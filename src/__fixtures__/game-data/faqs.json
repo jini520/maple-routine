@@ -132,6 +132,10 @@
     {
       "key": "mvp-grade-confirm",
       "title": "MVP 등급 확인"
+    },
+    {
+      "key": "inventory",
+      "title": "인벤토리"
     }
   ],
   "items": [

@@ -27,7 +27,6 @@ import type {
   NexonItemEquipmentResponse,
   NexonSymbolEquipmentResponse,
   NexonUnionArtifactResponse,
-  NexonUnionRaiderPreset,
   NexonUnionRaiderResponse,
 } from '../../types'
 
@@ -104,31 +103,13 @@ function symbolMeso(response: NexonSymbolEquipmentResponse): number {
   return sum((response.symbol ?? []).map((each) => Number.parseFloat(each.symbol_meso_rate ?? '0') || 0))
 }
 
-const raiderMesoIn = (preset: NexonUnionRaiderPreset): number =>
-  sum([...(preset.union_raider_stat ?? []), ...(preset.union_occupied_stat ?? [])].map(mesoPercentOf))
-
 /**
- * 유니온. 공격대원/점령 효과 + 스테이트 효과.
+ * 유니온. 공격대원 효과(`union_raider_stat`)만 센다.
  *
- * `union_raider_preset_1~5` 는 **전 계정이 `null`** 인 죽은 필드라 현재 적용본으로 폴백한다.
- * 있으면 최댓값, 없으면 현재값으로 짜 두는 이유는 되살아났을 때 **코드가 자동으로 잡게**
- * 하려는 것이다. 그때 이 파일을 다시 열 계기가 없다.
+ * 점령 효과 · 스테이트 효과 · 유니온 프리셋에는 메소 획득량이 없다(사용자 확인). 그 칸을 읽으면 메획 줄이 없는 칸을 계산에 섞는다.
  */
 function unionMeso(response: NexonUnionRaiderResponse): number {
-  const presets = [
-    response.union_raider_preset_1,
-    response.union_raider_preset_2,
-    response.union_raider_preset_3,
-    response.union_raider_preset_4,
-    response.union_raider_preset_5,
-  ].filter((each): each is NexonUnionRaiderPreset => each !== null && each !== undefined)
-
-  const raider = presets.length === 0 ? raiderMesoIn(response) : Math.max(...presets.map(raiderMesoIn))
-  const state = Math.max(
-    sum((response.union_state_stat ?? []).map(mesoPercentOf)),
-    ...(response.union_state_stat_preset ?? []).map((each) => sum((each.union_state_stat ?? []).map(mesoPercentOf))),
-  )
-  return raider + state
+  return sum((response.union_raider_stat ?? []).map(mesoPercentOf))
 }
 
 /**

@@ -6,6 +6,7 @@
 import { dayTotalsOf, recordMesoOf, type DayRecord } from '../cashbook/records'
 import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
+import { recordedItemNameOf } from '../../lib/item-catalog'
 import { findSpendChoice, findSpendRewardChoice, spendGroupOf } from '../../lib/cashbook/spend-catalog'
 import { hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
@@ -264,7 +265,7 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
       }
       return {
         slice: { key: category, name: incomeCategoryNameOf(category) },
-        parts: [typedNamePart(entry.record.item, meso)],
+        parts: [typedNamePart(recordedItemNameOf(entry.record.item, entry.record.itemKey), meso)],
       }
     }
     case 'spend': {
@@ -282,6 +283,7 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
         case 'hexa_matrix':
           return { slice, parts: [hexaPart(entry.record, meso)] }
         case 'item_purchase':
+          return { slice, parts: [typedNamePart(recordedItemNameOf(entry.record.item, entry.record.itemKey), meso)] }
         case 'etc':
           return { slice, parts: [typedNamePart(entry.record.item, meso)] }
       }

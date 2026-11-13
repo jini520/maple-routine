@@ -42,7 +42,7 @@ import {
 import { batchRecordWrites } from '../../storage/record-revision-batch'
 import { BOSS_CYCLES, type BossCycle } from '../../types'
 import { toScheduleSyncError } from '../schedule-sync/errors'
-import { refreshSettlement } from '../settlement/store'
+import { refreshSettlement, settlingYesterdayOf } from '../settlement/store'
 import { withSqliteFallback } from './sqlite-guards'
 
 export interface DefeatDateInput {
@@ -371,7 +371,10 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
 
   // 여기서부터 스케줄러를 부른다. 결산 여부도 함께 묻는다(안 기다린다). 미확정 기록이 없어 위에서
   // 돌아가는 길은 조회가 0회라 그 재진입을 이 요청으로 유료로 만들지 않는다.
-  if ([...credentials.values()].some((credential) => credential !== null)) void refreshSettlement()
+  const callable = [...credentials.values()].some((credential) => credential !== null)
+  if (callable) void refreshSettlement()
+  // 결산 중이면 어제를 묻지 않는다. 원장에 안 남아 결산이 끝난 뒤의 회차가 캔다.
+  const settlingYesterday = callable ? await settlingYesterdayOf(now) : null
 
   // 조회는 캐릭터끼리 나란히, **쓰기는 뒤에서 차례로**. 단일 공유 커넥션이라 동시에 쓰면 트랜잭션이
   // 겹쳐 던진다(`auto-record.ts` 가 같은 이유로 순차다).
@@ -400,7 +403,9 @@ async function runResolveDefeatDates(ocids: readonly string[], now: Date): Promi
       // 키가 없으면 **부를 수가 없다**. 가진 것으로 푼 만큼만 채우고 나머지는 NULL 로 둔다.
       const credential = credentials.get(ocid) ?? null
       if (unresolved.length > 0 && credential !== null) {
-        const days = missingDays(ledger.dates, periodsOf(unresolved), floorDateKey, ceilingDateKey)
+        const days = missingDays(ledger.dates, periodsOf(unresolved), floorDateKey, ceilingDateKey).filter(
+          (day) => day !== settlingYesterday,
+        )
         const probed = await probeDays(credential, ocid, days)
         for (const [dateKey, keys] of probed.observed) {
           observed.set(dateKey, keys)

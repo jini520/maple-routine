@@ -31,8 +31,10 @@ jest.mock('../../../nexon/schedule', () => ({
 }))
 const { fetchSchedulerCharacterState: fetchSchedulerCharacterStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 
-jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn() }))
-const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn(), settlingYesterdayOf: jest.fn() }))
+const { refreshSettlement: refreshSettlementMock, settlingYesterdayOf: settlingYesterdayMock } = jest.requireMock(
+  '../../settlement/store',
+) as Record<string, jest.Mock>
 
 jest.mock('../../../storage/api-key', () => ({
   getAuthConfig: jest.fn(),
@@ -194,6 +196,7 @@ beforeEach(async () => {
   // 합류해 영영 안 끝난다.
   resetSyncSingleFlightForTests()
   refreshSettlementMock.mockReset().mockResolvedValue(undefined)
+  settlingYesterdayMock.mockReset().mockResolvedValue(null)
   useRefreshProgress.getState().resetForTests()
   prefs = installFakePreferences()
   getAuthConfigMock.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }] })
@@ -301,6 +304,7 @@ describe('syncSchedules', () => {
         syncedAt: NOW,
         isStale: false,
         error: null,
+        reportedBossKeys: [],
       },
       {
         ocid: 'ocid-2',
@@ -310,6 +314,7 @@ describe('syncSchedules', () => {
         syncedAt: NOW,
         isStale: false,
         error: null,
+        reportedBossKeys: [],
       },
     ])
   })
@@ -478,6 +483,7 @@ describe('syncSchedules', () => {
       syncedAt: NOW,
       isStale: false,
       error: null,
+      reportedBossKeys: [],
     })
   })
 
@@ -885,6 +891,22 @@ describe('syncSchedules', () => {
         resolve(STALE_DAY)
       })
       await promise
+    })
+
+    // 넥슨 AI 에이전트 가이드는 00009 를 되풀이해 부르지 말라고 한다. 건너뛴 어제는 원장에 안 남아 다음 회차가 채운다.
+    it('서버가 결산 중이라고 하면 선채움이 어제를 묻지 않는다', async () => {
+      const characters = [mockCharacter('ocid-1')]
+      fetchCharacterListMock.mockResolvedValue([account('acc-1', characters)])
+      const stage1State = { ...schedulerState('캐릭터1'), isWeeklyBossStale: true, bossContents: [] }
+      mergeSchedulerStateMock.mockReturnValue({ characterState: stage1State, worldLedgerUpdates: {}, accountLedgerUpdates: {} })
+      fetchSchedulerCharacterStateMock.mockResolvedValueOnce(schedulerState('캐릭터1')).mockResolvedValue(STALE_DAY)
+      settlingYesterdayMock.mockResolvedValue('2026-07-10')
+
+      await syncSchedules(['ocid-1'])
+
+      const dated = fetchSchedulerCharacterStateMock.mock.calls.map(([, , , dateKey]) => dateKey).filter(Boolean)
+      expect(dated).toHaveLength(12)
+      expect(dated).not.toContain('2026-07-10')
     })
 
     it('병합이 일찍 멈춰도 이미 받은 날짜는 전부 원장에 기록한다 (이슈 #87 재발 방지)', async () => {
@@ -2855,5 +2877,48 @@ describe('getCharacterPickerRoster: 넥슨 계정이 여럿', () => {
       failure: expect.any(NexonRateLimitError),
       apiKey: '부-키',
     })
+  })
+})
+
+// 이번 응답이 담아 보낸 보스만이 넥슨이 미완료라고 말한 보스다. 처치 기록을 지우는 판단이 이 값을 본다.
+describe('이번 응답이 담아 보낸 보스(reportedBossKeys)', () => {
+  function boss(bossKey: string, cycle: 'weekly' | 'monthly'): SchedulerCharacterState['bossContents'][number] {
+    return { bossKey, apiName: bossKey, difficulty: 'hard', cycle, isRegistered: true, isComplete: false, ownComplete: false }
+  }
+
+  beforeEach(() => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1', [mockCharacter('ocid-1')])])
+    fetchCharacterBasicMock.mockResolvedValue(basicProfile({ name: '캐릭터1', level: 200 }))
+  })
+
+  it('병합이 캐시에서 되살린 보스는 담지 않는다', async () => {
+    fetchSchedulerCharacterStateMock.mockResolvedValue({
+      ...schedulerState('캐릭터1'),
+      bossContents: [boss('lotus', 'weekly'), boss('black_mage', 'monthly')],
+    })
+    mergeSchedulerStateMock.mockImplementation((input: { fresh: SchedulerCharacterState }) => ({
+      characterState: { ...input.fresh, bossContents: [...input.fresh.bossContents, boss('will', 'weekly')] },
+      worldLedgerUpdates: {},
+      accountLedgerUpdates: {},
+    }))
+
+    const [result] = await syncSchedules(['ocid-1'])
+
+    expect(result.state?.bossContents.map((content) => content.bossKey)).toEqual(['lotus', 'black_mage', 'will'])
+    expect(result.reportedBossKeys).toEqual(['lotus', 'black_mage'])
+  })
+
+  // 접속하지 않은 캐릭터의 응답은 주간 보스부터 빠지고 월간 보스가 미완료로 남는다. 안 잡았다는 사실이 아니다.
+  it('주간 보스가 하나도 없는 응답의 보스는 담지 않는다', async () => {
+    fetchSchedulerCharacterStateMock.mockResolvedValue({
+      ...schedulerState('캐릭터1'),
+      bossContents: [boss('black_mage', 'monthly')],
+      isWeeklyBossStale: true,
+      isMonthlyBossStale: true,
+    })
+
+    const [result] = await syncSchedules(['ocid-1'])
+
+    expect(result.reportedBossKeys).toEqual([])
   })
 })

@@ -23,6 +23,7 @@ import {
 import { useTrackedOcids } from '../features/schedule-sync/use-schedule-queries'
 import type { ScheduleSyncError } from '../features/schedule-sync/schedule-sync'
 import type { CharacterPickerEntry } from '../types'
+import type { NexonCredential } from '../types/auth'
 
 import { useAccountRosters } from './useAccountRosters'
 import { useKnownProfiles } from './useKnownProfiles'
@@ -31,10 +32,14 @@ import { useSelectionDraft } from './useSelectionDraft'
 export interface CharacterManageController {
   // 아래 층의 머리
   accounts: AccountSummaryView[]
+  /** 메이플 ID → 넥슨 계정 묶음 라벨. 보이는 넥슨 계정이 하나면 비어 있다 */
+  accountGroups: Record<string, string>
   portraitByAccountId: Record<string, string | null>
   selectedAccountId: string | null
   isAccountsLoading: boolean
   accountsError: ScheduleSyncError | null
+  /** 계정 목록을 부른 자격의 종류. 빈 목록 문구를 가른다 */
+  accountsCredentialType: NexonCredential['type'] | null
 
   // 위 층
   selectedOcids: string[]
@@ -107,10 +112,12 @@ export function useCharacterManage(): CharacterManageController {
 
   return {
     accounts: roster.accounts,
+    accountGroups: roster.accountGroups,
     portraitByAccountId,
     selectedAccountId: roster.selectedAccountId,
     isAccountsLoading: roster.isAccountsLoading,
     accountsError: roster.accountsError,
+    accountsCredentialType: roster.accountsCredentialType,
     selectedOcids: draft.selectedOcids,
     selectedViews,
     representativeOcid: draft.representativeOcid,

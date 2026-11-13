@@ -178,6 +178,22 @@ describe('InputCard', () => {
     expect(숫자.getByTestId('input-card-value').props.keyboardType).toBe('number-pad')
   })
 
+  // 사냥 기록의 조각 개수처럼 더 줄일 수 없는 경계가 있는 칸. 시트의 저장을 누르기 전에 카드에서 막는다.
+  it('min 보다 적은 값이면 확인이 안 눌리고, 같거나 크면 눌린다', async () => {
+    const { view, onConfirm } = await 그리기({ label: '조각 개수', unit: '개', value: '100', min: 60 })
+
+    await 치기(view, '')
+    await 누르기(view, 'input-card-confirm')
+    await 치기(view, '59')
+    await 누르기(view, 'input-card-confirm')
+    expect(onConfirm).not.toHaveBeenCalled()
+    expect(view.getByTestId('input-card-confirm').props.accessibilityState?.disabled).toBe(true)
+
+    await 치기(view, '60')
+    await 누르기(view, 'input-card-confirm')
+    expect(onConfirm).toHaveBeenCalledWith('60')
+  })
+
   it('필수 칸은 값이 차도 별표가 남는다', async () => {
     const { view } = await 그리기({ label: '시세 · 1억당', required: true, value: '1350' })
 
@@ -538,5 +554,73 @@ describe('InputCard', () => {
       expect(view.queryByTestId('input-card-exclude')).toBeNull()
       expect(view.queryByTestId('input-card-prev')).toBeNull()
     })
+  })
+})
+
+describe('InputCard: 칸 안 아이템 목록', () => {
+  const 아이템 = [
+    { key: 'low', name: '하급 아이템 결정', icon: null },
+    { key: 'top', name: '최상급 아이템 결정', icon: null },
+  ]
+  const 찾기 = (draft: string) => (draft === '' ? [] : 아이템.filter((item) => item.name.includes(draft)))
+
+  it('아직 안 쳤어도 목록 자리는 빈 채로 서고, 치면 맞는 아이템이 선다', async () => {
+    const { view } = await 그리기({ text: true, suggestions: { itemsOf: 찾기, onPick: jest.fn() } })
+
+    expect(view.getByTestId('input-card-suggestions')).toBeTruthy()
+    expect(view.queryByTestId('input-card-suggestion-low')).toBeNull()
+
+    await 치기(view, '아이템 결')
+    expect(view.getByTestId('input-card-suggestion-low')).toBeTruthy()
+    expect(view.getByTestId('input-card-suggestion-top')).toBeTruthy()
+  })
+
+  it('한 줄을 누르면 그 아이템을 고르고 이름으로 확인한다', async () => {
+    const onPick = jest.fn()
+    const { view, onConfirm } = await 그리기({ text: true, suggestions: { itemsOf: 찾기, onPick } })
+    await 치기(view, '최상급')
+
+    await 누르기(view, 'input-card-suggestion-top')
+
+    expect(onPick).toHaveBeenCalledWith('top')
+    expect(onConfirm).toHaveBeenCalledWith('최상급 아이템 결정')
+  })
+
+  it('목록에서만 받는 카드는 친 글자가 목록의 이름과 같을 때만 확인이 눌린다', async () => {
+    const onPick = jest.fn()
+    const { view, onConfirm } = await 그리기({ text: true, suggestions: { itemsOf: 찾기, onPick, pickOnly: true } })
+
+    await 치기(view, '아이템 결')
+    await 누르기(view, 'input-card-confirm')
+    expect(onConfirm).not.toHaveBeenCalled()
+
+    await 치기(view, '하급 아이템 결정')
+    await 누르기(view, 'input-card-confirm')
+    expect(onPick).toHaveBeenCalledWith('low')
+    expect(onConfirm).toHaveBeenCalledWith('하급 아이템 결정')
+  })
+
+  // 목록에 없는 이름도 받는 카드는, 맞는 아이템이 없을 때 목록 자리가 비지 않게 친 이름을 한 줄로 보인다.
+  it('맞는 아이템이 없으면 ‘친 글자’ 직접 입력 한 줄이 서고, 누르면 입력과 같다', async () => {
+    const onPick = jest.fn()
+    const { view, onConfirm } = await 그리기({ text: true, suggestions: { itemsOf: 찾기, onPick } })
+
+    await 치기(view, '아이템 결')
+    expect(view.queryByTestId('input-card-suggestion-typed')).toBeNull()
+
+    await 치기(view, '만병통치약')
+    expect(view.getByTestId('input-card-suggestion-typed')).toHaveTextContent('‘만병통치약’ 직접 입력')
+    await 누르기(view, 'input-card-suggestion-typed')
+
+    expect(onPick).not.toHaveBeenCalled()
+    expect(onConfirm).toHaveBeenCalledWith('만병통치약')
+  })
+
+  it('목록에서만 받는 카드와 아직 안 친 카드에는 직접 입력 줄이 없다', async () => {
+    const { view } = await 그리기({ text: true, suggestions: { itemsOf: 찾기, onPick: jest.fn(), pickOnly: true } })
+    expect(view.queryByTestId('input-card-suggestion-typed')).toBeNull()
+
+    await 치기(view, '만병통치약')
+    expect(view.queryByTestId('input-card-suggestion-typed')).toBeNull()
   })
 })

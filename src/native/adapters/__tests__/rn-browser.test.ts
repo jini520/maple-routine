@@ -51,4 +51,17 @@ describe('rnBrowserPort.openAuthSession', () => {
 
     await expect(rnBrowserPort.openAuthSession('https://login', 'app://cb')).resolves.toBeNull()
   })
+
+  // 쿠키를 나누는 창이면 네이버 같은 소셜 로그인이 앞서 고른 계정으로 묻지 않고 돌려보내, 다른 계정을 고를 수 없다.
+  it('앞서 로그인한 쿠키를 읽지도 남기지도 않는 창으로 연다', async () => {
+    openAuthSessionAsync.mockResolvedValue({ type: 'dismiss' })
+
+    await rnBrowserPort.openAuthSession('https://login', 'app://cb')
+
+    expect(openAuthSessionAsync).toHaveBeenCalledWith(
+      'https://login',
+      'app://cb',
+      expect.objectContaining({ preferEphemeralSession: true }),
+    )
+  })
 })

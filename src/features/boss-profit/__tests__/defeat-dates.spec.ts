@@ -48,8 +48,10 @@ const {
 const { fetchSchedulerCharacterState: fetchStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
 const { getNexonAccountIdsOfOcids } = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
 
-jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn() }))
-const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn(), settlingYesterdayOf: jest.fn() }))
+const { refreshSettlement: refreshSettlementMock, settlingYesterdayOf: settlingYesterdayMock } = jest.requireMock(
+  '../../settlement/store',
+) as Record<string, jest.Mock>
 
 
 beforeEach(() => {
@@ -61,6 +63,7 @@ beforeEach(() => {
   fetchStateMock.mockReset()
   getNexonAccountIdsOfOcids.mockReset().mockResolvedValue(new Map())
   refreshSettlementMock.mockReset().mockResolvedValue(undefined)
+  settlingYesterdayMock.mockReset().mockResolvedValue(null)
   recordsRevisionMock.mockReset().mockReturnValue(0)
 })
 
@@ -897,6 +900,20 @@ describe('resolveDefeatDates: 리프 경계는 원장에서 읽는다', () => {
 })
 
 // 스케줄러 데이터를 갱신하는 자리는 결산 여부도 함께 갱신한다.
+// 넥슨 AI 에이전트 가이드는 00009 를 되풀이해 부르지 말라고 한다. 건너뛴 어제는 원장에 안 남아 다음 회차가 캔다.
+describe('결산 중이면 어제를 묻지 않는다', () => {
+  it('서버가 결산 중이라고 하면 어제만 빼고 묻는다', async () => {
+    getUndatedMock.mockResolvedValue([미확정_스우])
+    fetchStateMock.mockResolvedValue(schedulerState([]))
+    settlingYesterdayMock.mockResolvedValue('2026-08-23')
+
+    await resolveDefeatDates(['ocid-1'], NOW)
+
+    const asked = fetchStateMock.mock.calls.map(([, , , dateKey]) => dateKey).sort()
+    expect(asked).toEqual(['2026-08-20', '2026-08-21', '2026-08-22'])
+  })
+})
+
 describe('결산 여부도 갱신한다', () => {
   it('날짜를 캐러 조회에 들어가면 결산도 다시 묻는다', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])

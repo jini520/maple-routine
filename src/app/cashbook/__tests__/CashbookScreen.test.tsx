@@ -12,6 +12,8 @@ jest.mock('../../../features/cashbook/records', () => {
     recordCardOf: actual.recordCardOf,
     recordMesoOf: actual.recordMesoOf,
     recordCashOf: actual.recordCashOf,
+    spendMesoOf: actual.spendMesoOf,
+    spendTileOf: actual.spendTileOf,
     dayTotalsOf: actual.dayTotalsOf,
     isManualRecord: actual.isManualRecord,
     rowKeyOf: actual.rowKeyOf,
@@ -28,6 +30,9 @@ jest.mock('../../../features/cashbook/records', () => {
     editIncome: jest.fn(),
     editSpend: jest.fn(),
     removeRecord: jest.fn(),
+    loadHuntFragmentFloor: jest.fn(async () => 0),
+    // 저장이 조각 때문에 막혔는지는 저장소의 에러가 정한다. 화면이 그 에러를 고르는 규칙이라 진짜를 쓴다.
+    isFragmentShortage: actual.isFragmentShortage,
   }
 })
 
@@ -62,6 +67,15 @@ jest.mock('../../../features/settlement/query', () => ({
 const mockOpenTab = jest.fn()
 jest.mock('../../../hooks/useOpenTab', () => ({ useOpenTab: () => mockOpenTab }))
 
+// today 빠른 이동이 넘기는 분류 파라미터는 케이스마다 다르므로 변수로 준다. 화면이 지우는 것은 `setParams` 로 본다.
+let mockRouteParams: { incomeCategory?: string } | undefined
+const mockSetParams = jest.fn()
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useRoute: () => ({ params: mockRouteParams }),
+}))
+jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: () => ({ setParams: mockSetParams }) }))
+
 // 시트 껍데기는 `BossDropSheet.test.tsx` 와 같은 방식으로 세운다.
 jest.mock('@gorhom/bottom-sheet', () => {
   const ReactNative = jest.requireActual<typeof import('react-native')>('react-native')
@@ -89,6 +103,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import { QueryClient, QueryClientProvider, notifyManager } from '@tanstack/react-query'
 
 import { useToastStore } from '../../../features/toast/store'
+import { FragmentShortageError } from '../../../storage/fragment-ledger'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { useResetBoundaryTick } from '../../../features/query/reset-timer'
 import { useSettlementBanner } from '../../../features/settlement/query'
@@ -113,7 +128,7 @@ beforeEach(() => {
   records.loadMonthDays.mockReset().mockResolvedValue({})
   records.loadLastPointRate.mockReset().mockResolvedValue(null)
   records.loadLastHunts.mockReset().mockResolvedValue({})
-  records.loadHexaStorageChecks.mockReset().mockResolvedValue({ useStorage: false, storageAsSpend: false })
+  records.loadHexaStorageChecks.mockReset().mockResolvedValue({ useStorage: false, storageAsSpend: false, storageUses: [] })
   records.loadTrackedCharacters.mockReset().mockResolvedValue([])
   records.recordIncome.mockReset().mockResolvedValue(undefined)
   records.recordSpend.mockReset().mockResolvedValue(undefined)
@@ -121,6 +136,8 @@ beforeEach(() => {
   mockWindow.collecting = false
   mockWindow.reload.mockReset().mockResolvedValue(undefined)
   mockOpenTab.mockReset()
+  mockRouteParams = undefined
+  mockSetParams.mockReset()
   records.editIncome.mockReset().mockResolvedValue(undefined)
   records.editSpend.mockReset().mockResolvedValue(undefined)
   records.removeRecord.mockReset().mockResolvedValue(undefined)
@@ -282,6 +299,27 @@ describe('CashbookScreen: 연도 표시', () => {
 
     expect(view.getByTestId('cashbook-period-label')).toHaveTextContent('2025년 12월')
     expect(view.queryByTestId('cashbook-period-year')).toBeNull()
+  })
+})
+
+// today 빠른 이동의 `사냥` · `전리품 판매` 칸이 분류를 파라미터로 넘겨 이 탭을 연다.
+describe('CashbookScreen: 빠른 이동의 분류 파라미터', () => {
+  it('받으면 그 분류의 수입 폼을 오늘 날짜로 바로 열고 파라미터를 지운다. 분류를 다시 고르는 누르개는 없다', async () => {
+    mockRouteParams = { incomeCategory: 'hunting' }
+
+    const view = await 그리기()
+
+    expect(view.getByTestId('income-sheet-title')).toHaveTextContent('사냥')
+    expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 23일 (일)')
+    expect(view.queryByTestId('income-sheet-back')).toBeNull()
+    expect(mockSetParams).toHaveBeenCalledWith({ incomeCategory: undefined })
+  })
+
+  it('파라미터 없이 들어오면 시트를 열지 않는다', async () => {
+    const view = await 그리기()
+
+    expect(view.queryByTestId('income-sheet')).toBeNull()
+    expect(mockSetParams).not.toHaveBeenCalled()
   })
 })
 
@@ -1248,6 +1286,64 @@ describe('줄을 누르면 고칠 수 있다', () => {
     expect(view.queryByText('지출 수정')).toBeNull()
   })
 
+  // 사냥 기록을 고치거나 지우면 그 조각을 가져간 뒤 기록 때문에 막힐 수 있다. 다시 저장해도 같으므로 까닭을 말한다.
+  describe('사냥 기록', () => {
+    const 그날사냥 = {
+      ...그날수입,
+      id: 'hunt-1',
+      category: 'hunting',
+      item: null,
+      mesoAmount: 100_000_000,
+      quantity: null,
+      itemKind: null,
+      hunt: { mode: 'manual', typedMeso: 100_000_000, fragments: 100, fragmentPrice: null },
+    }
+    const 막힘 = new FragmentShortageError([{ ocid: 'ocid-1', days: [{ date: 고른날, missing: 10 }] }])
+
+    beforeEach(() => {
+      useToastStore.setState({ toasts: [], queue: [] })
+      records.loadTrackedCharacters.mockResolvedValue([루디])
+      그날줄을(고른날, [{ kind: 'income', record: 그날사냥, characterName: '' }])
+    })
+
+    it('고치기가 조각 때문에 막히면 시트가 남고 그 까닭의 토스트가 뜬다', async () => {
+      records.editIncome.mockReset().mockRejectedValue(막힘)
+      const view = await 그리기()
+      await 누르기(view, 'cashbook-row-hunt-1')
+
+      await 이름으로누르기(view, '수정')
+      await act(async () => {})
+
+      expect(records.editIncome.mock.calls[0]?.[0]).toMatchObject({ id: 'hunt-1' })
+      expect(view.getByTestId('income-sheet-amount')).toBeTruthy()
+      expect(useToastStore.getState().toasts[0]?.message).toBe('조각을 사용한 기록이 있어 고칠 수 없습니다')
+    })
+
+    it('지우기가 조각 때문에 막히면 시트가 남고 그 까닭의 토스트가 뜬다', async () => {
+      records.removeRecord.mockReset().mockRejectedValue(막힘)
+      const view = await 그리기()
+      await 누르기(view, 'cashbook-row-hunt-1')
+
+      await 이름으로누르기(view, '삭제')
+      await act(async () => {})
+
+      expect(records.removeRecord.mock.calls[0]?.[0]).toMatchObject({ kind: 'income', record: { id: 'hunt-1' } })
+      expect(view.getByTestId('income-sheet-amount')).toBeTruthy()
+      expect(useToastStore.getState().toasts[0]?.message).toBe('조각을 사용한 기록이 있어 지울 수 없습니다')
+    })
+
+    it('다른 까닭으로 실패하면 지금 문구 그대로다', async () => {
+      records.editIncome.mockReset().mockRejectedValue(new Error('디스크'))
+      const view = await 그리기()
+      await 누르기(view, 'cashbook-row-hunt-1')
+
+      await 이름으로누르기(view, '수정')
+      await act(async () => {})
+
+      expect(useToastStore.getState().toasts[0]?.message).toBe('기록을 고치지 못했습니다')
+    })
+  })
+
   // 새로 적는 시트에는 지울 것이 없다.
   it('새로 적는 시트에는 삭제가 없다', async () => {
     const view = await 그리기()
@@ -1256,6 +1352,92 @@ describe('줄을 누르면 고칠 수 있다', () => {
     await 이름으로누르기(view, '지출 추가')
 
     expect(view.queryByTestId('spend-sheet-delete')).toBeNull()
+  })
+})
+
+// 헥사 매트릭스 · 아이템 구매는 그날 같은 캐릭터의 기록이 둘 이상이면 한 줄로 합친다. 합친 줄은 자동 줄처럼 그 자리에서
+// 펼치고, 기록을 고치는 곳은 펼친 칸이다. 어느 기록을 묶는지는 `merged-rows.spec.ts` 가 보고 여기서는 배선을 본다.
+describe('헥사 · 구매 합친 줄', () => {
+  const 지출 = (over: Record<string, unknown>) => ({
+    kind: 'spend' as const,
+    characterName: '루디',
+    record: {
+      ocid: 'ocid-1',
+      spentOn: 고른날,
+      category: 'item_purchase',
+      item: null,
+      itemKey: null,
+      formItemKeys: null,
+      itemKind: null,
+      levelFrom: null,
+      levelTo: null,
+      quantity: null,
+      mesoAmount: 0,
+      tariffMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
+      cashAmount: null,
+      hexa: null,
+      ...over,
+    },
+  })
+  const 벨트 = 지출({ id: 'buy-belt', itemKey: 'dreamy_belt', itemKind: 'equipment', mesoAmount: 3_200_000_000, recordedAt: '2026-08-23T01:00:00.000Z' })
+  const 흔적 = 지출({ id: 'buy-trace', itemKey: 'spell_trace', itemKind: 'etc', quantity: 3_000, mesoAmount: 105_000_000, recordedAt: '2026-08-23T02:00:00.000Z' })
+  const 구매줄 = 'cashbook-row-merged:item_purchase:ocid-1'
+
+  beforeEach(() => {
+    그날줄을(고른날, [벨트, 흔적])
+  })
+
+  it('기록이 둘이면 `n건` 과 합계로 한 줄에 서고, 기록마다의 줄은 없다', async () => {
+    const view = await 그리기()
+
+    expect(view.getByTestId(구매줄)).toHaveTextContent('루디 · 아이템 구매2건−33.05억')
+    expect(view.queryByTestId('cashbook-row-buy-belt')).toBeNull()
+    expect(view.queryByTestId('cashbook-row-buy-trace')).toBeNull()
+  })
+
+  // 칸의 글자는 지금 줄의 둘째 줄을 이름과 수량으로 나눈 것이다. 수량은 소비 · 기타 아이템에만 선다.
+  it('누르면 시트 대신 기록마다 칸이 적은 순으로 펼쳐진다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, 구매줄)
+
+    expect(view.queryByTestId('spend-sheet-title')).toBeNull()
+    const tiles = within(view.getByTestId('cashbook-merged-tiles-merged:item_purchase:ocid-1')).getAllByRole('button')
+    expect(tiles.map((tile) => tile.props.testID)).toEqual(['cashbook-merged-tile-buy-belt', 'cashbook-merged-tile-buy-trace'])
+    expect(view.getByLabelText('주문의 흔적 3,000개 고치기')).toBe(tiles[1])
+    expect(view.getByTestId('cashbook-merged-tile-buy-belt')).toHaveTextContent('몽환의 벨트−32억')
+    expect(view.getByTestId('cashbook-merged-tile-buy-trace')).toHaveTextContent('주문의 흔적3,000개−1.05억')
+  })
+
+  // 합친 뒤에는 기록을 고치거나 지울 곳이 이 칸뿐이다.
+  it('칸을 누르면 그 기록으로 채운 지출 시트가 열린다', async () => {
+    const view = await 그리기()
+    await 누르기(view, 구매줄)
+
+    await 누르기(view, 'cashbook-merged-tile-buy-trace')
+    await 이름으로누르기(view, '삭제')
+    await act(async () => {})
+
+    expect(records.removeRecord).toHaveBeenCalledWith(흔적)
+  })
+
+  // 헥사 스탯은 둘째 줄이 없다. 헥사 스킬은 코어의 첫 스킬 이름 아래에 레벨이 선다.
+  it('헥사 칸은 이름 아래에 레벨이 서고, 헥사 스탯 칸은 이름만 선다', async () => {
+    const 조각 = { fragmentCount: 100, untradableFragmentCount: 0, fragmentPrice: 1, useStorage: false, storageAsSpend: false, storageUses: [] }
+    그날줄을(고른날, [
+      지출({ id: 'hexa-skill', category: 'hexa_matrix', itemKey: '창룡파천검 : 만참', levelFrom: 25, levelTo: 28, mesoAmount: 4_830_000_000, hexa: { ...조각, activation: null }, recordedAt: '2026-08-23T01:00:00.000Z' }),
+      지출({ id: 'hexa-stat', category: 'hexa_matrix', itemKey: 'hexa_stat_1', mesoAmount: 0, hexa: { ...조각, activation: false }, recordedAt: '2026-08-23T02:00:00.000Z' }),
+    ])
+    const view = await 그리기()
+
+    await 누르기(view, 'cashbook-row-merged:hexa_matrix:ocid-1')
+
+    expect(view.getByTestId('cashbook-merged-tile-hexa-skill')).toHaveTextContent('창룡파천검 : 만참25 → 28−48.3억')
+    // 0 메소 헥사 기록도 칸이 선다.
+    expect(view.getByTestId('cashbook-merged-tile-hexa-stat')).toHaveTextContent('헥사 스탯 Ⅰ0')
   })
 })
 

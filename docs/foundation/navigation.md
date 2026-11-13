@@ -45,7 +45,7 @@ RootStack
    ├─ Main (LayerStack)
    │   ├─ Groups        Today · Utility · Settings
    │   ├─ ScheduleSubs  Appointments · Content · Boss
-   │   ├─ LedgerSubs    Profit · Cashbook · Stats
+   │   ├─ LedgerSubs    Profit · Cashbook · Stats · Inventory
    │   └─ BottomBar
    └─ 하위 페이지 스물둘
 ```
@@ -73,7 +73,7 @@ RootStack
 |---|---|---|
 | `today` | today | 없음 |
 | `schedule` | 스케줄러 | 파티 스케줄 · 컨텐츠 · 보스 |
-| `ledger` | 수입·지출 | 보스 수입 · 가계부 · 통계 |
+| `ledger` | 수입·지출 | 보스 수입 · 가계부 · 통계 · 인벤토리 |
 | `utility` | 유틸리티 | 없음 |
 | `settings` | 더보기 | 없음 |
 

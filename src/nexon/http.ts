@@ -1,4 +1,5 @@
 import {
+  isInvalidApiKeyError,
   NexonApiError,
   NexonAuthError,
   NexonBadRequestError,
@@ -10,6 +11,7 @@ import {
 } from './errors'
 import { markDeveloperKeyDead, nextDeveloperKey } from './developer-keys'
 import { waitForKeySlot } from './key-rate-limit'
+import { recordKeySuccess } from './key-success'
 import type { StreamLine, StreamTask } from '../server/friends-stream'
 import type { NexonCredential } from '../types/auth'
 
@@ -110,11 +112,50 @@ export async function requestJson<T>(path: string, credential: NexonCredential, 
   try {
     return await requestOnce<T>(path, credential, options)
   } catch (error) {
+    if (isDeveloperKeyRateLimit(error)) return await retryAfterRateLimit<T>(path, credential, error, options)
     // 재시도는 **한 번뿐**이다. 두 번째도 같은 실패면 올린다. 그래야 안 도는 것이 보장된다.
     const 다시 = await retryWith(path, credential, error)
     if (다시 === null) throw error
     return (await requestOnce<T>(path, 다시, options)) as T
   }
+}
+
+/** 번들 개발자 키가 429 를 받은 뒤 다시 부르기 전에 기다리는 시간의 기준. 매번 0.5 ~ 1.5배로 흩뜨린다. */
+const DEVELOPER_KEY_BACKOFF_MS = [1000, 2000] as const
+
+let retryWait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** 테스트가 기다림을 기록만 하게 갈아 끼운다. `null` 이면 실제로 기다린다. */
+export function setRetryWaitForTest(wait: ((ms: number) => Promise<void>) | null): void {
+  retryWait = wait ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)))
+}
+
+/** 번들 개발자 키로 부른 요청이 429 를 받았나. 사용자 키의 429 는 다시 부르지 않고 모달로 사용자가 고른다. */
+function isDeveloperKeyRateLimit(error: unknown): boolean {
+  return error instanceof NexonRateLimitError && error.developerKey !== undefined
+}
+
+/**
+ * 번들 개발자 키의 429 를 기다렸다가 다시 부른다. 키는 빼지 않는다. 키가 둘뿐이라 빼면 둘 다 한 번씩 막힌 기기는 다시 켤 때까지
+ * 넥슨을 못 부른다. 기다림을 흩뜨리는 것은 로그인 사용자의 기기가 모두 이 키를 함께 써서, 같은 순간에 다시 부르면 또 429 이기 때문이다.
+ */
+async function retryAfterRateLimit<T>(
+  path: string,
+  credential: NexonCredential,
+  first: unknown,
+  options?: RequestOptions,
+): Promise<T> {
+  let last = first
+  for (const base of DEVELOPER_KEY_BACKOFF_MS) {
+    await retryWait(base * (0.5 + Math.random()))
+    try {
+      return await requestOnce<T>(path, credential, options)
+    } catch (error) {
+      if (!isDeveloperKeyRateLimit(error)) throw error
+      last = error
+    }
+  }
+  throw last
 }
 
 /**
@@ -446,17 +487,13 @@ async function requestViaStream<T>(path: string, session: string): Promise<T> {
 /**
  * 이 실패가 **개발자 키를 빼야 하는 것**인가. 맞으면 그 키.
  *
- * 무효(401/403 · 400 `OPENAPI00005`)와 한도 초과(429)뿐이다. 다른 400 은 키가 아니라 ocid·날짜
- * 문제라 키를 빼면 멀쩡한 키가 사라진다.
+ * 무효 키(401/403 · 400 `OPENAPI00005` · `OPENAPI00006`)뿐이다. 다른 400 은 키가 아니라 ocid·날짜 문제라 키를 빼면 멀쩡한
+ * 키가 사라진다. 429 는 빼지 않고 기다렸다가 다시 부른다(`retryAfterRateLimit`).
  */
 function deadDeveloperKeyOf(error: unknown): string | null {
   if (!(error instanceof NexonApiError)) return null
   if (error.developerKey === undefined) return null
-  const 키문제 =
-    error instanceof NexonAuthError ||
-    error instanceof NexonRateLimitError ||
-    (error instanceof NexonBadRequestError && error.code === 'OPENAPI00005')
-  return 키문제 ? error.developerKey : null
+  return isInvalidApiKeyError(error) ? error.developerKey : null
 }
 
 async function requestOnce<T>(path: string, credential: NexonCredential, options?: RequestOptions): Promise<T> {
@@ -526,5 +563,7 @@ async function requestOnce<T>(path: string, credential: NexonCredential, options
     throw new NexonNetworkError('Nexon API 응답을 JSON으로 파싱하지 못했습니다', { cause: error })
   }
   maintenanceReporter?.succeeded(bareOf(path))
+  // 429 다시 시도 모달이 연달아 받은 429 를 셀 때, 그 사이에 이 키로 성공했으면 처음부터 센다.
+  if (credential.type === 'key') recordKeySuccess(credential.value)
   return body
 }

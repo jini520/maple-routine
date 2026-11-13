@@ -11,6 +11,7 @@ import { AlertTriangleIcon, Card, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { MvpPlate } from '../../components/molecules/MvpPlate/MvpPlate'
 import { AccountRow } from '../../components/organisms/AccountSelect/AccountSelect'
+import { useMapleIdNameOf } from '../../features/maple-id/names'
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
@@ -31,6 +32,7 @@ type Sheet = { kind: 'change' } | { kind: 'edit'; startDate: string }
 export function SettingsMvpGradeHistoryScreen(props: {
   route?: { params?: { accountId?: string } }
 }): React.JSX.Element {
+  const nameOf = useMapleIdNameOf()
   const faq = useFaqSheet('settings-mvp-grade-history')
   const navigation = useSettingsNavigation()
   const accountId = props.route?.params?.accountId
@@ -69,7 +71,7 @@ export function SettingsMvpGradeHistoryScreen(props: {
               <Card className="gap-2 p-3">
                 <View className="px-1 pt-0.5">
                   {account.summary === null ? (
-                    <Text className="text-sm font-semibold text-text">메이플 ID</Text>
+                    <Text className="text-sm font-semibold text-text">{nameOf(account.accountId)}</Text>
                   ) : (
                     <AccountRow summary={account.summary} portraitUrl={account.portraitUrl} />
                   )}

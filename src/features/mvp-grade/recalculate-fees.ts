@@ -2,7 +2,7 @@ import { crystalPayoutMeso } from '../../lib/boss/party-shares'
 import { periodStartDateKey } from '../../lib/boss/boss-profit-period'
 import type { FeePercent } from '../../lib/cashbook/item-split'
 import { withSaleFee } from '../../lib/cashbook/sale-fee'
-import { autoFeePercent } from '../../lib/mvp/fees'
+import { accountFeePercent, autoFeePercent } from '../../lib/mvp/fees'
 import { getAutoFeeDropRecords, type DropFeeUpdate } from '../../storage/boss-drops'
 import { getAutoFeeProfitRecords, type ProfitSplitFeeUpdate } from '../../storage/boss-profit'
 import { getAutoFeeIncomeRecords, type IncomeSaleFeeUpdate } from '../../storage/income'
@@ -16,7 +16,12 @@ export async function recalcIncomeUpdates(): Promise<IncomeSaleFeeUpdate[]> {
   const [context, incomes] = await Promise.all([loadFeeContext(), getAutoFeeIncomeRecords()])
   const updates: IncomeSaleFeeUpdate[] = []
   for (const record of incomes) {
-    const percent = autoFeePercent(context, record.ocid ?? context.fallbackOcid, record.earnedOn) as FeePercent
+    // 메이플 ID 기록(인벤토리에서 판 것)은 그 메이플 ID 의 등급이다. 캐릭터도 메이플 ID 도 없는 옛 기록만 대표 캐릭터로 센다.
+    const percent = (
+      record.ocid === null && record.accountId !== undefined
+        ? accountFeePercent(context, record.accountId, record.earnedOn)
+        : autoFeePercent(context, record.ocid ?? context.fallbackOcid, record.earnedOn)
+    ) as FeePercent
     if (record.saleFeePercent === percent) continue
     const fields = withSaleFee(record, percent)
     if (fields !== null) updates.push({ id: record.id, ...fields })

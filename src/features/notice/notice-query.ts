@@ -18,6 +18,17 @@ import { receiveNoticeKind } from './notice-feed'
 import { pickBannerNotice } from './pick-banner-notice'
 import { useNoticeDismissal } from './banner-dismissal'
 
+/**
+ * 넥슨 공지 목록을 받은 뒤 두는 기간. 넥슨 AI 에이전트 가이드의 30일 갱신 의무다. 조회가 계속 실패해 든 값을 지키는 동안에도
+ * 이 기간이 지나면 그리지 않고 기기에 저장하지도 않는다. 운영자 공지(`app`)는 우리가 쓴 글이라 뺀다.
+ */
+export const NEXON_NOTICE_RETAIN_MS = 30 * 24 * 60 * 60 * 1000
+
+/** 받은 지 30일이 지난 넥슨 공지 목록인가. `dataUpdatedAt` 이 0 이면 아직 받은 적이 없다. */
+function isExpired(kind: NoticeKind, dataUpdatedAt: number): boolean {
+  return kind !== 'app' && dataUpdatedAt > 0 && Date.now() - dataUpdatedAt >= NEXON_NOTICE_RETAIN_MS
+}
+
 export function noticesOptions(kind: NoticeKind) {
   return queryOptions<Notice[]>({
     queryKey: queryKeys.notices(kind),
@@ -31,7 +42,7 @@ export function noticesOptions(kind: NoticeKind) {
     },
     staleTime: 0,
     refetchOnWindowFocus: 'always',
-    meta: { persist: true, source: 'server' },
+    meta: kind === 'app' ? { persist: true, source: 'server' } : { persist: true, source: 'server', retainMs: NEXON_NOTICE_RETAIN_MS },
   })
 }
 
@@ -43,11 +54,13 @@ export type NoticesByKind = Readonly<Record<NoticeKind, Notice[] | null>>
 
 export function useNotices(kinds: readonly NoticeKind[]): NoticesByKind {
   const combine = useCallback(
-    (results: { data: Notice[] | undefined; isPending: boolean }[]) => {
+    (results: { data: Notice[] | undefined; isPending: boolean; dataUpdatedAt: number }[]) => {
       const byKind = {} as Record<NoticeKind, Notice[] | null>
       kinds.forEach((kind, index) => {
         const result = results[index]
-        byKind[kind] = result.data ?? (result.isPending ? null : [])
+        // 기한이 지난 넥슨 공지는 그리지 않는다. 다시 받을 때까지 처음 받는 것처럼 스켈레톤이다.
+        if (isExpired(kind, result.dataUpdatedAt)) byKind[kind] = null
+        else byKind[kind] = result.data ?? (result.isPending ? null : [])
       })
       return byKind as NoticesByKind
     },
@@ -76,6 +89,7 @@ export async function refreshNoticeKinds(kinds: readonly NoticeKind[]): Promise<
 /** 캐시에 든 공지 하나. 상세 화면이 조회를 기다리기 전에 먼저 그리는 데 쓴다. 없으면 `null`. */
 export function findCachedNotice(id: string): Notice | null {
   for (const kind of NOTICE_KINDS) {
+    if (isExpired(kind, queryClient.getQueryState(queryKeys.notices(kind))?.dataUpdatedAt ?? 0)) continue
     const found = queryClient.getQueryData<Notice[]>(queryKeys.notices(kind))?.find((notice) => notice.id === id)
     if (found !== undefined) return found
   }

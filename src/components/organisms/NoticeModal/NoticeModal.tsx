@@ -48,7 +48,8 @@ interface NoticeAction {
 }
 
 export interface NoticeModalProps {
-  icon: ModalIcon
+  /** 비우면 배지 없이 제목만 선다. 아래 `content` 가 무엇을 다루는지 보여 주는 확인(인벤토리 삭제)이 쓴다 */
+  icon?: ModalIcon
   tone: ModalTone
   title: string
   description?: string
@@ -75,7 +76,7 @@ export interface NoticeModalProps {
   onClose: () => void
   /**
    * 오버레이의 testID. 안쪽 조각들이 여기서 파생한다(`-header` · `-badge` · `-description` ·
-   * `-content` · `-option` · `-link`). `Modal` 이 창 자체에 `-modal` 을 붙인다.
+   * `-content` · `-option` · `-primary` · `-link`). `Modal` 이 창 자체에 `-modal` 을 붙인다.
    */
   testId: string
   /** 제목에 다는 별도 손잡이. 화면 테스트가 이것으로 모달이 떴는지 본다. */
@@ -91,6 +92,7 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
         footer={
           <View className="mt-4 gap-1">
             <Button
+              testID={`${testId}-primary`}
               variant="primary"
               onPress={props.action.onPress}
               busy={props.action.busy}
@@ -130,6 +132,7 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
           <View testID={`${testId}-header`}>
             <ModalHeader
               icon={props.icon}
+              bare={props.icon === undefined}
               tone={props.tone}
               title={props.title}
               description={props.description}

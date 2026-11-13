@@ -20,14 +20,25 @@ jest.mock('../../../server/drop-price', () => ({
   sendDropPrice: jest.fn(),
   deleteDropPrice: jest.fn(),
 }))
-jest.mock('../../auth/server-identity', () => ({ serverIdentityHeaders: jest.fn() }))
+jest.mock('../../../storage/character-accounts', () => ({ getCharacterOwnersOfOcids: jest.fn() }))
+jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
+jest.mock('../../../lib/crypto/api-key-hash', () => ({ apiKeyHashHex: (key: string) => `키해시(${key})` }))
+jest.mock('../../../lib/crypto/nexon-id-hash', () => ({ nexonIdHashHex: (id: string) => `해시(${id})` }))
 
 const { getBossDropRecordById } = jest.requireMock('../../../storage/boss-drops')
 const { enqueueServerSync } = jest.requireMock('../../../storage/server-sync-queue')
 const { sendDropPrice, deleteDropPrice } = jest.requireMock('../../../server/drop-price')
-const { serverIdentityHeaders } = jest.requireMock('../../auth/server-identity')
+const { getCharacterOwnersOfOcids } = jest.requireMock('../../../storage/character-accounts')
+const { getAuthConfig } = jest.requireMock('../../../storage/api-key')
 
-const HEADERS = { 'x-api-key-hash': 'a'.repeat(64) }
+/** 로그인과 그 로그인의 부계정 키 하나. 드롭은 캐릭터가 속한 계정의 신원으로 나간다. */
+const CONFIG = {
+  login: { type: 'login', id: 'acc-login', session: 'S' },
+  mainKeyId: null,
+  apiKeys: [{ type: 'key', id: 'acc-sub', label: '', value: '부-키', loginId: 'acc-login' }],
+}
+const HEADERS = { Authorization: 'Bearer S' }
+const SUB_HEADERS = { 'x-api-key-hash': '키해시(부-키)' }
 const NOW = new Date('2026-10-16T00:00:00.000Z')
 const ID = '33333333-3333-4333-8333-333333333333'
 
@@ -67,14 +78,15 @@ function record(over: Partial<BossDropRecord> = {}): BossDropRecord {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  serverIdentityHeaders.mockResolvedValue(HEADERS)
+  getAuthConfig.mockResolvedValue(CONFIG)
+  getCharacterOwnersOfOcids.mockResolvedValue(new Map([['ocid-1', { mapleId: 'maple-1', nexonAccountId: 'acc-login' }]]))
   sendDropPrice.mockResolvedValue({ outcome: 'sent' })
   deleteDropPrice.mockResolvedValue({ outcome: 'sent' })
 })
 
 describe('보낼 값', () => {
   it('입력된 가격은 completed 다', () => {
-    expect(dropPricePayloadOf(record(), 'period-1')).toEqual({
+    expect(dropPricePayloadOf(record(), 'period-1', null)).toEqual({
       dropRecordId: ID,
       itemKey: 'ring-restraint',
       status: 'completed',
@@ -86,7 +98,15 @@ describe('보낼 값', () => {
       difficulty: 'hard',
       periodRecordId: 'period-1',
       pricedAt: '2026-08-10T09:18:34.156Z',
+      boxOriginKey: null,
     })
+  })
+
+  // 서버는 같은 드롭을 ocid · 보스 · 기간 · 아이템 · 획득처로 가리고, 메이플 ID 가 보낸 계정의 것인지 본다. 원문은 서버에 두지 않는다.
+  it('캐릭터의 메이플 ID 를 알면 메이플 ID · ocid 를 해시로 싣고, 상자에서 나온 드롭은 상자 key 를 싣는다', () => {
+    const payload = dropPricePayloadOf(record({ boxOriginKey: 'ring-box' }), 'period-1', { mapleId: 'maple-1', nexonAccountId: 'acc-login' })
+
+    expect(payload).toMatchObject({ mapleId: '해시(maple-1)', ocid: '해시(ocid-1)', boxOriginKey: 'ring-box' })
   })
 
   it('분배 인원 · 비율 · 수수료는 안 싣는다', () => {
@@ -94,6 +114,7 @@ describe('보낼 값', () => {
     const payload = dropPricePayloadOf(
       record({ pricePartySize: 3, priceShare: 4, saleFeePercent: 5, splitFeePercent: 6 }),
       'period-1',
+      null,
     )
     expect(Object.keys(payload ?? {}).sort()).toEqual([
       'boss',
@@ -103,21 +124,22 @@ describe('보낼 값', () => {
       'periodKey',
       'periodRecordId',
       'priceMeso',
+      'boxOriginKey',
       'pricedAt',
       'ringLevel',
       'status',
       'worldKey',
-    ])
+    ].sort())
   })
 
   // 둘 다 기록은 있고 가격만 없다. 지우기로 보내면 올라간 적 없는 기록에 지우기가 나간다.
   it('기록 안함은 skipped, 미입력은 pending 이고 가격은 null 이다', () => {
-    expect(dropPricePayloadOf(record({ priceState: 'excluded', priceMeso: null }), 'period-1')).toMatchObject({
+    expect(dropPricePayloadOf(record({ priceState: 'excluded', priceMeso: null }), 'period-1', null)).toMatchObject({
       dropRecordId: ID,
       status: 'skipped',
       priceMeso: null,
     })
-    expect(dropPricePayloadOf(record({ priceState: null, priceMeso: null }), 'period-1')).toMatchObject({
+    expect(dropPricePayloadOf(record({ priceState: null, priceMeso: null }), 'period-1', null)).toMatchObject({
       status: 'pending',
       priceMeso: null,
     })
@@ -125,17 +147,17 @@ describe('보낼 값', () => {
 
   // 서버는 이 시각을 거래 날짜로 쓴다. 과거 올리기가 올린 날이 거래 날짜가 되면 시세가 오늘로 몰린다.
   it('거래 시각은 판매가를 적은 기록에만 기기 값 그대로 싣는다', () => {
-    expect(dropPricePayloadOf(record({ priceState: null, priceMeso: null }), 'period-1')?.pricedAt).toBeNull()
-    expect(dropPricePayloadOf(record({ priceState: 'excluded', priceMeso: null }), 'period-1')?.pricedAt).toBeNull()
+    expect(dropPricePayloadOf(record({ priceState: null, priceMeso: null }), 'period-1', null)?.pricedAt).toBeNull()
+    expect(dropPricePayloadOf(record({ priceState: 'excluded', priceMeso: null }), 'period-1', null)?.pricedAt).toBeNull()
   })
 
   it('아이템 key 가 없으면 못 보낸다. 값이 null 인 유일한 경우다', () => {
     // 서버가 그 칸을 분포의 축으로 쓴다.
-    expect(dropPricePayloadOf(record({ itemKey: null }), 'period-1')).toBeNull()
+    expect(dropPricePayloadOf(record({ itemKey: null }), 'period-1', null)).toBeNull()
   })
 
   it('월드를 모르는 기록도 보낸다', () => {
-    expect(dropPricePayloadOf(record({ world: null, worldKey: null }), 'period-1')?.worldKey).toBeNull()
+    expect(dropPricePayloadOf(record({ world: null, worldKey: null }), 'period-1', null)?.worldKey).toBeNull()
   })
 })
 
@@ -153,9 +175,39 @@ describe('저장 자리의 전송', () => {
 
     expect(sendDropPrice).toHaveBeenCalledWith(
       HEADERS,
-      expect.objectContaining({ priceMeso: 10_000_000_000, periodRecordId: 'period-1' }),
+      expect.objectContaining({ priceMeso: 10_000_000_000, periodRecordId: 'period-1', mapleId: '해시(maple-1)' }),
     )
     expect(enqueueServerSync).not.toHaveBeenCalled()
+  })
+
+  // 서버는 기록의 메이플 ID 가 보낸 신원의 계정에 없으면 거절한다. 로그인 세션으로 보내면 부계정 드롭이 늘 거절된다.
+  it('부계정 캐릭터의 드롭은 그 키의 신원으로 보낸다', async () => {
+    getBossDropRecordById.mockResolvedValue(record())
+    getCharacterOwnersOfOcids.mockResolvedValue(new Map([['ocid-1', { mapleId: 'maple-2', nexonAccountId: 'acc-sub' }]]))
+    await reportDropPrice(ID, NOW)
+
+    expect(sendDropPrice).toHaveBeenCalledWith(SUB_HEADERS, expect.objectContaining({ mapleId: '해시(maple-2)' }))
+  })
+
+  // 앱이 목록에서 본 적 없는 캐릭터다. 계정 칸이 생기기 전의 기록은 모두 메인 계정의 것이었다.
+  it('캐릭터의 주인을 모르면 메이플 ID · ocid 없이 메인 계정의 신원으로 보낸다', async () => {
+    getBossDropRecordById.mockResolvedValue(record())
+    getCharacterOwnersOfOcids.mockResolvedValue(new Map())
+    await reportDropPrice(ID, NOW)
+
+    const payload = sendDropPrice.mock.calls[0][1]
+    expect(sendDropPrice.mock.calls[0][0]).toEqual(HEADERS)
+    expect(payload).not.toHaveProperty('mapleId')
+    expect(payload).not.toHaveProperty('ocid')
+  })
+
+  it('지금 로그인에 귀속되지 않은 계정의 드롭은 보내지 않고 대기 표에 쌓는다', async () => {
+    getBossDropRecordById.mockResolvedValue(record())
+    getCharacterOwnersOfOcids.mockResolvedValue(new Map([['ocid-1', { mapleId: 'maple-9', nexonAccountId: 'acc-남의-부' }]]))
+    await reportDropPrice(ID, NOW)
+
+    expect(sendDropPrice).not.toHaveBeenCalled()
+    expect(enqueueServerSync).toHaveBeenCalledTimes(1)
   })
 
   // 과거 드롭도 서버 시세에 들어간다. 기능이 나간 뒤 기간만 보내던 기준일은 걷었다.
@@ -210,7 +262,7 @@ describe('저장 자리의 전송', () => {
 
   it('밝힐 수단이 없으면 보내지 않고 쌓아만 둔다', async () => {
     getBossDropRecordById.mockResolvedValue(record())
-    serverIdentityHeaders.mockResolvedValue(null)
+    getAuthConfig.mockResolvedValue(null)
     await reportDropPrice(ID, NOW)
 
     expect(sendDropPrice).not.toHaveBeenCalled()
@@ -220,12 +272,21 @@ describe('저장 자리의 전송', () => {
 
 // 기기에서 기록이 사라진 자리다. 시트 저장에서 빠진 드롭과 난이도 확정으로 걷힌 드롭이 여기로 온다.
 describe('기록이 사라진 자리의 전송', () => {
-  it('지우기를 보낸다. 기록을 다시 읽지 않는다', async () => {
+  // 기록이 사라진 뒤라 어느 계정의 드롭이었는지 모른다. 서버는 신원의 메이플 ID 줄만 지우고 없으면 아무 일도 안 한다.
+  it('지우기를 지금 쓸 수 있는 신원 모두로 보낸다. 기록을 다시 읽지 않는다', async () => {
     await reportDropRemoved(ID, NOW)
 
     expect(deleteDropPrice).toHaveBeenCalledWith(HEADERS, ID)
+    expect(deleteDropPrice).toHaveBeenCalledWith(SUB_HEADERS, ID)
     expect(getBossDropRecordById).not.toHaveBeenCalled()
     expect(enqueueServerSync).not.toHaveBeenCalled()
+  })
+
+  it('신원 하나라도 받지 못했으면 대기 표에 쌓는다', async () => {
+    deleteDropPrice.mockResolvedValueOnce({ outcome: 'sent' }).mockResolvedValueOnce({ outcome: 'rejected', status: 500 })
+    await reportDropRemoved(ID, NOW)
+
+    expect(enqueueServerSync).toHaveBeenCalledTimes(1)
   })
 
   it('응답이 안 왔으면 대기 표에 쌓는다. 다음 회차는 원본이 없어 그대로 지우기다', async () => {
@@ -236,7 +297,7 @@ describe('기록이 사라진 자리의 전송', () => {
   })
 
   it('밝힐 수단이 없으면 보내지 않고 쌓아만 둔다', async () => {
-    serverIdentityHeaders.mockResolvedValue(null)
+    getAuthConfig.mockResolvedValue(null)
     await reportDropRemoved(ID, NOW)
 
     expect(deleteDropPrice).not.toHaveBeenCalled()

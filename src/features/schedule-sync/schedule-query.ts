@@ -98,9 +98,13 @@ function distribute(results: readonly CharacterScheduleSync[]): Record<string, S
  * 받은 스케줄로 지금 기간의 보스 수익을 기록하고 처치 날짜를 캔다. 동기화 뒤에 이 차례로 한다. 없는 기록은 날짜를 캘 수
  * 없다. 둘은 던져도 회차를 깨지 않는다. 기록이 덜 된 것은 다음 회차가 다시 하고, 받은 스케줄은 이미 캐시에 들었다.
  */
-async function recordAfterSync(ocids: readonly string[], results: readonly CharacterScheduleSync[]): Promise<void> {
+async function recordAfterSync(
+  ocids: readonly string[],
+  results: readonly CharacterScheduleSync[],
+  requestedAt: Date,
+): Promise<void> {
   const now = new Date()
-  await recordBossProfitFromRound(ocids, results, now).catch(() => undefined)
+  await recordBossProfitFromRound(ocids, results, now, requestedAt).catch(() => undefined)
   await resolveDefeatDates(ocids, now).catch(() => undefined)
 }
 
@@ -123,10 +127,12 @@ async function runScheduleRound(): Promise<ScheduleRoundResult> {
   if (ocids.length === 0) {
     return { fetchedAt: new Date().toISOString(), receivedAt: previousReceivedAt(), ocids: [], outcomes: {}, stranded: [] }
   }
+  // 넥슨에 묻기 직전의 시각. 기록할 때 기간이 바뀌었으면 받은 완료는 지난 기간의 것이다.
+  const requestedAt = new Date()
   const results = await syncSchedules(ocids)
   const outcomes = distribute(results)
   const stranded = await resolveStrandedCharacters(ocids, results)
-  await recordAfterSync(ocids, results)
+  await recordAfterSync(ocids, results, requestedAt)
   return {
     fetchedAt: new Date().toISOString(),
     receivedAt: latestReceivedAt(results, previousReceivedAt()),
@@ -172,10 +178,11 @@ export async function syncAddedCharacters(
   onProgress?: (completed: number, total: number) => void,
 ): Promise<void> {
   if (added.length === 0) return
+  const requestedAt = new Date()
   const results = await syncSchedules([...added], onProgress)
   const outcomes = distribute(results)
   const stranded = await resolveStrandedCharacters(added, results)
-  await recordAfterSync(added, results)
+  await recordAfterSync(added, results, requestedAt)
   queryClient.setQueryData<ScheduleRoundResult>(queryKeys.scheduleRound(), (previous) => ({
     fetchedAt: previous?.fetchedAt ?? new Date().toISOString(),
     receivedAt: latestReceivedAt(results, previous?.receivedAt ?? null),

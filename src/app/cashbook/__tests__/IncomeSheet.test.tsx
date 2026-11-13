@@ -43,6 +43,7 @@ jest.mock('../../../features/mvp-grade/fee-context', () => ({
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { IncomeSheet } from '../IncomeSheet'
 import { cashbookCategoriesTable } from '../../../lib/cashbook/categories'
+import { huntingGroundsTable } from '../../../lib/cashbook/hunting-grounds'
 import type { IncomeRecord } from '../../../storage/income'
 
 // 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
@@ -104,6 +105,8 @@ async function 시트열기(overrides: Partial<React.ComponentProps<typeof Incom
       lastHunts={{}}
       // 보관이 없는 상태가 기본이다. 정산을 보는 케이스만 값을 준다.
       loadFragmentStorage={async () => 0}
+      // 가져간 조각이 없는 상태가 기본이다. 최소 개수를 보는 케이스만 값을 준다.
+      loadHuntFragmentFloor={async () => 0}
       onSave={jest.fn()}
       onSaveMany={jest.fn()}
       onClose={jest.fn()}
@@ -575,6 +578,22 @@ describe('판매 수수료', () => {
     })
   })
 
+  it('목록에서 고르면 key 로 저장하고 종류 칸이 숨으며, 특수스킬 반지는 고른 줄의 레벨로 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 고른판매시트({ onSave })
+    await 아이디로누르기(view, 'income-sheet-name')
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('input-card-value'), '리스크테이커')
+    })
+    await 아이디로누르기(view, 'input-card-suggestion-risk_taker_ring@4')
+
+    expect(view.queryByTestId('income-sheet-item-kind')).toBeNull()
+    expect(view.getByTestId('income-sheet-name')).toHaveTextContent('리스크테이커 링 Lv.4')
+    await 대금치기(view, '1000000')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'risk_taker_ring', item: null, ringLevel: 4, itemKind: 'equipment' })
+  })
+
   /**
    * 갈래를 옮기면 골라 둔 것이 통째로 풀린다.
    *
@@ -843,6 +862,13 @@ describe('수정 모드', () => {
  * 종류에서 합계에 대해 뗀다.
  */
 describe('아이템 판매의 종류', () => {
+  /** 종류 칸은 목록에 없는 이름을 쳤을 때만 서므로 이름부터 친다. */
+  async function 친판매시트(overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {}): Promise<Rendered> {
+    const view = await 고른판매시트(overrides)
+    await 칸에치기(view, 'income-sheet-name', '앱솔 무기')
+    return view
+  }
+
   async function 종류고르기(view: Rendered, 이름: '장비' | '소비' | '기타'): Promise<void> {
     await act(async () => {
       fireEvent.press(within(view.getByTestId('income-sheet-item-kind')).getByLabelText(이름))
@@ -855,7 +881,7 @@ describe('아이템 판매의 종류', () => {
   }
 
   it('새 판매는 장비로 열린다. 금액 칸은 판매 대금이고 수량 칸이 없다', async () => {
-    const view = await 고른판매시트()
+    const view = await 친판매시트()
 
     expect(고른종류(view, '장비')).toBe(true)
     expect(view.getByLabelText('판매 대금')).toBeTruthy()
@@ -863,7 +889,7 @@ describe('아이템 판매의 종류', () => {
   })
 
   it('소비를 고르면 금액 칸이 단가가 되고 수량 칸이 1 로 선다', async () => {
-    const view = await 고른판매시트()
+    const view = await 친판매시트()
 
     await 종류고르기(view, '소비')
 
@@ -874,7 +900,7 @@ describe('아이템 판매의 종류', () => {
 
   it('단가 × 수량에서 수수료를 떼고 종류와 수량을 함께 저장한다', async () => {
     const onSave = jest.fn()
-    const view = await 고른판매시트({ onSave })
+    const view = await 친판매시트({ onSave })
     await 종류고르기(view, '소비')
     await 대금치기(view, '1000000')
     await 아이디로치기(view, 'income-sheet-quantity', '100')
@@ -896,7 +922,7 @@ describe('아이템 판매의 종류', () => {
 
   it('장비는 수량 없이 저장한다', async () => {
     const onSave = jest.fn()
-    const view = await 고른판매시트({ onSave })
+    const view = await 친판매시트({ onSave })
     await 대금치기(view, '1200000000')
 
     await 누르기(view, '저장')
@@ -905,7 +931,7 @@ describe('아이템 판매의 종류', () => {
   })
 
   it('종류를 바꾸면 수량은 1 로 돌아가고 친 금액은 남는다', async () => {
-    const view = await 고른판매시트()
+    const view = await 친판매시트()
     await 종류고르기(view, '기타')
     await 대금치기(view, '1000000')
     await 아이디로치기(view, 'income-sheet-quantity', '30')
@@ -1532,6 +1558,34 @@ describe('사냥 계산기', () => {
     ])
     // 참조표에서 맨 앞이던 `성문으로 가는 길 1`(270)은 뒤로 밀린다.
     expect(이름들.indexOf('odium_road_to_castle_gate_1')).toBeGreaterThan(10)
+  })
+
+  describe('인기 사냥터', () => {
+    const 원래표 = huntingGroundsTable.get()
+    const 인기 = 'odium_laboratory_behind_locked_door_4'
+    beforeEach(() => {
+      huntingGroundsTable.set({
+        ...원래표,
+        grounds: 원래표.grounds.map((each) => (each.key === 인기 ? { ...each, popular: true } : each)),
+      })
+    })
+    afterEach(() => huntingGroundsTable.set(원래표))
+
+    /** 인기는 사냥터를 고를 때 쓰는 정보라 목록에만 선다(사용자 지정 2026-11-12). */
+    it('인기 사냥터 줄에만 왕관이 서고, 고른 뒤 닫힌 사냥터 칸에는 서지 않는다', async () => {
+      const view = await 그리기({}, 'hunting')
+      await 루디고르기(view)
+      await 사슬고르기(view, 'odium')
+      await 아이디로누르기(view, 'income-sheet-ground-open')
+
+      expect(within(view.getByTestId(`income-sheet-ground-option-${인기}`)).getByTestId('popular-mark')).toBeTruthy()
+      expect(view.getAllByTestId('popular-mark')).toHaveLength(1)
+
+      await 아이디로누르기(view, `income-sheet-ground-option-${인기}`)
+
+      expect(view.getByTestId('income-sheet-ground-value')).toHaveTextContent('잠긴 문 뒤 실험실 4')
+      expect(view.queryByTestId('popular-mark')).toBeNull()
+    })
   })
 
   /**
@@ -2358,6 +2412,80 @@ describe('조각 가격을 비우면 보관', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({
       mesoAmount: 500_000_000,
       hunt: { mode: 'manual', typedMeso: 500_000_000, fragments: 10, fragmentPrice: null },
+    })
+  })
+  /**
+   * 수정으로 연 사냥 기록의 조각을 정산 · 헥사 강화가 가져갔으면 그보다 줄일 수 없다. 화면이 그 기록으로 센 최소 개수를
+   * 넘기고, 조각 개수 카드가 그것을 보이고 막는다. 저장을 누른 뒤에야 막힌 것을 알지 않게 하려는 것이다.
+   */
+  describe('최소 개수', () => {
+    const 수동 = { mode: 'manual', typedMeso: 500_000_000, fragments: 100, fragmentPrice: null } as const
+
+    async function 조각카드열기(view: Rendered): Promise<void> {
+      await 아이디로누르기(view, 'income-sheet-fragments')
+    }
+
+    it.each([
+      ['계산기', () => 사냥기록(계산기(100, null), 21_168_000)],
+      ['수동', () => 사냥기록(수동, 500_000_000)],
+    ])('%s 폼은 조각 개수 카드의 설명 줄에 최소 개수를 세우고, 그보다 적으면 입력이 안 눌린다', async (_폼, 기록) => {
+      const editing = 기록()
+      const loadHuntFragmentFloor = jest.fn(async () => 60)
+      const view = await 그리기({ editing, onDelete: jest.fn(), loadHuntFragmentFloor })
+
+      await 조각카드열기(view)
+
+      expect(loadHuntFragmentFloor).toHaveBeenCalledWith(editing)
+      expect(view.getByTestId('input-card-context')).toHaveTextContent('솔 에르다 조각 · 최소 60개')
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '59')
+      })
+      await 아이디로누르기(view, 'input-card-confirm')
+      expect(줄글자(view, 'income-sheet-fragments')).toBe('100')
+
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '60')
+      })
+      await 아이디로누르기(view, 'input-card-confirm')
+      expect(줄글자(view, 'income-sheet-fragments')).toBe('60')
+    })
+
+    it('최소 개수가 0 이면 설명 줄은 그대로다', async () => {
+      const view = await 그리기({ editing: 사냥기록(수동, 500_000_000), onDelete: jest.fn() })
+
+      await 조각카드열기(view)
+
+      expect(view.getByTestId('input-card-context')).toHaveTextContent(/^솔 에르다 조각$/)
+    })
+
+    it('새 기록은 최소 개수를 읽지 않는다', async () => {
+      const loadHuntFragmentFloor = jest.fn(async () => 60)
+      const view = await 그리기({ loadHuntFragmentFloor }, 'hunting')
+      await 이름으로누르기(view, '획득 메소 직접 입력')
+
+      await 조각카드열기(view)
+
+      expect(loadHuntFragmentFloor).not.toHaveBeenCalled()
+      expect(view.getByTestId('input-card-context')).toHaveTextContent(/^솔 에르다 조각$/)
+    })
+
+    // 조각이 보관에 드는지, 어느 캐릭터 · 날짜에 드는지가 달라지면 연 기록으로 센 최소 개수가 맞지 않는다. 막히는지는 저장이 본다.
+    it.each([
+      ['조각 가격을 채우면', (view: Rendered) => 칸에치기(view, 'income-sheet-fragment-price', '7000000')],
+      ['캐릭터를 바꾸면', (view: Rendered) => 사슬고르기(view, 'ocid-2')],
+      ['날짜를 바꾸면', (view: Rendered) => 날짜고르기(view, '2026-08-22')],
+    ])('%s 최소 개수가 서지 않고 그보다 적어도 입력이 눌린다', async (_바꾼것, 바꾸기) => {
+      const view = await 그리기({ editing: 사냥기록(수동, 500_000_000), onDelete: jest.fn(), loadHuntFragmentFloor: async () => 60 })
+
+      await 바꾸기(view)
+      await 조각카드열기(view)
+
+      expect(view.getByTestId('input-card-context')).toHaveTextContent(/^솔 에르다 조각$/)
+      await act(async () => {
+        fireEvent.changeText(view.getByTestId('input-card-value'), '10')
+      })
+      await 아이디로누르기(view, 'input-card-confirm')
+      expect(줄글자(view, 'income-sheet-fragments')).toBe('10')
     })
   })
 })

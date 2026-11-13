@@ -5,7 +5,8 @@
 import { BACKFILL_BATCH, runBackfill, type BackfillDeps, type BackfillKindSpec } from '../backfill'
 import type { BackfillState } from '../../../storage/server-backfill'
 
-const HEADERS = { 'x-api-key-hash': 'h' }
+const HEADERS = { Authorization: 'Bearer S' }
+const SUB_HEADERS = { 'x-api-key-hash': 'h' }
 const NOW = new Date('2026-10-26T00:00:00.000Z')
 
 const ids = (prefix: string, count: number) => Array.from({ length: count }, (_, i) => `${prefix}-${String(i).padStart(3, '0')}`)
@@ -15,9 +16,11 @@ function setup(records: string[], initial: BackfillState = {}) {
   const requeued: string[] = []
   const kinds: BackfillKindSpec[] = [
     {
-      kind: 'dropPrice',
+      kind: 'dropPriceOwner',
       path: '/drop-prices',
-      read: async (id: string) => (id.endsWith('skip') ? null : { id }),
+      // 이름에 `sub` 가 들면 부계정 캐릭터, `gone` 이면 지금 밝힐 수 없는 계정의 드롭이다.
+      read: async (id: string) =>
+        id.endsWith('skip') ? null : { value: { id }, accountId: id.includes('sub') ? 'acc-sub' : id.includes('gone') ? 'acc-gone' : null },
       requeue: async (failed: readonly string[]) => {
         requeued.push(...failed)
       },
@@ -35,6 +38,7 @@ function setup(records: string[], initial: BackfillState = {}) {
     setState: async (next) => {
       state = structuredClone(next)
     },
+    identities: async () => (accountId) => (accountId === 'acc-sub' ? SUB_HEADERS : accountId === 'acc-gone' ? null : HEADERS),
   }
   return { deps, post, requeued, state: () => state }
 }
@@ -42,25 +46,25 @@ function setup(records: string[], initial: BackfillState = {}) {
 it('id 차례로 100 건씩 보내고, 100 건보다 적게 읽히면 끝으로 적는다', async () => {
   const { deps, post, state } = setup(ids('d', 150))
 
-  await runBackfill(HEADERS, NOW, deps)
+  await runBackfill(NOW, deps)
 
   expect(post.mock.calls.map(([, path, items]) => [path, items.length])).toEqual([
     ['/drop-prices', BACKFILL_BATCH],
     ['/drop-prices', 50],
   ])
-  expect(state()).toEqual({ dropPrice: { after: 'd-149', done: true } })
+  expect(state()).toEqual({ dropPriceOwner: { after: 'd-149', done: true } })
 })
 
 it('묶음이 실패하면 그 회차를 멈추고 자리를 넘기지 않아, 다음 회차가 같은 자리부터 다시 보낸다', async () => {
   const { deps, post, state } = setup(ids('d', 150))
   post.mockResolvedValueOnce({ outcome: 'sent', results: [] }).mockResolvedValueOnce({ outcome: 'no-response' })
 
-  await runBackfill(HEADERS, NOW, deps)
-  expect(state()).toEqual({ dropPrice: { after: 'd-099', done: false } })
+  await runBackfill(NOW, deps)
+  expect(state()).toEqual({ dropPriceOwner: { after: 'd-099', done: false } })
 
-  await runBackfill(HEADERS, NOW, deps)
+  await runBackfill(NOW, deps)
   expect(post.mock.calls[2]?.[2]).toHaveLength(50)
-  expect(state().dropPrice).toEqual({ after: 'd-149', done: true })
+  expect(state().dropPriceOwner).toEqual({ after: 'd-149', done: true })
 })
 
 it('서버가 받지 못한 건만 평소 대기 표로 보낸다', async () => {
@@ -74,16 +78,16 @@ it('서버가 받지 못한 건만 평소 대기 표로 보낸다', async () => 
     ],
   })
 
-  await runBackfill(HEADERS, NOW, deps)
+  await runBackfill(NOW, deps)
 
   expect(requeued).toEqual(['d-2'])
 })
 
 // 끝난 뒤에는 다시 훑지 않는다. 평소 저장은 한 건 전송이 따로 덮는다.
 it('끝난 뒤에는 다시 훑지 않는다', async () => {
-  const { deps, post } = setup(ids('d', 5), { dropPrice: { after: 'd-004', done: true } })
+  const { deps, post } = setup(ids('d', 5), { dropPriceOwner: { after: 'd-004', done: true } })
 
-  await runBackfill(HEADERS, NOW, deps)
+  await runBackfill(NOW, deps)
 
   expect(post).not.toHaveBeenCalled()
 })
@@ -91,8 +95,29 @@ it('끝난 뒤에는 다시 훑지 않는다', async () => {
 it('보낼 값이 없는 기록은 빼고 보내되 자리는 넘긴다', async () => {
   const { deps, post, state } = setup(['d-1', 'd-2skip'])
 
-  await runBackfill(HEADERS, NOW, deps)
+  await runBackfill(NOW, deps)
 
   expect(post.mock.calls.map(([, path, items]) => [path, items])).toEqual([['/drop-prices', [{ id: 'd-1' }]]])
-  expect(state().dropPrice).toEqual({ after: 'd-2skip', done: true })
+  expect(state().dropPriceOwner).toEqual({ after: 'd-2skip', done: true })
+})
+
+// 서버는 기록의 메이플 ID 가 보낸 신원의 계정에 있어야 받는다. 한 묶음을 세션 하나로 보내면 부계정 드롭이 모두 거절된다.
+it('한 묶음을 신원마다 나눠 보낸다', async () => {
+  const { deps, post } = setup(['d-1', 'd-2sub', 'd-3'])
+
+  await runBackfill(NOW, deps)
+
+  expect(post.mock.calls.map(([headers, , items]) => [headers, items])).toEqual([
+    [HEADERS, [{ id: 'd-1' }, { id: 'd-3' }]],
+    [SUB_HEADERS, [{ id: 'd-2sub' }]],
+  ])
+})
+
+it('지금 밝힐 수 없는 계정의 드롭은 보내지 않고 평소 대기 표로 보낸다', async () => {
+  const { deps, post, requeued } = setup(['d-1', 'd-2gone'])
+
+  await runBackfill(NOW, deps)
+
+  expect(post.mock.calls.map(([, , items]) => items)).toEqual([[{ id: 'd-1' }]])
+  expect(requeued).toEqual(['d-2gone'])
 })

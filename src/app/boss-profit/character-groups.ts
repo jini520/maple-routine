@@ -7,8 +7,9 @@
 
 import { dropRowKey } from '../../features/boss-profit/store'
 import type { BossProfitRow, BossProfitWeeklySubtotal } from '../../features/boss-profit/store'
-import type { MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
+import { crystalPairKey, type MonthlyCrystalsByWorld } from '../../features/boss-profit/monthly-crystals'
 import { isSeasonBoss } from '../../lib/boss/bosses'
+import { countsCrystalLimitPerMapleId, crystalLimitLineKey, GENERAL_LIMIT_LINE } from '../../lib/boss/crystal-limit'
 import { isValuableDropItem } from '../../lib/drop/drop-items'
 import { worldNameOf } from '../../lib/world/worlds'
 import { sumDropPayout } from '../../lib/drop/drop-price'
@@ -23,7 +24,9 @@ export interface CharacterGroup {
 }
 
 export interface WorldCrystalSummary {
-  /** 월드 key. 한도를 세는 단위이고 엠블럼을 찾는 열쇠다. */
+  /** 메이플 ID. 소속을 넘기지 않았으면 `null` 이고 월드로만 가른다. */
+  accountId: string | null
+  /** 월드 key. 메이플 ID 안에서 한도를 세는 단위이고 엠블럼을 찾는 열쇠다. */
   worldKey: string
   /** 보이는 월드 이름. 월드 표 이름이다. */
   world: string
@@ -261,15 +264,15 @@ export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
   return clearedBossKeys.size
 }
 
-// 월드별 주간 결정석 소진량(90 은 계정이 아니라 월드당 한도다). 캐릭터별 처치 수는 위
+// 월드별 주간 결정석 소진량. 한도 줄로 묶는 것은 아래 `crystalLimitLines` 다. 캐릭터별 처치 수는 위
 // `countGroupClearedWeeklyBosses` 를 그대로 재사용하고 여기서는 월드 묶음만 얹는다. 그룹의
 // 행은 모두 같은 캐릭터에서 나오므로 월드도 첫 행에서 읽으면 된다. 월드 key 가 null 인
 // 캐릭터(구버전 캐시)는 어느 월드 한도에도 귀속시킬 수 없어 조용히 제외한다. 결과 순서는
 // Map 삽입 순서라 렌더마다 흔들리지 않는다. 월드는 이름이 아니라 월드 key 로 가른다.
 //
 // 집계 단위가 행이다. `group.bossRows[0]?.world` 로 캐릭터당 월드를 하나로 정하면 주 중간에
-// 월드를 옮겼을 때 한 캐릭터의 행이 두 월드에 걸치는데 첫 행의 월드로 전부 쏠린다. 판매
-// 한도(90)는 월드마다 따로 산정되므로 그 주의 판매량은 두 월드에 각각 계상돼야 한다.
+// 월드를 옮겼을 때 한 캐릭터의 행이 두 월드에 걸치는데 첫 행의 월드로 전부 쏠린다. 두 월드는
+// 한도 줄이 다를 수 있으므로 그 주의 판매량은 두 월드에 각각 계상돼야 한다.
 //
 // 같은 보스는 한 주에 한 번만 처치할 수 있어 한 행은 정확히 한 월드에 속한다. 그래서 행
 // 단위로 갈라도 보스 key distinct 의 의미가 유지된다.
@@ -283,10 +286,15 @@ export function countGroupClearedWeeklyBosses(group: CharacterGroup): number {
 export function summarizeWorldCrystals(
   groups: CharacterGroup[],
   monthlyByWorld?: MonthlyCrystalsByWorld,
+  /** ocid → 메이플 ID. 주면 메이플 ID 와 월드마다 가르고 메이플 ID 를 모르는 캐릭터는 뺀다. 같은 월드라도 메이플 ID 가 다르면 한도가 따로다 */
+  mapleIdOfOcid?: Readonly<Record<string, string>> | null,
 ): WorldCrystalSummary[] {
-  // 월드 → (캐릭터 → 그 월드에서 처치한 보스 key 집합). 캐릭터를 한 번 더 갈라야 서로 다른
+  // 한도 줄(메이플 ID · 월드) → (캐릭터 → 그 줄에서 처치한 보스 key 집합). 캐릭터를 한 번 더 갈라야 서로 다른
   // 캐릭터가 같은 보스를 잡은 것이 하나로 합쳐지지 않는다. 주간과 월간은 한도가 갈려 집합도 따로다.
-  const byWorld = new Map<string, Map<string, { weekly: Set<string>; monthly: Set<string> }>>()
+  const byPair = new Map<
+    string,
+    { accountId: string | null; worldKey: string; byCharacter: Map<string, { weekly: Set<string>; monthly: Set<string> }> }
+  >()
   // 보이는 이름의 폴백. 월드 표 이름이 먼저고, 표에 없는 key 면 행이 적어 둔 이름이다.
   const nameByWorldKey = new Map<string, string>()
 
@@ -295,23 +303,27 @@ export function summarizeWorldCrystals(
       if (row.worldKey === null) {
         continue
       }
+      const accountId = mapleIdOfOcid == null ? null : mapleIdOfOcid[row.ocid]
+      if (accountId === undefined) continue
       if (!nameByWorldKey.has(row.worldKey)) nameByWorldKey.set(row.worldKey, row.world ?? row.worldKey)
       // 월드 집합과 처치 수를 분리한다. 월드를 아는 행이 있으면 처치가 0 이어도 그 월드를
       // 목록에 넣어 `0 / 90` 을 보여준다. 완료 조건을 월드 판정에 섞으면 그 표시가 사라진다.
-      const byCharacter = byWorld.get(row.worldKey) ?? new Map<string, { weekly: Set<string>; monthly: Set<string> }>()
-      const bossKeys = byCharacter.get(row.ocid) ?? { weekly: new Set<string>(), monthly: new Set<string>() }
+      const key = crystalPairKey(accountId, row.worldKey)
+      const pair = byPair.get(key) ?? { accountId, worldKey: row.worldKey, byCharacter: new Map() }
+      const bossKeys = pair.byCharacter.get(row.ocid) ?? { weekly: new Set<string>(), monthly: new Set<string>() }
       if (row.isComplete && row.cycle === 'weekly' && !isSeasonBoss(row.bossKey)) {
         bossKeys.weekly.add(row.bossKey)
       }
       if (row.isComplete && row.cycle === 'monthly') {
         bossKeys.monthly.add(row.bossKey)
       }
-      byCharacter.set(row.ocid, bossKeys)
-      byWorld.set(row.worldKey, byCharacter)
+      pair.byCharacter.set(row.ocid, bossKeys)
+      byPair.set(key, pair)
     }
   }
 
-  const summaries = [...byWorld].map(([worldKey, byCharacter]) => ({
+  const summaries = [...byPair.values()].map(({ accountId, worldKey, byCharacter }) => ({
+    accountId,
     worldKey,
     world: worldNameOf(worldKey, nameByWorldKey.get(worldKey) ?? worldKey),
     cleared: [...byCharacter.values()].reduce((sum, bossKeys) => sum + bossKeys.weekly.size, 0),
@@ -321,13 +333,54 @@ export function summarizeWorldCrystals(
 
   const merged = summaries.map((summary) => ({
     ...summary,
-    monthlyCleared: monthlyByWorld[summary.worldKey]?.count ?? 0,
+    monthlyCleared: monthlyByWorld[crystalPairKey(summary.accountId, summary.worldKey)]?.count ?? 0,
   }))
-  for (const [worldKey, entry] of Object.entries(monthlyByWorld)) {
-    if (merged.some((summary) => summary.worldKey === worldKey)) continue
-    merged.push({ worldKey, world: worldNameOf(worldKey, entry.world), cleared: 0, monthlyCleared: entry.count })
+  for (const [key, entry] of Object.entries(monthlyByWorld)) {
+    if (merged.some((summary) => crystalPairKey(summary.accountId, summary.worldKey) === key)) continue
+    merged.push({
+      accountId: entry.accountId,
+      worldKey: entry.worldKey,
+      world: worldNameOf(entry.worldKey, entry.world),
+      cleared: 0,
+      monthlyCleared: entry.count,
+    })
   }
   return merged
+}
+
+/** 한도를 따로 세는 묶음 하나와 그 안의 월드들. */
+export interface CrystalLimitLine {
+  accountId: string | null
+  /** 메이플 ID 안에서 한도 줄의 열쇠(`crystalLimitLineKey`) */
+  key: string
+  /** `일반 월드` · `챌린저스`. 월드마다 세던 주는 월드 이름 */
+  name: string
+  /** 줄에 든 월드들의 주간 결정석 수의 합 */
+  cleared: number
+  worlds: WorldCrystalSummary[]
+}
+
+/**
+ * 월드 요약을 그 주의 규칙으로 한도 줄에 묶는 함수. 메이플 ID 는 처음 나온 차례이고, 한 메이플 ID 안에서는
+ * `일반 월드` 줄이 먼저다. 처치 순서로 차례를 정하면 2칸 위젯의 링이 주마다 다른 줄을 그린다.
+ *
+ * @param weekKey 주 키(목요일 `YYYY-MM-DD`)
+ */
+export function crystalLimitLines(worlds: readonly WorldCrystalSummary[], weekKey: string): CrystalLimitLine[] {
+  const perMapleId = countsCrystalLimitPerMapleId(weekKey)
+  const byMapleId = new Map<string | null, Map<string, CrystalLimitLine>>()
+  for (const summary of worlds) {
+    const key = crystalLimitLineKey(summary.worldKey, weekKey)
+    const lines = byMapleId.get(summary.accountId) ?? new Map<string, CrystalLimitLine>()
+    const name = key === GENERAL_LIMIT_LINE ? '일반 월드' : perMapleId ? '챌린저스' : summary.world
+    const line = lines.get(key) ?? { accountId: summary.accountId, key, name, cleared: 0, worlds: [] }
+    lines.set(key, { ...line, cleared: line.cleared + summary.cleared, worlds: [...line.worlds, summary] })
+    byMapleId.set(summary.accountId, lines)
+  }
+  return [...byMapleId.values()].flatMap((lines) => {
+    const list = [...lines.values()]
+    return [...list.filter((line) => line.key === GENERAL_LIMIT_LINE), ...list.filter((line) => line.key !== GENERAL_LIMIT_LINE)]
+  })
 }
 
 // 이 캐릭터가 이 달에 처치한 월간 보스 수(보스 key distinct. 같은 보스를 여러 난이도로 잡아도 1).

@@ -20,11 +20,7 @@
 import { currentCredentials } from '../features/auth/current-credential'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import {
-  sortAccountSummaries,
-  summarizeAccount,
-  type AccountSummaryView,
-} from '../features/character-manage/derivations'
+import { groupAccountSummaries, type AccountSummaryView } from '../features/character-manage/derivations'
 import { CHARACTER_BASIC_TTL_MS } from '../features/schedule-sync/character-basic-fetch'
 import {
   getCharacterPickerRoster,
@@ -34,6 +30,7 @@ import {
 import { fetchCharacterListsCached } from '../features/mvp-grade/character-list'
 import { CredentialFailure } from '../features/schedule-sync/errors'
 import type { CharacterPickerEntry } from '../types'
+import type { NexonCredential } from '../types/auth'
 import { apiKeyValueOf } from '../lib/nexon-credential'
 
 /** 계정 하나의 후보 목록 + **성공 도장**. 도장이 없으면 TTL 판정에서 아직 이다. */
@@ -44,9 +41,13 @@ interface AccountRoster {
 
 export interface AccountRosters {
   accounts: AccountSummaryView[]
+  /** 메이플 ID → 넥슨 계정 묶음 라벨. 보이는 넥슨 계정이 하나면 비어 있다 */
+  accountGroups: Record<string, string>
   selectedAccountId: string | null
   isAccountsLoading: boolean
   accountsError: ScheduleSyncError | null
+  /** `accounts` 를 부른 자격의 종류. 빈 목록일 때 화면이 넥슨 로그인과 API 키의 문구를 가른다 */
+  accountsCredentialType: NexonCredential['type'] | null
 
   /** 열어 본 계정 전부의 후보. 캐시가 모르는 얼굴을 여기서 채운다. */
   loadedEntries: CharacterPickerEntry[]
@@ -62,9 +63,11 @@ export interface AccountRosters {
 
 export function useAccountRosters(): AccountRosters {
   const [accounts, setAccounts] = useState<AccountSummaryView[]>([])
+  const [accountGroups, setAccountGroups] = useState<Record<string, string>>({})
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
   const [isAccountsLoading, setIsAccountsLoading] = useState(true)
   const [accountsError, setAccountsError] = useState<ScheduleSyncError | null>(null)
+  const [accountsCredentialType, setAccountsCredentialType] = useState<NexonCredential['type'] | null>(null)
   const [accountsNonce, setAccountsNonce] = useState(0)
 
   const [rosters, setRosters] = useState<Record<string, AccountRoster>>({})
@@ -144,22 +147,19 @@ export function useAccountRosters(): AccountRosters {
         if (failed !== undefined && lists.every((one) => one.accounts === null)) {
           throw new CredentialFailure(failed.error, apiKeyValueOf(failed.credential))
         }
-        const list = lists.flatMap((one) => one.accounts ?? [])
-        // 캐릭터 0명 계정은 `normalizeCharacterList` 가 이미 걸렀고,
-        // `summarizeAccount` 의 `null` 은 그 규칙이 뚫렸을 때의 안전망이다. 렌더 중에 던지지 않는다.
-        // 차례는 **대표 레벨이 높은 계정이 먼저** 다(`sortAccountSummaries`). 그래서 아래 `[0]` 이
-        // 고르는 첫 계정도 주력 ID 가 된다.
-        const summaries = sortAccountSummaries(
-          list
-            .map(summarizeAccount)
-            .filter((summary): summary is AccountSummaryView => summary !== null),
-        )
+        // 넥슨 계정마다 묶고 묶음 안은 대표 레벨 차례다(`groupAccountSummaries`). 그래서 아래 `[0]` 이 고르는 첫 계정은
+        // 넥슨 ID 계정의 주력 ID 다.
+        const grouped = groupAccountSummaries(lists)
+        const summaries = grouped.accounts
         const open = openAccountRef.current
         const next =
           open !== null && summaries.some((summary) => summary.accountId === open)
             ? open
             : (summaries[0]?.accountId ?? null)
         setAccounts(summaries)
+        setAccountGroups(grouped.groupOf)
+        // 메인 수단이 맨 앞이다. 모두 비었을 때 화면이 그 수단의 문구를 고른다.
+        setAccountsCredentialType(credentials[0]?.type ?? null)
         setSelectedAccountId(next)
         openAccountRef.current = next
         setIsAccountsLoading(false)
@@ -210,9 +210,11 @@ export function useAccountRosters(): AccountRosters {
 
   return {
     accounts,
+    accountGroups,
     selectedAccountId,
     isAccountsLoading,
     accountsError,
+    accountsCredentialType,
     loadedEntries,
     selectable,
     isRosterLoading,

@@ -84,6 +84,18 @@ describe('usableCredentialsOf', () => {
     expect(usableCredentialsOf({ login: null, mainKeyId: null, apiKeys })).toEqual([])
     expect(usableCredentialsOf(null)).toEqual([])
   })
+
+  // 무효가 된 키는 계정 관리에 남지만 부르면 같은 실패를 다시 받는다. 그 계정의 캐릭터도 이미 추적에서 뺐다.
+  it('무효 표시가 붙은 부계정 키는 빠진다', () => {
+    const config = {
+      login: 로그인,
+      mainKeyId: null,
+      apiKeys: [{ ...키('account-무효', 'account-login'), invalid: { untrackedOcids: [] } }, 키('account-부', 'account-login')],
+    }
+
+    expect(usableCredentialsOf(config).map((one) => one.accountId)).toEqual(['account-login', 'account-부'])
+    expect(credentialOfOwner(config, 'account-무효')).toBeNull()
+  })
 })
 
 // 캐릭터는 그 캐릭터가 속한 넥슨 계정의 자격으로 부른다.

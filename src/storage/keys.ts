@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   // 남은 값을 치우기 위해 이름만 남긴다(로그아웃이 지운다).
   legacySelectedAccountId: 'selectedAccountId',
   theme: 'theme',
+  // 오버 프레임(머리를 원 밖으로 그리는 얼굴) 켜짐. 'on' · 'off', 없으면 켜짐.
+  overFrame: 'overFrame',
   textSize: 'textSize',
   trackingMode: 'trackingMode',
   dropEffect: 'dropEffect',
@@ -115,6 +117,10 @@ export const STORAGE_KEYS = {
   statsCumulativeStart: 'statsCumulativeStart',
   // today 빠른 이동 구성(JSON `{ rows, ids }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   quickLinks: 'quickLinks',
+  // today 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID. 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
+  todaySharedMapleId: 'todaySharedMapleId',
+  // 사용자가 바꾼 메이플 ID 이름(JSON `{ [메이플 ID]: 이름 }`). 사용자가 지은 것이라 데이터 삭제 그룹에 넣지 말 것.
+  mapleIdNames: 'mapleIdNames',
   // 하단바 순서(JSON `{ groups, subs }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   barOrder: 'barOrder',
   // MVP 등급 주간 확인을 끈 체크박스(`앞으로 등급은 직접 바꿀게요`). 데이터 삭제 그룹에 넣지 말 것.
@@ -132,6 +138,8 @@ export const STORAGE_KEYS = {
   partyAppointments: 'partyAppointments',
   // 과거 기록을 서버로 어디까지 올렸나(종류마다 마지막으로 보낸 id 와 끝났는지).
   serverBackfill: 'serverBackfill',
+  // 서버가 계정마다 마지막으로 돌려준 메이플 ID 해시와 등록한 부계정 키(로그인마다 키 해시).
+  serverAccounts: 'serverAccounts',
   // 옛 강화 원본 표를 합계로 옮겼나. 옮긴 뒤 원본 표를 지운다.
   enhancementTotalsMoved: 'enhancementTotalsMoved',
   // 월드로만 묶던 옛 월드 공유 원장을 메이플 ID 마다 베꼈나. 베낀 뒤 옛 원장을 지운다.

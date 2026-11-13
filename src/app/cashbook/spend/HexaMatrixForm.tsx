@@ -38,6 +38,7 @@ import {
   hexaSpendMeso,
   hexaStats,
   type HexaCore,
+  type HexaStorages,
 } from '../../../lib/cashbook/hexa-matrix'
 import { AmountInput, CharacterField, FIELD_CELL_CLASS, FieldCard, FieldRow, SelectRow } from '../sheet-fields'
 import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
@@ -98,9 +99,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
    * 보관을 가져올 캐릭터와 그 보관. 캐릭터나 날짜를 빠르게 바꾸면 먼저 부른 응답이 늦게 올 수 있어, 지금 고른 것과
    * 열쇠가 다른 값은 안 쓴다. `value` 가 `null` 이면 한 캐릭터라도 못 읽은 것이다.
    */
-  const [storages, setStorages] = useState<{ key: string; value: readonly { ocid: string; stored: number }[] | null } | null>(
-    null,
-  )
+  const [storages, setStorages] = useState<{ key: string; value: HexaStorages | null } | null>(null)
   const { saving, submit, remove } = useSpendSubmit(props)
 
   const { loadHexaStorages, dateKey } = props
@@ -136,11 +135,13 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
         : enhanceFragments + (activation ? (activationFragments ?? 0) : 0)
   const price = optionalMesoValueOf(priceText)
   const untradable = optionalMesoValueOf(untradableText) ?? 0
-  /** 캐릭터마다 센 보관. 안 골랐거나 읽는 중이면 `undefined`, 한 캐릭터라도 못 읽었으면 `null` 이다. */
+  /** 기타 조각과 캐릭터마다 센 보관. 안 골랐거나 읽는 중이면 `undefined`, 한 자리라도 못 읽었으면 `null` 이다. */
   const loaded = storages !== null && storages.key === storageKey ? storages.value : undefined
   // 꺼져 있어도 켜면 가져올 개수를 흐리게 보이려고 센다.
   const allocation =
-    fragments !== null && loaded != null ? allocateHexaStorage({ fragments, untradable, storages: loaded }) : null
+    fragments !== null && loaded != null
+      ? allocateHexaStorage({ fragments, untradable, other: loaded.other, storages: loaded.hunts })
+      : null
   const taken = useStorage ? (allocation?.taken ?? 0) : 0
   const asSpend = useStorage && storageAsSpend
   const left = fragments === null ? null : hexaFragmentsLeft({ fragments, untradable, taken })
@@ -207,6 +208,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
           useStorage,
           storageAsSpend,
           storageUses: useStorage ? (allocation?.uses ?? []) : [],
+          ...(useStorage && allocation?.otherUse !== undefined ? { otherUse: allocation.otherUse } : {}),
         },
       })
     },

@@ -24,6 +24,8 @@ import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { netProceedsMeso } from '../../../lib/cashbook/item-split'
 import { characterDecorOf, requiredCharacterOptions } from '../character-options'
 import { countsQuantity, itemKindNameOf, itemKinds, type ItemKindKey } from '../../../lib/cashbook/categories'
+import { ItemPickField } from '../item-pick-field'
+import { useItemPick } from '../../../hooks/useItemPick'
 import { AmountInput, FieldCard, FieldRow, SelectRow, useCountField } from '../sheet-fields'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSaleFeeChoice } from './sale-fee'
@@ -37,7 +39,6 @@ import { acceptMesoText, settleMesoText } from '../../../components/organisms/Me
 export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const editing = props.editing !== undefined
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
-  const [name, setName] = useState(props.editing?.item ?? '')
   /** `null` 은 종류 칸이 생기기 전 행이고 장비다. */
   const [itemKind, setItemKind] = useState<ItemKindKey>(props.editing?.itemKind ?? itemKinds()[0]?.key ?? 'equipment')
   const { text: quantityText, pristine: quantityPristine, set: setQuantityText, reset: resetQuantity } =
@@ -53,6 +54,13 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   })
   const fee = useSaleFeeChoice(props.editing, ocid, props.dateKey)
   const { saving, submit, remove } = useSheetSubmit(props)
+  // 목록에서 고르면 그 아이템의 종류로 바꾼다. 종류를 바꿀 때처럼 수량은 1 로 돌아간다.
+  const item = useItemPick(props.editing, (kind) => {
+    if (kind === itemKind) return
+    setItemKind(kind)
+    resetQuantity()
+  })
+  const name = item.name
 
   const feePercent = fee.percent
   const counts = countsQuantity(itemKind)
@@ -83,9 +91,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         earnedOn: props.dateKey,
         category: 'item_sale',
         // 빈 칸은 `null` 이다. 빈 문자열을 넣으면 **적었는데 비어 있다** 와 **안 적었다** 가 같아진다.
-        item: name.trim() === '' ? null : name.trim(),
-        // 직접 친 이름이라 가리킬 key 가 없다.
-        itemKey: null,
+        ...item.fields,
         // 수수료를 뗀 값이다. 집계가 보는 칸이 이것 하나다.
         mesoAmount: net,
         saleFeePercent: feePercent,
@@ -116,38 +122,27 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         />
 
         <FieldRow label="판매 아이템" labelTestID="income-sheet-name-label">
-          {/* 누르면 입력 카드가 글자판으로 받는다. 카드 안에서는 왼쪽 정렬이라 끝 공백이 보인다. */}
-          <Pressable
+          <ItemPickField
             testID="income-sheet-name"
-            role="button"
-            aria-label="판매 아이템"
-            onPress={() =>
-              openInputCard({
-                label: '판매 아이템',
-                text: true,
-                placeholder: '아이템 명',
-                value: name,
-                onConfirm: setName,
-              })
-            }
-            className="h-5 flex-1"
-          >
-            <Text
-              numberOfLines={1}
-              className={`text-right text-sm ${name === '' ? 'text-text-disabled' : 'font-semibold text-text'}`}
-            >
-              {name === '' ? '아이템 명' : name}
-            </Text>
-          </Pressable>
-        </FieldRow>
-
-        <FieldRow label="종류" testID="income-sheet-item-kind">
-          <Segment size="sm"
-            options={itemKinds().map((each) => each.name)}
-            selected={itemKindNameOf(itemKind)}
-            onSelect={selectItemKind}
+            label="판매 아이템"
+            placeholder="아이템 명"
+            picked={item.picked}
+            name={name}
+            onPick={item.pick}
+            onType={item.type}
           />
         </FieldRow>
+
+        {/* 목록에서 고른 아이템은 종류가 정해져 있어 칸이 없고, 목록에 없는 이름을 쳤을 때만 선다. */}
+        {item.picked === null && name !== '' && (
+          <FieldRow label="종류" testID="income-sheet-item-kind">
+            <Segment size="sm"
+              options={itemKinds().map((each) => each.name)}
+              selected={itemKindNameOf(itemKind)}
+              onSelect={selectItemKind}
+            />
+          </FieldRow>
+        )}
 
         {/* 치는 자리는 여기다. 큰 숫자는 합계라 못 친다. 이름 아래에 서는 것은 계산 차례
             그대로이기 때문이다. 무엇을 · 얼마에 · 몇 개 · 몇 % 떼고 → 합계. */}

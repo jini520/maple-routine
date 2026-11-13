@@ -456,6 +456,40 @@ describe('창을 채우면 기간마다 미입력 건수를 낸다', () => {
   })
 })
 
+describe('기간을 가리지 않는 판매 · 기록 안함(인벤토리)', () => {
+  const 그룹 = () => [
+    record({ dropIndex: 0, dropRecordId: 'drop-0', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }),
+    record({ dropIndex: 1, dropRecordId: 'drop-1', itemKey: 'restraint_ring', itemName: '리스트레인트 링' }),
+    // 같은 기간의 다른 보스 드롭은 다른 저장 그룹이라 함께 쓰지 않는다.
+    record({ dropIndex: 0, dropRecordId: 'drop-x', bossKey: 'will', boss: '윌', itemKey: 'other', itemName: '다른 드롭' }),
+  ]
+
+  it('화면에 읽지 않은 기간이어도 같은 저장 그룹의 드롭을 저장소에서 읽어 함께 쓴다', async () => {
+    getBossDropRecordsMock.mockResolvedValue(그룹())
+    const { excludeDropPriceOf } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await excludeDropPriceOf(그룹()[1]!)
+
+    const [, boss, , periodKey, drops] = replaceBossDropRecordsMock.mock.calls[0]
+    expect([boss, periodKey]).toEqual(['lotus', PERIOD])
+    expect(drops).toHaveLength(2)
+    expect(drops[0].priceState).toBeUndefined()
+    expect(drops[1]).toEqual(expect.objectContaining({ priceState: 'excluded', itemKey: 'restraint_ring' }))
+  })
+
+  it('판매는 그 드롭 하나에 값을 매기고 서버로 보낸다', async () => {
+    getBossDropRecordsMock.mockResolvedValue(그룹())
+    const { saveDropPriceOf } = require('../drop-price-store') as typeof import('../drop-price-store')
+
+    await saveDropPriceOf(그룹()[0]!, 900_000_000, { mode: 'even' as const, partySize: 1, myShare: 1, sharesTotal: 1 }, undefined)
+
+    const [, , , , drops] = replaceBossDropRecordsMock.mock.calls[0]
+    expect(drops[0]).toEqual(expect.objectContaining({ priceState: 'entered', priceMeso: 900_000_000 }))
+    expect(drops[1].priceState).toBeUndefined()
+    expect(reportDropPriceMock).toHaveBeenCalledWith('drop-0', expect.any(Date))
+  })
+})
+
 describe('savePrice · excludePrice', () => {
   it('그 그룹 전체를 replace-all 하되 대상 한 건에만 가격을 박는다', async () => {
     getBossDropRecordsMock.mockResolvedValue([

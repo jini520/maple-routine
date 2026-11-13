@@ -29,9 +29,11 @@ import { useBossProfitRound } from '../../features/boss-profit/round-view'
 import { useBossProfitStore } from '../../features/boss-profit/store'
 import { usePeriodLoadErrorToast } from '../../features/boss-profit/use-period-error-toast'
 import { queryKeys } from '../../features/query/keys'
+import { useResetBoundaryTick } from '../../features/query/reset-timer'
 import { refreshSchedules } from '../../features/schedule-sync/schedule-query'
 import { useTrackedOcids } from '../../features/schedule-sync/use-schedule-queries'
 import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
+import { useMapleIdOwners } from '../../hooks/useMapleIdOwners'
 import type { RecordedDrop } from '../../types/drops'
 import { useMonthlyCrystalsUpToWeek } from '../../features/boss-profit/monthly-crystals'
 import {
@@ -114,6 +116,7 @@ export function BossProfitScreen(): React.JSX.Element {
     periodKey,
     setTab,
     goToCurrentPeriod,
+    followCurrentPeriod,
     resetToCurrentWeek,
     goToPreviousPeriod,
     goToNextPeriod,
@@ -201,7 +204,17 @@ export function BossProfitScreen(): React.JSX.Element {
    * 오늘로 가는 길이 있나. `isCurrentPeriod` 는 `>=` 라 지금보다 앞선 키도 참이므로, **지금 그
    * 기간을 보고 있나**는 따로 묻는다.
    */
-  const isOnCurrentPeriod = periodKey === getCurrentBossProfitPeriod(tab, now).periodKey
+  const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
+  const isOnCurrentPeriod = periodKey === currentPeriodKey
+
+  // KST 자정을 넘기면 다시 그린다. 안 그리면 아래 `currentPeriodKey` 가 지난 기간에 머문다.
+  useResetBoundaryTick()
+  // 스토어의 기간은 앱을 켤 때 정해진다. 마운트할 때와 지금 기간이 바뀔 때, 지금 기간을 보던 중이었으면 새 기간으로 옮긴다.
+  // 안 부르면 수요일에 켠 앱을 목요일에 열 때 지난주가 이번 주처럼 보인다.
+  useEffect(() => {
+    followCurrentPeriod(new Date())
+  }, [currentPeriodKey, followCurrentPeriod])
+
   // 앞으로 갈 수 있나. 지금 기간이 하한이다.
   const canGoNext = !isCurrentPeriod
 
@@ -252,9 +265,12 @@ export function BossProfitScreen(): React.JSX.Element {
 
   // 주간 탭 칩의 월간 몫은 **그 주가 끝날 때까지의 그 달 누적**이다. 행에는 그 주에 선 월간 보스만
   // 있어 기록에서 따로 센다. 세는 캐릭터는 카드가 선 캐릭터 - 칩의 주간 몫과 같은 범위다.
+  // 결정석 한도는 메이플 ID 마다 따로다. 소속을 읽기 전에는 메이플 ID 를 가르지 않는다.
+  const mapleIds = useMapleIdOwners(trackedOcids ?? [])
   const monthlyCrystalsUpToWeek = useMonthlyCrystalsUpToWeek(
     characterGroups.map((group) => group.ocid),
     tab === 'weekly' ? periodKey : null,
+    mapleIds?.ofOcid ?? null,
   )
 
   if (isEmpty) {
@@ -408,9 +424,9 @@ export function BossProfitScreen(): React.JSX.Element {
 
           <View className="flex-row items-center gap-1.5">
             {tab === 'weekly' ? (
-              <CrystalSummaryChip groups={characterGroups} monthlyByWorld={monthlyCrystalsUpToWeek ?? undefined} />
+              <CrystalSummaryChip weekKey={periodKey} groups={characterGroups} monthlyByWorld={monthlyCrystalsUpToWeek ?? undefined} mapleIds={mapleIds} />
             ) : (
-              <CrystalSummaryChip variant="monthly" groups={characterGroups} />
+              <CrystalSummaryChip variant="monthly" weekKey={null} groups={characterGroups} mapleIds={mapleIds} />
             )}
             <Pressable
               ref={periodChipRef}

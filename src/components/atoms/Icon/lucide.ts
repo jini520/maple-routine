@@ -96,6 +96,9 @@ import Calculator from 'lucide-react-native/icons/calculator'
 import Divide from 'lucide-react-native/icons/divide'
 import Hammer from 'lucide-react-native/icons/hammer'
 import UserRound from 'lucide-react-native/icons/user-round'
+import Gem from 'lucide-react-native/icons/gem'
+import IdCard from 'lucide-react-native/icons/id-card'
+import Palette from 'lucide-react-native/icons/palette'
 import Wrench from 'lucide-react-native/icons/wrench'
 import X from 'lucide-react-native/icons/x'
 
@@ -159,7 +162,7 @@ export const CircleUserRoundIcon = withIconInterop(CircleUserRound)
 export const ClockIcon = withIconInterop(Clock)
 /** 새 업데이트 있음. `UpdatePromptModal`(update-available). */
 export const CloudDownloadIcon = withIconInterop(CloudDownload)
-
+/** today 빠른 이동의 사냥 칸. */
 export const CrosshairIcon = withIconInterop(Crosshair)
 /** 앱 밖으로 나가는 이동. `ApiKeyForm` 의 두 링크. */
 export const ExternalLinkIcon = withIconInterop(ExternalLink)
@@ -268,6 +271,12 @@ export const CalculatorIcon = withIconInterop(Calculator)
 export const BellRingIcon = withIconInterop(BellRing)
 /** today 빠른 이동의 캐릭터 관리 칸. 원 안의 얼굴(`CircleUserRound`)은 머리의 관리 버튼 몫이다. */
 export const UserRoundIcon = withIconInterop(UserRound)
+/** today 빠른 이동의 사냥 전리품 판매 칸. */
+export const GemIcon = withIconInterop(Gem)
+/** today 빠른 이동의 계정 관리 칸. */
+export const IdCardIcon = withIconInterop(IdCard)
+/** today 빠른 이동의 테마 칸. */
+export const PaletteIcon = withIconInterop(Palette)
 
 export const WrenchIcon = withIconInterop(Wrench)
 /** 통계 탭. */

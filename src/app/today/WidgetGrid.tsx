@@ -19,7 +19,7 @@ import { groupWidgetRows, moveTilesToEnd } from '../../lib/today/widget-layout'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import type { TodayViewModel } from './view-model'
-import { TILE_LAYOUT } from './widgets/layout'
+import { TILE_LAYOUT, WIDE_CRYSTAL_LAYOUT } from './widgets/layout'
 import { WIDGETS, WIDGET_BY_ID } from './widgets/registry'
 import type { WidgetTarget } from './widgets/types'
 
@@ -37,7 +37,9 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
   const lastIds = new Set(
     WIDGETS.filter((widget) => widget.placeLast !== undefined && widget.placeLast(data)).map((widget) => widget.id),
   )
-  const rows = groupWidgetRows(moveTilesToEnd(TILE_LAYOUT, lastIds))
+  // 메이플 ID 가 둘 이상이면 결정석 위젯이 메이플 ID 마다 칸을 둬야 해서 넓힌 배치를 쓴다.
+  const layout = data.crystalLimits.length >= 2 ? WIDE_CRYSTAL_LAYOUT : TILE_LAYOUT
+  const rows = groupWidgetRows(moveTilesToEnd(layout, lastIds))
 
   // 타일 탭은 today(그룹 행)에서 하위 층으로 한 층 내려가는 이동이라, 층이 스택이 된 뒤로는
   // 그냥 그 층을 여는 것으로 끝난다. 바 기록을 손으로 맞출 일이 없다.

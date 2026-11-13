@@ -59,7 +59,8 @@ function normalizeBossContent(
   completedNames: Set<string>,
   resolvers: ScheduleNameResolvers,
 ): BossContent | null {
-  if (wire.cycle === 'bossDaily') {
+  // 일간으로 내려간 보스와 모르는 주기는 버린다. 모르는 주기를 월간으로 받으면 그 달의 월간 완료를 덮을 수 있다.
+  if (wire.cycle !== 'bossWeekly' && wire.cycle !== 'bossMonthly') {
     return null
   }
 
@@ -93,7 +94,7 @@ export function normalizeSchedulerCharacterState(
   // 승격시킨다(사용자 재현 확인).
   const completedBossNames = new Set(
     bossContentsWire
-      .filter((boss) => boss.cycle !== 'bossDaily' && boss.complete_flag === 'true')
+      .filter((boss) => (boss.cycle === 'bossWeekly' || boss.cycle === 'bossMonthly') && boss.complete_flag === 'true')
       .map((boss) => boss.content_name),
   )
 

@@ -99,7 +99,7 @@ let index = indexOf(getBossCatalog())
 export let BOSS_ENTRIES: readonly BossEntry[] = index.entries
 
 // 이름이 비슷하지만 단위가 다른 별개 한도라 나란히 둔다. CLEAR_LIMIT 은 캐릭터당 주간 보스 등록/처치
-// 한도(12), CRYSTAL_SALE_LIMIT 은 월드당 주간 결정석 판매 한도(90).
+// 한도(12), CRYSTAL_SALE_LIMIT 은 한도 줄마다의 주간 결정석 판매 한도(90). 한도 줄은 `crystal-limit.ts` 가 가른다.
 export let WEEKLY_BOSS_CLEAR_LIMIT: number = getBossCatalog().rules.weeklyBossSelectionLimit
 export let WEEKLY_CRYSTAL_SALE_LIMIT: number = getBossCatalog().rules.weeklyCrystalSaleLimit
 

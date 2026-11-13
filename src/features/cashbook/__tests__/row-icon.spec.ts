@@ -139,4 +139,13 @@ describe('recordIconOf', () => {
     expect(recordIconOf(spend({ category: 'item_purchase', item: '루즈 컨트롤 머신 마크' }))).toBeNull()
     expect(recordIconOf(income({ category: 'item_sale', item: '앱솔 무기' }))).toBeNull()
   })
+
+  it('목록에서 고른 아이템 구매 · 판매는 그 아이템의 그림이다', () => {
+    expect(recordIconOf(spend({ category: 'item_purchase', item: null, itemKey: 'risk_taker_ring' }))).toBe(
+      imageOfPath('items/rings/Risk_Taker_Ring.webp'),
+    )
+    expect(recordIconOf(income({ category: 'item_sale', item: null, itemKey: 'risk_taker_ring' }))).toBe(
+      imageOfPath('items/rings/Risk_Taker_Ring.webp'),
+    )
+  })
 })

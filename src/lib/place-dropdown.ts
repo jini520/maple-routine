@@ -26,6 +26,35 @@ interface DropdownPlacement {
   top: number
   /** 넘치는 목록은 잘리고 안에서 굴린다. */
   maxHeight: number
+  /** 연 쪽. 펼치는 움직임을 이 쪽에 맞춰 뒤집는다 */
+  side: 'below' | 'above'
+}
+
+interface DropdownXInput {
+  /** 트리거의 윈도우 기준 왼쪽 끝 · 폭(`measureInWindow`). */
+  anchorLeft: number
+  anchorWidth: number
+  /** 목록 내용의 자연 폭(`onLayout`). */
+  contentWidth: number
+  windowWidth: number
+  edgeGap: number
+  /** 목록을 트리거의 어느 끝에 맞출지. 기본은 왼쪽 끝이다 */
+  align?: 'start' | 'end'
+  /** 목록 폭을 내용에 맞출지. 안 주면 트리거 폭이다. 맞춰도 트리거보다 좁아지지 않는다 */
+  fitContent?: boolean
+}
+
+/**
+ * 목록의 가로 자리와 폭. 화면 밖으로 나가면 가장자리 여백 안으로 밀어 넣는다.
+ *
+ * 위젯 드롭다운 버튼은 제목 줄 오른쪽 끝에 서서, 목록을 버튼의 오른쪽 끝에 맞춰 가장 긴 이름의 폭으로 연다. 버튼 폭으로 열면
+ * 지금 이름보다 긴 이름이 잘린다.
+ */
+export function placeDropdownX(input: DropdownXInput): { left: number; width: number } {
+  const width = input.fitContent === true ? Math.max(input.anchorWidth, input.contentWidth) : input.anchorWidth
+  const preferred = input.align === 'end' ? input.anchorLeft + input.anchorWidth - width : input.anchorLeft
+  const maxLeft = input.windowWidth - input.edgeGap - width
+  return { left: Math.max(input.edgeGap, Math.min(preferred, maxLeft)), width }
 }
 
 /**
@@ -49,14 +78,14 @@ export function placeDropdown(input: DropdownPlacementInput): DropdownPlacement 
   const spaceAbove = aboveEnd - topLimit
 
   if (input.contentHeight <= spaceBelow) {
-    return { top: belowStart, maxHeight: spaceBelow }
+    return { top: belowStart, maxHeight: spaceBelow, side: 'below' }
   }
   if (input.contentHeight <= spaceAbove) {
-    return { top: aboveEnd - input.contentHeight, maxHeight: spaceAbove }
+    return { top: aboveEnd - input.contentHeight, maxHeight: spaceAbove, side: 'above' }
   }
   return spaceAbove > spaceBelow
-    ? { top: topLimit, maxHeight: spaceAbove }
-    : { top: belowStart, maxHeight: spaceBelow }
+    ? { top: topLimit, maxHeight: spaceAbove, side: 'above' }
+    : { top: belowStart, maxHeight: spaceBelow, side: 'below' }
 }
 
 interface PopoverPlacement {

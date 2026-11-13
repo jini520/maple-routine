@@ -37,3 +37,15 @@ export const TILE_LAYOUT: readonly TilePlacement[] = [
   { id: 'top-valuable-item', col: 0, row: 7, w: 2 },
   { id: 'unpriced-drops', col: 2, row: 7, w: 2 },
 ]
+
+/**
+ * 메이플 ID 가 둘 이상일 때의 배치. 결정석 위젯을 4칸으로 넓히고 초기화 카운트다운도 4칸으로 그 위에 둔다.
+ *
+ * 결정석 위젯만 넓히면 카운트다운이 그 줄에 혼자 남는다(사용자 지정). 두 위젯의 순서는 기본 배치와 같고, 그 아래는 한 줄씩 내려간다.
+ */
+export const WIDE_CRYSTAL_LAYOUT: readonly TilePlacement[] = TILE_LAYOUT.map((placement) => {
+  if (placement.id === 'reset-countdown') return { ...placement, w: 4 }
+  if (placement.id === 'crystal-limit') return { ...placement, col: 0, row: 3, w: 4 }
+  return placement.row >= 3 ? { ...placement, row: placement.row + 1 } : placement
+})
+

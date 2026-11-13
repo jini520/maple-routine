@@ -7,10 +7,15 @@
  *
  * **폴백은 이 부품이 안 고른다**. 지금 세 모양이 살아 있고, 어느 것을 쓸지는 호출부가 정한다.
  */
-import { Image, View } from 'react-native'
+import MaskedView from '@react-native-masked-view/masked-view'
+import { Image, View, type ImageStyle } from 'react-native'
 
-import { faceCropStyle } from '../../../lib/face-crop'
+import { useOverFrameStore } from '../../../features/over-frame/store'
+import { faceCropStyle, overFrameCropStyle, overFrameMask } from '../../../lib/face-crop'
 import { UnavailableFaceMark } from './UnavailableFaceMark'
+
+/** 마스크 조각의 색. 마스크는 알파만 읽는다. 3자리 hex 는 안드로이드가 거부한다. */
+const MASK_COLOR = '#000000'
 
 /** 조회 불가 얼굴의 흐림 반지름. 얼굴 지름의 5% 이고 1.2 보다 작게 하지 않는다. */
 function blurRadiusOf(faceSize: number): number {
@@ -41,9 +46,86 @@ export interface CharacterAvatarProps {
   readonly imageTestID?: string
   /** 조회할 수 없게 된 캐릭터. 그림을 흐리고 원 안을 경고 덮개로 덮는다. */
   readonly unavailable?: boolean
+  /**
+   * 이 자리가 오버 프레임을 쓴다. 머리를 원 밖으로 그린다. 원 위로 지름만큼, 양옆으로 지름만큼 넓혀 자르고 원 위 끝에서 지름의
+   * 75% 아래는 원으로 자른다. 사용자가 테마 페이지에서 오버 프레임을 끄면 원 안에만 그린다.
+   * 캐릭터 레일만 안 준다. 스케줄러 링이 얼굴 바로 둘레에 있어 머리가 링을 가린다.
+   */
+  readonly overFrame?: boolean
+}
+
+/** 잘라 낸 전신 그림. 원이 자르는 얼굴과 마스크가 자르는 얼굴이 배치만 달리 쓴다. */
+function FaceImage(props: { avatar: CharacterAvatarProps; imageUrl: string; style: ImageStyle }): React.JSX.Element {
+  return (
+    <Image
+      testID={props.avatar.imageTestID}
+      accessibilityLabel={props.avatar.name}
+      source={{ uri: props.imageUrl }}
+      // RN 의 `filter: blur` 는 이 앱에서 두 플랫폼 모두 안 그려진다. 흐림은 그림이 직접 낸다.
+      blurRadius={props.avatar.unavailable === true ? blurRadiusOf(props.avatar.size) : undefined}
+      style={{ position: 'absolute', ...props.style }}
+    />
+  )
+}
+
+/** 오버 프레임 얼굴. 원이 자르지 않고 마스크가 자른다. */
+function OverFrameAvatar(props: CharacterAvatarProps): React.JSX.Element {
+  const frame = overFrameMask(props.size)
+  return (
+    <View
+      testID={props.testID}
+      // 원 밖의 머리가 핸들 · 버튼 · 위 줄에 걸려도 그 자리의 누름은 그쪽이 받아야 한다. iOS 는 부모가 자르지 않는
+      // 자식을 부모 밖에서도 누름 대상으로 고른다.
+      pointerEvents="none"
+      // 머리가 같은 줄의 이름 위에 서야 한다. RN 은 나중 형제를 위에 그려서 그대로 두면 이름이 머리를 덮는다.
+      style={{ width: props.size, height: props.size, zIndex: 1 }}
+      className={`rounded-full ${props.className ?? ''}`}
+    >
+      {props.imageUrl !== null && (
+        <MaskedView
+          style={{ position: 'absolute', left: frame.left, top: frame.top, width: frame.width, height: frame.height }}
+          maskElement={
+            <View style={{ flex: 1 }}>
+              <View
+                style={{ position: 'absolute', left: 0, top: 0, ...frame.upper, backgroundColor: MASK_COLOR }}
+              />
+              <View
+                style={{
+                  position: 'absolute',
+                  left: frame.circle.left,
+                  top: frame.circle.top,
+                  width: frame.circle.size,
+                  height: frame.circle.size,
+                  borderRadius: frame.circle.size / 2,
+                  backgroundColor: MASK_COLOR,
+                }}
+              />
+            </View>
+          }
+        >
+          <FaceImage
+            avatar={props}
+            imageUrl={props.imageUrl}
+            style={overFrameCropStyle(props.size, props.faceZoom, props.mirrored)}
+          />
+        </MaskedView>
+      )}
+      {/* 폴백과 조회 불가 덮개는 원 안에만 선다. 이 얼굴은 루트가 자르지 않아서 원 모양 상자를 따로 둔다. */}
+      {(props.imageUrl === null || props.unavailable === true) && (
+        <View className="absolute inset-0 overflow-hidden rounded-full">
+          {props.imageUrl === null && props.fallback}
+          {props.unavailable === true && <UnavailableFaceMark size={props.size} />}
+        </View>
+      )}
+    </View>
+  )
 }
 
 export function CharacterAvatar(props: CharacterAvatarProps): React.JSX.Element {
+  // 설정은 여기서만 읽는다. 호출부마다 읽으면 한 곳이 빠졌을 때 그 자리만 설정을 따르지 않는다.
+  const overFrameEnabled = useOverFrameStore((state) => state.enabled)
+  if (props.overFrame === true && overFrameEnabled) return <OverFrameAvatar {...props} />
+
   const unavailable = props.unavailable === true
   return (
     <View
@@ -53,13 +135,10 @@ export function CharacterAvatar(props: CharacterAvatarProps): React.JSX.Element 
       className={`overflow-hidden rounded-full ${props.className ?? ''}`}
     >
       {props.imageUrl !== null && (
-        <Image
-          testID={props.imageTestID}
-          accessibilityLabel={props.name}
-          source={{ uri: props.imageUrl }}
-          // RN 의 `filter: blur` 는 이 앱에서 두 플랫폼 모두 안 그려진다. 흐림은 그림이 직접 낸다.
-          blurRadius={unavailable ? blurRadiusOf(props.size) : undefined}
-          style={{ position: 'absolute', ...faceCropStyle(props.size, props.faceZoom, props.mirrored) }}
+        <FaceImage
+          avatar={props}
+          imageUrl={props.imageUrl}
+          style={faceCropStyle(props.size, props.faceZoom, props.mirrored)}
         />
       )}
       {props.imageUrl === null && props.fallback}

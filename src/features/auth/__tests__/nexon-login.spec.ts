@@ -8,18 +8,22 @@ jest.mock('../../../native/browser', () => ({ openAuthSession: jest.fn() }))
 jest.mock('../../../server/nexon-auth', () => ({
   startNexonLogin: jest.fn(),
   redeemNexonSession: jest.fn(),
+  revokeNexonSession: jest.fn(),
 }))
 jest.mock('../prune-covered-keys', () => ({ saveNexonLogin: jest.fn() }))
 jest.mock('../../character-selection/forget', () => ({ forgetTrackedSelection: jest.fn() }))
+jest.mock('../../mvp-grade/character-list', () => ({ fetchUnsavedCharacterList: jest.fn() }))
 
 const { openAuthSession } = jest.requireMock('../../../native/browser') as Record<string, jest.Mock>
-const { startNexonLogin, redeemNexonSession } = jest.requireMock(
+const { startNexonLogin, redeemNexonSession, revokeNexonSession } = jest.requireMock(
   '../../../server/nexon-auth',
 ) as Record<string, jest.Mock>
 const { saveNexonLogin } = jest.requireMock('../prune-covered-keys') as Record<string, jest.Mock>
 const { forgetTrackedSelection } = jest.requireMock('../../character-selection/forget') as Record<string, jest.Mock>
+const { fetchUnsavedCharacterList } = jest.requireMock('../../mvp-grade/character-list') as Record<string, jest.Mock>
 
 const 시작값 = { authorizeUrl: 'https://openid.nexon.com/oauth2/authorize?state=s', redeemKey: '되찾기열쇠' }
+const 메이플ID목록 = [{ accountId: '메이플ID', characters: [] }]
 
 function 콜백(url: string): void {
   openAuthSession.mockResolvedValue(url)
@@ -33,12 +37,14 @@ beforeEach(() => {
   redeemNexonSession.mockResolvedValue({ status: 'ok', session: '받은세션' })
   saveNexonLogin.mockResolvedValue(undefined)
   forgetTrackedSelection.mockResolvedValue(undefined)
+  revokeNexonSession.mockResolvedValue(undefined)
+  fetchUnsavedCharacterList.mockResolvedValue(메이플ID목록)
   콜백('com.mapleroutine.app://oauth/callback?receipt=영수증')
 })
 
 describe('정상 흐름', () => {
   it('열쇠 둘로 세션을 받아 저장하고 성공으로 끝난다', async () => {
-    await expect(signInWithNexon()).resolves.toEqual({ kind: 'signedIn' })
+    await expect(signInWithNexon()).resolves.toEqual({ kind: 'signedIn', accounts: 메이플ID목록 })
 
     expect(redeemNexonSession).toHaveBeenCalledWith({ redeemKey: '되찾기열쇠', receipt: '영수증' })
     expect(saveNexonLogin).toHaveBeenCalledWith('받은세션', { fresh: false })
@@ -63,6 +69,50 @@ describe('정상 흐름', () => {
   })
 })
 
+// 메이플 ID 가 없는 로그인을 저장하면 조회가 늘 그 로그인으로 가서, API 키로도 다른 넥슨 ID 로도 빠져나올 수 없었다.
+describe('메이플 ID 가 없는 넥슨 ID 는 저장하지 않는다', () => {
+  it('받은 세션으로 목록을 먼저 받고, 메이플 ID 가 있으면 그 뒤에 저장한다', async () => {
+    const 차례: string[] = []
+    fetchUnsavedCharacterList.mockImplementation(async () => {
+      차례.push('목록')
+      return 메이플ID목록
+    })
+    saveNexonLogin.mockImplementation(async () => {
+      차례.push('저장')
+    })
+
+    await signInWithNexon()
+
+    expect(fetchUnsavedCharacterList).toHaveBeenCalledWith({ type: 'login', value: '받은세션', accountId: null })
+    expect(차례).toEqual(['목록', '저장'])
+  })
+
+  it('목록이 비면 저장하지 않고 서버 세션을 거둔 뒤 noMapleId 로 끝난다', async () => {
+    fetchUnsavedCharacterList.mockResolvedValue([])
+
+    await expect(signInWithNexon()).resolves.toEqual({ kind: 'noMapleId' })
+
+    expect(saveNexonLogin).not.toHaveBeenCalled()
+    expect(revokeNexonSession).toHaveBeenCalledWith('받은세션')
+  })
+
+  it('새 로그인이어도 메이플 ID 가 없으면 앞 로그인의 추적 목록을 비우지 않는다. 기기에 아무것도 바뀌지 않는다', async () => {
+    fetchUnsavedCharacterList.mockResolvedValue([])
+
+    await signInWithNexon({ fresh: true })
+
+    expect(forgetTrackedSelection).not.toHaveBeenCalled()
+  })
+
+  it('목록을 못 받으면 저장하지 않고 실패다. 메이플 ID 가 있는지 모르는 로그인이다', async () => {
+    fetchUnsavedCharacterList.mockRejectedValue(new Error('503'))
+
+    await expect(signInWithNexon()).resolves.toEqual({ kind: 'failed' })
+
+    expect(saveNexonLogin).not.toHaveBeenCalled()
+  })
+})
+
 describe('콜백이 아직 도는 중이면 되묻는다', () => {
   it('pending 이면 간격을 두고 다시 물어 ok 를 받는다', async () => {
     jest.useFakeTimers()
@@ -74,7 +124,7 @@ describe('콜백이 아직 도는 중이면 되묻는다', () => {
     const result = signInWithNexon()
     await jest.advanceTimersByTimeAsync(REDEEM_RETRY_MS * 2)
 
-    await expect(result).resolves.toEqual({ kind: 'signedIn' })
+    await expect(result).resolves.toMatchObject({ kind: 'signedIn' })
     expect(redeemNexonSession).toHaveBeenCalledTimes(3)
     expect(saveNexonLogin).toHaveBeenCalledWith('늦은세션', { fresh: false })
   })

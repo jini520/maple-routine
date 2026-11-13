@@ -35,6 +35,7 @@ import type { HuntingIncomeDetail, IncomeRecord } from '../income'
 import type { SqliteDbConnection } from '../ports'
 import type { SpendRecord } from '../spend'
 import { BOSS_DROP_RECORDS_BODY, BOSS_KEYED_TABLES } from './boss-tables'
+import { CASHBOOK_ENTRY_FRAGMENT_USES_BODY } from './cashbook-tables'
 import { ENHANCEMENT_TOTALS_BODY } from './enhancement-tables'
 import {
   CHARACTER_ACCOUNTS_BODY,
@@ -46,7 +47,7 @@ import {
 import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 20
+export const DB_VERSION = 21
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -769,6 +770,28 @@ async function fillMesoMarketFees(db: SqliteDbConnection): Promise<void> {
   )
 }
 
+/**
+ * 조각 사용 표에 가져온 보관의 경로 칸을 더한다. 인벤토리의 기타 조각은 캐릭터가 아니라 메이플 ID · 월드의 것이라 `ocid` 의
+ * `NOT NULL` 을 떼야 하고, SQLite 는 그것을 ALTER 로 못 해서 표를 다시 쓴다. 옛 줄은 모두 사냥 조각이다. 그때는 사냥 보관밖에 없었다.
+ */
+async function addFragmentUseSources(db: SqliteDbConnection): Promise<void> {
+  const table = 'cashbook_entry_fragment_uses'
+  if ((await columnsOf(db, table)).has('fragment_source')) return
+
+  const rebuilt = `${table}_v21`
+  await db.execute(`CREATE TABLE ${rebuilt} ${CASHBOOK_ENTRY_FRAGMENT_USES_BODY}`)
+  // rowid 차례가 헥사 기록의 보관 차례라(readEntries) 그 차례대로 옮긴다.
+  await db.execute(
+    `INSERT INTO ${rebuilt} (id, entry_id, fragment_source, ocid, fragments)
+     SELECT id, entry_id, 'hunt', ocid, fragments FROM ${table} ORDER BY rowid`,
+  )
+  const before = await countOf(db, table)
+  const after = await countOf(db, rebuilt)
+  if (before !== after) throw new Error(`버전 21 이관이 ${table} 의 행을 잃었다: ${before} → ${after}`)
+  await db.execute(`DROP TABLE ${table}`)
+  await db.execute(`ALTER TABLE ${rebuilt} RENAME TO ${table}`)
+}
+
 /** 합계 표의 값 칸. 다시 쓴 표로 옮길 때 그대로 나른다. */
 const ENHANCEMENT_TOTAL_VALUE_COLUMNS = [
   'enhancement_type',
@@ -908,6 +931,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   attachEnhancementOcids,
   fillCashbookEntryWorlds,
   fillMesoMarketFees,
+  addFragmentUseSources,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

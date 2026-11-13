@@ -11,6 +11,7 @@
  * @see docs/persistence/sqlite.md `enhancement_history`
  */
 import type { NexonCredential } from '../../types/auth'
+import { NexonNetworkError } from '../errors'
 import { requestJson } from '../http'
 
 /** 한 번에 달라고 하는 최대 건수. 상한이라 이보다 적게 올 수 있다. */
@@ -89,15 +90,19 @@ export async function fetchEnhancementHistory(
   itemKeyOf: (apiName: string) => string | null,
   query: EnhancementHistoryQuery,
 ): Promise<EnhancementHistoryPage> {
-  const tail = query.cursor === undefined ? `date=${query.dateKey}` : `cursor=${query.cursor}`
+  const tail =
+    query.cursor === undefined
+      ? `date=${encodeURIComponent(query.dateKey ?? '')}`
+      : `cursor=${encodeURIComponent(query.cursor)}`
   const body = await requestJson<Record<string, unknown>>(
     `/maplestory/v1/history/${PATH_BY_KIND[kind]}?count=${PAGE_SIZE}&${tail}`,
     credential,
   )
 
   const raw = body[historyKeyOf(kind)]
-  // 배열이 아니면 빈 쪽이다. 던지면 그 날짜가 영영 안 채워진다.
-  const rows = Array.isArray(raw) ? raw : []
+  // 0건이면 넥슨은 빈 배열을 준다. 배열이 아닌 것을 빈 쪽으로 받으면 그날이 0건으로 원장에 굳는다.
+  if (!Array.isArray(raw)) throw new NexonNetworkError(`강화 내역 ${kind} 의 응답에 내역 배열이 없습니다`)
+  const rows = raw
 
   return {
     rows: rows.map((entry) => {

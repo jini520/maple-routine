@@ -11,6 +11,7 @@ import { queryOptions, useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { create } from 'zustand'
 
+import { getKstDateKeyDaysAgo } from '../../lib/scheduler/reset-clock'
 import { fetchSettlement } from '../../server/settlement'
 import { dismissSettlement, getDismissedSettlementAt } from '../../storage/settlement-banner'
 import type { Settlement } from '../../types/settlement'
@@ -29,6 +30,29 @@ export const settlementOptions = queryOptions<Settlement | null>({
 /** 신선해도 다시 묻는다. 스케줄러를 부르는 회차가 부른다. 답이 늦어도 회차가 늦으면 안 되므로 기다리지 않는 것이 맞다. */
 export async function refreshSettlement(): Promise<void> {
   await queryClient.fetchQuery({ ...settlementOptions, staleTime: 0 }).catch(() => undefined)
+}
+
+/** 결산을 먼저 읽는 시각의 끝(KST). 지금까지 잰 결산이 0시부터 2시 정각까지였다. */
+const SETTLEMENT_READ_END_HOUR = 2
+/** 받은 결산 상태를 다시 쓰는 시간. 서버는 10분마다 확인하므로 1분 늦어도 판정은 같다. */
+const SETTLEMENT_REUSE_MS = 60_000
+
+/**
+ * 결산 중이라 넥슨에 묻지 않을 어제 날짜(KST). 아니면 `null`.
+ *
+ * 0시 ~ 2시 회차만 서버의 결산 상태를 먼저 읽는다. 넥슨 AI 에이전트 가이드가 `OPENAPI00009` 를 되풀이해 부르지 말라고 해서다.
+ * 서버가 결산이 아니라거나 모른다고 하거나 답을 못 받으면 `null` 이다. 서버가 죽었을 때 어제 날짜를 아예 못 받으면 안 된다.
+ *
+ * @example const skip = await settlingYesterdayOf(now) // 그 날짜의 조회를 건너뛴다
+ */
+export async function settlingYesterdayOf(now: Date): Promise<string | null> {
+  const kstHour = new Date(now.getTime() + 9 * 60 * 60 * 1000).getUTCHours()
+  if (kstHour >= SETTLEMENT_READ_END_HOUR) return null
+  // 캐릭터마다 부르므로 1분 안의 답은 다시 쓴다. 매번 물으면 회차 하나가 우리 서버 nginx 의 속도 제한(초당 10건)에 닿는다.
+  const settlement = await queryClient
+    .fetchQuery({ ...settlementOptions, staleTime: SETTLEMENT_REUSE_MS })
+    .catch(() => null)
+  return settlement?.settling === true ? getKstDateKeyDaysAgo(now, 1) : null
 }
 
 interface SettlementDismissalState {

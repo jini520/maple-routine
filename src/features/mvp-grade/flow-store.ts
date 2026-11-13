@@ -73,7 +73,7 @@ interface MvpAskState {
  * 표시 없이 **ID 와 지금 등급만** 세운다. 둘 다 로컬에서 나온다.
  *
  * 화면이 카드를 세우는 데 필요한 것이 이만큼이다. 표시(닉네임 · 초상)는 넥슨 목록에서 오고
- * 못 받으면 화면이 `메이플 ID` 로 폴백한다.
+ * 못 받으면 화면이 메이플 ID 이름만 적는다.
  */
 function accountsWithoutIdentity(
   accountIds: readonly string[],
@@ -134,7 +134,7 @@ async function evaluateAsk(now: Date, set: (partial: Partial<MvpAskState>) => vo
   const accounts = accountsWithoutIdentity(ask.accountIds, histories)
   set({ ask, accounts, weeklyOff })
 
-  // 표시는 뒤이어 얹는다. 못 받으면 카드가 `메이플 ID` 로 선 채로 남는다.
+  // 표시는 뒤이어 얹는다. 못 받으면 카드가 메이플 ID 이름만으로 선 채로 남는다.
   const identities = await loadAccountIdentities(ask.accountIds).catch(() => null)
   if (identities !== null) set({ accounts: withIdentities(accounts, identities) })
 }

@@ -30,7 +30,7 @@ import {
   spendGroupCardTitleOf,
   spendRewardCoins,
 } from '../../lib/cashbook/spend-catalog'
-import { hexaStorageCandidates, hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
+import { hexaStorageCandidates, hexaTargetOf, type HexaStorages } from '../../lib/cashbook/hexa-matrix'
 import { accountOfOcid } from '../../lib/mvp/membership'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import { getBossDropRecords } from '../../storage/boss-drops'
@@ -51,12 +51,16 @@ import {
 import { ensureEnhancementTotals } from '../enhancement-history/legacy-totals'
 import { getMvpGradeHistories } from '../../storage/mvp-grades'
 import { getCharacterAccountSightings } from '../../storage/character-accounts'
+import { getOtherFragmentStorage } from '../../storage/inventory'
+import { FragmentShortageError } from '../../storage/fragment-ledger'
+import { getHuntFragmentFloor, type HexaSources } from '../../storage/fragment-moves'
 import type { MvpGradeEntry } from '../../lib/mvp/history'
 import { starforceMvpDiscountOf } from '../../lib/mvp/starforce'
 import { withMvpDiscount } from '../../lib/enhancement/cost'
 import { loadEnhancementTotals } from '../../storage/enhancement-totals'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
+import { recordedItemNameOf, withRingLevel } from '../../lib/item-catalog'
 import { randomUuid } from '../../native/uuid'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import { getLastHunts, setLastHunt, type LastHunt, type LastHunts } from '../../storage/last-hunts'
@@ -564,7 +568,7 @@ export async function loadLastHunts(): Promise<LastHunts> {
  */
 interface ManualDayRecordBase {
   /**
-   * 그 기록에 붙은 캐릭터의 이름, 메이플 ID 기록이면 `메이플 ID · 대표 캐릭터`. 없으면 빈 문자열이다.
+   * 그 기록에 붙은 캐릭터의 이름, 메이플 ID 기록이면 그 ID 의 이름(`메이플ID-da9b2f21`). 없으면 빈 문자열이다.
    *
    * 주인을 모르는 옛 기록이거나 캐시에 이름이 없으면 빈다. 줄은 그때 항목만 적는다.
    */
@@ -805,7 +809,7 @@ function toEnhancementRecords(
  * 못 찾은 `ocid` 는 표에 안 든다. 부르는 쪽이 그때 빈 문자열을 쓴다. `ocid` 는 사용자에게 아무
  * 뜻도 없는 문자열이라 그것을 적을 바에 이름을 안 적는다.
  */
-async function namesByOcid(ocids: readonly string[]): Promise<Map<string, string>> {
+export async function namesByOcid(ocids: readonly string[]): Promise<Map<string, string>> {
   const profiles = await resolveDisplayProfiles(ocids).catch(() => new Map())
   return new Map([...profiles].map(([ocid, profile]) => [ocid, profile.name]))
 }
@@ -881,10 +885,20 @@ function joined(parts: ReadonlyArray<string | null | undefined>, separator = ' '
   return kept.length === 0 ? null : kept.join(separator)
 }
 
-/** 직접 친 이름 뒤에 종류 단위의 수량을 붙인다. 장비는 수량이 없다. */
+/** 아이템 구매 · 판매 줄의 이름. 고른 아이템은 아이템 표의 이름이고, 특수스킬 반지는 이름 뒤에 레벨이 붙는다. */
+function tradedItemName(record: { item: string | null; itemKey: string | null; ringLevel?: number }): string | null {
+  const name = recordedItemNameOf(record.item, record.itemKey)
+  return name === null ? null : withRingLevel(name, record.ringLevel)
+}
+
+/** 종류 단위의 수량. 장비처럼 단위가 없는 종류는 수량이 없다. */
+function tradedItemQuantity(kind: ItemKindKey | null, quantity: number | null): string | null {
+  return kind !== null && countsQuantity(kind) && quantity !== null ? quantityText(quantity, itemKindUnitOf(kind)) : null
+}
+
+/** 직접 친 이름 뒤에 종류 단위의 수량을 붙인다. */
 function tradedItemDetail(item: string | null, kind: ItemKindKey | null, quantity: number | null): string | null {
-  const counted = kind !== null && countsQuantity(kind) && quantity !== null
-  return joined([item, counted ? quantityText(quantity, itemKindUnitOf(kind)) : null])
+  return joined([item, tradedItemQuantity(kind, quantity)])
 }
 
 /** 사냥에서 조각 가격을 적었으면 판 개수. 보관한 조각은 안 적는다. */
@@ -914,7 +928,7 @@ function incomeCard(record: IncomeRecord): RecordCard {
       return { title, detail: record.quantity === null ? name : `${name} ${quantityText(record.quantity, '개')} 판매` }
     }
     case 'item_sale':
-      return { title, detail: tradedItemDetail(record.item, record.itemKind ?? 'equipment', record.quantity) }
+      return { title, detail: tradedItemDetail(tradedItemName(record), record.itemKind ?? 'equipment', record.quantity) }
     case 'etc':
       return { title, detail: joined([record.item, etcQuantity(record.quantity, category?.unit)]) }
   }
@@ -934,13 +948,10 @@ function spendCard(record: SpendRecord): RecordCard {
       const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
       return { title: categoryTitle, detail: found === null ? record.item : joined([found.symbol.name, levels]) }
     }
-    case 'hexa_matrix': {
-      const target = hexaTargetOf(record.itemKey, record.hexa?.activation != null)
-      const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
-      return { title: categoryTitle, detail: joined([target?.name ?? record.item, levels]) }
-    }
+    case 'hexa_matrix':
+      return { title: categoryTitle, detail: joined(hexaParts(record)) }
     case 'item_purchase':
-      return { title: categoryTitle, detail: tradedItemDetail(record.item, record.itemKind ?? 'equipment', record.quantity) }
+      return { title: categoryTitle, detail: tradedItemDetail(tradedItemName(record), record.itemKind ?? 'equipment', record.quantity) }
     case 'etc':
       return { title: categoryTitle, detail: joined([record.item, etcQuantity(record.quantity, category?.unit)]) }
     default: {
@@ -965,6 +976,25 @@ function spendCard(record: SpendRecord): RecordCard {
       }
     }
   }
+}
+
+/** 헥사 기록의 이름(코어의 첫 스킬이나 스탯)과 레벨. */
+function hexaParts(record: SpendRecord): [string | null, string | null] {
+  const target = hexaTargetOf(record.itemKey, record.hexa?.activation != null)
+  const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
+  return [target?.name ?? record.item, levels]
+}
+
+/**
+ * 합친 줄을 펼친 칸의 두 줄. 기록 줄의 둘째 줄을 이름과 레벨 · 수량으로 나눈 것이라 두 곳이 같은 조각을 쓴다.
+ * 이름을 모르면 갈래 이름이다.
+ */
+export function spendTileOf(record: SpendRecord): RecordCard {
+  const [name, detail] =
+    record.category === 'hexa_matrix'
+      ? hexaParts(record)
+      : [tradedItemName(record), tradedItemQuantity(record.itemKind ?? 'equipment', record.quantity)]
+  return { title: name ?? cashbookCategoryOf('spend', record.category)?.name ?? record.category, detail }
 }
 
 function autoDetail(entry: AutoDayRecord): string {
@@ -1033,7 +1063,7 @@ export function recordCashOf(entry: DayRecord): number | null {
 }
 
 /**
- * 한 캐릭터가 고른 날까지 보관 중인 솔 에르다 조각 개수. 정산 폼이 쓴다.
+ * 한 캐릭터가 그 날 쓸 수 있는 솔 에르다 조각. 그 날과 뒤 모든 날의 남은 개수 가운데 가장 작은 값이고, 정산 폼이 쓴다.
  *
  * 못 읽으면 `null` 이다. 0 으로 읽으면 보관이 있는데도 정산 폼이 없다고 적는다.
  *
@@ -1041,42 +1071,65 @@ export function recordCashOf(entry: DayRecord): number | null {
  */
 export function loadFragmentStorage(
   ocid: string,
-  onOrBeforeDateKey: string,
+  dateKey: string,
   excludeRecordId: string | undefined,
 ): Promise<number | null> {
-  return withSqliteFallback<number | null>(
-    getFragmentStorage(ocid, onOrBeforeDateKey, excludeRecordId),
-    null,
-  )
+  return withSqliteFallback<number | null>(getFragmentStorage(ocid, dateKey, excludeRecordId), null)
 }
 
 /**
- * 헥사 강화가 보관 조각을 가져올 캐릭터와 그 보관. 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID · 같은 월드의
- * 추적 캐릭터를 캐릭터 관리 순서로 둔다. 월드는 캐릭터 기본 정보 캐시에서 읽는다.
- *
- * 한 캐릭터라도 못 읽으면 `null` 이다. 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
- *
- * @param excludeRecordId 수정 중인 헥사 기록. 그 기록이 가져간 몫을 보관에 되돌려야 다시 배분할 수 있다.
+ * 헥사 강화가 보관 조각을 가져올 캐릭터의 차례를 내는 함수. 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID · 같은
+ * 월드의 추적 캐릭터를 캐릭터 관리 순서로 둔다. 월드는 캐릭터 기본 정보 캐시에서 읽는다.
  */
-export async function loadHexaStorages(
-  ocid: string,
-  onOrBeforeDateKey: string,
-  excludeRecordId: string | undefined,
-): Promise<{ ocid: string; stored: number }[] | null> {
-  try {
-    const [trackedOcids, sightings] = await Promise.all([getTrackedCharacterOcids(), getCharacterAccountSightings()])
-    const candidates = hexaStorageCandidates({
+export async function loadHexaCandidatesOf(): Promise<(ocid: string) => string[]> {
+  const [trackedOcids, sightings] = await Promise.all([getTrackedCharacterOcids(), getCharacterAccountSightings()])
+  return (ocid) =>
+    hexaStorageCandidates({
       ocid,
       trackedOcids: trackedOcids ?? [],
       accountOf: (each) => accountOfOcid(sightings, each),
       worldOf: (each) => readCharacterBasic(each)?.profile?.worldKey ?? null,
     })
-    return await Promise.all(
-      candidates.map(async (each) => ({
-        ocid: each,
-        stored: await getFragmentStorage(each, onOrBeforeDateKey, excludeRecordId),
-      })),
-    )
+}
+
+/** 헥사 강화가 기타 조각을 가져올 메이플 ID · 월드를 내는 함수. 월드는 캐릭터 기본 정보 캐시에서 읽는다. */
+export async function loadHexaOwnerOf(): Promise<(ocid: string) => { accountId: string; worldKey: string } | null> {
+  const sightings = await getCharacterAccountSightings()
+  return (ocid) => {
+    const accountId = accountOfOcid(sightings, ocid)
+    const worldKey = readCharacterBasic(ocid)?.profile?.worldKey ?? null
+    return accountId === null || worldKey === null ? null : { accountId, worldKey }
+  }
+}
+
+/**
+ * 헥사 강화가 가져올 보관. 강화한 캐릭터의 메이플 ID · 월드의 기타 조각과, 그 날 쓸 수 있는 캐릭터별 사냥 조각이다. 사냥
+ * 조각의 차례는 `loadHexaCandidatesOf` 다.
+ *
+ * 한 자리라도 못 읽으면 `null` 이다. 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
+ *
+ * @param excludeRecordId 수정 중인 헥사 기록. 그 기록이 가져간 몫을 보관에 되돌려야 다시 배분할 수 있다.
+ */
+export async function loadHexaStorages(
+  ocid: string,
+  dateKey: string,
+  excludeRecordId: string | undefined,
+): Promise<HexaStorages | null> {
+  try {
+    const [candidatesOf, ownerOf] = await Promise.all([loadHexaCandidatesOf(), loadHexaOwnerOf()])
+    const owner = ownerOf(ocid)
+    const [other, hunts] = await Promise.all([
+      owner === null
+        ? null
+        : getOtherFragmentStorage(owner.accountId, owner.worldKey, excludeRecordId).then((stored) => ({ ...owner, stored })),
+      Promise.all(
+        candidatesOf(ocid).map(async (each) => ({
+          ocid: each,
+          stored: await getFragmentStorage(each, dateKey, excludeRecordId),
+        })),
+      ),
+    ])
+    return { other, hunts }
   } catch {
     return null
   }
@@ -1097,8 +1150,34 @@ export async function editSpend(edited: SpendRecord): Promise<void> {
   }
 }
 
+/** 사냥 기록을 고쳐 조각이 모자라면 헥사 강화를 옮길 곳. 강화할 때 가져오는 차례와 같다. */
+async function loadHexaSources(): Promise<HexaSources> {
+  const [candidatesOf, ownerOf] = await Promise.all([loadHexaCandidatesOf(), loadHexaOwnerOf()])
+  return { candidatesOf, ownerOf }
+}
+
+/** 사냥 기록만 옮길 곳을 넘긴다. 정산은 폼이 쓸 수 있는 개수까지만 받아, 모자라면 그 저장만 실패한다. */
+async function sourcesFor(record: IncomeRecord): Promise<HexaSources | undefined> {
+  return record.category === 'hunting' ? loadHexaSources() : undefined
+}
+
 export async function editIncome(record: IncomeRecord): Promise<void> {
-  await updateIncomeRecord(record)
+  await updateIncomeRecord(record, await sourcesFor(record))
+}
+
+/**
+ * 수정으로 연 사냥 기록의 조각을 이보다 적게 저장할 수 없는 개수. 정산 · 헥사 강화가 가져간 몫이다. 못 읽으면 0 이고,
+ * 그때는 저장이 막히는지를 본다.
+ */
+export function loadHuntFragmentFloor(record: IncomeRecord): Promise<number> {
+  return loadHexaSources()
+    .then((sources) => getHuntFragmentFloor(record, sources))
+    .catch(() => 0)
+}
+
+/** 조각 장부가 모자라 저장이 막혔는가. 다시 저장해도 같아서 화면이 다른 실패와 문구를 가른다. */
+export function isFragmentShortage(error: unknown): boolean {
+  return error instanceof FragmentShortageError
 }
 
 /** 지우기. 갈래가 어느 테이블인지를 안다. 손입력만 받는다. */
@@ -1112,5 +1191,5 @@ export async function removeRecord(entry: ManualDayRecord): Promise<void> {
     })
     await deleteSpendRecord(record.id)
     await quietly(() => rememberAfterRemove(record, latestId))
-  } else await deleteIncomeRecord(entry.record.id)
+  } else await deleteIncomeRecord(entry.record.id, await sourcesFor(entry.record))
 }

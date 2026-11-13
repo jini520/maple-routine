@@ -23,6 +23,23 @@ describe('shouldPersistQuery', () => {
     expect(shouldPersistQuery(persisted)).toBe(true)
     expect(shouldPersistQuery(notPersisted)).toBe(false)
   })
+
+  // 넥슨 공지는 받은 지 30일 안에 기기에서 지운다(넥슨 AI 에이전트 가이드). 저장에서 빠지면 다음 저장 때 기기에서 사라진다.
+  it('meta.retainMs 가 있으면 받은 지 그만큼 지난 쿼리는 저장하지 않는다', () => {
+    const client = new QueryClient()
+    const DAY = 24 * 60 * 60 * 1000
+    client.setQueryData(['notices', 'event'], [], { updatedAt: Date.now() - 31 * DAY })
+    client.setQueryData(['notices', 'game'], [], { updatedAt: Date.now() - DAY })
+    for (const kind of ['event', 'game']) {
+      client.getQueryCache().find({ queryKey: ['notices', kind] })!.setOptions({
+        queryKey: ['notices', kind],
+        meta: { persist: true, retainMs: 30 * DAY },
+      })
+    }
+
+    expect(shouldPersistQuery(client.getQueryCache().find({ queryKey: ['notices', 'event'] })!)).toBe(false)
+    expect(shouldPersistQuery(client.getQueryCache().find({ queryKey: ['notices', 'game'] })!)).toBe(true)
+  })
 })
 
 // `meta` 는 옵저버가 붙거나 `fetchQuery` 가 돌 때 쿼리에 실린다. 둘 다 없는 쿼리는 저장기가 조용히 건너뛴다.

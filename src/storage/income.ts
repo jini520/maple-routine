@@ -22,8 +22,14 @@ import {
   readEntries,
   replaceEntry,
 } from './cashbook-entries'
+import { availableFragmentsOn } from '../lib/cashbook/fragment-ledger'
+import type { OtherFragmentUse } from './cashbook-entries'
 import { incomeEntryOf, incomeRecordOf } from './cashbook-entry-shape'
+import { readFragmentMoves, writeCheckingFragments } from './fragment-ledger'
+import { moveHexaAfterWrite, type HexaSources } from './fragment-moves'
+import type { SqliteDbConnection } from './ports'
 import { notifyAfterBatch } from './record-revision-batch'
+import { bumpSpendRecordsRevision } from './spend'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 
@@ -97,6 +103,12 @@ export interface IncomeRecord {
    */
   hunt: HuntingIncomeDetail | null
   recordedAt: string
+  /** 인벤토리에서 판 아이템 판매가 가리키는 인벤토리 줄. 가계부에서 적은 판매는 칸이 없다. */
+  inventoryItemId?: string
+  /** 아이템 판매에서 목록으로 고른 특수스킬 반지의 레벨. 다른 기록은 칸이 없다. */
+  ringLevel?: number
+  /** 인벤토리에서 판 기타 조각. 판 개수만큼 그 메이플 ID · 월드의 기타 조각에서 가져온다. 다른 기록은 칸이 없다. */
+  otherFragmentUse?: OtherFragmentUse
 }
 
 /**
@@ -191,26 +203,59 @@ function bumpIncomeRecordsRevision(): void {
   })
 }
 
+/** 조각 장부를 모자라게 하면 던진다(`FragmentShortageError`). 넣기 · 고치기 · 지우기가 모두 같다. */
 export async function insertIncomeRecord(record: IncomeRecord): Promise<void> {
   const db = await getBossProfitDb()
-  await inTransaction(db, () => insertEntry(db, incomeEntryOf(record)))
+  await inTransaction(db, () => writeCheckingFragments(db, () => insertEntry(db, incomeEntryOf(record))))
   bumpIncomeRecordsRevision()
 }
 
 /** 여러 건을 한 트랜잭션으로 넣는다. 하나라도 못 넣으면 아무것도 안 남는다. */
 export async function insertIncomeRecords(records: readonly IncomeRecord[]): Promise<void> {
   const db = await getBossProfitDb()
-  await inTransaction(db, async () => {
-    for (const record of records) await insertEntry(db, incomeEntryOf(record))
-  })
+  await inTransaction(db, () =>
+    writeCheckingFragments(db, async () => {
+      for (const record of records) await insertEntry(db, incomeEntryOf(record))
+    }),
+  )
   bumpIncomeRecordsRevision()
 }
 
-/** 갈아 끼우기. 지출과 같은 계약이다. 저장 시각은 그대로다. */
-export async function updateIncomeRecord(record: IncomeRecord): Promise<void> {
+/** 수입 기록 하나를 고치거나 지우는 일. */
+type IncomeChange = { kind: 'edit'; record: IncomeRecord } | { kind: 'remove'; id: string }
+
+function changedIdOf(change: IncomeChange): string {
+  return change.kind === 'edit' ? change.record.id : change.id
+}
+
+function writeChange(db: SqliteDbConnection, change: IncomeChange, now: Date): Promise<void> {
+  return change.kind === 'edit' ? replaceEntry(db, incomeEntryOf(change.record), now) : deleteEntry(db, change.id)
+}
+
+/**
+ * 고치기 · 지우기를 쓰고, 옮길 곳을 받았으면 모자라게 된 장부에서 헥사 강화를 다른 보관으로 옮긴다. 옮기고도 모자라면
+ * `FragmentShortageError` 를 던지고 아무것도 남기지 않는다.
+ *
+ * @param sources 사냥 기록만 넘긴다. 정산은 폼이 쓸 수 있는 개수까지만 받으므로, 모자라면 그 저장만 실패한다
+ */
+async function writeIncomeChange(change: IncomeChange, sources: HexaSources | undefined): Promise<void> {
   const db = await getBossProfitDb()
-  await inTransaction(db, () => replaceEntry(db, incomeEntryOf(record), new Date()))
+  const now = new Date()
+  const id = changedIdOf(change)
+  const moved = await inTransaction(db, () =>
+    writeCheckingFragments(
+      db,
+      () => writeChange(db, change, now),
+      sources === undefined ? undefined : (before) => moveHexaAfterWrite(db, [id], before, sources, now),
+    ),
+  )
   bumpIncomeRecordsRevision()
+  if (moved === true) bumpSpendRecordsRevision()
+}
+
+/** 갈아 끼우기. 지출과 같은 계약이다. 저장 시각은 그대로다. */
+export function updateIncomeRecord(record: IncomeRecord, sources?: HexaSources): Promise<void> {
+  return writeIncomeChange({ kind: 'edit', record }, sources)
 }
 
 /**
@@ -243,10 +288,8 @@ export async function moveIncomeRecordsToOcid(fromOcid: string, toOcid: string):
 }
 
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
-export async function deleteIncomeRecord(id: string): Promise<void> {
-  const db = await getBossProfitDb()
-  await deleteEntry(db, id)
-  bumpIncomeRecordsRevision()
+export function deleteIncomeRecord(id: string, sources?: HexaSources): Promise<void> {
+  return writeIncomeChange({ kind: 'remove', id }, sources)
 }
 
 const INCOME = `e.entry_type = 'income'`
@@ -342,35 +385,28 @@ export async function applyAutoIncomeSaleFees(updates: readonly IncomeSaleFeeUpd
 }
 
 /**
- * 한 캐릭터의 솔 에르다 조각 보관 개수. 조각 가격을 안 적은(`NULL`) 사냥 기록의 조각 합에서 `솔 에르다 조각` 정산 기록이 판
- * 개수 합과 헥사 기록이 그 캐릭터의 보관에서 가져간 개수 합을 뺀 값이다.
- *
- * 보관을 따로 저장하지 않고 기록에서 센다. 저장하면 사냥 기록을 고치거나 지울 때마다 그 값도 맞춰야 한다. 마이너스도 그대로 낸다.
+ * 한 캐릭터가 그 날 쓸 수 있는 솔 에르다 조각. 그 날과 뒤 모든 날의 남은 개수 가운데 가장 작은 값이다. 정산 폼 ·
+ * 헥사 폼 · 사냥 전리품 판매의 `보유` 가 모두 이것을 읽는다. 따로 세면 한 폼에서 받은 개수가 다른 폼에서 모자라게 된다.
  *
  * @param ocid 보관이 캐릭터별이라 캐릭터 없는 기록은 안 든다
- * @param onOrBeforeDateKey 이 날까지 쌓인 기록만 센다. 나중에 보관한 조각을 앞선 날짜로 팔 수 없다
+ * @param dateKey 쓰려는 날
  * @param excludeRecordId 수정 중인 정산 · 헥사 기록. 자기 몫을 빼야 보관을 다 쓴 기록을 열어 저장할 수 있다
  */
-export async function getFragmentStorage(
-  ocid: string,
-  onOrBeforeDateKey: string,
-  excludeRecordId?: string,
-): Promise<number> {
+export async function getFragmentStorage(ocid: string, dateKey: string, excludeRecordId?: string): Promise<number> {
   const db = await getBossProfitDb()
-  const scope = `e.entry_type = 'income' AND e.ocid = ? AND e.entry_date <= ? AND e.id != ?`
-  const params = [ocid, onOrBeforeDateKey, excludeRecordId ?? '']
-  const { values } = await db.query(
-    `SELECT
-       (SELECT COALESCE(SUM(h.fragments), 0)
-          FROM cashbook_entries e JOIN cashbook_entry_hunt_inputs h ON h.entry_id = e.id
-         WHERE ${scope} AND e.category_key = 'hunting' AND h.fragment_price_meso IS NULL)
-       - (SELECT COALESCE(SUM(i.quantity), 0)
-          FROM cashbook_entries e JOIN cashbook_entry_items i ON i.entry_id = e.id
-         WHERE ${scope} AND e.category_key = 'sol_erda_fragment')
-       - (SELECT COALESCE(SUM(u.fragments), 0)
-          FROM cashbook_entries e JOIN cashbook_entry_fragment_uses u ON u.entry_id = e.id
-         WHERE u.ocid = ? AND e.entry_date <= ? AND e.id != ?) AS stored`,
-    [...params, ...params, ...params],
-  )
-  return Number((values?.[0] as { stored?: unknown } | undefined)?.stored ?? 0)
+  const moves = (await readFragmentMoves(db, ocid)).filter((move) => move.entryId !== excludeRecordId)
+  return availableFragmentsOn(moves, dateKey)
+}
+
+/**
+ * 인벤토리의 사냥 조각 칸 개수. 캐릭터마다 그 날 쓸 수 있는 조각을 세어, 1개 이상인 캐릭터만 더한다. 인벤토리는 가진 것을
+ * 파는 화면이라 팔 수 없는 마이너스는 더하지 않는다.
+ */
+export async function getHuntFragmentTotal(dateKey: string): Promise<number> {
+  const moves = await readFragmentMoves(await getBossProfitDb())
+  const ocids = [...new Set(moves.map((move) => move.ocid))]
+  return ocids
+    .map((ocid) => availableFragmentsOn(moves.filter((move) => move.ocid === ocid), dateKey))
+    .filter((stored) => stored > 0)
+    .reduce((sum, stored) => sum + stored, 0)
 }

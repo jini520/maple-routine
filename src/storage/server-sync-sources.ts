@@ -13,10 +13,10 @@ export async function getDropPeriodId(dropRecordId: string): Promise<string | nu
 }
 
 /** 과거 올리기가 나눠 읽는 종류. 표와 조건이 종류마다 다르다. */
-export type BackfillKind = 'dropPrice'
+export type BackfillKind = 'dropPriceOwner'
 
 const BACKFILL_QUERIES: Record<BackfillKind, string> = {
-  dropPrice: 'SELECT id FROM boss_drops WHERE id > ? ORDER BY id LIMIT ?',
+  dropPriceOwner: 'SELECT id FROM boss_drops WHERE id > ? ORDER BY id LIMIT ?',
 }
 
 /**

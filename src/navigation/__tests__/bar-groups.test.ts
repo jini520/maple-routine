@@ -235,7 +235,7 @@ describe('openPage: 바를 거치지 않은 이동', () => {
 describe('사용자가 정한 순서', () => {
   const moved: BarOrder = {
     ...DEFAULT_BAR_ORDER,
-    subs: { schedule: ['Boss', 'Appointments', 'Content'], ledger: ['Stats', 'Cashbook', 'Profit'] },
+    subs: { schedule: ['Boss', 'Appointments', 'Content'], ledger: ['Stats', 'Cashbook', 'Profit', 'Inventory'] },
   }
 
   it('하위 행이 그 순서를 따른다', () => {

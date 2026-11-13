@@ -51,6 +51,7 @@ import { useSettingsNavigation } from '../../../hooks/useSettingsNavigation'
 // 팩토리 밖 변수를 참조하려면 이름이 `mock` 으로 시작해야 한다(babel-jest 규칙).
 const mockGetRoster = jest.fn()
 const mockNoticeApiKeyIssue = jest.fn()
+const mockLeaveEmptyNexonLogin = jest.fn()
 const mockEvaluateMvpAsk = jest.fn()
 
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
@@ -82,7 +83,9 @@ jest.mock('../../../features/mvp-grade/flow-store', () => ({
 }))
 // 401·429 는 키 재입력 진입점으로 간다.
 jest.mock('../../../features/auth/store', () => ({
-  useAuthStore: { getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue }) },
+  useAuthStore: {
+    getState: () => ({ noticeApiKeyIssue: mockNoticeApiKeyIssue, leaveEmptyNexonLogin: mockLeaveEmptyNexonLogin }),
+  },
 }))
 
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
@@ -676,6 +679,46 @@ describe('못 고르는 계정', () => {
 
     // 사용자가 손으로 누른 것이라 실패가 없고, 따라서 실어 보낼 키도 없다.
     expect(mockNoticeApiKeyIssue).toHaveBeenCalledWith('invalid')
+  })
+
+  // 조회는 로그인이 있으면 늘 로그인으로 간다. API 키 문구를 보이면 키를 지워도 빈 로그인이 남아 같은 화면에 머문다.
+  describe('넥슨 로그인으로 부른 목록이 비면', () => {
+    const 빈로그인설정 = {
+      login: { type: 'login' as const, id: 'login-id', session: '빈세션' },
+      mainKeyId: 'account-key',
+      apiKeys: [{ type: 'key' as const, id: 'account-key', label: '', value: 'key', loginId: null }],
+    }
+    const 키만남은설정 = { ...빈로그인설정, login: null }
+
+    it('넥슨 ID 문구와 `다른 넥슨 ID 로 로그인` 이 서고, API 키 문구는 없다', async () => {
+      mockedGetAuthConfig.mockResolvedValue(빈로그인설정)
+      mockedFetchCharacterList.mockResolvedValue([])
+
+      const view = await renderScreen()
+
+      expect(view.getByText('조회되는 캐릭터가 없어요')).toBeTruthy()
+      expect(view.getByText('이 넥슨 ID 에 연결된 메이플 ID 를 찾지 못했어요')).toBeTruthy()
+      expect(view.getByText('다른 넥슨 ID 로 로그인')).toBeTruthy()
+      expect(view.queryByText('API 키 다시 입력')).toBeNull()
+    })
+
+    it('누르면 로그인을 떼고, API 키가 남으면 그 키로 목록을 다시 받는다', async () => {
+      let 설정: typeof 빈로그인설정 | typeof 키만남은설정 = 빈로그인설정
+      mockedGetAuthConfig.mockImplementation(async () => 설정)
+      mockedFetchCharacterList.mockImplementation(async (credential) => (credential.type === 'login' ? [] : [계정A, 계정B]))
+      mockLeaveEmptyNexonLogin.mockImplementation(async () => {
+        설정 = 키만남은설정
+        return true
+      })
+      const view = await renderScreen()
+
+      await press(view.getByText('다른 넥슨 ID 로 로그인'))
+      for (let i = 0; i < 4; i += 1) await act(async () => {})
+
+      expect(mockLeaveEmptyNexonLogin).toHaveBeenCalledTimes(1)
+      expect(mockNoticeApiKeyIssue).not.toHaveBeenCalled()
+      expect(view.getByTestId('account-select-trigger')).toBeTruthy()
+    })
   })
 
   it('후보를 전부 골랐으면 **모두 조회할 수 없어요** 가 아니라 빈 목록이다', async () => {

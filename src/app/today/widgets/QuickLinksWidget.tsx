@@ -8,10 +8,10 @@ import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
 import { PencilIcon, Text } from '../../../components/atoms'
-import { QUICK_LINK_NAMES, QUICK_LINKS_PER_ROW } from '../../../features/quick-links/config'
+import { QUICK_LINK_NAMES, QUICK_LINKS_PER_ROW, onlyOpenable } from '../../../features/quick-links/config'
 import type { QuickLinkId } from '../../../types/quick-links'
 import { QuickLinksSheet } from '../QuickLinksSheet'
-import { QUICK_LINK_ICONS, useOpenQuickLink, useQuickLinkColors } from '../quick-links'
+import { QUICK_LINK_ICONS, useCanOpenQuickLink, useOpenQuickLink, useQuickLinkColors } from '../quick-links'
 import type { WidgetProps } from './types'
 
 function chunk(ids: readonly QuickLinkId[]): QuickLinkId[][] {
@@ -23,6 +23,7 @@ function chunk(ids: readonly QuickLinkId[]): QuickLinkId[][] {
 export function QuickLinksWidget({ data }: WidgetProps): React.JSX.Element {
   const [editing, setEditing] = useState(false)
   const open = useOpenQuickLink()
+  const canOpen = useCanOpenQuickLink()
   const { tint, ink } = useQuickLinkColors()
 
   return (
@@ -41,7 +42,7 @@ export function QuickLinksWidget({ data }: WidgetProps): React.JSX.Element {
         </Pressable>
       </View>
       <View className="gap-3">
-        {chunk(data.quickLinks.ids).map((row, rowIndex) => (
+        {chunk(onlyOpenable(data.quickLinks, canOpen).ids).map((row, rowIndex) => (
           <View key={row[0]} testID={`quick-links-row-${rowIndex}`} className="flex-row">
             {row.map((id) => {
               const Icon = QUICK_LINK_ICONS[id]

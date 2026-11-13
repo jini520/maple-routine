@@ -2,7 +2,24 @@
  * 로그인 실패 문구. 스토어(features)가 이 함수를 쓰므로 app/ 이 아니라 features/ 에 있다
  * (features → app 은 레이어가 거꾸로다). features/schedule-sync/format.ts 와 같은 자리.
  */
+import { isInvalidApiKeyError, NexonMaintenanceError, NexonRateLimitError } from '../../nexon/errors'
 import type { AuthError } from './state'
+
+/** 키를 넣다 받은 실패의 종류. 로그인 화면 · 429 모달의 키 바꾸기 · 계정 관리가 같은 갈래로 가른다. */
+export function toAuthError(error: unknown): AuthError {
+  // 400 OPENAPI00005 도 무효 키다(판정은 nexon/errors 한 곳). 이 폼에서 키를 잘못 입력했을 때
+  // 네트워크 오류라고 말하면 원인이 키인데 네트워크를 가리키게 된다.
+  if (isInvalidApiKeyError(error)) {
+    return { kind: 'invalidApiKey' }
+  }
+  if (error instanceof NexonRateLimitError) {
+    return { kind: 'rateLimited' }
+  }
+  if (error instanceof NexonMaintenanceError) {
+    return { kind: error.scope === 'game' ? 'gameMaintenance' : 'apiMaintenance' }
+  }
+  return { kind: 'network' }
+}
 
 export function formatAuthError(error: AuthError): string {
   switch (error.kind) {

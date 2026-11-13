@@ -4,10 +4,12 @@
 // 지금 테마도 첫 테마로 둔다.
 import { act, fireEvent } from '@testing-library/react-native'
 
+import { useOverFrameStore } from '../../../features/over-frame/store'
 import { useThemeStore } from '../../../features/theme/store'
 import { THEME_NAMES, getThemeDefinition } from '../../../lib/theme/theme-registry'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setStatusBarPort } from '../../../native/ports'
+import { getOverFrameEnabled } from '../../../storage/over-frame'
 import { getTheme } from '../../../storage/theme'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 
@@ -48,6 +50,7 @@ beforeEach(() => {
   installFakePreferences()
   setStatusBarPort({ setStyle })
   useThemeStore.setState({ theme: 지금테마 })
+  useOverFrameStore.setState({ enabled: true })
 })
 
 afterEach(() => {
@@ -111,5 +114,48 @@ describe('SettingsThemeScreen: 고르기와 적용', () => {
     })
     expect(setStyle).toHaveBeenLastCalledWith(false)
     expect(useThemeStore.getState().theme).toBe(지금테마)
+  })
+})
+
+// 오버 프레임도 테마처럼 `적용` 을 눌러야 저장되고 앱 전체에 반영된다.
+describe('SettingsThemeScreen: 오버 프레임', () => {
+  function 스위치(view: Rendered): boolean {
+    return view.getByLabelText('오버 프레임').props.accessibilityState.checked
+  }
+
+  it('스위치를 바꾸면 적용이 켜지고, 누르기 전에는 저장하지 않는다', async () => {
+    const view = await renderOverlay(<SettingsThemeScreen />)
+    expect(스위치(view)).toBe(true)
+
+    await press(view.getByLabelText('오버 프레임'))
+
+    expect(스위치(view)).toBe(false)
+    expect(applyButton(view).props.accessibilityState?.disabled).toBe(false)
+    expect(useOverFrameStore.getState().enabled).toBe(true)
+    expect(await getOverFrameEnabled()).toBe(true)
+  })
+
+  it('적용을 누르면 바꾼 값을 저장하고 앱에 반영한다. 테마는 그대로다', async () => {
+    const view = await renderOverlay(<SettingsThemeScreen />)
+
+    await press(view.getByLabelText('오버 프레임'))
+    await press(applyButton(view))
+
+    expect(useOverFrameStore.getState().enabled).toBe(false)
+    expect(await getOverFrameEnabled()).toBe(false)
+    expect(useThemeStore.getState().theme).toBe(지금테마)
+    expect(mockGoBack).toHaveBeenCalledTimes(1)
+  })
+
+  it('적용 없이 나가면 바꾼 것을 버린다', async () => {
+    const view = await renderOverlay(<SettingsThemeScreen />)
+
+    await press(view.getByLabelText('오버 프레임'))
+    await act(async () => {
+      view.unmount()
+    })
+
+    expect(useOverFrameStore.getState().enabled).toBe(true)
+    expect(await getOverFrameEnabled()).toBe(true)
   })
 })

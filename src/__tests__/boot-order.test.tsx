@@ -88,6 +88,16 @@ jest.mock('../features/drop-effect/store', () => ({
     }),
 }))
 
+jest.mock('../features/over-frame/store', () => ({
+  __esModule: true,
+  useOverFrameStore: (selector: (state: unknown) => unknown) =>
+    selector({
+      restoreFromStorage: async () => {
+        mockCalls.push('restore:overFrame')
+      },
+    }),
+}))
+
 // 공지 구독. 복원이 **끝난 뒤에** 재구독이 도는지를 본다. 복원을 한 틱 늦게 끝내서, 복원을 기다리지
 // 않고 부르는 배선이면 재구독이 복원 끝보다 앞에 찍힌다.
 jest.mock('../features/notice/store', () => ({
@@ -112,7 +122,7 @@ jest.mock('../app/prehydrate', () => ({
   },
 }))
 
-// OTA 부팅 확인은 셸이 아니라 `boot.ts` 가 부른다. 셸이 읽는 것은 스플래시 붙들기와 잠금 위 모달의 상태뿐이다.
+// OTA 부팅 확인은 셸이 아니라 `boot.ts` 가 부른다. 셸이 쓰는 것은 스플래시 붙들기, 잠금 위 모달의 상태, 복귀 확인이다.
 // 확인이 실제로 무엇을 하는지는 어댑터·스토어 테스트의 몫이다.
 const mockLiveUpdate = {
   status: 'idle',
@@ -125,6 +135,9 @@ const mockLiveUpdate = {
   minNativeVersion: null,
   downloadProgress: 0,
   channel: 'production',
+  checkOnReturn: async () => {
+    mockCalls.push('check:liveUpdate')
+  },
 }
 jest.mock('../features/live-update/store', () => {
   const useLiveUpdateStore = (selector?: (value: typeof mockLiveUpdate) => unknown) =>
@@ -197,16 +210,16 @@ describe('① 셸이 무엇을 언제 하는가', () => {
 
   async function mountShell(): Promise<void> {
     await renderOverlay(<AppShell />)
-    // 복원 다섯·예열은 마이크로태스크(그리고 예열은 동적 import)라 이펙트 뒤 한 번 흘려보내야 관측된다.
+    // 복원 여섯·예열은 마이크로태스크(그리고 예열은 동적 import)라 이펙트 뒤 한 번 흘려보내야 관측된다.
     await act(async () => {})
   }
 
   // 여기에 `startAds`(광고 SDK 초기화 + 사전 로드)가 다섯 번째 항목으로 있었다. 이
   // 전면광고를 걷으며 셸에서 사라졌다.
-  it('복원 다섯이 첫 렌더에 전부 시작된다', async () => {
+  it('복원 여섯이 첫 렌더에 전부 시작된다', async () => {
     await mountShell()
 
-    // 다섯 사이에는 순서가 없다. 서로 독립이고, 각자 자기 이펙트를 갖는다(하나가 던져도
+    // 여섯 사이에는 순서가 없다. 서로 독립이고, 각자 자기 이펙트를 갖는다(하나가 던져도
     // 나머지가 돈다). 그래서 "전부 있었다"까지만 본다.
     expect(mockCalls).toEqual(
       expect.arrayContaining([
@@ -215,6 +228,7 @@ describe('① 셸이 무엇을 언제 하는가', () => {
         'restore:theme',
         'restore:trackingMode',
         'restore:dropEffect',
+        'restore:overFrame',
       ]),
     )
   })
@@ -286,8 +300,9 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     expect(mockCalls.indexOf('restored:notice')).toBeLessThan(mockCalls.indexOf('resubscribe:notice'))
   })
 
-  // OS 설정에서 알림 권한을 켜고 돌아오면 그때 구독이 맞춰져야 한다.
-  it('백그라운드에서 돌아오면 다시 구독한다', async () => {
+  // OS 설정에서 알림 권한을 켜고 돌아오면 그때 구독이 맞춰져야 한다. 아이폰은 앱을 새로 켜지 않고 이어서 돌리므로
+  // 게임 데이터와 OTA 도 돌아올 때 다시 확인해야 늦지 않는다.
+  it('백그라운드에서 돌아오면 다시 구독하고, 게임 데이터와 업데이트를 다시 확인한다', async () => {
     const currentState = Object.getOwnPropertyDescriptor(AppState, 'currentState')
     Object.defineProperty(AppState, 'currentState', { value: 'active', configurable: true, writable: true })
     const listeners: ((next: AppStateStatus) => void)[] = []
@@ -311,7 +326,7 @@ describe('① 셸이 무엇을 언제 하는가', () => {
         }
       })
 
-      expect(mockCalls.sort()).toEqual(['refresh:gameData', 'resubscribe:notice'])
+      expect(mockCalls.sort()).toEqual(['check:liveUpdate', 'refresh:gameData', 'resubscribe:notice'])
     } finally {
       stopFocus()
       focusManager.setFocused(undefined)

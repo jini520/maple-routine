@@ -48,6 +48,8 @@ export function spendItemsOf(record: SpendRecord): EntryItem[] {
     hexaActivation: record.hexa?.activation ?? null,
     hexaUseStorage: record.hexa?.useStorage ?? null,
     hexaStorageAsSpend: record.hexa?.storageAsSpend ?? null,
+    inventoryItemId: record.inventoryItemId ?? null,
+    ringLevel: record.ringLevel ?? null,
   }
   const forms = SPEND_FORM_KEYS.filter((form) => record.formItemKeys?.[form] !== undefined)
   if (forms.length === 0) {
@@ -89,6 +91,7 @@ export function spendEntryOf(record: SpendRecord): StoredEntry {
     items: spendItemsOf(record),
     hunt: null,
     fragmentUses: record.hexa?.storageUses ?? [],
+    otherFragmentUses: record.hexa?.otherUse === undefined ? [] : [record.hexa.otherUse],
   }
 }
 
@@ -99,8 +102,9 @@ function sumOf(items: readonly EntryItem[], pick: (item: EntryItem) => number | 
 }
 
 /** 필요 조각 · 교환 불가 칸이 있어야 헥사 기록이다. 개당 가격은 곱할 개수가 없으면 비어 있다. */
-function hexaOf(item: EntryItem, uses: StoredEntry['fragmentUses']): SpendHexa | null {
+function hexaOf(item: EntryItem, uses: StoredEntry['fragmentUses'], otherUses: StoredEntry['otherFragmentUses']): SpendHexa | null {
   if (item.fragmentCount === null || item.untradableFragmentCount === null) return null
+  const otherUse = otherUses[0]
   return {
     fragmentCount: item.fragmentCount,
     untradableFragmentCount: item.untradableFragmentCount,
@@ -109,6 +113,7 @@ function hexaOf(item: EntryItem, uses: StoredEntry['fragmentUses']): SpendHexa |
     useStorage: item.hexaUseStorage === true,
     storageAsSpend: item.hexaStorageAsSpend === true,
     storageUses: uses,
+    ...(otherUse === undefined ? {} : { otherUse }),
   }
 }
 
@@ -134,8 +139,10 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
     pointPer100mMeso: first.pointPer100mMeso,
     mesoMarketFeePercent: first.mesoMarketFeePercent,
     cashAmount: sumOf(entry.items, (item) => item.amountCash),
-    hexa: hexaOf(first, entry.fragmentUses),
+    hexa: hexaOf(first, entry.fragmentUses, entry.otherFragmentUses),
     recordedAt: entry.head.createdAt,
+    ...(first.inventoryItemId === null ? {} : { inventoryItemId: first.inventoryItemId }),
+    ...(first.ringLevel === null ? {} : { ringLevel: first.ringLevel }),
   }
 }
 
@@ -232,10 +239,13 @@ export function incomeEntryOf(record: IncomeRecord): StoredEntry {
         amountPoint: record.pointAmount,
         pointPer100mMeso: record.pointPer100mMeso,
         amountCash: record.cashAmount,
+        inventoryItemId: record.inventoryItemId ?? null,
+        ringLevel: record.ringLevel ?? null,
       },
     ],
     hunt: huntRowOf(record.hunt),
     fragmentUses: [],
+    otherFragmentUses: record.otherFragmentUse === undefined ? [] : [record.otherFragmentUse],
   }
 }
 
@@ -261,6 +271,9 @@ export function incomeRecordOf(entry: StoredEntry): IncomeRecord {
     saleFeeAuto: item.saleFeeAuto,
     hunt: huntOf(entry.hunt, hunting ? item.quantity : null),
     recordedAt: entry.head.createdAt,
+    ...(item.inventoryItemId === null ? {} : { inventoryItemId: item.inventoryItemId }),
+    ...(item.ringLevel === null ? {} : { ringLevel: item.ringLevel }),
+    ...(entry.otherFragmentUses[0] === undefined ? {} : { otherFragmentUse: entry.otherFragmentUses[0] }),
   }
 }
 

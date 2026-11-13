@@ -14,6 +14,7 @@ import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
 import { MvpGradeGrid } from '../../components/molecules/MvpGradeGrid/MvpGradeGrid'
 import { MvpPlate } from '../../components/molecules/MvpPlate/MvpPlate'
 import { AccountRow } from '../../components/organisms/AccountSelect/AccountSelect'
+import { useMapleIdNameOf } from '../../features/maple-id/names'
 import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import type { MvpAskAccount } from '../../features/mvp-grade/flow-store'
@@ -21,9 +22,12 @@ import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { formatDayLabel, monthKeyOf } from '../../lib/calendar'
 import { mvpBenefitText, type MvpGradeKey } from '../../lib/mvp/grades'
 
-/** ID 카드의 머리. 목록을 못 받은 ID 는 표시 없이 선다. */
+/** ID 카드의 머리. 목록을 못 받은 ID 는 대표 캐릭터 없이 이름만 선다. */
 function Identity(props: { account: MvpAskAccount }): React.JSX.Element {
-  if (props.account.summary === null) return <Text className="text-sm font-semibold text-text">메이플 ID</Text>
+  const nameOf = useMapleIdNameOf()
+  if (props.account.summary === null) {
+    return <Text className="text-sm font-semibold text-text">{nameOf(props.account.accountId)}</Text>
+  }
   return <AccountRow summary={props.account.summary} portraitUrl={props.account.portraitUrl} />
 }
 

@@ -21,8 +21,10 @@ jest.mock('../../../storage/schedule-probe-ledger', () => {
 })
 jest.mock('../../../nexon/schedule', () => ({ fetchSchedulerCharacterState: jest.fn() }))
 jest.mock('../../../storage/character-accounts', () => ({ getNexonAccountIdsOfOcids: jest.fn() }))
-jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn() }))
-const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn(), settlingYesterdayOf: jest.fn() }))
+const { refreshSettlement: refreshSettlementMock, settlingYesterdayOf: settlingYesterdayMock } = jest.requireMock(
+  '../../settlement/store',
+) as Record<string, jest.Mock>
 
 
 import { NexonBadRequestError } from '../../../nexon/errors'
@@ -69,6 +71,7 @@ beforeEach(() => {
   recordProbeMock.mockReset().mockResolvedValue(undefined)
   fetchStateMock.mockReset().mockResolvedValue(schedulerState())
   refreshSettlementMock.mockReset().mockResolvedValue(undefined)
+  settlingYesterdayMock.mockReset().mockResolvedValue(null)
   getNexonAccountIdsOfOcids.mockReset().mockResolvedValue(new Map())
 })
 
@@ -192,6 +195,20 @@ describe('진행을 알린다', () => {
 })
 
 // 스케줄러 데이터를 갱신하는 자리는 결산 여부도 함께 갱신한다. 값이 바뀌면 today 에 바로 선다.
+// 넥슨 AI 에이전트 가이드는 00009 를 되풀이해 부르지 말라고 한다. 건너뛴 날은 원장에 안 남아 결산이 끝난 뒤의 회차가 채운다.
+describe('결산 중이면 어제를 묻지 않는다', () => {
+  it('서버가 결산 중이라고 하면 어제만 빼고 부른다', async () => {
+    settlingYesterdayMock.mockResolvedValue('2026-09-04')
+
+    await fillScheduleWindow(['ocid-1'], NOW)
+
+    expect(settlingYesterdayMock).toHaveBeenCalledWith(NOW)
+    expect(asked()).not.toContain('2026-09-04')
+    expect(asked()).toHaveLength(12)
+    expect(recordProbeMock).not.toHaveBeenCalledWith('ocid-1', '2026-09-04', expect.anything())
+  })
+})
+
 describe('결산 여부도 갱신한다', () => {
   it('창을 채우면 결산도 다시 묻는다', async () => {
     await fillScheduleWindow(['o1'], NOW)

@@ -1,7 +1,7 @@
 # ADR-137+168 헥사 강화 지출과 강화 레벨 기억
 
 > 🟢 유효
-> 관련 소스: `app/cashbook/spend/HexaMatrixForm.tsx` · `app/cashbook/spend/LevelRangeGrid.tsx` · `app/cashbook/spend/level-range.ts` · `app/cashbook/spend/SymbolForm.tsx` · `lib/cashbook/hexa-matrix.ts` · `features/cashbook/remembered-levels.ts` · `storage/remembered-levels.ts` · `nexon/hexamatrix/` · `features/cashbook/records.ts` · `storage/cashbook-entries.ts` · `storage/income.ts` · `storage/hexa-storage-checks.ts`
+> 관련 소스: `app/cashbook/spend/HexaMatrixForm.tsx` · `app/cashbook/spend/LevelRangeGrid.tsx` · `app/cashbook/spend/level-range.ts` · `app/cashbook/spend/SymbolForm.tsx` · `lib/cashbook/hexa-matrix.ts` · `features/cashbook/remembered-levels.ts` · `storage/remembered-levels.ts` · `nexon/hexamatrix/` · `features/cashbook/records.ts` · `storage/cashbook-entries.ts` · `storage/income.ts` · `storage/fragment-ledger.ts` · `storage/hexa-storage-checks.ts`
 
 ## 배경
 
@@ -174,6 +174,7 @@
 
 - 하루 목록 줄의 제목은 `헥사 매트릭스` 다. 내용은 헥사 스킬이면 코어의 첫 스킬 이름과 레벨(`매화검 본초 : 선참 VI 25 → 28`), 헥사 스탯이면 스탯 이름이다. 조각 개수는 적지 않는다(사용자 지정 2026-10-30).
 - 줄 그림은 헥사 스킬이면 그 코어의 스킬 그림, 헥사 스탯이면 갈래 카드와 같은 헥사 매트릭스 원본 그림이다.
+- 그날 같은 캐릭터의 헥사 기록이 둘 이상이면 하루 목록에서 한 줄로 합친다. 위 내용과 그림은 그 줄을 펼친 칸에 선다([[ADR-047]] 결정 18).
 - 0 메소 헥사 기록도 하루 목록에 선다(사용자 선택 2026-10-30). 다른 지출은 0 이면 줄을 안 세우지만, 헥사 기록은 0 이어도 레벨을 옮겨서 고치거나 지울 길이 있어야 하기 때문이다.
 - 통계에서 헥사 매트릭스 조각은 코어 · 스탯별로 나뉜다.
 - 강화 레벨 기억은 데이터 삭제의 가계부 그룹이 기록과 함께 지운다. 기록만 지우고 기억을 남기면 다음 기록의 강화 전 칸이 지운 기록의 레벨로 서기 때문이다.
@@ -217,7 +218,8 @@
   뺀다. 같은 ID · 같은 월드인지 모르는 캐릭터의 보관을 빼면 옮길 수 없는 조각을 쓴 것으로 남을 수 있다.
 - 차례는 강화한 캐릭터가 먼저이고, 그다음은 캐릭터 관리에 저장한 순서(`getTrackedCharacterOcids`)다(`hexaStorageCandidates`).
   사용자가 캐릭터 관리에서 순서를 바꾸면 어느 캐릭터의 보관부터 빠질지 정할 수 있다.
-- 보관은 기록 날짜까지 센다. `getFragmentStorage` 와 같은 규칙이다. 나중에 보관한 조각을 앞선 날짜의 강화에 쓸 수 없기 때문이다.
+- 후보마다 쓸 수 있는 보관은 [[ADR-049]] 결정 11 의 개수다(`getFragmentStorage`). 기록 날짜와 그 뒤 모든 날의 남은 개수 가운데
+  가장 작은 값이다. 그래서 나중에 모은 조각도, 그 뒤 날짜에 팔거나 쓴 조각도 이 강화에 쓸 수 없다.
 - 보관이 0 이하인 캐릭터는 건너뛴다.
 - 후보 중 한 캐릭터라도 보관을 못 읽으면 개수가 `-` 이고 저장을 끈다(`loadHexaStorages` 가 `null`). 못 읽은 캐릭터를 건너뛰면
   차례가 뒤 캐릭터로 밀려 다른 보관이 빠지기 때문이다. 정산 폼의 `모든 캐릭터` 와 같은 규칙이다([[ADR-049]] 결정 15).
@@ -229,6 +231,10 @@
 - 저장할 때 배분을 표 `cashbook_entry_fragment_uses` 에 캐릭터마다 한 줄로 적는다. 칸은 uuid 기본키 · 기록 id · `ocid` · 개수이고,
   기록을 지우면 함께 지워진다. 저장할 때마다 다시 계산하면 옛 사냥 기록을 고쳤을 때 지난 헥사 기록이 가져간 캐릭터가 조용히 바뀐다.
 - `getFragmentStorage` 는 사냥 보관에서 정산한 개수와 함께 이 표의 개수도 뺀다.
+- 저장 · 수정 · 삭제는 조각 장부를 0 아래로 내리는지 검사를 거친다([[ADR-049]] 결정 17).
+- 굳힌 배분이 바뀌는 때는 하나다. 사냥 기록을 고쳐 이 기록이 가져간 보관이 모자라게 되면, 강화한 캐릭터의 메이플 ID · 월드의
+  기타 조각이나 다른 캐릭터의 보관으로 옮긴다([[ADR-049]] 결정 17). 보관에서 가져온 개수는 그대로라 금액은 바뀌지 않는다. 옮길
+  보관이 모자라면 그 사냥 기록의 저장이 막히고 이 기록은 그대로 남는다.
 - 수정으로 열면 그 기록의 몫을 뺀 보관으로 다시 배분한다.
 - 0 메소 정산 기록을 대신 만들지 않는다. 하루 목록에 판매처럼 서고, 헥사 기록을 고치거나 지울 때 그 줄도 맞춰야 하기 때문이다.
 - 데이터 삭제의 가계부 그룹이 이 표도 지운다([[ADR-053]]).
@@ -255,7 +261,7 @@
 | `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` | 결정 3 · 9: 조각 칸 넷이 그대로 돌아오는지, 칸이 없는 옛 품목 표에 칸이 붙는지, 가장 최근 기록 조회와 기억의 fill · overwrite 를 진짜 SQLite 로 본다 |
 | `features/cashbook/__tests__/records.spec.ts` · `row-icon.spec.ts` · `features/stats/__tests__/aggregate.spec.ts` | 결정 12: 0 메소 헥사 줄이 서는지, 줄 두 줄 · 그림, 통계의 코어 · 스탯별 몫을 본다 |
 | `lib/__tests__/hexa-matrix.test.ts` (보관) | 결정 14 · 15 · 17: 교환 불가를 먼저 빼고 보관을 차례대로 가져오며 마지막 캐릭터는 모자란 만큼만 쓰는지, 강화한 캐릭터 다음 같은 메이플 ID · 같은 월드 캐릭터를 캐릭터 관리 순서로 두는지, 메이플 ID 나 월드를 모르면 자신뿐이고 월드를 모르는 다른 캐릭터는 빠지는지, 보관 0 이하를 건너뛰는지, 지출 체크에 따라 금액이 갈리는지 본다 |
-| `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` (`보관에서 가져온 조각`) | 결정 13 · 16 · 17: 두 체크와 배분이 그대로 돌아오고 가격 없는 기록도 헥사 기록인지, 고치면 배분을 갈아 끼우고 지우면 함께 지워지는지, 보관이 헥사 기록이 가져간 개수를 날짜 · 수정 중인 기록을 가려 빼는지 진짜 SQLite 로 본다 |
+| `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` (`보관에서 가져온 조각`) | 결정 13 · 16 · 17: 두 체크와 배분이 그대로 돌아오고 가격 없는 기록도 헥사 기록인지, 고치면 배분을 갈아 끼우고 지우면 함께 지워지는지, 보관이 헥사 기록이 가져간 개수를 빼고 수정 중인 기록의 몫은 되돌리는지 진짜 SQLite 로 본다 |
 | `features/cashbook/__tests__/records.spec.ts` (`헥사 보관 체크 기억` · `loadHexaStorages`) | 결정 13 · 15: 새 헥사 기록만 두 체크를 기억하는지, 같은 메이플 ID · 같은 월드 캐릭터의 보관을 차례대로 읽고 한 캐릭터라도 못 읽으면 `null` 인지 본다 |
 | `app/cashbook/__tests__/SpendSheet.test.tsx` (`헥사 매트릭스` 의 보관) | 결정 13 · 14 · 15 · 16 · 17: 보관을 켜면 줄인 필요 조각과 취소선 원래 수가 서고 배분을 저장하는지, 다 채우면 가격 입력이 꺼지고 지출 체크로 다시 켜지는지, 못 읽으면 저장이 꺼지는지, 새 폼은 기억한 체크로 · 수정은 기록의 체크로 열리는지 본다 |
 | `src/modules/hexa-matrix/hexa-matrix.repository.spec.ts` | 결정 5 · 6: API 타입마다 기본 종류가 하나인지, 비용 줄이 0 부터 만렙 − 1 까지 다 있어야 하는지, 직업별 코어의 차례를 진짜 Postgres 로 본다 |
@@ -266,3 +272,4 @@
 - ADR-137 (2026-10-30): 헥사 코어 그림 · 레벨 범위 격자 · 강화 레벨 기억 · hexamatrix 응답 해석을 처음 작성했다(#631). 같은 날 사용자가 확인한 직업 48 개의 3rd 스킬 코어 표, 서버 종류 표 · 이름 표로 종류를 가르는 결정, 실제 코어를 고르는 결정, 수정 · 삭제 때 기억값 규칙, 이벤트 레벨 무시, 6차 스킬 그림을 서버 그림 목록 `skills/` 에 webp 로 두는 결정, API 레벨이 낮을 때 채우지 않는 규칙, 직업별 코어 목록을 서버 게임 데이터로 두는 결정을 더했다. 지출 갈래 이름 · 하위 갈래 세그먼트 · 원본 그림을 쓰는 곳도 정했다. 기록 칸 셋 · 이슈의 먼저 정한 규칙 · 서버 먼저 배포를 더했다. 하루 목록 · 통계 · 데이터 삭제 규칙과 종류 표의 만렙 칸도 더했다. 처음 레벨을 추적 시작 때 받고 폼에서는 API 를 부르지 않도록 결정 3 을 다시 썼다
 - ADR-137 (2026-10-30): 가계부 기록을 서버로 보내지 않게 되어([[ADR-099]] 결정 1) 결정 9 의 서버 기록 표와 결정 10 의 0 메소 기록 전송 규칙을 지웠다
 - ADR-168 (2026-11-05): 헥사 강화가 같은 메이플 ID 캐릭터의 보관 조각을 쓰는 결정 13 ~ 17 을 더하고, 결정 10 의 `보관한 조각을 빼지 않는다` 를 지웠다. 결정 9 의 금액 식은 결정 17 로 옮겼다. 같은 날 결정 15 의 후보를 같은 월드로 더 좁혔다
+- (2026-11-13) 결정 12 에 하루 목록에서 같은 캐릭터의 헥사 기록을 한 줄로 합친다는 것을 적었다. 결정은 [[ADR-047]] 결정 18 에 있다(#924)
