@@ -135,7 +135,7 @@ describe('InventoryScreen', () => {
     expect(actions.removeInventoryRemaining).toHaveBeenCalledWith('item-1')
   })
 
-  it('넣기에는 종류 칸이 없고 찾아 고른 아이템의 종류로 넣는다. 특수스킬 반지는 수량 대신 레벨을 골라야 저장된다', async () => {
+  it('넣기에는 종류 칸이 없고 찾아 고른 아이템의 종류로 넣는다. 특수스킬 반지는 수량 대신 레벨 칸이 4 로 선다', async () => {
     const view = await 열기()
     await 누르기(view, 'inventory-add-fab')
     expect(view.queryByTestId('inventory-add-kind')).toBeNull()
@@ -151,11 +151,8 @@ describe('InventoryScreen', () => {
     })
 
     expect(view.queryByTestId('inventory-add-quantity')).toBeNull()
-    expect(view.getByRole('button', { name: '저장' })).toBeDisabled()
+    expect(within(view.getByTestId('inventory-add-ring-level')).getByRole('button', { name: '4', selected: true })).toBeTruthy()
 
-    await act(async () => {
-      fireEvent.press(within(view.getByTestId('inventory-add-ring-level')).getByRole('button', { name: '4' }))
-    })
     await act(async () => {
       fireEvent.press(view.getByRole('button', { name: '저장' }))
     })

@@ -13,7 +13,13 @@ import { mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
 import { COUNT_QUICK_ADDS } from '../../constants/domain/quick-adds'
 import { openInputCard } from '../../features/input-card/store'
 import { addToInventory } from '../../features/inventory/actions'
-import { catalogMatches, inventoryCatalog, RING_LEVELS, type CatalogItem } from '../../features/inventory/catalog'
+import {
+  catalogMatches,
+  DEFAULT_RING_LEVEL,
+  inventoryCatalog,
+  RING_LEVELS,
+  type CatalogItem,
+} from '../../features/inventory/catalog'
 import { loadInventoryOwners, type InventoryOwner } from '../../features/inventory/load'
 import { useToastStore } from '../../features/toast/store'
 import { worldEmblemUrl } from '../../lib/assets/asset-lookup'
@@ -71,13 +77,13 @@ export function InventoryAddSheet(props: { onClose: () => void; catalog?: readon
   const owner = owners.find((each) => ownerKeyOf(each) === ownerKey) ?? null
   const counts = item !== null && countsQuantity(item.kind)
   const quantity = counts ? mesoValueOf(quantityText) : 1
-  const ringReady = item?.ringLevels !== true || ringLevel !== null
-  const canSave = owner !== null && item !== null && quantity > 0 && ringReady
+  const canSave = owner !== null && item !== null && quantity > 0
 
   function pickItem(key: string): void {
     // 아이템이 바뀌면 고른 레벨은 그 아이템의 것이 아니다.
-    setItem(catalog.find((each) => each.key === key) ?? null)
-    setRingLevel(null)
+    const next = catalog.find((each) => each.key === key) ?? null
+    setItem(next)
+    setRingLevel(next?.ringLevels === true ? DEFAULT_RING_LEVEL : null)
   }
 
   function openItemCard(): void {

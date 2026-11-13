@@ -17,6 +17,9 @@ const SPECIAL_SKILL_RING = 'special_skill_ring'
 /** 넣을 때 고르는 특수스킬 반지의 레벨. 서버 반지 상자 표의 레벨 범위를 합친 것과 같다. */
 export const RING_LEVELS = [1, 2, 3, 4] as const
 
+/** 특수스킬 반지를 고르면 처음 골라져 있는 레벨 */
+export const DEFAULT_RING_LEVEL = 4
+
 export interface CatalogItem {
   key: string
   name: string
