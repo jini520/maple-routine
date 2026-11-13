@@ -68,7 +68,7 @@ async function 그리기(
       // 메이플 ID 보기는 그것을 보는 케이스만 준다.
       accounts={[]}
       loadRememberedLevels={async () => ({})}
-      loadHexaStorages={async () => []}
+      loadHexaStorages={async () => ({ other: null, hunts: [] })}
       hexaStorageChecks={{ useStorage: false, storageAsSpend: false }}
       lastPointRate={null}
       onSave={jest.fn()}
@@ -2854,10 +2854,13 @@ describe('헥사 매트릭스', () => {
 
   it('보관 중인 조각 사용을 켜면 교환 불가 다음으로 보관에서 가져온 만큼 필요 조각을 줄이고, 원래 수는 취소선으로 남긴다', async () => {
     const onSave = jest.fn()
-    const loadHexaStorages = jest.fn(async () => [
-      { ocid: 'ocid-ren', stored: 120 },
-      { ocid: 'ocid-alt', stored: 100 },
-    ])
+    const loadHexaStorages = jest.fn(async () => ({
+      other: null,
+      hunts: [
+        { ocid: 'ocid-ren', stored: 120 },
+        { ocid: 'ocid-alt', stored: 100 },
+      ],
+    }))
     const view = await 열기({ onSave, loadHexaStorages, loadRememberedLevels: async () => ({ [선참]: 25 }) })
     await 선참25에서28(view)
 
@@ -2890,12 +2893,32 @@ describe('헥사 매트릭스', () => {
     })
   })
 
+  it('메이플 ID · 월드의 기타 조각이 있으면 먼저 가져오고, 모자란 만큼만 캐릭터의 사냥 조각에서 가져와 저장한다', async () => {
+    const onSave = jest.fn()
+    const loadHexaStorages = jest.fn(async () => ({
+      other: { accountId: 'maple-a', worldKey: 'scania', stored: 200 },
+      hunts: [{ ocid: 'ocid-ren', stored: 120 }],
+    }))
+    const view = await 열기({ onSave, loadHexaStorages, loadRememberedLevels: async () => ({ [선참]: 25 }) })
+    await 선참25에서28(view)
+    await 아이디로누르기(view, 'spend-sheet-hexa-use-storage')
+
+    expect(view.getByTestId('spend-sheet-hexa-storage-taken')).toHaveTextContent('300개')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      hexa: {
+        storageUses: [{ ocid: 'ocid-ren', fragments: 100 }],
+        otherUse: { accountId: 'maple-a', worldKey: 'scania', fragments: 200 },
+      },
+    })
+  })
+
   // 곱할 개수가 없는데 가격을 치게 하면 저장하려고 아무 값이나 넣게 된다.
   it('교환 불가와 보관이 필요 조각을 다 채우면 가격 입력이 꺼지고 0 메소로 저장하며, 지출 체크를 켜면 가격을 받는다', async () => {
     const onSave = jest.fn()
     const view = await 열기({
       onSave,
-      loadHexaStorages: async () => [{ ocid: 'ocid-ren', stored: 400 }],
+      loadHexaStorages: async () => ({ other: null, hunts: [{ ocid: 'ocid-ren', stored: 400 }] }),
       loadRememberedLevels: async () => ({ [선참]: 25 }),
     })
     await 선참25에서28(view)
@@ -2971,7 +2994,7 @@ describe('헥사 매트릭스', () => {
       },
       recordedAt: '2026-08-23T01:00:00.000Z',
     }
-    const loadHexaStorages = jest.fn(async () => [{ ocid: 'ocid-ren', stored: 300 }])
+    const loadHexaStorages = jest.fn(async () => ({ other: null, hunts: [{ ocid: 'ocid-ren', stored: 300 }] }))
     const view = await 그리기({
       characters: 렌,
       editing: 기록,

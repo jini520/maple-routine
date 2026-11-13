@@ -170,6 +170,36 @@ describe('allocateHexaStorage: 보관에서 가져오는 배분', () => {
     const result = allocateHexaStorage({ fragments: 50, untradable: 80, storages: [{ ocid: 'main', stored: 100 }] })
     expect(result).toEqual({ uses: [], taken: 0 })
   })
+
+  it('메이플 ID · 월드의 기타 조각을 먼저 가져오고, 모자란 만큼만 캐릭터의 사냥 조각에서 가져온다', () => {
+    const result = allocateHexaStorage({
+      fragments: 500,
+      untradable: 0,
+      other: { accountId: 'maple-a', worldKey: 'scania', stored: 300 },
+      storages: [
+        { ocid: 'main', stored: 150 },
+        { ocid: 'alt1', stored: 100 },
+      ],
+    })
+    expect(result).toEqual({
+      otherUse: { accountId: 'maple-a', worldKey: 'scania', fragments: 300 },
+      uses: [
+        { ocid: 'main', fragments: 150 },
+        { ocid: 'alt1', fragments: 50 },
+      ],
+      taken: 500,
+    })
+  })
+
+  it('기타 조각으로 다 채우면 사냥 조각은 가져오지 않는다', () => {
+    const result = allocateHexaStorage({
+      fragments: 100,
+      untradable: 20,
+      other: { accountId: 'maple-a', worldKey: 'scania', stored: 300 },
+      storages: [{ ocid: 'main', stored: 150 }],
+    })
+    expect(result).toEqual({ otherUse: { accountId: 'maple-a', worldKey: 'scania', fragments: 80 }, uses: [], taken: 80 })
+  })
 })
 
 describe('findHexaStat: 헥사 스탯과 활성화 조각', () => {

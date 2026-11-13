@@ -8,6 +8,7 @@ import { BossProfitScreen } from '../app/boss-profit/BossProfitScreen'
 import { AppointmentsScreen } from '../app/party-appointments/AppointmentsScreen'
 import { BossScreen } from '../app/boss-scheduler/BossScreen'
 import { CashbookScreen } from '../app/cashbook/CashbookScreen'
+import { InventoryScreen } from '../app/inventory/InventoryScreen'
 import { StatsScreen } from '../app/stats/StatsScreen'
 import { ContentScreen } from '../app/content-scheduler/ContentScreen'
 import { SettingsScreen } from '../app/settings/SettingsScreen'
@@ -79,6 +80,7 @@ function LedgerLayer(): React.JSX.Element {
         {/* 껍데기 둘(사냥 수익·지출)이 있던 자리. 가계부 하나로 합쳐졌다. */}
         <LedgerTabs.Screen name="Cashbook" component={CashbookScreen} />
         <LedgerTabs.Screen name="Stats" component={StatsScreen} />
+        <LedgerTabs.Screen name="Inventory" component={InventoryScreen} />
       </LedgerTabs.Navigator>
       {/* 불러오는 중도 층이 말한다. 하위 화면은 자기 스피너를 갖지 않는다. */}
       <LedgerLoadingModal />

@@ -23,6 +23,7 @@ import {
   replaceEntry,
 } from './cashbook-entries'
 import { availableFragmentsOn } from '../lib/cashbook/fragment-ledger'
+import type { OtherFragmentUse } from './cashbook-entries'
 import { incomeEntryOf, incomeRecordOf } from './cashbook-entry-shape'
 import {
   applyApprovedCuts,
@@ -30,6 +31,7 @@ import {
   planCutsAfterWrite,
   type FragmentCutPlan,
   type FragmentCutsApproval,
+  type HexaOwnerOf,
 } from './fragment-cuts'
 import { readFragmentMoves, writeCheckingFragments } from './fragment-ledger'
 import type { SqliteDbConnection } from './ports'
@@ -108,6 +110,10 @@ export interface IncomeRecord {
    */
   hunt: HuntingIncomeDetail | null
   recordedAt: string
+  /** 인벤토리에서 판 아이템 판매가 가리키는 인벤토리 줄. 가계부에서 적은 판매는 칸이 없다. */
+  inventoryItemId?: string
+  /** 인벤토리에서 판 기타 조각. 판 개수만큼 그 메이플 ID · 월드의 기타 조각에서 가져온다. 다른 기록은 칸이 없다. */
+  otherFragmentUse?: OtherFragmentUse
 }
 
 /**
@@ -263,10 +269,12 @@ const PREVIEW_ONLY = Symbol('previewOnly')
  * 사냥 기록을 고치거나 지우면 함께 줄일 뒤 기록. 저장과 같은 함수로 세도록 쓰고 센 뒤 되돌린다.
  *
  * @param candidatesOf 헥사 강화가 보관을 가져올 캐릭터의 차례
+ * @param ownerOf 헥사 강화가 기타 조각을 가져올 메이플 ID · 월드
  */
 export async function previewIncomeCuts(
   change: IncomeChange,
   candidatesOf: (ocid: string) => readonly string[],
+  ownerOf?: HexaOwnerOf,
 ): Promise<FragmentCutPlan> {
   const db = await getBossProfitDb()
   let plan: FragmentCutPlan = NO_FRAGMENT_CUTS
@@ -274,7 +282,7 @@ export async function previewIncomeCuts(
     await inTransaction(db, async () => {
       const before = await readFragmentMoves(db)
       await writeChange(db, change, new Date())
-      plan = await planCutsAfterWrite(db, [changedIdOf(change)], before, candidatesOf)
+      plan = await planCutsAfterWrite(db, [changedIdOf(change)], before, candidatesOf, ownerOf)
       throw PREVIEW_ONLY
     })
   } catch (error) {
@@ -421,4 +429,17 @@ export async function getFragmentStorage(ocid: string, dateKey: string, excludeR
   const db = await getBossProfitDb()
   const moves = (await readFragmentMoves(db, ocid)).filter((move) => move.entryId !== excludeRecordId)
   return availableFragmentsOn(moves, dateKey)
+}
+
+/**
+ * 인벤토리의 사냥 조각 칸 개수. 캐릭터마다 그 날 쓸 수 있는 조각을 세어, 1개 이상인 캐릭터만 더한다. 인벤토리는 가진 것을
+ * 파는 화면이라 팔 수 없는 마이너스는 더하지 않는다.
+ */
+export async function getHuntFragmentTotal(dateKey: string): Promise<number> {
+  const moves = await readFragmentMoves(await getBossProfitDb())
+  const ocids = [...new Set(moves.map((move) => move.ocid))]
+  return ocids
+    .map((ocid) => availableFragmentsOn(moves.filter((move) => move.ocid === ocid), dateKey))
+    .filter((stored) => stored > 0)
+    .reduce((sum, stored) => sum + stored, 0)
 }

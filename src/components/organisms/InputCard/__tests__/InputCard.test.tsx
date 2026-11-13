@@ -540,3 +540,47 @@ describe('InputCard', () => {
     })
   })
 })
+
+describe('InputCard: 칸 안 아이템 목록', () => {
+  const 아이템 = [
+    { key: 'low', name: '하급 아이템 결정', icon: null },
+    { key: 'top', name: '최상급 아이템 결정', icon: null },
+  ]
+  const 찾기 = (draft: string) => (draft === '' ? [] : 아이템.filter((item) => item.name.includes(draft)))
+
+  it('아직 안 쳤어도 목록 자리는 빈 채로 서고, 치면 맞는 아이템이 선다', async () => {
+    const { view } = await 그리기({ text: true, suggestions: { itemsOf: 찾기, onPick: jest.fn() } })
+
+    expect(view.getByTestId('input-card-suggestions')).toBeTruthy()
+    expect(view.queryByTestId('input-card-suggestion-low')).toBeNull()
+
+    await 치기(view, '아이템 결')
+    expect(view.getByTestId('input-card-suggestion-low')).toBeTruthy()
+    expect(view.getByTestId('input-card-suggestion-top')).toBeTruthy()
+  })
+
+  it('한 줄을 누르면 그 아이템을 고르고 이름으로 확인한다', async () => {
+    const onPick = jest.fn()
+    const { view, onConfirm } = await 그리기({ text: true, suggestions: { itemsOf: 찾기, onPick } })
+    await 치기(view, '최상급')
+
+    await 누르기(view, 'input-card-suggestion-top')
+
+    expect(onPick).toHaveBeenCalledWith('top')
+    expect(onConfirm).toHaveBeenCalledWith('최상급 아이템 결정')
+  })
+
+  it('목록에서만 받는 카드는 친 글자가 목록의 이름과 같을 때만 확인이 눌린다', async () => {
+    const onPick = jest.fn()
+    const { view, onConfirm } = await 그리기({ text: true, suggestions: { itemsOf: 찾기, onPick, pickOnly: true } })
+
+    await 치기(view, '아이템 결')
+    await 누르기(view, 'input-card-confirm')
+    expect(onConfirm).not.toHaveBeenCalled()
+
+    await 치기(view, '하급 아이템 결정')
+    await 누르기(view, 'input-card-confirm')
+    expect(onPick).toHaveBeenCalledWith('low')
+    expect(onConfirm).toHaveBeenCalledWith('하급 아이템 결정')
+  })
+})

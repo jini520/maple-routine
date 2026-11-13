@@ -480,7 +480,20 @@ export interface AppImagesTable extends TableHead {
   images: AppImageRow[]
 }
 
-/** 계약을 통과한 칸 스물. */
+/** 고르기 목록이 쓰는 아이템 표 한 줄. 종류는 서버 분류 트리의 첫 단(장비 · 장신구 · 소비 · 기타 · 캐시)이고 묶음은 둘째 단이다. */
+export interface ItemRow {
+  key: string
+  name: string
+  kind: string
+  category: string
+  /** 그림 id(`assets` 칸). 그림이 없는 아이템은 빠진다. */
+  iconAssetId?: string
+}
+export interface ItemsTable extends TableHead {
+  items: ItemRow[]
+}
+
+/** 계약을 통과한 칸 스물하나. */
 export interface GameData {
   bosses: BossCatalog
   dropItems: DropItemsTable
@@ -502,11 +515,12 @@ export interface GameData {
   imageCrops: ImageCropsTable
   faqs: FaqsTable
   appImages: AppImagesTable
+  items: ItemsTable
 }
 
 export type GameDataSection = keyof GameData
 
-/** 칸 이름 스물. 응답과 기기 사본이 같은 차례로 든다. */
+/** 칸 이름 스물하나. 응답과 기기 사본이 같은 차례로 든다. */
 export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'bosses',
   'dropItems',
@@ -528,6 +542,7 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'imageCrops',
   'faqs',
   'appImages',
+  'items',
 ]
 
 /** 서버 응답을 칸마다 검사한 결과. 못 받았거나 계약을 어겼거나 서버가 아직 안 넣은 칸은 `null` 이다. */

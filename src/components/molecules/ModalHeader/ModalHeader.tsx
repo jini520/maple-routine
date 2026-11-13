@@ -27,6 +27,8 @@ export interface ModalHeaderProps {
   tone: ModalTone
   title: string
   description?: string
+  /** 참이면 배지 없이 제목과 설명만 선다. 아래 칸이 무엇을 다루는지 보여 줄 때 쓴다(인벤토리 삭제 확인). */
+  bare?: boolean
   /** 배지 · 설명의 testID 가 여기서 파생한다(`-badge` · `-description`). */
   testId?: string
   titleTestId?: string
@@ -43,16 +45,18 @@ export function ModalHeader(props: ModalHeaderProps): React.JSX.Element {
 
   return (
     <View className="flex-row items-center gap-3">
-      <View
-        testID={props.testId === undefined ? undefined : `${props.testId}-badge`}
-        className={`h-10 w-10 items-center justify-center rounded-full ${tone.bg}`}
-      >
-        {props.busy === true ? (
-          <RingSpinner size={20} />
-        ) : (
-          Icon !== undefined && <Icon className={`h-5 w-5 ${tone.ink}`} strokeWidth={1.75} aria-hidden />
-        )}
-      </View>
+      {props.bare !== true && (
+        <View
+          testID={props.testId === undefined ? undefined : `${props.testId}-badge`}
+          className={`h-10 w-10 items-center justify-center rounded-full ${tone.bg}`}
+        >
+          {props.busy === true ? (
+            <RingSpinner size={20} />
+          ) : (
+            Icon !== undefined && <Icon className={`h-5 w-5 ${tone.ink}`} strokeWidth={1.75} aria-hidden />
+          )}
+        </View>
+      )}
       <View className="min-w-0 flex-1 gap-0.5">
         <Text testID={props.titleTestId} className="text-base font-bold text-text">
           {props.title}

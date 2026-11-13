@@ -14,20 +14,21 @@
 | `types/game-data.ts` | 칸 이름(`GAME_DATA_SECTIONS`)과 칸마다의 형식 |
 | `lib/game-data/table.ts` | 칸 하나의 현재 값(`gameTable` · `createTable` · `derive`) |
 | `lib/game-data/initial.ts` | 표의 첫 값. 앱은 빈 표이고, jest 는 `src/__fixtures__/game-data/initial.ts` 로 바꿔 fixture 로 시작한다 |
-| `lib/game-data/sections.ts` | 칸 스물의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
+| `lib/game-data/sections.ts` | 칸 스물하나의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
 | `lib/assets/asset-files.ts` | 그림 목록(`assets` 칸)과 받은 그림의 `{ uri, width, height }` |
 | `lib/assets/image-crops.ts` | 크롭 표(`imageCrops` 칸) |
 | `lib/assets/asset-lookup.ts` | 그림 칸의 id · 앱 그림 key 를 그림 · 크롭으로 바꾸는 조회 |
 | `lib/assets/app-images.ts` | 붙일 표가 없는 앱 그림(`appImages` 칸)의 key 와 드롭 연출 프레임 |
+| `lib/item-catalog.ts` | 아이템 표(`items` 칸). key 로 찾기와 기록의 아이템 이름(`recordedItemNameOf`) |
 | `features/game-data/sync.ts` | 켤 때 사본 읽기 · 잠근 채 받기 · 돌아올 때 조용히 받기(`startGameData` · `refreshGameData`) · 칸 구독 훅(`useGameTable`) |
 | `app/game-data/GameDataLock.tsx` | 다 받기 전의 잠금 화면 |
 | `server/game-data.ts` | `GET /v1/game-data` 를 ETag 와 함께 받고 칸마다 검사한다 |
 | `storage/game-data-copy.ts` | 기기 사본(SQLite `game_data_sections` · `game_data_meta`) |
 | `storage/adapters/rn-asset-files.ts` | 그림 파일(문서 디렉터리 `game-assets/`) |
-| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 스물. 운영 서버 응답을 떠 둔 것이다 |
+| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 스물하나. 운영 서버 응답을 떠 둔 것이다 |
 | `lib/boss/boss-profit-period.ts` | 줄의 유효 기간 판정(`isEffectiveIn` · `isEffectiveAnytimeIn`) |
 
-## 칸 스물
+## 칸 스물하나
 
 | 칸 | 담는 것 | 조회 모듈 | 관리 화면 |
 |---|---|---|---|
@@ -51,6 +52,7 @@
 | `imageCrops` | 보스 초상(카드 · 원형 아이콘 · 파티 모달 띠)과 컨텐츠 지역 지도의 크롭 | `lib/assets/image-crops` | `/admin/assets` |
 | `faqs` | 화면 FAQ 의 묶음(key · 제목)과 문항(질문 · 답 블록). 묶음 하나가 시트 하나다([[ADR-150]]) | `lib/faq/faqs` | `/admin/faqs` |
 | `appImages` | 붙일 표가 없는 앱 그림 72장의 key 와 그림 id. 결정석 칩 · 강화 다섯 · 메소 주머니 · 포스 · 모르는 캐릭터 · 드롭 연출 프레임 등이다([[ADR-187]] 결정 8) | `lib/assets/app-images` | 없음(S4 에서 만든다) |
+| `items` | 분류가 있는 아이템 672개의 key · 이름 · 종류(분류 트리의 첫 단) · 묶음 · 그림 id. 이름 차례다. 인벤토리 넣기와 가계부 아이템 고르기가 여기서 고르고, 상자를 빼는 일과 장신구를 장비로 옮기는 일은 고르는 쪽이 한다([[ADR-187]] 결정 10) | `lib/item-catalog` | `/admin/items` |
 
 응답은 서버 표의 줄을 그대로 펼친 목록이다. 보스 · 난이도 · 분류로 묶거나 지역 안에 사냥터를 묶는 일은 조회 모듈이 한다.
 부르는 쪽은 값이 기기 사본에서 왔는지 서버 응답인지 모른다.
@@ -67,7 +69,7 @@
 
 ## 값이 기기에 반영되는 순서
 
-1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 스물이 계약을 지키면 표를
+1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 스물하나가 계약을 지키면 표를
    세우고 바로 연다.
 2. 사본이 없거나 읽을 수 없으면 잠금 화면을 세운다. 먼저 OTA 부팅 확인(`checkOnBoot`)이 끝나기를 기다린다. 새 번들이
    계약 판을 바꾸면 먼저 받은 게임 데이터를 재시작 뒤 또 받기 때문이다. 그다음 게임 데이터를 받는다. 처음 실행(사본이

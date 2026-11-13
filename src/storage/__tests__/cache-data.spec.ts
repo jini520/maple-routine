@@ -115,6 +115,7 @@ async function seedAll(): Promise<void> {
   for (const table of [
     'cashbook_entries',
     'cashbook_entry_items',
+    'inventory_items',
     'enhancement_totals',
     'enhancement_history_checks',
     'enhancement_refetches',
@@ -157,7 +158,7 @@ describe('clearCacheData', () => {
 
     await clearCacheData({ ...NONE, cashbook: true })
 
-    expect([count('cashbook_entries'), count('cashbook_entry_items')]).toEqual([0, 0])
+    expect([count('cashbook_entries'), count('cashbook_entry_items'), count('inventory_items')]).toEqual([0, 0, 0])
     expect([count('enhancement_totals'), count('enhancement_history_checks')]).toEqual([1, 1])
     expect(await remainingKeys()).toEqual([...MANUAL_KEYS, ...CACHE_KEYS, ...KEPT_KEYS].sort())
   })
@@ -311,6 +312,7 @@ describe('getCacheDataCounts', () => {
     await prefs.set('manualTrackedContent:o2', '[]')
     insertRow('cashbook_entries')
     insertRow('cashbook_entries')
+    insertRow('inventory_items')
     insertRow('enhancement_totals', { history_date: '2026-10-01' })
     insertRow('enhancement_totals', { history_date: '2026-10-01' })
     insertRow('enhancement_totals', { history_date: '2026-10-02' })
@@ -323,7 +325,7 @@ describe('getCacheDataCounts', () => {
       manualCharacters: 2,
       bossClears: 0,
       bossDrops: 0,
-      cashbookEntries: 2,
+      cashbookEntries: 3,
       enhancementDays: 2,
       cacheEntries: CACHE_KEYS.length,
     })

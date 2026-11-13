@@ -16,6 +16,8 @@ import {
   CASHBOOK_ENTRY_FRAGMENT_USES_BODY,
   CASHBOOK_ENTRY_HUNT_INPUTS_BODY,
   CASHBOOK_ENTRY_ITEMS_BODY,
+  INVENTORY_ITEMS_BODY,
+  INVENTORY_ITEMS_OWNER_INDEX,
 } from './cashbook-tables'
 import {
   ENHANCEMENT_RECOMPUTES_BODY,
@@ -272,6 +274,11 @@ const TABLE_DEFINITIONS = [
     PRIMARY KEY (id)
 )`,
   },
+  // 인벤토리에 넣은 아이템. 가계부 품목이 이 표를 가리키므로 가계부 표보다 먼저 선다.
+  {
+    name: 'inventory_items',
+    createSql: `CREATE TABLE IF NOT EXISTS inventory_items ${INVENTORY_ITEMS_BODY}`,
+  },
   // 가계부 손입력 기록. 위 둘을 버전 15 가 옮긴 표다. 부모가 먼저 서야 외래키가 선다. 옛 둘은 옛 코드가 새 DB 를
   // 열어도 열리도록 v1.0.14 까지 남긴다.
   {
@@ -474,6 +481,9 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'cashbook_entry_items', 'hexa_storage_as_spend', 'INTEGER')
   // 이 칸이 생기기 전의 메포 지출에는 버전 20 이관이 요율을 채운다.
   await ensureColumn(db, 'cashbook_entry_items', 'meso_market_fee_percent', 'INTEGER')
+  // 인벤토리에서 판 판매가 가리키는 줄. 이미 가계부를 적은 기기에는 CREATE 가 안 붙인다.
+  await ensureColumn(db, 'cashbook_entry_items', 'inventory_item_id', 'TEXT REFERENCES inventory_items(id)')
+  await ensureColumn(db, 'inventory_items', 'ring_level', 'INTEGER')
   // 사용자가 직접 적은 완료를 가르는 칸. 이미 기록을 쌓아 둔 기기에는 CREATE 가 안 붙인다.
   await ensureColumn(db, 'boss_profit_records', 'source', 'TEXT')
   await ensureColumn(db, 'character_profiles', 'world_key', 'TEXT')
@@ -608,6 +618,7 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await db.execute(BOSS_DROPS_PERIOD_INDEX)
   await db.execute(CASHBOOK_ENTRIES_DATE_INDEX)
   await db.execute(ENHANCEMENT_TOTALS_DATE_INDEX)
+  await db.execute(INVENTORY_ITEMS_OWNER_INDEX)
 
   return db
 }

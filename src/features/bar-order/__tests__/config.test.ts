@@ -4,7 +4,7 @@ import { isSameBarOrder, parseBarOrder } from '../config'
 
 const MOVED = {
   groups: ['today', 'ledger', 'utility', 'schedule', 'settings'],
-  subs: { schedule: ['Boss', 'Appointments', 'Content'], ledger: ['Stats', 'Profit', 'Cashbook'] },
+  subs: { schedule: ['Boss', 'Appointments', 'Content'], ledger: ['Stats', 'Profit', 'Cashbook', 'Inventory'] },
 }
 
 describe('parseBarOrder', () => {
@@ -32,8 +32,15 @@ describe('parseBarOrder', () => {
     const order = parseBarOrder({ groups: ['today', 'utility', 'settings'], subs: { ledger: ['Stats'] } })
 
     expect(order.groups).toEqual(['today', 'utility', 'schedule', 'ledger', 'settings'])
-    expect(order.subs.ledger).toEqual(['Stats', 'Profit', 'Cashbook'])
+    expect(order.subs.ledger).toEqual(['Stats', 'Profit', 'Cashbook', 'Inventory'])
     expect(order.subs.schedule).toEqual(DEFAULT_BAR_ORDER.subs.schedule)
+  })
+
+  // 인벤토리 탭이 생기기 전에 저장한 순서에도 인벤토리가 뒤에 붙어 하위 탭이 빠지지 않는다.
+  it('인벤토리가 없던 저장값은 수입·지출의 맨 뒤에 인벤토리를 더한다', () => {
+    const order = parseBarOrder({ ...MOVED, subs: { ...MOVED.subs, ledger: ['Cashbook', 'Stats', 'Profit'] } })
+
+    expect(order.subs.ledger).toEqual(['Cashbook', 'Stats', 'Profit', 'Inventory'])
   })
 
   it('today 와 더보기가 밀려 있으면 양 끝으로 되돌린다', () => {

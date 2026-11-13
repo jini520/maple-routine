@@ -43,6 +43,7 @@ jest.mock('../../../storage/enhancement-totals', () => ({ loadEnhancementTotals:
 jest.mock('../../enhancement-history/legacy-totals', () => ({ ensureEnhancementTotals: jest.fn() }))
 jest.mock('../../../storage/mvp-grades', () => ({ getMvpGradeHistories: jest.fn() }))
 jest.mock('../../../storage/character-accounts', () => ({ getCharacterAccountSightings: jest.fn() }))
+jest.mock('../../../storage/inventory', () => ({ getOtherFragmentStorage: jest.fn(async () => 0) }))
 jest.mock('../../../storage/hexa-storage-checks', () => ({ setHexaStorageChecks: jest.fn(), getHexaStorageChecks: jest.fn() }))
 jest.mock('../../../lib/mvp/starforce', () => ({ starforceMvpDiscountOf: jest.fn() }))
 jest.mock('../../app-review/request', () => ({ countCoreSave: jest.fn() }))
@@ -696,6 +697,13 @@ describe('하루 목록 카드의 두 줄', () => {
     expect(
       카드({ kind: 'income', record: { ...수입행, category: 'item_sale', item: '마력의 돌', itemKind: 'etc', quantity: 3 }, characterName: '' }),
     ).toEqual(['아이템 판매', '마력의 돌 3개'])
+  })
+
+  // 인벤토리에서 판 기록은 이름 칸이 비어 있다. 서버에서 이름을 고쳐도 따라오게 아이템 표에서 찾는다.
+  it('이름 칸이 빈 아이템 판매는 아이템 표에서 key 로 이름을 찾는다', () => {
+    const 판매 = { ...수입행, category: 'item_sale' as const, item: null, itemKey: 'soul_ether_1', itemKind: 'consumable' as const, quantity: 2 }
+
+    expect(카드({ kind: 'income', record: 판매, characterName: '' })).toEqual(['아이템 판매', '1단계 소울 에테르 2개'])
   })
 
   it('기타는 직접 친 이름이고 수량이 2 이상일 때만 붙인다. 이름이 없으면 둘째 줄이 없다', () => {
@@ -1403,11 +1411,25 @@ describe('loadHexaStorages', () => {
     income.getFragmentStorage.mockImplementation(async (ocid: string) => ({ main: 10, alt: 20 })[ocid] ?? 0)
     const { loadHexaStorages } = require('../records') as typeof import('../records')
 
-    await expect(loadHexaStorages('main', '2026-10-30', 'rec-1')).resolves.toEqual([
-      { ocid: 'main', stored: 10 },
-      { ocid: 'alt', stored: 20 },
-    ])
+    await expect(loadHexaStorages('main', '2026-10-30', 'rec-1')).resolves.toMatchObject({
+      hunts: [
+        { ocid: 'main', stored: 10 },
+        { ocid: 'alt', stored: 20 },
+      ],
+    })
     expect(income.getFragmentStorage).toHaveBeenCalledWith('main', '2026-10-30', 'rec-1')
+  })
+
+  it('강화한 캐릭터의 메이플 ID · 월드의 기타 조각을 함께 읽는다', async () => {
+    const inventory = jest.requireMock('../../../storage/inventory') as Record<string, jest.Mock>
+    inventory.getOtherFragmentStorage.mockResolvedValueOnce(30)
+    income.getFragmentStorage.mockResolvedValue(0)
+    const { loadHexaStorages } = require('../records') as typeof import('../records')
+
+    await expect(loadHexaStorages('main', '2026-10-30', 'rec-1')).resolves.toMatchObject({
+      other: { accountId: 'A', worldKey: 'scania', stored: 30 },
+    })
+    expect(inventory.getOtherFragmentStorage).toHaveBeenCalledWith('A', 'scania', 'rec-1')
   })
 
   // 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.

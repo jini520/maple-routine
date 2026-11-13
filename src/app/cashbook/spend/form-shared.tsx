@@ -16,6 +16,7 @@ import { openInputCard } from '../../../features/input-card/store'
 import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import type { SheetAccount } from '../../../features/cashbook/account-names'
 import type { SpendCategoryKey } from '../../../lib/cashbook/categories'
+import type { HexaStorages } from '../../../lib/cashbook/hexa-matrix'
 import type { HexaStorageChecks } from '../../../storage/hexa-storage-checks'
 import { type SpendRecord } from '../../../storage/spend'
 
@@ -82,14 +83,10 @@ export interface SpendFormProps {
   /** 캐릭터의 기억한 강화 레벨(심볼 key · 코어 이름 별)을 읽는 콜백. 심볼 강화 · 헥사 매트릭스 폼이 쓴다. */
   loadRememberedLevels: (ocid: string, kind: 'symbol' | 'hexa') => Promise<Readonly<Record<string, number>>>
   /**
-   * 헥사 강화가 보관 조각을 가져올 캐릭터와 그 보관을 차례대로 읽는 콜백. 한 캐릭터라도 못 읽으면 `null` 이다.
+   * 헥사 강화가 가져올 보관(메이플 ID · 월드의 기타 조각과 캐릭터별 사냥 조각)을 읽는 콜백. 한 자리라도 못 읽으면 `null` 이다.
    * 헥사 매트릭스 폼이 쓴다.
    */
-  loadHexaStorages: (
-    ocid: string,
-    dateKey: string,
-    excludeRecordId: string | undefined,
-  ) => Promise<readonly { ocid: string; stored: number }[] | null>
+  loadHexaStorages: (ocid: string, dateKey: string, excludeRecordId: string | undefined) => Promise<HexaStorages | null>
   /** 새 헥사 폼의 두 체크. 직전에 새 헥사 기록을 저장한 때의 상태다. */
   hexaStorageChecks: HexaStorageChecks
 }

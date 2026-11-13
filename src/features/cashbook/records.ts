@@ -30,7 +30,7 @@ import {
   spendGroupCardTitleOf,
   spendRewardCoins,
 } from '../../lib/cashbook/spend-catalog'
-import { hexaStorageCandidates, hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
+import { hexaStorageCandidates, hexaTargetOf, type HexaStorages } from '../../lib/cashbook/hexa-matrix'
 import { accountOfOcid } from '../../lib/mvp/membership'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import { getBossDropRecords } from '../../storage/boss-drops'
@@ -51,12 +51,14 @@ import {
 import { ensureEnhancementTotals } from '../enhancement-history/legacy-totals'
 import { getMvpGradeHistories } from '../../storage/mvp-grades'
 import { getCharacterAccountSightings } from '../../storage/character-accounts'
+import { getOtherFragmentStorage } from '../../storage/inventory'
 import type { MvpGradeEntry } from '../../lib/mvp/history'
 import { starforceMvpDiscountOf } from '../../lib/mvp/starforce'
 import { withMvpDiscount } from '../../lib/enhancement/cost'
 import { loadEnhancementTotals } from '../../storage/enhancement-totals'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
+import { recordedItemNameOf } from '../../lib/item-catalog'
 import { randomUuid } from '../../native/uuid'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import { getLastHunts, setLastHunt, type LastHunt, type LastHunts } from '../../storage/last-hunts'
@@ -914,7 +916,7 @@ function incomeCard(record: IncomeRecord): RecordCard {
       return { title, detail: record.quantity === null ? name : `${name} ${quantityText(record.quantity, '개')} 판매` }
     }
     case 'item_sale':
-      return { title, detail: tradedItemDetail(record.item, record.itemKind ?? 'equipment', record.quantity) }
+      return { title, detail: tradedItemDetail(recordedItemNameOf(record.item, record.itemKey), record.itemKind ?? 'equipment', record.quantity) }
     case 'etc':
       return { title, detail: joined([record.item, etcQuantity(record.quantity, category?.unit)]) }
   }
@@ -1062,10 +1064,21 @@ export async function loadHexaCandidatesOf(): Promise<(ocid: string) => string[]
     })
 }
 
+/** 헥사 강화가 기타 조각을 가져올 메이플 ID · 월드를 내는 함수. 월드는 캐릭터 기본 정보 캐시에서 읽는다. */
+export async function loadHexaOwnerOf(): Promise<(ocid: string) => { accountId: string; worldKey: string } | null> {
+  const sightings = await getCharacterAccountSightings()
+  return (ocid) => {
+    const accountId = accountOfOcid(sightings, ocid)
+    const worldKey = readCharacterBasic(ocid)?.profile?.worldKey ?? null
+    return accountId === null || worldKey === null ? null : { accountId, worldKey }
+  }
+}
+
 /**
- * 헥사 강화가 보관 조각을 가져올 캐릭터와 그 날 쓸 수 있는 보관. 차례는 `loadHexaCandidatesOf` 다.
+ * 헥사 강화가 가져올 보관. 강화한 캐릭터의 메이플 ID · 월드의 기타 조각과, 그 날 쓸 수 있는 캐릭터별 사냥 조각이다. 사냥
+ * 조각의 차례는 `loadHexaCandidatesOf` 다.
  *
- * 한 캐릭터라도 못 읽으면 `null` 이다. 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
+ * 한 자리라도 못 읽으면 `null` 이다. 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
  *
  * @param excludeRecordId 수정 중인 헥사 기록. 그 기록이 가져간 몫을 보관에 되돌려야 다시 배분할 수 있다.
  */
@@ -1073,15 +1086,22 @@ export async function loadHexaStorages(
   ocid: string,
   dateKey: string,
   excludeRecordId: string | undefined,
-): Promise<{ ocid: string; stored: number }[] | null> {
+): Promise<HexaStorages | null> {
   try {
-    const candidatesOf = await loadHexaCandidatesOf()
-    return await Promise.all(
-      candidatesOf(ocid).map(async (each) => ({
-        ocid: each,
-        stored: await getFragmentStorage(each, dateKey, excludeRecordId),
-      })),
-    )
+    const [candidatesOf, ownerOf] = await Promise.all([loadHexaCandidatesOf(), loadHexaOwnerOf()])
+    const owner = ownerOf(ocid)
+    const [other, hunts] = await Promise.all([
+      owner === null
+        ? null
+        : getOtherFragmentStorage(owner.accountId, owner.worldKey, excludeRecordId).then((stored) => ({ ...owner, stored })),
+      Promise.all(
+        candidatesOf(ocid).map(async (each) => ({
+          ocid: each,
+          stored: await getFragmentStorage(each, dateKey, excludeRecordId),
+        })),
+      ),
+    ])
+    return { other, hunts }
   } catch {
     return null
   }

@@ -504,7 +504,7 @@ describe('탭 이동에만 햅틱이 난다', () => {
 describe('사용자가 정한 순서로 그린다', () => {
   const MOVED: BarOrder = {
     groups: ['today', 'utility', 'ledger', 'schedule', 'settings'],
-    subs: { schedule: ['Boss', 'Appointments', 'Content'], ledger: ['Stats', 'Profit', 'Cashbook'] },
+    subs: { schedule: ['Boss', 'Appointments', 'Content'], ledger: ['Stats', 'Profit', 'Cashbook', 'Inventory'] },
   }
 
   /** 트리에서 그려진 순서대로의 칸. RN 이 왼쪽부터 놓으므로 트리 순서가 곧 화면 순서다. */
@@ -568,6 +568,6 @@ describe('사용자가 정한 순서로 그린다', () => {
     await press('bar-group-ledger')
 
     expect(screen.getByTestId('bar-sub-Stats').props.accessibilityState).toEqual({ selected: true })
-    expect(drawnTestIds('bar-sub-')).toEqual(['bar-sub-Stats', 'bar-sub-Profit', 'bar-sub-Cashbook'])
+    expect(drawnTestIds('bar-sub-')).toEqual(['bar-sub-Stats', 'bar-sub-Profit', 'bar-sub-Cashbook', 'bar-sub-Inventory'])
   })
 })

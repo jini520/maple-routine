@@ -110,7 +110,7 @@ describe('SettingsBarOrderScreen', () => {
     await drop(1, ['Boss', 'Appointments', 'Content'])
 
     expect(previewLabels(view, 'schedule')).toEqual(['보스', '파티 스케줄', '컨텐츠'])
-    expect(previewLabels(view, 'ledger')).toEqual(['보스 수입', '가계부', '통계'])
+    expect(previewLabels(view, 'ledger')).toEqual(['보스 수입', '가계부', '통계', '인벤토리'])
     expect(useBarOrderStore.getState().order).toEqual(DEFAULT_BAR_ORDER)
     expect(await getBarOrder()).toBeNull()
   })
