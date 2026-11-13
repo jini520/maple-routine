@@ -1,5 +1,6 @@
 // 여덟 자리가 각자 그리던 얼굴 원을 이 부품이 든다.
 import { within } from '@testing-library/react-native'
+import type { ReactTestRendererJSON } from 'react-test-renderer'
 import { View } from 'react-native'
 
 import { FACE_CROP_BOX, FACE_SOURCE_IMAGE_SIZE } from '../../../../lib/face-crop'
@@ -135,5 +136,94 @@ describe('조회 불가', () => {
 
     expect(getByTestId('폴백')).toBeTruthy()
     expect(getByTestId('portrait-unavailable')).toBeTruthy()
+  })
+})
+
+/** 루트에서 `testID` 를 품은 노드까지 내려가는 길. 루트는 빼고 그 노드는 넣는다. */
+function 길(node: ReactTestRendererJSON, testID: string): ReactTestRendererJSON[] | null {
+  for (const child of node.children ?? []) {
+    if (typeof child === 'string') continue
+    if (child.props.testID === testID) return [child]
+    const 아래 = 길(child, testID)
+    if (아래 !== null) return [child, ...아래]
+  }
+  return null
+}
+
+/** 원으로 자르는 상자인가. `overflow-hidden rounded-full` 이다. */
+function 원상자(node: ReactTestRendererJSON): boolean {
+  const style = flattenStyle(node.props.style)
+  return style.overflow === 'hidden' && Number(style.borderRadius) > 0
+}
+
+/** 얼굴 루트(`testID="얼굴"`) 안쪽에서 `testID` 를 원 모양 상자가 감싸는가. 루트가 자르는 것은 세지 않는다. */
+function 원안에(트리: ReactTestRendererJSON, testID: string): boolean {
+  const 노드들 = 길(트리, testID) ?? []
+  const 루트 = 노드들.findIndex((node) => node.props.testID === '얼굴')
+  return 루트 >= 0 && 노드들.slice(루트 + 1).some(원상자)
+}
+
+// 줄과 today 머리 버튼의 얼굴은 머리를 원 밖으로 그린다. 원이 자르지 않고 마스크가 자른다.
+describe('머리 넘침', () => {
+  const 그림 = 'https://example.test/a.png'
+
+  it('`headOverflow` 를 주면 원이 자르지 않고 마스크 안에 그림을 그린다', async () => {
+    const { getByTestId, toJSON } = await renderAtom(
+      <CharacterAvatar testID="얼굴" imageTestID="그림" imageUrl={그림} name="아무개" size={36} headOverflow />,
+    )
+
+    expect(flattenStyle(getByTestId('얼굴').props.style).overflow).not.toBe('hidden')
+    const [마스크] = findAllOfType(toJSON(), 'RNCMaskedView')
+    expect(마스크).toBeDefined()
+    expect(길(마스크 as ReactTestRendererJSON, '그림')).not.toBeNull()
+  })
+
+  // 머리가 같은 줄의 이름 위에 서야 한다. RN 은 나중 형제를 위에 그려서 그대로 두면 이름이 머리를 덮는다.
+  // 원 밖의 머리가 핸들 · 버튼 · 위 줄에 걸려도 그 자리의 누름은 그쪽이 받아야 한다.
+  it('얼굴이 형제 위에 서고 누름을 받지 않는다', async () => {
+    const { getByTestId } = await renderAtom(
+      <CharacterAvatar testID="얼굴" imageUrl={그림} name="아무개" size={36} headOverflow />,
+    )
+
+    expect(Number(flattenStyle(getByTestId('얼굴').props.style).zIndex)).toBeGreaterThan(0)
+    expect(getByTestId('얼굴').props.pointerEvents).toBe('none')
+  })
+
+  // 레일 · 보스 카드 · 알약은 지금처럼 원 안에만 그린다. 기본값이 바뀌면 그 자리가 함께 넘친다.
+  it('안 주면 지금처럼 원이 자르고 마스크가 없다', async () => {
+    const { getByTestId, toJSON } = await renderAtom(
+      <CharacterAvatar testID="얼굴" imageUrl={그림} name="아무개" size={36} />,
+    )
+
+    expect(원상자(getByTestId('얼굴'))).toBe(true)
+    expect(findAllOfType(toJSON(), 'RNCMaskedView')).toHaveLength(0)
+  })
+
+  it('그림이 없으면 폴백을 원 안에 그린다', async () => {
+    const { toJSON } = await renderAtom(
+      <CharacterAvatar testID="얼굴" imageUrl={null} name="아무개" size={36} fallback={폴백} headOverflow />,
+    )
+
+    const 트리 = toJSON() as ReactTestRendererJSON
+    expect(findAllOfType(트리, 'RNCMaskedView')).toHaveLength(0)
+    expect(원안에(트리, '폴백')).toBe(true)
+  })
+
+  // 흐린 머리는 원 밖으로 나오고, 경고 색과 표시는 원 안에만 선다.
+  it('조회 불가면 그림을 흐리고 덮개는 원 모양 상자 안에만 얹는다', async () => {
+    const { getByTestId, toJSON } = await renderAtom(
+      <CharacterAvatar
+        testID="얼굴"
+        imageTestID="그림"
+        imageUrl={그림}
+        name="지내우시"
+        size={36}
+        unavailable
+        headOverflow
+      />,
+    )
+
+    expect(getByTestId('그림').props.blurRadius).toBeGreaterThan(0)
+    expect(원안에(toJSON() as ReactTestRendererJSON, 'portrait-unavailable')).toBe(true)
   })
 })

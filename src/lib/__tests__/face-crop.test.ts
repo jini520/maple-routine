@@ -5,7 +5,14 @@
 //
 // `zoom` 이 붙으면서 특히 필요해졌다. 아홉 자리가 이 함수 하나를 쓰는데 기본값이 흔들리면 앱의 모든
 // 얼굴이 함께 움직인다. 그래서 **`zoom` 1 이 옛 식과 한 픽셀도 다르지 않다**를 첫 케이스로 둔다.
-import { FACE_AVATAR_SIZE, FACE_CROP_BOX, FACE_SOURCE_IMAGE_SIZE, faceCropStyle } from '../face-crop'
+import {
+  FACE_AVATAR_SIZE,
+  FACE_CROP_BOX,
+  FACE_SOURCE_IMAGE_SIZE,
+  faceCropStyle,
+  headOverflowCropStyle,
+  headOverflowFrame,
+} from '../face-crop'
 
 /** `zoom` 이 붙기 전의 식. 이 파일이 지키는 기준선이다. */
 function 옛식(size: number) {
@@ -101,5 +108,62 @@ describe('mirrored', () => {
   it('뒤집으면 transform 이 붙고, 안 뒤집으면 없다', () => {
     expect(faceCropStyle(SIZE, 1, true).transform).toEqual([{ scaleX: -1 }])
     expect(faceCropStyle(SIZE).transform).toBeUndefined()
+  })
+})
+
+// 머리를 원 밖으로 그리는 얼굴. 원 중심선 위는 원 위로 지름만큼 · 양옆으로 지름만큼 넓힌 네모로 자르고, 아래는 원으로
+// 자른다. 값이 어긋나도 에러는 안 나고 머리가 엉뚱한 높이에서 잘릴 뿐이라 관계로 지킨다.
+describe('머리 넘침', () => {
+  const SIZE = 36
+  const 중심X = FACE_CROP_BOX.x + FACE_CROP_BOX.size / 2
+  const 중심Y = FACE_CROP_BOX.y + FACE_CROP_BOX.size / 2
+
+  it('마스크 상자는 원 위로 지름만큼, 양옆으로 지름만큼 넓다', () => {
+    const frame = headOverflowFrame(SIZE)
+
+    expect(frame.top).toBe(-SIZE)
+    expect(frame.left).toBe(-SIZE)
+    expect(frame.width).toBe(SIZE * 3)
+    expect(frame.height).toBe(SIZE * 2)
+  })
+
+  // 원 조각이 옮겨 가면 중심선 아래가 원래 원과 다른 자리에서 잘린다.
+  it('원 조각은 원래 원 자리에 그대로 선다', () => {
+    const frame = headOverflowFrame(SIZE)
+
+    expect(frame.circle).toEqual({ left: -frame.left, top: -frame.top, size: SIZE })
+  })
+
+  it('네모 조각은 상자 위 끝에서 원 중심선까지라, 중심선 아래는 원만 남는다', () => {
+    const frame = headOverflowFrame(SIZE)
+
+    expect(frame.upper.width).toBe(frame.width)
+    expect(frame.upper.height).toBe(frame.circle.top + SIZE / 2)
+  })
+
+  it('크롭 상자를 1.1 배로 넓혀 얼굴이 작아진다. 받은 배수에 곱한다', () => {
+    expect(headOverflowCropStyle(SIZE).width).toBeCloseTo(faceCropStyle(SIZE).width / 1.1, 9)
+    expect(headOverflowCropStyle(40, 1.35).width).toBeCloseTo(faceCropStyle(40, 1.35).width / 1.1, 9)
+  })
+
+  // 얼굴이 올라간 만큼 넓힌 위쪽에 머리가 들어간다. 원 중심이 원본에서 그만큼 아래를 본다.
+  it('얼굴이 지름의 8% 만큼 위로 올라간다', () => {
+    const frame = headOverflowFrame(SIZE)
+    const { left, top, width } = headOverflowCropStyle(SIZE)
+    const scale = width / FACE_SOURCE_IMAGE_SIZE
+    const 원중심 = { x: frame.circle.left + SIZE / 2, y: frame.circle.top + SIZE / 2 }
+
+    expect((원중심.x - left) / scale).toBeCloseTo(중심X, 5)
+    expect((원중심.y - top) / scale).toBeCloseTo(중심Y + (SIZE * 0.08) / scale, 5)
+  })
+
+  it('뒤집어도 올리는 양은 같고, 원 중심이 거울상 원본 좌표를 본다', () => {
+    const frame = headOverflowFrame(SIZE)
+    const 뒤집음 = headOverflowCropStyle(SIZE, 1, true)
+    const scale = 뒤집음.width / FACE_SOURCE_IMAGE_SIZE
+
+    expect(뒤집음.top).toBe(headOverflowCropStyle(SIZE).top)
+    expect(뒤집음.transform).toEqual([{ scaleX: -1 }])
+    expect((frame.circle.left + SIZE / 2 - 뒤집음.left) / scale).toBeCloseTo(FACE_SOURCE_IMAGE_SIZE - 중심X, 5)
   })
 })

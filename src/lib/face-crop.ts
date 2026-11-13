@@ -59,3 +59,60 @@ export function faceCropStyle(
     ...(mirrored ? { transform: [{ scaleX: -1 }] } : {}),
   }
 }
+
+/**
+ * 머리를 원 밖으로 그리는 얼굴의 비율. `lift` 는 지름에, `top` · `side` 도 지름에 댄 값이다.
+ *
+ * 크롭 상자를 넓혀(`zoom`) 얼굴을 작게 그리고 위로 올려야(`lift`) 넓힌 위쪽에 머리가 들어간다.
+ */
+export const HEAD_OVERFLOW = { zoom: 1.1, lift: 0.08, top: 1, side: 1 } as const
+
+/**
+ * 머리를 넘기는 얼굴의 마스크 상자. 원의 왼쪽 위가 (0, 0) 인 좌표다.
+ *
+ * 마스크는 두 조각의 합이다. `upper` 는 상자 위 끝에서 원 중심선까지의 네모, `circle` 은 원래 원이다. 그래서 중심선
+ * 아래는 원만 남는다. 두 조각의 좌표는 상자의 왼쪽 위가 (0, 0) 이다.
+ *
+ * @param size 원의 지름
+ */
+export function headOverflowFrame(size: number): {
+  left: number
+  top: number
+  width: number
+  height: number
+  upper: { width: number; height: number }
+  circle: { left: number; top: number; size: number }
+} {
+  const above = HEAD_OVERFLOW.top * size
+  const side = HEAD_OVERFLOW.side * size
+  const width = size + side * 2
+  return {
+    left: -side,
+    top: -above,
+    width,
+    height: above + size,
+    upper: { width, height: above + size / 2 },
+    circle: { left: side, top: above, size },
+  }
+}
+
+/**
+ * 머리를 넘기는 얼굴의 `<Image>` 배치. 마스크 상자(`headOverflowFrame`) 안의 좌표다.
+ *
+ * @param size 원의 지름
+ * @param zoom 호출하는 쪽의 배수. 여기에 `HEAD_OVERFLOW.zoom` 을 곱한다
+ * @param mirrored 그림을 좌우로 뒤집는다
+ */
+export function headOverflowCropStyle(
+  size: number,
+  zoom = 1,
+  mirrored = false,
+): ReturnType<typeof faceCropStyle> {
+  const frame = headOverflowFrame(size)
+  const crop = faceCropStyle(size, zoom * HEAD_OVERFLOW.zoom, mirrored)
+  return {
+    ...crop,
+    left: crop.left - frame.left,
+    top: crop.top - frame.top - HEAD_OVERFLOW.lift * size,
+  }
+}

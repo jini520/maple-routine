@@ -45,7 +45,7 @@ const CIRCLE_BORDER_PX = 2
  * 35% 넓게 잡아 어깨 쪽까지 조금 더 들인다. 얼굴 상자(40)와 원(48)은 그대로다.
  *
  * 이 값을 주는 곳은 여기뿐이다. `faceCropStyle` 의 기본값은 1 이라 나머지 초상화 여덟 자리는
- * 안 움직인다.
+ * 안 움직인다. 머리를 원 밖으로 그리므로 `CharacterAvatar` 가 여기에 1.1 을 더 곱한다.
  */
 const HEADER_FACE_ZOOM = 1.35
 
@@ -92,6 +92,7 @@ export function CharacterManageButton(props: {
     >
       {props.portrait !== null && (
         <CharacterAvatar
+          headOverflow
           testID="character-manage-face-box"
           imageTestID="character-manage-face"
           imageUrl={props.portrait.imageUrl}
