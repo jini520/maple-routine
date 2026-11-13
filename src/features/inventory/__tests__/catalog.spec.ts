@@ -55,6 +55,20 @@ describe('inventoryCatalog', () => {
     ])
   })
 
+  // 최근 드롭 기록이 있던 열만 남긴다. 나머지는 거래되지 않아 목록만 길게 만든다.
+  it('특수스킬 반지는 남기는 열만 서고 나머지는 빠진다', () => {
+    itemsTable.set({
+      updatedAt: null,
+      items: [
+        { key: 'critical_damage_ring', name: '크리데미지 링', kind: 'accessory', category: 'special_skill_ring' },
+        { key: 'crisis_hm_ring', name: '크라이시스 - HM링', kind: 'accessory', category: 'special_skill_ring' },
+        { key: 'other_ring', name: '기타', kind: 'accessory', category: 'special_skill_ring' },
+      ],
+    })
+
+    expect([...new Set(inventoryCatalog().map((item) => item.itemKey))]).toEqual(['crisis_hm_ring'])
+  })
+
   // 서버 분류 트리에 종류가 늘어도 앱이 모르는 종류는 어느 탭에도 세울 수 없어 뺀다.
   it('가계부 아이템 종류로 옮길 수 없는 종류의 아이템은 뺀다', () => {
     itemsTable.set({

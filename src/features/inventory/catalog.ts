@@ -14,6 +14,23 @@ import type { ImageAssetRef } from '../../types/image-asset'
 /** 특수스킬 반지의 묶음. 이 묶음의 아이템은 목록에서 레벨마다 한 줄로 선다. */
 const SPECIAL_SKILL_RING = 'special_skill_ring'
 
+/**
+ * 목록에 남기는 특수스킬 반지. 운영 드롭 기록에서 최근 4주에 기록이 있던 반지이고, 나머지는 거래되지 않아 목록만 길게 만든다.
+ * 남길 것을 적어 두므로 서버에 새 특수스킬 반지가 생겨도 여기 더하기 전에는 목록에 서지 않는다.
+ */
+const KEPT_SPECIAL_SKILL_RINGS: ReadonlySet<string> = new Set([
+  'restraint_ring',
+  'continuous_ring',
+  'ring_of_sum',
+  'risk_taker_ring',
+  'weapon_puff_d_ring',
+  'weapon_puff_i_ring',
+  'weapon_puff_s_ring',
+  'weapon_puff_l_ring',
+  'ultimatum_ring',
+  'crisis_hm_ring',
+])
+
 /** 목록에 서는 특수스킬 반지의 레벨. 서버 반지 상자 표의 레벨 범위를 합친 것과 같고, 높은 레벨부터 선다. */
 const RING_LEVELS = [4, 3, 2, 1] as const
 
@@ -43,6 +60,7 @@ function itemKindOf(kind: string): ItemKindKey | null {
 /** 고르기 목록에서 빼는 아이템. 아스트라 보조무기는 묶음이 따로 없어 보조무기 가운데 key 로 가른다. */
 function excluded(item: ItemRow): boolean {
   if (item.category === 'box' || item.category === 'destiny_weapon' || item.category === 'genesis_weapon') return true
+  if (item.category === SPECIAL_SKILL_RING) return !KEPT_SPECIAL_SKILL_RINGS.has(item.key)
   return item.category === 'secondary_weapon' && item.key.startsWith('astra_')
 }
 
