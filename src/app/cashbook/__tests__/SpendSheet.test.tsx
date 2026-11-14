@@ -329,9 +329,9 @@ describe('항목. 고르면 채워진다', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    // 30,000 메포 × 1억 ÷ (1,180 × 0.99) = 2,568,053,415 메소. 메소마켓 수수료 1% 를 시세에서 뗀다.
+    // 30,000 메포는 26억을 팔아 받은 30,374 메포에서 쓰고 남은 374 메포를 되돌린 2,568,305,085 메소다. 메소마켓 수수료 1% 를 받는 메포에서 뗀다.
     // 여기서 주화 8개(3억 2천만)가 빠진다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 4805만 3415')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 4830만 5085')
     // 주화 줄도 메소를 적으므로 큰 숫자의 통화는 그 줄의 이름으로 짚는다.
     expect(view.getByTestId('spend-sheet-amount-unit')).toHaveTextContent(/메소/)
     expect(view.queryByTestId('spend-sheet-amount-hint')).toBeNull()
@@ -379,8 +379,8 @@ describe('세라자르 주화', () => {
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
     await 형태단계(view, '솔 에르다', '2단계')
 
-    // 37,500 메포 × 1억 ÷ (1,180 × 0.99) = 3,210,066,769 메소. 주화 12개는 4억 8천만이다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('27억 3006만 6769')
+    // 37,500 메포는 33억을 팔아 받은 38,551 메포에서 1,051 메포를 되돌린 3,210,932,204 메소다. 주화 12개는 4억 8천만이다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('27억 3093만 2204')
   })
 
   // 메포를 메소로 환산하지 않는 상태라 뺄 값을 얹을 축이 없다. 여기서 주화만 빼면 아직 아무것도
@@ -401,8 +401,8 @@ describe('세라자르 주화', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
 
-    // 7,500 메포 × 1억 ÷ (10,000 × 0.99) = 75,757,575 메소. 주화 4개는 1억 6천만이다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('-8424만 2425')
+    // 7,500 메포는 1억을 팔아 받은 9,900 메포에서 2,400 메포를 되돌린 76,000,000 메소다. 주화 4개는 1억 6천만이다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('-8400만')
   })
 })
 
@@ -862,7 +862,7 @@ describe('형태별 단계', () => {
     })
   })
 
-  // 큰 숫자는 그 합을 메소로 옮긴 값이다. 37,500 메포 × 1억 ÷ (1,180 × 0.99) = 3,210,066,769 메소.
+  // 큰 숫자는 그 합을 메소로 옮긴 값이다. 37,500 메포는 33억을 팔아 1,051 메포를 되돌린 3,210,932,204 메소다.
   // 거기서 주화 12개(4억 8천만)가 빠진다.
   it('큰 숫자가 그 합을 메소로 든다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
@@ -870,7 +870,7 @@ describe('형태별 단계', () => {
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
     await 형태단계(view, '솔 에르다', '2단계')
 
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('27억 3006만 6769')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('27억 3093만 2204')
   })
 
   // 0단계인 형태를 이름이나 key 에 적으면 **안 산 것이 산 것처럼** 읽힌다.
@@ -1526,7 +1526,7 @@ describe('시세가 비어 있을 때', () => {
     await 카드칸에치기(view, 'spend-sheet-rate', '1180')
 
     // 메소마켓 수수료 1% 를 뗀 시세로 바꾼 2,568,053,415 메소에서 주화 8개(3억 2천만)가 빠진 값이다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 4805만 3415')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 4830만 5085')
     // 별표는 **물어본 칸이라는 표시**라 값을 채워도 남는다. `왜 막혔나` 와는 다른 말이다.
     expect(view.getByTestId('spend-sheet-required')).toBeTruthy()
   })
@@ -1720,8 +1720,8 @@ describe('기타. 금액 × 수량', () => {
     await 금액치기(view, '30000')
     await 카드칸에치기(view, 'spend-sheet-quantity', '2')
 
-    // 60,000 메포 × 1억 ÷ (1,180 × 0.99) = 5,136,106,831 메소. 메소마켓 수수료 1% 를 시세에서 뗀다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('51억 3610만 6831')
+    // 60,000 메포는 52억을 팔아 받은 60,747 메포에서 747 메포를 되돌린 5,136,694,916 메소다. 메소마켓 수수료 1% 를 받는 메포에서 뗀다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('51억 3669만 4916')
     expect(줄글자(view, 'spend-sheet-unit-price')).toBe('30,000')
   })
 
@@ -1937,9 +1937,9 @@ describe('수량 줄', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
 
-    // 7,500 메포 × 1 × 1억 ÷ (1,180 × 0.99) = 642,013,353 메소에서 주화 4개(1억 6천만)가 빠진다.
+    // 7,500 메포는 7억을 팔아 678 메포를 되돌린 642,542,373 메소이고, 주화 4개(1억 6천만)가 빠진다.
     // 낸 메포를 적던 힌트는 사라졌다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('4억 8201만 3353')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('4억 8254만 2373')
   })
 
   it('상한이 여럿인 항목은 수량이 그대로 선다. 규칙이지 특별 취급이 아니다', async () => {

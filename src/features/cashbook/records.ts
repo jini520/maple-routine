@@ -25,6 +25,7 @@ import {
   findSpendChoice,
   findSpendRewardChoice,
   pointToMeso,
+  spentPointToMeso,
   rewardCoinMeso,
   mesoMarketFeeOf,
   spendGroupCardTitleOf,
@@ -174,7 +175,8 @@ export function incomeMesoOf(record: IncomeRecord): number {
 /**
  * 지출 한 건의 메소 축 금액. 수입과 **같은 시세**로 바꾸되 메소마켓 수수료와 주화가 더 있다.
  *
- * 메포를 쓰려면 메소를 팔아야 하고 메소마켓은 팔 때 받는 메포에서 수수료를 떼므로, 그 기록에 적힌 요율을 시세에서 뺀다.
+ * 메포를 쓰려면 메소를 팔아야 하고 메소마켓은 1억 단위로 팔아 받는 메포에서 수수료를 떼므로, 그 기록의 메포를 받을 수 있는
+ * 가장 적은 억 수를 판 것으로 세고 남은 메포를 되돌린다.
  *
  * 에픽던전 추가 리워드는 세라자르 주화를 주고 그 주화는 상점에 팔면 메소가 되므로, 실제로 나간
  * 돈은 메포 값에서 주화 판매가를 뺀 값이다. 그 뺄셈을 **읽을 때** 한다. 저장 칸을 안 더하므로
@@ -186,7 +188,7 @@ export function spendMesoOf(record: SpendRecord): number {
   const meso = record.mesoAmount ?? 0
   // 메포를 환산하지 않는 행이라 주화를 얹을 축도 없다.
   if (record.pointAmount === null || record.pointPer100mMeso === null) return meso
-  return meso + pointToMeso(record.pointAmount, record.pointPer100mMeso, record.mesoMarketFeePercent) - rewardCoinMesoOf(record)
+  return meso + spentPointToMeso(record.pointAmount, record.pointPer100mMeso, record.mesoMarketFeePercent) - rewardCoinMesoOf(record)
 }
 
 /**
