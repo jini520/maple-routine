@@ -26,7 +26,7 @@ import { characterDecorOf, requiredCharacterOptions } from '../character-options
 import { countsQuantity, itemKindNameOf, itemKinds, type ItemKindKey } from '../../../lib/cashbook/categories'
 import { ItemPickField } from '../item-pick-field'
 import { useItemPick } from '../../../hooks/useItemPick'
-import { AmountInput, FieldCard, FieldRow, SelectRow, useCountField } from '../sheet-fields'
+import { AmountInput, FieldCard, FieldRow, MemoInput, SelectRow, useCountField } from '../sheet-fields'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
 import { useSaleFeeChoice } from './sale-fee'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
@@ -52,6 +52,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
     const total = (props.editing.mesoAmount ?? 0) + (props.editing.saleFeeMeso ?? 0)
     return mesoTextOf(Math.round(total / (props.editing.quantity ?? 1)))
   })
+  const [memo, setMemo] = useState(props.editing?.memo ?? '')
   const fee = useSaleFeeChoice(props.editing, ocid, props.dateKey)
   const { saving, submit, remove } = useSheetSubmit(props)
   // 목록에서 고르면 그 아이템의 종류로 바꾼다. 종류를 바꿀 때처럼 수량은 1 로 돌아간다.
@@ -104,6 +105,7 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
         quantity: counts ? quantity : null,
         itemKind,
         hunt: null,
+        memo,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })
@@ -204,6 +206,8 @@ export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
 
         <FeeRow testID="income-sheet-fee" label="수수료" {...fee.row} />
       </FieldCard>
+
+      <MemoInput testID="income-sheet-memo" memo={memo} context={name === '' ? undefined : name} onChange={setMemo} />
 
       <AmountFigure
         // 아이템 판매의 큰 숫자는 합계다. 수수료를 뗀 값이고 앱이 세므로 못 친다.

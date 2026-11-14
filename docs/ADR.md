@@ -163,19 +163,19 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-035](./adr/ADR-035_content-scheduler_layout.md) | 🟢 | content-scheduler | 스케줄러 화면의 레일 아래 간격 |
 | [ADR-036](./adr/ADR-036_boss-scheduler_boss-list.md) | 🟢 | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 |
 | [ADR-037](./adr/ADR-037_boss-scheduler_completion.md) | 🟢 | boss-scheduler | 보스 완료 판정과 주간 한도 |
-| [ADR-038](./adr/ADR-038_boss-scheduler_party.md) | 🟢 | boss-scheduler | 보스 파티 인원과 결정석 분배 비율 |
+| [ADR-038+220](./adr/ADR-038+220_boss-scheduler_party.md) | 🟢 | boss-scheduler | 보스 파티 인원과 결정석 분배 비율 · 결정석을 팔지 않은 처치의 `제외` |
 | [ADR-039](./adr/ADR-039_boss-scheduler_card.md) | 🟢 | boss-scheduler | 보스 카드 |
 | [ADR-093+121](./adr/ADR-093+121_boss-scheduler_manage-redesign.md) | 🟢 | boss-scheduler | 보스 관리 화면 리디자인과 난이도 고르개 통일 |
 | [ADR-040+208](./adr/ADR-040+208_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
 | [ADR-041+203](./adr/ADR-041+203_boss-profit_period.md) | 🟢 | boss-profit | 보스 수익 기간 |
-| [ADR-042+135+178+212](./adr/ADR-042+135+178+212_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 |
+| [ADR-042+135+178+212+221](./adr/ADR-042+135+178+212+221_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 · 결정석 판매 한도를 넘긴 처치의 0 메소 |
 | [ADR-043](./adr/ADR-043_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
 | [ADR-092+112+153](./adr/ADR-092+112+153_boss-profit_redesign.md) | 🟢 | boss-profit | 보스 수익 리디자인과 고가 드롭 홀로그램 강조 |
 | [ADR-044+066+076+111+120](./adr/ADR-044+066+076+111+120_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
 | [ADR-045](./adr/ADR-045_item-drop_effect.md) | 🟢 | item-drop | 고가 드롭 연출과 강조 |
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
-| [ADR-047+190+217](./adr/ADR-047+190+217_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 메소마켓 수수료 · 헥사와 구매 줄 합치기 |
-| [ADR-048+070+118+126+214](./adr/ADR-048+070+118+126+214_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 |
+| [ADR-047+190+217+225](./adr/ADR-047+190+217+225_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 억 단위 판매 · 헥사와 구매 줄 합치기 · 주간 보스 수입 이전 · 메소마켓 환전 수수료 |
+| [ADR-048+070+118+126+214+226](./adr/ADR-048+070+118+126+214+226_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 · 아이템 구매 · 판매 메모 |
 | [ADR-049+127+157+199+206+211+215](./adr/ADR-049+127+157+199+206+211+215_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
 | [ADR-050+110+128](./adr/ADR-050+110+128_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |

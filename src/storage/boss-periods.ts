@@ -82,14 +82,15 @@ export async function deletePeriodIfEmpty(db: SqliteDbConnection, periodId: stri
   )
 }
 
-/** 분배 칸을 저장 값으로. 결정석 비율이 비면 균등이다. */
+/** 조합 행 · 기간 행의 분배 칸을 저장 값으로. 결정석 비율이 비면 균등이다. */
 export function crystalSplitValues(share: {
   partySize: number
   crystalMyShare: number | null
   crystalSharesTotal: number | null
   splitFeePercent: number | null
   splitFeeAuto?: boolean
-}): [string, number, number | null, number | null, number | null, number | null] {
+  crystalExcluded?: boolean
+}): [string, number, number | null, number | null, number | null, number | null, number | null] {
   const ratio = share.crystalMyShare != null && share.crystalSharesTotal != null
   return [
     ratio ? 'ratio' : 'even',
@@ -98,11 +99,15 @@ export function crystalSplitValues(share: {
     ratio ? share.crystalSharesTotal : null,
     share.splitFeePercent ?? null,
     share.splitFeeAuto === true ? 1 : null,
+    share.crystalExcluded === true ? 1 : null,
   ]
 }
 
-/** 분배 칸 여섯의 이름. `crystalSplitValues` 와 같은 차례다. */
+/** 세 표가 같이 쓰는 분배 칸 여섯의 이름. */
 export const SPLIT_COLUMN_NAMES = ['split_mode', 'party_size', 'my_share', 'shares_total', 'split_fee_percent', 'split_fee_auto'] as const
+
+/** 조합 행 · 기간 행의 분배 칸 일곱. `crystalSplitValues` 와 같은 차례이고, 드롭 표에는 `crystal_excluded` 가 없다 */
+export const CRYSTAL_SPLIT_COLUMN_NAMES = [...SPLIT_COLUMN_NAMES, 'crystal_excluded'] as const
 
 /** 저장된 칸을 정수로. 비었으면 `null`. */
 export function numberOrNull(value: unknown): number | null {

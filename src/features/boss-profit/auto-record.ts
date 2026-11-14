@@ -176,6 +176,7 @@ async function recordEachRow({
       myShare: configured?.crystalMyShare ?? null,
       sharesTotal: configured?.crystalSharesTotal ?? null,
       splitFeePercent: splitFee.splitFeePercent,
+      excluded: configured?.crystalExcluded === true,
     }
     const payoutMeso = crystalPayoutMeso(row.priceMeso, partySize, shares)
 
@@ -194,6 +195,7 @@ async function recordEachRow({
         crystalSharesTotal: shares.sharesTotal,
         splitFeePercent: shares.splitFeePercent,
         splitFeeAuto: splitFee.splitFeeAuto,
+        crystalExcluded: shares.excluded,
         recordedAt: now.toISOString(),
         world: row.world,
         worldKey: row.worldKey,
@@ -208,6 +210,7 @@ async function recordEachRow({
       crystalMyShare: shares.myShare,
       crystalSharesTotal: shares.sharesTotal,
       splitFeePercent: shares.splitFeePercent,
+      crystalExcluded: shares.excluded,
     })
   }
 

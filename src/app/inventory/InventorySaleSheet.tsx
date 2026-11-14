@@ -23,7 +23,7 @@ import { netProceedsMeso } from '../../lib/cashbook/item-split'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { useSaleFeeChoice } from '../cashbook/income/sale-fee'
 import { SaveRow } from '../cashbook/income/form-shared'
-import { AmountInput, FieldCard, FieldRow, SheetDateField } from '../cashbook/sheet-fields'
+import { AmountInput, FieldCard, FieldRow, MemoInput, SheetDateField } from '../cashbook/sheet-fields'
 
 type ItemCell = Extract<InventoryCell, { kind: 'item' }>
 
@@ -68,6 +68,7 @@ export function InventorySaleSheet(props: { cell: ItemCell; owner: string; onClo
   const [priceText, setPriceText] = useState(mesoTextOf(0))
   const [quantityText, setQuantityText] = useState(equipment ? '1' : '')
   const [saving, setSaving] = useState(false)
+  const [memo, setMemo] = useState('')
   // 그 메이플 ID · 월드의 캐릭터 하나로 등급을 찾는다. 등급은 메이플 ID 단위라 어느 캐릭터든 같다.
   const fee = useSaleFeeChoice(undefined, cell.faceOcid, dateKey)
 
@@ -100,6 +101,7 @@ export function InventorySaleSheet(props: { cell: ItemCell; owner: string; onClo
           quantity: equipment ? null : quantity,
           itemKind: cell.itemKindKey,
           hunt: null,
+          memo,
           // 기타 조각은 메이플 ID · 월드마다 모아 세어 조각 사용으로 적는다. 헥사 강화가 가져간 것과 한 표에서 센다.
           ...(fragment
             ? { otherFragmentUse: { accountId: cell.item.accountId, worldKey: cell.item.worldKey, fragments: quantity } }
@@ -211,6 +213,7 @@ export function InventorySaleSheet(props: { cell: ItemCell; owner: string; onClo
           )}
           <FeeRow testID="inventory-sale-fee" label="수수료" {...fee.row} />
         </FieldCard>
+        <MemoInput testID="inventory-sale-memo" memo={memo} context={inventoryItemNameOf(cell.itemKey)} onChange={setMemo} />
         <AmountFigure value={net} unit="메소" testID="inventory-sale-amount" />
       </View>
     </BottomSheet>

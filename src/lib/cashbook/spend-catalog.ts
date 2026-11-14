@@ -686,30 +686,48 @@ export function optionItemOf(
 }
 
 /**
- * 메포 → 메소. 시세의 단위가 **1억 메소당 메포**라 이것은 **나눗셈**이다.
+ * 받은 메포를 메소로 바꾼 값. 메포로 메소를 사는 쪽이라 수수료가 없다.
  *
  * ```
- * 메소 = 메포 × 100,000,000 × 100 ÷ (시세 × (100 − 수수료율))
+ * 메소 = 메포 × 100,000,000 ÷ 시세
  * ```
  *
  * 곱셈으로 짜면 결과가 **1억 배** 어긋난다. 컬럼 이름을 `meso_per_point` 에서
  * `point_per_100m_meso` 로 고친 이유가 그것이다.
  *
- * 수수료율은 메포 지출만 넘긴다. 메소마켓은 메소를 팔 때 받는 메포에서 수수료를 떼므로 시세에서 뺀다.
- * 메소 값에 수수료율을 더하면 그보다 작게 나온다.
- *
  * 시세가 0 이하면 **0 을 돌려준다.** 어댑터가 저장을 막지만(`storage/spend.ts`) 화면은 입력
  * 중간에 0 을 들고 있을 수 있고, 그때 `Infinity` 가 금액 칸에 들어가면 화면이 깨진다.
- *
- * @param mesoMarketFeePercent 그 기록의 메소마켓 수수료율. 수입과 요율 없는 기록은 `null` 이다
  */
-export function pointToMeso(pointAmount: number, pointPer100mMeso: number, mesoMarketFeePercent: number | null = null): number {
-  const divisor = pointPer100mMeso * (100 - (mesoMarketFeePercent ?? 0))
-  if (pointPer100mMeso <= 0 || divisor <= 0) return 0
-  // ×100 까지 곱해 한 번에 나누면 몫이 커서 나눗셈의 반올림이 내림을 1 메소 넘기는 값이 있다. 몫과 나머지로 나눠 센다.
-  const scaled = pointAmount * MESO_PER_RATE_UNIT
-  const whole = Math.floor(scaled / divisor)
-  return whole * 100 + Math.floor(((scaled - whole * divisor) * 100) / divisor)
+export function pointToMeso(pointAmount: number, pointPer100mMeso: number): number {
+  if (pointPer100mMeso <= 0) return 0
+  return Math.floor((pointAmount * MESO_PER_RATE_UNIT) / pointPer100mMeso)
+}
+
+/**
+ * 메소 `hundredMillions` 억을 메소마켓에 팔아 받는 메포. 수수료를 떼고 소수점은 올린다.
+ *
+ * @param mesoMarketFeePercent 판매 수수료율. `null` 은 0 이다
+ */
+export function receivedPointOf(hundredMillions: number, pointPer100mMeso: number, mesoMarketFeePercent: number | null): number {
+  const scaled = hundredMillions * pointPer100mMeso * (100 - (mesoMarketFeePercent ?? 0))
+  return Math.floor((scaled + 99) / 100)
+}
+
+/**
+ * 메포 지출의 메소. 필요한 메포를 받을 수 있는 가장 적은 억 수를 팔았다고 보고, 쓰고 남은 메포는 수수료 없이 메소로 되돌려 뺀다.
+ *
+ * 시세가 0 이하이거나 요율이 100 이상이면 0 이다.
+ *
+ * @param mesoMarketFeePercent 그 기록의 메소마켓 수수료율. 요율 없는 옛 기록은 `null` 이고 수수료 0 으로 센다
+ */
+export function spentPointToMeso(pointAmount: number, pointPer100mMeso: number, mesoMarketFeePercent: number | null): number {
+  const keep = 100 - (mesoMarketFeePercent ?? 0)
+  if (pointAmount <= 0 || pointPer100mMeso <= 0 || keep <= 0) return 0
+  let sold = Math.max(1, Math.ceil((pointAmount * 100) / (pointPer100mMeso * keep)))
+  while (sold > 1 && receivedPointOf(sold - 1, pointPer100mMeso, mesoMarketFeePercent) >= pointAmount) sold -= 1
+  while (receivedPointOf(sold, pointPer100mMeso, mesoMarketFeePercent) < pointAmount) sold += 1
+  const left = receivedPointOf(sold, pointPer100mMeso, mesoMarketFeePercent) - pointAmount
+  return sold * MESO_PER_RATE_UNIT - pointToMeso(left, pointPer100mMeso)
 }
 
 /**

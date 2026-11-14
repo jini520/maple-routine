@@ -20,6 +20,8 @@ export const CASHBOOK_ENTRIES_BODY = `(
     category_key TEXT NOT NULL,
     -- 돈이 오간 날(KST YYYY-MM-DD). 사용자가 고르고 고칠 수 있다.
     entry_date TEXT NOT NULL,
+    -- 아이템 구매 · 판매의 메모. 앞뒤 공백을 걷은 값이고 없으면 NULL 이다.
+    memo TEXT,
     -- 저장한 시각. 같은 날 안의 차례가 이것이고 고쳐도 안 바뀐다.
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -86,6 +88,30 @@ export const CASHBOOK_ENTRY_HUNT_INPUTS_BODY = `(
     -- NULL 이 아니면 직접 입력 사냥의 친 메소다.
     typed_meso INTEGER,
     union_tier INTEGER
+  )`
+
+/** `주간 보스 수입 이전` 시트의 입력. 이 줄이 있는 `기타` 지출은 그 시트로 연다. */
+export const CASHBOOK_ENTRY_TRANSFER_INPUTS_BODY = `(
+    id TEXT PRIMARY KEY,
+    entry_id TEXT NOT NULL UNIQUE REFERENCES cashbook_entries(id) ON DELETE CASCADE,
+    -- 메소를 받은 캐릭터. 수수료율은 이 캐릭터의 MVP 등급에서 나온다.
+    receiver_ocid TEXT NOT NULL,
+    transfer_meso INTEGER NOT NULL,
+    fee_percent INTEGER NOT NULL,
+    -- 1 이면 받는 캐릭터의 등급을 따라간다. NULL 은 손으로 고른 요율이다.
+    fee_auto INTEGER
+  )`
+
+/** `메소마켓 환전 수수료` 시트의 입력. 이 줄이 있는 `기타` 지출 · 수입은 그 시트로 연다. */
+export const CASHBOOK_ENTRY_EXCHANGE_INPUTS_BODY = `(
+    id TEXT PRIMARY KEY,
+    entry_id TEXT NOT NULL UNIQUE REFERENCES cashbook_entries(id) ON DELETE CASCADE,
+    sold_meso INTEGER NOT NULL,
+    sell_point_per_100m_meso INTEGER NOT NULL,
+    -- 판매만 적은 기록은 구매 두 칸이 NULL 이다. 나중에 수정 시트에서 채운다.
+    bought_meso INTEGER,
+    buy_point_per_100m_meso INTEGER,
+    meso_market_fee_percent INTEGER NOT NULL
   )`
 
 /**

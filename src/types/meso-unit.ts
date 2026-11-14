@@ -6,4 +6,4 @@ export type MesoUnit = 'base' | 'man' | 'eok'
  *
  * 드롭 판매가에서 억을 골라도 개당 가격은 몇 만 메소를 치는 칸이라 따라오면 안 된다.
  */
-export type MesoUnitKey = 'dropPrice' | 'itemSale' | 'itemBuy' | 'catalogUnitPrice' | 'itemSplit'
+export type MesoUnitKey = 'dropPrice' | 'itemSale' | 'itemBuy' | 'catalogUnitPrice' | 'itemSplit' | 'bossIncomeTransfer'

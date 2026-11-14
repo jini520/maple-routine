@@ -29,6 +29,9 @@ jest.mock('../../../features/cashbook/records', () => {
     recordSpend: jest.fn(),
     editIncome: jest.fn(),
     editSpend: jest.fn(),
+    editMesoMarketExchange: jest.fn(),
+    // 수입으로 저장된 환전 기록을 지출 시트에 여는 모양이다. 시트가 무엇을 그리나가 이 함수에 달려 진짜를 쓴다.
+    exchangeSpendViewOf: actual.exchangeSpendViewOf,
     removeRecord: jest.fn(),
     loadHuntFragmentFloor: jest.fn(async () => 0),
     // 저장이 조각 때문에 막혔는지는 저장소의 에러가 정한다. 화면이 그 에러를 고르는 규칙이라 진짜를 쓴다.
@@ -1249,6 +1252,36 @@ describe('줄을 누르면 고칠 수 있다', () => {
     expect(view.queryByLabelText('컨텐츠')).toBeNull()
   })
 
+  // 메소마켓 환전 수수료는 수익이면 수입으로 저장되지만 지출 시트에서 적은 기록이라 그 시트로 연다.
+  it('수입으로 저장된 메소마켓 환전 수수료는 지출 시트의 그 폼으로 연다', async () => {
+    그날줄을(고른날, [
+      {
+        kind: 'income',
+        record: {
+          ...그날수입,
+          id: 'inc-2',
+          ocid: null,
+          accountId: 'maple-1',
+          category: 'etc',
+          item: '메소마켓 환전 수수료',
+          mesoAmount: 22_448_015,
+          quantity: 1,
+          itemKind: null,
+          hunt: null,
+          exchange: { soldMeso: 500_000_000, sellPointPer100mMeso: 2_116, boughtMeso: 500_000_000, buyPointPer100mMeso: 2_000, mesoMarketFeePercent: 1 },
+        },
+        characterName: '',
+      },
+    ])
+    const view = await 그리기()
+
+    await 누르기(view, 'cashbook-row-inc-2')
+
+    expect(view.getByTestId('spend-sheet-exchange-sold')).toHaveTextContent('500,000,000')
+    expect(view.getByTestId('spend-sheet-exchange-record')).toHaveTextContent('수입')
+    expect(view.queryByTestId('income-sheet-title')).toBeNull()
+  })
+
   it('수입 줄은 채워진 수입 시트를 연다', async () => {
     const view = await 그리기()
 
@@ -1438,6 +1471,65 @@ describe('헥사 · 구매 합친 줄', () => {
     expect(view.getByTestId('cashbook-merged-tile-hexa-skill')).toHaveTextContent('창룡파천검 : 만참25 → 28−48.3억')
     // 0 메소 헥사 기록도 칸이 선다.
     expect(view.getByTestId('cashbook-merged-tile-hexa-stat')).toHaveTextContent('헥사 스탯 Ⅰ0')
+  })
+})
+
+// 메모 본문은 목록에 적지 않고, 메모가 있는 기록에만 제목 뒤 아이콘이 선다. 아이콘은 읽어 주지 않으므로 같은 것을 이름이 말한다.
+describe('메모 아이콘', () => {
+  const 구매 = (over: Record<string, unknown>) => ({
+    kind: 'spend' as const,
+    characterName: '루디',
+    record: {
+      ocid: 'ocid-1',
+      spentOn: 고른날,
+      category: 'item_purchase',
+      item: null,
+      itemKey: 'dreamy_belt',
+      formItemKeys: null,
+      itemKind: 'equipment',
+      levelFrom: null,
+      levelTo: null,
+      quantity: null,
+      mesoAmount: 3_200_000_000,
+      tariffMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
+      cashAmount: null,
+      hexa: null,
+      recordedAt: '2026-08-23T01:00:00.000Z',
+      ...over,
+    },
+  })
+
+  it('메모가 있는 줄에만 아이콘이 서고, 읽어 주는 이름에 `메모 있음` 이 붙는다', async () => {
+    그날줄을(고른날, [
+      구매({ id: 'buy-memo', memo: '17성 3추옵' }),
+      { kind: 'income', record: { ...그날수입, id: 'sale-plain' }, characterName: '' },
+    ])
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-memo-buy-memo')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-row-memo-sale-plain')).toBeNull()
+    expect(view.getByLabelText('루디 · 아이템 구매 몽환의 벨트 메모 있음 고치기')).toBe(view.getByTestId('cashbook-row-buy-memo'))
+    // 본문은 목록에 안 선다.
+    expect(view.queryByText('17성 3추옵')).toBeNull()
+  })
+
+  it('합친 줄은 접힌 줄에 아이콘이 없고, 펼치면 메모가 있는 기록의 칸에만 선다', async () => {
+    그날줄을(고른날, [
+      구매({ id: 'buy-belt', memo: '17성 3추옵' }),
+      구매({ id: 'buy-trace', itemKey: 'spell_trace', itemKind: 'etc', quantity: 3_000, mesoAmount: 105_000_000, recordedAt: '2026-08-23T02:00:00.000Z' }),
+    ])
+    const view = await 그리기()
+    const 구매줄 = 'merged:item_purchase:ocid-1'
+    expect(view.queryByTestId(`cashbook-row-memo-${구매줄}`)).toBeNull()
+
+    await 누르기(view, `cashbook-row-${구매줄}`)
+
+    expect(view.getByTestId('cashbook-merged-tile-memo-buy-belt')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-merged-tile-memo-buy-trace')).toBeNull()
+    expect(view.getByLabelText('몽환의 벨트 메모 있음 고치기')).toBe(view.getByTestId('cashbook-merged-tile-buy-belt'))
   })
 })
 

@@ -49,7 +49,7 @@ export interface SaleFeeChoice {
  * @example const fee = useSaleFeeChoice(props.editing, ocid, props.dateKey)
  */
 export function useSaleFeeChoice(
-  editing: IncomeRecord | undefined,
+  editing: Pick<IncomeRecord, 'saleFeeAuto' | 'saleFeePercent'> | undefined,
   ocid: string | null,
   dateKey: string,
   everyone?: readonly string[],
