@@ -28,6 +28,7 @@
 | `app/settings/SettingsNoticeDetailScreen.tsx` · `NoticeBlocks.tsx` | 상세 화면(`/settings/notices/detail`)과 본문 블록 |
 | `navigation/AppNavigation.tsx` | 알림 탭으로 연 상세를 스택이 준비된 뒤에 연다 |
 | `maple-routine-server` 의 `src/modules/notices/` · `src/modules/push/push-text.ts` | 넥슨 목록 수집 · 알림 발송 · 알림 문구 |
+| `maple-routine-server` 의 `src/modules/notices/markdown-blocks.ts` · `operator-notices.service.ts` · `src/modules/admin/views/notices.ts` · `admin-notice-images.controller.ts` | 운영자 공지의 마크다운을 블록으로 바꾸기 · 쓰기와 고치기 · 관리 화면의 공지 폼 · 공지 그림 올리기 |
 
 ## 분류
 
@@ -40,6 +41,33 @@
 | `update` | `업데이트` | 넥슨 `/maplestory/v1/notice-update` | 최근 글 2줄 |
 
 넥슨 공지는 사용자의 API 키로 받는다. 키가 없으면 넥슨 넷은 받지 않고 든 목록을 그린다.
+
+## 운영자 공지 쓰기
+
+운영자는 관리 화면 `/admin/notices` 의 `내용` 칸에 마크다운을 쓴다. 서버가 저장할 때 그것을 블록으로 바꾸므로 앱은 넥슨 공지와 같은
+`NoticeBlocks` 로 그린다. 블록 종류는 앱이 이미 아는 다섯 가지뿐이라 스토어의 1.0.13 앱에도 그림과 링크가 보인다. 이유는
+[[ADR-057]] 결정 13 에 있다.
+
+| 마크다운 | 앱에서 보이는 것 |
+|---|---|
+| 제목 `#` ~ `######` | 소제목(`heading`) |
+| 문단 | 글(`text`). 한 번 누른 줄바꿈도 남는다. 굵게 · 기울임은 글자만 남는다 |
+| 목록 `-` · `1.` | 글 하나. 항목마다 줄을 나누고 앞에 `• ` 나 번호를 붙인다 |
+| 그림 `![](주소)` | 그림(`image`). 문단 안에 섞여 있으면 문단을 그림 앞뒤로 나눈다 |
+| 링크만 있는 문단 `[글](주소)` | 링크(`link`). 누르면 인앱 브라우저로 연다 |
+| 글 사이의 링크 | 글은 그대로 남고, 그 문단 바로 뒤에 링크가 한 줄로 온다 |
+| 표 | 표(`table`) |
+| 인용 `>` | 안의 내용을 같은 규칙으로. 인용 표시는 없다 |
+| 코드 · HTML | 글자 그대로 글(`text`) |
+| 구분선 | 버린다 |
+
+- 그림 · 링크 주소는 `https` 만 된다. 다른 주소가 있으면 저장이 거절되고 관리 화면이 그 주소를 알린다.
+- 입력 칸 아래에 서버가 바꾼 결과를 미리 보여 준다. 저장하면 곧바로 앱에 보이기 때문이다.
+- `그림 올리기` 는 고른 그림을 브라우저에서 가로 1,080px 이하 WebP 로 줄여 올리고, 받은 주소로 `![](주소)` 줄을 커서 자리에 넣는다.
+  그림은 게임 데이터 그림과 같은 서버 디스크에 내용 해시 이름으로 남고 그림 화면(`/admin/assets`)에는 나오지 않는다. 공지를 지워도
+  그림 파일은 남는다.
+- 서버는 운영자가 쓴 마크다운(`markdown`)과 바꾼 블록(`blocks`), 블록의 소제목 · 글을 이은 평문(`body`)을 함께 저장한다. today 배너와
+  알림 문구는 평문을 쓴다.
 
 ## 받기와 저장
 
