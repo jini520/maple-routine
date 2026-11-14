@@ -1,7 +1,7 @@
 # ADR-101+186+193+201 다계정: 넥슨 로그인 아래에 API 키 계정을 더 등록한다
 
 > ⚪ 미구현
-> 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/character-selection/untrack.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/` · `lib/enhancement/sighted-owner.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/stats/aggregate.ts` · `lib/mvp/starforce.ts` · `features/cashbook/account-names.ts` · `lib/maple-id-name.ts` · `features/character-manage/derivations.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/mvp-grade/MvpGradeCards.tsx` · `app/today/view-model.ts` · `app/today/widgets/crystal-cells.ts` · `app/today/widgets/CrystalLimitWidget.tsx` · `app/today/widgets/SharedContentsWidget.tsx` · `app/today/widgets/layout.ts` · `components/organisms/WidgetSelect/` · `features/maple-id/owners.ts` · `hooks/useMapleIdOwners.ts` · `features/today/shared-maple-id.ts` · `storage/today-shared-maple-id.ts` · `app/boss-profit/character-groups.ts` · `app/boss-profit/HeadlineChips.tsx` · `features/boss-profit/monthly-crystals.ts` · `features/boss-profit/world-leap-moves.ts` · `features/boss-profit/world-leap-link.ts` · `storage/cashbook-entries.ts` · `storage/character-profiles.ts` · `features/ledger/useLedgerData.tsx`
+> 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/character-selection/untrack.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/` · `lib/enhancement/sighted-owner.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/stats/aggregate.ts` · `lib/mvp/starforce.ts` · `features/cashbook/account-names.ts` · `lib/maple-id-name.ts` · `lib/text-bytes.ts` · `components/atoms/TextInput/` · `features/character-manage/derivations.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/mvp-grade/MvpGradeCards.tsx` · `app/today/view-model.ts` · `app/today/widgets/crystal-cells.ts` · `app/today/widgets/CrystalLimitWidget.tsx` · `app/today/widgets/SharedContentsWidget.tsx` · `app/today/widgets/layout.ts` · `components/organisms/WidgetSelect/` · `features/maple-id/owners.ts` · `hooks/useMapleIdOwners.ts` · `features/today/shared-maple-id.ts` · `storage/today-shared-maple-id.ts` · `app/boss-profit/character-groups.ts` · `app/boss-profit/HeadlineChips.tsx` · `features/boss-profit/monthly-crystals.ts` · `features/boss-profit/world-leap-moves.ts` · `features/boss-profit/world-leap-link.ts` · `storage/cashbook-entries.ts` · `storage/character-profiles.ts` · `features/ledger/useLedgerData.tsx`
 
 ## 배경
 
@@ -237,13 +237,16 @@
 - 기본 이름은 그릴 때 만들고, 사용자가 바꾼 이름만 기기에 저장한다. 이름 칸을 비우고 저장하면 저장한 이름을 지워 기본 이름으로
   돌아간다.
 - 다른 메이플 ID 와 같은 이름도 저장한다(사용자 선택 2026-11-11).
-- 사용자가 짓는 이름은 10자까지다(사용자 지정 2026-11-11). 가장 좁은 폭 320 에서 위젯 드롭다운 버튼(결정 9)에 한글이 11자까지
-  들어가서 한 자를 남겼다. 폭 320 에서는 앱이 글자를 0.89배로 줄이므로 그 크기로 잰 값이다. 기본 이름은 14자지만 영문 · 숫자라
-  한글 10.7자 폭이어서 버튼에 들어간다.
+- 사용자가 짓는 이름은 16바이트까지다(사용자 지정 2026-11-14, #1015). 한글과 그 밖의 글자(기호 · 이모지)는 2바이트, 영문 · 숫자 ·
+  공백 · 기본 기호(ASCII)는 1바이트로 센다. 그래서 한글은 8자, 영문 · 숫자는 16자까지다. 글자 수로 세면 한글보다 폭이 좁은
+  영문 · 숫자도 한글과 같은 글자 수에서 막힌다. 가장 좁은 폭 320 에서 위젯 드롭다운 버튼(결정 9)에는 한글이 11자, 영문 · 숫자가 약
+  15자 들어간다. 폭 320 에서는 앱이 글자를 0.89배로 줄이므로 그 크기로 잰 값이다. 버튼은 넘치는 이름의 끝을 `…` 로 자른다.
+- 상한을 넘는 입력은 칸에 들어가지 않는다(사용자 선택 2026-11-14, #1015). 붙여 넣은 글이 길면 상한까지만 들어가고, 지우기는 언제나
+  된다. 이름 칸은 한글 조합을 지키려고 앱이 칸의 글자를 바꾸지 않는다. 그래서 넘는 입력을 되돌릴 때만 RN 의 `setTextAndSelection`
+  명령으로 칸의 글자를 고친다. 상한에 닿는 순간 조합 중인 한글은 깨질 수 있다(사용자 확인).
 - 이름을 바꾼 적 없는 메이플 ID 는 계정 관리의 이름 칸(결정 2)을 비워 두고, 기본 이름을 흐린 안내 글자(placeholder)로 보인다(사용자
-  선택 2026-11-14, #1011). 칸에는 사용자가 친 글자만 들어가 10자를 넘지 않는다. 14자인 기본 이름을 칸에 채우면 iOS 에서 한 글자씩
-  지워지지 않는다. RN 의 iOS 입력 칸은 `상한 - 지금 길이 + 고칠 범위` 가 0 이하이면 입력을 버리는데, 14자 칸에서 4자 이하를 지우면
-  이 값이 0 이하다. 바꾼 이름이 있는 메이플 ID 는 칸이 그 이름으로 시작한다.
+  선택 2026-11-14, #1011). 기본 이름은 17바이트라 상한을 넘으므로 칸의 값이 될 수 없다. 바꾼 이름이 있는 메이플 ID 는 칸이 그 이름으로
+  시작한다.
 - 메이플 ID 를 보여 주는 곳은 모두 이 이름을 쓴다. today 위젯 드롭다운 · 캐릭터 관리 드롭다운 · 가계부의 메이플 ID 보기와 하루 목록 ·
   통계 `캐릭터별` 카드 · MVP 등급이다. 지금 이름 `메이플 ID · 대표 캐릭터`([[ADR-161]] 결정 3)를 이것으로 바꾼다(사용자 지정
   2026-11-09). 같은 메이플 ID 가 화면마다 다른 이름이면 같은 ID 로 읽히지 않는다. 가계부 쪽 규칙은 [[ADR-161]] 결정 3 에 있다.
@@ -716,12 +719,13 @@
 | `app/today/__tests__/view-model.test.ts` (공유 컨텐츠) · `app/today/widgets/__tests__/SharedContentsWidget.test.tsx` · `features/maple-id/__tests__/owners.spec.ts` | 결정 9: 공유 컨텐츠가 고른 메이플 ID 의 추적 캐릭터만 모으는지, 고를 메이플 ID 가 추적 캐릭터가 있는 것만 넥슨 계정 차례(한 계정 안은 추적 목록 차례)로 서는지, 고른 ID 가 목록에 없으면 첫 ID 인지, 고를 것이 둘 이상일 때만 제목 줄에 버튼이 서는지 본다 |
 | `app/today/__tests__/view-model.test.ts` (결정석) · `app/today/widgets/__tests__/crystal-cells.spec.ts` · `CrystalLimitWidget.test.tsx` · `app/today/__tests__/WidgetGrid.test.tsx` | 결정 10: 같은 월드라도 메이플 ID 마다 한도를 따로 세고 메이플 ID 를 모르는 캐릭터는 빼는지, 메이플 ID 가 둘 이상이면 카운트다운과 결정석 위젯이 4칸으로 한 줄씩 서는지, 한도 줄 수로 반 폭 칸과 넓은 칸을 고르고 넓은 칸을 앞으로 모으는지, 넓은 칸에 링이 옆으로 서는지, 반 폭 칸을 둘씩 짝짓고 짝 없는 칸은 반 폭으로 두는지 본다 |
 | `app/boss-profit/__tests__/character-groups.test.ts` · `HeadlineChips.test.tsx` · `features/boss-profit/__tests__/monthly-crystals.spec.ts` | 결정 10: 보스 수익 결정석 칸이 판 수의 합만 적는지, 같은 월드도 메이플 ID 마다 줄이 따로이고 월간 누적도 그 줄마다 세는지, 메이플 ID 가 둘 이상일 때만 팝오버 묶음에 이름을 적는지 본다 |
+| `lib/__tests__/text-bytes.spec.ts` · `components/atoms/TextInput/__tests__/TextInput.test.tsx` | 결정 8: 한글 · 기호 · 이모지를 2바이트, ASCII 를 1바이트로 세는지, 상한을 넘는 입력은 넘지 않는 데까지만 받고 지우기는 언제나 받는지, 되돌릴 때 칸의 글자와 커서를 고치는지 본다 |
 | `lib/__tests__/place-dropdown.spec.ts` | 결정 9: 위젯 드롭다운 목록이 버튼 오른쪽 끝에 맞춰 가장 긴 보기의 폭으로 열리고 화면 밖으로 나가지 않는지 본다 |
 | `features/account-manage/__tests__/accounts.spec.ts` | 결정 1 · 2 · 6: 목록이 넥슨 ID 계정과 이 기기에 있는 지금 로그인의 API 키 계정으로 서는지, 상한을 이 기기의 계정으로 세는지, 로그인이 없으면 메인 키 계정 하나인지 본다. 결정 15: 무효 표시가 붙은 키의 계정도 목록에 서고 무효로 표시되는지 본다 |
 | `features/account-manage/__tests__/validate-key.spec.ts` | 결정 3: 무효 키 · 개발 단계 · 메이플 ID 없음 · 이미 등록된 계정 · 다른 계정을 차례로 가르고, 무효 키가 아닌 실패는 모달로 넘기지 않으며, 변경은 그 계정을 빼고 겹침을 보는지 본다 |
 | `features/account-manage/__tests__/store.spec.ts` | 결정 2 · 3 · 6: 추가가 서버 등록 뒤에 저장하고 응답이 없어도 저장하는지, 추가한 키가 등록된 부계정과 겹치면 저장하지 않고 그 계정을 돌려주며 바꾸기를 고르면 그 계정의 키를 바꾸는지, 변경이 같은 계정 id 와 귀속으로 키를 바꾸는지, 삭제가 서버에 묻지 않고 키와 그 계정의 추적 캐릭터를 빼는지 본다. 결정 15: 무효 표시가 붙은 키를 바꾸면 표시를 걷고 뺐던 캐릭터를 추적 목록 끝에 겹치지 않게 다시 넣는지 본다 |
 | `features/maple-id/__tests__/names.spec.ts` | 결정 8: 바꾼 이름만 저장하고 빈 칸으로 저장하면 그 이름을 지워 기본 이름으로 돌아가는지, 같은 이름도 받는지 본다 |
-| `app/settings/__tests__/SettingsAccountScreens.test.tsx` · `AppSettingsScreen.test.tsx` | 결정 2: 목록의 카드 · `API 키 추가` · 5개 모달 · 빈 상태 · 로그인 블록, 상세의 이름 칸 · `저장` · 키 행이 사용자와 계정 종류마다 서는지, 저장하지 않고 나가면 고친 이름이 남지 않는지 본다. 결정 8: 이름을 바꾼 적 없는 메이플 ID 의 칸이 비어 있고 기본 이름이 안내 글자로 서는지, 바꾼 이름이 있으면 칸이 그 이름으로 시작하는지 본다. 결정 3: 등록된 부계정의 키를 추가하면 바꿀지 묻고, `바꾸기` 는 그 계정의 키를 바꾸고 `취소` 는 시트로 돌아가는지 본다. 결정 15: 무효 표시가 붙은 계정 행에 `유효하지 않은 키` 가 서는지 본다 |
+| `app/settings/__tests__/SettingsAccountScreens.test.tsx` · `AppSettingsScreen.test.tsx` | 결정 2: 목록의 카드 · `API 키 추가` · 5개 모달 · 빈 상태 · 로그인 블록, 상세의 이름 칸 · `저장` · 키 행이 사용자와 계정 종류마다 서는지, 저장하지 않고 나가면 고친 이름이 남지 않는지 본다. 결정 8: 이름을 바꾼 적 없는 메이플 ID 의 칸이 비어 있고 기본 이름이 안내 글자로 서는지, 바꾼 이름이 있으면 칸이 그 이름으로 시작하는지, 16바이트를 넘는 입력이 저장할 이름에 들어가지 않는지 본다. 결정 3: 등록된 부계정의 키를 추가하면 바꿀지 묻고, `바꾸기` 는 그 계정의 키를 바꾸고 `취소` 는 시트로 돌아가는지 본다. 결정 15: 무효 표시가 붙은 계정 행에 `유효하지 않은 키` 가 서는지 본다 |
 | `features/auth/__tests__/key-problem.spec.ts` · `store.spec.ts` (키 문제) · `app/auth/__tests__/ApiKeyNoticeModal.test.tsx` · `storage/__tests__/api-key.spec.ts` · `lib/__tests__/nexon-credential.spec.ts` · `features/server-sync/__tests__/accounts.spec.ts` | 결정 15: 부계정 키의 무효 알림을 확인하면 키를 지우지 않고 무효 표시와 뺀 캐릭터를 적는지, 남은 추적 캐릭터가 있으면 계정 관리 목록을 열고 없으면 캐릭터 설정으로 가는지, 메인 키는 지금처럼 지우고 로그인 화면으로 가는지, 모달 본문이 가는 곳을 말하는지 본다. 무효 표시가 붙은 키를 부르지도 등록하지도 않는지 본다 |
 | `app/auth/__tests__/RateLimitNoticeModal.test.tsx` | 결정 2: 부계정 키의 `다른 키 입력` 이 그 계정의 상세 페이지를 `API 키 변경` 시트와 함께 여는지 본다 |
 | `features/auth/__tests__/nexon-login.spec.ts` | 결정 14: 로그인 화면의 넥슨 로그인만 세션을 받은 뒤 저장하기 전에 추적 목록을 비우는지, 연동 시트와 창을 닫거나 세션을 못 받은 로그인은 비우지 않는지 본다 |
@@ -775,5 +779,6 @@
   `API 키 추가` 로 넣은 키가 등록된 부계정과 겹치면 그 계정의 키를 바꿀지 묻는 것을 더했다(사용자 지정)
 - (2026-11-12) 결정 10 을 고쳤다. 2026-11-19 주부터 한도를 메이플 ID 마다 세고 챌린저스 월드만 따로 센다([[ADR-042]] 결정 3, #987).
   넓힌 결정석 위젯의 막대 칸을 걷고 모두 링으로 그리며, 한도 줄이 둘 이상인 칸은 폭 전체에 링을 옆으로 둔다(사용자 선택)
-- (2026-11-14) 결정 8 에 이름을 바꾼 적 없는 메이플 ID 의 이름 칸을 비워 두고 기본 이름을 안내 글자로 보이는 것을 더했다(사용자 선택,
-  #1011). 14자 기본 이름을 10자 상한 칸에 채우면 iOS 에서 한 글자씩 지워지지 않았다
+- (2026-11-14) 결정 8 을 고쳤다. 이름을 바꾼 적 없는 메이플 ID 의 이름 칸을 비워 두고 기본 이름을 안내 글자로 보인다(사용자 선택,
+  #1011). 14자 기본 이름을 10자 상한 칸에 채우면 iOS 에서 한 글자씩 지워지지 않았다. 이름 상한을 10자에서 16바이트로 바꾸고, 넘는
+  입력은 칸에 들이지 않는다(사용자 지정 · 선택, #1015)
