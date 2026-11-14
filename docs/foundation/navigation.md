@@ -58,6 +58,7 @@ RootStack
 |---|---|
 | 컨텐츠 관리 · 보스 관리 | `ContentManage` · `BossManage` |
 | 드롭 히스토리 · 아이템 가격 입력 | `DropHistory` · `DropPrice` |
+| 거래 내역(가계부 머리의 `거래 내역`) | `TradeHistory` |
 | 개발 노트 | `SettingsReleaseNotes` |
 | 앱 정보 및 계정 | `SettingsAbout` |
 | 캐릭터 관리 | `SettingsCharacters` |
