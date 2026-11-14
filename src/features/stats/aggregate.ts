@@ -284,7 +284,10 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
           return { slice, parts: [hexaPart(entry.record, meso)] }
         case 'item_purchase':
           return { slice, parts: [typedNamePart(recordedItemNameOf(entry.record.item, entry.record.itemKey), meso)] }
+        // 두 시트의 기록은 `etc` 로 저장해서 이 갈래 key 로는 안 온다. 기타처럼 적힌 이름으로 센다.
         case 'etc':
+        case 'boss_income_transfer':
+        case 'meso_market_exchange':
           return { slice, parts: [typedNamePart(entry.record.item, meso)] }
       }
     }

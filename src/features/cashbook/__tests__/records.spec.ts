@@ -14,8 +14,10 @@ jest.mock('../../../storage/income', () => ({
   getIncomeRecordsBetween: jest.fn(),
   getIncomeMonthRows: jest.fn(),
   getFragmentStorage: jest.fn(),
+  bumpIncomeRecordsRevision: jest.fn(),
 }))
 jest.mock('../../../storage/spend', () => ({
+  bumpSpendRecordsRevision: jest.fn(),
   insertSpendRecord: jest.fn(),
   updateSpendRecord: jest.fn(),
   deleteSpendRecord: jest.fn(),
@@ -348,11 +350,11 @@ describe('spendMesoOf: 메소 축으로 접는다', () => {
   const 행 = { ...메포지출, id: 'x', recordedAt: '', formItemKeys: null, mesoMarketFeePercent: null }
 
   it('메포는 시세로 환산해 더한다', () => {
-    expect(spendMesoOf(행)).toBe(2_542_372_881)
+    expect(spendMesoOf(행)).toBe(2_542_372_882)
   })
 
   it('둘 다 쓴 행은 합친다. 아이템 구매의 모양이다', () => {
-    expect(spendMesoOf({ ...행, mesoAmount: 935_000_000 })).toBe(935_000_000 + 2_542_372_881)
+    expect(spendMesoOf({ ...행, mesoAmount: 935_000_000 })).toBe(935_000_000 + 2_542_372_882)
   })
 
   // **캐시는 안 든다**. 환산 자체를 안 하므로 칸의 숫자가 그날 지출의
@@ -375,7 +377,7 @@ describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
 
   // 솔 에르다 2단계 하나라 주화 8개다. 8 × 40,000,000 = 320,000,000.
   it('고른 단계의 주화 판매가만큼 뺀다', () => {
-    expect(spendMesoOf(행)).toBe(2_542_372_881 - 320_000_000)
+    expect(spendMesoOf(행)).toBe(2_542_372_882 - 320_000_000)
   })
 
   // 형태마다 각각 주므로 둘을 다 사면 4 + 8 = 12개다.
@@ -386,7 +388,7 @@ describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
       pointAmount: 37_500,
     }
 
-    expect(spendMesoOf(둘)).toBe(3_177_966_101 - 480_000_000)
+    expect(spendMesoOf(둘)).toBe(3_177_966_102 - 480_000_000)
   })
 
   // 0 에서 멈추면 그 줄과 하루 합계가 조용히 달라진다(사용자 결정).
@@ -403,7 +405,7 @@ describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
 
   // 무엇을 샀는지 모르는 행이라 셀 주화가 없다.
   it('형태별 항목 key 가 없는 옛 행은 안 뺀다', () => {
-    expect(spendMesoOf({ ...행, formItemKeys: null })).toBe(2_542_372_881)
+    expect(spendMesoOf({ ...행, formItemKeys: null })).toBe(2_542_372_882)
   })
 
   // 메포를 메소로 환산하지 않는 행이라 뺄 값을 얹을 축이 없다.
@@ -414,30 +416,30 @@ describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
 
   // 주화를 안 주는 갈래는 그대로다. 되짚어도 개수가 0 이다.
   it('에픽던전이 아닌 행은 그대로다', () => {
-    expect(spendMesoOf({ ...행, category: 'etc', formItemKeys: null })).toBe(2_542_372_881)
+    expect(spendMesoOf({ ...행, category: 'etc', formItemKeys: null })).toBe(2_542_372_882)
   })
 })
 
 /**
- * 메포를 쓰려면 메소를 팔아야 하고, 메소마켓은 메소를 팔 때만 수수료를 뗀다. 받은 메포를 메소로 바꾸는 수입은
- * 메소를 사는 쪽이라 수수료가 없다(사용자 확인 2026-11-10).
+ * 메포를 쓰려면 메소를 팔아야 하고, 메소마켓은 메소를 1억 단위로 팔 때만 수수료를 뗀다. 받은 메포를 메소로 바꾸는 수입은
+ * 메소를 사는 쪽이라 수수료가 없다(사용자 확인 2026-11-10 · 2026-11-11).
  */
 describe('spendMesoOf: 메소마켓 수수료', () => {
   const { incomeMesoOf, spendMesoOf } = require('../records') as typeof import('../records')
 
   const 행 = { ...메포지출, id: 'x', recordedAt: '', formItemKeys: null, mesoMarketFeePercent: 1 }
 
-  // 30,000 메포 × 1억 ÷ (1,180 × 0.99) = 2,568,053,415. 수수료가 없으면 2,542,372,881 이다.
-  it('지출의 메포는 수수료를 뗀 시세로 바꾸고, 같은 메포의 수입은 수수료 없이 바꾼다', () => {
+  // 1,180 에 1% 를 떼면 26억을 팔아 30,374 메포를 받고, 남은 374 메포를 되돌리면 2,568,305,085 다. 같은 메포의 수입은 2,542,372,881 이다.
+  it('지출의 메포는 1억 단위로 판 것으로 세고, 같은 메포의 수입은 수수료 없이 바꾼다', () => {
     const 메포수입 = { ...수입행, mesoAmount: null, pointAmount: 30_000, pointPer100mMeso: 1_180 }
 
-    expect(spendMesoOf(행)).toBe(2_568_053_415)
+    expect(spendMesoOf(행)).toBe(2_568_305_085)
     expect(incomeMesoOf(메포수입)).toBe(2_542_372_881)
   })
 
   // 솔 에르다 2단계라 주화 8개(320,000,000)다.
   it('세라자르 주화는 수수료를 넣은 값에서 뺀다', () => {
-    expect(spendMesoOf({ ...행, formItemKeys: { sol_erda: 'high_mountain_2' } })).toBe(2_568_053_415 - 320_000_000)
+    expect(spendMesoOf({ ...행, formItemKeys: { sol_erda: 'high_mountain_2' } })).toBe(2_568_305_085 - 320_000_000)
   })
 })
 
@@ -493,7 +495,7 @@ describe('칸 금액', () => {
     expect(amounts['2026-08-23']).toEqual({
       incomeMeso: 1_743_000_000,
       // 메포 환산에서 주화 8개(320,000,000)가 빠진 값이다.
-      expenseMeso: 2_542_372_881 - 320_000_000,
+      expenseMeso: 2_542_372_882 - 320_000_000,
     })
   })
 
@@ -765,7 +767,7 @@ describe('줄의 금액', () => {
   it('메포 지출은 시세로 환산한 메소다', () => {
     const { recordMesoOf } = require('../records') as typeof import('../records')
 
-    expect(recordMesoOf({ kind: 'spend', record: 지출행, characterName: '' })).toBe(101_694_915)
+    expect(recordMesoOf({ kind: 'spend', record: 지출행, characterName: '' })).toBe(101_694_916)
   })
 
   // 캐시는 환산 자체를 안 한다. 메소 축에 0 으로 들되 줄은 원으로 적는다.
@@ -1545,7 +1547,7 @@ describe('강화 지출이 칸에 든다', () => {
     enhancementTotals.loadEnhancementTotals.mockResolvedValue([합계()])
 
     expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso)
-      .toBe(2_542_372_881 - 320_000_000 + 450_000)
+      .toBe(2_542_372_882 - 320_000_000 + 450_000)
   })
 
   // 판정하지 못한 줄을 세우면 이벤트 월드 지출까지 섞여 지출이 부푼다.
@@ -1780,5 +1782,90 @@ describe('손입력 지출의 0', () => {
     ])
 
     expect(rows).toHaveLength(1)
+  })
+})
+
+// 메소마켓 환전 수수료는 지출 시트에서 적지만, 금액이 0 보다 작으면 수익이라 `기타` 수입으로 적는다. 고쳐서 부호가 바뀌면
+// 같은 기록이 지출과 수입 사이를 옮긴다.
+describe('메소마켓 환전 수수료', () => {
+  const { editMesoMarketExchange, recordSpend } = require('../records') as typeof import('../records')
+  const NOW = new Date('2026-11-20T10:00:00+09:00')
+  const 판매만: SpendDraft = {
+    ocid: null,
+    accountId: 'maple-1',
+    spentOn: '2026-11-20',
+    category: 'etc',
+    item: '메소마켓 환전 수수료',
+    itemKey: null,
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: null,
+    levelTo: null,
+    quantity: 1,
+    mesoAmount: 4_962_193,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
+    hexa: null,
+    exchange: { soldMeso: 500_000_000, sellPointPer100mMeso: 2_116, boughtMeso: null, buyPointPer100mMeso: null, mesoMarketFeePercent: 1 },
+  }
+  const 수익: SpendDraft = {
+    ...판매만,
+    mesoAmount: 22_448_015,
+    exchange: { ...판매만.exchange!, boughtMeso: 500_000_000, buyPointPer100mMeso: 2_000 },
+  }
+
+  it('금액이 0 이상이면 메이플 ID 의 기타 지출로 적는다', async () => {
+    await recordSpend(판매만, NOW)
+
+    expect(spend.insertSpendRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ accountId: 'maple-1', category: 'etc', mesoAmount: 4_962_193, exchange: 판매만.exchange }),
+    )
+    expect(income.insertIncomeRecord).not.toHaveBeenCalled()
+  })
+
+  it('금액이 0 보다 작으면 같은 시트 입력으로 기타 수입으로 적는다', async () => {
+    await recordSpend(수익, NOW)
+
+    expect(income.insertIncomeRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ocid: null,
+        accountId: 'maple-1',
+        category: 'etc',
+        earnedOn: '2026-11-20',
+        item: '메소마켓 환전 수수료',
+        mesoAmount: 22_448_015,
+        exchange: 수익.exchange,
+      }),
+    )
+    expect(spend.insertSpendRecord).not.toHaveBeenCalled()
+  })
+
+  it('지출로 적은 기록을 고쳐 수익이 되면 같은 id 로 수입을 고치고 지출 판도 올린다', async () => {
+    const 원본 = { ...판매만, id: 'e1', recordedAt: '2026-11-20T00:00:00.000Z', mesoMarketFeePercent: null }
+
+    await editMesoMarketExchange({ kind: 'spend', record: 원본, characterName: '' }, 수익)
+
+    expect(income.updateIncomeRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'e1', recordedAt: '2026-11-20T00:00:00.000Z', mesoAmount: 22_448_015 }),
+    )
+    expect(spend.updateSpendRecord).not.toHaveBeenCalled()
+    expect(spend.bumpSpendRecordsRevision).toHaveBeenCalled()
+  })
+
+  it('수입으로 적은 기록도 같은 부호면 그대로 수입을 고친다', async () => {
+    const 원본 = {
+      id: 'e2', ocid: null, accountId: 'maple-1', earnedOn: '2026-11-20', category: 'etc' as const, item: '메소마켓 환전 수수료',
+      itemKey: null, mesoAmount: 22_448_015, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false, pointAmount: null,
+      pointPer100mMeso: null, cashAmount: null, quantity: 1, itemKind: null, hunt: null, recordedAt: '2026-11-20T00:00:00.000Z',
+      exchange: 수익.exchange,
+    }
+
+    await editMesoMarketExchange({ kind: 'income', record: 원본, characterName: '' }, 수익)
+
+    expect(income.updateIncomeRecord).toHaveBeenCalledWith(expect.objectContaining({ id: 'e2' }))
+    expect(spend.bumpSpendRecordsRevision).not.toHaveBeenCalled()
+    expect(income.bumpIncomeRecordsRevision).not.toHaveBeenCalled()
   })
 })

@@ -9,6 +9,7 @@ jest.mock('../../../storage/boss-drops', () => ({
   // 실물과 같은 값이어야 호출 단언이 맞는다. 목이 안 내주면 `undefined` 가 흐른다.
   NO_WORLD: { name: null, key: null }, getAutoFeeDropRecords: jest.fn() }))
 jest.mock('../../../storage/boss-profit', () => ({ getAutoFeeProfitRecords: jest.fn() }))
+jest.mock('../../../storage/spend', () => ({ getAutoFeeTransferRecords: jest.fn() }))
 
 import { getMvpGradeHistories } from '../../../storage/mvp-grades'
 import { getCharacterAccountSightings } from '../../../storage/character-accounts'
@@ -16,7 +17,8 @@ import { getRepresentativeCharacter, getTrackedCharacterOcids } from '../../../s
 import { getAutoFeeIncomeRecords } from '../../../storage/income'
 import { getAutoFeeDropRecords } from '../../../storage/boss-drops'
 import { getAutoFeeProfitRecords } from '../../../storage/boss-profit'
-import { recalcCrystalUpdates, recalcDropUpdates, recalcIncomeUpdates } from '../recalculate-fees'
+import { getAutoFeeTransferRecords } from '../../../storage/spend'
+import { recalcCrystalUpdates, recalcDropUpdates, recalcIncomeUpdates, recalcTransferUpdates } from '../recalculate-fees'
 
 const mocked = <T extends (...args: never[]) => unknown>(fn: T) => fn as unknown as jest.Mock
 
@@ -35,6 +37,7 @@ beforeEach(() => {
   mocked(getAutoFeeIncomeRecords).mockResolvedValue([])
   mocked(getAutoFeeDropRecords).mockResolvedValue([])
   mocked(getAutoFeeProfitRecords).mockResolvedValue([])
+  mocked(getAutoFeeTransferRecords).mockResolvedValue([])
 })
 
 const income = (over: Record<string, unknown>) => ({
@@ -110,5 +113,15 @@ describe('다시 계산이 고쳐 쓸 목록', () => {
     await expect(recalcCrystalUpdates()).resolves.toEqual([
       { ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', splitFeePercent: 3, payoutMeso: 663_299 },
     ])
+  })
+
+  // 수수료율은 메소를 받는 캐릭터의 등급이다. 수수료가 곧 지출 금액이라 함께 다시 센다.
+  it('주간 보스 수입 이전은 받는 캐릭터의 새 요율로 수수료를 다시 센다', async () => {
+    mocked(getAutoFeeTransferRecords).mockResolvedValue([
+      { id: 't1', ocid: 'b1', spentOn: '2026-08-10', mesoAmount: 180_000_000, transfer: { receiverOcid: 'a1', transferMeso: 3_600_000_000, feePercent: 5, feeAuto: true } },
+      { id: 't2', ocid: 'a1', spentOn: '2026-08-10', mesoAmount: 180_000_000, transfer: { receiverOcid: 'b1', transferMeso: 3_600_000_000, feePercent: 5, feeAuto: true } },
+    ])
+
+    await expect(recalcTransferUpdates()).resolves.toEqual([{ id: 't1', feePercent: 3, mesoAmount: 108_000_000 }])
   })
 })

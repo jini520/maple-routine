@@ -90,6 +90,8 @@ export function spendEntryOf(record: SpendRecord): StoredEntry {
     },
     items: spendItemsOf(record),
     hunt: null,
+    transfer: record.transfer ?? null,
+    exchange: record.exchange ?? null,
     fragmentUses: record.hexa?.storageUses ?? [],
     otherFragmentUses: record.hexa?.otherUse === undefined ? [] : [record.hexa.otherUse],
   }
@@ -143,6 +145,8 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
     recordedAt: entry.head.createdAt,
     ...(first.inventoryItemId === null ? {} : { inventoryItemId: first.inventoryItemId }),
     ...(first.ringLevel === null ? {} : { ringLevel: first.ringLevel }),
+    ...(entry.transfer == null ? {} : { transfer: entry.transfer }),
+    ...(entry.exchange == null ? {} : { exchange: entry.exchange }),
   }
 }
 
@@ -244,6 +248,7 @@ export function incomeEntryOf(record: IncomeRecord): StoredEntry {
       },
     ],
     hunt: huntRowOf(record.hunt),
+    exchange: record.exchange ?? null,
     fragmentUses: [],
     otherFragmentUses: record.otherFragmentUse === undefined ? [] : [record.otherFragmentUse],
   }
@@ -274,6 +279,7 @@ export function incomeRecordOf(entry: StoredEntry): IncomeRecord {
     ...(item.inventoryItemId === null ? {} : { inventoryItemId: item.inventoryItemId }),
     ...(item.ringLevel === null ? {} : { ringLevel: item.ringLevel }),
     ...(entry.otherFragmentUses[0] === undefined ? {} : { otherFragmentUse: entry.otherFragmentUses[0] }),
+    ...(entry.exchange == null ? {} : { exchange: entry.exchange }),
   }
 }
 

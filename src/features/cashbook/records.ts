@@ -25,6 +25,7 @@ import {
   findSpendChoice,
   findSpendRewardChoice,
   pointToMeso,
+  spentPointToMeso,
   rewardCoinMeso,
   mesoMarketFeeOf,
   spendGroupCardTitleOf,
@@ -40,6 +41,7 @@ import { getRecordedCharacterOcids } from '../../storage/boss-profit'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import {
+  bumpIncomeRecordsRevision,
   deleteIncomeRecord,
   getFragmentStorage,
   getIncomeRecordsBetween,
@@ -60,6 +62,8 @@ import { withMvpDiscount } from '../../lib/enhancement/cost'
 import { loadEnhancementTotals } from '../../storage/enhancement-totals'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
+import { mesoMarketExchangeMeso } from '../../lib/cashbook/meso-market-exchange'
+import type { EntryExchange } from '../../storage/cashbook-entries'
 import { recordedItemNameOf, withRingLevel } from '../../lib/item-catalog'
 import { randomUuid } from '../../native/uuid'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
@@ -71,6 +75,7 @@ import {
   type HexaStorageChecks,
 } from '../../storage/hexa-storage-checks'
 import {
+  bumpSpendRecordsRevision,
   deleteSpendRecord,
   getSpendRecordsBetween,
   insertSpendRecord,
@@ -138,8 +143,94 @@ async function quietly(task: () => Promise<void>): Promise<void> {
   }
 }
 
+/** 환전 기록의 금액은 시트 입력으로 다시 센다. 0 보다 작으면 수익이라 `기타` 수입이다 */
+type ExchangeSave = { kind: 'spend'; record: SpendRecord } | { kind: 'income'; record: IncomeRecord }
+
+function exchangeSaveOf(draft: SpendDraft, exchange: EntryExchange, id: string, recordedAt: string): ExchangeSave {
+  const meso = mesoMarketExchangeMeso({
+    soldMeso: exchange.soldMeso,
+    sellRate: exchange.sellPointPer100mMeso,
+    boughtMeso: exchange.boughtMeso,
+    buyRate: exchange.buyPointPer100mMeso,
+    feePercent: exchange.mesoMarketFeePercent,
+  })
+  if (meso >= 0) return { kind: 'spend', record: { ...draft, id, recordedAt, mesoAmount: meso, mesoMarketFeePercent: null } }
+  return {
+    kind: 'income',
+    record: {
+      id,
+      ocid: draft.ocid,
+      ...(draft.accountId === undefined ? {} : { accountId: draft.accountId }),
+      earnedOn: draft.spentOn,
+      category: 'etc',
+      item: draft.item,
+      itemKey: null,
+      mesoAmount: -meso,
+      saleFeePercent: null,
+      saleFeeMeso: null,
+      saleFeeAuto: false,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      quantity: draft.quantity,
+      itemKind: null,
+      hunt: null,
+      recordedAt,
+      exchange,
+    },
+  }
+}
+
+/**
+ * 메소마켓 환전 기록을 고친다. 금액의 부호가 바뀌면 같은 `id` 로 지출과 수입 사이를 옮기고, 떠난 쪽 목록도 다시 읽게 판을 올린다.
+ */
+export async function editMesoMarketExchange(entry: ManualDayRecord, draft: SpendDraft): Promise<void> {
+  if (draft.exchange === undefined) throw new Error('editMesoMarketExchange: 시트 입력이 없는 초안입니다')
+  const saved = exchangeSaveOf(draft, draft.exchange, entry.record.id, entry.record.recordedAt)
+  if (saved.kind === 'spend') await updateSpendRecord(saved.record)
+  else await updateIncomeRecord(saved.record)
+  if (saved.kind === entry.kind) return
+  if (saved.kind === 'spend') bumpIncomeRecordsRevision()
+  else bumpSpendRecordsRevision()
+}
+
+/** 수입으로 저장된 환전 기록을 지출 시트가 열 수 있는 모양으로 바꾼다. 그 시트에서 적은 기록이라 같은 시트로 연다 */
+export function exchangeSpendViewOf(record: IncomeRecord): SpendRecord {
+  return {
+    id: record.id,
+    ocid: record.ocid,
+    ...(record.accountId === undefined ? {} : { accountId: record.accountId }),
+    spentOn: record.earnedOn,
+    category: 'etc',
+    item: record.item,
+    itemKey: null,
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: null,
+    levelTo: null,
+    quantity: record.quantity,
+    mesoAmount: record.mesoAmount,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
+    cashAmount: null,
+    hexa: null,
+    recordedAt: record.recordedAt,
+    ...(record.exchange === undefined ? {} : { exchange: record.exchange }),
+  }
+}
+
 export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
   const id = randomUuid()
+  if (draft.exchange !== undefined) {
+    const saved = exchangeSaveOf(draft, draft.exchange, id, now.toISOString())
+    if (saved.kind === 'spend') await insertSpendRecord(saved.record)
+    else await insertIncomeRecord(saved.record)
+    countCoreSave()
+    recordUsageAction('cashbook-add')
+    return
+  }
   const record = withMesoMarketFee({ ...draft, id, recordedAt: now.toISOString(), mesoMarketFeePercent: null })
   await insertSpendRecord(record)
   await quietly(() => rememberAfterSave(record))
@@ -174,7 +265,8 @@ export function incomeMesoOf(record: IncomeRecord): number {
 /**
  * 지출 한 건의 메소 축 금액. 수입과 **같은 시세**로 바꾸되 메소마켓 수수료와 주화가 더 있다.
  *
- * 메포를 쓰려면 메소를 팔아야 하고 메소마켓은 팔 때 받는 메포에서 수수료를 떼므로, 그 기록에 적힌 요율을 시세에서 뺀다.
+ * 메포를 쓰려면 메소를 팔아야 하고 메소마켓은 1억 단위로 팔아 받는 메포에서 수수료를 떼므로, 그 기록의 메포를 받을 수 있는
+ * 가장 적은 억 수를 판 것으로 세고 남은 메포를 되돌린다.
  *
  * 에픽던전 추가 리워드는 세라자르 주화를 주고 그 주화는 상점에 팔면 메소가 되므로, 실제로 나간
  * 돈은 메포 값에서 주화 판매가를 뺀 값이다. 그 뺄셈을 **읽을 때** 한다. 저장 칸을 안 더하므로
@@ -186,7 +278,7 @@ export function spendMesoOf(record: SpendRecord): number {
   const meso = record.mesoAmount ?? 0
   // 메포를 환산하지 않는 행이라 주화를 얹을 축도 없다.
   if (record.pointAmount === null || record.pointPer100mMeso === null) return meso
-  return meso + pointToMeso(record.pointAmount, record.pointPer100mMeso, record.mesoMarketFeePercent) - rewardCoinMesoOf(record)
+  return meso + spentPointToMeso(record.pointAmount, record.pointPer100mMeso, record.mesoMarketFeePercent) - rewardCoinMesoOf(record)
 }
 
 /**

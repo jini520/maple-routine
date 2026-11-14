@@ -44,6 +44,8 @@ const CASHBOOK_TABLES = [
   'cashbook_entries',
   'cashbook_entry_items',
   'cashbook_entry_hunt_inputs',
+  'cashbook_entry_transfer_inputs',
+  'cashbook_entry_exchange_inputs',
   'cashbook_entry_fragment_uses',
   'inventory_items',
   'remembered_levels',

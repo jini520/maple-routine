@@ -88,6 +88,30 @@ export const CASHBOOK_ENTRY_HUNT_INPUTS_BODY = `(
     union_tier INTEGER
   )`
 
+/** `주간 보스 수입 이전` 시트의 입력. 이 줄이 있는 `기타` 지출은 그 시트로 연다. */
+export const CASHBOOK_ENTRY_TRANSFER_INPUTS_BODY = `(
+    id TEXT PRIMARY KEY,
+    entry_id TEXT NOT NULL UNIQUE REFERENCES cashbook_entries(id) ON DELETE CASCADE,
+    -- 메소를 받은 캐릭터. 수수료율은 이 캐릭터의 MVP 등급에서 나온다.
+    receiver_ocid TEXT NOT NULL,
+    transfer_meso INTEGER NOT NULL,
+    fee_percent INTEGER NOT NULL,
+    -- 1 이면 받는 캐릭터의 등급을 따라간다. NULL 은 손으로 고른 요율이다.
+    fee_auto INTEGER
+  )`
+
+/** `메소마켓 환전 수수료` 시트의 입력. 이 줄이 있는 `기타` 지출 · 수입은 그 시트로 연다. */
+export const CASHBOOK_ENTRY_EXCHANGE_INPUTS_BODY = `(
+    id TEXT PRIMARY KEY,
+    entry_id TEXT NOT NULL UNIQUE REFERENCES cashbook_entries(id) ON DELETE CASCADE,
+    sold_meso INTEGER NOT NULL,
+    sell_point_per_100m_meso INTEGER NOT NULL,
+    -- 판매만 적은 기록은 구매 두 칸이 NULL 이다. 나중에 수정 시트에서 채운다.
+    bought_meso INTEGER,
+    buy_point_per_100m_meso INTEGER,
+    meso_market_fee_percent INTEGER NOT NULL
+  )`
+
 /**
  * 기록이 보관에서 가져온 조각을 보관마다 한 줄. 저장할 때 굳힌다. 다시 계산하면 옛 사냥 기록을 고칠 때 지난 헥사
  * 기록이 가져간 캐릭터가 바뀐다. 사냥 조각 보관(`getFragmentStorage`)은 `hunt` 줄을, 인벤토리의 기타 조각은 `other` 줄을 뺀다.
