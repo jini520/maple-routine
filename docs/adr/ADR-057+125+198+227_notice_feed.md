@@ -380,8 +380,8 @@ CommonJS 로도 나와서 빌드와 테스트 설정을 바꾸지 않고 들어�
 
 - **그림 · 링크 주소는 `https` 만 받는다.** 다른 주소가 있으면 저장을 400 으로 거절하고 어느 주소인지 알린다. iOS 는 평문 http 그림을
   막는다. 넥슨 본문처럼 주소를 몰래 고치거나 버리면 운영자가 빠진 것을 알 수 없다.
-- **운영자가 쓴 마크다운은 `notices.source` 칸에 둔다.** 고칠 때 이 원문을 다시 연다. 블록에서 마크다운을 되살리면 목록 · 꾸밈 ·
-  글 사이 링크의 자리가 바뀐 글이 열린다. 마크다운 이전에 쓴 공지는 `source` 가 NULL 이라 `body` 를 원문으로 연다.
+- **운영자가 쓴 마크다운은 `notices.markdown` 칸에 둔다.** 고칠 때 이 원문을 다시 연다. 블록에서 마크다운을 되살리면 목록 · 꾸밈 ·
+  글 사이 링크의 자리가 바뀐 글이 열린다. 마크다운 이전에 쓴 공지는 `markdown` 이 NULL 이라 `body` 를 원문으로 연다.
 - **`body` 는 바꾼 블록의 `heading` · `text` 를 줄바꿈으로 이은 평문이다.** today 배너 · 알림 문구 · 푸시 `data` 가 평문 `body` 를 쓴다.
   마크다운을 그대로 두면 배너에 `![](…)` 가 글자로 보인다.
 - **저장하면 곧바로 앱에 보인다.** 그래서 관리 화면은 입력 칸 아래에 서버가 바꾼 블록을 미리 보여 준다(`POST /admin/notices/preview`).
@@ -426,8 +426,8 @@ CommonJS 로도 나와서 빌드와 테스트 설정을 바꾸지 않고 들어�
 | `features/notice/__tests__/format.spec.ts` | 결정 6: 발행일을 기기 시간대가 아니라 한국 시간의 날짜로 적는지 본다 |
 | 서버 `modules/notices/notice-poller.spec.ts` · `notices.repository.spec.ts` · `clients/nexon-open-api.client.spec.ts` · `database/nexon-guide-compliance-migration.spec.ts` | 결정 11: 목록 칸이 배열이 아니면 던지는지, 제목 · 날짜가 빈 글과 상세가 실패하거나 비어 있는 썬데이 글만 다음 회차로 미루는지, 목록에 있는 글의 값과 받은 시각을 고치고 다시 알리지 않는지, 썬데이 상세를 다시 받는지, 받은 지 30일이 지난 넥슨 공지만 지우는지, 이관이 이미 있는 글의 받은 시각을 채우는지 본다 |
 | 서버 `modules/notices/markdown-blocks.spec.ts` | 결정 13: 표의 마크다운마다 블록이 맞는지, 한 번 누른 줄바꿈이 남는지, 문단 안의 그림이 문단을 나누는지, 글 사이 링크가 글을 남기고 문단 뒤에 오는지, `https` 가 아닌 주소를 거절하는지, `body` 가 `heading` · `text` 만 잇는지 본다 |
-| 서버 `modules/notices/operator-notices.service.spec.ts` | 결정 13: 쓰기 · 고치기가 `source` · `blocks` · `body` 를 함께 저장하는지, 알림 문구를 비우면 바꾼 `body` 를 쓰는지, 주소가 틀리면 아무것도 저장하지 않는지 본다 |
-| 서버 `modules/admin/admin.controller.spec.ts` | 결정 13: 그림 올리기가 그림이 아닌 본문을 거절하고 해시 이름으로 써서 주소를 돌려주는지, 미리 보기가 저장과 같은 블록을 돌려주고 `https` 가 아닌 주소에 400 인지, 공지 목록이 `source` 를 싣는지 본다 |
+| 서버 `modules/notices/operator-notices.service.spec.ts` | 결정 13: 쓰기 · 고치기가 `markdown` · `blocks` · `body` 를 함께 저장하는지, 알림 문구를 비우면 바꾼 `body` 를 쓰는지, 주소가 틀리면 아무것도 저장하지 않는지 본다 |
+| 서버 `modules/admin/admin.controller.spec.ts` · `admin-notice-images.controller.spec.ts` | 결정 13: 미리 보기가 저장과 같은 블록을 돌려주고 `https` 가 아닌 주소에 400 인지, 공지 목록이 `markdown` 을 싣는지, 그림 올리기가 그림이 아닌 본문을 거절하고 해시 이름으로 써서 주소를 돌려주는지 본다 |
 
 ## 번호 기록
 

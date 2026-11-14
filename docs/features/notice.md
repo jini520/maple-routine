@@ -28,7 +28,7 @@
 | `app/settings/SettingsNoticeDetailScreen.tsx` · `NoticeBlocks.tsx` | 상세 화면(`/settings/notices/detail`)과 본문 블록 |
 | `navigation/AppNavigation.tsx` | 알림 탭으로 연 상세를 스택이 준비된 뒤에 연다 |
 | `maple-routine-server` 의 `src/modules/notices/` · `src/modules/push/push-text.ts` | 넥슨 목록 수집 · 알림 발송 · 알림 문구 |
-| `maple-routine-server` 의 `src/modules/notices/markdown-blocks.ts` · `operator-notices.service.ts` · `src/modules/admin/views/notices.ts` | 운영자 공지의 마크다운을 블록으로 바꾸기 · 쓰기와 고치기 · 관리 화면의 공지 폼 |
+| `maple-routine-server` 의 `src/modules/notices/markdown-blocks.ts` · `operator-notices.service.ts` · `src/modules/admin/views/notices.ts` · `admin-notice-images.controller.ts` | 운영자 공지의 마크다운을 블록으로 바꾸기 · 쓰기와 고치기 · 관리 화면의 공지 폼 · 공지 그림 올리기 |
 
 ## 분류
 
@@ -66,7 +66,7 @@
 - `그림 올리기` 는 고른 그림을 브라우저에서 가로 1,080px 이하 WebP 로 줄여 올리고, 받은 주소로 `![](주소)` 줄을 커서 자리에 넣는다.
   그림은 게임 데이터 그림과 같은 서버 디스크에 내용 해시 이름으로 남고 그림 화면(`/admin/assets`)에는 나오지 않는다. 공지를 지워도
   그림 파일은 남는다.
-- 서버는 운영자가 쓴 마크다운(`source`)과 바꾼 블록(`blocks`), 블록의 소제목 · 글을 이은 평문(`body`)을 함께 저장한다. today 배너와
+- 서버는 운영자가 쓴 마크다운(`markdown`)과 바꾼 블록(`blocks`), 블록의 소제목 · 글을 이은 평문(`body`)을 함께 저장한다. today 배너와
   알림 문구는 평문을 쓴다.
 
 ## 받기와 저장
