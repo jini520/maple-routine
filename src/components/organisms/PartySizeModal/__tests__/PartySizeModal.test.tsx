@@ -348,6 +348,53 @@ it('비율 카드는 세로로 늘거나 줄지 않는다', async () => {
 })
 
 // 다른 가운데 모달과 같은 패널이다. 테두리 없이 바탕색 차이로만 스크림과 갈리고, 다크에서는 표면을 한 칸 올려 가장자리가 스크림에 안 묻힌다.
+describe('분배 방식 `제외`', () => {
+  // 나눌 결정석이 없어서 셋 다 금액을 안 바꾼다.
+  it('`제외` 를 고르면 인원 · 비율 · 송금 수수료 줄이 모두 사라진다', async () => {
+    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3 }
+    const { getByLabelText, queryByTestId, queryByText } = await renderOverlay(<PartySizeModal {...props({ shares })} />)
+
+    await fireEvent.press(getByLabelText('제외'))
+
+    expect(getByLabelText('제외').props.accessibilityState?.selected).toBe(true)
+    expect(queryByText('파티 인원')).toBeNull()
+    expect(queryByTestId('share-field-ratio-결정석')).toBeNull()
+    expect(queryByText('수수료')).toBeNull()
+  })
+
+  // 숨긴 분배는 드롭 가격 카드의 처음 값과 `기본` 으로 돌아올 때 쓰인다.
+  it('적용하면 숨긴 분배와 `제외` 를 함께 내보낸다', async () => {
+    const onApply = jest.fn()
+    const { getByLabelText, getByText } = await renderOverlay(<PartySizeModal {...props({ onApply })} />)
+
+    await fireEvent.press(getByLabelText('제외'))
+    await fireEvent.press(getByText('적용'))
+
+    expect(onApply).toHaveBeenCalledWith({ partySize: 4, shares: { ...EVEN_SHARES, crystalExcluded: true } })
+  })
+
+  it('`제외` 에서 `기본` 을 고르면 숨긴 인원이 그대로 돌아온다', async () => {
+    const onApply = jest.fn()
+    const shares = { ...EVEN_SHARES, crystalExcluded: true }
+    const { getByLabelText, getByText } = await renderOverlay(<PartySizeModal {...props({ shares, onApply })} />)
+
+    expect(getByLabelText('제외').props.accessibilityState?.selected).toBe(true)
+    await fireEvent.press(getByLabelText('기본'))
+    await fireEvent.press(getByText('적용'))
+
+    expect(onApply).toHaveBeenCalledWith({ partySize: 4, shares: expect.not.objectContaining({ crystalExcluded: true }) })
+  })
+
+  it('`제외` 에서 `비율` 을 고르면 숨긴 비율이 그대로 돌아온다', async () => {
+    const shares = { ...EVEN_SHARES, crystalMyShare: 1, crystalSharesTotal: 4, crystalExcluded: true }
+    const { getByLabelText, getByTestId } = await renderOverlay(<PartySizeModal {...props({ shares })} />)
+
+    await fireEvent.press(getByLabelText('비율'))
+
+    expect(getByTestId('share-field-ratio-결정석')).toHaveTextContent('25%')
+  })
+})
+
 describe('패널', () => {
   const 검은마법사 = getThemeDefinition('검은마법사')
 

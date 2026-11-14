@@ -55,6 +55,10 @@ export interface BossProfitRow {
   splitFeePercent: number | null
   /** 송금 수수료가 등급을 따라가나. 기록에서 나온 행만 값을 갖는다 */
   splitFeeAuto?: boolean
+  /** 분배 방식 `제외`. 기록에서 나온 행만 값을 갖는다 */
+  crystalExcluded?: boolean
+  /** 주간 결정석 판매 한도를 넘겨 `payoutMeso` 가 0 인 처치. 기록에서 나온 행만 값을 갖는다 */
+  overCrystalLimit?: boolean
   isComplete: boolean // false면 보스 스케줄러에 등록만 되고 아직 처치 전(미완료 placeholder). payoutMeso는 항상 0이고 DB에 기록되지 않는다
   /**
    * 며칟날 잡았나. 기록에서 나온 행만 값을 갖고 그 밖은 `null` 이다.
@@ -289,6 +293,8 @@ export function buildRowFromRecord(
     crystalSharesTotal: record.crystalSharesTotal,
     splitFeePercent: record.splitFeePercent,
     splitFeeAuto: record.splitFeeAuto === true,
+    crystalExcluded: record.crystalExcluded === true,
+    overCrystalLimit: record.overCrystalLimit === true,
     isComplete: true, // 기록은 항상 완료된 보스만 남는다(backfillTarget/자동 기록이 완료 보스만 upsert)
     defeatedOn: record.defeatedOn ?? null,
     source: record.source ?? 'auto',
@@ -327,6 +333,8 @@ export function mergeRecordsIntoRows(
       crystalSharesTotal: record.crystalSharesTotal,
       splitFeePercent: record.splitFeePercent,
       splitFeeAuto: record.splitFeeAuto === true,
+      crystalExcluded: record.crystalExcluded === true,
+      overCrystalLimit: record.overCrystalLimit === true,
       defeatedOn: record.defeatedOn ?? row.defeatedOn,
       source: record.source ?? 'auto',
       // **기록이 있으면 그 조합은 완료다.** 자동 기록은 완료 행만 만들고, 직접 적은 완료도 기록이

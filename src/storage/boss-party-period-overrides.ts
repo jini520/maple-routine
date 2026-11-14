@@ -10,7 +10,7 @@
 import {
   PERIODS_JOIN,
   PERIOD_KEY_WHERE,
-  SPLIT_COLUMN_NAMES,
+  CRYSTAL_SPLIT_COLUMN_NAMES,
   crystalSplitValues,
   ensurePartyId,
   cycleOfPeriodKey,
@@ -35,10 +35,10 @@ export interface BossPartyPeriodOverride extends BossPartyShareColumns {
 /** 처치한 기간('cleared')은 건드리지 않는다. 처치 기록의 값이 그 기간의 값이다. */
 const UPSERT_SQL = `
   INSERT INTO boss_party_periods
-    (id, party_id, period_key, cycle, clear_status, ${SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
-  VALUES (${NEW_UUID_SQL}, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?)
+    (id, party_id, period_key, cycle, clear_status, ${CRYSTAL_SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
+  VALUES (${NEW_UUID_SQL}, ?, ?, ?, 'open', ${CRYSTAL_SPLIT_COLUMN_NAMES.map(() => '?').join(', ')}, ?, ?)
   ON CONFLICT (party_id, period_key) DO UPDATE SET
-    ${SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(',\n    ')},
+    ${CRYSTAL_SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(',\n    ')},
     updated_at = excluded.updated_at
   WHERE boss_party_periods.clear_status = 'open'
 `
@@ -48,7 +48,7 @@ const HAS_OVERRIDE = `pe.clear_status = 'open' AND pe.split_mode IS NOT NULL`
 
 const OVERRIDE_SELECT = `
   SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.period_key, pe.party_size, pe.my_share, pe.shares_total,
-         pe.split_fee_percent, pe.split_fee_auto, pe.updated_at
+         pe.split_fee_percent, pe.split_fee_auto, pe.crystal_excluded, pe.updated_at
     FROM ${PERIODS_JOIN}`
 
 /**
@@ -81,6 +81,7 @@ function rowToOverride(row: Record<string, unknown>): BossPartyPeriodOverride {
     crystalSharesTotal: numberOrNull(row.shares_total),
     splitFeePercent: numberOrNull(row.split_fee_percent),
     splitFeeAuto: Number(row.split_fee_auto) === 1,
+    crystalExcluded: Number(row.crystal_excluded) === 1,
     updatedAt: row.updated_at as string,
   }
 }
