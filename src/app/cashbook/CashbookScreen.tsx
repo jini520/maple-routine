@@ -502,7 +502,7 @@ function DayTotalHalf(props: {
 function MemoMark(props: { testID: string }): React.JSX.Element {
   return (
     <View testID={props.testID} className="shrink-0">
-      <StickyNoteIcon className="h-[13px] w-[13px] text-text-muted" strokeWidth={2} aria-hidden />
+      <StickyNoteIcon className="h-[11px] w-[11px] text-text-muted" strokeWidth={2} aria-hidden />
     </View>
   )
 }
@@ -569,7 +569,7 @@ function RowHeader(props: {
           `recordCardOf` 가 든다. */}
       <View className="min-w-0 flex-1">
         {/* 제목이 길면 제목이 먼저 줄고 메모 아이콘은 남는다. 아이콘은 읽어 주지 않아 이름이 `메모 있음` 을 말한다. */}
-        <View className="flex-row items-center gap-1">
+        <View className="flex-row items-center gap-2">
           <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="shrink text-xs font-semibold text-text">
             {card.title}
           </Text>
@@ -726,7 +726,7 @@ function MergedRecordTile(props: { entry: SpendDayRecord; onPress: () => void })
         />
       )}
       <View className="min-w-0 flex-1">
-        <View className="flex-row items-center gap-1">
+        <View className="flex-row items-center gap-2">
           <Text numberOfLines={1} className="shrink text-xs font-semibold text-text">
             {tile.title}
           </Text>
