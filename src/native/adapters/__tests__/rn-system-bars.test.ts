@@ -6,7 +6,11 @@
 
 // 변수 이름이 `mock` 으로 시작하는 것은 취향이 아니다. jest 가 `jest.mock` 팩토리에서 바깥 변수를
 // 참조하는 것을 막는데 그 접두사만 예외로 둔다(`rn-back-gesture.test.ts` 와 같은 사정).
-let mockNativeModule: { setNavigationBarStyle: jest.Mock } | null = null
+let mockNativeModule: {
+  setNavigationBarStyle: jest.Mock
+  isButtonNavigation: jest.Mock
+  addListener: jest.Mock
+} | null = null
 
 jest.mock('../../../../modules/app-system-bars', () => ({
   __esModule: true,
@@ -17,8 +21,15 @@ jest.mock('../../../../modules/app-system-bars', () => ({
 
 import { rnSystemBarsPort } from '../rn-system-bars'
 
+const remove = jest.fn()
+
 beforeEach(() => {
-  mockNativeModule = { setNavigationBarStyle: jest.fn(async () => {}) }
+  remove.mockClear()
+  mockNativeModule = {
+    setNavigationBarStyle: jest.fn(async () => {}),
+    isButtonNavigation: jest.fn(() => false),
+    addListener: jest.fn(() => ({ remove })),
+  }
 })
 
 describe('setNavigationBarStyle: 네이티브 한 줄을 그대로 옮겼다', () => {
@@ -47,10 +58,42 @@ describe('refreshSafeAreaInsets: 할 일이 없다는 것이 결론이다', () =
     await expect(rnSystemBarsPort.refreshSafeAreaInsets()).resolves.toBeUndefined()
   })
 
-  // 네이티브 모듈에는 이 함수 자체가 없다. `AppSystemBarsModule` 의 함수는 하나뿐이다.
+  // 네이티브 모듈에는 이 함수가 없다.
   it('네이티브를 부르지 않는다', async () => {
     await rnSystemBarsPort.refreshSafeAreaInsets()
 
     expect(mockNativeModule?.setNavigationBarStyle).not.toHaveBeenCalled()
+  })
+})
+
+describe('3버튼 내비게이션 바: 네이티브가 아는 값과 바뀜을 그대로 옮긴다', () => {
+  it.each([true, false])('네이티브가 %s 라고 하면 그대로 답한다', (buttonNavigation) => {
+    mockNativeModule?.isButtonNavigation.mockReturnValue(buttonNavigation)
+
+    expect(rnSystemBarsPort.isButtonNavigation()).toBe(buttonNavigation)
+  })
+
+  // 사용자가 내비게이션 방식을 바꾸면 하단바가 그 자리에서 따라 움직여야 한다.
+  it('네이티브의 바뀜 이벤트를 듣고, 돌려준 함수로 뗀다', () => {
+    const listener = jest.fn()
+
+    const unsubscribe = rnSystemBarsPort.addButtonNavigationListener(listener)
+    const [eventName, nativeListener] = mockNativeModule?.addListener.mock.calls[0] ?? []
+    nativeListener?.({ buttonNavigation: true })
+
+    expect(eventName).toBe('onButtonNavigationChange')
+    expect(listener).toHaveBeenCalledTimes(1)
+
+    unsubscribe()
+    expect(remove).toHaveBeenCalledTimes(1)
+  })
+
+  // iOS 에는 이 바가 없다. 던지면 하단바를 그리는 모든 화면이 깨진다.
+  it('네이티브 모듈이 없는 플랫폼(iOS)에서는 3버튼이 아니고, 구독은 아무것도 하지 않는다', () => {
+    mockNativeModule = null
+
+    expect(rnSystemBarsPort.isButtonNavigation()).toBe(false)
+    const unsubscribe = rnSystemBarsPort.addButtonNavigationListener(jest.fn())
+    expect(() => unsubscribe()).not.toThrow()
   })
 })

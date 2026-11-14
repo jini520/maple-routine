@@ -6,7 +6,8 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
-import { __resetNativePortsForTest, setHapticsPort } from '../../../../native/ports'
+import { setHapticsPort } from '../../../../native/ports'
+import { installNoopNativePorts } from '../../../../native/__tests__/fake-native-ports'
 import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import {
   __resetThemeAppearanceForTest,
@@ -285,7 +286,8 @@ describe('＋ 의 촉각', () => {
     setHapticsPort({ tap, select: async () => {} })
   })
 
-  afterEach(__resetNativePortsForTest)
+  // 비우지 않고 기본값으로 되돌린다. 원의 자리가 시스템 바 포트(3버튼 내비게이션 바인지)를 읽는다.
+  afterEach(installNoopNativePorts)
 
   it('열 때와 닫을 때 한 번씩 난다', async () => {
     const view = await 그리기()
@@ -312,7 +314,7 @@ describe('＋ 의 촉각', () => {
 describe('알약의 모양', () => {
   beforeEach(() => setHapticsPort({ tap: async () => {}, select: async () => {} }))
   afterEach(() => {
-    __resetNativePortsForTest()
+    installNoopNativePorts()
     jest.mocked(useReducedMotion).mockReturnValue(false)
   })
 

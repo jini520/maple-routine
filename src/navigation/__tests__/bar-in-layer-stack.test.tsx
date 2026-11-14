@@ -14,12 +14,13 @@ import { useAppEntryStore } from '../../features/app-entry/store'
 import jobThemes from '../../data/job-themes.json'
 import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
-import { BAR_MAX_WIDTH, resolveBottomBarMetrics } from '../../lib/bottom-bar-metrics'
+import { BAR_MAX_WIDTH, BAR_SIDE_MARGIN, resolveBottomBarMetrics } from '../../lib/bottom-bar-metrics'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../theme/appearance-store'
 import { resetBarStoreForTests, setLastSub } from '../../components/organisms/BottomBar/bar-store'
 import { useBarOrderStore } from '../../features/bar-order/store'
 import { DEFAULT_BAR_ORDER, type BarOrder } from '../bar-groups'
-import { setHapticsPort } from '../../native/ports'
+import { setHapticsPort, setSystemBarsPort } from '../../native/ports'
+import { buttonNavigationSystemBarsPort, noopSystemBarsPort } from '../../native/__tests__/fake-native-ports'
 import { __resetScrollToTopForTest, registerScrollToTop } from '../scroll-to-top'
 import { NavigationHarness } from './harness'
 import { installMemoryPreferences } from './memory-preferences'
@@ -49,6 +50,7 @@ beforeEach(() => {
 afterEach(() => {
   useAppEntryStore.setState({ stage: 'signIn' })
   __resetThemeAppearanceForTest()
+  setSystemBarsPort(noopSystemBarsPort)
 })
 
 async function press(testID: string): Promise<void> {
@@ -322,13 +324,28 @@ describe('바의 스타일이 플랫폼을 안 가린다', () => {
   // 콘텐츠 인셋(`ScreenScroll`)이 서로 다른 값을 믿는 상태가 조용히 만들어진다.
   it('바의 폭·높이가 창 폭에서 나온다', async () => {
     await render(<NavigationHarness />)
-    const metrics = resolveBottomBarMetrics(Dimensions.get('window').width)
+    const metrics = resolveBottomBarMetrics(Dimensions.get('window').width, false)
 
     const style = styleOf('bottom-bar')
 
     expect(style.height).toBe(metrics.heightPx)
     expect(style.left).toBe(metrics.sideMarginPx)
     expect(style.right).toBe(metrics.sideMarginPx)
+  })
+
+  // 3버튼 내비게이션 바는 버튼 줄 전체가 인셋이라, 안전영역 바로 위에 서면 바가 버튼 줄에 붙는다(#984).
+  // 띄우는 높이는 좌우 최소 여백과 같아 바가 세 방향에서 같은 간격으로 뜬다.
+  it('3버튼 내비게이션 바가 있으면 안전영역 위 14 에 선다', async () => {
+    setSystemBarsPort(buttonNavigationSystemBarsPort)
+    await render(<NavigationHarness />)
+
+    expect(styleOf('bottom-bar').bottom).toBe(34 + BAR_SIDE_MARGIN)
+  })
+
+  it('3버튼 내비게이션 바가 없으면 안전영역 바로 위에 선다', async () => {
+    await render(<NavigationHarness />)
+
+    expect(styleOf('bottom-bar').bottom).toBe(34)
   })
 
  // 큰 화면에서 캡슐이 계속 늘어나지 않는다. 테스트 창(750pt)이 이미 상한 밖이라

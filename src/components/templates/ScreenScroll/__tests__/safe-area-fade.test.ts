@@ -17,9 +17,9 @@ import { FADE_MASK_ALPHAS, FADE_MASK_LOCATIONS, resolveSafeAreaFade } from '../s
  */
 const 인셋 = { top: 59, bottom: 34 }
 
-/** 기준 기기(402pt)의 바 몫. 기기마다 다르다(`bottom-bar-metrics.ts`). */
+/** 기준 기기(402pt)의 바 높이. 기기마다 다르다(`bottom-bar-metrics.ts`). 띄우지 않으면 바 몫과 같다. */
 const 바_몫 = 72
-/** 페이드가 바 위로 올라가는 몫. 바 몫의 절반. */
+/** 페이드가 바 위로 올라가는 몫. 바 높이의 절반. */
 const 바_페이드 = 바_몫 / 2
 
 /** 화면 하나분의 인자. 하단 판정(`bottom-inset.ts`)을 그대로 태워서 넘긴다. */
@@ -35,7 +35,8 @@ const 화면 = (
     hasTabBar,
     topSafeAreaPx: 인셋.top,
     bottomSafeAreaPx,
-    barSpacePx: 바_몫,
+    barHeightPx: 바_몫,
+    barLiftPx: 0,
     portBottomPx: resolveScreenBottomInset({
       hasTabBar,
       insetBottomPx,
@@ -76,12 +77,27 @@ describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다',
   // 바 몫이 기기마다 다르다. 페이드를 상수로 두면 큰 화면에서는 캡슐 한가운데보다 아래에서
   // 0 이 되고(콘텐츠가 선명한 채로 캡슐에 들어간다), 작은 화면에서는 그 위에서 0 이 된다
   // (캡슐 위가 흐릿하다).
-  it('바 몫이 달라지면 페이드도 그 절반으로 따라간다', () => {
-    for (const barSpacePx of [64, 72, 81]) {
-      const fade = resolveSafeAreaFade({ ...화면(true, 'ios'), barSpacePx })
+  it('바 높이가 달라지면 페이드도 그 절반으로 따라간다', () => {
+    for (const barHeightPx of [64, 72, 81]) {
+      const fade = resolveSafeAreaFade({ ...화면(true, 'ios'), barHeightPx })
 
-      expect(fade.bottomPx).toBe(인셋.bottom + barSpacePx / 2)
+      expect(fade.bottomPx).toBe(인셋.bottom + barHeightPx / 2)
     }
+  })
+
+  // 3버튼 내비게이션 바 위에서는 바가 안전영역보다 14 더 뜬다. 그만큼 캡슐 한가운데도 올라가므로 페이드도
+  // 함께 올라야 한다. 띄운 몫까지 반으로 나누면 한가운데보다 7 아래에서 0 이 되어 콘텐츠가 선명한 채로 캡슐에 들어간다.
+  it('바를 띄우면 그 높이를 통째로 더한다. 0 이 되는 자리는 여전히 캡슐 한가운데다', () => {
+    const fade = resolveSafeAreaFade({ ...화면(true, 'android', 48), barLiftPx: 14 })
+
+    // 캡슐 한가운데 = 안전영역 + 띄운 높이 + 바 높이의 절반
+    expect(fade.bottomPx).toBe(48 + 14 + 바_몫 / 2)
+  })
+
+  it('바가 없는 하위 페이지는 띄운 높이를 보지 않는다', () => {
+    const fade = resolveSafeAreaFade({ ...화면(false, 'ios'), barLiftPx: 14 })
+
+    expect(fade.bottomPx).toBe(인셋.bottom)
   })
 
   // 하위 페이지에는 바가 없다. 그래서 값이 안 바뀐다.

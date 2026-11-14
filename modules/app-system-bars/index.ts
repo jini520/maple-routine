@@ -1,7 +1,10 @@
-import { requireOptionalNativeModule } from 'expo'
+import { NativeModule, requireOptionalNativeModule } from 'expo'
 
 /**
- * 하단 시스템 내비게이션 바 글리프의 명암([[ADR-128]] 3단계 — `SystemBarsPort` 의 절반).
+ * 하단 시스템 내비게이션 바 글리프의 명암([[ADR-128]] 3단계 — `SystemBarsPort` 의 절반)과 그 바가 3버튼인지.
+ *
+ * 3버튼인지도 RN 에서는 알 수 없다. `react-native-safe-area-context` 는 아래 인셋 하나만 주고, 그 값으로는
+ * 3버튼(48 안팎)과 제스처(15~24)를 어림잡을 수밖에 없다.
  *
  * ## 왜 네이티브 코드가 필요한가
  *
@@ -19,9 +22,19 @@ import { requireOptionalNativeModule } from 'expo'
  * `if (platform !== 'android') return` 을 두고 있었다. `not-implemented.ts` 의 기준으로 말하면
  * *"이 플랫폼에 그 개념이 없다"* 쪽이라 **정당한 no-op** 이다.
  */
-export interface AppSystemBarsNativeModule {
+export declare class AppSystemBarsNativeModule extends NativeModule<AppSystemBarsEvents> {
   /** `dark`: 어두운 표면(다크 테마)이면 `true` → 글리프를 밝게 그린다. */
   setNavigationBarStyle(dark: boolean): Promise<void>
+  /**
+   * 아래에 3버튼 내비게이션 바가 있는가. 탭할 수 있는 시스템 바 인셋(`tappableElement`)의 아래 값이 0 보다 큰지다.
+   * 제스처 내비게이션에서는 0 이다. 동기 함수라 첫 렌더부터 맞는 값을 쓴다.
+   */
+  isButtonNavigation(): boolean
+}
+
+type AppSystemBarsEvents = {
+  /** 3버튼 내비게이션 바가 생기거나 사라졌다. 사용자가 방식을 바꾸거나 버튼 줄을 숨기면 온다. */
+  onButtonNavigationChange: (event: { buttonNavigation: boolean }) => void
 }
 
 export default requireOptionalNativeModule<AppSystemBarsNativeModule>('AppSystemBars')

@@ -3,9 +3,9 @@ import type { SystemBarsPort } from '../ports'
 import AppSystemBars from '../../../modules/app-system-bars'
 
 /**
- * `SystemBarsPort` 의 RN 구현. 두 메서드의 사정이 정반대다.
+ * `SystemBarsPort` 의 RN 구현. 메서드마다 사정이 다르다.
  *
- * `setNavigationBarStyle` 은 로컬 Expo 모듈(`modules/app-system-bars`)이 진짜로 한다.
+ * `setNavigationBarStyle` 과 3버튼 내비게이션 바 판별은 로컬 Expo 모듈(`modules/app-system-bars`)이 진짜로 한다.
  * `refreshSafeAreaInsets` 는 할 일이 없다.
  *
  * 그 함수의 존재 이유는 유실 복구였다. 네이티브가 최초 인셋을 적용하는 시점이 화면 준비보다
@@ -32,4 +32,14 @@ export const rnSystemBarsPort: SystemBarsPort = {
 
   /** 의도적으로 비어 있다. 다시 요청할 대상도, 유실될 주입도 없다. */
   async refreshSafeAreaInsets() {},
+
+  /** iOS 는 모듈이 없고 그 바도 없으므로 거짓. */
+  isButtonNavigation() {
+    return AppSystemBars?.isButtonNavigation() ?? false
+  },
+
+  addButtonNavigationListener(listener) {
+    const subscription = AppSystemBars?.addListener('onButtonNavigationChange', () => listener())
+    return () => subscription?.remove()
+  },
 }
