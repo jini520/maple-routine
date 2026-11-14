@@ -8,8 +8,9 @@ import { applyAutoDropFees, updateDropFees } from '../../storage/boss-drops'
 import { updateProfitSplitFees } from '../../storage/boss-profit'
 import { judgeCrystalLimit } from '../boss-profit/crystal-limit-judge'
 import { applyAutoIncomeSaleFees, updateIncomeSaleFees } from '../../storage/income'
+import { updateTransferFees } from '../../storage/spend'
 import { bulkDropUpdates, bulkIncomeUpdates } from './bulk-apply'
-import { recalcCrystalUpdates, recalcDropUpdates, recalcIncomeUpdates } from './recalculate-fees'
+import { recalcCrystalUpdates, recalcDropUpdates, recalcIncomeUpdates, recalcTransferUpdates } from './recalculate-fees'
 
 /** 목록 함수가 남은 일을 세고, 앞에서 `limit` 개를 잘라 쓴다. 쓴 기록은 목록에서 빠져 다시 안 잡힌다. */
 function step<T>(label: string, sub: string | undefined, updates: () => Promise<T[]>, write: (chunk: T[]) => Promise<void>): TaskStep {
@@ -50,6 +51,7 @@ export const mvpRecalcFeeTask: ResumableTask = {
       // 받은 몫이 바뀌면 한도를 넘긴 처치의 차례도 바뀐다.
       await judgeCrystalLimit(chunk.map((update) => update.periodKey))
     }),
+    step('주간 보스 수입 이전', undefined, recalcTransferUpdates, updateTransferFees),
   ],
   doneToast: (count) => `자동 수수료 기록 ${count.toLocaleString()}건을 다시 계산했어요`,
 }

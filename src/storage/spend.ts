@@ -284,6 +284,37 @@ export async function deleteSpendRecord(id: string): Promise<void> {
   bumpSpendRecordsRevision()
 }
 
+/** 수수료가 자동인 `주간 보스 수입 이전` 기록. 등급 기록이 바뀌면 다시 셀 대상이다 */
+export async function getAutoFeeTransferRecords(): Promise<SpendRecord[]> {
+  const db = await getBossProfitDb()
+  const entries = await readEntries(
+    db,
+    `e.entry_type = 'spend' AND EXISTS (SELECT 1 FROM cashbook_entry_transfer_inputs t WHERE t.entry_id = e.id AND t.fee_auto = 1)`,
+    [],
+  )
+  return entries.map(spendRecordOf)
+}
+
+export interface TransferFeeUpdate {
+  id: string
+  feePercent: number
+  /** 수수료. 이 기록의 지출 금액이다 */
+  mesoAmount: number
+}
+
+/** `주간 보스 수입 이전` 기록의 요율과 수수료를 고쳐 쓴다. 수수료가 곧 지출이라 품목 금액도 함께 간다 */
+export async function updateTransferFees(updates: readonly TransferFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run('UPDATE cashbook_entry_transfer_inputs SET fee_percent = ? WHERE entry_id = ?', [update.feePercent, update.id])
+      await db.run('UPDATE cashbook_entry_items SET amount_meso = ? WHERE entry_id = ?', [update.mesoAmount, update.id])
+    }
+  })
+  bumpSpendRecordsRevision()
+}
+
 /** 날짜 범위의 기록. **두 끝을 포함**한다. `ocid` 로 거르지 않는 이유는 `income.ts` 와 같다. */
 export async function getSpendRecordsBetween(
   fromDateKey: string,
