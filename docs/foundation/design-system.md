@@ -97,9 +97,10 @@
 | `InsetNote` | 가운데 모달의 `card-inset` 칸에 든 설명 문단. `text-xs` 흐린 색([[ADR-017]] 결정 8) |
 | `NumberPad` | 짧은 화면에서 숫자 칸이 쓰는 앱 판 |
 | `AmountFigure` | 시트의 큰 숫자. 칠 수 없다 |
-| `MemoField` | 시트의 메모 칸. 비어 있으면 `메모 추가` 칸, 적으면 `메모` 라벨 아래 본문 전체. 누르면 부르는 쪽이 여러 줄 입력 카드를 연다([[ADR-051]] 결정 14 · [[ADR-048]] 결정 19) |
+| `MemoField` | 시트의 메모 칸. 비어 있으면 `메모 추가` 칸, 적으면 `메모` 라벨 아래 본문 전체. 누르면 부르는 쪽이 여러 줄 입력 카드를 연다([[ADR-051]] 결정 14 · [[ADR-048]] 결정 19). `onPress` 가 없으면 누를 수 없는 읽기 전용이다([[ADR-228]] 결정 7) |
+| `SearchField` | 목록을 좁히는 입력 칸. 돋보기와 한 줄 입력이 선 `card-inset` 칸이고, 칸 카드 안 칸과 높이 · 바탕이 같다([[ADR-228]] 결정 9) |
 | `BackButton` | 헤더의 `←`. 크기는 하나(28px · 흐린 화살표) |
-| `CalendarGrid` · `DateSelect` · `TimeWheel` | 달력 격자 · 날짜 선택 버튼 · 시각 휠 |
+| `CalendarGrid` · `DateSelect` · `TimeWheel` | 달력 격자 · 날짜 선택 버튼 · 시각 휠. `DateSelect` 의 `readOnly` 는 화살표를 빼고 누르지 못하게 한 바꿀 수 없는 날짜다([[ADR-228]] 결정 9) |
 | `ShareField` · `PartyShareSummary` | 분배 비율 고르기 · 분배 요약 줄([[ADR-038]]) |
 | `Stepper` | `−` · 숫자 · `+` 고르개. 크기 `sm` · `md`. 색은 세그먼트와 같아 어디에 놓여도 같다([[ADR-060]] 결정 14). 값이 바뀌면 `selectionFeedback()` 햅틱을 낸다([[ADR-059]] 결정 10) |
 | `BossPortrait` · `CharacterAvatar` | 보스 얼굴 · 캐릭터 얼굴 원. 링을 두른 초상화(캐릭터 레일 · 보스 수입 카드 머리) 말고는 머리를 원 밖으로 그린다(오버 프레임, [[ADR-219]] 결정 12 · 13) |

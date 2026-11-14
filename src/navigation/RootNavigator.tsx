@@ -3,6 +3,7 @@ import { useAppEntryStore } from '../features/app-entry/store'
 
 import { DropHistoryScreen } from '../app/boss-profit/DropHistoryScreen'
 import { DropPriceScreen } from '../app/boss-profit/DropPriceScreen'
+import { TradeHistoryScreen } from '../app/trade-history/TradeHistoryScreen'
 import { ContentManageScreen } from '../app/content-scheduler/ContentManageScreen'
 import { SignInScreen } from '../app/auth/SignInScreen'
 import { CharacterSetupScreen } from '../app/character-setup/CharacterSetupScreen'
@@ -42,6 +43,7 @@ const STACK_SCREENS = {
   ContentManage: ContentManageScreen,
   DropHistory: DropHistoryScreen,
   DropPrice: DropPriceScreen,
+  TradeHistory: TradeHistoryScreen,
   SettingsReleaseNotes: SettingsReleaseNotesScreen,
   SettingsAbout: SettingsAboutScreen,
   SettingsCharacters: SettingsCharactersScreen,

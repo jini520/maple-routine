@@ -7,15 +7,19 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `app/trade-history/TradeHistoryScreen.tsx` | 머리 · 판매/구매 세그먼트 · 필터 카드 · 날짜 제목으로 묶은 목록 |
+| `app/trade-history/TradeHistoryScreen.tsx` | 머리 · 판매/구매 세그먼트 · 필터 카드(기간 · 캐릭터 · 검색) · 날짜 제목으로 묶은 목록 · 목록 줄 |
 | `app/trade-history/TradeDetailSheet.tsx` | 읽기 전용 상세 시트와 `거래로 이동` |
-| `features/trade-history/` | 기록 모으기 · 줄 세우기 · 필터 · 쿼리. 가계부와 같은 저장소 읽기(`storage/income.ts` · `storage/spend.ts` · `storage/boss-drops.ts`)를 거친다 |
-| `components/molecules/SearchField/` | 아이템 검색 칸. 돋보기와 입력이 선 `card-inset` 칸 |
-| `components/molecules/DateSelect/` | 기간 칸의 날짜 알약, 상세 시트의 화살표 없는 날짜 알약 |
+| `features/trade-history/rows.ts` | 줄 세우기(`tradeRowsOf`) · 필터(`filterTradeRows`) · 날짜 묶음 · 처음 기간 · 캐릭터 드롭다운 보기 |
+| `features/trade-history/detail.ts` | 상세 시트의 머리 · 칸 · 금액(`tradeDetailOf`) |
+| `features/trade-history/load.ts` · `query.ts` | 조회 한도부터 오늘까지의 기록 읽기와 쿼리. 가계부와 같은 저장소 읽기를 거치고, 수입 · 지출 · 드롭 · 보스 수익 표의 판이 오르면 다시 읽는다 |
+| `features/trade-history/target.ts` | `거래로 이동` 이 가계부에 넘기는 기록 |
+| `features/cashbook/records.ts` | 줄의 윗줄(`tradeLineOf`), 판 드롭 읽기(`loadSoldDropsBetween`). 이름 · 단위는 하루 목록 줄과 같은 표에서 찾는다 |
+| `components/molecules/SearchField/` | 아이템 검색 칸 |
+| `components/molecules/DateSelect/` | 기간 칸의 날짜 알약, 상세 시트의 화살표 없는 날짜 알약(`readOnly`) |
 | `app/cashbook/sheet-fields.tsx` 의 `SelectRow` | 캐릭터 칸. 가계부 시트의 캐릭터 칸과 같다 |
-| `app/inventory/InventorySaleSheet.tsx` 의 `InventoryItemBlock` | 상세 시트 맨 위의 아이템 블록 |
-| `app/boss-profit/drop-price-card.ts` | 보스 드롭 판매의 `거래로 이동` 이 여는 가격 입력 카드 |
-| `navigation/routes.ts` · `navigation/RootNavigator.tsx` | 하위 페이지 `TradeHistory`, 가계부 라우트의 열 기록 파라미터 |
+| `app/inventory/InventorySaleSheet.tsx` 의 `ItemBlock` | 상세 시트 맨 위의 아이템 블록. 인벤토리 판매 시트와 같은 블록이다 |
+| `app/cashbook/open-drop-price-card.ts` | 보스 드롭 판매의 `거래로 이동` 이 가계부에서 여는 가격 입력 카드 |
+| `navigation/routes.ts` · `navigation/RootNavigator.tsx` | 하위 페이지 `TradeHistory`, 가계부 라우트의 `trade` 파라미터 |
 
 ## 담는 기록
 
@@ -53,7 +57,7 @@
 | 아이템 검색 | 치는 대로 좁힌다. 고른 아이템 이름과 직접 친 아이템 이름만 찾고, 지출 항목 이름과 메모는 찾지 않는다 |
 | 목록 | 최신 날짜가 위이고 날짜 제목 아래에 그날 기록이 모인다. 같은 날은 나중에 적은 기록이 위다. 올해가 아닌 날짜는 연도가 붙는다 |
 
-네 필터는 함께 걸린다. 페이지를 열 때마다 처음 값으로 선다.
+네 필터는 함께 걸린다. 페이지를 열 때마다 처음 값으로 선다. 목록이 비면 기록이 없을 때와 필터에 맞는 기록이 없을 때 모두 `아직 기록이 없어요` 가 선다. 읽기 전에는 이 문구를 보이지 않는다.
 
 ## 목록의 줄
 

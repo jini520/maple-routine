@@ -21,6 +21,7 @@ import { inventoryItemIconOf, inventoryItemNameOf } from '../../features/invento
 import { useToastStore } from '../../features/toast/store'
 import { netProceedsMeso } from '../../lib/cashbook/item-split'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
+import type { ImageAssetRef } from '../../types/image-asset'
 import { useSaleFeeChoice } from '../cashbook/income/sale-fee'
 import { SaveRow } from '../cashbook/income/form-shared'
 import { AmountInput, FieldCard, FieldRow, MemoInput, SheetDateField } from '../cashbook/sheet-fields'
@@ -29,33 +30,58 @@ type ItemCell = Extract<InventoryCell, { kind: 'item' }>
 
 const FRAGMENT_KEY = 'sol_erda_fragment'
 
-/** 아이템 블록. 바꿀 수 없는 아이템 · 주인을 한 덩어리로 모은다. 오른쪽에 남은 개수가 선다. */
-export function InventoryItemBlock(props: {
-  cell: ItemCell
+/**
+ * 아이템 블록. 바꿀 수 없는 아이템 · 주인을 한 덩어리로 모은다. 오른쪽에 개수가 선다. 거래 내역 상세 시트도 같은 블록을 쓴다.
+ *
+ * @param ownerLabel 주인 줄의 이름(`메이플 ID · 월드` · `캐릭터`)
+ */
+export function ItemBlock(props: {
+  icon: ImageAssetRef | null
+  name: string
+  ownerLabel: string
   owner: string
   right?: React.ReactNode
   children?: React.ReactNode
 }): React.JSX.Element {
-  const icon = inventoryItemIconOf(props.cell.itemKey)
   return (
     <View testID="inventory-item-block" className="gap-0.5 rounded-[10px] bg-card-inset px-3 py-2">
       <View className="min-h-[30px] flex-row items-center gap-2.5">
-        {icon === null ? (
+        {props.icon === null ? (
           <View style={{ width: 26, height: 26 }} />
         ) : (
-          <Image source={icon} style={{ width: 26, height: 26 }} resizeMode="contain" aria-hidden />
+          <Image source={props.icon} style={{ width: 26, height: 26 }} resizeMode="contain" aria-hidden />
         )}
-        <Text className="shrink text-sm font-semibold text-text">{inventoryItemNameOf(props.cell.itemKey)}</Text>
+        <Text className="shrink text-sm font-semibold text-text">{props.name}</Text>
         {props.right !== undefined && <View className="ml-auto shrink-0">{props.right}</View>}
       </View>
       <View className="min-h-7 flex-row items-center gap-3">
-        <Text className="shrink-0 text-xs text-text-muted">메이플 ID · 월드</Text>
+        <Text className="shrink-0 text-xs text-text-muted">{props.ownerLabel}</Text>
         <Text className="ml-auto shrink text-right text-sm text-text-muted" numberOfLines={1}>
           {props.owner}
         </Text>
       </View>
       {props.children}
     </View>
+  )
+}
+
+/** 인벤토리 칸의 아이템 블록. 주인은 메이플 ID · 월드다. */
+export function InventoryItemBlock(props: {
+  cell: ItemCell
+  owner: string
+  right?: React.ReactNode
+  children?: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <ItemBlock
+      icon={inventoryItemIconOf(props.cell.itemKey)}
+      name={inventoryItemNameOf(props.cell.itemKey)}
+      ownerLabel="메이플 ID · 월드"
+      owner={props.owner}
+      right={props.right}
+    >
+      {props.children}
+    </ItemBlock>
   )
 }
 

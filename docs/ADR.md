@@ -217,4 +217,4 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-187+213+216](./adr/ADR-187+213+216_game-data_item-catalog.md) | ⚪ | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 · 고르기 목록 칸 · 묶음 표 |
 | [ADR-188](./adr/ADR-188_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기 |
 | [ADR-209](./adr/ADR-209_inventory_items.md) | 🟢 | inventory | 인벤토리 |
-| [ADR-228](./adr/ADR-228_trade-history_page.md) | ⚪ | trade-history | 거래 내역 |
+| [ADR-228](./adr/ADR-228_trade-history_page.md) | 🟢 | trade-history | 거래 내역 |

@@ -30,6 +30,7 @@
 | `lib/cashbook/meso-market-exchange.ts` | 메소마켓 환전 수수료의 금액(`mesoMarketExchangeMeso`) |
 | `lib/cashbook/boss-income-transfer.ts` | 주간 보스 수입 이전의 수수료(`transferFeeMeso`) |
 | `features/cashbook/week-crystal.ts` | 한 캐릭터의 그 주 결정석 몫(`loadWeekCrystalMeso`). `주간 보스 수입 이전` 의 체크 박스가 읽는다 |
+| `app/cashbook/open-drop-price-card.ts` | 거래 내역의 `거래로 이동` 으로 온 보스 드롭 판매의 가격 입력 카드 |
 | `app/cashbook/item-pick-field.tsx` · `hooks/useItemPick.ts` | 아이템 구매 · 판매의 아이템 칸. 목록에서 고르거나 직접 친다 |
 | `components/molecules/MemoField/` · `app/cashbook/sheet-fields.tsx` 의 `MemoInput` | 아이템 구매 · 판매 폼과 인벤토리 판매 시트의 메모 칸. 칸은 파티 스케줄 시트와 같은 부품이고, `MemoInput` 이 여러 줄 입력 카드를 연다 |
 | `lib/cashbook/categories.ts` | 지출 · 수입 분류, 메이플 ID 를 고를 수 있는 분류, 아이템 종류, 에픽던전 형태의 key 와 이름 |

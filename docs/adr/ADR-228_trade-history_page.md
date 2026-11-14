@@ -1,7 +1,7 @@
 # ADR-228 거래 내역
 
-> ⚪ 미구현
-> 관련 소스: `app/cashbook/CashbookScreen.tsx` · `features/cashbook/records.ts` · `features/cashbook/range.ts`(`historyFloorDateKey`) · `features/cashbook/account-names.ts` · `storage/income.ts` · `storage/spend.ts` · `storage/boss-drops.ts` · `app/boss-profit/drop-price-card.ts` · `app/inventory/InventorySaleSheet.tsx`(`InventoryItemBlock`) · `lib/item-search.ts` · `components/molecules/DateSelect/` · `navigation/routes.ts` · 이슈 #1016 · #1002
+> 🟢 유효
+> 관련 소스: `app/trade-history/` · `features/trade-history/` · `app/cashbook/CashbookScreen.tsx` · `app/cashbook/open-drop-price-card.ts` · `features/cashbook/records.ts`(`tradeLineOf` · `loadSoldDropsBetween`) · `features/cashbook/range.ts`(`historyFloorDateKey`) · `app/inventory/InventorySaleSheet.tsx`(`ItemBlock`) · `components/molecules/SearchField/` · `components/molecules/DateSelect/` · `navigation/routes.ts` · 이슈 #1016 · #1002
 
 ## 배경
 
@@ -24,7 +24,8 @@
 - 누르면 하위 페이지 `TradeHistory` 가 열리고, ← 를 누르면 가계부로 돌아온다. 수입·지출 하단바의 하위 탭은 넷 그대로다(사용자 지정
   2026-11-14).
 - 머리는 다른 하위 페이지처럼 `BackButton` · 제목 `거래 내역` · `PageHeaderTitleRow` 다. 진입 뒤의 모든 페이지처럼 FAQ 물음표를
-  단다([[ADR-150]] 결정 1). 문항은 사용자가 정하고, 문항이 생기기 전에는 보이지 않는다.
+  단다([[ADR-150]] 결정 1). 문항은 사용자가 정하고, 문항이 생기기 전에는 보이지 않는다. 서버 FAQ 표에 문항 없는 묶음
+  `trade-history`(제목 `거래 내역`)를 만들어 두었다(사용자 지정 2026-11-15).
 
 ### 결정 2. 아이템을 사고판 기록 여섯 가지를 담고, `기타` 는 담지 않는다 (사용자 지정 2026-11-14)
 
@@ -87,6 +88,9 @@
 - 날짜 제목은 `11월 14일 (토)`(`formatDayLabel`)이고 섹션 제목(`text-sm font-bold`)이다. 올해가 아닌 날은 앞에 `2025년` 을
   붙인다. 기간이 1년 6개월까지 걸쳐 같은 월 · 일이 두 번 나오기 때문이다. 가계부의 기간 이름도 올해가 아니면 연도를 붙인다.
 - 같은 날 안에서는 나중에 적은 기록이 위다(`created_at`). 보스 드롭은 가격을 넣은 시각(`priced_at`)으로 센다.
+- 목록이 비면 `EmptyState` 에 `아직 기록이 없어요` 가 선다. 기록이 아예 없을 때와 필터에 맞는 기록이 없을 때 같은 문구이고,
+  가계부의 빈 목록과 같은 글자다(사용자 지정 2026-11-15). 읽기 전에는 이 문구를 보이지 않는다. 아직 모르는 것을 없다고 말하게
+  되기 때문이다.
 
 ### 결정 5. 필터는 판매 · 구매, 기간, 캐릭터, 아이템 검색 넷이고, 모두 맞는 기록만 보인다 (시안 F8 · P1, 사용자 지정 2026-11-14)
 
@@ -191,18 +195,15 @@
 
 ## 테스트
 
-구현할 때 적는다. 지킬 것은 이렇다.
-
 | 파일 | 확인하는 것 |
 |---|---|
-| `features/trade-history/__tests__/` | 결정 2: 여섯 가지 기록이 들고 `기타` · 결정석 · 강화 · 심볼 · 헥사가 빠지는지, 조각 가격이 `NULL` 인 사냥 기록이 빠지고 0 메소로 판 것은 드는지, 드롭이 처치한 날에 서는지 본다. 결정 3: 장비에 개수가 없는지, 사냥 기록 줄의 금액이 조각 몫만인지, 메이플 ID 기록이 메이플 ID 이름으로 서는지 본다. 결정 4: 날짜가 최신 순이고 같은 날은 나중에 적은 기록이 위인지, 올해가 아닌 날에 연도가 붙는지 본다. 결정 5: 넷이 함께 걸리는지, 고른 아이템을 아이템 표의 이름으로 찾고 지출 항목 이름 · 메모로는 안 찾히는지, 캐릭터 드롭다운에 기록이 있는 캐릭터만 서고 메이플 ID 가 뒤에 서는지 본다. 결정 6: 처음 기간이 3개월 전 같은 날(없으면 그 달 마지막 날)부터인지 본다 |
-| `app/trade-history/__tests__/` | 결정 7: 상세 시트에 수정 · 삭제가 없고 날짜 알약이 눌리지 않는지, 메모가 없으면 메모 칸이 없는지 본다. 결정 8: `거래로 이동` 이 가계부에 날짜와 기록을 넘기는지 본다 |
-| `app/cashbook/__tests__/CashbookScreen.test.tsx` | 결정 8: 열 기록을 받으면 그 날짜를 고르고 수정 시트(드롭은 가격 입력 카드)를 연 뒤 파라미터를 지우는지 본다 |
-
-## 열린 질문
-
-- 기록이 없거나 필터에 맞는 기록이 없을 때 목록 위치에 보일 문구. 사용자가 정한다.
+| `features/trade-history/__tests__/rows.spec.ts` | 결정 2: 여섯 가지 기록만 줄이 되고 `기타` · 심볼이 빠지는지, 조각 가격이 `NULL` 인 사냥 기록이 빠지고 0 메소로 판 사냥은 드는지, 드롭이 처치한 날에 서는지 본다. 결정 3: 장비에 개수가 없는지, 사냥 기록 줄의 금액이 조각 몫만인지, 드롭 금액이 분배 · 수수료를 뗀 몫인지, 메이플 ID 기록이 메이플 ID 를 주인으로 들고 메모를 싣는지 본다. 결정 4: 날짜가 최신 순이고 같은 날은 나중에 적은 기록이 위인지, 올해가 아닌 날에 연도가 붙는지 본다. 결정 5: 네 필터가 함께 걸리는지, 고른 아이템을 아이템 표의 이름으로 찾고 지출 항목 이름 · 메모로는 안 찾히는지, 캐릭터 드롭다운이 기록 있는 캐릭터만 관리 순서로 세우고 추적 밖 캐릭터 · 메이플 ID 를 뒤에 세우는지 본다. 결정 6: 처음 기간이 3개월 전 같은 날(없으면 그 달 마지막 날)부터인지 본다 |
+| `features/trade-history/__tests__/detail.spec.ts` | 결정 7: 아이템 판매의 단가가 뗀 수수료를 되돌려 수량으로 나눈 값인지, 장비 구매가 구매 비용 · 관세로 갈리는지, 사냥 기록 줄이 개당 가격과 조각 몫 금액인지, 드롭이 판매 가격 · 분배 비율 · 판매 수수료와 내 몫 금액인지 본다 |
+| `app/trade-history/__tests__/TradeHistoryScreen.test.tsx` | 결정 3: 줄의 판매 · 구매 글자 · 이름 · 개수 · 메모를 본다. 결정 4: 읽기 전에는 빈 목록 문구가 없고, 기록이 없을 때와 필터에 맞지 않을 때 모두 `아직 기록이 없어요` 인지 본다. 결정 5: 세그먼트와 검색이 목록을 좁히는지 본다. 결정 6: 기간 칸이 3개월로 열리는지 본다. 결정 7: 상세 시트에 수정 · 삭제가 없고 날짜 알약이 눌리지 않는지, 메모가 없으면 메모 칸이 없는지 본다. 결정 8: `거래로 이동` 이 가계부 탭에 그 기록을 넘기는지 본다 |
+| `app/cashbook/__tests__/CashbookScreen.test.tsx` | 결정 1: 머리의 `거래 내역` 이 하위 페이지를 여는지 본다. 결정 8: 받은 손입력 기록의 날짜를 고르고 수정 시트를 연 뒤 파라미터를 지우는지, 드롭은 수정 시트 대신 가격 입력 카드를 여는지 본다 |
+| `lib/faq/__tests__/faqs.spec.ts` | 결정 1: 앱이 단 FAQ key `trade-history` 가 서버 묶음에 있는지 본다 |
 
 ## 번호 기록
 
 - ADR-228 (2026-11-14): 처음 작성. 이슈 #1016 에서 사용자가 정한 것(2026-11-14)을 옮겼다
+- (2026-11-15) 구현하고 유효로 바꿨다. 열린 질문이던 빈 목록 문구(결정 4)와 서버 FAQ 묶음(결정 1)을 사용자가 정했다

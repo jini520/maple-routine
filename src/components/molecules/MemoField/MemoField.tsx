@@ -9,7 +9,8 @@ import { PlusIcon, StickyNoteIcon, Text } from '../../atoms'
 export interface MemoFieldProps {
   /** 지금 칸에 든 메모. 공백뿐이면 메모 없음이다 */
   memo: string
-  onPress: () => void
+  /** 없으면 읽기 전용이다. 적은 메모만 보이고 누를 수 없다(거래 내역 상세 시트) */
+  onPress?: () => void
   /** 본문 글자의 `testID` 는 이 값 뒤에 `-body` 를 붙인다 */
   testID?: string
 }
@@ -32,14 +33,26 @@ export function MemoField(props: MemoFieldProps): React.JSX.Element {
       </Pressable>
     )
   }
-  return (
-    <Pressable testID={props.testID} role="button" aria-label="메모 고치기" onPress={props.onPress} className="gap-1.5 active:opacity-60">
+  const body = (
+    <>
       <Text className="text-xs text-text">메모</Text>
       <View className="rounded-xl bg-surface px-3 py-2.5">
         <Text testID={props.testID === undefined ? undefined : `${props.testID}-body`} className="text-sm text-text">
           {props.memo}
         </Text>
       </View>
+    </>
+  )
+  if (props.onPress === undefined) {
+    return (
+      <View testID={props.testID} className="gap-1.5">
+        {body}
+      </View>
+    )
+  }
+  return (
+    <Pressable testID={props.testID} role="button" aria-label="메모 고치기" onPress={props.onPress} className="gap-1.5 active:opacity-60">
+      {body}
     </Pressable>
   )
 }

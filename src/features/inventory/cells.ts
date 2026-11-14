@@ -43,6 +43,11 @@ function dropKindOf(category: BossDropRecord['category']): ItemKindKey {
   return 'etc'
 }
 
+/** 드롭 아이템의 종류. 아이템 목록의 종류가 먼저이고, 목록에 없으면 드롭 표의 갈래로 정한다. 거래 내역도 같은 판정을 쓴다. */
+export function dropItemKindOf(drop: Pick<BossDropRecord, 'itemKey' | 'category'>): ItemKindKey {
+  return (drop.itemKey === null ? null : catalogKindOf(drop.itemKey)) ?? dropKindOf(drop.category)
+}
+
 function itemKindOf(key: string): ItemKindKey {
   return (ITEM_KIND_KEYS as readonly string[]).includes(key) ? (key as ItemKindKey) : 'etc'
 }
@@ -68,7 +73,7 @@ export function buildInventoryCells(input: {
           kind: 'drop',
           drop,
           itemKey: drop.itemKey!,
-          itemKindKey: catalogKindOf(drop.itemKey!) ?? dropKindOf(drop.category),
+          itemKindKey: dropItemKindOf(drop),
           count: drop.quantity,
           ringLevel: drop.ringLevel,
           faceOcid: drop.ocid,

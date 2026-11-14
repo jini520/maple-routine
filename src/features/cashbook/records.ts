@@ -34,7 +34,7 @@ import {
 import { hexaStorageCandidates, hexaTargetOf, type HexaStorages } from '../../lib/cashbook/hexa-matrix'
 import { accountOfOcid } from '../../lib/mvp/membership'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
-import { getBossDropRecords } from '../../storage/boss-drops'
+import { getBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
 import { getDatedBossProfitRecords } from '../../storage/boss-profit'
 import { readCharacterBasic } from '../schedule-sync/read-schedule'
 import { getRecordedCharacterOcids } from '../../storage/boss-profit'
@@ -363,19 +363,47 @@ async function resolveDisplayOcids(): Promise<string[]> {
   return [...new Set([...(tracked ?? []), ...recorded])]
 }
 
+/** 처치한 날이 밝혀진 판 드롭 하나. 드롭에는 날짜가 없어 짝인 보스 수익 행의 처치 날짜를 물려받는다. */
+export interface DatedSoldDrop {
+  dateKey: string
+  drop: BossDropRecord
+}
+
+/** 이 범위(두 끝 포함)에 처치한 날이 밝혀진 보스 수익 행과, 그 처치에서 값을 넣은 드롭. 가계부 줄과 거래 내역이 같이 읽는다. */
+async function loadDatedBossRows(
+  fromDateKey: string,
+  toDateKey: string,
+): Promise<{ records: Awaited<ReturnType<typeof getDatedBossProfitRecords>>; soldDrops: DatedSoldDrop[] }> {
+  const ocids = await resolveDisplayOcids()
+  if (ocids.length === 0) return { records: [], soldDrops: [] }
+
+  const records = await withSqliteFallback(getDatedBossProfitRecords(ocids, fromDateKey, toDateKey), [])
+  if (records.length === 0) return { records, soldDrops: [] }
+
+  const dateByBossRow = new Map(records.map((record) => [bossRowKey(record), record.defeatedOn]))
+  const periodKeys = [...new Set(records.map((record) => record.periodKey))]
+  const drops = await withSqliteFallback(getBossDropRecords(ocids, periodKeys), [])
+  const soldDrops: DatedSoldDrop[] = []
+  for (const drop of drops) {
+    // 짝인 수익 행이 없으면 물려받을 날짜가 없다. 결정석 가격을 모르는 보스가 그렇다.
+    const dateKey = dateByBossRow.get(bossRowKey(drop))
+    // 가계부는 판 것만 보여 준다. 값을 안 넣은 드롭과 `'excluded'`(기록 안 함)는 줄에도 판에도 안 든다.
+    if (dateKey === undefined || drop.priceState !== 'entered') continue
+    soldDrops.push({ dateKey, drop })
+  }
+  return { records, soldDrops }
+}
+
+/** 이 범위(두 끝 포함)에 처치한 보스의 판 드롭. 거래 내역이 드롭 한 건을 한 줄로 세운다. */
+export async function loadSoldDropsBetween(fromDateKey: string, toDateKey: string): Promise<DatedSoldDrop[]> {
+  return (await loadDatedBossRows(fromDateKey, toDateKey)).soldDrops
+}
+
 async function loadBossDaySummaries(
   fromDateKey: string,
   toDateKey: string,
 ): Promise<BossDaySummary[]> {
-  const ocids = await resolveDisplayOcids()
-  if (ocids.length === 0) {
-    return []
-  }
-
-  const records = await withSqliteFallback(
-    getDatedBossProfitRecords(ocids, fromDateKey, toDateKey),
-    [],
-  )
+  const { records, soldDrops } = await loadDatedBossRows(fromDateKey, toDateKey)
   if (records.length === 0) {
     return []
   }
@@ -399,10 +427,8 @@ async function loadBossDaySummaries(
     return created
   }
 
-  const dateByBossRow = new Map<string, string>()
   for (const record of records) {
-    dateByBossRow.set(bossRowKey(record), record.defeatedOn)
-    // 0 이 된 결정석(`제외` · 한도 초과)은 판 것이 아니라 줄에 안 세운다. 날짜는 그 보스의 드롭이 물려받으므로 위에서 먼저 남긴다.
+    // 0 이 된 결정석(`제외` · 한도 초과)은 판 것이 아니라 줄에 안 세운다. 그 보스의 드롭은 처치 날짜를 그대로 물려받는다.
     if (record.crystalExcluded || record.overCrystalLimit) continue
     const bucket = bucketOf(record.defeatedOn, record.ocid)
     bucket.crystalMeso += record.payoutMeso
@@ -416,15 +442,7 @@ async function loadBossDaySummaries(
     })
   }
 
-  const periodKeys = [...new Set(records.map((record) => record.periodKey))]
-  const drops = await withSqliteFallback(getBossDropRecords(ocids, periodKeys), [])
-  for (const drop of drops) {
-    // 짝인 수익 행이 없으면 물려받을 날짜가 없다. 결정석 가격을 모르는 보스가 그렇다.
-    const dateKey = dateByBossRow.get(bossRowKey(drop))
-    if (dateKey === undefined) continue
-
-    // 가계부는 판 것만 보여 준다. 값을 안 넣은 드롭과 `'excluded'`(기록 안 함)는 줄에도 판에도 안 든다.
-    if (drop.priceState !== 'entered') continue
+  for (const { dateKey, drop } of soldDrops) {
     const bucket = bucketOf(dateKey, drop.ocid)
     const payoutMeso = dropPayoutMeso(drop)
     bucket.dropMeso += payoutMeso
@@ -1089,6 +1107,91 @@ export function spendTileOf(record: SpendRecord): RecordCard {
       ? hexaParts(record)
       : [tradedItemName(record), tradedItemQuantity(record.itemKind ?? 'equipment', record.quantity)]
   return { title: name ?? cashbookCategoryOf('spend', record.category)?.name ?? record.category, detail }
+}
+
+/** 거래 내역 줄의 윗줄. 아이템 이름과 개수를 갈라 든다. 이름이 길면 이름만 줄이고 개수는 남기기 때문이다. */
+export interface TradeLine {
+  name: string
+  /** 종류 단위의 개수(`3,000개`). 장비처럼 단위가 없는 종류는 `null` */
+  quantity: string | null
+  /** 아이템 검색이 찾는 이름인가. 지출 목록에서 고른 항목의 이름은 찾지 않는다 */
+  searchable: boolean
+}
+
+/**
+ * 아이템을 사고판 기록의 윗줄. 이름 · 단위는 하루 목록 줄과 같은 표에서 찾는다. 거래가 아닌 기록(기타 · 심볼 · 헥사 · 조각을
+ * 팔지 않은 사냥)은 `null` 이다.
+ */
+export function tradeLineOf(entry: ManualDayRecord): TradeLine | null {
+  if (entry.kind === 'income') {
+    const record = entry.record
+    const category = cashbookCategoryOf('income', record.category)
+    switch (record.category) {
+      case 'item_sale':
+        return {
+          name: tradedItemName(record) ?? category?.name ?? record.category,
+          quantity: tradedItemQuantity(record.itemKind ?? 'equipment', record.quantity),
+          searchable: true,
+        }
+      case 'sol_erda_fragment':
+        return {
+          name: category?.name ?? record.category,
+          quantity: record.quantity === null ? null : quantityText(record.quantity, category?.unit),
+          searchable: true,
+        }
+      case 'hunt_loot_sale':
+        return {
+          name: findHuntLoot(record.itemKey)?.name ?? category?.name ?? record.category,
+          quantity: record.quantity === null ? null : quantityText(record.quantity, '개'),
+          searchable: true,
+        }
+      case 'hunting': {
+        // 조각 가격을 적은 사냥만 판 기록이다. 가격이 `null` 이면 조각은 보관에 든다.
+        const hunt = record.hunt
+        if (hunt === null || hunt.fragmentPrice === null || hunt.fragments <= 0) return null
+        const fragment = cashbookCategoryOf('income', 'sol_erda_fragment')
+        return {
+          name: fragment?.name ?? 'sol_erda_fragment',
+          quantity: quantityText(hunt.fragments, fragment?.unit),
+          searchable: true,
+        }
+      }
+      case 'etc':
+        return null
+    }
+  }
+  const record = entry.record
+  switch (record.category) {
+    case 'item_purchase':
+      return {
+        name: tradedItemName(record) ?? cashbookCategoryOf('spend', record.category)?.name ?? record.category,
+        quantity: tradedItemQuantity(record.itemKind ?? 'equipment', record.quantity),
+        searchable: true,
+      }
+    case 'scroll':
+    case 'buff':
+    case 'event_bm':
+    case 'content': {
+      const reward = findSpendRewardChoice(record.category, record.formItemKeys)
+      if (reward !== null) {
+        const name = buildSpendRewardName(reward.choice, reward.tierByForm) ?? cashbookCategoryOf('spend', record.category)?.name
+        return { name: name ?? record.category, quantity: null, searchable: false }
+      }
+      const chosen = findSpendChoice(record.category, record.itemKey)
+      return {
+        name: chosen?.item.name ?? record.item ?? cashbookCategoryOf('spend', record.category)?.name ?? record.category,
+        quantity: chosen === null || record.quantity === null ? null : quantityText(record.quantity, chosen.item.unit),
+        searchable: false,
+      }
+    }
+    default:
+      return null
+  }
+}
+
+/** 판 드롭의 개수. 드롭은 늘 하나이고, 장비가 아니면 `1개` 다. */
+export function dropTradeQuantityOf(kind: ItemKindKey): string | null {
+  return tradedItemQuantity(kind, 1)
 }
 
 function autoDetail(entry: AutoDayRecord): string {
