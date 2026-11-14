@@ -92,16 +92,16 @@ function CompactPortrait(props: CompactPortraitProps): React.JSX.Element {
         total={props.clears.total}
         label={props.clears.label}
       />
+      {/* 오버 프레임을 쓰지 않는다(사용자 지정). 머리가 칸 링을 가린다. 얼굴 원에 바탕을 깔지 않는다. 그림 뒤로 회색이 비친다. */}
       <CharacterAvatar
-        overFrame
+        testID="portrait-face"
         imageTestID="character-portrait-image"
         imageUrl={props.imageUrl}
         name={props.characterName}
         size={PORTRAIT_COMPACT.faceSize}
-        className="bg-surface-2"
         unavailable={props.unavailable}
         mirrored={props.mirrored}
-        fallback={<InitialFallback name={props.characterName} textClass="text-xs" />}
+        fallback={<InitialFallback testID="portrait-face-fallback" name={props.characterName} textClass="text-xs" />}
       />
     </View>
   )

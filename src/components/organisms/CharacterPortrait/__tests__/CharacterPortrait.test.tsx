@@ -7,6 +7,7 @@ import { within } from '@testing-library/react-native'
 import { processColor } from 'react-native'
 
 import {
+  findAllOfType,
   flattenStyle,
   renderAtom,
   기본테마,
@@ -372,6 +373,28 @@ describe('CharacterPortrait · compact 규격', () => {
 
     expect(view.getByText('지')).toBeTruthy()
     expect(view.queryByTestId('character-portrait-image')).toBeNull()
+  })
+
+  // 레일과 같다. 그림이 투명 배경이라 얼굴 원의 회색이 그림 뒤로 비친다. 머리글자 폴백에는 글자가 앉을 바탕으로 남긴다.
+  it('이미지가 있는 얼굴 원에는 바탕색이 없다', async () => {
+    const view = await compact({ cleared: 0, total: 12, label: '주간' })
+
+    expect(flattenStyle(view.getByTestId('portrait-face').props.style).backgroundColor).toBeUndefined()
+  })
+
+  it('이미지가 없으면 머리글자 뒤에 바탕이 남는다', async () => {
+    const view = await compact({ cleared: 0, total: 12, label: '주간' }, null)
+
+    expect(
+      flattenStyle(view.getByTestId('portrait-face-fallback').props.style).backgroundColor,
+    ).toBeDefined()
+  })
+
+  // 보스 수입 카드 머리는 오버 프레임을 쓰지 않는다(사용자 지정). 머리가 보스 처치 칸 링을 가린다.
+  it('오버 프레임을 쓰지 않는다. 얼굴은 원 안에만 그린다', async () => {
+    const view = await compact({ cleared: 0, total: 12, label: '주간' })
+
+    expect(findAllOfType(view.toJSON(), 'RNCMaskedView')).toHaveLength(0)
   })
 
   // 곡선 글자는 rail 규격만의 것이다. 보스 수익 헤더는 이름을 옆에 평평하게 둔다.
