@@ -109,6 +109,8 @@ export interface IncomeRecord {
   ringLevel?: number
   /** 인벤토리에서 판 기타 조각. 판 개수만큼 그 메이플 ID · 월드의 기타 조각에서 가져온다. 다른 기록은 칸이 없다. */
   otherFragmentUse?: OtherFragmentUse
+  /** 아이템 판매의 메모. 저장할 때 앞뒤 공백을 걷고, 메모가 없는 기록은 읽을 때 칸이 없다. */
+  memo?: string
   /** `메소마켓 환전 수수료` 시트의 입력. 그 시트로 적어 수익이 난 `기타` 수입만 칸이 있다 */
   exchange?: EntryExchange
 }

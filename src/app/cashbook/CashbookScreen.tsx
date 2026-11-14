@@ -36,6 +36,7 @@ import {
   ChevronUpIcon,
   ProfitIcon,
   ShoppingCartIcon,
+  StickyNoteIcon,
   Text,
 } from '../../components/atoms'
 import { CalendarGrid } from '../../components/molecules/CalendarGrid/CalendarGrid'
@@ -497,6 +498,15 @@ function DayTotalHalf(props: {
   )
 }
 
+/** 메모가 있는 기록의 제목 뒤 아이콘. lucide 아이콘은 `testID` 를 받지 못해 상자가 든다. */
+function MemoMark(props: { testID: string }): React.JSX.Element {
+  return (
+    <View testID={props.testID} className="shrink-0">
+      <StickyNoteIcon className="h-[11px] w-[11px] text-text-muted" strokeWidth={2} aria-hidden />
+    </View>
+  )
+}
+
 /** 줄 카드의 머리 한 줄(표식 · 두 줄 · 금액 · 화살촉). 기록 줄과 합친 줄이 함께 쓰는 부품. */
 function RowHeader(props: {
   rowKey: string
@@ -509,6 +519,8 @@ function RowHeader(props: {
   action: string
   /** 펼칠 수 없는 줄이면 `undefined` */
   expanded: boolean | undefined
+  /** 메모가 있는 손입력 줄. 제목 뒤에 메모 아이콘이 선다 */
+  memo: boolean
   onPress: () => void
 }): React.JSX.Element {
   const { rowKey, card, income, rowIcon, Chevron } = props
@@ -520,7 +532,7 @@ function RowHeader(props: {
       // 자동 줄은 고치러 가는 것이 아니라 보러 가는 것이다. 읽어 주는 이름이 그 사실을 말해야
       // 눌렀더니 시트가 안 열린다 가 고장으로 읽히지 않는다.
       // 둘째 줄까지 읽는다. 강화 줄은 제목이 모두 `강화` 라 둘째 줄이 있어야 줄이 갈린다.
-      aria-label={`${card.title}${card.detail === null ? '' : ` ${card.detail}`} ${props.action}`}
+      aria-label={`${card.title}${card.detail === null ? '' : ` ${card.detail}`}${props.memo ? ' 메모 있음' : ''} ${props.action}`}
       aria-expanded={props.expanded}
       onPress={props.onPress}
       className="flex-row items-center gap-2.5 py-3 pl-3 pr-2.5"
@@ -556,9 +568,13 @@ function RowHeader(props: {
       {/* 첫 줄은 캐릭터 · 제목, 둘째 줄은 무엇을 얼마나다. 갈래마다 다른 규칙은 화면이 아니라
           `recordCardOf` 가 든다. */}
       <View className="min-w-0 flex-1">
-        <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="text-xs font-semibold text-text">
-          {card.title}
-        </Text>
+        {/* 제목이 길면 제목이 먼저 줄고 메모 아이콘은 남는다. 아이콘은 읽어 주지 않아 이름이 `메모 있음` 을 말한다. */}
+        <View className="flex-row items-center gap-2">
+          <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="shrink text-xs font-semibold text-text">
+            {card.title}
+          </Text>
+          {props.memo && <MemoMark testID={`cashbook-row-memo-${rowKey}`} />}
+        </View>
         {card.detail !== null && (
           <Text
             numberOfLines={1}
@@ -628,6 +644,7 @@ function DayRecordRow(props: {
         Chevron={!expandable ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon}
         action={!expandable ? '고치기' : isOpen ? '접기' : '펼치기'}
         expanded={expandable ? isOpen : undefined}
+        memo={isManualRecord(entry) && entry.record.memo !== undefined}
         onPress={props.onPress}
       />
       {isOpen && bosses !== null && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
@@ -666,6 +683,8 @@ function MergedRecordRow(props: {
         Chevron={expanded ? ChevronUpIcon : ChevronDownIcon}
         action={expanded ? '접기' : '펼치기'}
         expanded={expanded}
+        // 접힌 합친 줄에는 메모 아이콘을 세우지 않는다. 메모가 있는 기록은 펼친 칸이 알린다.
+        memo={false}
         onPress={props.onToggle}
       />
       {expanded && (
@@ -692,7 +711,7 @@ function MergedRecordTile(props: { entry: SpendDayRecord; onPress: () => void })
     <Pressable
       role="button"
       testID={`cashbook-merged-tile-${record.id}`}
-      aria-label={`${tile.title}${tile.detail === null ? '' : ` ${tile.detail}`} 고치기`}
+      aria-label={`${tile.title}${tile.detail === null ? '' : ` ${tile.detail}`}${record.memo === undefined ? '' : ' 메모 있음'} 고치기`}
       onPress={props.onPress}
       className="min-h-[49px] flex-row items-center gap-2.5 rounded-[10px] bg-card-inset px-2.5 py-2"
     >
@@ -707,9 +726,12 @@ function MergedRecordTile(props: { entry: SpendDayRecord; onPress: () => void })
         />
       )}
       <View className="min-w-0 flex-1">
-        <Text numberOfLines={1} className="text-xs font-semibold text-text">
-          {tile.title}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <Text numberOfLines={1} className="shrink text-xs font-semibold text-text">
+            {tile.title}
+          </Text>
+          {record.memo !== undefined && <MemoMark testID={`cashbook-merged-tile-memo-${record.id}`} />}
+        </View>
         {tile.detail !== null && (
           <Text numberOfLines={1} className="text-11 text-text-muted" style={TABULAR_NUMS}>
             {tile.detail}

@@ -77,6 +77,17 @@ function accountIdField(accountId: string | null): { accountId?: string } {
   return accountId === null ? {} : { accountId }
 }
 
+/** 저장할 메모. 앞뒤 공백을 걷고, 남는 글자가 없으면 메모가 없는 것이다. */
+function storedMemoOf(memo: string | undefined): string | null {
+  const trimmed = memo?.trim() ?? ''
+  return trimmed === '' ? null : trimmed
+}
+
+/** 읽은 기록의 메모 칸. 메모가 없는 기록은 칸이 없다. */
+function memoField(memo: string | null): { memo?: string } {
+  return memo === null ? {} : { memo }
+}
+
 export function spendEntryOf(record: SpendRecord): StoredEntry {
   return {
     head: {
@@ -86,6 +97,7 @@ export function spendEntryOf(record: SpendRecord): StoredEntry {
       entryType: 'spend',
       categoryKey: record.category,
       entryDate: record.spentOn,
+      memo: storedMemoOf(record.memo),
       createdAt: record.recordedAt,
     },
     items: spendItemsOf(record),
@@ -145,6 +157,7 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
     recordedAt: entry.head.createdAt,
     ...(first.inventoryItemId === null ? {} : { inventoryItemId: first.inventoryItemId }),
     ...(first.ringLevel === null ? {} : { ringLevel: first.ringLevel }),
+    ...memoField(entry.head.memo),
     ...(entry.transfer == null ? {} : { transfer: entry.transfer }),
     ...(entry.exchange == null ? {} : { exchange: entry.exchange }),
   }
@@ -226,6 +239,7 @@ export function incomeEntryOf(record: IncomeRecord): StoredEntry {
       entryType: 'income',
       categoryKey: record.category,
       entryDate: record.earnedOn,
+      memo: storedMemoOf(record.memo),
       createdAt: record.recordedAt,
     },
     items: [
@@ -279,6 +293,7 @@ export function incomeRecordOf(entry: StoredEntry): IncomeRecord {
     ...(item.inventoryItemId === null ? {} : { inventoryItemId: item.inventoryItemId }),
     ...(item.ringLevel === null ? {} : { ringLevel: item.ringLevel }),
     ...(entry.otherFragmentUses[0] === undefined ? {} : { otherFragmentUse: entry.otherFragmentUses[0] }),
+    ...memoField(entry.head.memo),
     ...(entry.exchange == null ? {} : { exchange: entry.exchange }),
   }
 }

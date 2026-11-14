@@ -1,8 +1,8 @@
-# ADR-048+070+118+126+214 가계부 입력 시트
+# ADR-048+070+118+126+214+226 가계부 입력 시트
 
 > 🟢 유효
 > 옛 번호: ADR-170 결정 5 · 6 · 9 · 정정 9 · 14 · 17 · ADR-173 · ADR-178 · ADR-202 · ADR-203 · ADR-241 결정 1 · ADR-243 · ADR-244 · ADR-245 · ADR-262 · ADR-301 · ADR-325 결정 1 · 2 · 5 · ADR-327 · ADR-333 결정 5 · 6
-> 관련 소스: `app/cashbook/income/ItemSaleForm.tsx` · `app/cashbook/spend/ItemBuyForm.tsx` · `app/cashbook/IncomeSheet.tsx` · `app/cashbook/SpendSheet.tsx` · `app/cashbook/CategoryPicker.tsx` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/` · `app/cashbook/spend/` · `app/cashbook/character-options.ts` · `app/cashbook/select-value.tsx` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/symbol-costs.ts` · `constants/domain/quick-adds.ts`
+> 관련 소스: `app/cashbook/income/ItemSaleForm.tsx` · `app/cashbook/spend/ItemBuyForm.tsx` · `app/cashbook/IncomeSheet.tsx` · `app/cashbook/SpendSheet.tsx` · `app/cashbook/CategoryPicker.tsx` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/` · `app/cashbook/spend/` · `app/cashbook/character-options.ts` · `app/cashbook/select-value.tsx` · `components/molecules/MemoField/` · `app/inventory/InventorySaleSheet.tsx` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/symbol-costs.ts` · `constants/domain/quick-adds.ts`
 
 ## 배경
 
@@ -333,6 +333,35 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
   지우거나 스위치를 끄면 보관한 것이 빠진다. 그 결과 남은 개수가 0 아래로 내려가면(이미 판 것보다 적어지면) 저장이 되돌아가고
   토스트가 뜬다. 조각 장부 검사와 같은 자리에서 본다([[ADR-209]] 결정 12).
 
+### 결정 19. 아이템 구매 · 판매에는 메모를 적고, 하루 목록에는 메모가 있다는 표시만 선다 (사용자 지정 2026-11-14)
+
+어떤 아이템을 사고팔았는지 구체적으로 적어 두려는 것이다(#1002). 아이템 칸에는 이름만 들어서, 같은 아이템을 여러 번 사고팔면
+기록끼리 구별할 수 없다.
+
+- 메모는 기록 하나에 하나이고 `cashbook_entries.memo` 칸에 저장한다. 앞뒤 공백을 걷고, 공백만 남으면 `NULL` 이다. 글자 수 한도는
+  없다(사용자 선택). 파티 스케줄 메모([[ADR-051]] 결정 14)와 같다.
+- 메모를 적는 시트는 셋이다. 가계부 `아이템 구매` · `아이템 판매` 폼과 인벤토리의 판매 시트다. 인벤토리 판매 시트도 `아이템 판매`
+  기록을 만들기 때문이다(사용자 선택). 그 시트는 기타 조각 판매도 함께 받으므로 거기에도 칸이 선다. 다른 분류의 폼에는 칸이 없다.
+- 칸은 칸 카드(`FieldCard`) 아래에 따로 선다(사용자 선택). 구매는 칸 카드 · 메모 · `인벤토리에 보관` · 큰 숫자 차례이고, 판매는 칸
+  카드 · 메모 · 큰 숫자 차례다. 칸 카드 안에 한 줄로 두면 긴 메모가 말줄임되기 때문이다.
+- 칸의 모양은 파티 스케줄 시트의 메모 칸과 같다. 비어 있으면 메모 아이콘 · `메모 추가` · `+` 가 선 파인 바탕 칸이다. 적으면 `메모`
+  라벨 아래 표면색 칸에 본문 전체가 줄바꿈 그대로 선다. 두 시트가 같은 부품(`MemoField`)을 쓴다.
+- 칸을 누르면 여러 줄 입력 카드가 열린다([[ADR-062]] 결정 14). 카드 이름과 자리표시자는 `메모` 다(사용자 선택). 맥락 줄은 같은
+  시트의 금액 칸 카드와 같은 아이템 이름이다. 가계부 폼은 아이템 칸에 든 이름이라 비어 있으면 맥락 줄이 없고, 인벤토리 판매 시트는
+  그 칸의 아이템 이름이다.
+- 수정 시트는 저장된 메모로 열린다. 메모를 지우고 저장하면 `NULL` 이 된다.
+- 하루 목록에는 메모 본문을 적지 않는다(사용자 선택). 메모가 있는 기록의 줄에만 메모 아이콘(`StickyNoteIcon`)이 첫 줄 제목 바로
+  뒤에 선다(사용자 선택). 아이콘은 11 크기 · 흐린 글자색이고 제목과 8 띄운다(사용자 지정). 처음에는 파티 스케줄 회차 카드의
+  메모 줄처럼 13 크기 · 간격 4 로 그렸는데, 시안을 보고 아이콘을 줄이고 간격을 넓혔다. 다른 모양 후보 여덟도 함께 보았으나 모양은
+  그대로 두었다([시안](https://claude.ai/artifact/KHkYTASjRfm3adE3pm6H2p)). 제목이 길면 제목이 먼저 줄고 아이콘은 남는다.
+- [[ADR-047]] 결정 18 로 합친 줄은 접힌 줄에 아이콘을 세우지 않는다. 펼친 칸 가운데 메모가 있는 기록의 칸에만 이름 바로 뒤에
+  세운다(사용자 선택).
+- 메모가 있는 줄과 칸은 읽어 주는 이름에서 둘째 줄 뒤에 `메모 있음` 을 붙인다. 아이콘은 읽어 주지 않으므로 같은 것을 말로 전한다.
+- 인벤토리 화면에는 보관한 구매의 메모를 보이지 않는다(사용자 선택). today · 통계도 메모를 쓰지 않는다.
+- 메모 칸은 버전 17 이 지운 칸을 버전 22(`addCashbookMemo`)가 다시 더한 것이다. 새 기기도 버전 1 부터 차례로 이관을 돌므로, 표
+  정의에 둔 칸을 버전 17 이 지운다. 그래서 버전 22 는 칸이 없을 때만 더한다. 메모는 서버로 보내지 않는다. 가계부 기록을 서버로
+  보내지 않기 때문이다([[ADR-099]] 결정 1).
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -354,6 +383,11 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 | `components/organisms/InputCard/__tests__/InputCard.test.tsx` | 결정 18: 목록에 없는 이름도 받는 카드에서 맞는 아이템이 없으면 `‘친 글자’ 직접 입력` 한 줄이 서고 누르면 `입력` 과 같은지, 목록에서만 받는 카드에는 그 줄이 없는지 본다 |
 | `app/cashbook/__tests__/SpendSheet.test.tsx` · `IncomeSheet.test.tsx` | 결정 18: 처음에는 종류 칸이 없고 목록에 없는 이름을 치면 서는지, 목록에서 고르면 key 로 저장되고 종류 칸이 숨는지, 이름을 고치면 다시 서는지, 목록에 없는 이름도 저장되는지, 특수스킬 반지를 레벨째 고르면 그 레벨이 저장되는지, 보관 체크가 늘 서되 고른 아이템 · 캐릭터 · 메이플 ID 를 갖춰야 눌리고 꺼진 채 시작하는지 본다 |
 | `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` | 결정 18: 보관한 구매가 인벤토리 개수에 더해지고, 구매를 고치거나 지우면 따라 바뀌며, 이미 판 것보다 적게 만드는 저장이 되돌아가는지, 보관한 반지가 고른 레벨로 들어가는지 본다 |
+| `storage/__tests__/spend.spec.ts` · `storage/__tests__/income.spec.ts` | 결정 19: 앞뒤 공백을 걷어 저장하고 공백만 있는 메모는 `NULL` 인지, 고치면 메모가 바뀌고 지우면 `NULL` 이 되는지 본다 |
+| `storage/sqlite/__tests__/record-keys-real-sqlite.test.ts` | 결정 19: 메모 칸이 있던 버전 15 기기와 메모 칸이 없는 버전 21 기기가 모두 행을 잃지 않고 빈 메모 칸을 갖게 되는지, 새 DB 에도 칸이 있는지 실제 SQLite 엔진에서 본다 |
+| `app/cashbook/__tests__/SpendSheet.test.tsx` · `IncomeSheet.test.tsx` | 결정 19: 메모 칸이 아이템 구매 · 판매에만 서는지, 누르면 이름 · 자리표시자가 `메모` 이고 맥락 줄이 아이템 이름인 여러 줄 카드가 열리는지, 적은 메모로 저장되는지, 수정 시트가 메모로 열리고 지우면 `NULL` 로 저장되는지 본다 |
+| `app/inventory/__tests__/InventorySaleSheet.test.tsx` | 결정 19: 판매 시트에 메모 칸이 서고 적은 메모가 판 기록에 저장되는지 본다 |
+| `app/cashbook/__tests__/CashbookScreen.test.tsx` | 결정 19: 메모가 있는 줄에만 아이콘이 서고 읽어 주는 이름에 `메모 있음` 이 붙는지, 합친 줄은 접힌 줄에 아이콘이 없고 펼친 칸 가운데 메모가 있는 칸에만 서는지 본다 |
 
 ## 번호 기록
 
@@ -362,3 +396,4 @@ SpendSheet   spend/CatalogForm · SymbolForm · ItemBuyForm · EtcForm
 - ADR-118 (2026-10-28): 시트 새 디자인(#746). 결정 2 의 분류와 항목 타일을 카드 하나 안의 `card-inset` 칸으로 바꾸고, 결정 4 에 칸 카드와 `card-inset` 칸을, 결정 7 에 알약 대신 값 글자를 적었다
 - ADR-126 (2026-10-29): 결정 17 을 더했다. 캐릭터 · 지역 드롭다운에 월드 · 지역 아이콘과 레벨 · 보유를 붙이고, 목록 줄을 닫힌 줄과 같은 모양으로 왼쪽에 붙였다(#790)
 - ADR-214 (2026-11-13): 결정 18 을 더했다. 아이템 구매 · 판매가 아이템 목록에서 고르고, 산 아이템은 인벤토리에 보관할 수 있다(#912)
+- ADR-226 (2026-11-14): 결정 19 를 더했다. 아이템 구매 · 판매와 인벤토리 판매 시트에서 메모를 적고, 하루 목록에는 메모가 있는 줄에 아이콘만 선다(#1002)

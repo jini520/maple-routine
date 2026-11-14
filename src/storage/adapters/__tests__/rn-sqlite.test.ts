@@ -228,6 +228,8 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_parties ADD COLUMN crystal_excluded INTEGER',
       'ALTER TABLE boss_party_periods ADD COLUMN crystal_excluded INTEGER',
       'ALTER TABLE boss_party_periods ADD COLUMN over_crystal_limit INTEGER',
+      // 아이템 구매 · 판매의 메모. 버전 17 이 지운 칸이라 `ensureColumn` 이 아니라 버전 22 가 더한다.
+      'ALTER TABLE cashbook_entries ADD COLUMN memo TEXT',
     ])
   })
 
@@ -297,6 +299,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'created_date' },
             { name: 'crystal_excluded' },
             { name: 'over_crystal_limit' },
+            { name: 'memo' },
           ]
         : []
 

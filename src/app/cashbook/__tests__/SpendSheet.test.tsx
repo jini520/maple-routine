@@ -1259,6 +1259,90 @@ describe('아이템 구매 · 목록에서 고르기', () => {
   })
 })
 
+// 어떤 아이템을 샀는지 적는 칸. 칸 카드 안 한 줄이면 긴 메모가 말줄임되어 카드 아래에 따로 선다.
+describe('아이템 구매 · 메모', () => {
+  const 보관한구매: SpendRecord = {
+    id: 'p-memo',
+    ocid: 'ocid-1',
+    spentOn: '2026-08-23',
+    category: 'item_purchase',
+    item: null,
+    itemKey: 'dreamy_belt',
+    formItemKeys: null,
+    itemKind: 'equipment',
+    levelFrom: null,
+    levelTo: null,
+    quantity: null,
+    mesoAmount: 3_200_000_000,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
+    cashAmount: null,
+    hexa: null,
+    recordedAt: '2026-08-23T01:00:00.000Z',
+    memo: '17성 3추옵',
+  }
+
+  it('메모 칸은 아이템 구매에만 서고, 누르면 이름 · 자리표시자가 `메모` 이고 맥락 줄이 아이템 이름인 여러 줄 카드가 열린다', async () => {
+    const view = await 그리기()
+    await 갈래바꾸기(view, '기타')
+    expect(view.queryByLabelText('메모 추가')).toBeNull()
+
+    await 갈래바꾸기(view, '아이템 구매')
+    await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
+    await 누르기(view, '메모 추가')
+
+    expect(view.getByTestId('input-card-label')).toHaveTextContent('메모')
+    expect(view.getByTestId('input-card-context')).toHaveTextContent('1단계 소울 에테르')
+    expect(view.getByTestId('input-card-value').props.placeholder).toBe('메모')
+    expect(view.getByTestId('input-card-value').props.multiline).toBe(true)
+  })
+
+  it('적은 메모는 칸에 줄바꿈 그대로 다 보이고, 그 메모로 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 갈래바꾸기(view, '아이템 구매')
+    await 목록에서고르기(view, 'spend-sheet-name', '몽환', 'dreamy_belt')
+    await 치기(view, '3200000000')
+    await 캐릭터고르기(view)
+
+    await 누르기(view, '메모 추가')
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('input-card-value'), '17성 3추옵\n경매장 최저가')
+    })
+    await act(async () => {
+      fireEvent.press(view.getByTestId('input-card-confirm'))
+    })
+
+    const body = view.getByTestId('spend-sheet-memo-body')
+    expect(body.props.children).toBe('17성 3추옵\n경매장 최저가')
+    expect(body.props.numberOfLines).toBeUndefined()
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'dreamy_belt', memo: '17성 3추옵\n경매장 최저가' })
+  })
+
+  it('수정 시트는 저장된 메모로 열리고, 메모를 지우고 고치면 빈 메모로 넘긴다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ editing: 보관한구매, onDelete: jest.fn(), onSave }, null)
+    expect(view.getByTestId('spend-sheet-memo-body').props.children).toBe('17성 3추옵')
+
+    await 누르기(view, '메모 고치기')
+    // 글자 칸은 한글 조합 때문에 값을 `defaultValue` 로 심는다.
+    expect(view.getByTestId('input-card-value').props.defaultValue).toBe('17성 3추옵')
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('input-card-value'), '')
+    })
+    await act(async () => {
+      fireEvent.press(view.getByTestId('input-card-confirm'))
+    })
+
+    expect(view.getByLabelText('메모 추가')).toBeTruthy()
+    await 누르기(view, '수정')
+    expect(onSave.mock.calls[0][0].memo ?? '').toBe('')
+  })
+})
+
 describe('아이템 구매', () => {
   /**
    * **갈래를 옮기면 금액을 안 들고 간다**.

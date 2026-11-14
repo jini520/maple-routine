@@ -662,6 +662,56 @@ describe('판매 수수료', () => {
 
 })
 
+// 어떤 아이템을 팔았는지 적는 칸. 아이템 구매와 같은 부품이고 칸 카드 아래에 선다.
+describe('아이템 판매 · 메모', () => {
+  it('메모 칸은 아이템 판매에만 서고, 누르면 맥락 줄이 아이템 이름인 여러 줄 카드가 열리며, 적은 메모로 저장한다', async () => {
+    expect((await 그리기({}, 'etc')).queryByLabelText('메모 추가')).toBeNull()
+
+    const onSave = jest.fn()
+    const view = await 고른판매시트({ onSave })
+    await 칸에치기(view, 'income-sheet-name', '앱솔랩스 케이프')
+    await 이름으로누르기(view, '메모 추가')
+    expect(view.getByTestId('input-card-label')).toHaveTextContent('메모')
+    expect(view.getByTestId('input-card-context')).toHaveTextContent('앱솔랩스 케이프')
+    expect(view.getByTestId('input-card-value').props.placeholder).toBe('메모')
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('input-card-value'), '22성 보공 2줄')
+    })
+    await 아이디로누르기(view, 'input-card-confirm')
+
+    expect(view.getByTestId('income-sheet-memo-body').props.children).toBe('22성 보공 2줄')
+    await 대금치기(view, '1000000')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ category: 'item_sale', memo: '22성 보공 2줄' })
+  })
+
+  it('수정 시트는 저장된 메모로 열린다', async () => {
+    const 판매: IncomeRecord = {
+      id: 'inc-memo',
+      ocid: 'ocid-1',
+      earnedOn: '2026-08-23',
+      category: 'item_sale',
+      item: '앱솔랩스 케이프',
+      itemKey: null,
+      mesoAmount: 1_200_000_000,
+      saleFeePercent: null,
+      saleFeeMeso: null,
+      saleFeeAuto: false,
+      itemKind: 'equipment',
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      hunt: null,
+      quantity: null,
+      recordedAt: '2026-08-23T01:00:00.000Z',
+      memo: '22성 보공 2줄',
+    }
+    const view = await 그리기({ editing: 판매, onDelete: jest.fn() })
+
+    expect(view.getByTestId('income-sheet-memo-body').props.children).toBe('22성 보공 2줄')
+  })
+})
+
 describe('저장', () => {
   it('갈래와 이름과 금액을 넘긴다. 통화 칸이 없다', async () => {
     const onSave = jest.fn()

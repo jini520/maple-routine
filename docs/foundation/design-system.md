@@ -97,6 +97,7 @@
 | `InsetNote` | 가운데 모달의 `card-inset` 칸에 든 설명 문단. `text-xs` 흐린 색([[ADR-017]] 결정 8) |
 | `NumberPad` | 짧은 화면에서 숫자 칸이 쓰는 앱 판 |
 | `AmountFigure` | 시트의 큰 숫자. 칠 수 없다 |
+| `MemoField` | 시트의 메모 칸. 비어 있으면 `메모 추가` 칸, 적으면 `메모` 라벨 아래 본문 전체. 누르면 부르는 쪽이 여러 줄 입력 카드를 연다([[ADR-051]] 결정 14 · [[ADR-048]] 결정 19) |
 | `BackButton` | 헤더의 `←`. 크기는 하나(28px · 흐린 화살표) |
 | `CalendarGrid` · `DateSelect` · `TimeWheel` | 달력 격자 · 날짜 선택 버튼 · 시각 휠 |
 | `ShareField` · `PartyShareSummary` | 분배 비율 고르기 · 분배 요약 줄([[ADR-038]]) |

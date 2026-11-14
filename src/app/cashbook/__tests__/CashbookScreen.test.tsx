@@ -1474,6 +1474,65 @@ describe('헥사 · 구매 합친 줄', () => {
   })
 })
 
+// 메모 본문은 목록에 적지 않고, 메모가 있는 기록에만 제목 뒤 아이콘이 선다. 아이콘은 읽어 주지 않으므로 같은 것을 이름이 말한다.
+describe('메모 아이콘', () => {
+  const 구매 = (over: Record<string, unknown>) => ({
+    kind: 'spend' as const,
+    characterName: '루디',
+    record: {
+      ocid: 'ocid-1',
+      spentOn: 고른날,
+      category: 'item_purchase',
+      item: null,
+      itemKey: 'dreamy_belt',
+      formItemKeys: null,
+      itemKind: 'equipment',
+      levelFrom: null,
+      levelTo: null,
+      quantity: null,
+      mesoAmount: 3_200_000_000,
+      tariffMeso: null,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
+      cashAmount: null,
+      hexa: null,
+      recordedAt: '2026-08-23T01:00:00.000Z',
+      ...over,
+    },
+  })
+
+  it('메모가 있는 줄에만 아이콘이 서고, 읽어 주는 이름에 `메모 있음` 이 붙는다', async () => {
+    그날줄을(고른날, [
+      구매({ id: 'buy-memo', memo: '17성 3추옵' }),
+      { kind: 'income', record: { ...그날수입, id: 'sale-plain' }, characterName: '' },
+    ])
+    const view = await 그리기()
+
+    expect(view.getByTestId('cashbook-row-memo-buy-memo')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-row-memo-sale-plain')).toBeNull()
+    expect(view.getByLabelText('루디 · 아이템 구매 몽환의 벨트 메모 있음 고치기')).toBe(view.getByTestId('cashbook-row-buy-memo'))
+    // 본문은 목록에 안 선다.
+    expect(view.queryByText('17성 3추옵')).toBeNull()
+  })
+
+  it('합친 줄은 접힌 줄에 아이콘이 없고, 펼치면 메모가 있는 기록의 칸에만 선다', async () => {
+    그날줄을(고른날, [
+      구매({ id: 'buy-belt', memo: '17성 3추옵' }),
+      구매({ id: 'buy-trace', itemKey: 'spell_trace', itemKind: 'etc', quantity: 3_000, mesoAmount: 105_000_000, recordedAt: '2026-08-23T02:00:00.000Z' }),
+    ])
+    const view = await 그리기()
+    const 구매줄 = 'merged:item_purchase:ocid-1'
+    expect(view.queryByTestId(`cashbook-row-memo-${구매줄}`)).toBeNull()
+
+    await 누르기(view, `cashbook-row-${구매줄}`)
+
+    expect(view.getByTestId('cashbook-merged-tile-memo-buy-belt')).toBeTruthy()
+    expect(view.queryByTestId('cashbook-merged-tile-memo-buy-trace')).toBeNull()
+    expect(view.getByLabelText('몽환의 벨트 메모 있음 고치기')).toBe(view.getByTestId('cashbook-merged-tile-buy-belt'))
+  })
+})
+
 // 보스 수익이 흘러든 줄. **여기서 못 고친다**. 눌러도 시트가 안 열린다.
 // 가는 곳은 줄마다 다르다. 결정석은 **그 자리에서
 // 펼쳐지고**, 판매는 보스 수익 탭으로 간다.
