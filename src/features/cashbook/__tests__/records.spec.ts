@@ -14,8 +14,10 @@ jest.mock('../../../storage/income', () => ({
   getIncomeRecordsBetween: jest.fn(),
   getIncomeMonthRows: jest.fn(),
   getFragmentStorage: jest.fn(),
+  bumpIncomeRecordsRevision: jest.fn(),
 }))
 jest.mock('../../../storage/spend', () => ({
+  bumpSpendRecordsRevision: jest.fn(),
   insertSpendRecord: jest.fn(),
   updateSpendRecord: jest.fn(),
   deleteSpendRecord: jest.fn(),
@@ -1780,5 +1782,90 @@ describe('손입력 지출의 0', () => {
     ])
 
     expect(rows).toHaveLength(1)
+  })
+})
+
+// 메소마켓 환전 수수료는 지출 시트에서 적지만, 금액이 0 보다 작으면 수익이라 `기타` 수입으로 적는다. 고쳐서 부호가 바뀌면
+// 같은 기록이 지출과 수입 사이를 옮긴다.
+describe('메소마켓 환전 수수료', () => {
+  const { editMesoMarketExchange, recordSpend } = require('../records') as typeof import('../records')
+  const NOW = new Date('2026-11-20T10:00:00+09:00')
+  const 판매만: SpendDraft = {
+    ocid: null,
+    accountId: 'maple-1',
+    spentOn: '2026-11-20',
+    category: 'etc',
+    item: '메소마켓 환전 수수료',
+    itemKey: null,
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: null,
+    levelTo: null,
+    quantity: 1,
+    mesoAmount: 4_962_193,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
+    hexa: null,
+    exchange: { soldMeso: 500_000_000, sellPointPer100mMeso: 2_116, boughtMeso: null, buyPointPer100mMeso: null, mesoMarketFeePercent: 1 },
+  }
+  const 수익: SpendDraft = {
+    ...판매만,
+    mesoAmount: 22_448_015,
+    exchange: { ...판매만.exchange!, boughtMeso: 500_000_000, buyPointPer100mMeso: 2_000 },
+  }
+
+  it('금액이 0 이상이면 메이플 ID 의 기타 지출로 적는다', async () => {
+    await recordSpend(판매만, NOW)
+
+    expect(spend.insertSpendRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ accountId: 'maple-1', category: 'etc', mesoAmount: 4_962_193, exchange: 판매만.exchange }),
+    )
+    expect(income.insertIncomeRecord).not.toHaveBeenCalled()
+  })
+
+  it('금액이 0 보다 작으면 같은 시트 입력으로 기타 수입으로 적는다', async () => {
+    await recordSpend(수익, NOW)
+
+    expect(income.insertIncomeRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ocid: null,
+        accountId: 'maple-1',
+        category: 'etc',
+        earnedOn: '2026-11-20',
+        item: '메소마켓 환전 수수료',
+        mesoAmount: 22_448_015,
+        exchange: 수익.exchange,
+      }),
+    )
+    expect(spend.insertSpendRecord).not.toHaveBeenCalled()
+  })
+
+  it('지출로 적은 기록을 고쳐 수익이 되면 같은 id 로 수입을 고치고 지출 판도 올린다', async () => {
+    const 원본 = { ...판매만, id: 'e1', recordedAt: '2026-11-20T00:00:00.000Z', mesoMarketFeePercent: null }
+
+    await editMesoMarketExchange({ kind: 'spend', record: 원본, characterName: '' }, 수익)
+
+    expect(income.updateIncomeRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'e1', recordedAt: '2026-11-20T00:00:00.000Z', mesoAmount: 22_448_015 }),
+    )
+    expect(spend.updateSpendRecord).not.toHaveBeenCalled()
+    expect(spend.bumpSpendRecordsRevision).toHaveBeenCalled()
+  })
+
+  it('수입으로 적은 기록도 같은 부호면 그대로 수입을 고친다', async () => {
+    const 원본 = {
+      id: 'e2', ocid: null, accountId: 'maple-1', earnedOn: '2026-11-20', category: 'etc' as const, item: '메소마켓 환전 수수료',
+      itemKey: null, mesoAmount: 22_448_015, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false, pointAmount: null,
+      pointPer100mMeso: null, cashAmount: null, quantity: 1, itemKind: null, hunt: null, recordedAt: '2026-11-20T00:00:00.000Z',
+      exchange: 수익.exchange,
+    }
+
+    await editMesoMarketExchange({ kind: 'income', record: 원본, characterName: '' }, 수익)
+
+    expect(income.updateIncomeRecord).toHaveBeenCalledWith(expect.objectContaining({ id: 'e2' }))
+    expect(spend.bumpSpendRecordsRevision).not.toHaveBeenCalled()
+    expect(income.bumpIncomeRecordsRevision).not.toHaveBeenCalled()
   })
 })

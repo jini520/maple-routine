@@ -23,8 +23,22 @@ import {
 } from '../game-data/contract'
 import { gameTable, derive } from '../game-data/table'
 
-/** 앱이 입력 폼을 아는 지출 갈래. 차례는 서버 표가 정한다. */
-export const SPEND_CATEGORY_KEYS = ['content', 'event_bm', 'buff', 'scroll', 'symbol', 'hexa_matrix', 'item_purchase', 'etc'] as const
+/**
+ * 앱이 입력 폼을 아는 지출 갈래. 차례는 서버 표가 정한다. `boss_income_transfer` · `meso_market_exchange` 는 시트만 있고 기록은
+ * `etc` 로 저장한다.
+ */
+export const SPEND_CATEGORY_KEYS = [
+  'content',
+  'event_bm',
+  'buff',
+  'scroll',
+  'symbol',
+  'hexa_matrix',
+  'item_purchase',
+  'etc',
+  'boss_income_transfer',
+  'meso_market_exchange',
+] as const
 export type SpendCategoryKey = (typeof SPEND_CATEGORY_KEYS)[number]
 
 /** 앱이 입력 폼을 아는 수익 갈래. 서버 표의 맨 앞이 기본 갈래다. */

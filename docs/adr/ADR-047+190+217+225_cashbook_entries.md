@@ -1,8 +1,8 @@
 # ADR-047+190+217+225 가계부 기록과 금액
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-166 · ADR-170 결정 1 · 2 · 3 · 정정 9 · 15 · ADR-171 · ADR-280 결정 10 · ADR-202 결정 4 · 정정 2 · ADR-223 · ADR-300 · ADR-325 결정 3 · 4
-> 관련 소스: `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` · `storage/enhancement-history.ts` · `storage/enhancement-totals.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/cashbook/row-icon.ts` · `features/cashbook/merged-rows.ts` · `app/cashbook/CashbookScreen.tsx` · `features/enhancement-history/` · `lib/enhancement/` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/free-currency.ts` · `lib/cashbook/meso-market-exchange.ts` · `app/cashbook/spend/BossIncomeTransferForm.tsx` · `app/cashbook/spend/MesoMarketExchangeForm.tsx` · `features/cashbook/week-crystal.ts`
+> 관련 소스: `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` · `storage/enhancement-history.ts` · `storage/enhancement-totals.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/cashbook/row-icon.ts` · `features/cashbook/merged-rows.ts` · `app/cashbook/CashbookScreen.tsx` · `features/enhancement-history/` · `lib/enhancement/` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/free-currency.ts` · `lib/cashbook/meso-market-exchange.ts` · `lib/cashbook/boss-income-transfer.ts` · `app/cashbook/spend/BossIncomeTransferForm.tsx` · `app/cashbook/spend/MesoMarketExchangeForm.tsx` · `features/cashbook/week-crystal.ts`
 
 ## 배경
 
@@ -383,7 +383,7 @@ C 보드다.
 | `보내는 캐릭터` | 캐릭터만 고른다(`CharacterField`). 기록이 이 캐릭터에 붙는다 |
 | `받는 캐릭터` | 캐릭터만 고르고, 보내는 캐릭터는 목록에서 빠진다. 보내는 캐릭터와 같은 메이플 ID 의 캐릭터도 선다. 넥슨 ID 의 주계정이 늘 본계정이라고 볼 수 없기 때문이다 |
 | `옮길 메소` | 메소 금액 칸. 사용자가 친다(칸 이름은 사용자 지정 2026-11-14). 칸 이름 바로 오른쪽에 `이번주 보스 수입 옮기기` 체크 박스가 서고, 켜면 그 주 보스 수입을 이 칸에 채운다 |
-| `수수료` | 아이템 판매와 같은 수수료 줄(`FeeRow`, 사용자 선택 2026-11-14). `자동` 이면 받는 캐릭터의 그 날짜 MVP 등급 요율이고, 끄면 3% · 5% 에서 고른다 |
+| `수수료` | 아이템 판매와 같은 수수료 줄(`FeeRow` · `useSaleFeeChoice`, 사용자 선택 2026-11-14). `자동` 이면 받는 캐릭터의 그 날짜 MVP 등급 요율이고, 끄면 `없음` · 3% · 5% 에서 고른다 |
 
 - **큰 숫자는 수수료다.** `⌊옮길 메소 × 요율 ÷ 100⌋` 이고 소수점은 버린다. 1 메소 차이는 따지지 않는다(사용자 지정).
 - **체크 박스는 헥사 매트릭스의 `보관 중인 조각도 지출로 기록하기` 와 같은 모양이다**(사용자 선택 2026-11-14, 시안 D).
@@ -494,8 +494,10 @@ C 보드다.
 | `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` | 결정 17: 요율을 형태마다 품목에 저장하고 되읽는지, 버전 20 이관이 메포 지출 품목에만 요율 1 을 채우고 메소 지출 · 메포 수입은 비워 두는지 실제 SQLite 엔진에서 본다 |
 | `storage/__tests__/last-point-rate.spec.ts` | 결정 2: 잘못된 값은 없는 것으로 보고 쓰지도 않는지 본다 |
 | `app/cashbook/__tests__/SpendSheet.test.tsx` | 결정 17: 메포 항목과 메포 `기타` 의 큰 숫자가 억 단위 판매 값인지, 고칠 때는 그 기록에 적힌 요율로 그리는지 본다 |
-| | 결정 19: 받는 캐릭터 목록에서 보내는 캐릭터가 빠지는지, 체크 박스가 그 주 결정석 몫을 채우고 금액을 고치면 꺼지는지, 큰 숫자가 받는 캐릭터 등급의 수수료인지, 보내는 캐릭터의 `기타` 지출과 시트 입력으로 저장하는지, 수정으로 열면 이 시트로 열리는지 본다 |
-| | 결정 20: 억 수 칸, 판매만 쳐도 저장되고 구매 메소를 치면 구매 월드 시세가 필요한지, 계산 결과에 따라 기록 표시가 `지출` · `수입` 으로 바뀌는지, 메이플 ID 의 `기타` 지출 · 수입과 시트 입력으로 저장하는지, 판매만 적은 기록을 수정 시트로 열어 구매를 더하면 다시 세는지, 수입 기록도 이 시트로 열리는지 본다 |
+| | 결정 19: 받는 캐릭터 목록에서 보내는 캐릭터가 빠지는지, 체크 박스가 그 주 결정석 몫을 채우고 금액을 고치면 꺼지는지, 큰 숫자가 고른 요율의 수수료인지, 보내는 캐릭터의 `기타` 지출과 시트 입력으로 저장하는지, 수정으로 열면 체크가 꺼진 채 이 시트로 열리는지 본다 |
+| | 결정 20: 억 수를 쳐서 `500,000,000` 으로 적히는지, 판매만 쳐도 저장되고 구매 메소를 치면 구매 월드 시세가 필요한지, 계산 결과에 따라 기록 표시가 `지출` · `수입` 으로 바뀌는지, 메이플 ID 의 `기타` 지출과 시트 입력으로 저장하는지, 판매만 적은 기록을 수정 시트로 열어 구매를 더하면 다시 세는지 본다 |
+| `features/cashbook/__tests__/records.spec.ts` | 결정 20: 금액이 0 이상이면 `기타` 지출, 작으면 같은 시트 입력의 `기타` 수입으로 적는지, 고쳐서 부호가 바뀌면 같은 `id` 로 다른 쪽을 고치고 떠난 쪽 판을 올리는지 본다 |
+| `app/cashbook/__tests__/CashbookScreen.test.tsx` | 결정 20: 수입으로 저장된 환전 기록을 누르면 수입 시트가 아니라 지출 시트의 그 폼으로 열리는지 본다 |
 | `lib/__tests__/meso-market-exchange.spec.ts` | 결정 20: 판매만 적은 예시(지출 4,962,193), 이슈의 두 예시(지출 20,841,210 · 수입 22,448,015), 남은 메포가 음수일 때를 본다 |
 | `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` | 결정 19 · 20: 시트 입력 줄을 쓰고 되읽으며, 고치면 갈아 끼우고 지우면 함께 지워지는지, 부호가 바뀐 수정이 같은 `id` 로 지출과 수입 사이를 옮기는지 실제 SQLite 엔진에서 본다 |
 | `features/cashbook/__tests__/week-crystal.spec.ts` | 결정 19: 그 주의 주간 보스와 그 주에 선 월간 보스의 결정석 몫을 더하고, 다른 캐릭터 · 다른 주와 드롭은 넣지 않는지 본다 |

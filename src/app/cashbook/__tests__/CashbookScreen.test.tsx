@@ -29,6 +29,9 @@ jest.mock('../../../features/cashbook/records', () => {
     recordSpend: jest.fn(),
     editIncome: jest.fn(),
     editSpend: jest.fn(),
+    editMesoMarketExchange: jest.fn(),
+    // 수입으로 저장된 환전 기록을 지출 시트에 여는 모양이다. 시트가 무엇을 그리나가 이 함수에 달려 진짜를 쓴다.
+    exchangeSpendViewOf: actual.exchangeSpendViewOf,
     removeRecord: jest.fn(),
     loadHuntFragmentFloor: jest.fn(async () => 0),
     // 저장이 조각 때문에 막혔는지는 저장소의 에러가 정한다. 화면이 그 에러를 고르는 규칙이라 진짜를 쓴다.
@@ -1247,6 +1250,36 @@ describe('줄을 누르면 고칠 수 있다', () => {
 
     expect(view.queryByLabelText('다시 고르기')).toBeNull()
     expect(view.queryByLabelText('컨텐츠')).toBeNull()
+  })
+
+  // 메소마켓 환전 수수료는 수익이면 수입으로 저장되지만 지출 시트에서 적은 기록이라 그 시트로 연다.
+  it('수입으로 저장된 메소마켓 환전 수수료는 지출 시트의 그 폼으로 연다', async () => {
+    그날줄을(고른날, [
+      {
+        kind: 'income',
+        record: {
+          ...그날수입,
+          id: 'inc-2',
+          ocid: null,
+          accountId: 'maple-1',
+          category: 'etc',
+          item: '메소마켓 환전 수수료',
+          mesoAmount: 22_448_015,
+          quantity: 1,
+          itemKind: null,
+          hunt: null,
+          exchange: { soldMeso: 500_000_000, sellPointPer100mMeso: 2_116, boughtMeso: 500_000_000, buyPointPer100mMeso: 2_000, mesoMarketFeePercent: 1 },
+        },
+        characterName: '',
+      },
+    ])
+    const view = await 그리기()
+
+    await 누르기(view, 'cashbook-row-inc-2')
+
+    expect(view.getByTestId('spend-sheet-exchange-sold')).toHaveTextContent('500,000,000')
+    expect(view.getByTestId('spend-sheet-exchange-record')).toHaveTextContent('수입')
+    expect(view.queryByTestId('income-sheet-title')).toBeNull()
   })
 
   it('수입 줄은 채워진 수입 시트를 연다', async () => {

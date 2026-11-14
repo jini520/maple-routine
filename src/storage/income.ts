@@ -198,7 +198,7 @@ export function subscribeIncomeRecordsRevision(listener: () => void): () => void
   }
 }
 
-function bumpIncomeRecordsRevision(): void {
+export function bumpIncomeRecordsRevision(): void {
   incomeRecordsRevision += 1
   notifyAfterBatch(() => {
     for (const listener of revisionListeners) listener()
