@@ -15,6 +15,8 @@ import {
   CASHBOOK_ENTRIES_DATE_INDEX,
   CASHBOOK_ENTRY_FRAGMENT_USES_BODY,
   CASHBOOK_ENTRY_HUNT_INPUTS_BODY,
+  CASHBOOK_ENTRY_TRANSFER_INPUTS_BODY,
+  CASHBOOK_ENTRY_EXCHANGE_INPUTS_BODY,
   CASHBOOK_ENTRY_ITEMS_BODY,
   INVENTORY_ITEMS_BODY,
   INVENTORY_ITEMS_OWNER_INDEX,
@@ -292,6 +294,14 @@ const TABLE_DEFINITIONS = [
   {
     name: 'cashbook_entry_hunt_inputs',
     createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_hunt_inputs ${CASHBOOK_ENTRY_HUNT_INPUTS_BODY}`,
+  },
+  {
+    name: 'cashbook_entry_transfer_inputs',
+    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_transfer_inputs ${CASHBOOK_ENTRY_TRANSFER_INPUTS_BODY}`,
+  },
+  {
+    name: 'cashbook_entry_exchange_inputs',
+    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_exchange_inputs ${CASHBOOK_ENTRY_EXCHANGE_INPUTS_BODY}`,
   },
   {
     name: 'cashbook_entry_fragment_uses',

@@ -18,7 +18,7 @@ import {
   readEntries,
   replaceEntry,
 } from './cashbook-entries'
-import type { OtherFragmentUse } from './cashbook-entries'
+import type { EntryExchange, EntryTransfer, OtherFragmentUse } from './cashbook-entries'
 import { spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
 import { writeCheckingFragments } from './fragment-ledger'
 import { deleteEmptyInventoryRows, inventoryRowForPurchase, linkedInventoryItemOf } from './inventory'
@@ -110,6 +110,10 @@ export interface SpendRecord {
    * 기록에는 칸이 없다. 주인을 정하는 캐릭터 정보가 저장 계층 밖에 있어 고르는 쪽이 넘긴다.
    */
   inventoryStore?: { accountId: string; worldKey: string }
+  /** `주간 보스 수입 이전` 시트의 입력. 그 시트로 적은 `기타` 지출만 칸이 있다 */
+  transfer?: EntryTransfer
+  /** `메소마켓 환전 수수료` 시트의 입력. 그 시트로 적은 `기타` 지출만 칸이 있다 */
+  exchange?: EntryExchange
 }
 
 /**
