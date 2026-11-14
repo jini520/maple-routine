@@ -1,6 +1,6 @@
 # ADR-057+125+198+227 운영자 공지와 넥슨 공지
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-228 결정 1 · 5 · 정정 3 · ADR-230 · ADR-247 결정 1 · 3 · 4 · 5 · 6 · 7 · 8 · 9 · 12 · ADR-266 결정 1 · ADR-277 · ADR-282 결정 1 ~ 9 · ADR-289 결정 2 · 3 · ADR-344 결정 1
 > 관련 소스: `features/notice/`(`notice-query.ts` · `notice-feed.ts` · `banner-dismissal.ts` · `pick-banner-notice.ts`) · `server/notices.ts` · `nexon/notice/` · `storage/notice-banner.ts` · `types/notice.ts` · `app/settings/SettingsScreen.tsx` · `app/settings/SettingsNoticesScreen.tsx` · `app/settings/SettingsNoticeDetailScreen.tsx` · `app/today/NoticeBanner.tsx` · `navigation/AppNavigation.tsx`
 
@@ -443,3 +443,4 @@ CommonJS 로도 나와서 빌드와 테스트 설정을 바꾸지 않고 들어�
   적는 규칙을 더했다
 - ADR-227 (2026-11-14): 결정 13 을 더했다. 운영자 공지를 마크다운으로 쓰고 서버가 저장할 때 블록 다섯 가지로 바꾸며, 그림은 공지 화면에서
   줄여 올린다(#985)
+- (2026-11-14) 결정 13 을 서버 release #113 으로 배포했다. ADR-198 의 결정은 #956 에서 이미 구현돼, 파일 전체가 🟢 다
