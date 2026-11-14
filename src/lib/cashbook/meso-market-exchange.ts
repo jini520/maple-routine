@@ -3,7 +3,7 @@
  *
  * @see docs/features/cashbook.md 의 `입력`
  */
-import { pointToMeso, receivedPointOf } from './spend-catalog'
+import { receivedPointOf } from './spend-catalog'
 
 const MESO_PER_HUNDRED_MILLION = 100_000_000
 
