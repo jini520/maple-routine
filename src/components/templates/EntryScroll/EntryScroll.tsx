@@ -19,6 +19,7 @@ import { useScrollIndicatorStyle } from '../../../theme/context'
 import { BackButton } from '../../molecules/BackButton/BackButton'
 import { PageHeader } from '../PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../PageHeader/PageHeaderTitleRow'
+import { resolveScreenBottomInset } from '../ScreenScroll/bottom-inset'
 
 // `props` 를 통째로 받지 않고 **구조 분해**하는 것이 계약이다. `react-hooks/refs` 는 ref 를 품은
 // 객체를 렌더 중에 읽는 것을 통째로 막으므로, `props.center` 처럼 다른 필드를 읽는 자리까지 전부
@@ -53,6 +54,15 @@ export function EntryScroll({
   // `marginTop` 은 헤더 여백이 아니라 콘텐츠 여백이라 축이 다르다. 하단은 반대로 **탭바 없는 화면의
   // 규칙**(아래) 그 자체라, 하한이 깔린 값을 본다.
   const bottomSafeAreaPx = useBottomSafeAreaPx()
+  // 버튼 줄이 없는 화면(로그인)은 하위 페이지와 같다. 안드로이드는 스크롤 상자를 내비게이션 바 위에서 끝낸다.
+  // 투명한 3버튼 바 뒤까지 상자가 내려가 있으면 굴릴 때 글자가 버튼 사이로 비친다.
+  const bottom = resolveScreenBottomInset({
+    hasTabBar: false,
+    insetBottomPx: insets.bottom,
+    bottomSafeAreaPx,
+    barSpacePx: 0,
+    platform: Platform.OS,
+  })
   const indicatorStyle = useScrollIndicatorStyle()
   // 고정 바가 덮는 높이. 잰 값이 오기 전에는 0이라 마지막 행이 한 프레임 가려질 수 있지만, 그
   // 프레임은 바가 그려지는 바로 그 프레임이라 사용자가 스크롤을 시작하기 전이다.
@@ -64,16 +74,19 @@ export function EntryScroll({
       ref={scrollRef}
       indicatorStyle={indicatorStyle}
       className="flex-1"
-      // 마진이지 패딩이 아니다. 하단은 홈 인디케이터 자리라 콘텐츠 여백으로 남긴다. 탭바가
-      // 없는 화면의 규칙이고 `ScreenScroll` 의 `bottom-inset.ts` 와 같은 갈래다.
-      style={{ marginTop: onBack === undefined ? insets.top : 0 }}
+      // 마진이지 패딩이 아니다. 인디케이터는 콘텐츠가 아니라 스크롤 상자 위에 그려진다. 버튼 줄이 있으면
+      // 불투명한 그 줄이 내비게이션 바까지 덮으므로 상자를 올리지 않는다.
+      style={{
+        marginTop: onBack === undefined ? insets.top : 0,
+        marginBottom: footer === undefined ? bottom.portBottomPx : 0,
+      }}
       contentContainerClassName={
         center === true ? 'items-center justify-center px-4' : onBack === undefined ? 'px-4 pt-8 pb-4' : 'px-4 pt-4 pb-4'
       }
       contentContainerStyle={{
         flexGrow: 1,
         // 바가 있으면 그 바가 안전영역을 먹는다. 비울 것은 잰 바 높이 하나다.
-        paddingBottom: footer === undefined ? bottomSafeAreaPx : actionBarHeightPx,
+        paddingBottom: footer === undefined ? bottom.contentBottomPx : actionBarHeightPx,
       }}
       // 키보드가 떠 있는 동안에도 첫 탭이 버튼에 닿는다. 없으면 그 탭이 키보드를 내리는 데만 쓰인다
       // (`ApiKeyForm` 의 확인 버튼이 그 자리다).

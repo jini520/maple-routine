@@ -14,16 +14,17 @@
 import type { ScreenBottomInset } from './bottom-inset'
 
 /**
- * 떠 있는 바 위로 페이드가 얼마나 올라가는가. 바 몫의 절반.
+ * 떠 있는 바 위로 페이드가 얼마나 올라가는가. 바를 띄운 높이 + 바 높이의 절반.
  *
  * 0 이면 콘텐츠가 선명한 채로 캡슐 밑에 들어간다. 바 전체면 캡슐 윗변에서 이미 완전히
  * 투명하지만 너무 높아 목록의 마지막 두 카드쯤이 늘 흐릿하다. 절반이면 캡슐 한가운데에서 0
  * 이라, 콘텐츠는 캡슐에 닿기 전에 옅어지기 시작하고 흐려지는 구간은 바 뒤에 대부분 숨는다.
  *
- * 바 높이에서 파생시킨다. 숫자를 따로 적으면 바 높이가 바뀔 때 둘이 어긋난다.
+ * 띄운 높이는 반으로 나누지 않는다. 나누면 3버튼 내비게이션 바 위에서 캡슐 한가운데보다 7 아래에서 0 이 된다.
+ * 바 치수에서 파생시킨다. 숫자를 따로 적으면 바 높이가 바뀔 때 둘이 어긋난다.
  */
-function barFadePx(barSpacePx: number): number {
-  return barSpacePx / 2
+function barFadePx(barHeightPx: number, barLiftPx: number): number {
+  return barLiftPx + barHeightPx / 2
 }
 
 export interface SafeAreaFade {
@@ -39,7 +40,7 @@ export interface SafeAreaFade {
  * | | 값 | 0 이 되는 경우 |
  * |---|---|---|
  * | 상단 | 상단 안전영역(안드로이드는 하한 48) | 헤더가 없는 화면. 셸이 스크롤포트를 그만큼 내려, 깎으면 콘텐츠의 첫 줄을 깎는다 |
- * | 하단 | 하단 안전영역(안드로이드는 하한 34) + 바의 절반(탭 화면) | 안드로이드 3버튼 내비의 하위 페이지. 스크롤포트가 이미 인셋 위에서 끝난다 |
+ * | 하단 | 하단 안전영역(안드로이드는 하한 34) + 띄운 높이 + 바의 절반(탭 화면) | 안드로이드 3버튼 내비의 하위 페이지. 스크롤포트가 이미 인셋 위에서 끝난다 |
  *
  * 하단이 안전영역 위로 올라가는 것이 요점이다. 안전영역까지만 두면 콘텐츠가 선명한 채로 캡슐
  * 밑에 들어가고 녹는 것은 이미 바가 가린 뒤가 된다. 콘텐츠가 크롬과 처음 겹치는 자리는 바닥이
@@ -70,8 +71,10 @@ export function resolveSafeAreaFade(options: {
    * 되어 콘텐츠가 선명한 채로 캡슐에 들어간다.
    */
   bottomSafeAreaPx: number
-  /** 떠 있는 바가 먹는 세로 몫. `bottom-inset.ts` 에 넘기는 값과 **같은 값**이어야 한다. */
-  barSpacePx: number
+  /** 떠 있는 바의 높이. `bottom-inset.ts` 에 넘기는 몫과 같은 `resolveBottomBarMetrics` 에서 와야 한다. */
+  barHeightPx: number
+  /** 바를 안전영역 위로 띄운 높이. 위와 같은 함수에서 온다. */
+  barLiftPx: number
   /** `resolveScreenBottomInset()` 이 정한 값. 스크롤포트가 이미 비운 몫은 깎을 것이 없다. */
   portBottomPx: ScreenBottomInset['portBottomPx']
 }): SafeAreaFade {
@@ -79,7 +82,7 @@ export function resolveSafeAreaFade(options: {
     topPx: options.hasHeader ? options.topSafeAreaPx : 0,
     bottomPx:
       Math.max(0, options.bottomSafeAreaPx - options.portBottomPx) +
-      (options.hasTabBar ? barFadePx(options.barSpacePx) : 0),
+      (options.hasTabBar ? barFadePx(options.barHeightPx, options.barLiftPx) : 0),
   }
 }
 

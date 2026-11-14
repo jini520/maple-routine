@@ -22,6 +22,7 @@ import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { resolvePullIndicatorOffset } from './pull-indicator-offset'
 import { resolveScreenBottomInset } from './bottom-inset'
 import { useCallback, useRef } from 'react'
+import { useButtonNavigation } from '../../../hooks/useButtonNavigation'
 import { usePullRefresh } from '../../../hooks/usePullRefresh'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useScrollToTopTarget } from '../../../hooks/useScrollToTop'
@@ -182,12 +183,13 @@ export function ScreenScroll({
   // 콘텐츠가 바 뒤로 들어가거나 바닥에 빈 띠를 남기지 않는다. `100dvh` 짝을 안전영역 프레임에서
   // 받는 자리들과 달리 여기는 **창 폭**이 맞다: 바 자신이 그 폭으로 자리를 잡는다.
   const { width: windowWidthPx } = useWindowDimensions()
-  const barSpacePx = resolveBottomBarMetrics(windowWidthPx).spacePx
+  const buttonNavigation = useButtonNavigation()
+  const bar = resolveBottomBarMetrics(windowWidthPx, buttonNavigation)
   const bottom = resolveScreenBottomInset({
     hasTabBar,
     insetBottomPx: insets.bottom,
     bottomSafeAreaPx,
-    barSpacePx,
+    barSpacePx: bar.spacePx,
     platform: Platform.OS,
   })
   const fade = resolveSafeAreaFade({
@@ -195,7 +197,8 @@ export function ScreenScroll({
     hasTabBar,
     topSafeAreaPx,
     bottomSafeAreaPx,
-    barSpacePx,
+    barHeightPx: bar.heightPx,
+    barLiftPx: bar.liftPx,
     portBottomPx: bottom.portBottomPx,
   })
   const indicatorOffsetPx = resolvePullIndicatorOffset({

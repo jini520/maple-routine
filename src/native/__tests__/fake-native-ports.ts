@@ -17,6 +17,21 @@ import {
   setThemeAppearancePort,
   setUuidPort,
 } from '../ports'
+import type { SystemBarsPort } from '../ports'
+
+/** 시스템 바 포트의 테스트 기본값. 3버튼 내비게이션 바가 없는 기기다(제스처 내비게이션 · iOS). */
+export const noopSystemBarsPort: SystemBarsPort = {
+  setNavigationBarStyle: async () => {},
+  refreshSafeAreaInsets: async () => {},
+  isButtonNavigation: () => false,
+  addButtonNavigationListener: () => () => {},
+}
+
+/** 3버튼 내비게이션 바가 있는 안드로이드 기기. 되돌릴 때는 `noopSystemBarsPort` 를 다시 꽂는다. */
+export const buttonNavigationSystemBarsPort: SystemBarsPort = {
+  ...noopSystemBarsPort,
+  isButtonNavigation: () => true,
+}
 
 /**
  * 네이티브 포트의 테스트 기본값.
@@ -61,10 +76,7 @@ export function installNoopNativePorts(): void {
 
   setStatusBarPort({ setStyle: async () => {} })
 
-  setSystemBarsPort({
-    setNavigationBarStyle: async () => {},
-    refreshSafeAreaInsets: async () => {},
-  })
+  setSystemBarsPort(noopSystemBarsPort)
 
   setKeyboardPort({ addVisibilityListener: async () => () => {}, addHeightListener: async () => () => {} })
 

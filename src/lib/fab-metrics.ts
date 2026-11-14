@@ -12,6 +12,7 @@
  */
 import { useWindowDimensions } from 'react-native'
 
+import { useButtonNavigation } from '../hooks/useButtonNavigation'
 import { resolveBottomBarMetrics } from './bottom-bar-metrics'
 import { useBottomSafeAreaPx } from './safe-area'
 import type { ShadowLayer } from './shadow'
@@ -63,6 +64,7 @@ export const FAB_SHADOW: ShadowLayer = { opacity: 0.65, radius: 12, y: 4 }
 export function useFabBottomPx(): number {
   const bottomSafeAreaPx = useBottomSafeAreaPx()
   const { width: windowWidthPx } = useWindowDimensions()
+  const buttonNavigation = useButtonNavigation()
 
-  return bottomSafeAreaPx + resolveBottomBarMetrics(windowWidthPx).spacePx + FAB_LIFT_PX
+  return bottomSafeAreaPx + resolveBottomBarMetrics(windowWidthPx, buttonNavigation).spacePx + FAB_LIFT_PX
 }
