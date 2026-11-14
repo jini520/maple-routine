@@ -1,8 +1,8 @@
-# ADR-059+136 화면 스택과 하단바
+# ADR-059+136+224 화면 스택과 하단바
 
 > 🟢 유효
 > 옛 번호: ADR-077 · ADR-098 · ADR-120 결정 1 · 4 · 9 · 18 · ADR-132 결정 1 · 2 · 3 · 7 · 11 · ADR-167 · ADR-209 · ADR-210 · ADR-234
-> 관련 소스: `navigation/` · `components/organisms/BottomBar/` · `lib/bottom-bar-metrics.ts` · `hooks/useOpenTab.ts` · `hooks/useScreenNavigation.ts` · `hooks/useScrollToTop.ts` · `hooks/useRootBackToBackground.ts` · `native/haptics.ts`
+> 관련 소스: `navigation/` · `components/organisms/BottomBar/` · `lib/bottom-bar-metrics.ts` · `hooks/useButtonNavigation.ts` · `modules/app-system-bars/` · `hooks/useOpenTab.ts` · `hooks/useScreenNavigation.ts` · `hooks/useScrollToTop.ts` · `hooks/useRootBackToBackground.ts` · `native/haptics.ts`
 
 ## 배경
 
@@ -191,7 +191,7 @@ API 34 이상에만 있기 때문이다. 기기에 진동 장치가 없거나 �
 |---|---|
 | 폭 | `min(창 폭 − 14 × 2, 420)`. 상한에 걸리면 남는 폭을 좌우로 나눠 가운데에 둔다 |
 | 높이 | `round(폭 × 72 / 374)`, 최소 64 |
-| 아래 위치 | 하단 안전영역 바로 위(`BAR_LIFT` 0). 안드로이드는 안전영역 최소 34 |
+| 아래 위치 | 하단 안전영역 바로 위. 안드로이드는 안전영역 최소 34. 아래에 3버튼 내비게이션 바가 있으면 14 더 띄운다 |
 | 안쪽 여백 | 3. 알약 높이는 바 높이 − 6 |
 | 칸 폭 | `(폭 − 3 × 2 − 23) ÷ 5`. 알약은 칸보다 23 넓다 |
 
@@ -202,6 +202,25 @@ API 34 이상에만 있기 때문이다. 기기에 진동 장치가 없거나 �
 
 치수를 측정하지 않고 계산하는 이유는 측정값이 첫 프레임에 0 이어서 알약이 한 프레임 접혀 보이기 때문이다.
 같은 함수(`resolveBottomBarMetrics`)를 바와 `ScreenScroll` 이 함께 써서 두 값이 어긋나지 않는다.
+
+3버튼 내비게이션 바 위에서만 14 를 더 띄우는 것은 그 바가 버튼 줄 전체를 인셋으로 주기 때문이다. 인셋 바로
+위에 서면 하단바의 아래 끝이 버튼 줄의 위 끝에 붙는다(#984). 아이폰 홈 인디케이터와 안드로이드 제스처 핸들은
+인셋 안에 가는 막대만 있어서, 같은 계산으로도 바가 떠 보인다. 그래서 그 기기들은 지금 위치 그대로 둔다. 14 는
+바가 좌우 가장자리에서 남기는 최소 여백(`BAR_SIDE_MARGIN`)과 같은 값이다. 바가 좌우와 아래 세 방향에서 같은
+간격으로 뜬다(사용자 지정).
+
+3버튼인지는 인셋 크기로 어림잡지 않고 안드로이드에 묻는다. 탭할 수 있는 시스템 바의 인셋
+(`WindowInsetsCompat.Type.tappableElement()`)은 제스처 내비게이션에서 0 이고, 3버튼에서는 버튼 줄 높이다.
+RN 과 `react-native-safe-area-context` 는 이 값을 주지 않는다. 그래서 로컬 모듈 `app-system-bars` 가 이 값을 읽고,
+바뀌면 이벤트로 알린다. 사용자가 내비게이션 방식을 바꾸거나 갤럭시의 버튼 숨기기로 버튼 줄을 내리면 바가 그
+자리에서 따라 움직인다. iOS 에는 이 바가 없어 언제나 띄우지 않는다. 네이티브 변경이라 1.0.14 바이너리부터
+적용되고 OTA 로는 낼 수 없다.
+
+띄운 높이는 콘텐츠가 바 아래에 남기는 몫(`spacePx`)에 들어간다. 그래서 콘텐츠 끝 여백, 안전영역 페이드, 팝오버와
+FAB 의 위치가 함께 올라간다. 한 곳만 올리면 콘텐츠가 바 뒤로 들어간다.
+
+토스트(`ToastStack`)도 같은 `spacePx` 위에 12 를 띄워 선다. 전에는 바 높이를 상수 64 로 따로 적어 두어서, 바가
+72 인 402pt 기기에서 토스트가 바 위로 4 만 떴다. 바 높이는 창 폭에 따라 바뀌므로 상수로는 맞출 수 없다.
 
 키보드가 떠 있으면 바를 그리지 않는다(`useKeyboardShown`).
 
@@ -260,15 +279,20 @@ iOS 26 이상에서는 바와 알약, ← 원판을 `expo-glass-effect` 의 `Gla
 | `navigation/__tests__/bar-in-layer-stack.test.tsx` | 결정 3 · 5: 실제 내비게이터 위에서 행과 ← 가 바뀌는지, ← 가 그룹에 들어오기 전 화면으로 돌아가는지 본다. 결정 12: 바에 테두리가 없는지 본다 |
 | | 결정 9: 활성 탭 두 번 누름이 지금 페이지 이름으로 맨 위 스크롤을 부르는지, 세 번 누름과 다른 탭에서 넘어온 직후 누름이 더블탭으로 잡히지 않는지 본다 |
 | | 결정 10: 탭 이동과 ← 에서만 햅틱이 나고 활성 탭 재누름과 맨 위 스크롤에는 나지 않는지 본다 |
-| | 결정 11: 바의 폭과 높이가 `resolveBottomBarMetrics` 에서 오는지, 상한에서 가운데에 놓이는지 본다 |
+| | 결정 11: 바의 폭과 높이가 `resolveBottomBarMetrics` 에서 오는지, 상한에서 가운데에 놓이는지, 3버튼 내비게이션 바가 있으면 안전영역 위 14 에 서는지 본다 |
 | | 결정 12: 유리가 앱 테마를 따르는지, ← 원판이 누름 영역 밖에 있는지, 폴백이 불투명 캡슐인지, 그림자가 `boxShadow` 로만 가는지, 라벨이 폰트 여백을 끄는지, 채우는 아이콘과 굵히는 아이콘이 나뉘는지 본다 |
 | `components/molecules/Stepper/__tests__/Stepper.test.tsx` | 결정 10: `−` · `+` 로 값이 바뀔 때마다 `selectionFeedback()` 이 한 번씩 나는지, 막힌 버튼을 누르면 안 나는지 본다 |
 | `components/organisms/BottomBar/__tests__/double-tap.test.ts` | 결정 9: 같은 항목 · 간격 안일 때만 더블탭으로 잡히는지, 간격 끝은 포함하고 그 다음은 제외하는지 본다 |
 | `navigation/__tests__/scroll-to-top.test.ts` · `hooks/__tests__/useScrollToTop.spec.tsx` | 결정 9: 이름으로 등록한 화면만 움직이는지, 옛 등록을 해제해도 새 등록이 남는지, 내비게이터 밖에서 예외를 던지지 않는지 본다 |
-| `lib/__tests__/bottom-bar-metrics.test.ts` | 결정 11: 402pt 에서 높이 72 인지, 폭이 넓을수록 높이가 줄지 않는지, 좁으면 최소 높이에서 멈추는지, 폭 상한에서 높이도 멈추는지, 남는 폭을 좌우로 나누는지, 콘텐츠 여백이 바 높이에서 나오는지 본다 |
+| `lib/__tests__/bottom-bar-metrics.test.ts` | 결정 11: 402pt 에서 높이 72 인지, 폭이 넓을수록 높이가 줄지 않는지, 좁으면 최소 높이에서 멈추는지, 폭 상한에서 높이도 멈추는지, 남는 폭을 좌우로 나누는지, 콘텐츠 여백이 바 높이에서 나오는지, 3버튼 내비게이션 바가 있을 때만 좌우 최소 여백만큼 띄우고 콘텐츠 여백도 그만큼 느는지 본다 |
+| `hooks/__tests__/useButtonNavigation.spec.tsx` | 결정 11: 네이티브가 알린 값으로 다시 그리는지, 언마운트하면 구독을 떼는지 본다 |
+| `native/adapters/__tests__/rn-system-bars.test.ts` | 결정 11: 모듈이 없는 iOS 에서 3버튼이 아니라고 답하고 구독이 아무것도 하지 않는지, 모듈이 있으면 그 값과 이벤트를 그대로 넘기는지 본다 |
+| `components/organisms/Toast/__tests__/ToastStack.test.tsx` | 결정 11: 토스트가 하단바 몫(`spacePx`) 위 12 에 서는지, 3버튼 내비게이션 바가 있으면 바를 띄운 높이만큼 함께 오르는지 본다 |
+| 실기기 확인 | 결정 11: 안드로이드 3버튼 · 제스처 · 버튼 숨기기에서 바 아래 틈과 방식을 바꿀 때 따라 움직이는지, 아이폰에서 바 위치가 그대로인지 본다. JVM 테스트 환경이 없어 Kotlin 은 기기로 확인한다 |
 | `components/organisms/BottomBar/__tests__/bar-colors.test.ts` | 결정 12: 테마 전부에서 알약과 바, 라벨과 바탕이 충분히 구분되는지, 활성과 비활성이 다른 색인지, 다크에서 색상과 채도를 지킨 채 명도만 올리는지 본다 |
 
 ## 번호 기록
 
 - ADR-059 (2026-10-19): 옛 ADR-077 · 098 · 120 · 132 · 167 · 209 · 210 · 234 의 살아 있는 결정을 합쳐 처음 작성
 - ADR-136 (2026-10-30): 결정 12 에서 바와 활성 알약의 헤어라인을 걷고 그림자로 페이지와 가른다
+- ADR-224 (2026-11-14): 결정 11 에 더했다. 아래에 3버튼 내비게이션 바가 있으면 하단바를 좌우 최소 여백과 같은 14 만큼 더 띄운다. 3버튼인지는 탭할 수 있는 시스템 바의 인셋으로 가린다. 토스트는 상수 64 대신 하단바 몫 위에 선다(#984)

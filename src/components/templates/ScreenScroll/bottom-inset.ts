@@ -37,7 +37,7 @@ export function resolveScreenBottomInset(options: {
   /**
    * `useSafeAreaInsets().bottom`. 내비바가 실제로 차지하는 자리다.
    *
-   * 안드로이드 하위 페이지에서만 쓴다. 그 한 자리가 이 함수에서 지나가면 안 되는 조각이고,
+   * 안드로이드에서 바가 없는 화면(하위 페이지 · 진입 화면)에서만 쓴다. 그 한 자리가 이 함수에서 지나가면 안 되는 조각이고,
    * 나머지는 전부 아래 `bottomSafeAreaPx` 가 정한다.
    */
   insetBottomPx: number
@@ -53,7 +53,7 @@ export function resolveScreenBottomInset(options: {
    */
   bottomSafeAreaPx: number
   /**
-   * 떠 있는 바가 먹는 세로 몫. `resolveBottomBarMetrics(창 폭).spacePx`.
+   * 떠 있는 바가 먹는 세로 몫. `resolveBottomBarMetrics(창 폭, 3버튼 여부).spacePx`.
    *
    * 상수로 두면 `BottomBar` 의 `BAR_HEIGHT + LIFT` 와 같은 값이어야 한다 는 약속을 손으로
    * 지켜야 하는데, 그 값이 기기마다 달라진 뒤로는 손으로 옮길 수 없다. 어긋나면 콘텐츠가 바

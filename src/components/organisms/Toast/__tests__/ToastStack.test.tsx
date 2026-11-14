@@ -10,8 +10,15 @@ import {
   type AtomElement,
 } from '../../../__tests__/render-atom'
 import { fireEvent } from '@testing-library/react-native'
+import { Dimensions } from 'react-native'
 
 import { useToastStore, type ToastItem } from '../../../../features/toast/store'
+import { resolveBottomBarMetrics } from '../../../../lib/bottom-bar-metrics'
+import { setSystemBarsPort } from '../../../../native/ports'
+import {
+  buttonNavigationSystemBarsPort,
+  noopSystemBarsPort,
+} from '../../../../native/__tests__/fake-native-ports'
 
 import { ToastStack } from '../ToastStack'
 
@@ -51,7 +58,11 @@ function toast(id: string, message: string): ToastItem {
 
 afterEach(() => {
   jest.clearAllMocks()
+  setSystemBarsPort(noopSystemBarsPort)
 })
+
+/** 토스트가 하단바 윗변에서 띄우는 간격. */
+const 간격 = 12
 
 describe('ToastStack', () => {
   // 목록 순서가 곧 위→아래 순서다.
@@ -80,19 +91,33 @@ describe('ToastStack', () => {
     expect(getByTestId('toast-stack').props.pointerEvents).toBe('box-none')
   })
 
-  it('hasTabBar 가 true(기본값)면 탭바 높이만큼 띄운다', async () => {
+  // 바 높이는 창 폭의 함수다. 상수로 적어 두면 바가 72 인 기기에서 토스트가 바 위로 4 만 뜨고, 더 높은 기기에서는 바에 겹친다.
+  it('hasTabBar 가 true(기본값)면 하단바 몫 위에 띄운다', async () => {
     mockStore([toast('t1', '첫째')])
     const { getByTestId } = await renderOverlay(<ToastStack />)
 
-    // 탭바 64 + 안전영역 하단 34 + 12
-    expect(flattenStyle(getByTestId('toast-stack').props.style).bottom).toBe(64 + 34 + 12)
+    const 바_몫 = resolveBottomBarMetrics(Dimensions.get('window').width, false).spacePx
+    expect(flattenStyle(getByTestId('toast-stack').props.style).bottom).toBe(34 + 바_몫 + 간격)
+  })
+
+  // 3버튼 내비게이션 바 위에서는 하단바가 14 더 뜬다. 토스트만 그대로면 바에 겹친다.
+  it('3버튼 내비게이션 바가 있으면 하단바를 띄운 높이만큼 함께 오른다', async () => {
+    setSystemBarsPort(buttonNavigationSystemBarsPort)
+    mockStore([toast('t1', '첫째')])
+    const { getByTestId } = await renderOverlay(<ToastStack />)
+
+    const 바 = resolveBottomBarMetrics(Dimensions.get('window').width, true)
+    expect(바.liftPx).toBeGreaterThan(0)
+    expect(flattenStyle(getByTestId('toast-stack').props.style).bottom).toBe(
+      34 + 바.liftPx + 바.heightPx + 간격,
+    )
   })
 
   it('hasTabBar 가 false 면 안전영역 바로 위에 띄운다(온보딩 등 탭바 없는 화면)', async () => {
     mockStore([toast('t1', '첫째')])
     const { getByTestId } = await renderOverlay(<ToastStack hasTabBar={false} />)
 
-    expect(flattenStyle(getByTestId('toast-stack').props.style).bottom).toBe(34 + 12)
+    expect(flattenStyle(getByTestId('toast-stack').props.style).bottom).toBe(34 + 간격)
   })
 
 })

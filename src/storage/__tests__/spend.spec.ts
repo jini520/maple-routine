@@ -199,6 +199,31 @@ describe('고치기 · 지우기', () => {
   })
 })
 
+// 아이템 구매 · 판매의 메모. 저장 계층이 다듬으므로 어느 시트가 적어도 같은 규칙이다.
+describe('메모', () => {
+  const purchase: SpendRecord = { ...mesoSpend, category: 'item_purchase', itemKey: 'dreamy_belt', itemKind: 'equipment', quantity: null }
+
+  it('앞뒤 공백을 걷어 저장하고, 공백만 있는 메모는 칸이 비어 메모 없는 기록으로 읽힌다', async () => {
+    await insertSpendRecord({ ...purchase, memo: '  17성 3추옵\n경매장 최저가  ' })
+    await insertSpendRecord({ ...purchase, id: '6f1b0e2c-0000-4000-8000-000000000009', memo: ' \n ' })
+
+    const [kept, blank] = await getSpendRecordsBetween('2026-08-23', '2026-08-23')
+    expect(kept!.memo).toBe('17성 3추옵\n경매장 최저가')
+    expect(blank).not.toHaveProperty('memo')
+    expect(all('SELECT memo FROM cashbook_entries ORDER BY id')).toEqual([{ memo: '17성 3추옵\n경매장 최저가' }, { memo: null }])
+  })
+
+  it('고치면 메모가 바뀌고, 메모를 지우고 고치면 칸이 빈다', async () => {
+    await insertSpendRecord({ ...purchase, memo: '첫 메모' })
+
+    await updateSpendRecord({ ...purchase, memo: '고친 메모' })
+    expect((await getSpendRecordsBetween('2026-08-23', '2026-08-23'))[0]!.memo).toBe('고친 메모')
+
+    await updateSpendRecord({ ...purchase, memo: '' })
+    expect(all('SELECT memo FROM cashbook_entries')).toEqual([{ memo: null }])
+  })
+})
+
 /** 주인을 모르는 옛 기록. 계정 칸만 든 채로 남은 행이다. */
 async function insertLegacySpend(record: SpendRecord, nexonAccountId: string | null): Promise<void> {
   await insertSpendRecord(record)

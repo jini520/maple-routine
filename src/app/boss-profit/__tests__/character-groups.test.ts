@@ -260,6 +260,20 @@ describe('summarizeWorldCrystals: 주간 몫과 월간 몫', () => {
 
     expect(summaries).toEqual([{ accountId: null, world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 1 }])
   })
+
+  // 팔지 않은 결정석이라 판 수에 안 든다. 그래서 판 수는 한도를 넘지 않는다.
+  it('`제외` 와 한도를 넘긴 처치는 판 수에서, `제외` 인 월간 보스는 월간 수에서 빠진다', () => {
+    const summaries = summarizeWorldCrystals([
+      group([
+        보스행({ world: '스카니아', worldKey: 'scania' }),
+        보스행({ bossKey: 다른주간보스, world: '스카니아', worldKey: 'scania', crystalExcluded: true }),
+        보스행({ bossKey: 'lucid', world: '스카니아', worldKey: 'scania', overCrystalLimit: true }),
+        월간행({ world: '스카니아', worldKey: 'scania', crystalExcluded: true }),
+      ]),
+    ])
+
+    expect(summaries).toEqual([{ accountId: null, world: '스카니아', worldKey: 'scania', cleared: 1, monthlyCleared: 0 }])
+  })
 })
 
 // 같은 월드라도 메이플 ID 가 다르면 한도가 따로다. 메이플 ID 를 모르는 캐릭터는 어느 한도에도 안 든다.

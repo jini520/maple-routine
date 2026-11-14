@@ -311,10 +311,12 @@ export function summarizeWorldCrystals(
       const key = crystalPairKey(accountId, row.worldKey)
       const pair = byPair.get(key) ?? { accountId, worldKey: row.worldKey, byCharacter: new Map() }
       const bossKeys = pair.byCharacter.get(row.ocid) ?? { weekly: new Set<string>(), monthly: new Set<string>() }
-      if (row.isComplete && row.cycle === 'weekly' && !isSeasonBoss(row.bossKey)) {
+      // `제외` 와 한도를 넘긴 처치는 판 결정석이 아니라 세지 않는다. 그래서 판 수가 한도를 넘지 않는다.
+      const sold = row.isComplete && row.crystalExcluded !== true && row.overCrystalLimit !== true
+      if (sold && row.cycle === 'weekly' && !isSeasonBoss(row.bossKey)) {
         bossKeys.weekly.add(row.bossKey)
       }
-      if (row.isComplete && row.cycle === 'monthly') {
+      if (sold && row.cycle === 'monthly') {
         bossKeys.monthly.add(row.bossKey)
       }
       pair.byCharacter.set(row.ocid, bossKeys)

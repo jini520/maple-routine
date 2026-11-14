@@ -224,6 +224,12 @@ describe('db.ts 와 맞물리는가', () => {
       // 캐릭터 기록의 그때 월드와 리프 자동 판정이 읽는 만든 날.
       'ALTER TABLE cashbook_entries ADD COLUMN world_key TEXT',
       'ALTER TABLE character_profiles ADD COLUMN created_date TEXT',
+      // 분배 방식 `제외` 와 한도를 넘긴 처치.
+      'ALTER TABLE boss_parties ADD COLUMN crystal_excluded INTEGER',
+      'ALTER TABLE boss_party_periods ADD COLUMN crystal_excluded INTEGER',
+      'ALTER TABLE boss_party_periods ADD COLUMN over_crystal_limit INTEGER',
+      // 아이템 구매 · 판매의 메모. 버전 17 이 지운 칸이라 `ensureColumn` 이 아니라 버전 22 가 더한다.
+      'ALTER TABLE cashbook_entries ADD COLUMN memo TEXT',
     ])
   })
 
@@ -291,6 +297,9 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'from_star' },
             { name: 'to_star' },
             { name: 'created_date' },
+            { name: 'crystal_excluded' },
+            { name: 'over_crystal_limit' },
+            { name: 'memo' },
           ]
         : []
 

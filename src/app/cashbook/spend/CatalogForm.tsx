@@ -35,7 +35,7 @@ import {
   optionAxesOf,
   optionItemOf,
   pickSpendOption,
-  pointToMeso,
+  spentPointToMeso,
   rewardCoinMeso,
   spendFormOf,
   spendGroupsOf,
@@ -306,7 +306,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
    * 주화만 빼면 아직 아무것도 안 센 줄이 음수로 선다. 저장된 기록을 읽는 `spendMesoOf` 도
    * 시세가 없는 행에서는 같은 이유로 안 뺀다.
    */
-  const pointMeso = pointToMeso(amount, rate ?? 0, mesoMarketFeeOf(props.editing?.mesoMarketFeePercent))
+  const pointMeso = spentPointToMeso(amount, rate ?? 0, mesoMarketFeeOf(props.editing?.mesoMarketFeePercent))
   const totalMeso = usesPoint ? pointMeso - (blocked ? 0 : rewardCoinMeso(coins)) : amount
   const picked = forms.length > 0 ? rewardName !== null : item !== null
   const canSave = owner !== null && picked && !blocked && quantity > 0 && (!typesPrice || unitPrice > 0)

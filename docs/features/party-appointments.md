@@ -28,7 +28,7 @@
 | `app/party-appointments/ScheduleTimeline.tsx` · `AppointmentAgenda.tsx` | 목록 보기의 시간표 카드 · 요일별 목록 |
 | `app/party-appointments/AppointmentBoard.tsx` | 보드 보기의 요일 일곱 열 |
 | `app/party-appointments/OccurrenceCard.tsx` · `OccurrenceBossGroups.tsx` | 두 보기가 함께 쓰는 회차 카드 · 보스 줄과 알림 · 반복 줄 |
-| `app/party-appointments/AppointmentMemoField.tsx` | 시트의 메모 칸(누르면 여러 줄 입력 카드) · 상세의 메모 타일 |
+| `app/party-appointments/AppointmentMemoField.tsx` | 시트의 메모 칸(`components/molecules/MemoField/`, 누르면 여러 줄 입력 카드) · 상세의 메모 타일 |
 | `app/party-appointments/AppointmentSheet.tsx` | 추가 · 상세 · 수정 시트와 보스 추가 단계 |
 | `app/party-appointments/AppointmentTimeBand.tsx` · `AppointmentWeekdayTile.tsx` | 날짜 · 요일 · 시작 · 종료 타일 |
 | `app/party-appointments/AppointmentBossList.tsx` · `AppointmentAlarmField.tsx` · `AppointmentSummaryTiles.tsx` | 보스 목록 · 알림 칸 · 상세의 알림 · 반복 타일 |

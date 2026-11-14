@@ -47,7 +47,7 @@ import {
 import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 21
+export const DB_VERSION = 22
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -743,6 +743,15 @@ async function dropCashbookMemo(db: SqliteDbConnection): Promise<void> {
 }
 
 /**
+ * 가계부 기록 표에 메모 칸이 없으면 더한다. 새 DB 도 버전 17 이 표 정의의 칸을 지우므로 `ensureColumn` 이 아니라 여기서 더한다.
+ */
+async function addCashbookMemo(db: SqliteDbConnection): Promise<void> {
+  if (!(await columnsOf(db, 'cashbook_entries')).has('memo')) {
+    await db.execute('ALTER TABLE cashbook_entries ADD COLUMN memo TEXT')
+  }
+}
+
+/**
  * 캐릭터에 붙은 가계부 기록의 월드 칸을 그 ocid 의 프로필 월드로 채운다. 리프한 캐릭터의 기록을 새 ocid 로 옮기기 전에 채워야
  * 리프 전 월드가 남는다.
  */
@@ -932,6 +941,7 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   fillCashbookEntryWorlds,
   fillMesoMarketFees,
   addFragmentUseSources,
+  addCashbookMemo,
 ]
 
 async function userVersionOf(db: SqliteDbConnection): Promise<number> {

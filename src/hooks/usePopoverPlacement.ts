@@ -13,6 +13,7 @@ import { overlayWindowHeightPx } from '../lib/modal-metrics'
 import { placePopover } from '../lib/place-dropdown'
 import { useBottomSafeAreaPx } from '../lib/safe-area'
 import type { PopoverAnchorRect } from './useAnchoredPopover'
+import { useButtonNavigation } from './useButtonNavigation'
 
 /** 상자가 화면 위아래 안전영역에서 띄우는 여백. 드롭다운과 같은 값이다. */
 const EDGE_GAP_PX = 12
@@ -31,6 +32,7 @@ export function usePopoverPlacement(anchor: PopoverAnchorRect | null, gap: numbe
   const window = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const bottomSafeAreaPx = useBottomSafeAreaPx()
+  const buttonNavigation = useButtonNavigation()
   const [height, setHeight] = useState<number | null>(null)
 
   function onLayout(event: LayoutChangeEvent): void {
@@ -51,7 +53,7 @@ export function usePopoverPlacement(anchor: PopoverAnchorRect | null, gap: numbe
     edgeGap: EDGE_GAP_PX,
     gap,
     // 하단바 윗변. 토스트가 서는 자리와 같은 계산이다
-    coveredBottomPx: bottomSafeAreaPx + resolveBottomBarMetrics(window.width).spacePx,
+    coveredBottomPx: bottomSafeAreaPx + resolveBottomBarMetrics(window.width, buttonNavigation).spacePx,
   })
   return { ...placed, measured: true, onLayout }
 }

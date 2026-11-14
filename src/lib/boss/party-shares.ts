@@ -23,6 +23,8 @@ export interface PartyShares {
   splitFeePercent: number | null
   /** 송금 수수료가 등급을 따라가나. 계산은 안 보고 기록에 함께 적힌다 */
   splitFeeAuto?: boolean
+  /** 분배 방식 `제외`. 결정석을 팔지 않은 처치라 내 몫이 0 이고, 위 칸들은 숨겨 둔 분배다 */
+  excluded?: boolean
 }
 
 /** 계산이 쓰는 모양. `isEven` 이면 나눌 것이 비율이 아니라 파티 인원이다. */
@@ -59,9 +61,12 @@ export function parseShares(shares: PartyShares): ResolvedShares {
  * 반반(`myShare × 2 = 합`)을 넣으면 분자와 분모의 괄호가 같아져 게임 지급액만 남기 때문이고,
  * 그래서 비율을 안 쓰는 파티와 옛 기록의 금액이 이 기능 때문에 움직이지 않는다.
  *
+ * `제외` 면 숨겨 둔 분배와 상관없이 0 이다.
+ *
  * @param partySize **균등일 때만** 쓴다. 비율을 쓰면 두 쪽이라 이 수가 안 들어간다.
  */
 export function crystalPayoutMeso(priceMeso: number, partySize: number, shares: PartyShares): number {
+  if (shares.excluded === true) return 0
   const { myShare, sharesTotal, splitFeePercent, isEven } = parseShares(shares)
   if (isEven) return Math.floor(priceMeso / partySize)
 

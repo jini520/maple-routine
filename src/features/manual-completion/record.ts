@@ -18,6 +18,7 @@ import {
   type BossProfitRecordKey,
 } from '../../storage/boss-profit'
 import type { BossCycle, BossDifficulty } from '../../types'
+import { judgeCrystalLimit } from '../boss-profit/crystal-limit-judge'
 import { migrateDropsToConfirmedDifficulty } from '../boss-profit/drops-loader'
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
 
@@ -108,6 +109,7 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
     crystalSharesTotal: shares.sharesTotal,
     splitFeePercent: shares.splitFeePercent,
     splitFeeAuto,
+    crystalExcluded: shares.excluded === true,
     recordedAt: now.toISOString(),
     world: input.world,
     worldKey: input.worldKey,
@@ -124,28 +126,29 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
   )
   countCoreSave()
 
-  if (!changedDifficulty) return
-
-  // 옛 난이도의 드롭을 새 키로 옮긴 뒤에 옛 줄을 지운다. 순서를 바꾸면 그 사이에 앱이 죽었을 때
-  // 드롭만 남고 기록이 사라진다.
-  const drops = await getBossDropRecords([input.ocid], [input.periodKey])
-  await migrateDropsToConfirmedDifficulty(
-    {
+  if (changedDifficulty) {
+    // 옛 난이도의 드롭을 새 키로 옮긴 뒤에 옛 줄을 지운다. 순서를 바꾸면 그 사이에 앱이 죽었을 때
+    // 드롭만 남고 기록이 사라진다.
+    const drops = await getBossDropRecords([input.ocid], [input.periodKey])
+    await migrateDropsToConfirmedDifficulty(
+      {
+        ocid: input.ocid,
+        bossKey: input.bossKey,
+        difficulty: input.difficulty,
+        periodKey: input.periodKey,
+      },
+      drops,
+      now,
+    )
+    const previous: BossProfitRecordKey = {
       ocid: input.ocid,
       bossKey: input.bossKey,
-      difficulty: input.difficulty,
+      difficulty: input.previousDifficulty as BossDifficulty,
       periodKey: input.periodKey,
-    },
-    drops,
-    now,
-  )
-  const previous: BossProfitRecordKey = {
-    ocid: input.ocid,
-    bossKey: input.bossKey,
-    difficulty: input.previousDifficulty as BossDifficulty,
-    periodKey: input.periodKey,
+    }
+    await deleteBossProfitRecord(previous)
   }
-  await deleteBossProfitRecord(previous)
+  await judgeCrystalLimit([input.periodKey])
 }
 
 /**
@@ -164,4 +167,5 @@ export async function cancelManualCompletion(key: BossProfitRecordKey, now: Date
     NO_WORLD,
   )
   await deleteBossProfitRecord(key)
+  await judgeCrystalLimit([key.periodKey])
 }

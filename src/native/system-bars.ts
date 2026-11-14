@@ -12,3 +12,13 @@ export async function setNavigationBarStyle(isDarkTheme: boolean): Promise<void>
 export async function refreshSafeAreaInsets(): Promise<void> {
   await getSystemBarsPort().refreshSafeAreaInsets()
 }
+
+/** 아래에 3버튼 내비게이션 바가 있는가. 그 바는 버튼 줄 전체가 인셋이라 하단바를 더 띄워야 한다 */
+export function isButtonNavigation(): boolean {
+  return getSystemBarsPort().isButtonNavigation()
+}
+
+/** 내비게이션 방식이 바뀌면 부를 함수를 건다. 돌려준 함수로 뗀다 */
+export function addButtonNavigationListener(listener: () => void): () => void {
+  return getSystemBarsPort().addButtonNavigationListener(listener)
+}

@@ -9,9 +9,9 @@ import { existsSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 
 import { saveCharacterProfile } from '../../character-profiles'
-import { getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../income'
+import { getIncomeRecordsBetween, insertIncomeRecord, updateIncomeRecord, type IncomeRecord } from '../../income'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
-import { assignOwnerlessSpends, getSpendRecordsBetween, insertSpendRecord, updateSpendRecord, type SpendRecord } from '../../spend'
+import { assignOwnerlessSpends, deleteSpendRecord, getSpendRecordsBetween, insertSpendRecord, updateSpendRecord, type SpendRecord } from '../../spend'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { DB_VERSION } from '../migrations'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
@@ -382,5 +382,114 @@ describe('메포 지출의 메소마켓 수수료율', () => {
     expect(feesOf(메포지출.id)).toEqual([1, 1])
     expect(feesOf(메소지출.id)).toEqual([null])
     expect(feesOf(메포수입.id)).toEqual([null])
+  })
+})
+
+describe('시트 입력 표: 주간 보스 수입 이전 · 메소마켓 환전 수수료', () => {
+  const 기타지출: SpendRecord = {
+    id: '7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f',
+    ocid: 'ocid-1',
+    spentOn: '2026-11-20',
+    category: 'etc',
+    item: '주간 보스 수입 이전',
+    itemKey: null,
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: null,
+    levelTo: null,
+    quantity: 1,
+    mesoAmount: 108_000_000,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
+    cashAmount: null,
+    hexa: null,
+    recordedAt: '2026-11-20T01:00:00.000Z',
+  }
+  const 이전: SpendRecord = {
+    ...기타지출,
+    transfer: { receiverOcid: 'ocid-2', transferMeso: 3_600_000_000, feePercent: 3, feeAuto: true },
+  }
+  const 판매만: SpendRecord = {
+    ...기타지출,
+    id: '8d9e0f1a-2b3c-4d4e-9f5a-6b7c8d9e0f1a',
+    ocid: null,
+    accountId: 'maple-1',
+    item: '메소마켓 환전 수수료',
+    mesoAmount: 4_962_193,
+    exchange: { soldMeso: 500_000_000, sellPointPer100mMeso: 2_116, boughtMeso: null, buyPointPer100mMeso: null, mesoMarketFeePercent: 1 },
+  }
+
+  function countOf(table: string, entryId: string): number {
+    return Number(all(`SELECT COUNT(*) AS n FROM ${table} WHERE entry_id = '${entryId}'`)[0]?.n)
+  }
+
+  it('주간 보스 수입 이전의 시트 입력을 쓰고 그대로 되읽는다', async () => {
+    await insertSpendRecord(이전)
+
+    const [read] = await getSpendRecordsBetween('2026-11-20', '2026-11-20')
+    expect(read).toMatchObject({ category: 'etc', mesoAmount: 108_000_000, transfer: 이전.transfer })
+    expect(read?.exchange).toBeUndefined()
+  })
+
+  it('판매만 적은 환전은 구매 칸을 비워 두고, 구매를 더해 고치면 시트 입력을 갈아 끼운다', async () => {
+    await insertSpendRecord(판매만)
+    const [first] = await getSpendRecordsBetween('2026-11-20', '2026-11-20')
+    expect(first?.exchange).toEqual(판매만.exchange)
+
+    const 구매더함 = {
+      ...판매만,
+      mesoAmount: 20_841_210,
+      exchange: { ...판매만.exchange!, boughtMeso: 400_000_000, buyPointPer100mMeso: 2_200 },
+    }
+    await updateSpendRecord(구매더함)
+
+    const [read] = await getSpendRecordsBetween('2026-11-20', '2026-11-20')
+    expect(read).toMatchObject({ id: 판매만.id, recordedAt: 판매만.recordedAt, exchange: 구매더함.exchange })
+    expect(countOf('cashbook_entry_exchange_inputs', 판매만.id)).toBe(1)
+  })
+
+  it('기록을 지우면 시트 입력도 함께 지워진다', async () => {
+    await insertSpendRecord(이전)
+    await insertSpendRecord(판매만)
+
+    await deleteSpendRecord(이전.id)
+    await deleteSpendRecord(판매만.id)
+
+    expect(countOf('cashbook_entry_transfer_inputs', 이전.id)).toBe(0)
+    expect(countOf('cashbook_entry_exchange_inputs', 판매만.id)).toBe(0)
+  })
+
+  // 고쳐서 금액의 부호가 바뀌면 같은 기록이 지출과 수입 사이를 옮긴다. id 와 적은 시각은 그대로다.
+  it('지출로 적은 환전을 수입으로 고치면 같은 id 로 수입이 된다', async () => {
+    await insertSpendRecord(판매만)
+    const 수입: IncomeRecord = {
+      id: 판매만.id,
+      ocid: null,
+      accountId: 'maple-1',
+      earnedOn: 판매만.spentOn,
+      category: 'etc',
+      item: '메소마켓 환전 수수료',
+      itemKey: null,
+      mesoAmount: 22_448_015,
+      saleFeePercent: null,
+      saleFeeMeso: null,
+      saleFeeAuto: false,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      quantity: 1,
+      itemKind: null,
+      hunt: null,
+      recordedAt: 판매만.recordedAt,
+      exchange: { ...판매만.exchange!, boughtMeso: 500_000_000, buyPointPer100mMeso: 2_000 },
+    }
+
+    await updateIncomeRecord(수입)
+
+    expect(await getSpendRecordsBetween('2026-11-20', '2026-11-20')).toEqual([])
+    const [read] = await getIncomeRecordsBetween('2026-11-20', '2026-11-20')
+    expect(read).toMatchObject({ id: 판매만.id, recordedAt: 판매만.recordedAt, mesoAmount: 22_448_015, exchange: 수입.exchange })
   })
 })

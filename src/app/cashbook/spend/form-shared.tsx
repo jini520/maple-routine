@@ -91,6 +91,8 @@ export interface SpendFormProps {
   hexaStorageChecks: HexaStorageChecks
   /** 캐릭터의 메이플 ID · 월드를 찾는 함수를 읽는 콜백. 아이템 구매 폼이 인벤토리에 보관할 주인을 정할 때 쓴다. */
   loadStoreOwnerOf?: () => Promise<(ocid: string) => { accountId: string; worldKey: string } | null>
+  /** 한 캐릭터의 그 주 결정석 몫을 읽는 콜백. 주간 보스 수입 이전 폼의 체크 박스가 쓴다 */
+  loadWeekCrystalMeso?: (ocid: string, dateKey: string) => Promise<number>
 }
 
 /**
@@ -164,24 +166,33 @@ export function RateRow(props: {
   value: string
   onChange: (next: string) => void
   valid: boolean
+  /** 줄 이름. 메소마켓 환전처럼 시세가 둘인 폼이 월드를 붙인다 */
+  label?: string
+  /** 반드시 쳐야 하는 칸인가. 구매를 나중에 적는 칸은 아니다 */
+  required?: boolean
+  testID?: string
 }): React.JSX.Element {
+  const label = props.label ?? '시세 · 1억당'
+  const required = props.required ?? true
   return (
     <View className={FIELD_CELL_CLASS}>
       <Text className="shrink-0 text-xs text-text-muted">
-        시세 · 1억당
-        <Text testID="spend-sheet-required" className="text-error-ink">
-          {' *'}
-        </Text>
+        {label}
+        {required && (
+          <Text testID="spend-sheet-required" className="text-error-ink">
+            {' *'}
+          </Text>
+        )}
       </Text>
       <Pressable
-        testID="spend-sheet-rate"
+        testID={props.testID ?? 'spend-sheet-rate'}
         role="button"
-        aria-label="시세 · 1억당"
+        aria-label={label}
         onPress={() =>
           openInputCard({
-            label: '시세 · 1억당',
+            label,
             context: '메소마켓에서 1억 메소를 사는 메포',
-            required: true,
+            required,
             unit: '메포',
             chips: POINT_QUICK_ADDS,
             placeholder: '메소마켓 시세',

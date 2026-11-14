@@ -130,3 +130,31 @@ describe('copyMissingBossPartySettings', () => {
     expect(real.inspect((db) => db.prepare(`SELECT count(*) AS n FROM boss_parties WHERE ocid = 'new'`).get())).toEqual({ n: 0 })
   })
 })
+
+describe('분배 방식 `제외`', () => {
+  // 숨긴 분배는 드롭 가격 카드의 처음 값과 `기본` 으로 돌아올 때 그대로 쓰인다.
+  it('`제외` 를 쓰면 숨긴 인원과 비율이 그대로 남고 다시 읽을 때 `제외` 로 읽는다', async () => {
+    await setBossPartySetting(setting({ partySize: 2, crystalMyShare: 2, crystalSharesTotal: 3, crystalExcluded: true }))
+
+    expect(await getBossPartySetting('ocid-1', 'lucid', 'hard')).toMatchObject({
+      partySize: 2,
+      crystalMyShare: 2,
+      crystalSharesTotal: 3,
+      crystalExcluded: true,
+    })
+  })
+
+  it('`기본` 으로 되돌리면 `제외` 가 풀린다', async () => {
+    await setBossPartySetting(setting({ crystalExcluded: true }))
+    await setBossPartySetting(setting({ crystalExcluded: false }))
+
+    expect((await getBossPartySetting('ocid-1', 'lucid', 'hard'))?.crystalExcluded).toBe(false)
+  })
+
+  it('리프한 새 캐릭터로 설정을 옮길 때 `제외` 도 함께 간다', async () => {
+    await setBossPartySetting(setting({ crystalExcluded: true }))
+    await copyMissingBossPartySettings('ocid-1', 'ocid-2', AT)
+
+    expect((await getBossPartySetting('ocid-2', 'lucid', 'hard'))?.crystalExcluded).toBe(true)
+  })
+})

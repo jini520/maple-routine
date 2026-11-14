@@ -31,6 +31,7 @@ import { getScheduleProbeLedger } from '../../storage/schedule-probe-ledger'
 import { batchRecordWrites } from '../../storage/record-revision-batch'
 import { BOSS_CYCLES, type BossCycle, type BossDifficulty } from '../../types'
 import { isChallengersWorld } from '../../lib/world/worlds'
+import { judgeCrystalLimit } from '../boss-profit/crystal-limit-judge'
 import { migrateDropsToConfirmedDifficulty } from '../boss-profit/drops-loader'
 import { withSqliteFallback, withSqliteTimeout } from '../boss-profit/sqlite-guards'
 import type { WindowFailure } from './window'
@@ -159,6 +160,7 @@ async function recordPeriod(
       myShare: configured?.crystalMyShare ?? null,
       sharesTotal: configured?.crystalSharesTotal ?? null,
       splitFeePercent: splitFee.splitFeePercent,
+      excluded: configured?.crystalExcluded === true,
     }
 
     await withSqliteTimeout(
@@ -176,6 +178,7 @@ async function recordPeriod(
         crystalSharesTotal: shares.sharesTotal,
         splitFeePercent: shares.splitFeePercent,
         splitFeeAuto: splitFee.splitFeeAuto,
+        crystalExcluded: shares.excluded,
         recordedAt: now.toISOString(),
         world,
         worldKey,
@@ -224,6 +227,7 @@ async function recordWindow(ocids: readonly string[], now: Date): Promise<void> 
       }
     }
   }
+  await judgeCrystalLimit(periods.map((period) => period.periodKey))
 }
 
 /** `${ocid}|${cycle}|${periodKey}` 한 줄로 접은 키. 화면이 캐릭터·기간별 상태를 이 키로 찾는다. */

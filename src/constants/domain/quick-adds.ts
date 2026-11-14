@@ -49,3 +49,12 @@ export const POINT_AMOUNT_QUICK_ADDS = [
   { label: '+10', value: 10 },
   { label: '+1', value: 1 },
 ] as const
+
+/**
+ * 메소마켓에서 사고파는 억 수의 눈금. **큰 것이 왼쪽이다**(사용자 지정). 메소마켓은 1억 단위로만 거래해서 칸이 억 수만 받는다.
+ */
+export const HUNDRED_MILLION_QUICK_ADDS = [
+  { label: '+10억', value: 10 },
+  { label: '+5억', value: 5 },
+  { label: '+1억', value: 1 },
+] as const

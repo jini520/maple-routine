@@ -78,6 +78,10 @@ export interface StatusBarPort {
 export interface SystemBarsPort {
   setNavigationBarStyle(isDarkTheme: boolean): Promise<void>
   refreshSafeAreaInsets(): Promise<void>
+  /** 아래에 3버튼 내비게이션 바가 있는가. 제스처 내비게이션과 iOS 는 거짓. 인셋 크기로는 둘을 못 가른다 */
+  isButtonNavigation(): boolean
+  /** 위 값이 바뀌면 부를 함수. 돌려준 함수로 뗀다 */
+  addButtonNavigationListener(listener: () => void): () => void
 }
 
 /**

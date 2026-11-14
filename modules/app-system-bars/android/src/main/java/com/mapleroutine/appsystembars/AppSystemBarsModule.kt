@@ -1,13 +1,22 @@
 package com.mapleroutine.appsystembars
 
+import android.os.Handler
+import android.os.Looper
+import android.view.View
+import android.view.ViewTreeObserver
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.functions.Queues
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
+import java.lang.ref.WeakReference
+
+private const val BUTTON_NAVIGATION_CHANGE = "onButtonNavigationChange"
 
 /**
- * 하단 시스템 내비게이션 바(제스처 핸들·3버튼) **글리프의 명암**을 앱 표면 밝기에 맞춘다.
+ * 하단 시스템 내비게이션 바(제스처 핸들·3버튼) **글리프의 명암**을 앱 표면 밝기에 맞추고, 그 바가 3버튼인지 알린다.
  *
  * 웹뷰 쪽 짝은 `SystemBarsPlugin.setStyle` 이고 그 한 줄을 그대로 옮긴 것이다:
  * `setAppearanceLightNavigationBars(!dark)` — 어두운 표면이면 밝은 글리프, 밝은 표면이면 어두운
@@ -20,14 +29,25 @@ import expo.modules.kotlin.modules.ModuleDefinition
  * edge-to-edge 는 RN 0.86/Expo 57 의 안드로이드 기본이고, 인셋은
  * `react-native-safe-area-context` 가 자기 네이티브 리스너로 컴포넌트에 내려준다.
  *
- * 그래서 이 모듈에는 함수가 **하나뿐**이다(`rn-system-bars.ts` 가 그 갈림을 적어 두었다).
+ * ## 3버튼인지
+ *
+ * 탭할 수 있는 시스템 바의 인셋(`WindowInsetsCompat.Type.tappableElement()`)은 제스처 내비게이션에서 0 이고
+ * 3버튼에서는 버튼 줄 높이다. 인셋 리스너를 따로 걸지 않고 화면 배치가 끝날 때마다 다시 읽는다.
+ * `setOnApplyWindowInsetsListener` 는 뷰마다 하나뿐이라, 걸면 RN 과 안전영역 라이브러리의 리스너를 덮는다.
  *
  * `Queues.MAIN` 은 선택이 아니다 — Expo 의 `AsyncFunction` 은 기본적으로 백그라운드 큐에서 돌고,
  * `Window` 조작은 UI 스레드 밖에서 하면 안 된다(`AppBackgroundModule` 과 같은 이유).
  */
 class AppSystemBarsModule : Module() {
+  /** JS 스레드의 동기 함수가 읽고 UI 스레드가 쓴다. */
+  @Volatile private var buttonNavigation = false
+  private var observedDecor: WeakReference<View>? = null
+  private val layoutListener = ViewTreeObserver.OnGlobalLayoutListener { refreshButtonNavigation() }
+
   override fun definition() = ModuleDefinition {
     Name("AppSystemBars")
+
+    Events(BUTTON_NAVIGATION_CHANGE)
 
     AsyncFunction("setNavigationBarStyle") { dark: Boolean ->
       val activity = appContext.activityProvider?.currentActivity
@@ -36,5 +56,37 @@ class AppSystemBarsModule : Module() {
       WindowCompat.getInsetsController(window, window.decorView)
         .isAppearanceLightNavigationBars = !dark
     }.runOnQueue(Queues.MAIN)
+
+    Function("isButtonNavigation") { buttonNavigation }
+
+    // 모듈이 액티비티가 앞에 나온 뒤에 만들어질 수 있어 둘 다 건다. 같은 화면이면 두 번 걸지 않는다.
+    OnCreate { Handler(Looper.getMainLooper()).post { observeDecor() } }
+    OnActivityEntersForeground { observeDecor() }
+    OnActivityDestroys { stopObserving() }
+  }
+
+  private fun observeDecor() {
+    val decor = appContext.activityProvider?.currentActivity?.window?.decorView ?: return
+    if (observedDecor?.get() !== decor) {
+      stopObserving()
+      decor.viewTreeObserver.addOnGlobalLayoutListener(layoutListener)
+      observedDecor = WeakReference(decor)
+    }
+    refreshButtonNavigation()
+  }
+
+  private fun stopObserving() {
+    val observer = observedDecor?.get()?.viewTreeObserver
+    if (observer != null && observer.isAlive) observer.removeOnGlobalLayoutListener(layoutListener)
+    observedDecor = null
+  }
+
+  private fun refreshButtonNavigation() {
+    val decor = observedDecor?.get() ?: return
+    val insets = ViewCompat.getRootWindowInsets(decor) ?: return
+    val next = insets.getInsets(WindowInsetsCompat.Type.tappableElement()).bottom > 0
+    if (next == buttonNavigation) return
+    buttonNavigation = next
+    sendEvent(BUTTON_NAVIGATION_CHANGE, mapOf("buttonNavigation" to next))
   }
 }

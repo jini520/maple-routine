@@ -21,11 +21,12 @@ import {
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
 import { useBarOrderStore } from '../../../features/bar-order/store'
+import { useButtonNavigation } from '../../../hooks/useButtonNavigation'
 import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
 import { tapFeedback } from '../../../native/haptics'
 import { scrollPageToTop } from '../../../navigation/scroll-to-top'
 import { isSecondTap, type TapRecord } from './double-tap'
-import { BAR_LIFT, resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
+import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { boxShadowOf } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
@@ -145,7 +146,8 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
   // 바의 세로는 창 폭에서 나온다. 콘텐츠가 남기는 몫도 같은 함수를 보므로
   // (`ScreenScroll` → `bottom-inset.ts`) 두 값이 어긋날 자리가 없다.
   const { width: windowWidth } = useWindowDimensions()
-  const metrics = resolveBottomBarMetrics(windowWidth)
+  const buttonNavigation = useButtonNavigation()
+  const metrics = resolveBottomBarMetrics(windowWidth, buttonNavigation)
   const barHeight = metrics.heightPx
   /** 바 높이에서 위아래 여백을 뺀 값. 둘은 함께 움직인다. 따로 두면 알약이 바 안에서 떠 버린다. */
   const pillHeight = barHeight - BAR_PADDING * 2
@@ -342,7 +344,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
         // 창 전체를 전제로 폭을 계산했기 때문이다. 같은 전제를 쓰면 둘이 어긋날 수 없다.
         left: metrics.sideMarginPx,
         right: metrics.sideMarginPx,
-        bottom: bottomSafeAreaPx + BAR_LIFT,
+        bottom: bottomSafeAreaPx + metrics.liftPx,
         height: barHeight,
         flexDirection: 'row',
         alignItems: 'center',

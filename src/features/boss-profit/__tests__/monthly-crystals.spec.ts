@@ -137,6 +137,15 @@ describe('countMonthlyCrystalsUpToWeek', () => {
   })
 })
 
+describe('countMonthlyCrystalsUpToWeek: 분배 방식 `제외`', () => {
+  // 팔지 않은 결정석이다.
+  it('`제외` 인 월간 처치는 세지 않는다', () => {
+    const records = [월간기록('A', { defeatedOn: '2026-09-05' }), 월간기록('B', { defeatedOn: '2026-09-05', crystalExcluded: true })]
+
+    expect(수(records, '2026-09-03')).toBe(1)
+  })
+})
+
 describe('useMonthlyCrystalsUpToWeek', () => {
   beforeEach(() => {
     getBossProfitRecordsMock.mockReset()

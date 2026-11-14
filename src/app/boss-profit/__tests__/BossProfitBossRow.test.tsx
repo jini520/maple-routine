@@ -179,6 +179,27 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
   })
 })
 
+describe('BossProfitBossRow: 결정석 `제외`', () => {
+  it('한도를 넘긴 처치는 인원 배지 옆에 `제외` 배지가 서고 금액이 `0 메소` 다', async () => {
+    const { getByTestId, getByText } = await renderProfit(
+      <BossProfitBossRow row={보스행({ partySize: 3, payoutMeso: 0, overCrystalLimit: true })} drops={[]} />,
+    )
+
+    expect(getByTestId('party-share-badge')).toHaveTextContent('파티 3인')
+    expect(getByTestId('party-share-over-limit-badge')).toHaveTextContent('제외')
+    expect(getByText('0 메소')).toBeTruthy()
+  })
+
+  it('분배 방식 `제외` 인 처치는 배지가 `제외` 하나다', async () => {
+    const { getByTestId, queryByTestId } = await renderProfit(
+      <BossProfitBossRow row={보스행({ partySize: 3, payoutMeso: 0, crystalExcluded: true })} drops={[]} />,
+    )
+
+    expect(getByTestId('party-share-badge')).toHaveTextContent('제외')
+    expect(queryByTestId('party-share-over-limit-badge')).toBeNull()
+  })
+})
+
 describe('BossProfitBossRow: 드롭 지시자', () => {
   it('드롭이 없으면 "＋ 드롭 추가" 칩이다', async () => {
     const { getByText } = await renderProfit(<BossProfitBossRow row={보스행()} drops={[]} />)
@@ -298,7 +319,7 @@ describe('BossProfitBossRow: 파티원 수', () => {
 
     expect(setRowParty).toHaveBeenCalledWith(row, {
       partySize: 4,
-      shares: { myShare: null, sharesTotal: null, splitFeePercent: null, splitFeeAuto: undefined },
+      shares: { myShare: null, sharesTotal: null, splitFeePercent: null, splitFeeAuto: undefined, excluded: false },
     })
   })
 

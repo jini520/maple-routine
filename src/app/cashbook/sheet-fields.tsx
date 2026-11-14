@@ -12,6 +12,7 @@ import { Pressable, View } from 'react-native'
 import { Text } from '../../components/atoms'
 import { Stepper } from '../../components/molecules/Stepper/Stepper'
 import { DateSelect } from '../../components/molecules/DateSelect/DateSelect'
+import { MemoField } from '../../components/molecules/MemoField/MemoField'
 import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import {
   SelectChevron,
@@ -413,6 +414,36 @@ export function TextField(props: {
         {empty ? props.placeholder : props.value}
       </Text>
     </Pressable>
+  )
+}
+
+/**
+ * 아이템 구매 · 판매 시트의 메모 칸. 누르면 이름과 자리표시자가 `메모` 인 여러 줄 입력 카드.
+ *
+ * @param context 카드 머리 아래 한 줄. 같은 시트의 금액 칸 카드와 같은 아이템 이름
+ */
+export function MemoInput(props: {
+  testID: string
+  memo: string
+  context?: string
+  onChange: (next: string) => void
+}): React.JSX.Element {
+  return (
+    <MemoField
+      testID={props.testID}
+      memo={props.memo}
+      onPress={() =>
+        openInputCard({
+          label: '메모',
+          context: props.context,
+          text: true,
+          multiline: true,
+          placeholder: '메모',
+          value: props.memo,
+          onConfirm: props.onChange,
+        })
+      }
+    />
   )
 }
 

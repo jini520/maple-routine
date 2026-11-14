@@ -20,6 +20,7 @@ import {
 } from '../../storage/boss-party-period-overrides'
 import { replaceBossDropRecords } from '../../storage/boss-drops'
 import { upsertBossProfitRecord } from '../../storage/boss-profit'
+import { batchRecordWrites } from '../../storage/record-revision-batch'
 import type { RecordedDrop } from '../../types/drops'
 import type { BossCycle, BossDifficulty } from '../../types'
 import { countCoreSave } from '../app-review/request'
@@ -30,6 +31,7 @@ import {
 } from '../manual-completion/record'
 import { reportDropPrice, reportDropRemoved } from '../server-sync/drop-price-sync'
 import { readTrackedOcidsSync } from '../schedule-sync/read-schedule'
+import { judgeCrystalLimit } from './crystal-limit-judge'
 import { buildPartyPlans, partyPlanKey, type BossPartyPlan } from './party-plans'
 import { readPeriodSnapshot, refetchPeriod } from './period-query'
 import { resolveDisplayOcids } from './period-snapshot'
@@ -214,6 +216,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         crystalSharesTotal: shares.sharesTotal,
         splitFeePercent: shares.splitFeePercent,
         splitFeeAuto: shares.splitFeeAuto === true,
+        crystalExcluded: shares.excluded === true,
       }
       await setBossPartyPeriodOverride({
         ocid: row.ocid,
@@ -233,50 +236,57 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     }
 
     if (row.priceMeso === null) return
-    // 기록이 바뀌면 판이 올라 기간 쿼리가 다시 읽는다. 화면은 여기서 안 건드린다.
-    await upsertBossProfitRecord({
-      ocid: row.ocid,
-      bossKey: row.bossKey,
-      boss: row.bossName,
-      difficulty: row.difficulty,
-      cycle: row.cycle,
-      periodKey: row.periodKey,
-      partySize,
-      priceMeso: row.priceMeso,
-      payoutMeso: crystalPayoutMeso(row.priceMeso, partySize, shares),
-      crystalMyShare: shares.myShare,
-      crystalSharesTotal: shares.sharesTotal,
-      splitFeePercent: shares.splitFeePercent,
-      splitFeeAuto: shares.splitFeeAuto === true,
-      recordedAt: new Date().toISOString(),
-      world: row.world,
-      worldKey: row.worldKey,
-      // 파티원 수만 고치는 upsert 가 **출처를 지우면 안 된다.** 안 넘기면 기본값이 `auto` 라 직접 적은 완료의 표식이
-      // 편집 한 번에 사라진다.
-      source: row.source,
+    const priceMeso = row.priceMeso
+    // 기록이 바뀌면 판이 올라 기간 쿼리가 다시 읽는다. 화면은 여기서 안 건드린다. 판정까지 한 묶음이라 화면이 판정 전 금액을 안 그린다.
+    await batchRecordWrites(async () => {
+      await upsertBossProfitRecord({
+        ocid: row.ocid,
+        bossKey: row.bossKey,
+        boss: row.bossName,
+        difficulty: row.difficulty,
+        cycle: row.cycle,
+        periodKey: row.periodKey,
+        partySize,
+        priceMeso,
+        payoutMeso: crystalPayoutMeso(priceMeso, partySize, shares),
+        crystalMyShare: shares.myShare,
+        crystalSharesTotal: shares.sharesTotal,
+        splitFeePercent: shares.splitFeePercent,
+        splitFeeAuto: shares.splitFeeAuto === true,
+        crystalExcluded: shares.excluded === true,
+        recordedAt: new Date().toISOString(),
+        world: row.world,
+        worldKey: row.worldKey,
+        // 파티원 수만 고치는 upsert 가 **출처를 지우면 안 된다.** 안 넘기면 기본값이 `auto` 라 직접 적은 완료의 표식이
+        // 편집 한 번에 사라진다.
+        source: row.source,
+      })
+      await judgeCrystalLimit([row.periodKey])
     })
   },
 
   async saveManualCompletion(rowKey, input) {
     const row = findRow(get().tab, get().periodKey, rowKey, 'saveManualCompletion')
 
-    await saveManualCompletion(
-      {
-        ocid: row.ocid,
-        bossKey: row.bossKey,
-        bossName: row.bossName,
-        cycle: row.cycle,
-        periodKey: row.periodKey,
-        difficulty: input.difficulty,
-        partySize: input.partySize,
-        shares: input.shares,
-        defeatedOn: input.dateKey,
-        world: row.world,
-        worldKey: row.worldKey,
-        // 난이도를 바꿨으면 옛 줄을 지워야 한다. 안 지우면 같은 처치가 두 줄이 된다.
-        previousDifficulty: row.source === 'manual' ? row.difficulty : undefined,
-      },
-      new Date(),
+    await batchRecordWrites(() =>
+      saveManualCompletion(
+        {
+          ocid: row.ocid,
+          bossKey: row.bossKey,
+          bossName: row.bossName,
+          cycle: row.cycle,
+          periodKey: row.periodKey,
+          difficulty: input.difficulty,
+          partySize: input.partySize,
+          shares: input.shares,
+          defeatedOn: input.dateKey,
+          world: row.world,
+          worldKey: row.worldKey,
+          // 난이도를 바꿨으면 옛 줄을 지워야 한다. 안 지우면 같은 처치가 두 줄이 된다.
+          previousDifficulty: row.source === 'manual' ? row.difficulty : undefined,
+        },
+        new Date(),
+      ),
     )
 
     // **적은 날짜의 주로 데려간다**(사용자 지정). 월간 보스는 잡은 주에 서므로 날짜를 옮기면 그 행이 다른 주로 가고,
@@ -289,9 +299,11 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
 
   async cancelManualCompletion(rowKey) {
     const row = findRow(get().tab, get().periodKey, rowKey, 'cancelManualCompletion')
-    await cancelManualCompletion(
-      { ocid: row.ocid, bossKey: row.bossKey, difficulty: row.difficulty, periodKey: row.periodKey },
-      new Date(),
+    await batchRecordWrites(() =>
+      cancelManualCompletion(
+        { ocid: row.ocid, bossKey: row.bossKey, difficulty: row.difficulty, periodKey: row.periodKey },
+        new Date(),
+      ),
     )
   },
 

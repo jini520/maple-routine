@@ -11,8 +11,8 @@ import { getMapleIdNames, setMapleIdNames } from '../../storage/maple-id-names'
 import { queryClient } from '../query/client'
 import { queryKeys } from '../query/keys'
 
-/** 사용자가 짓는 이름의 최대 글자 수. 가장 좁은 폭에서 위젯 드롭다운 버튼에 들어가는 길이다 */
-export const MAPLE_ID_NAME_MAX_LENGTH = 10
+/** 사용자가 짓는 이름의 최대 바이트(한글 8자 · 영문 16자). 가장 좁은 폭의 위젯 드롭다운 버튼에 들어가는 길이다 */
+export const MAPLE_ID_NAME_MAX_BYTES = 16
 
 export interface MapleIdNamesStore {
   /** 메이플 ID → 사용자가 바꾼 이름 */

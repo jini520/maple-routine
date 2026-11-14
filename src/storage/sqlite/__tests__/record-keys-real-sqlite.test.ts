@@ -3,7 +3,7 @@
  * 남은 다섯 표의 기본키를 uuid 로 옮기고 칸 이름을 서버 규칙에 맞추는 버전 16 을 진짜 SQLite 로 태운다.
  *
  * 새 DB 를 연 뒤 다섯 표를 옛 모양으로 다시 세우고 바뀐 칸 이름을 되돌려 버전 15 기기를 만든다. 다시 열어 옛 행이
- * 하나도 빠지지 않았는지, 새 이름과 `UNIQUE` 가 섰는지 본다.
+ * 하나도 빠지지 않았는지, 새 이름과 `UNIQUE` 가 섰는지 본다. 버전 17 이 지운 가계부 메모 칸을 버전 22 가 다시 더하는 것도 본다.
  */
 import type { DatabaseSync } from 'node:sqlite'
 
@@ -116,7 +116,6 @@ async function seedVersion15(): Promise<void> {
       db.exec(`ALTER TABLE ${table} RENAME COLUMN ${next} TO ${previous}`)
     }
     db.exec('ALTER TABLE cashbook_entries DROP COLUMN nexon_account_id')
-    db.exec('ALTER TABLE cashbook_entries ADD COLUMN memo TEXT')
     seedDevice(db)
     db.exec("UPDATE cashbook_entries SET memo = NULL")
     db.exec('PRAGMA user_version = 15')
@@ -139,7 +138,6 @@ describe('버전 16: 남은 다섯 표의 기본키를 uuid 로 옮기고 칸 �
     )
     expect(columnsOf('mvp_grade_history')).toContain('from_date')
     expect(columnsOf('cashbook_entries')).toContain('nexon_account_id')
-    expect(columnsOf('cashbook_entries')).not.toContain('memo')
     for (const [table, next] of RENAMED_COLUMNS) expect(columnsOf(table)).toContain(next)
   })
 
@@ -227,15 +225,6 @@ describe('버전 16: 남은 다섯 표의 기본키를 uuid 로 옮기고 칸 �
     await expect(db.run(insert, ['account-a'])).rejects.toThrow(/UNIQUE/)
   })
 
-  // 입력 시트가 모두 null 로 적던 칸이다. 서버로도 보내지 않아 칸째 지운다.
-  it('버전 17 이 쓰지 않던 가계부 메모 칸을 지운다', async () => {
-    await seedVersion15()
-    await getBossProfitDb()
-
-    expect(columnsOf('cashbook_entries')).not.toContain('memo')
-    expect(all('SELECT count(*) AS n FROM cashbook_entries')).toEqual([{ n: 2 }])
-  })
-
   it('한 번 돈 버전 16 은 다시 열어도 다시 돌지 않는다', async () => {
     await seedVersion15()
     await getBossProfitDb()
@@ -307,5 +296,43 @@ describe('버전 16: 남은 다섯 표의 기본키를 uuid 로 옮기고 칸 �
     const found = await getNexonAccountIdsOfOcids(['o-이름바꿈', 'o-모름', 'o-없음'])
 
     expect([...found.entries()]).toEqual([['o-이름바꿈', 'account-new']])
+  })
+})
+
+// 버전 17 이 지운 메모 칸을 아이템 구매 · 판매의 메모로 다시 쓴다. 새 DB 도 버전 1 부터 이관을 돌아 표 정의의 칸을 버전 17 이
+// 지우므로, 어느 기기든 버전 22 를 지나면 칸이 있어야 한다.
+describe('버전 22: 가계부 메모 칸을 다시 더한다', () => {
+  it('새 DB 에 메모 칸이 있다', async () => {
+    await getBossProfitDb()
+
+    expect(columnsOf('cashbook_entries')).toContain('memo')
+  })
+
+  it('메모 칸이 있던 버전 15 기기는 버전 17 이 지운 칸을 빈 채로 다시 갖고, 행을 잃지 않는다', async () => {
+    await seedVersion15()
+    await getBossProfitDb()
+
+    expect(all('SELECT id, memo FROM cashbook_entries ORDER BY id')).toEqual([
+      { id: 'e-account', memo: null },
+      { id: 'e-character', memo: null },
+    ])
+  })
+
+  it('메모 칸이 없는 버전 21 기기도 행을 잃지 않고 빈 메모 칸을 갖는다. 다시 열어도 그대로다', async () => {
+    await getBossProfitDb()
+    await closeBossProfitDb()
+    real.inspect((db) => {
+      db.exec('ALTER TABLE cashbook_entries DROP COLUMN memo')
+      db.exec(`INSERT INTO cashbook_entries (id, ocid, entry_type, category_key, entry_date, created_at, updated_at)
+        VALUES ('e-21', 'ocid-1', 'spend', 'item_purchase', '2026-11-13', '2026-11-13T00:00:00.000Z', '2026-11-13T00:00:00.000Z')`)
+      db.exec('PRAGMA user_version = 21')
+    })
+
+    await getBossProfitDb()
+    await closeBossProfitDb()
+    await getBossProfitDb()
+
+    expect(all('SELECT id, memo FROM cashbook_entries')).toEqual([{ id: 'e-21', memo: null }])
+    expect(real.inspect((db) => (db.prepare('PRAGMA user_version').get() as Row).user_version)).toBe(DB_VERSION)
   })
 })

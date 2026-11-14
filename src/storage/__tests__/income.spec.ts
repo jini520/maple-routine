@@ -166,6 +166,18 @@ describe('고치기 · 지우기', () => {
   })
 })
 
+// 수입 쪽 변환(`incomeEntryOf` · `incomeRecordOf`)도 메모를 나르는지 본다. 빠뜨리면 타입 오류 없이 메모만 사라진다.
+describe('메모', () => {
+  it('아이템 판매의 메모를 다듬어 저장해 되읽고, 지우고 고치면 칸이 빈다', async () => {
+    await insertIncomeRecord({ ...sale, memo: ' 에테르넬 모자 22성 ' })
+    expect((await getIncomeRecordsBetween('2026-08-20', '2026-08-20'))[0]!.memo).toBe('에테르넬 모자 22성')
+
+    await updateIncomeRecord({ ...sale, memo: '   ' })
+    expect(await getIncomeRecordsBetween('2026-08-20', '2026-08-20')).toEqual([sale])
+    expect(all('SELECT memo FROM cashbook_entries')).toEqual([{ memo: null }])
+  })
+})
+
 describe('assignLegacyIncomeAccounts: 주인을 모르는 옛 수입을 메이플 ID 로 옮긴다', () => {
   // 사냥은 이미 캐릭터가 필수라 옛 기록도 옮기지 않는다. 수정으로 열면 캐릭터를 골라야 저장된다.
   it('넥슨 계정의 메이플 ID 가 하나면 고를 수 있는 분류의 옛 기록만 옮기고, 판은 옮긴 것이 있을 때만 오른다', async () => {

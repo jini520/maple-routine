@@ -36,6 +36,7 @@ import {
   ChevronUpIcon,
   ProfitIcon,
   ShoppingCartIcon,
+  StickyNoteIcon,
   Text,
 } from '../../components/atoms'
 import { CalendarGrid } from '../../components/molecules/CalendarGrid/CalendarGrid'
@@ -102,7 +103,9 @@ import {
   recordIncomes,
   recordSpend,
   editIncome,
+  editMesoMarketExchange,
   editSpend,
+  exchangeSpendViewOf,
   removeRecord,
   recordCardOf,
   recordMesoOf,
@@ -118,6 +121,7 @@ import {
   type RecordCard,
   type SoldItem,
 } from '../../features/cashbook/records'
+import { loadWeekCrystalMeso } from '../../features/cashbook/week-crystal'
 import {
   mergeDayRows,
   mergedRowCardOf,
@@ -143,6 +147,7 @@ import { useToastStore } from '../../features/toast/store'
 import { SETTLEMENT_BANNER_DETAIL_LEDGER } from '../../features/settlement/banner-text'
 import { SettlementBanner } from '../SettlementBanner'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
+import type { SpendRecord } from '../../storage/spend'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
 import { useMonthDays } from './useMonthDays'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
@@ -493,6 +498,15 @@ function DayTotalHalf(props: {
   )
 }
 
+/** 메모가 있는 기록의 제목 뒤 아이콘. lucide 아이콘은 `testID` 를 받지 못해 상자가 든다. */
+function MemoMark(props: { testID: string }): React.JSX.Element {
+  return (
+    <View testID={props.testID} className="shrink-0">
+      <StickyNoteIcon className="h-[11px] w-[11px] text-text-muted" strokeWidth={2} aria-hidden />
+    </View>
+  )
+}
+
 /** 줄 카드의 머리 한 줄(표식 · 두 줄 · 금액 · 화살촉). 기록 줄과 합친 줄이 함께 쓰는 부품. */
 function RowHeader(props: {
   rowKey: string
@@ -505,6 +519,8 @@ function RowHeader(props: {
   action: string
   /** 펼칠 수 없는 줄이면 `undefined` */
   expanded: boolean | undefined
+  /** 메모가 있는 손입력 줄. 제목 뒤에 메모 아이콘이 선다 */
+  memo: boolean
   onPress: () => void
 }): React.JSX.Element {
   const { rowKey, card, income, rowIcon, Chevron } = props
@@ -516,7 +532,7 @@ function RowHeader(props: {
       // 자동 줄은 고치러 가는 것이 아니라 보러 가는 것이다. 읽어 주는 이름이 그 사실을 말해야
       // 눌렀더니 시트가 안 열린다 가 고장으로 읽히지 않는다.
       // 둘째 줄까지 읽는다. 강화 줄은 제목이 모두 `강화` 라 둘째 줄이 있어야 줄이 갈린다.
-      aria-label={`${card.title}${card.detail === null ? '' : ` ${card.detail}`} ${props.action}`}
+      aria-label={`${card.title}${card.detail === null ? '' : ` ${card.detail}`}${props.memo ? ' 메모 있음' : ''} ${props.action}`}
       aria-expanded={props.expanded}
       onPress={props.onPress}
       className="flex-row items-center gap-2.5 py-3 pl-3 pr-2.5"
@@ -552,9 +568,13 @@ function RowHeader(props: {
       {/* 첫 줄은 캐릭터 · 제목, 둘째 줄은 무엇을 얼마나다. 갈래마다 다른 규칙은 화면이 아니라
           `recordCardOf` 가 든다. */}
       <View className="min-w-0 flex-1">
-        <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="text-xs font-semibold text-text">
-          {card.title}
-        </Text>
+        {/* 제목이 길면 제목이 먼저 줄고 메모 아이콘은 남는다. 아이콘은 읽어 주지 않아 이름이 `메모 있음` 을 말한다. */}
+        <View className="flex-row items-center gap-2">
+          <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="shrink text-xs font-semibold text-text">
+            {card.title}
+          </Text>
+          {props.memo && <MemoMark testID={`cashbook-row-memo-${rowKey}`} />}
+        </View>
         {card.detail !== null && (
           <Text
             numberOfLines={1}
@@ -624,6 +644,7 @@ function DayRecordRow(props: {
         Chevron={!expandable ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon}
         action={!expandable ? '고치기' : isOpen ? '접기' : '펼치기'}
         expanded={expandable ? isOpen : undefined}
+        memo={isManualRecord(entry) && entry.record.memo !== undefined}
         onPress={props.onPress}
       />
       {isOpen && bosses !== null && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
@@ -662,6 +683,8 @@ function MergedRecordRow(props: {
         Chevron={expanded ? ChevronUpIcon : ChevronDownIcon}
         action={expanded ? '접기' : '펼치기'}
         expanded={expanded}
+        // 접힌 합친 줄에는 메모 아이콘을 세우지 않는다. 메모가 있는 기록은 펼친 칸이 알린다.
+        memo={false}
         onPress={props.onToggle}
       />
       {expanded && (
@@ -688,7 +711,7 @@ function MergedRecordTile(props: { entry: SpendDayRecord; onPress: () => void })
     <Pressable
       role="button"
       testID={`cashbook-merged-tile-${record.id}`}
-      aria-label={`${tile.title}${tile.detail === null ? '' : ` ${tile.detail}`} 고치기`}
+      aria-label={`${tile.title}${tile.detail === null ? '' : ` ${tile.detail}`}${record.memo === undefined ? '' : ' 메모 있음'} 고치기`}
       onPress={props.onPress}
       className="min-h-[49px] flex-row items-center gap-2.5 rounded-[10px] bg-card-inset px-2.5 py-2"
     >
@@ -703,9 +726,12 @@ function MergedRecordTile(props: { entry: SpendDayRecord; onPress: () => void })
         />
       )}
       <View className="min-w-0 flex-1">
-        <Text numberOfLines={1} className="text-xs font-semibold text-text">
-          {tile.title}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <Text numberOfLines={1} className="shrink text-xs font-semibold text-text">
+            {tile.title}
+          </Text>
+          {record.memo !== undefined && <MemoMark testID={`cashbook-merged-tile-memo-${record.id}`} />}
+        </View>
         {tile.detail !== null && (
           <Text numberOfLines={1} className="text-11 text-text-muted" style={TABULAR_NUMS}>
             {tile.detail}
@@ -720,6 +746,16 @@ function MergedRecordTile(props: { entry: SpendDayRecord; onPress: () => void })
       </View>
     </Pressable>
   )
+}
+
+/** 체크 박스가 부르는 그 주 결정석 몫. 모듈에 두어야 폼의 효과가 렌더마다 다시 돌지 않는다 */
+function loadWeekCrystal(ocid: string, dateKey: string): Promise<number> {
+  return loadWeekCrystalMeso(ocid, dateKey, new Date())
+}
+
+/** 지출 시트가 열 기록. 수입으로 저장된 메소마켓 환전도 그 시트에서 적었으므로 지출 모양으로 바꿔 연다 */
+function spendViewOf(entry: ManualDayRecord): SpendRecord {
+  return entry.kind === 'spend' ? entry.record : exchangeSpendViewOf(entry.record)
 }
 
 export function CashbookScreen(): React.JSX.Element {
@@ -925,7 +961,10 @@ export function CashbookScreen(): React.JSX.Element {
    */
   async function saveEdit(entry: ManualDayRecord, draft: IncomeDraft | SpendDraft): Promise<void> {
     try {
-      if (entry.kind === 'spend') {
+      // 메소마켓 환전 수수료는 금액의 부호로 지출 · 수입을 다시 고른다. 원본이 수입이어도 지출 시트에서 고친다.
+      if ('exchange' in draft && draft.exchange !== undefined) {
+        await editMesoMarketExchange(entry, draft as SpendDraft)
+      } else if (entry.kind === 'spend') {
         // 메소마켓 수수료율도 원본의 것을 얹는다. 시트는 요율을 모르고, 적힌 요율은 고쳐도 그대로다.
         await editSpend({
           ...(draft as SpendDraft),
@@ -1296,7 +1335,7 @@ export function CashbookScreen(): React.JSX.Element {
       />
 
       {/* 시트는 조건부 마운트다. 마운트가 곧 열림이고 `onClose` 로 언마운트한다. */}
-      {(sheet === 'income' || (typeof sheet === 'object' && sheet?.kind === 'income')) && (
+      {(sheet === 'income' || (typeof sheet === 'object' && sheet?.kind === 'income' && sheet.record.exchange === undefined)) && (
         // 고치는 것이면 그 기록의 날짜로 연다. 고른 날이 아니다(둘은 지금 같지만 목록이
         // 여러 날을 걸치게 되는 날 갈린다).
         <IncomeSheet
@@ -1321,11 +1360,12 @@ export function CashbookScreen(): React.JSX.Element {
           onClose={() => setSheet(null)}
         />
       )}
-      {(sheet === 'expense' || (typeof sheet === 'object' && sheet?.kind === 'spend')) && (
+      {(sheet === 'expense' ||
+        (typeof sheet === 'object' && (sheet?.kind === 'spend' || sheet?.record.exchange !== undefined))) && (
         <SpendSheet
           characters={characters}
           accounts={accounts}
-          dateKey={typeof sheet === 'object' ? sheet.record.spentOn : selectedDateKey}
+          dateKey={typeof sheet === 'object' ? spendViewOf(sheet).spentOn : selectedDateKey}
           todayDateKey={todayDateKey}
           earliestDateKey={historyFloorDateKey(todayDateKey)}
           lastPointRate={lastPointRate}
@@ -1336,7 +1376,9 @@ export function CashbookScreen(): React.JSX.Element {
           hexaStorageChecks={hexaStorageChecks}
           // 아이템 구매가 인벤토리에 보관할 메이플 ID · 월드를 찾을 때 부른다. 헥사의 기타 조각 주인과 같은 규칙이다.
           loadStoreOwnerOf={loadHexaOwnerOf}
-          editing={typeof sheet === 'object' ? sheet.record : undefined}
+          // 주간 보스 수입 이전의 체크 박스가 그 주 결정석 몫을 읽을 때 부른다.
+          loadWeekCrystalMeso={loadWeekCrystal}
+          editing={typeof sheet === 'object' ? spendViewOf(sheet) : undefined}
           onSave={typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveSpend}
           onDelete={typeof sheet === 'object' ? () => deleteEntry(sheet) : undefined}
           onClose={() => setSheet(null)}

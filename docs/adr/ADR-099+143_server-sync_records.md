@@ -73,11 +73,6 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 기기가 만든 넥슨 계정 id 헤더(`x-nexon-account-id`)는 싣지 않는다. 기기마다 다른 값이라 서버가 [[ADR-101]] 결정 21 부터 읽지 않고,
 기록은 실어 온 메이플 ID 로 넥슨 계정을 찾는다. 어느 계정의 신원으로 보내는지는 [[ADR-101]] 결정 7 에 있다.
 
-### 결정 7. 가계부 메모 칸을 없앤다
-
-기기의 `cashbook_entries.memo` 칸과 기록 타입의 `memo` 를 지운다(사용자 지정). 입력 시트 아홉이 모두 이 칸을 `null` 로
-적고 화면에 입력하는 곳이 없다. 실기기에도 메모가 든 기록이 없었다(옛 표 둘 포함 0 건).
-
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -88,7 +83,6 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `features/server-sync/__tests__/drop-price-sync.spec.ts` | 결정 2: 옛 기간의 드롭도 보내고 기간 행 id 를 싣는지 |
 | `features/auth/__tests__/server-identity.spec.ts` | 결정 6: 신원 헤더 옆에 메인 계정 id 를 싣는지 |
 | `storage/sqlite/__tests__/server-sync-sources-real-sqlite.test.ts` | 결정 2 · 3: 드롭이 붙은 기간 행 id 를 읽고, 과거 올리기가 id 차례로 나눠 읽는지 |
-| `storage/sqlite/__tests__/record-keys-real-sqlite.test.ts` | 결정 7: 버전 17 이 메모 칸을 지우는지 |
 | `src/server/__tests__/write.spec.ts` | 결정 3: 묶음이 `/batch` 로 가고 건마다 결과를 돌려받는지 |
 | 서버 `users.repository.spec.ts` · `identity.guard.spec.ts` | 결정 5: 자격으로 사람 · 계정을 찾고 동시에 와도 사람이 하나인지 본다 |
 | 서버 `drop-prices.*.spec.ts` · `common/batch.spec.ts` | 결정 3: 같은 기록은 한 줄로 덮는지, 묶음이 틀린 건만 실패로 돌려주는지 |
@@ -104,3 +98,4 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - (2026-11-10) 결정 5 의 계정 표를 [[ADR-101]] 결정 25 에 맞췄다. 넥슨 계정 줄은 넥슨 ID 하나에 하나이고, 키 해시와 메이플 ID 를 따로
   표로 둔다
 - (2026-11-10) 결정 6 에 서버가 `x-nexon-account-id` 를 더 읽지 않는 것을 적었다([[ADR-101]] 결정 21)
+- (2026-11-14) 결정 7(가계부 메모 칸 없애기)을 걷었다. 아이템 구매 · 판매에 메모를 적게 되어 칸을 다시 더했다([[ADR-048]] 결정 19, #1002)

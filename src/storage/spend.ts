@@ -18,7 +18,7 @@ import {
   readEntries,
   replaceEntry,
 } from './cashbook-entries'
-import type { OtherFragmentUse } from './cashbook-entries'
+import type { EntryExchange, EntryTransfer, OtherFragmentUse } from './cashbook-entries'
 import { spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
 import { writeCheckingFragments } from './fragment-ledger'
 import { deleteEmptyInventoryRows, inventoryRowForPurchase, linkedInventoryItemOf } from './inventory'
@@ -103,6 +103,8 @@ export interface SpendRecord {
   recordedAt: string
   /** 아이템 구매에서 목록으로 고른 특수스킬 반지의 레벨. 다른 기록은 칸이 없다. */
   ringLevel?: number
+  /** 아이템 구매의 메모. 저장할 때 앞뒤 공백을 걷고, 메모가 없는 기록은 읽을 때 칸이 없다. */
+  memo?: string
   /** 인벤토리에 보관한 아이템 구매가 가리키는 인벤토리 줄. 읽을 때만 채운다. 저장은 `inventoryStore` 로 고른다. */
   inventoryItemId?: string
   /**
@@ -110,6 +112,10 @@ export interface SpendRecord {
    * 기록에는 칸이 없다. 주인을 정하는 캐릭터 정보가 저장 계층 밖에 있어 고르는 쪽이 넘긴다.
    */
   inventoryStore?: { accountId: string; worldKey: string }
+  /** `주간 보스 수입 이전` 시트의 입력. 그 시트로 적은 `기타` 지출만 칸이 있다 */
+  transfer?: EntryTransfer
+  /** `메소마켓 환전 수수료` 시트의 입력. 그 시트로 적은 `기타` 지출만 칸이 있다 */
+  exchange?: EntryExchange
 }
 
 /**
@@ -277,6 +283,37 @@ export async function deleteSpendRecord(id: string): Promise<void> {
       await deleteEmptyInventoryRows(db)
     }),
   )
+  bumpSpendRecordsRevision()
+}
+
+/** 수수료가 자동인 `주간 보스 수입 이전` 기록. 등급 기록이 바뀌면 다시 셀 대상이다 */
+export async function getAutoFeeTransferRecords(): Promise<SpendRecord[]> {
+  const db = await getBossProfitDb()
+  const entries = await readEntries(
+    db,
+    `e.entry_type = 'spend' AND EXISTS (SELECT 1 FROM cashbook_entry_transfer_inputs t WHERE t.entry_id = e.id AND t.fee_auto = 1)`,
+    [],
+  )
+  return entries.map(spendRecordOf)
+}
+
+export interface TransferFeeUpdate {
+  id: string
+  feePercent: number
+  /** 수수료. 이 기록의 지출 금액이다 */
+  mesoAmount: number
+}
+
+/** `주간 보스 수입 이전` 기록의 요율과 수수료를 고쳐 쓴다. 수수료가 곧 지출이라 품목 금액도 함께 간다 */
+export async function updateTransferFees(updates: readonly TransferFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run('UPDATE cashbook_entry_transfer_inputs SET fee_percent = ? WHERE entry_id = ?', [update.feePercent, update.id])
+      await db.run('UPDATE cashbook_entry_items SET amount_meso = ? WHERE entry_id = ?', [update.mesoAmount, update.id])
+    }
+  })
   bumpSpendRecordsRevision()
 }
 

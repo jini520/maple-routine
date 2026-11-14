@@ -32,7 +32,7 @@ import {
 import { ownerFieldsOf, ownerValueOf } from '../character-options'
 import { ItemPickField } from '../item-pick-field'
 import { useItemPick } from '../../../hooks/useItemPick'
-import { AmountInput, FieldCard, FieldRow, OwnerField, useCountField } from '../sheet-fields'
+import { AmountInput, FieldCard, FieldRow, MemoInput, OwnerField, useCountField } from '../sheet-fields'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
@@ -66,6 +66,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
     return mesoTextOf(Math.round((total - (props.editing.tariffMeso ?? 0)) / count))
   })
   const [hasTariff, setHasTariff] = useState(props.editing?.tariffMeso != null)
+  const [memo, setMemo] = useState(props.editing?.memo ?? '')
   /** `null` 은 종류 칸이 생기기 전 행이고 장비다. */
   const [itemKind, setItemKind] = useState<ItemKindKey>(
     props.editing?.itemKind ?? itemKinds()[0]?.key ?? 'equipment',
@@ -143,6 +144,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
         cashAmount: null,
         hexa: null,
         inventoryStore: stored && storeOwner !== null ? storeOwner : undefined,
+        memo,
       }),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })
@@ -255,6 +257,8 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
           </FieldRow>
         )}
       </FieldCard>
+
+      <MemoInput testID="spend-sheet-memo" memo={memo} context={name === '' ? undefined : name} onChange={setMemo} />
 
       <Pressable
         testID="spend-sheet-store"

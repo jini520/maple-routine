@@ -136,6 +136,7 @@ export const useBossSchedulerStore = create<BossSchedulerStore>()((set, get) => 
         crystalSharesTotal: setting.crystalSharesTotal,
         splitFeePercent: setting.splitFeePercent,
         splitFeeAuto: setting.splitFeeAuto,
+        crystalExcluded: setting.crystalExcluded,
       }
     }
     set({ partySizes, partyShares })

@@ -25,7 +25,6 @@ import {
   type SpendRecord,
 } from '../../spend'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
-import { DB_VERSION } from '../migrations'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 let real: RealSqlite
@@ -270,7 +269,7 @@ describe('버전 21 이관', () => {
         VALUES ('hexa-1', 'spend', 'hexa_matrix', '2026-11-12', '2026-11-12T01:00:00.000Z', '2026-11-12T01:00:00.000Z', 'ocid-a')`)
       db.exec(`INSERT INTO cashbook_entry_fragment_uses (id, entry_id, ocid, fragments)
         VALUES ('u-2', 'hexa-1', 'ocid-b', 5), ('u-1', 'hexa-1', 'ocid-a', 7)`)
-      db.exec(`PRAGMA user_version = ${DB_VERSION - 1}`)
+      db.exec('PRAGMA user_version = 20')
     })
 
     await getBossProfitDb()

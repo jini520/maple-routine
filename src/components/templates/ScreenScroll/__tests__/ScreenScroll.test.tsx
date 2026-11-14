@@ -33,16 +33,24 @@ import { flattenStyle, renderOverlay, 테스트_안전영역 } from '../../../__
 import { rnThemeAppearancePort } from '../../../../native/adapters/rn-theme-appearance'
 import { __resetThemeAppearanceForTest } from '../../../../theme/appearance-store'
 import { resolveBottomBarMetrics } from '../../../../lib/bottom-bar-metrics'
+import { setSystemBarsPort } from '../../../../native/ports'
+import {
+  buttonNavigationSystemBarsPort,
+  noopSystemBarsPort,
+} from '../../../../native/__tests__/fake-native-ports'
 
 /**
  * 바가 먹는 몫은 **창 폭의 함수**다. 여기서 숫자를 적지 않고 같은 함수를
  * 부르는 것이 이 파일이 지키는 것이다. 셸이 창 폭을 안 보면 이 값이 안 맞는다.
  */
-const 바_몫 = resolveBottomBarMetrics(Dimensions.get('window').width).spacePx
+const 바_몫 = resolveBottomBarMetrics(Dimensions.get('window').width, false).spacePx
 import { ScreenScroll } from '../ScreenScroll'
 
 beforeEach(__resetThemeAppearanceForTest)
-afterEach(__resetThemeAppearanceForTest)
+afterEach(() => {
+  __resetThemeAppearanceForTest()
+  setSystemBarsPort(noopSystemBarsPort)
+})
 
 const 목록 = <Text>목록</Text>
 
@@ -163,6 +171,23 @@ describe('하단 인셋이 들어가는 자리', () => {
     expect(flattenStyle(scroller.props.style).marginBottom).toBe(0)
     expect(flattenStyle(scroller.props.contentContainerStyle).paddingBottom).toBe(
       테스트_안전영역.insets.bottom + 바_몫,
+    )
+  })
+
+  // 3버튼 내비게이션 바 위에서는 바가 더 뜬다. 콘텐츠 끝 여백과 페이드가 바와 같은 함수를 봐야 마지막 카드가
+  // 캡슐 뒤로 안 들어가고, 페이드가 캡슐 한가운데에서 0 이 된다.
+  it('3버튼 내비게이션 바가 있으면 콘텐츠 끝 여백과 페이드가 띄운 높이를 따라간다', async () => {
+    setSystemBarsPort(buttonNavigationSystemBarsPort)
+    const 바 = resolveBottomBarMetrics(Dimensions.get('window').width, true)
+    const { getByTestId } = await renderOverlay(
+      <ScreenScroll header={<View testID="header" />}>{목록}</ScreenScroll>,
+    )
+
+    expect(flattenStyle(getByTestId('screen-scroll').props.contentContainerStyle).paddingBottom).toBe(
+      테스트_안전영역.insets.bottom + 바.liftPx + 바.heightPx,
+    )
+    expect(flattenStyle(getByTestId('screen-fade-bottom').props.style).height).toBe(
+      테스트_안전영역.insets.bottom + 바.liftPx + 바.heightPx / 2,
     )
   })
 })

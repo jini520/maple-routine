@@ -13,6 +13,7 @@ import type { InventoryCell } from '../../features/inventory/cells'
 import { inventoryItemIconOf, inventoryItemNameOf } from '../../features/inventory/item-look'
 import type { InventoryFace } from '../../features/inventory/load'
 import { useThemeStore } from '../../features/theme/store'
+import { useButtonNavigation } from '../../hooks/useButtonNavigation'
 import { resolveBottomBarMetrics } from '../../lib/bottom-bar-metrics'
 import { getThemeDefinition } from '../../lib/theme/theme-registry'
 
@@ -132,13 +133,14 @@ export function InventoryGrid(props: {
   const halo = useCountHalo()
   const { width: windowWidth, height: windowHeight } = useWindowDimensions()
   const insets = useSafeAreaInsets()
+  const buttonNavigation = useButtonNavigation()
   const [width, setWidth] = useState(0)
   const [top, setTop] = useState<number | null>(null)
   const [node, setNode] = useState<View | null>(null)
 
   const size = width === 0 ? 0 : (width - PANEL_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS
   // 판이 화면 아래 끝(하단바 위)까지 닿을 만큼 줄을 채운다. 아이템이 그보다 많으면 아이템 수만큼 선다.
-  const bottom = windowHeight - insets.bottom - resolveBottomBarMetrics(windowWidth).spacePx
+  const bottom = windowHeight - insets.bottom - resolveBottomBarMetrics(windowWidth, buttonNavigation).spacePx
   const fitRows = top === null || size <= 0 ? 0 : Math.floor((bottom - top - PANEL_PADDING * 2 + GAP) / (size + GAP))
   const rows = Math.max(Math.ceil(props.cells.length / COLUMNS), fitRows, 1)
   const empties = rows * COLUMNS - props.cells.length
