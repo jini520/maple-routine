@@ -1,6 +1,6 @@
 # ADR-048+070+118+126+214+226 가계부 입력 시트
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-170 결정 5 · 6 · 9 · 정정 9 · 14 · 17 · ADR-173 · ADR-178 · ADR-202 · ADR-203 · ADR-241 결정 1 · ADR-243 · ADR-244 · ADR-245 · ADR-262 · ADR-301 · ADR-325 결정 1 · 2 · 5 · ADR-327 · ADR-333 결정 5 · 6
 > 관련 소스: `app/cashbook/income/ItemSaleForm.tsx` · `app/cashbook/spend/ItemBuyForm.tsx` · `app/cashbook/IncomeSheet.tsx` · `app/cashbook/SpendSheet.tsx` · `app/cashbook/CategoryPicker.tsx` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/` · `app/cashbook/spend/` · `app/cashbook/character-options.ts` · `app/cashbook/select-value.tsx` · `components/molecules/MemoField/` · `app/inventory/InventorySaleSheet.tsx` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/symbol-costs.ts` · `constants/domain/quick-adds.ts`
 

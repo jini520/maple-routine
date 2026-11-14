@@ -27,7 +27,7 @@
 | `app/cashbook/IncomeSheet.tsx` · `SpendSheet.tsx` · `CategoryPicker.tsx` · `sheet-fields.tsx` | 두 시트와 공용 부품 |
 | `app/cashbook/income/` · `app/cashbook/spend/` | 분류별 폼 |
 | `app/cashbook/item-pick-field.tsx` · `hooks/useItemPick.ts` | 아이템 구매 · 판매의 아이템 칸. 목록에서 고르거나 직접 친다 |
-| `components/molecules/MemoField/` | 아이템 구매 · 판매 폼과 인벤토리 판매 시트의 메모 칸. 파티 스케줄 시트와 같은 부품이다 |
+| `components/molecules/MemoField/` · `app/cashbook/sheet-fields.tsx` 의 `MemoInput` | 아이템 구매 · 판매 폼과 인벤토리 판매 시트의 메모 칸. 칸은 파티 스케줄 시트와 같은 부품이고, `MemoInput` 이 여러 줄 입력 카드를 연다 |
 | `lib/cashbook/categories.ts` | 지출 · 수입 분류, 메이플 ID 를 고를 수 있는 분류, 아이템 종류, 에픽던전 형태의 key 와 이름 |
 | `lib/cashbook/spend-catalog.ts` | 지출 참조표(서버 게임 데이터의 `spendCatalog` 칸) · 메포 환산 · 관세 · 주화 |
 | `lib/cashbook/symbol-costs.ts` | 심볼 강화 비용(`symbolCosts` 칸) |

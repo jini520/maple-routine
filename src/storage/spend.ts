@@ -103,6 +103,8 @@ export interface SpendRecord {
   recordedAt: string
   /** 아이템 구매에서 목록으로 고른 특수스킬 반지의 레벨. 다른 기록은 칸이 없다. */
   ringLevel?: number
+  /** 아이템 구매의 메모. 저장할 때 앞뒤 공백을 걷고, 메모가 없는 기록은 읽을 때 칸이 없다. */
+  memo?: string
   /** 인벤토리에 보관한 아이템 구매가 가리키는 인벤토리 줄. 읽을 때만 채운다. 저장은 `inventoryStore` 로 고른다. */
   inventoryItemId?: string
   /**

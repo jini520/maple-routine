@@ -18,6 +18,8 @@ export interface EntryHead {
   entryType: EntryType
   categoryKey: string
   entryDate: string
+  /** 아이템 구매 · 판매의 메모. 앞뒤 공백을 걷은 값이고 없으면 `null` 이다. */
+  memo: string | null
   createdAt: string
 }
 
@@ -207,8 +209,8 @@ const PROFILE_WORLD_SQL = '(SELECT p.world_key FROM character_profiles p WHERE p
 export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry): Promise<void> {
   const { head } = entry
   await db.run(
-    `INSERT INTO cashbook_entries (id, ocid, account_id, world_key, entry_type, category_key, entry_date, created_at, updated_at)
-     VALUES (?, ?, ?, ${PROFILE_WORLD_SQL}, ?, ?, ?, ?, ?)`,
+    `INSERT INTO cashbook_entries (id, ocid, account_id, world_key, entry_type, category_key, entry_date, memo, created_at, updated_at)
+     VALUES (?, ?, ?, ${PROFILE_WORLD_SQL}, ?, ?, ?, ?, ?, ?)`,
     [
       head.id,
       head.ocid,
@@ -217,6 +219,7 @@ export async function insertEntry(db: SqliteDbConnection, entry: StoredEntry): P
       head.entryType,
       head.categoryKey,
       head.entryDate,
+      head.memo,
       head.createdAt,
       head.createdAt,
     ],
@@ -240,7 +243,7 @@ export async function replaceEntry(db: SqliteDbConnection, entry: StoredEntry, n
     `UPDATE cashbook_entries
         SET ocid = ?, account_id = ?, nexon_account_id = CASE WHEN ? IS NULL AND ? IS NULL THEN nexon_account_id END,
             world_key = CASE WHEN ocid IS ? THEN world_key ELSE ${PROFILE_WORLD_SQL} END,
-            category_key = ?, entry_date = ?, updated_at = ?
+            category_key = ?, entry_date = ?, memo = ?, updated_at = ?
       WHERE id = ?`,
     [
       head.ocid,
@@ -251,6 +254,7 @@ export async function replaceEntry(db: SqliteDbConnection, entry: StoredEntry, n
       head.ocid,
       head.categoryKey,
       head.entryDate,
+      head.memo,
       now.toISOString(),
       head.id,
     ],
@@ -459,6 +463,7 @@ export async function readEntries(db: SqliteDbConnection, where: string, params:
       entryType: row.entry_type as EntryType,
       categoryKey: row.category_key as string,
       entryDate: row.entry_date as string,
+      memo: textOrNull(row.memo),
       createdAt: row.created_at as string,
     },
     items: itemsOf.get(row.id as string) ?? [{ ...EMPTY_ITEM }],
