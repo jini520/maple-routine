@@ -23,7 +23,7 @@ import { useAccountManageStore } from '../../features/account-manage/store'
 import type { KeyRejection } from '../../features/account-manage/validate-key'
 import { useAuthStore } from '../../features/auth/store'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
-import { MAPLE_ID_NAME_MAX_LENGTH, useMapleIdNamesStore } from '../../features/maple-id/names'
+import { MAPLE_ID_NAME_MAX_BYTES, useMapleIdNamesStore } from '../../features/maple-id/names'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { mapleIdNameOf } from '../../lib/maple-id-name'
 import type { AccountDetailParams } from '../../navigation/routes'
@@ -152,8 +152,8 @@ export function SettingsAccountDetailScreen(props: { route?: { params?: Partial<
 /**
  * 메이플 ID 이름 칸들. 칸 위에 대표 캐릭터 라벨, 칸 오른쪽에 연필 아이콘, 카드 맨 아래 `저장` 이다.
  *
- * 칸은 바꾼 이름에서 시작하고, 바꾼 적 없으면 비운 채 기본 이름을 안내 글자로 보인다. 14자 기본 이름을 10자 상한 칸에 채우면
- * iOS 가 4자 이하를 지우는 입력을 버린다. 이 컴포넌트가 고친 값을 들고 있어, 페이지를 나가면 저장하지 않은 값이 함께 사라진다.
+ * 칸은 바꾼 이름에서 시작하고, 바꾼 적 없으면 비운 채 기본 이름을 안내 글자로 보인다. 기본 이름은 17바이트라 16바이트 상한
+ * 칸의 값이 될 수 없다. 이 컴포넌트가 고친 값을 들고 있어, 페이지를 나가면 저장하지 않은 값이 함께 사라진다.
  */
 function NameFields(props: { account: ManagedAccount }): React.JSX.Element {
   const names = useMapleIdNamesStore((state) => state.names)
@@ -164,8 +164,7 @@ function NameFields(props: { account: ManagedAccount }): React.JSX.Element {
   for (const { accountId } of props.account.mapleIds) {
     const draft = drafts[accountId]
     if (draft === undefined) continue
-    // 기본 이름을 그대로 적으면 빈 칸과 같다. 기본 이름은 저장하지 않고 그릴 때 짓는다.
-    const typed = draft.trim() === mapleIdNameOf(accountId) ? '' : draft.trim()
+    const typed = draft.trim()
     if (typed !== (names[accountId] ?? '')) changes[accountId] = typed
   }
   const changed = Object.keys(changes).length > 0
@@ -193,7 +192,7 @@ function NameFields(props: { account: ManagedAccount }): React.JSX.Element {
                 value={drafts[mapleId.accountId] ?? names[mapleId.accountId] ?? ''}
                 placeholder={mapleIdNameOf(mapleId.accountId)}
                 onChangeText={(text) => setDrafts((current) => ({ ...current, [mapleId.accountId]: text }))}
-                maxLength={MAPLE_ID_NAME_MAX_LENGTH}
+                maxBytes={MAPLE_ID_NAME_MAX_BYTES}
                 autoCorrect={false}
                 spellCheck={false}
                 className="h-12 w-full rounded-[10px] bg-card-inset px-3.5 pr-11 text-base text-text"

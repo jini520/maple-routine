@@ -5,6 +5,7 @@
  * 가 막는다. **이 파일이 그 규칙의 예외 둘 중 하나다**(다른 하나는 `atoms/Text/Text.tsx`).
  */
 import { cssInterop } from 'nativewind'
+import { useRef } from 'react'
 import {
   Platform,
   TextInput as RNTextInput,
@@ -12,13 +13,18 @@ import {
   type TextInputProps as RNTextInputProps,
 } from 'react-native'
 
+import { fitToBytes } from '../../../lib/text-bytes'
 import { useThemeAppearance } from '../../../theme/context'
 import { useTextScale } from '../../../theme/text-scale'
 import { BASE_TEXT_STYLE } from '../Text/app-font'
 import { scaleTextStyle } from '../Text/font-scaling'
+import { setNativeText } from './set-native-text'
 
 /** RN 의 `TextInputProps` 에서 시스템 배수 프롭 둘을 뺀 것. 배수는 앱 설정이 정한다. */
-export type TextInputProps = Omit<RNTextInputProps, 'allowFontScaling' | 'maxFontSizeMultiplier'>
+export type TextInputProps = Omit<RNTextInputProps, 'allowFontScaling' | 'maxFontSizeMultiplier'> & {
+  /** 넘는 입력을 칸에서 되돌리는 바이트 상한. 세는 법은 `textBytes` 다 */
+  maxBytes?: number
+}
 
 /** 조합이 안 도는 키보드. 숫자만 나오므로 IME 가 조합 구간을 쥘 일이 없다. */
 /**
@@ -61,10 +67,15 @@ const NUMERIC_KEYBOARDS = new Set<RNTextInputProps['keyboardType']>([
 export function TextInput({
   value,
   keyboardType,
+  maxBytes,
   ...rest
 }: TextInputProps): React.JSX.Element {
   const scale = useTextScale()
   const { definition } = useThemeAppearance()
+  const input = useRef<RNTextInput>(null)
+  /** 마지막으로 받은 글자. 넘는 입력은 이 글자에 견줘 뗀다. */
+  const accepted = useRef(value ?? '')
+  const eventCount = useRef(0)
 
   /**
    * 숫자 키패드 칸은 되쓰기가 필요하다(`1234` 를 `1,234` 로 갈아 끼운다). 글자 칸은 되쓰면 한글
@@ -72,11 +83,36 @@ export function TextInput({
    */
   const numeric = keyboardType !== undefined && NUMERIC_KEYBOARDS.has(keyboardType)
 
+  /**
+   * 조합을 지키려고 칸의 글자를 되쓰지 않으므로, 넘는 입력은 그 입력의 차례를 붙인 명령으로만 되돌린다. 글자 수 상한도
+   * 같은 수로 달아 1바이트 글자는 칸이 먼저 막는다. 영문이 들어갔다 지워지는 깜빡임이 없다.
+   */
+  const byteLimit: Partial<RNTextInputProps> =
+    maxBytes === undefined
+      ? {}
+      : {
+          maxLength: rest.maxLength ?? maxBytes,
+          onChange: (event) => {
+            eventCount.current = event.nativeEvent.eventCount
+            rest.onChange?.(event)
+          },
+          onChangeText: (text) => {
+            const fitted = fitToBytes(accepted.current, text, maxBytes)
+            if (fitted.text !== text && input.current !== null) {
+              setNativeText(input.current, eventCount.current, fitted.text, fitted.caret)
+            }
+            accepted.current = fitted.text
+            rest.onChangeText?.(fitted.text)
+          },
+        }
+
   return (
     <RNTextInput
       /** `{...rest}` 보다 앞이라 호출부가 직접 주면 그쪽이 이긴다. */
       placeholderTextColor={definition.textDisabled}
       {...rest}
+      {...byteLimit}
+      ref={input}
       keyboardType={keyboardType}
       {...(numeric ? { value } : { defaultValue: value })}
       /** 플랫폼 기본 상자를 지우는 값. 배열 앞이라 호출부의 치수가 이긴다. */

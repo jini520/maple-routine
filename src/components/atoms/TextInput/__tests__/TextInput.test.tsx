@@ -8,11 +8,16 @@
 // `useWindowDimensions` 는 초기값을 그 호출에서 얻으므로, 그 하나만 목으로 덮으면 시스템 글자
 // 크기가 그렇게 설정된 기기를 만들 수 있다. 훅 자체를 목으로 안 덮는 것은 `react-native` 의
 // export 가 게터라 `jest.spyOn` 이 안 걸리기 때문이다.
+import { fireEvent } from '@testing-library/react-native'
 import { Dimensions, Platform } from 'react-native'
 
 import { flattenStyle, renderAtom, 기본테마 } from '../../../__tests__/render-atom'
 import { __resetTextScaleForTest, setTextScale } from '../../../../theme/text-scale'
+import { setNativeText } from '../set-native-text'
 import { TextInput } from '../TextInput'
+
+// jest 의 RN `TextInput` 은 목 컴포넌트라 네이티브 명령을 받을 칸이 없다. 명령을 보낸 값만 본다.
+jest.mock('../set-native-text', () => ({ setNativeText: jest.fn() }))
 
 /** 시스템 글자 크기가 `fontScale` 로 설정된 기기. */
 function 시스템_글자배수(fontScale: number): void {
@@ -178,5 +183,38 @@ describe('TextInput: 자리표시자 색을 아톰이 건다', () => {
     )
 
     expect(getByTestId('칸').props.placeholderTextColor).toBe(기본테마.errorInk)
+  })
+})
+
+/**
+ * 바이트 상한. 칸은 `defaultValue` 로 심어 앱이 글자를 되쓰지 않으므로, 넘는 입력은 그 입력의 차례를 붙인 명령으로만
+ * 되돌린다. 차례가 다르면 칸이 명령을 버린다.
+ */
+describe('TextInput: maxBytes 를 넘는 입력을 칸에서 되돌린다', () => {
+  beforeEach(() => jest.mocked(setNativeText).mockClear())
+
+  it('넘는 글자를 떼고 받은 글자만 넘기며, 칸의 글자와 커서를 그 입력의 차례로 고친다', async () => {
+    const onChangeText = jest.fn()
+    const { getByTestId } = await renderAtom(
+      <TextInput testID="칸" value="가나다" maxBytes={8} onChangeText={onChangeText} />,
+    )
+
+    await fireEvent(getByTestId('칸'), 'change', { nativeEvent: { text: '가나다라마', eventCount: 7 } })
+    await fireEvent.changeText(getByTestId('칸'), '가나다라마')
+
+    expect(onChangeText).toHaveBeenLastCalledWith('가나다라')
+    expect(setNativeText).toHaveBeenCalledWith(expect.anything(), 7, '가나다라', 4)
+  })
+
+  it('상한을 넘은 값에서 시작해도 지우기는 받고 칸을 건드리지 않는다', async () => {
+    const onChangeText = jest.fn()
+    const { getByTestId } = await renderAtom(
+      <TextInput testID="칸" value="가나다라마바" maxBytes={8} onChangeText={onChangeText} />,
+    )
+
+    await fireEvent.changeText(getByTestId('칸'), '가나다라마')
+
+    expect(onChangeText).toHaveBeenLastCalledWith('가나다라마')
+    expect(setNativeText).not.toHaveBeenCalled()
   })
 })
