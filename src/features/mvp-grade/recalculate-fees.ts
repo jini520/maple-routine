@@ -1,11 +1,13 @@
 import { crystalPayoutMeso } from '../../lib/boss/party-shares'
 import { periodStartDateKey } from '../../lib/boss/boss-profit-period'
 import type { FeePercent } from '../../lib/cashbook/item-split'
+import { transferFeeMeso } from '../../lib/cashbook/boss-income-transfer'
 import { withSaleFee } from '../../lib/cashbook/sale-fee'
 import { accountFeePercent, autoFeePercent } from '../../lib/mvp/fees'
 import { getAutoFeeDropRecords, type DropFeeUpdate } from '../../storage/boss-drops'
 import { getAutoFeeProfitRecords, type ProfitSplitFeeUpdate } from '../../storage/boss-profit'
 import { getAutoFeeIncomeRecords, type IncomeSaleFeeUpdate } from '../../storage/income'
+import { getAutoFeeTransferRecords, type TransferFeeUpdate } from '../../storage/spend'
 import { loadFeeContext } from './fee-context'
 
 /**
@@ -55,9 +57,24 @@ export async function recalcCrystalUpdates(): Promise<ProfitSplitFeeUpdate[]> {
       myShare: record.crystalMyShare,
       sharesTotal: record.crystalSharesTotal,
       splitFeePercent: percent,
+      excluded: record.crystalExcluded,
     })
     const { ocid, bossKey, difficulty, periodKey } = record
     updates.push({ ocid, bossKey, difficulty, periodKey, splitFeePercent: percent, payoutMeso })
+  }
+  return updates
+}
+
+/** 다시 계산이 고쳐 쓸 `주간 보스 수입 이전` 기록. 요율은 메소를 받는 캐릭터의 그 날짜 등급이고, 수수료가 곧 지출이라 함께 다시 센다 */
+export async function recalcTransferUpdates(): Promise<TransferFeeUpdate[]> {
+  const [context, records] = await Promise.all([loadFeeContext(), getAutoFeeTransferRecords()])
+  const updates: TransferFeeUpdate[] = []
+  for (const record of records) {
+    const transfer = record.transfer
+    if (transfer === undefined) continue
+    const percent = autoFeePercent(context, transfer.receiverOcid, record.spentOn)
+    if (percent === transfer.feePercent) continue
+    updates.push({ id: record.id, feePercent: percent, mesoAmount: transferFeeMeso(transfer.transferMeso, percent) })
   }
   return updates
 }

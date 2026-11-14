@@ -33,7 +33,9 @@ cashbook_entries               id · ocid · account_id · nexon_account_id · e
   ├ cashbook_entry_items       id · entry_id · sort_order · item_key · item_name · form_key · item_kind_key
   │                            · quantity · from_level · to_level · 금액 칸
   ├ cashbook_entry_hunt_inputs id · entry_id · 사냥 계산기 입력
-  └ cashbook_entry_fragment_uses id · entry_id · ocid · fragments
+  ├ cashbook_entry_fragment_uses id · entry_id · ocid · fragments
+  ├ cashbook_entry_transfer_inputs id · entry_id · 주간 보스 수입 이전 시트 입력
+  └ cashbook_entry_exchange_inputs id · entry_id · 메소마켓 환전 수수료 시트 입력
 ```
 
 - `entry_type` 은 `income` · `spend` 둘이다. 하루 목록과 기간 합계를 테이블 하나에서 읽으려고 합쳤다(사용자 선택).
@@ -49,6 +51,9 @@ cashbook_entries               id · ocid · account_id · nexon_account_id · e
 - 헥사 기록이 보관에서 가져온 조각은 캐릭터마다 한 줄이라 `cashbook_entry_fragment_uses` 로 뺀다([[ADR-137]] 결정 16).
 - 사냥 계산기 입력은 수입 사냥에만 있어서 `cashbook_entry_hunt_inputs` 로 뺀다. 기록 하나에 0개나 1개다. 합친 테이블에 두면
   지출 행마다 빈 칸이 열 개 넘게 붙는다.
+- `주간 보스 수입 이전` 과 `메소마켓 환전 수수료` 시트의 입력도 같은 이유로 `cashbook_entry_transfer_inputs` ·
+  `cashbook_entry_exchange_inputs` 로 뺀다. 두 시트의 기록은 `기타` 로 저장하므로, 이 줄이 있는지로 어느 시트에서 적었는지
+  안다([[ADR-047]] 결정 19 · 20).
 - 보스 결정석 · 보스 드롭 판매 · 강화 지출은 원천 테이블(보스 기록 테이블 · `enhancement_totals`)에 그대로 둔다. 카드는
   같은 두 줄 규칙으로 그린다.
 

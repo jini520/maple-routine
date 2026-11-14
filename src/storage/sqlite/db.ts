@@ -15,6 +15,8 @@ import {
   CASHBOOK_ENTRIES_DATE_INDEX,
   CASHBOOK_ENTRY_FRAGMENT_USES_BODY,
   CASHBOOK_ENTRY_HUNT_INPUTS_BODY,
+  CASHBOOK_ENTRY_TRANSFER_INPUTS_BODY,
+  CASHBOOK_ENTRY_EXCHANGE_INPUTS_BODY,
   CASHBOOK_ENTRY_ITEMS_BODY,
   INVENTORY_ITEMS_BODY,
   INVENTORY_ITEMS_OWNER_INDEX,
@@ -292,6 +294,14 @@ const TABLE_DEFINITIONS = [
   {
     name: 'cashbook_entry_hunt_inputs',
     createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_hunt_inputs ${CASHBOOK_ENTRY_HUNT_INPUTS_BODY}`,
+  },
+  {
+    name: 'cashbook_entry_transfer_inputs',
+    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_transfer_inputs ${CASHBOOK_ENTRY_TRANSFER_INPUTS_BODY}`,
+  },
+  {
+    name: 'cashbook_entry_exchange_inputs',
+    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_exchange_inputs ${CASHBOOK_ENTRY_EXCHANGE_INPUTS_BODY}`,
   },
   {
     name: 'cashbook_entry_fragment_uses',
@@ -612,6 +622,10 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'cashbook_entries', 'world_key', 'TEXT')
   // 리프 자동 판정이 읽는 만든 날. 옛 행은 NULL 이고 다음 `character/basic` 이 채운다.
   await ensureColumn(db, 'character_profiles', 'created_date', 'TEXT')
+  // 분배 방식 `제외` 와 한도를 넘긴 처치. 옛 행은 NULL 이라 둘 다 아니다.
+  await ensureColumn(db, 'boss_parties', 'crystal_excluded', 'INTEGER')
+  await ensureColumn(db, 'boss_party_periods', 'crystal_excluded', 'INTEGER')
+  await ensureColumn(db, 'boss_party_periods', 'over_crystal_limit', 'INTEGER')
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
   await runVersionedMigrations(db)
   // 기본키를 uuid 로 옮긴 뒤에 선다. 종전에는 기본키가 곧 이 인덱스였다.

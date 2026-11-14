@@ -23,7 +23,7 @@ import {
   replaceEntry,
 } from './cashbook-entries'
 import { availableFragmentsOn } from '../lib/cashbook/fragment-ledger'
-import type { OtherFragmentUse } from './cashbook-entries'
+import type { EntryExchange, OtherFragmentUse } from './cashbook-entries'
 import { incomeEntryOf, incomeRecordOf } from './cashbook-entry-shape'
 import { readFragmentMoves, writeCheckingFragments } from './fragment-ledger'
 import { moveHexaAfterWrite, type HexaSources } from './fragment-moves'
@@ -111,6 +111,8 @@ export interface IncomeRecord {
   otherFragmentUse?: OtherFragmentUse
   /** 아이템 판매의 메모. 저장할 때 앞뒤 공백을 걷고, 메모가 없는 기록은 읽을 때 칸이 없다. */
   memo?: string
+  /** `메소마켓 환전 수수료` 시트의 입력. 그 시트로 적어 수익이 난 `기타` 수입만 칸이 있다 */
+  exchange?: EntryExchange
 }
 
 /**
@@ -198,7 +200,7 @@ export function subscribeIncomeRecordsRevision(listener: () => void): () => void
   }
 }
 
-function bumpIncomeRecordsRevision(): void {
+export function bumpIncomeRecordsRevision(): void {
   incomeRecordsRevision += 1
   notifyAfterBatch(() => {
     for (const listener of revisionListeners) listener()

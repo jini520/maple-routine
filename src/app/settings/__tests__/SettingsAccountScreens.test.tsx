@@ -16,6 +16,8 @@ jest.mock('../../../hooks/useSettingsNavigation', () => ({
   useSettingsNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
 }))
 jest.mock('../../../native/browser', () => ({ openInAppBrowser: jest.fn() }))
+// jest 의 RN `TextInput` 은 목 컴포넌트라 넘는 입력을 되돌리는 네이티브 명령을 받을 칸이 없다.
+jest.mock('../../../components/atoms/TextInput/set-native-text', () => ({ setNativeText: jest.fn() }))
 jest.mock('../../../storage/maple-id-names', () => ({
   getMapleIdNames: jest.fn(async () => ({})),
   setMapleIdNames: jest.fn(async () => undefined),
@@ -225,7 +227,7 @@ describe('SettingsAccountDetailScreen', () => {
     expect(view.queryByText('API 키 삭제')).toBeNull()
   })
 
-  // 14자 기본 이름을 10자 상한 칸에 채우면 iOS 가 4자 이하를 지우는 입력을 버린다.
+  // 기본 이름은 17바이트라 16바이트 상한 칸의 값이 될 수 없다.
   it('이름을 바꾼 적 없는 메이플 ID 는 칸을 비우고 기본 이름을 안내 글자로 보인다', async () => {
     const view = await 상세(부계정)
     const field = view.getByTestId('maple-id-name-4f1c08abbb')
@@ -249,6 +251,18 @@ describe('SettingsAccountDetailScreen', () => {
     await fireEvent.press(view.getByText('저장'))
 
     expect(save).toHaveBeenCalledWith({ '9e3a77cccc': '본캐' })
+  })
+
+  it('16바이트를 넘는 입력은 저장할 이름에 들어가지 않는다', async () => {
+    const save = jest.fn(async () => undefined)
+    useMapleIdNamesStore.setState({ names: {}, save })
+    const view = await 상세(부계정)
+
+    // 한글 둘(4바이트)에 영문 14자를 붙이면 18바이트다.
+    await fireEvent.changeText(view.getByPlaceholderText('메이플ID-4f1c08ab'), '본캐ABCDEFGHIJKLMN')
+    await fireEvent.press(view.getByText('저장'))
+
+    expect(save).toHaveBeenCalledWith({ '4f1c08abbb': '본캐ABCDEFGHIJKL' })
   })
 
   it('저장은 고친 이름만 넘기고, 칸을 비우면 빈 값으로 넘겨 기본 이름으로 돌린다', async () => {

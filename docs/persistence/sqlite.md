@@ -39,7 +39,8 @@
 ## 테이블
 
 외래키는 보스 기록 표 셋과 가계부 기록 표 셋에만 있다. `boss_parties` → `boss_party_periods` → `boss_drops`, 그리고
-`cashbook_entries` → `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` 차례로 부모를 가리키고, 부모를 지우면 자식도
+`cashbook_entries` → `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` · `cashbook_entry_transfer_inputs` ·
+`cashbook_entry_exchange_inputs` 차례로 부모를 가리키고, 부모를 지우면 자식도
 지워진다(`ON DELETE CASCADE`). 다른 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서,
 한쪽만 지우면 짝이 없는 행이 남는다. 그래서 데이터 삭제는 서로 이어 읽는 표를 한 그룹으로 함께 지운다(`lifecycle.md`).
 
@@ -68,6 +69,8 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 갈래 · 캐릭터나 메이플 ID. 캐릭터 기록은 적을 때의 월드를 든다. 아이템 구매 · 판매는 메모를 든다 | `storage/income.ts` · `storage/spend.ts` | 지운다 (가계부) | [[ADR-096]] · [[ADR-161]] · [[ADR-048]] |
 | `cashbook_entry_items` | `id`(uuid, `(entry_id, sort_order)` 는 UNIQUE) | 기록의 품목. 항목 key 또는 직접 친 이름, 수량 · 레벨, 금액 · 수수료 · 관세, 헥사 강화의 조각 칸 넷과 보관 체크 칸 둘, 인벤토리에서 판 판매가 가리키는 인벤토리 줄 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-096]] · [[ADR-209]] |
 | `cashbook_entry_hunt_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | 사냥 기록의 계산기 입력 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-096]] |
+| `cashbook_entry_transfer_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | `주간 보스 수입 이전` 시트 입력. 이 줄이 있는 `기타` 지출은 그 시트로 연다 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-047]] |
+| `cashbook_entry_exchange_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | `메소마켓 환전 수수료` 시트 입력. 이 줄이 있는 `기타` 지출 · 수입은 그 시트로 연다 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-047]] |
 | `cashbook_entry_fragment_uses` | `id`(uuid) | 기록이 보관에서 가져온 조각을 보관마다 한 줄. 사냥 조각(`hunt`)은 캐릭터, 인벤토리의 기타 조각(`other`)은 메이플 ID · 월드의 것이다. 보관 개수가 이것을 뺀다 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-137]] · [[ADR-209]] |
 | `inventory_items` | `id`(uuid, 장비가 아닌 줄은 `(account_id, world_key, item_key)` 가 UNIQUE) | 인벤토리에 넣은 아이템. 메이플 ID · 월드의 아이템 하나가 한 줄이고 장비는 하나가 한 줄이다. 남은 개수는 판매 · 조각 사용을 빼서 센다 | `storage/inventory.ts` | 지운다 (가계부) | [[ADR-209]] |
 | `remembered_levels` | `id`(uuid, `(ocid, kind, item_key)` 는 UNIQUE) | 캐릭터의 심볼 · 헥사 코어 강화 레벨 기억. 추적을 시작할 때 넥슨 값으로 채우고 기록을 저장 · 고치기 · 지우기 할 때 옮긴다 | `storage/remembered-levels.ts` | 지운다 (가계부) | [[ADR-137]] |
@@ -87,8 +90,8 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 
 | 테이블 | 칸 |
 |---|---|
-| `boss_parties` | `id` NN · `ocid` NN · `boss_key` NN · `difficulty` NN · 분배 조건 · `created_at` NN · `updated_at` NN |
-| `boss_party_periods` | `id` NN · `party_id` NN · `period_key` NN · `cycle` NN · `world_key` · `clear_status` NN · `price_meso` · `payout_meso` · `defeated_date` · `source` · 분배 조건 · `created_at` NN · `updated_at` NN |
+| `boss_parties` | `id` NN · `ocid` NN · `boss_key` NN · `difficulty` NN · 분배 조건 · `crystal_excluded` · `created_at` NN · `updated_at` NN |
+| `boss_party_periods` | `id` NN · `party_id` NN · `period_key` NN · `cycle` NN · `world_key` · `clear_status` NN · `price_meso` · `payout_meso` · `defeated_date` · `source` · 분배 조건 · `crystal_excluded` · `over_crystal_limit` · `created_at` NN · `updated_at` NN |
 | `boss_drops` | `id` NN · `period_id` NN · `sort_order` NN · `category` NN · `item_key` NN · `box_origin_key` · `ring_level` · `record_status` NN · `price_meso` · `priced_at` · `sale_fee_percent` · `sale_fee_auto` · 분배 조건 · `created_at` NN · `updated_at` NN |
 | `character_profiles` | `id` NN · `ocid` NN UNIQUE · `name` NN · `image_url` NN · `world` · `world_key` · `level` · `job_class` · `created_date` · `updated_at` NN |
 | `character_world_leaps` | `id` NN · `from_ocid` NN UNIQUE · `to_ocid` NN · `linked_at` NN |
@@ -102,6 +105,8 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | `cashbook_entries` | `id` NN · `ocid` · `account_id` · `nexon_account_id` · `world_key` · `entry_type` NN(`income` · `spend`) · `category_key` NN · `entry_date` NN · `memo` · `created_at` NN · `updated_at` NN |
 | `cashbook_entry_items` | `id` NN · `entry_id` NN · `sort_order` NN · `item_key` · `item_name` · `form_key` · `item_kind_key` · `quantity` · `from_level` · `to_level` · `amount_meso` · `tariff_meso` · `sale_fee_percent` · `sale_fee_meso` · `sale_fee_auto` · `amount_point` · `point_per_100m_meso` · `meso_market_fee_percent` · `amount_cash` · `fragment_count` · `untradable_fragment_count` · `fragment_price_meso` · `hexa_activation` · `hexa_use_storage` · `hexa_storage_as_spend` · `inventory_item_id` · `ring_level`(아이템 구매 · 판매의 특수스킬 반지 레벨, 옛 줄에는 `ensureColumn` 이 붙인다) |
 | `cashbook_entry_hunt_inputs` | `id` NN · `entry_id` NN UNIQUE · `character_level` · `missed_mobs` · `boosts` · `fragments` · `fragment_price_meso` · `meso_rate` · `typed_meso` · `union_tier` |
+| `cashbook_entry_transfer_inputs` | `id` NN · `entry_id` NN UNIQUE · `receiver_ocid` NN · `transfer_meso` NN · `fee_percent` NN · `fee_auto`(1 자동 · `NULL` 손으로 고름) |
+| `cashbook_entry_exchange_inputs` | `id` NN · `entry_id` NN UNIQUE · `sold_meso` NN · `sell_point_per_100m_meso` NN · `bought_meso`(판매만 적었으면 `NULL`) · `buy_point_per_100m_meso`(같음) · `meso_market_fee_percent` NN |
 | `cashbook_entry_fragment_uses` | `id` NN · `entry_id` NN · `fragment_source` NN(`hunt` · `other`) · `ocid`(`hunt` 만) · `account_id` · `world_key`(`other` 만) · `fragments` NN |
 | `inventory_items` | `id` NN · `account_id` NN · `world_key` NN · `item_key` NN · `item_kind_key` NN · `quantity` NN · `ring_level`(특수스킬 반지만, 옛 줄에는 `ensureColumn` 이 붙인다) · `created_at` NN · `updated_at` NN |
 | `remembered_levels` | `id` NN · `ocid` NN · `kind` NN · `item_key` NN · `level` NN · `updated_at` NN |
@@ -115,6 +120,10 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 분배 조건은 세 표가 같이 쓰는 여섯 칸이다. `split_mode`(`even` · `ratio`) · `party_size` · `my_share` · `shares_total` ·
 `split_fee_percent` · `split_fee_auto`. 정의는 `boss-tables.ts` 한 곳에 있다. 이름은 저장하지 않는다. 보스 · 아이템 · 월드
 이름은 읽을 때 key 로 게임 데이터에서 찾는다([[ADR-078]] 결정 6).
+
+`boss_parties` · `boss_party_periods` 에는 분배 칸 `crystal_excluded` 가 하나 더 있다. `1` 이면 분배 방식 `제외` 다([[ADR-038]]
+결정 12). `boss_party_periods.over_crystal_limit` 는 주간 결정석 판매 한도를 넘겨 0 메소로 읽는 처치다. `payout_meso` 는 그대로
+두고 읽을 때 0 으로 읽는다([[ADR-042]] 결정 15). 두 칸 모두 옛 기기에는 `ensureColumn` 이 붙인다.
 
 `boss_drops` 의 `(period_id, sort_order)` 에는 인덱스 `boss_drops_period` 가 있다. 유일 인덱스가 아니다. 한 행씩 고치는
 동안 `sort_order` 가 잠깐 겹치기 때문이다([[ADR-077]] 결정 8).

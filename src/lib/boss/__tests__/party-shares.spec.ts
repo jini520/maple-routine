@@ -185,3 +185,15 @@ describe('formatShareRatio: 화면이 적는 글자', () => {
     expect(formatShareRatio({ myShare: 3, sharesTotal: 5, splitFeePercent: null })).toBe('60%')
   })
 })
+
+describe('crystalPayoutMeso: 분배 방식 `제외`', () => {
+  // 결정석을 팔지 않은 처치다. 숨겨 둔 분배가 무엇이든 받은 메소가 없다.
+  it('균등이든 비율이든 내 몫이 0 이다', () => {
+    expect(crystalPayoutMeso(1_000_000_000, 3, { ...EVEN, excluded: true })).toBe(0)
+    expect(crystalPayoutMeso(1_000_000_000, 2, { myShare: 2, sharesTotal: 3, splitFeePercent: 3, excluded: true })).toBe(0)
+  })
+
+  it('`제외` 가 아니면 숨긴 분배 그대로 센다', () => {
+    expect(crystalPayoutMeso(900, 3, { ...EVEN, excluded: false })).toBe(300)
+  })
+})

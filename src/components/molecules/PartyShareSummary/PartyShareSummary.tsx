@@ -1,8 +1,8 @@
 /**
  * 파티 분배를 적고 고치는 자리로 보내는 줄. **배지 하나와 `변경`** 이다.
  *
- * 배지는 `솔로` · `파티 3인` · `67%` 셋 중 하나다. 비율은 결정석에만 있어(아이템은 건마다 값이 달라 드롭 기록이 든다)
- * 무엇의 비율인지 물을 일이 없고, 그래서 라벨이 없다.
+ * 배지는 `솔로` · `파티 3인` · `67%` · `제외` 넷 중 하나다. 비율은 결정석에만 있어(아이템은 건마다 값이 달라 드롭 기록이 든다)
+ * 무엇의 비율인지 물을 일이 없고, 그래서 라벨이 없다. 한도를 넘긴 처치는 그 옆에 `제외` 배지가 하나 더 선다.
  *
  * 값은 백분율이다. `나 : 나머지` 로 적으면 2:1 과 4:2 가 다른 값처럼 보이는데 둘은 같은 약속이다.
  *
@@ -29,8 +29,10 @@ export function PartyShareSummary(props: {
   /** aria-label 접두. 목록에서 어느 행인지 구분한다(보스명). */
   label: string
   partySize: number
-  /** 결정석 비율. 균등이면 인원을, 비율이면 내 몫을 적는다. */
+  /** 결정석 비율. 균등이면 인원을, 비율이면 내 몫을, `제외` 면 `제외` 를 적는다. */
   crystal: PartyShares
+  /** 주간 결정석 판매 한도를 넘겨 0 메소로 센 처치 */
+  overCrystalLimit?: boolean
   size?: keyof typeof SIZES
   /** 고칠 수 없는 행. 글자만 흐리게 서고 `변경` 이 사라진다. */
   disabled?: boolean
@@ -63,9 +65,20 @@ export function PartyShareSummary(props: {
       {/* 읽는 차례도 보이는 차례와 같아야 해서 `flex-row-reverse` 로 뒤집지 않고 그리는 차례를 바꾼다. */}
       {end && change}
       {/* 혼자면 인원을 세지도 않는다. `파티 1인` 은 파티가 아니다. */}
-      <Badge testID="party-share-badge" variant="primary" size={size.badge} style={TABULAR_NUMS}>
-        {crystalRatio ?? (props.partySize <= 1 ? '솔로' : `파티 ${props.partySize}인`)}
-      </Badge>
+      {props.crystal.excluded === true ? (
+        <Badge testID="party-share-badge" variant="muted" size={size.badge}>
+          제외
+        </Badge>
+      ) : (
+        <Badge testID="party-share-badge" variant="primary" size={size.badge} style={TABULAR_NUMS}>
+          {crystalRatio ?? (props.partySize <= 1 ? '솔로' : `파티 ${props.partySize}인`)}
+        </Badge>
+      )}
+      {props.overCrystalLimit === true && props.crystal.excluded !== true && (
+        <Badge testID="party-share-over-limit-badge" variant="muted" size={size.badge}>
+          제외
+        </Badge>
+      )}
       {!end && change}
     </View>
   )

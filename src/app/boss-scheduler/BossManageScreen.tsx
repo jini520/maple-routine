@@ -291,6 +291,7 @@ export function BossManageScreen(): React.JSX.Element {
           myShare: columns.crystalMyShare,
           sharesTotal: columns.crystalSharesTotal,
           splitFeePercent: columns.splitFeePercent,
+          excluded: columns.crystalExcluded === true,
         }}
         side="end"
         onPress={() => setPartyModal({ entry, difficulty })}

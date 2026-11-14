@@ -13,7 +13,8 @@
  * 베일로 눌러 읽히게 할 일이 없고, 그래서 이름을 크게 쓸 자리가 난다. 난이도도 머리에 서서
  * 본문은 분배 하나만 든다.
  *
- * 분배는 `균등`·`비율` 세그먼트로 가른다. 지금 어느 쪽인지가 늘 보여야 해서 스위치가 아니다.
+ * 분배는 `기본`·`비율`·`제외` 세그먼트로 가른다. 지금 어느 쪽인지가 늘 보여야 해서 스위치가 아니다.
+ * `제외` 는 고르기 전 분배를 지우지 않고 숨긴다. 숨긴 분배를 드롭 가격 카드가 처음 값으로 쓴다.
  *
  * **언제 저장할지는 호출부가 정한다.** 비율은 끌기 한 번에 값이 여러 번 바뀌어서, 바뀔 때마다
  * 쓰면 한 몸짓이 저장 아홉 번이 된다.
@@ -49,6 +50,8 @@ export interface PartyModalShares {
   splitFeePercent: number | null
   /** 송금 수수료가 등급을 따라가나. 적용하면 요율은 그 등급 요율로 나간다 */
   splitFeeAuto?: boolean
+  /** 분배 방식 `제외`. 위 칸들은 숨겨 둔 분배다 */
+  crystalExcluded?: boolean
 }
 
 /**
@@ -67,8 +70,8 @@ const FEE_OPTIONS = ['0%', '3%', '5%'] as const
  */
 const SEED_SHARES = { myShare: 2, sharesTotal: 3 }
 
-/** 분배를 가르는 두 조각. 글자가 곧 상태다. */
-const SPLIT_OPTIONS = ['기본', '비율'] as const
+/** 분배를 가르는 세 조각. 글자가 곧 상태다. */
+const SPLIT_OPTIONS = ['기본', '비율', '제외'] as const
 
 /**
  * 그림이 서는 띠의 폭.
@@ -168,6 +171,7 @@ export function PartySizeModal(props: {
   }
 
   const usesShares = draft.shares.crystalSharesTotal !== null
+  const excluded = draft.shares.crystalExcluded === true
   const crystal = {
     myShare: draft.shares.crystalMyShare ?? SEED_SHARES.myShare,
     sharesTotal: draft.shares.crystalSharesTotal ?? SEED_SHARES.sharesTotal,
@@ -284,25 +288,30 @@ export function PartySizeModal(props: {
                 <Text className="text-xs font-bold text-text">분배 방식</Text>
                 <Segment
                   options={SPLIT_OPTIONS}
-                  selected={usesShares ? '비율' : '기본'}
+                  selected={excluded ? '제외' : usesShares ? '비율' : '기본'}
                   size="md"
                   onSelect={(option) =>
                     setShares(
-                      option === '기본'
-                        ? NO_SHARES
-                        : {
-                            crystalMyShare: SEED_SHARES.myShare,
-                            crystalSharesTotal: SEED_SHARES.sharesTotal,
-                            // 비율로 바꿀 때 송금 수수료는 자동으로 시작한다(내 등급 요율).
-                            splitFeePercent: null,
-                            splitFeeAuto: true,
-                          },
+                      option === '제외'
+                        ? { ...draft.shares, crystalExcluded: true }
+                        : option === '기본'
+                          ? NO_SHARES
+                          : // `제외` 로 숨겨 둔 비율이 있으면 그대로 돌아온다.
+                            usesShares
+                            ? { ...draft.shares, crystalExcluded: false }
+                            : {
+                                crystalMyShare: SEED_SHARES.myShare,
+                                crystalSharesTotal: SEED_SHARES.sharesTotal,
+                                // 비율로 바꿀 때 송금 수수료는 자동으로 시작한다(내 등급 요율).
+                                splitFeePercent: null,
+                                splitFeeAuto: true,
+                              },
                     )
                   }
                 />
               </View>
 
-              {usesShares ? (
+              {excluded ? null : usesShares ? (
                 <>
                   {/* 카드 한 장이다. 아이템 비율은 건마다 값이 달라 드롭 가격 카드가 받는다. */}
                   <ShareCard

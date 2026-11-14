@@ -103,7 +103,9 @@ import {
   recordIncomes,
   recordSpend,
   editIncome,
+  editMesoMarketExchange,
   editSpend,
+  exchangeSpendViewOf,
   removeRecord,
   recordCardOf,
   recordMesoOf,
@@ -119,6 +121,7 @@ import {
   type RecordCard,
   type SoldItem,
 } from '../../features/cashbook/records'
+import { loadWeekCrystalMeso } from '../../features/cashbook/week-crystal'
 import {
   mergeDayRows,
   mergedRowCardOf,
@@ -144,6 +147,7 @@ import { useToastStore } from '../../features/toast/store'
 import { SETTLEMENT_BANNER_DETAIL_LEDGER } from '../../features/settlement/banner-text'
 import { SettlementBanner } from '../SettlementBanner'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
+import type { SpendRecord } from '../../storage/spend'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
 import { useMonthDays } from './useMonthDays'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
@@ -744,6 +748,16 @@ function MergedRecordTile(props: { entry: SpendDayRecord; onPress: () => void })
   )
 }
 
+/** 체크 박스가 부르는 그 주 결정석 몫. 모듈에 두어야 폼의 효과가 렌더마다 다시 돌지 않는다 */
+function loadWeekCrystal(ocid: string, dateKey: string): Promise<number> {
+  return loadWeekCrystalMeso(ocid, dateKey, new Date())
+}
+
+/** 지출 시트가 열 기록. 수입으로 저장된 메소마켓 환전도 그 시트에서 적었으므로 지출 모양으로 바꿔 연다 */
+function spendViewOf(entry: ManualDayRecord): SpendRecord {
+  return entry.kind === 'spend' ? entry.record : exchangeSpendViewOf(entry.record)
+}
+
 export function CashbookScreen(): React.JSX.Element {
   const faq = useFaqSheet('cashbook')
   /**
@@ -947,7 +961,10 @@ export function CashbookScreen(): React.JSX.Element {
    */
   async function saveEdit(entry: ManualDayRecord, draft: IncomeDraft | SpendDraft): Promise<void> {
     try {
-      if (entry.kind === 'spend') {
+      // 메소마켓 환전 수수료는 금액의 부호로 지출 · 수입을 다시 고른다. 원본이 수입이어도 지출 시트에서 고친다.
+      if ('exchange' in draft && draft.exchange !== undefined) {
+        await editMesoMarketExchange(entry, draft as SpendDraft)
+      } else if (entry.kind === 'spend') {
         // 메소마켓 수수료율도 원본의 것을 얹는다. 시트는 요율을 모르고, 적힌 요율은 고쳐도 그대로다.
         await editSpend({
           ...(draft as SpendDraft),
@@ -1318,7 +1335,7 @@ export function CashbookScreen(): React.JSX.Element {
       />
 
       {/* 시트는 조건부 마운트다. 마운트가 곧 열림이고 `onClose` 로 언마운트한다. */}
-      {(sheet === 'income' || (typeof sheet === 'object' && sheet?.kind === 'income')) && (
+      {(sheet === 'income' || (typeof sheet === 'object' && sheet?.kind === 'income' && sheet.record.exchange === undefined)) && (
         // 고치는 것이면 그 기록의 날짜로 연다. 고른 날이 아니다(둘은 지금 같지만 목록이
         // 여러 날을 걸치게 되는 날 갈린다).
         <IncomeSheet
@@ -1343,11 +1360,12 @@ export function CashbookScreen(): React.JSX.Element {
           onClose={() => setSheet(null)}
         />
       )}
-      {(sheet === 'expense' || (typeof sheet === 'object' && sheet?.kind === 'spend')) && (
+      {(sheet === 'expense' ||
+        (typeof sheet === 'object' && (sheet?.kind === 'spend' || sheet?.record.exchange !== undefined))) && (
         <SpendSheet
           characters={characters}
           accounts={accounts}
-          dateKey={typeof sheet === 'object' ? sheet.record.spentOn : selectedDateKey}
+          dateKey={typeof sheet === 'object' ? spendViewOf(sheet).spentOn : selectedDateKey}
           todayDateKey={todayDateKey}
           earliestDateKey={historyFloorDateKey(todayDateKey)}
           lastPointRate={lastPointRate}
@@ -1358,7 +1376,9 @@ export function CashbookScreen(): React.JSX.Element {
           hexaStorageChecks={hexaStorageChecks}
           // 아이템 구매가 인벤토리에 보관할 메이플 ID · 월드를 찾을 때 부른다. 헥사의 기타 조각 주인과 같은 규칙이다.
           loadStoreOwnerOf={loadHexaOwnerOf}
-          editing={typeof sheet === 'object' ? sheet.record : undefined}
+          // 주간 보스 수입 이전의 체크 박스가 그 주 결정석 몫을 읽을 때 부른다.
+          loadWeekCrystalMeso={loadWeekCrystal}
+          editing={typeof sheet === 'object' ? spendViewOf(sheet) : undefined}
           onSave={typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveSpend}
           onDelete={typeof sheet === 'object' ? () => deleteEntry(sheet) : undefined}
           onClose={() => setSheet(null)}

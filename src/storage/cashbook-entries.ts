@@ -78,11 +78,32 @@ export interface EntryHunt {
   unionTier: number | null
 }
 
+/** `주간 보스 수입 이전` 시트의 입력. */
+export interface EntryTransfer {
+  receiverOcid: string
+  transferMeso: number
+  feePercent: number
+  feeAuto: boolean
+}
+
+/** `메소마켓 환전 수수료` 시트의 입력. 판매만 적었으면 구매 두 칸이 `null` 이다. */
+export interface EntryExchange {
+  soldMeso: number
+  sellPointPer100mMeso: number
+  boughtMeso: number | null
+  buyPointPer100mMeso: number | null
+  mesoMarketFeePercent: number
+}
+
 export interface StoredEntry {
   head: EntryHead
   /** 차례대로다. 하나 이상이다. */
   items: EntryItem[]
   hunt: EntryHunt | null
+  /** 이 줄이 있으면 `주간 보스 수입 이전` 시트로 연다 */
+  transfer?: EntryTransfer | null
+  /** 이 줄이 있으면 `메소마켓 환전 수수료` 시트로 연다 */
+  exchange?: EntryExchange | null
   /** 헥사 기록이 사냥 조각 보관에서 가져온 조각. 다른 기록은 빈 배열이다. */
   fragmentUses: readonly FragmentUse[]
   /** 헥사 강화와 인벤토리의 기타 조각 판매가 기타 조각에서 가져온 조각. 다른 기록은 빈 배열이다. */
@@ -183,6 +204,29 @@ async function writeChildren(db: SqliteDbConnection, entry: StoredEntry): Promis
   for (const use of entry.otherFragmentUses) {
     await db.run(INSERT_OTHER_FRAGMENT_USE_SQL, [entry.head.id, use.accountId, use.worldKey, use.fragments])
   }
+  const { transfer, exchange } = entry
+  if (transfer != null) {
+    await db.run(
+      `INSERT INTO cashbook_entry_transfer_inputs (id, entry_id, receiver_ocid, transfer_meso, fee_percent, fee_auto)
+       VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?)`,
+      [entry.head.id, transfer.receiverOcid, transfer.transferMeso, transfer.feePercent, transfer.feeAuto ? 1 : null],
+    )
+  }
+  if (exchange != null) {
+    await db.run(
+      `INSERT INTO cashbook_entry_exchange_inputs
+         (id, entry_id, sold_meso, sell_point_per_100m_meso, bought_meso, buy_point_per_100m_meso, meso_market_fee_percent)
+       VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?)`,
+      [
+        entry.head.id,
+        exchange.soldMeso,
+        exchange.sellPointPer100mMeso,
+        exchange.boughtMeso,
+        exchange.buyPointPer100mMeso,
+        exchange.mesoMarketFeePercent,
+      ],
+    )
+  }
   const hunt = entry.hunt
   if (hunt === null) return
   await db.run(INSERT_HUNT_SQL, [
@@ -243,7 +287,7 @@ export async function replaceEntry(db: SqliteDbConnection, entry: StoredEntry, n
     `UPDATE cashbook_entries
         SET ocid = ?, account_id = ?, nexon_account_id = CASE WHEN ? IS NULL AND ? IS NULL THEN nexon_account_id END,
             world_key = CASE WHEN ocid IS ? THEN world_key ELSE ${PROFILE_WORLD_SQL} END,
-            category_key = ?, entry_date = ?, memo = ?, updated_at = ?
+            entry_type = ?, category_key = ?, entry_date = ?, memo = ?, updated_at = ?
       WHERE id = ?`,
     [
       head.ocid,
@@ -252,6 +296,7 @@ export async function replaceEntry(db: SqliteDbConnection, entry: StoredEntry, n
       head.accountId,
       head.ocid,
       head.ocid,
+      head.entryType,
       head.categoryKey,
       head.entryDate,
       head.memo,
@@ -261,6 +306,8 @@ export async function replaceEntry(db: SqliteDbConnection, entry: StoredEntry, n
   )
   await db.run(`DELETE FROM cashbook_entry_items WHERE entry_id = ?`, [head.id])
   await db.run(`DELETE FROM cashbook_entry_hunt_inputs WHERE entry_id = ?`, [head.id])
+  await db.run(`DELETE FROM cashbook_entry_transfer_inputs WHERE entry_id = ?`, [head.id])
+  await db.run(`DELETE FROM cashbook_entry_exchange_inputs WHERE entry_id = ?`, [head.id])
   await db.run(`DELETE FROM cashbook_entry_fragment_uses WHERE entry_id = ?`, [head.id])
   await writeChildren(db, entry)
 }
@@ -418,6 +465,25 @@ function huntOf(row: Record<string, unknown>): EntryHunt {
   }
 }
 
+function transferOf(row: Record<string, unknown>): EntryTransfer {
+  return {
+    receiverOcid: row.receiver_ocid as string,
+    transferMeso: Number(row.transfer_meso),
+    feePercent: Number(row.fee_percent),
+    feeAuto: Number(row.fee_auto) === 1,
+  }
+}
+
+function exchangeOf(row: Record<string, unknown>): EntryExchange {
+  return {
+    soldMeso: Number(row.sold_meso),
+    sellPointPer100mMeso: Number(row.sell_point_per_100m_meso),
+    boughtMeso: numberOrNull(row.bought_meso),
+    buyPointPer100mMeso: numberOrNull(row.buy_point_per_100m_meso),
+    mesoMarketFeePercent: Number(row.meso_market_fee_percent),
+  }
+}
+
 /**
  * 조건에 맞는 기록과 그 품목 · 사냥 입력. 기록은 날짜 · 저장 시각 차례다.
  *
@@ -426,12 +492,14 @@ function huntOf(row: Record<string, unknown>): EntryHunt {
  */
 export async function readEntries(db: SqliteDbConnection, where: string, params: unknown[]): Promise<StoredEntry[]> {
   const ids = `SELECT e.id FROM cashbook_entries e WHERE ${where}`
-  const [heads, items, hunts, uses] = await Promise.all([
+  const [heads, items, hunts, uses, transfers, exchanges] = await Promise.all([
     db.query(`SELECT e.* FROM cashbook_entries e WHERE ${where} ORDER BY e.entry_date, e.created_at, e.id`, params),
     db.query(`SELECT * FROM cashbook_entry_items WHERE entry_id IN (${ids}) ORDER BY entry_id, sort_order`, params),
     db.query(`SELECT * FROM cashbook_entry_hunt_inputs WHERE entry_id IN (${ids})`, params),
     // 차례 칸이 없어 rowid 로 넣은 차례(강화한 캐릭터 먼저, 그다음 캐릭터 관리 순서)를 지킨다.
     db.query(`SELECT * FROM cashbook_entry_fragment_uses WHERE entry_id IN (${ids}) ORDER BY rowid`, params),
+    db.query(`SELECT * FROM cashbook_entry_transfer_inputs WHERE entry_id IN (${ids})`, params),
+    db.query(`SELECT * FROM cashbook_entry_exchange_inputs WHERE entry_id IN (${ids})`, params),
   ])
   const usesOf = new Map<string, FragmentUse[]>()
   const otherUsesOf = new Map<string, OtherFragmentUse[]>()
@@ -455,6 +523,8 @@ export async function readEntries(db: SqliteDbConnection, where: string, params:
     itemsOf.set(id, list)
   }
   const huntOfEntry = new Map((hunts.values ?? []).map((row) => [row.entry_id as string, huntOf(row)]))
+  const transferOfEntry = new Map((transfers.values ?? []).map((row) => [row.entry_id as string, transferOf(row)]))
+  const exchangeOfEntry = new Map((exchanges.values ?? []).map((row) => [row.entry_id as string, exchangeOf(row)]))
   return (heads.values ?? []).map((row) => ({
     head: {
       id: row.id as string,
@@ -468,6 +538,8 @@ export async function readEntries(db: SqliteDbConnection, where: string, params:
     },
     items: itemsOf.get(row.id as string) ?? [{ ...EMPTY_ITEM }],
     hunt: huntOfEntry.get(row.id as string) ?? null,
+    transfer: transferOfEntry.get(row.id as string) ?? null,
+    exchange: exchangeOfEntry.get(row.id as string) ?? null,
     fragmentUses: usesOf.get(row.id as string) ?? [],
     otherFragmentUses: otherUsesOf.get(row.id as string) ?? [],
   }))

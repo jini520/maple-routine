@@ -1,4 +1,4 @@
-import { SPLIT_COLUMN_NAMES, crystalSplitValues, numberOrNull } from './boss-periods'
+import { CRYSTAL_SPLIT_COLUMN_NAMES, crystalSplitValues, numberOrNull } from './boss-periods'
 import { getBossProfitDb } from './sqlite/db'
 import { NEW_UUID_SQL } from './sqlite/uuid'
 
@@ -12,6 +12,8 @@ export interface BossPartyShareColumns {
   splitFeePercent: number | null
   /** 송금 수수료가 등급을 따라가나. 없으면 손으로 고른 값이다 */
   splitFeeAuto?: boolean
+  /** 분배 방식 `제외`. 결정석을 팔지 않는 처치라 내 몫이 0 이고, 위 칸들은 숨겨 둔 분배다 */
+  crystalExcluded?: boolean
 }
 
 export interface BossPartySetting extends BossPartyShareColumns {
@@ -28,10 +30,10 @@ export interface BossPartySetting extends BossPartyShareColumns {
  * 있고, 그 행은 설정이 없는 것으로 읽는다.
  */
 const UPSERT_SQL = `
-  INSERT INTO boss_parties (id, ocid, boss_key, difficulty, ${SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
-  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO boss_parties (id, ocid, boss_key, difficulty, ${CRYSTAL_SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
+  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ${CRYSTAL_SPLIT_COLUMN_NAMES.map(() => '?').join(', ')}, ?, ?)
   ON CONFLICT (ocid, boss_key, difficulty) DO UPDATE SET
-    ${SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(',\n    ')},
+    ${CRYSTAL_SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(',\n    ')},
     updated_at = excluded.updated_at
 `
 
@@ -66,6 +68,7 @@ function rowToSetting(row: Record<string, unknown>): BossPartySetting {
     crystalSharesTotal: numberOrNull(row.shares_total),
     splitFeePercent: numberOrNull(row.split_fee_percent),
     splitFeeAuto: Number(row.split_fee_auto) === 1,
+    crystalExcluded: Number(row.crystal_excluded) === 1,
     updatedAt: row.updated_at as string,
   }
 }
@@ -113,12 +116,12 @@ export async function copyMissingBossPartySettings(
   updatedAt: string,
 ): Promise<void> {
   const db = await getBossProfitDb()
-  const columns = SPLIT_COLUMN_NAMES.join(', ')
+  const columns = CRYSTAL_SPLIT_COLUMN_NAMES.join(', ')
   await db.run(
     `INSERT INTO boss_parties (id, ocid, boss_key, difficulty, ${columns}, created_at, updated_at)
      SELECT ${NEW_UUID_SQL}, ?, boss_key, difficulty, ${columns}, ?, ? FROM boss_parties WHERE ocid = ? AND ${HAS_SETTING}
      ON CONFLICT (ocid, boss_key, difficulty) DO UPDATE SET
-       ${SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(', ')},
+       ${CRYSTAL_SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(', ')},
        updated_at = excluded.updated_at
      WHERE boss_parties.split_mode IS NULL`,
     [toOcid, updatedAt, updatedAt, fromOcid],
