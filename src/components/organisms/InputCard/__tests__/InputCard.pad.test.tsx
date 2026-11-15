@@ -29,7 +29,8 @@ function 키보드(up: boolean): void {
   ;(emitter as { emit(name: string, event: KeyboardEvent): void }).emit(이름, {
     duration: 0,
     easing: 'keyboard',
-    endCoordinates: { screenX: 0, screenY: 0, width: 0, height: 0 },
+    // 뜰 때는 실제 키보드처럼 높이를 준다. 높이 0 인 show 는 키보드가 뜬 것으로 보지 않는다(`useKeyboardShown`).
+    endCoordinates: { screenX: 0, screenY: 0, width: 0, height: up ? 300 : 0 },
   } as unknown as KeyboardEvent)
 }
 
