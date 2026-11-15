@@ -70,6 +70,8 @@ async function 그리기(
       loadRememberedLevels={async () => ({})}
       loadHexaStorages={async () => ({ other: null, hunts: [] })}
       hexaStorageChecks={{ useStorage: false, storageAsSpend: false }}
+      lastBossIncomeTransfers={{}}
+      lastEpicDungeonRewards={{}}
       lastPointRate={null}
       onSave={jest.fn()}
       onClose={jest.fn()}
@@ -886,6 +888,174 @@ describe('형태별 단계', () => {
       item: '악몽선경 솔 에르다 2단계',
       formItemKeys: { sol_erda: 'nightmare_paradise_2' },
     })
+  })
+})
+
+/**
+ * 새 에픽던전 리워드는 던전 타일을 누르면 그 던전을 마지막에 적은 캐릭터와 그 캐릭터의 단계로 채운다. 같은 캐릭터가 매주 같은
+ * 던전에서 같은 단계를 사기 때문이다. 캐릭터를 바꾸면 그 캐릭터의 단계로 바뀐다.
+ */
+describe('에픽던전 마지막 입력', () => {
+  const 기억 = {
+    high_mountain: {
+      last: { ocid: 'ocid-2' },
+      characters: {
+        'ocid-1': { exp: 'high_mountain_1' },
+        'ocid-2': { exp: 'high_mountain_2', sol_erda: 'high_mountain_1' },
+      },
+      accounts: {},
+    },
+  }
+
+  function 고른단계(view: Rendered, 형태: 형태이름): string | undefined {
+    return ['0단계', '1단계', '2단계'].find(
+      (단계) => 형태줄(view, 형태).getByLabelText(단계).props.accessibilityState?.selected === true,
+    )
+  }
+
+  it('던전 타일을 누르면 그 던전을 마지막에 적은 캐릭터와 그 캐릭터의 단계가 선다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, lastPointRate: 1_180, lastEpicDungeonRewards: 기억 })
+
+    await 누르기(view, '하이마운틴')
+
+    expect(view.getByTestId('spend-sheet-chain-value')).toHaveTextContent('아델')
+    expect(고른단계(view, '경험치')).toBe('2단계')
+    expect(고른단계(view, '솔 에르다')).toBe('1단계')
+
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      ocid: 'ocid-2',
+      formItemKeys: { exp: 'high_mountain_2', sol_erda: 'high_mountain_1' },
+    })
+  })
+
+  it('캐릭터를 바꾸면 그 캐릭터가 그 던전에서 고른 단계로 바뀌고, 그 캐릭터의 기억이 없으면 0단계다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 기억 })
+    await 누르기(view, '하이마운틴')
+
+    await 캐릭터고르기(view, 'ocid-1')
+
+    expect(고른단계(view, '경험치')).toBe('1단계')
+    expect(고른단계(view, '솔 에르다')).toBe('0단계')
+
+    const 한캐릭터만 = { high_mountain: { ...기억.high_mountain, characters: { 'ocid-2': 기억.high_mountain.characters['ocid-2'] } } }
+    const other = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 한캐릭터만 })
+    await 누르기(other, '하이마운틴')
+
+    await 캐릭터고르기(other, 'ocid-1')
+
+    expect(고른단계(other, '경험치')).toBe('0단계')
+    expect(고른단계(other, '솔 에르다')).toBe('0단계')
+  })
+
+  // 단계를 먼저 고르고 캐릭터를 나중에 고르는 사람이 고른 단계를 잃지 않는다. 기억이 있으면 그 기억이 선다.
+  it('빈 캐릭터 칸에서 처음 고른 캐릭터의 기억이 없으면 먼저 고른 단계가 남고, 기억이 있으면 기억으로 바뀐다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 기억 })
+    await 누르기(view, '앵글러 컴퍼니')
+    await 형태단계(view, '경험치', '2단계')
+
+    await 캐릭터고르기(view, 'ocid-1')
+
+    expect(고른단계(view, '경험치')).toBe('2단계')
+
+    const 주인없음 = { high_mountain: { ...기억.high_mountain, last: { ocid: 'ocid-gone' } } }
+    const other = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 주인없음 })
+    await 누르기(other, '하이마운틴')
+    await 형태단계(other, '솔 에르다', '2단계')
+
+    await 캐릭터고르기(other, 'ocid-1')
+
+    expect(고른단계(other, '경험치')).toBe('1단계')
+    expect(고른단계(other, '솔 에르다')).toBe('0단계')
+  })
+
+  // 다른 타일에서 고른 캐릭터를 남기면 이 던전을 가지 않는 캐릭터로 저장되기 쉽다.
+  it('그 던전의 기억이 없으면 앞에서 고른 캐릭터가 남지 않고 빈 칸 · 0단계로 연다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 기억 })
+    await 누르기(view, '하이마운틴')
+    await 누르기(view, '다시 고르기')
+
+    await 누르기(view, '앵글러 컴퍼니')
+
+    expect(view.getByTestId('spend-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
+    expect(고른단계(view, '경험치')).toBe('0단계')
+    expect(고른단계(view, '솔 에르다')).toBe('0단계')
+  })
+
+  // 목록에 없는 값이 줄에 남으면 안 된다.
+  it('목록에 없는 캐릭터는 빈 칸이고, 참조표에서 이 던전의 단계가 아닌 key 는 0단계다', async () => {
+    const 없는캐릭터 = {
+      high_mountain: { last: { ocid: 'ocid-gone' }, characters: { 'ocid-gone': { exp: 'high_mountain_2' } }, accounts: {} },
+    }
+    const view = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 없는캐릭터 })
+
+    await 누르기(view, '하이마운틴')
+
+    expect(view.getByTestId('spend-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
+    expect(고른단계(view, '경험치')).toBe('0단계')
+
+    const 다른던전key = {
+      high_mountain: {
+        last: { ocid: 'ocid-1' },
+        characters: { 'ocid-1': { exp: 'angler_company_1', sol_erda: 'high_mountain_2' } },
+        accounts: {},
+      },
+    }
+    const other = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 다른던전key })
+
+    await 누르기(other, '하이마운틴')
+
+    expect(고른단계(other, '경험치')).toBe('0단계')
+    expect(고른단계(other, '솔 에르다')).toBe('2단계')
+  })
+
+  it('메이플 ID 로 적은 던전은 그 메이플 ID 와 그 단계가 선다', async () => {
+    const 메이플ID = {
+      high_mountain: { last: { accountId: 'maple-a' }, characters: {}, accounts: { 'maple-a': { exp: 'high_mountain_1' } } },
+    }
+    const view = await 그리기({
+      lastPointRate: 1_180,
+      lastEpicDungeonRewards: 메이플ID,
+      accounts: [{ accountId: 'maple-a', label: '메이플ID-maple-a' }],
+    })
+
+    await 누르기(view, '하이마운틴')
+
+    expect(view.getByTestId('spend-sheet-chain-value')).toHaveTextContent('메이플ID-maple-a')
+    expect(고른단계(view, '경험치')).toBe('1단계')
+  })
+
+  // 수정은 그 기록을 고치는 일이다. 다른 기록의 단계로 덮으면 고치지 않은 칸이 바뀐다.
+  it('수정 시트는 캐릭터를 바꿔도 기억으로 채우지 않는다', async () => {
+    const editing: SpendRecord = {
+      id: 'x',
+      ocid: 'ocid-1',
+      spentOn: '2026-08-23',
+      category: 'content',
+      item: '하이마운틴 경험치 1단계',
+      itemKey: null,
+      formItemKeys: { exp: 'high_mountain_1' },
+      itemKind: null,
+      levelFrom: null,
+      levelTo: null,
+      quantity: 1,
+      mesoAmount: null,
+      tariffMeso: null,
+      pointAmount: 7_500,
+      pointPer100mMeso: 1_180,
+      mesoMarketFeePercent: 1,
+      cashAmount: null,
+      hexa: null,
+      recordedAt: '2026-08-23T00:00:00.000Z',
+    }
+    const view = await 그리기({ editing, onDelete: jest.fn(), lastEpicDungeonRewards: 기억 })
+
+    await 캐릭터고르기(view, 'ocid-2')
+
+    expect(고른단계(view, '경험치')).toBe('1단계')
+    expect(고른단계(view, '솔 에르다')).toBe('0단계')
   })
 })
 
@@ -3458,6 +3628,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
           mesoAmount: 108_000_000,
           transfer: { receiverOcid: 'ocid-2', transferMeso: 3_600_000_000, feePercent: 3, feeAuto: false },
         }),
+        { transferFillsWeek: false },
       )
     })
 
@@ -3489,6 +3660,140 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
       expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('주간 보스 수입 이전')
       expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('3,600,000,000')
       expect(view.getByTestId('spend-sheet-transfer-week').props.accessibilityState?.checked).toBe(false)
+    })
+
+    /**
+     * 새 기록은 보내는 캐릭터를 고르면 그 캐릭터로 마지막에 적은 받는 캐릭터 · 수수료 · 체크가 선다. 매주 같은 두 캐릭터
+     * 사이에서 같은 방식으로 옮기기 때문이다.
+     */
+    describe('마지막 입력', () => {
+      const 기억 = { 'ocid-1': { receiverOcid: 'ocid-2', feeAuto: false, feePercent: 5, fillsWeek: true } } as const
+
+      function 체크(view: Rendered): boolean | undefined {
+        return view.getByTestId('spend-sheet-transfer-week').props.accessibilityState?.checked
+      }
+
+      function 자동(view: Rendered): boolean | undefined {
+        return within(view.getByTestId('spend-sheet-fee')).getByLabelText('자동').props.accessibilityState?.checked
+      }
+
+      it('보내는 캐릭터를 고르면 기억한 받는 캐릭터 · 수수료 · 체크가 서고, 옮길 메소가 차며, 저장이 체크를 함께 넘긴다', async () => {
+        const onSave = jest.fn()
+        const loadWeekCrystalMeso = jest.fn(async () => 3_600_000_000)
+        const view = await 그리기({ onSave, loadWeekCrystalMeso, lastBossIncomeTransfers: 기억 }, null)
+        await 새갈래고르기(view, 'boss_income_transfer')
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+        expect(view.getByTestId('spend-sheet-transfer-receiver-value')).toHaveTextContent('아델')
+        expect(자동(view)).toBe(false)
+        expect(within(view.getByTestId('spend-sheet-fee')).getByLabelText('5%').props.accessibilityState?.selected).toBe(true)
+        expect(체크(view)).toBe(true)
+        expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('3,600,000,000')
+
+        await 누르기(view, '저장')
+
+        expect(onSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            transfer: { receiverOcid: 'ocid-2', transferMeso: 3_600_000_000, feePercent: 5, feeAuto: false },
+          }),
+          { transferFillsWeek: true },
+        )
+      })
+
+      // 체크로 채운 금액은 앞 캐릭터의 결정석 몫이다. 남기면 다른 캐릭터의 금액으로 저장된다.
+      it('바꾼 캐릭터의 기억이 없으면 처음 상태로 돌아가고, 켜져 있던 체크가 꺼지면 옮길 메소도 빈다', async () => {
+        const view = await 그리기({ loadWeekCrystalMeso: async () => 3_600_000_000, lastBossIncomeTransfers: 기억 }, null)
+        await 새갈래고르기(view, 'boss_income_transfer')
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-2')
+
+        expect(view.getByTestId('spend-sheet-transfer-receiver-value')).toHaveTextContent('캐릭터 선택')
+        expect(자동(view)).toBe(true)
+        expect(체크(view)).toBe(false)
+        // 빈 금액 칸에는 자리표시자 `0` 이 선다.
+        expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('0')
+      })
+
+      // 지우면 사용자가 방금 고른 값을 다시 골라야 한다.
+      it('빈 칸에서 처음 고른 보내는 캐릭터의 기억이 없으면 먼저 고른 받는 캐릭터 · 수수료가 남는다', async () => {
+        const view = await 그리기({ lastBossIncomeTransfers: 기억 }, null)
+        await 새갈래고르기(view, 'boss_income_transfer')
+        await 고르기(view, 'spend-sheet-transfer-receiver', 'ocid-1')
+        const 수수료줄 = within(view.getByTestId('spend-sheet-fee'))
+        await act(async () => {
+          fireEvent.press(수수료줄.getByLabelText('자동'))
+        })
+        await act(async () => {
+          fireEvent.press(수수료줄.getByLabelText('3%'))
+        })
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-2')
+
+        expect(view.getByTestId('spend-sheet-transfer-receiver-value')).toHaveTextContent('루디')
+        expect(자동(view)).toBe(false)
+        expect(within(view.getByTestId('spend-sheet-fee')).getByLabelText('3%').props.accessibilityState?.selected).toBe(true)
+      })
+
+      // 체크가 꺼져 있던 금액은 사용자가 친 값이다.
+      it('체크가 꺼져 있던 금액은 캐릭터를 바꿔도 그대로다', async () => {
+        const 체크없음 = { 'ocid-1': { ...기억['ocid-1'], fillsWeek: false } }
+        const view = await 그리기({ lastBossIncomeTransfers: 체크없음 }, null)
+        await 새갈래고르기(view, 'boss_income_transfer')
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-2')
+        await 카드칸에치기(view, 'spend-sheet-transfer-amount', '1000000000')
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+        expect(view.getByTestId('spend-sheet-transfer-receiver-value')).toHaveTextContent('아델')
+        expect(체크(view)).toBe(false)
+        expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('1,000,000,000')
+      })
+
+      it('기억한 받는 캐릭터가 목록에 없으면 빈 칸이다', async () => {
+        const view = await 그리기({ lastBossIncomeTransfers: { 'ocid-1': { ...기억['ocid-1'], receiverOcid: 'ocid-gone' } } }, null)
+        await 새갈래고르기(view, 'boss_income_transfer')
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+        expect(view.getByTestId('spend-sheet-transfer-receiver-value')).toHaveTextContent('캐릭터 선택')
+      })
+
+      // 수정은 그 기록을 고치는 일이다. 다른 기록의 수수료 · 체크로 덮으면 고치지 않은 칸이 바뀐다.
+      it('수정 시트는 보내는 캐릭터를 바꿔도 기억으로 채우지 않는다', async () => {
+        const loadWeekCrystalMeso = jest.fn(async () => 3_600_000_000)
+        const editing: SpendRecord = {
+          id: 'x',
+          ocid: 'ocid-2',
+          spentOn: '2026-08-23',
+          category: 'etc',
+          item: '주간 보스 수입 이전',
+          itemKey: null,
+          formItemKeys: null,
+          itemKind: null,
+          levelFrom: null,
+          levelTo: null,
+          quantity: 1,
+          mesoAmount: 30_000_000,
+          tariffMeso: null,
+          pointAmount: null,
+          pointPer100mMeso: null,
+          mesoMarketFeePercent: null,
+          cashAmount: null,
+          hexa: null,
+          recordedAt: '2026-08-23T00:00:00.000Z',
+          transfer: { receiverOcid: 'ocid-1', transferMeso: 1_000_000_000, feePercent: 3, feeAuto: false },
+        }
+        const view = await 그리기({ editing, onDelete: jest.fn(), loadWeekCrystalMeso, lastBossIncomeTransfers: 기억 })
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+        expect(within(view.getByTestId('spend-sheet-fee')).getByLabelText('3%').props.accessibilityState?.selected).toBe(true)
+        expect(체크(view)).toBe(false)
+        expect(loadWeekCrystalMeso).not.toHaveBeenCalled()
+        expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('1,000,000,000')
+      })
     })
   })
 

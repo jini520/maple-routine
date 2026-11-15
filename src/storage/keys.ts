@@ -43,6 +43,12 @@ export const STORAGE_KEYS = {
   // 헥사 매트릭스 폼의 두 체크(보관 중인 조각 사용 · 지출 체크)의 마지막 상태. 새 기록을 저장할 때만 적는다.
   // 데이터 삭제의 `manual` 그룹이 지운다. 지워지면 다음 폼이 둘 다 꺼진 채로 열릴 뿐이다.
   hexaStorageChecks: 'hexaStorageChecks',
+  // 보내는 캐릭터마다 마지막 `주간 보스 수입 이전` 의 받는 캐릭터 · 수수료 · 체크. `{ [ocid]: { ... } }` JSON 한 칸이고 새
+  // 기록을 저장할 때만 적는다. 데이터 삭제의 `manual` 그룹이 지운다. 지워지면 보내는 캐릭터를 골라도 빈 칸이 설 뿐이다.
+  lastBossIncomeTransfers: 'lastBossIncomeTransfers',
+  // 에픽던전마다 마지막에 적은 캐릭터나 메이플 ID 와, 그 주인마다 고른 형태별 항목 key. 새 기록을 저장할 때만 적는다.
+  // 데이터 삭제의 `manual` 그룹이 지운다. 지워지면 던전 타일을 눌러도 처음 상태로 열릴 뿐이다.
+  lastEpicDungeonRewards: 'lastEpicDungeonRewards',
   // 옛 한 벌 둘. `lastHunts` 가 없을 때 한 번 읽어 그 캐릭터 몫으로 옮기고 지운다.
   lastHuntSelection: 'lastHuntSelection',
   lastHuntToggles: 'lastHuntToggles',

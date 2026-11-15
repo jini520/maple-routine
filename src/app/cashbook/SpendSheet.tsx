@@ -81,6 +81,8 @@ export interface SpendSheetProps {
    * `null` 이면 아직 한 번도 안 넣었다는 뜻이다.
    */
   lastPointRate: number | null
+  lastBossIncomeTransfers: SpendFormProps['lastBossIncomeTransfers']
+  lastEpicDungeonRewards: SpendFormProps['lastEpicDungeonRewards']
   /** 던지면 **안 닫는다**. 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
   onSave: SpendFormProps['onSave']
   onClose: () => void
@@ -154,6 +156,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           editing: props.editing,
           onDelete: props.onDelete,
           lastPointRate: props.lastPointRate,
+          lastBossIncomeTransfers: props.lastBossIncomeTransfers,
+          lastEpicDungeonRewards: props.lastEpicDungeonRewards,
           onSave: props.onSave,
           onClose: props.onClose,
           onScrollKeyChange: setScrollKey,

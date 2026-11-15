@@ -69,6 +69,20 @@ import { randomUuid } from '../../native/uuid'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import { getLastHunts, setLastHunt, type LastHunt, type LastHunts } from '../../storage/last-hunts'
 import {
+  getLastBossIncomeTransfers,
+  setLastBossIncomeTransfer,
+  type LastBossIncomeTransfer,
+  type LastBossIncomeTransfers,
+} from '../../storage/last-boss-income-transfers'
+import {
+  getLastEpicDungeonRewards,
+  setLastEpicDungeonReward,
+  withLastEpicDungeonReward,
+  type FormItemKeys,
+  type LastEpicDungeonRewards,
+  type RewardOwner,
+} from '../../storage/last-epic-dungeon-rewards'
+import {
   DEFAULT_HEXA_STORAGE_CHECKS,
   getHexaStorageChecks,
   setHexaStorageChecks,
@@ -88,6 +102,55 @@ import { latestLevelRecordId, rememberAfterEdit, rememberAfterRemove, rememberAf
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
 /** 시트가 만드는 지출. 메소마켓 수수료율은 시트가 정하지 않고 저장할 때 붙인다(`withMesoMarketFee`). */
 export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt' | 'mesoMarketFeePercent'>
+
+/** 기록에 저장하지 않는 시트의 상태. 새 기록을 저장할 때 기억에만 적는다. */
+export interface SpendSheetState {
+  /** `주간 보스 수입 이전` 의 `이번주 보스 수입 옮기기` 체크 */
+  transferFillsWeek?: boolean
+}
+
+/** 새 수입 이전 기록이 남길 보내는 캐릭터 몫. 자동 수수료의 요율은 그때의 등급 값이라 남기지 않는다. */
+function lastTransferOf(draft: SpendDraft, sheet: SpendSheetState): { sender: string; transfer: LastBossIncomeTransfer } | null {
+  if (draft.transfer === undefined || draft.ocid === null) return null
+  const { receiverOcid, feeAuto, feePercent } = draft.transfer
+  return {
+    sender: draft.ocid,
+    transfer: {
+      receiverOcid,
+      feeAuto,
+      feePercent: !feeAuto && (feePercent === 3 || feePercent === 5) ? feePercent : null,
+      fillsWeek: sheet.transferFillsWeek === true,
+    },
+  }
+}
+
+/** 새 에픽던전 리워드 기록이 남길 던전 몫. 형태별 단계가 없는 컨텐츠 항목은 `null` 이다. */
+function lastEpicRewardOf(draft: SpendDraft): { choiceKey: string; owner: RewardOwner; formItemKeys: FormItemKeys } | null {
+  if (draft.formItemKeys === null) return null
+  const reward = findSpendRewardChoice(draft.category, draft.formItemKeys)
+  const owner: RewardOwner | null =
+    draft.accountId !== undefined ? { accountId: draft.accountId } : draft.ocid !== null ? { ocid: draft.ocid } : null
+  if (reward === null || owner === null) return null
+  return { choiceKey: reward.choice.key, owner, formItemKeys: draft.formItemKeys }
+}
+
+/** 저장 뒤 화면이 드는 수입 이전 기억. 저장이 쓴 것과 같은 규칙이고 남길 것이 없으면 그대로 돌려준다. */
+export function nextLastBossIncomeTransfers(
+  draft: SpendDraft,
+  sheet: SpendSheetState,
+  current: LastBossIncomeTransfers,
+): LastBossIncomeTransfers {
+  const remembered = lastTransferOf(draft, sheet)
+  return remembered === null ? current : { ...current, [remembered.sender]: remembered.transfer }
+}
+
+/** 저장 뒤 화면이 드는 에픽던전 기억. 저장이 쓴 것과 같은 규칙이고 남길 것이 없으면 그대로 돌려준다. */
+export function nextLastEpicDungeonRewards(draft: SpendDraft, current: LastEpicDungeonRewards): LastEpicDungeonRewards {
+  const remembered = lastEpicRewardOf(draft)
+  return remembered === null
+    ? current
+    : withLastEpicDungeonReward(current, remembered.choiceKey, remembered.owner, remembered.formItemKeys)
+}
 
 /** 저장할 지출에 메소마켓 수수료율을 붙인다. 메포 지출만 요율이 있다. */
 function withMesoMarketFee(record: SpendRecord): SpendRecord {
@@ -221,7 +284,7 @@ export function exchangeSpendViewOf(record: IncomeRecord): SpendRecord {
   }
 }
 
-export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
+export async function recordSpend(draft: SpendDraft, now: Date, sheet: SpendSheetState = {}): Promise<void> {
   const id = randomUuid()
   if (draft.exchange !== undefined) {
     const saved = exchangeSaveOf(draft, draft.exchange, id, now.toISOString())
@@ -239,6 +302,11 @@ export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
   if (hexa !== null) {
     await quietly(() => setHexaStorageChecks({ useStorage: hexa.useStorage, storageAsSpend: hexa.storageAsSpend }))
   }
+  // 다음 새 수입 이전 · 에픽던전 폼이 이 입력으로 열린다. 수정 저장은 지난 기록만 고치는 일이라 적지 않는다.
+  const transfer = lastTransferOf(draft, sheet)
+  if (transfer !== null) await quietly(() => setLastBossIncomeTransfer(transfer.sender, transfer.transfer))
+  const reward = lastEpicRewardOf(draft)
+  if (reward !== null) await quietly(() => setLastEpicDungeonReward(reward.choiceKey, reward.owner, reward.formItemKeys))
   countCoreSave()
   recordUsageAction('cashbook-add')
   // 저장이 성공한 뒤에만 기억한다. 던진 입력의 시세를 다음 기본값으로 남기면 안 된다.
@@ -669,6 +737,16 @@ export async function loadLastPointRate(): Promise<number | null> {
 /** 캐릭터를 고르면 설 마지막 사냥. 그 사냥터 · 아이템이 참조표에 아직 있는지는 시트가 판정한다. */
 export async function loadLastHunts(): Promise<LastHunts> {
   return getLastHunts().catch(() => ({}))
+}
+
+/** 보내는 캐릭터를 고르면 설 마지막 수입 이전. 받는 캐릭터가 지금 목록에 있는지는 시트가 판정한다. */
+export async function loadLastBossIncomeTransfers(): Promise<LastBossIncomeTransfers> {
+  return getLastBossIncomeTransfers().catch(() => ({}))
+}
+
+/** 던전 타일을 누르면 설 마지막 에픽던전 리워드. 주인 · 단계가 지금 있는지는 시트가 판정한다. */
+export async function loadLastEpicDungeonRewards(): Promise<LastEpicDungeonRewards> {
+  return getLastEpicDungeonRewards().catch(() => ({}))
 }
 
 
