@@ -29,7 +29,7 @@
 | `lib/boss/boss-drops.ts` | 드롭 후보 · 고정 보상 · 표시할 난이도 · 획득 가능 판정 · 상자 내용 · 이관 계획 |
 | `lib/drop/drop-items.ts` | 드롭 아이템 표 조회. 보이는 이름(`dropItemNameOf`) · 고가 판정(`isValuableDropItem`) |
 | `lib/drop/fixed-drops.ts` | 고정 보상 그림과 수량. 솔 에르다의 기운을 단위별로 나눈다 |
-| `lib/drop/drop-price.ts` | 내 몫(`dropPayoutMeso`) · 나눈 몫 글자 · 금액 축약 표기 |
+| `lib/drop/drop-price.ts` | 내 몫(`dropPayoutMeso`) · 가격 카드의 받는 금액(`cardPayoutMeso`) · 나눈 몫 글자 · 금액 축약 표기 |
 | `lib/drop/drop-prompt.ts` | 시트 확인 줄의 문구 |
 | `lib/drop/price-card-labels.ts` | 가격 카드 확인 버튼의 글자 |
 | `lib/drop/drop-history.ts` | 히스토리의 기간 묶기 · 한 줄 문장 · 고가 미획득 단계와 문구 |

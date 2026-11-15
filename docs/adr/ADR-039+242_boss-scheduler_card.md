@@ -1,6 +1,6 @@
 # ADR-039+242 보스 카드
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-018 결정 4 · 5 · 6 · 8 · 9 · 정정 · ADR-019 결정 5 · ADR-121 결정 1 · 4 · ADR-187 결정 2 · 정정 1
 > 관련 소스: `app/boss-scheduler/BossScreen.tsx` 의 `BossCard` · `components/molecules/FadedIllustration/` · `components/molecules/BossPortrait/` · `lib/assets/asset-lookup.ts`
 
