@@ -44,8 +44,10 @@ export interface ResolvedShares {
 /**
  * 저장 칸 셋을 계산이 쓰는 모양으로.
  *
- * 한쪽만 적힌 행과 반반(`1:1`)은 **균등으로 읽는다**. 반쯤 쓰다 만 값으로 금액을 세면 화면이
- * 조용히 틀린 수를 말한다.
+ * 한쪽만 적힌 행은 **균등으로 읽는다**. 반쯤 쓰다 만 값으로 금액을 세면 화면이 조용히 틀린 수를 말한다.
+ *
+ * **반반(50%)은 균등이 아니다.** 비율은 늘 비율이다. 균등으로 읽으면 파티 인원을 3 으로 정해 둔 채 50% 를 고를 때
+ * `가격 / 3` 으로 센다.
  *
  * **내 비율 0 은 균등이 아니다.** 이 몫을 하나도 안 갖는 약속이라 내 몫이 0 이 되어야 하는데,
  * 균등으로 읽으면 `가격 / 인원` 을 받은 것으로 센다.
@@ -53,8 +55,7 @@ export interface ResolvedShares {
 export function parseShares(shares: PartyShares): ResolvedShares {
   const splitFeePercent = shares.splitFeePercent ?? DEFAULT_SPLIT_FEE_PERCENT
   const { myShare, sharesTotal } = shares
-  const isEven =
-    myShare === null || sharesTotal === null || myShare < 0 || sharesTotal <= 0 || myShare * 2 === sharesTotal
+  const isEven = myShare === null || sharesTotal === null || myShare < 0 || sharesTotal <= 0
 
   if (isEven) return { myShare: 1, sharesTotal: 2, splitFeePercent, isEven: true }
   return { myShare, sharesTotal, splitFeePercent, isEven: false }
@@ -63,9 +64,8 @@ export function parseShares(shares: PartyShares): ResolvedShares {
 /**
  * 결정석에서 내가 쥐는 메소.
  *
- * 비율이 균등이거나 안 적혔으면 `floor(가격 / 인원)` 과 **한 메소도 안 다르다**. 비율 식에
- * 반반(`myShare × 2 = 합`)을 넣으면 분자와 분모의 괄호가 같아져 게임 지급액만 남기 때문이고,
- * 그래서 비율을 안 쓰는 파티와 옛 기록의 금액이 이 기능 때문에 움직이지 않는다.
+ * 비율이 안 적혔으면 `floor(가격 / 인원)` 이다. 반반(`myShare × 2 = 합`)은 비율 식의 분자와 분모의 괄호가 같아져
+ * 게임 지급액 `floor(가격 / 2)` 만 남는다. 2인 균등과 한 메소도 안 다르고, 인원을 몇으로 정해 두었든 같다.
  *
  * `제외` 면 숨겨 둔 분배와 상관없이 0 이다.
  *
@@ -150,10 +150,7 @@ export function acceptSharePercentText(previous: string, next: string): string {
 /**
  * 화면이 적는 비율 글자. **비율을 안 쓰는 행**이면 `null` 이라 인원만 선다.
  *
- * `parseShares` 의 `isEven` 과 묻는 것이 다르다. 그쪽은 **송금이 있나**이고 여기는 **비율을
- * 쓰나**다. 반반(`1:1`)은 송금이 없지만 사용자가 정한 비율이라 `50%` 로 적어야 한다.
- *
- * @example formatShareRatio({ myShare: 2, sharesTotal: 3, splitFeePercent: null }) // '66.7%'
+ * @example formatShareRatio({ myShare: 2, sharesTotal: 3, splitFeePercent: null }) // '66.667%'
  */
 export function formatShareRatio(shares: PartyShares): string | null {
   const { myShare, sharesTotal } = shares

@@ -14,6 +14,7 @@ import {
   formatSharePercent,
   formatShareRatio,
   parseShares,
+  partySizeForShares,
   sharePercentText,
   sharesFromPercentText,
   type PartyShares,
@@ -31,8 +32,10 @@ describe('parseShares: 저장 칸 셋을 계산이 쓰는 모양으로', () => {
     expect(parseShares({ myShare: 2, sharesTotal: 3, splitFeePercent: null }).splitFeePercent).toBe(3)
   })
 
-  it('반반이면 균등으로 본다. 1:1 은 오갈 것이 없다', () => {
-    expect(parseShares({ myShare: 2, sharesTotal: 4, splitFeePercent: 3 }).isEven).toBe(true)
+  // 비율은 늘 비율이다(사용자 지정). 균등으로 읽으면 정해 둔 파티 인원으로 나눈다.
+  it('반반도 비율이다. 균등으로 읽지 않는다', () => {
+    expect(parseShares({ myShare: 2, sharesTotal: 4, splitFeePercent: 3 }).isEven).toBe(false)
+    expect(parseShares({ myShare: 50_000, sharesTotal: 100_000, splitFeePercent: 3 }).isEven).toBe(false)
   })
 
   // 이 몫을 하나도 안 갖는 약속이다. 균등으로 읽으면 안 받은 돈을 받은 것으로 센다.
@@ -89,10 +92,13 @@ describe('crystalPayoutMeso: 결정석에서 내가 쥐는 메소', () => {
     }
   })
 
-  it('반반으로 적으면 균등이다. 파티 인원으로 나눈 값이 된다', () => {
-    expect(crystalPayoutMeso(3_000_000_000, 3, { myShare: 2, sharesTotal: 4, splitFeePercent: 5 })).toBe(
-      Math.floor(3_000_000_000 / 3),
-    )
+  // 비율은 두 쪽이라 반반은 인원과 상관없이 절반이다. 파티 인원을 3 으로 정해 둔 채 50% 를 골라도 1/3 이 아니다.
+  it('반반은 파티 인원과 상관없이 floor(가격 / 2) 다', () => {
+    for (const partySize of [1, 2, 3, 6]) {
+      expect(crystalPayoutMeso(3_000_000_001, partySize, { myShare: 50_000, sharesTotal: 100_000, splitFeePercent: 5 })).toBe(
+        Math.floor(3_000_000_001 / 2),
+      )
+    }
   })
 
   // 불변식 ③. 비율을 쓰면 인원은 식에 없다.
@@ -289,5 +295,13 @@ describe('acceptSharePercentText: 칠 수 있는 글자만 받는다', () => {
     expect(acceptSharePercentText('0', '05')).toBe('5')
     expect(acceptSharePercentText('', '.')).toBe('0.')
     expect(acceptSharePercentText('0', '0.')).toBe('0.')
+  })
+})
+
+describe('partySizeForShares: 저장할 파티 인원', () => {
+  // 화면이 비율을 말하는데 저장이 3인이면 파티 배지 · 필터가 다른 말을 한다. 반반도 비율이라 2 다.
+  it('비율이면 반반이어도 2 다. 균등이면 그 인원이다', () => {
+    expect(partySizeForShares({ myShare: 50_000, sharesTotal: 100_000, splitFeePercent: 3 }, 3)).toBe(2)
+    expect(partySizeForShares(EVEN, 3)).toBe(3)
   })
 })

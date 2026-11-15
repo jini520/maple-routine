@@ -163,3 +163,22 @@ describe('비율 합 100000', () => {
     ).toBe(2_244_371_586_570)
   })
 })
+
+describe('비율 50%', () => {
+  // 비율은 늘 비율이다(사용자 지정). 파티원 수를 3 으로 바꿔 둔 뒤 비율로 와도 2명 나누기다.
+  it('파티원 수와 상관없이 2명이 똑같이 나눌 때와 같다', () => {
+    const 두명 = transferPerMember({ salePriceMeso: 1_000_000_000, partySize: 2, saleFeePercent: 3, splitFeePercent: 3 })
+    for (const partySize of [2, 3, 6]) {
+      expect(
+        transferPerMember({
+          salePriceMeso: 1_000_000_000,
+          partySize,
+          saleFeePercent: 3,
+          splitFeePercent: 3,
+          myShare: 50_000,
+          sharesTotal: 100_000,
+        }),
+      ).toBe(두명)
+    }
+  })
+})

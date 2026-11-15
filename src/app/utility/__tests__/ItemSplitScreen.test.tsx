@@ -135,6 +135,18 @@ describe('ItemSplitScreen: 분배 방식', () => {
     expect(view.getByText('3')).toBeTruthy()
   })
 
+  // 비율은 늘 비율이다(사용자 지정). 파티원 수를 바꿔 둔 뒤 50% 를 골라도 그 수로 나누지 않는다.
+  it('파티원 수를 3 으로 바꿔 둔 뒤 비율 50% 를 골라도 2명 기준으로 센다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+    await typeSalePrice(view, '1000000000')
+    await press(view.getByLabelText('분배 파티원 수 증가'))
+
+    await press(within(view.getByTestId('item-split-split')).getByLabelText('비율'))
+
+    // 2인 · 판매 3% · 분배 3%: ⌊97,000,000,000 / 197⌋
+    expect(transferText(view)).toBe('492,385,786')
+  })
+
   it('친 % 로 보낼 금액을 센다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
     await typeSalePrice(view, '1000000000')
