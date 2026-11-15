@@ -6,8 +6,8 @@
 import type { IncomeRecord } from '../../../storage/income'
 import type { SpendRecord } from '../../../storage/spend'
 import { imageOfPath } from '../../../assets/__tests__/asset-uri'
-import type { DayRecord } from '../records'
-import { recordIconKeyOf, recordIconOf } from '../row-icon'
+import type { DayRecord, EnhancedItem } from '../records'
+import { enhancedItemIconOf, recordIconKeyOf, recordIconOf } from '../row-icon'
 
 const income = (over: Partial<IncomeRecord> = {}): DayRecord => ({
   kind: 'income',
@@ -147,5 +147,35 @@ describe('recordIconOf', () => {
     expect(recordIconOf(income({ category: 'item_sale', item: null, itemKey: 'risk_taker_ring' }))).toBe(
       imageOfPath('items/rings/Risk_Taker_Ring.webp'),
     )
+  })
+})
+
+// 펼친 강화 줄의 장비 그림. 강화 장비 표의 장비는 아이템 표에 같은 key 로 들어 있어 key 로 찾는다.
+describe('enhancedItemIconOf', () => {
+  const 장비 = (itemKey: string | null, targetItem: string): EnhancedItem => ({
+    itemKey,
+    targetItem,
+    count: 1,
+    costMeso: 1,
+    fromStar: null,
+    toStar: null,
+  })
+
+  it('장비 key 로 아이템 표의 그림을 찾고, key 로 찾으면 이름은 보지 않는다', () => {
+    expect(imageOfPath('items/dark_boss_ring.png')).not.toBeNull()
+    expect(enhancedItemIconOf(장비('giant_terror', '거대한 공포'))).toBe(imageOfPath('items/dark_boss_ring.png'))
+    expect(enhancedItemIconOf(장비('giant_terror', '루즈 컨트롤 머신 마크'))).toBe(imageOfPath('items/dark_boss_ring.png'))
+  })
+
+  // 강화 장비 표에 없는 장비는 합계 줄에 key 없이 넥슨이 준 이름만 남는다. 그 이름은 띄어쓰기가 아이템 표와 다를 수 있다.
+  it('key 로 못 찾으면 공백을 지운 이름으로 아이템 표를 찾는다', () => {
+    expect(imageOfPath('items/dark_boss_face_acc.png')).not.toBeNull()
+    expect(enhancedItemIconOf(장비(null, '루즈 컨트롤머신 마크'))).toBe(imageOfPath('items/dark_boss_face_acc.png'))
+    expect(enhancedItemIconOf(장비('nope', '루즈 컨트롤 머신 마크'))).toBe(imageOfPath('items/dark_boss_face_acc.png'))
+  })
+
+  // 비슷한 장비의 그림을 대신 붙이면 다른 장비를 그린다.
+  it('key 로도 이름으로도 못 찾으면 그림이 없다', () => {
+    expect(enhancedItemIconOf(장비(null, '타일런트 헤르메스 부츠'))).toBeNull()
   })
 })
