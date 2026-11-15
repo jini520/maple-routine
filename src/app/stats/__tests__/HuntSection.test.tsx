@@ -11,7 +11,7 @@ const 기본: HuntTotals = {
   sojae: 112,
   manualCount: 12,
   fragments: 10_512,
-  unsoldFragments: 7_512,
+  heldFragments: 7_512,
   huntMeso: 12_410_000_000,
   fragmentSaleMeso: 477_000_000,
   lootSaleMeso: 233_000_000,
@@ -40,7 +40,7 @@ describe('HuntSection', () => {
     expect(view.getByTestId('stats-hunt-sojae')).toHaveTextContent('112소재')
     expect(view.getByTestId('stats-hunt-manual').props.children).toBe('직접 입력 12건')
     expect(view.getByTestId('stats-hunt-fragments')).toHaveTextContent('조각 10,512개')
-    expect(view.getByTestId('stats-hunt-unsold').props.children).toBe('미판매 조각 7,512개')
+    expect(view.getByTestId('stats-hunt-held').props.children).toBe('보유 조각 7,512개')
     expect(view.getByTestId('stats-hunt-breakdown').props.children).toBe(
       '사냥 메소 124.1억 · 조각 판매 4.77억 · 전리품 판매 2.33억',
     )
@@ -49,10 +49,10 @@ describe('HuntSection', () => {
 
   // 줄이 생기고 사라지면 기간을 옮길 때마다 아래 카드가 움직인다
   it('0 인 둘째 줄은 글자를 숨기고 자리는 남긴다', async () => {
-    const view = await renderOverlay(<HuntSection totals={{ ...기본, manualCount: 0, unsoldFragments: 0 }} />)
+    const view = await renderOverlay(<HuntSection totals={{ ...기본, manualCount: 0, heldFragments: 0 }} />)
 
     expect(opacityOf(view.getByTestId('stats-hunt-manual', HIDDEN_TOO))).toBe(0)
-    expect(opacityOf(view.getByTestId('stats-hunt-unsold', HIDDEN_TOO))).toBe(0)
+    expect(opacityOf(view.getByTestId('stats-hunt-held', HIDDEN_TOO))).toBe(0)
     expect(opacityOf(view.getByTestId('stats-hunt-sojae'))).not.toBe(0)
   })
 
@@ -70,7 +70,7 @@ describe('HuntSection', () => {
       sojae: 0,
       manualCount: 0,
       fragments: 0,
-      unsoldFragments: 0,
+      heldFragments: 0,
       huntMeso: 0,
       fragmentSaleMeso: 0,
       lootSaleMeso: 0,
@@ -82,11 +82,11 @@ describe('HuntSection', () => {
     expect(opacityOf(view.getByTestId('stats-hunt-body', HIDDEN_TOO))).toBe(0)
   })
 
-  // 폭 375 에서 둘째 줄이 쓸 수 있는 폭은 93.5 라서 `미판매 조각 7,512개` 부터 넘친다
+  // 폭 375 에서 둘째 줄이 쓸 수 있는 폭은 93.5 라서 개수가 크면 넘친다
   it('타일의 큰 값과 둘째 줄은 한 줄이고 넘치면 글자를 줄인다', async () => {
     const view = await renderOverlay(<HuntSection totals={기본} />)
 
-    for (const testID of ['stats-hunt-sojae', 'stats-hunt-manual', 'stats-hunt-fragments', 'stats-hunt-unsold']) {
+    for (const testID of ['stats-hunt-sojae', 'stats-hunt-manual', 'stats-hunt-fragments', 'stats-hunt-held']) {
       const line = view.getByTestId(testID)
       expect([testID, line.props.numberOfLines, line.props.adjustsFontSizeToFit]).toEqual([testID, 1, true])
     }

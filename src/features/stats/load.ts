@@ -1,9 +1,12 @@
 /**
- * 통계 화면이 읽는 것 중 날짜별 줄이 아닌 것. 캐릭터 전신 그림과 누적 순수익의 시작 날짜다.
+ * 통계 화면이 읽는 것 중 날짜별 줄이 아닌 것. 캐릭터 전신 그림 · 누적 순수익의 시작 날짜 · 조각 장부다.
  *
  * 날짜별 줄은 화면이 `features/cashbook/ledger-query` 의 `useLedgerDays` 로 든다. 기록 표의 판이 오르면 그 쿼리가
  * 무효화되므로 여기서 판을 견주지 않는다.
  */
+import { withSqliteFallback } from '../boss-profit/sqlite-guards'
+import { getFragmentMoves } from '../../storage/income'
+import type { StoredFragmentMove } from '../../storage/fragment-ledger'
 import { getStatsCumulativeStart, setStatsCumulativeStart } from '../../storage/stats-cumulative-start'
 import {
   getCharacterProfiles,
@@ -46,4 +49,9 @@ export async function loadCumulativeStart(): Promise<string | null> {
 
 export async function saveCumulativeStart(dateKey: string): Promise<void> {
   await setStatsCumulativeStart(dateKey).catch(() => undefined)
+}
+
+/** 모든 캐릭터의 조각 장부. 날짜별 줄과 같이 읽지 못하면 빈 장부다. */
+export function loadFragmentMoves(): Promise<StoredFragmentMove[]> {
+  return withSqliteFallback(getFragmentMoves(), [])
 }
