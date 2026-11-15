@@ -81,6 +81,9 @@ jest.mock('@react-navigation/native', () => ({
 jest.mock('../../../hooks/useScreenNavigation', () => ({
   useScreenNavigation: () => ({ setParams: mockSetParams, navigate: mockNavigate }),
 }))
+// 전환이 끝난 뒤 부르는 일. 기본은 바로 부르고, 미루는 케이스만 일을 잡아 둔다. 기다리는 규칙은 그 훅의 테스트가 본다.
+const mockRunAfterTransition = jest.fn((task: () => void) => task())
+jest.mock('../../../hooks/useRunAfterTransition', () => ({ useRunAfterTransition: () => mockRunAfterTransition }))
 // 드롭의 가격 입력 카드는 인벤토리 · 가격 입력 화면과 같은 카드라 그 테스트가 본다. 여기서는 무엇을 열었나만 본다.
 jest.mock('../open-drop-price-card', () => ({ openDropPriceCardOf: jest.fn(async () => undefined) }))
 
@@ -168,6 +171,7 @@ beforeEach(() => {
   mockRouteParams = undefined
   mockSetParams.mockReset()
   mockNavigate.mockReset()
+  mockRunAfterTransition.mockReset().mockImplementation((task: () => void) => task())
   records.editIncome.mockReset().mockResolvedValue(undefined)
   records.editSpend.mockReset().mockResolvedValue(undefined)
   records.removeRecord.mockReset().mockResolvedValue(undefined)
@@ -373,6 +377,26 @@ describe('CashbookScreen: 거래 내역', () => {
     expect(view.getByTestId('income-sheet-title')).toHaveTextContent('아이템 판매')
     expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 10일 (월)')
     expect(mockSetParams).toHaveBeenCalledWith({ trade: undefined })
+  })
+
+  // 기간을 옮기면 조회 회차와 달 읽기가 시작된다. 거래 내역이 빠지는 전환 · 시트가 열리는 때와 겹치지 않게 뒤로 미룬다.
+  it('수정 시트는 바로 열고, 기간을 옮겨 날짜를 고르는 일은 전환이 끝난 뒤에 한다', async () => {
+    let 미룬일: (() => void) | null = null
+    mockRunAfterTransition.mockImplementation((task: () => void) => {
+      미룬일 = task
+    })
+    const record = { ...거래수입, earnedOn: '2026-08-10' }
+    mockRouteParams = { trade: { kind: 'entry', dateKey: '2026-08-10', entry: { kind: 'income', record, characterName: '루디' } } }
+
+    const view = await 그리기()
+
+    expect(view.getByTestId('income-sheet-title')).toHaveTextContent('아이템 판매')
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 23일 (일)')
+    expect(mockRunAfterTransition).toHaveBeenCalledWith(expect.any(Function), 600)
+
+    await act(async () => (미룬일 as unknown as () => void)())
+
+    expect(view.getByTestId('cashbook-selected-day')).toHaveTextContent('8월 10일 (월)')
   })
 
   it('`거래로 이동` 으로 받은 드롭은 수정 시트 대신 그 드롭의 가격 입력 카드를 연다', async () => {

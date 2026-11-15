@@ -58,6 +58,7 @@ import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useMvpGradeContext } from '../../features/mvp-grade/store'
 import { tapFeedback } from '../../native/haptics'
+import { useRunAfterTransition } from '../../hooks/useRunAfterTransition'
 import { openDropPriceCardOf } from './open-drop-price-card'
 import type { IncomeCategoryKey } from '../../lib/cashbook/categories'
 import type { TabParamList } from '../../navigation/routes'
@@ -789,6 +790,7 @@ export function CashbookScreen(): React.JSX.Element {
    */
   const tradeTarget = routeParams?.trade
   const gradeContext = useMvpGradeContext()
+  const runAfterTransition = useRunAfterTransition()
   /**
    * 시트가 무엇을 하고 있나. 셋이다.
    *
@@ -827,14 +829,19 @@ export function CashbookScreen(): React.JSX.Element {
   }, [quickLinkCategory, navigation])
 
   /**
-   * `거래로 이동` 으로 온 기록. 그 날짜가 든 기간으로 옮겨 날짜를 고르고, 손입력은 수정 시트를, 드롭은 가격 입력 카드를 연다.
-   * 날짜는 조회 한도 안이다. 거래 내역이 가계부 시트와 같은 범위에서만 기록을 읽기 때문이다.
+   * `거래로 이동` 으로 온 기록. 손입력은 수정 시트를, 드롭은 가격 입력 카드를 바로 열고, 그 날짜가 든 기간으로 옮겨 날짜를 고르는
+   * 일은 거래 내역이 빠지는 전환이 끝난 뒤에 한다. 기간을 옮기면 조회 회차와 달 읽기가 시작되는데, 전환 · 시트가 열리는 때와
+   * 겹치면 둘 다 느려진다. 시트는 그 기록의 날짜로 열려 달 데이터가 없어도 된다. 날짜는 조회 한도 안이다. 거래 내역이 가계부
+   * 시트와 같은 범위에서만 기록을 읽기 때문이다.
    */
   useEffect(() => {
     if (tradeTarget === undefined) return
     navigation.setParams({ trade: undefined })
-    if (isWeekly) setWeekStartKey(resetWeekStartOf(tradeTarget.dateKey))
-    selectDate(tradeTarget.dateKey)
+    // 전환 이벤트가 오지 않는 이동(이미 가계부가 보이던 때)에도 옮기도록 시간 제한을 둔다. 전환은 0.35초쯤이다.
+    runAfterTransition(() => {
+      if (isWeekly) setWeekStartKey(resetWeekStartOf(tradeTarget.dateKey))
+      selectDate(tradeTarget.dateKey)
+    }, 600)
     if (tradeTarget.kind === 'entry') {
       setSheet(tradeTarget.entry)
       return

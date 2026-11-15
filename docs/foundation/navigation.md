@@ -35,6 +35,7 @@
 | `hooks/useScrollToTop.ts` | 맨 위 스크롤 함수를 등록하거나 부른다 |
 | `hooks/useRootBackToBackground.ts` | 안드로이드에서 되돌아갈 화면이 없을 때 뒤로 가기를 받아 백그라운드로 보낸다 |
 | `hooks/useScreenFocused.ts` | 이 화면이 지금 보이는지. 내비게이터 밖이면 늘 `true` |
+| `hooks/useRunAfterTransition.ts` | 담은 스택의 다음 전환이 끝난 뒤 일을 한 번 부른다. 전환 이벤트가 없으면 시간 제한 뒤에 부르고, 내비게이터 밖이면 바로 부른다 |
 | `native/haptics.ts` | `tapFeedback()` · `selectionFeedback()` |
 
 ## 화면 구조
