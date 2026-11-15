@@ -208,11 +208,18 @@ function hexaPart(record: SpendRecord, meso: number): Part {
   return target === null ? typedNamePart(record.item, meso) : { ...target, meso }
 }
 
-/** 사냥 기록에 적힌 조각 값. 조각 가격을 안 적었으면 합계에 없어 0 이다 */
-function fragmentMesoOf(record: IncomeRecord): number {
+/**
+ * 사냥 기록 하나의 사냥 메소와 조각 판매 대금. 수입 내역의 사냥 조각과 사냥 수입 카드가 함께 쓰는 나눔.
+ *
+ * 기록 금액에는 수수료를 뗀 조각 값이 들어 있어서 수수료도 함께 빼야 한다. 떼기 전 값을 빼면 사냥 메소가 수수료만큼 작다.
+ *
+ * @param meso 그 기록의 금액(`recordMesoOf`)
+ */
+function huntSplitOf(record: IncomeRecord, meso: number): { huntMeso: number; fragmentSaleMeso: number } {
   const hunt = record.hunt
-  if (hunt === null || hunt.fragmentPrice === null) return 0
-  return hunt.fragments * hunt.fragmentPrice
+  const fragmentSaleMeso =
+    hunt === null || hunt.fragmentPrice === null ? 0 : hunt.fragments * hunt.fragmentPrice - (record.saleFeeMeso ?? 0)
+  return { huntMeso: meso - fragmentSaleMeso, fragmentSaleMeso }
 }
 
 /**
@@ -254,12 +261,12 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
         return { slice: hunting(), parts: [{ key: `hunt_loot:${itemKey ?? ''}`, name, meso }] }
       }
       if (category === 'hunting') {
-        const fragmentMeso = fragmentMesoOf(entry.record)
+        const { huntMeso, fragmentSaleMeso } = huntSplitOf(entry.record, meso)
         return {
           slice: hunting(),
           parts: [
-            { ...HUNTING_MESO, meso: meso - fragmentMeso },
-            { ...solErdaFragment(), meso: fragmentMeso },
+            { ...HUNTING_MESO, meso: huntMeso },
+            { ...solErdaFragment(), meso: fragmentSaleMeso },
           ],
         }
       }
@@ -333,6 +340,64 @@ export function categoryTotalsBetween(
   }
   for (const [key, parts] of partsBySlice) totals.get(key)!.parts = capParts(sortedNonZero(parts.values()))
   return sortedNonZero(totals.values())
+}
+
+/** 사냥 수입 카드의 값. 개수는 사냥 기록에서, 메소는 사냥 기록과 사냥 전리품 판매에서 센다. */
+export interface HuntTotals {
+  /** 사냥 기록이나 사냥 전리품 판매 기록이 하나라도 있나. 없으면 카드가 빈 문구를 적는다 */
+  recorded: boolean
+  /** 계산기 기록의 소재 수 합 */
+  sojae: number
+  /** 소재 수가 없는 사냥 기록의 수. 직접 입력 기록과 계산기 전 기록 */
+  manualCount: number
+  /** 사냥 기록의 조각 수 합. 그 자리에서 판 조각과 보관한 조각 모두 */
+  fragments: number
+  /** 조각 가격을 비운 사냥 기록의 조각 수 합 */
+  unsoldFragments: number
+  huntMeso: number
+  /** 사냥 기록에서 그 자리에서 판 조각의 대금. 수수료를 뗀 값 */
+  fragmentSaleMeso: number
+  lootSaleMeso: number
+  totalMeso: number
+}
+
+/**
+ * 범위의 사냥 수입. 나중에 한 `솔 에르다 조각` 정산은 안 센다. 그 조각은 사냥한 날 미판매 조각으로 이미 셌고, 정산
+ * 금액까지 더하면 같은 조각을 개수와 메소로 두 번 센다.
+ */
+export function huntTotalsBetween(byDate: DaysByDate, range: StatsRange): HuntTotals {
+  const totals: HuntTotals = {
+    recorded: false,
+    sojae: 0,
+    manualCount: 0,
+    fragments: 0,
+    unsoldFragments: 0,
+    huntMeso: 0,
+    fragmentSaleMeso: 0,
+    lootSaleMeso: 0,
+    totalMeso: 0,
+  }
+  for (const entry of entriesBetween(byDate, range)) {
+    if (entry.kind !== 'income') continue
+    const { record } = entry
+    if (record.category === 'hunt_loot_sale') {
+      totals.recorded = true
+      totals.lootSaleMeso += recordMesoOf(entry)
+      continue
+    }
+    if (record.category !== 'hunting') continue
+    totals.recorded = true
+    const { hunt } = record
+    if (hunt?.mode === 'calculator') totals.sojae += hunt.sojae
+    else totals.manualCount += 1
+    totals.fragments += hunt?.fragments ?? 0
+    if (hunt !== null && hunt.fragmentPrice === null) totals.unsoldFragments += hunt.fragments
+    const { huntMeso, fragmentSaleMeso } = huntSplitOf(record, recordMesoOf(entry))
+    totals.huntMeso += huntMeso
+    totals.fragmentSaleMeso += fragmentSaleMeso
+  }
+  totals.totalMeso = totals.huntMeso + totals.fragmentSaleMeso + totals.lootSaleMeso
+  return totals
 }
 
 export interface BossTotal {
