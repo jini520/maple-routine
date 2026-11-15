@@ -167,8 +167,8 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
   돈다. 안 묶으면 첫 수집의 수백 번 쓰기가 수백 번 다시 읽게 한다. 지출 기록의 판은 쓰기 **뒤에** 오른다. 앞에 올리면
   무효화된 쿼리가 쓰기 전 값을 읽는다.
 - 표마다 같은 알림 함수(모듈의 `notifyRevisionListeners`)를 `notifyAfterBatch` 에 넘긴다. 반복은 알림을 `Set` 으로 모으는데,
-  판을 올릴 때마다 함수를 새로 만들면 같은 알림으로 알아보지 못해 쓰기 수만큼 알림이 나간다. 수입 · 지출 · 강화 합계 · 인벤토리
-  표가 그렇게 해서, 옛 기간으로 옮긴 가계부가 회차 끝에 같은 달 읽기를 897번 돌렸다(2026-11-15 아이폰 계측, #1026).
+  판을 올릴 때마다 함수를 새로 만들면 같은 알림으로 알아보지 못해 쓰기 수만큼 알림이 나간다. 수입 · 지출 · 강화 합계 · 인벤토리 ·
+  조회 원장 표가 그렇게 해서, 옛 기간으로 옮긴 가계부가 회차 끝에 같은 달 읽기를 897번 돌렸다(2026-11-15 아이폰 계측, #1026).
 - 같은 작업 안에서 오른 표는 모아 한 번에 무효화한다(`queueMicrotask`). 표마다 무효화하면 두 표를 읽는 쿼리가 두 번 다시
   읽는다. 다시 읽기는 진행 중인 읽기를 버리고 새로 시작하는데(`cancelRefetch`), 버린 읽기도 끝까지 돌아 일이 겹친다.
 - 그래서 화면마다 있던 판 비교(`statsToken` · `isDropHistoryOutdated` · `cashbookDataRevision` · `statsDataRevision` ·
@@ -305,7 +305,7 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
 | `features/__tests__/prehydrate.spec.ts` | 결정 7: 복원을 기다린 뒤 선택 · 회차 · 보스 수익을 순차로 예열하는지 |
 | `storage/sqlite/__tests__/query-cache-real-sqlite.test.ts` | 결정 7: 같은 키는 값을 덮고 지우면 없는지 |
 | `features/query/__tests__/invalidation.spec.ts` | 결정 6: 표의 판이 오르면 그 표를 적은 쿼리만 무효화되는지, 같은 작업 안에서 오른 표들을 쿼리마다 한 번만 무효화하는지, 회차가 새 데이터를 들면 `dependsOn` 쿼리가 무효화되는지 |
-| `storage/__tests__/record-revision-notify.spec.ts` | 결정 6: 다섯 기록 표와 인벤토리 표가 반복 안의 여러 쓰기에 알림을 한 번만 내는지 |
+| `storage/__tests__/record-revision-notify.spec.ts` | 결정 6: 수입 · 지출 · 강화 합계 표가 반복 안의 여러 쓰기에 알림을 한 번만 내는지, 저장 계층 어디에서도 `notifyAfterBatch` 에 함수를 그 자리에서 만들어 넘기지 않는지 |
 | `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 3: 회차가 동기화 뒤 자동 기록 · 처치 날짜 순으로 부르고, 둘이 던져도 회차는 서는지 |
 | `features/refresh/__tests__/pull.spec.ts` | 결정 3: 당김이 회차 → 창 → 오늘 강화 순인지, 추적이 없으면 창을 안 부르는지 |
 | `features/refresh/__tests__/freshness.spec.ts` | 결정 3: 회차 시각과 오늘 강화 시각 중 늦은 쪽을 내고 둘 다 없으면 빈지 |
