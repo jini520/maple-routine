@@ -116,26 +116,37 @@ function bytesOf(files: AssetFilesTable['files']): number {
   return files.reduce((sum, f) => sum + f.size, 0)
 }
 
-/** 그림을 받는다. 하나라도 실패하면 던진다. */
+/**
+ * 그림을 받는 함수. 한 장이 실패하면 새 그림을 더 받지 않고, 받고 있던 그림이 끝난 뒤 첫 실패를 던진다.
+ *
+ * 기다리지 않고 던지면 남은 받기의 진행이 `failed` 를 덮어 99% 에서 멈추고, `다시 시도` 가 이 받기와 겹친다.
+ */
 async function downloadImages(
   needed: AssetFilesTable['files'],
   onBytes: (bytes: number, total: number) => void,
 ): Promise<void> {
   const port = getAssetFilesPort()
   const total = bytesOf(needed)
+  const errors: unknown[] = []
   let done = 0
   onBytes(0, total)
   let next = 0
   const worker = async (): Promise<void> => {
-    while (next < needed.length) {
+    while (errors.length === 0 && next < needed.length) {
       const file = needed[next]!
       next += 1
-      await port.download(assetFileUrl(file.file), file.file, file.sha256)
+      try {
+        await port.download(assetFileUrl(file.file), file.file, file.sha256)
+      } catch (error) {
+        errors.push(error)
+        return
+      }
       done += file.size
       onBytes(done, total)
     }
   }
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, needed.length) }, worker))
+  if (errors.length > 0) throw errors[0]
 }
 
 /** 목록에 없는 파일을 지운다. 실패해도 다음 정리 때 다시 지운다. */
