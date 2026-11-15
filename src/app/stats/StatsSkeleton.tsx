@@ -189,6 +189,10 @@ export function StatsSkeleton(): React.JSX.Element {
       <StatsSection title="수입 내역">
         <DonutChart />
       </StatsSection>
+      <StatsSection title="지출 내역">
+        <DonutChart />
+      </StatsSection>
+
       <StatsSection title="사냥 수입">
         <View className="flex-row gap-2">
           {[0, 1].map((index) => (
@@ -204,9 +208,6 @@ export function StatsSkeleton(): React.JSX.Element {
           <LineBar height={LINE[11]} className="h-2 w-48" />
           <LineBar height={LINE.lg} className="h-5 w-28" />
         </View>
-      </StatsSection>
-      <StatsSection title="지출 내역">
-        <DonutChart />
       </StatsSection>
 
       <StatsSection title="보스별 수입" trailing={<SegmentPill />}>

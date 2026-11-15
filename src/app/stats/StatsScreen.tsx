@@ -272,7 +272,6 @@ export function StatsScreen(): React.JSX.Element {
                   replayKey={replayKey}
                 />
               </View>
-              <HuntSection totals={hunt} />
               <View onLayout={onSectionLayout('expense')}>
                 <CategorySection
                   title="지출 내역"
@@ -282,6 +281,8 @@ export function StatsScreen(): React.JSX.Element {
                   replayKey={replayKey}
                 />
               </View>
+
+              <HuntSection totals={hunt} />
 
               <BossSection days={days} range={currentRange} />
 
