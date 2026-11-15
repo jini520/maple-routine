@@ -101,7 +101,7 @@ RootStack
 | 하려는 것 | 쓰는 것 |
 |---|---|
 | 하위 페이지 열기 · 닫기 | `useScreenNavigation()` 의 `navigate(라우트)` · `goBack()` |
-| 다른 탭 열기 | `useOpenTab()(페이지, 파라미터)`. 그룹 페이지로 가면 `Groups` 까지 되돌아간 뒤 연다 |
+| 다른 탭 열기 | `useOpenTab()(페이지, 파라미터)`. 그룹 페이지로 가면 `Groups` 까지 되돌아간 뒤 연다. 하위 페이지에서 부르면 그 하위 페이지를 빼고 아래의 `Main` 으로 되돌아간다(`pop`) |
 | 화면 안 버튼으로 맨 위 스크롤 | `useScrollToTop()` |
 | 컨테이너 밖에서 이동(알림 탭) | `AppNavigation` 의 `navigationRef`. 목적지가 화면 목록에 생긴 뒤에 push 한다 |
 

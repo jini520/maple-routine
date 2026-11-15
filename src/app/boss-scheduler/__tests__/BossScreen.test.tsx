@@ -274,7 +274,7 @@ describe('BossScreen: 빈 상태와 마운트', () => {
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'Groups',
       params: { screen: 'Settings', params: { openPicker: true } },
-    })
+    }, { pop: true })
     expect(screen.queryByTestId('character-tracking-picker-modal')).toBeNull()
   })
 })

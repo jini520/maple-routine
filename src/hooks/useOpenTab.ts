@@ -46,8 +46,14 @@ export function useOpenTab(): (page: TabRouteName, params?: Record<string, unkno
       }
 
       const [name, nested] = tabNavigateArgs(page, params)
+      // `pop` 을 준다. react-navigation 7 의 `navigate` 는 이동할 화면이 맨 위가 아니면 새로 쌓아서, 하위 페이지에서 부르면
+      // `Main` 이 통째로 하나 더 쌓이고 아래의 하위 페이지와 앱 전체가 계속 그려진다. `pop` 이면 아래의 `Main` 까지 되돌아간다.
       // 층 이름이 유니온이라 `navigate` 의 파라미터가 하나로 안 좁혀진다(`LayerStack.tsx` 와 같은 대가).
-      ;(navigation.navigate as (route: string, params: TabNavigateParams) => void)(name, nested)
+      ;(navigation.navigate as (route: string, params: TabNavigateParams, options: { pop: boolean }) => void)(
+        name,
+        nested,
+        { pop: true },
+      )
     },
     [navigation],
   )
