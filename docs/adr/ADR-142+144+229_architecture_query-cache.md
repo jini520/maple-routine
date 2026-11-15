@@ -177,8 +177,10 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 - 보고 있지 않은 화면의 쿼리는 무효 표시만 되고, 그 화면이 다시 보일 때 읽는다. 전에 포커스마다 판을 견주던 것과 같은
   비용이다. 하단바 탭 화면은 한 번 열면 안 보여도 마운트된 채라, 기기 DB 를 읽는 쿼리는 화면이 보일 때만 구독한다(react-query
   `subscribed`). 구독하지 않는 동안은 무효 표시만 되고, 다시 구독할 때 무효면 한 번 읽는다. 안 그러면 통계처럼 1년 6개월을
-  읽는 쿼리가 다른 탭에서 기록을 저장할 때마다 다시 돈다(#1026). `features/` 는 내비게이션을 모르므로 쿼리 훅은 구독 여부를
-  인자로 받고, 화면이 `useScreenFocused` 의 값을 넘긴다.
+  읽는 쿼리가 다른 탭에서 기록을 저장할 때마다 다시 돈다(#1026). 내비게이터가 화면마다 감싸는 `screenLayout` 에서 그 화면의
+  포커스를 `QuerySubscribedContext` 로 내리고(`navigation/ScreenQuerySubscription.tsx`), 기기 DB 쿼리 훅(`useLedgerDays` ·
+  `useMonthDays` · `useBossProfitPeriod` · `useDropHistory` · `useInventory` · `useManualCompleted`)이 `useQuerySubscribed` 로
+  읽는다. `features/` 는 내비게이션을 몰라도 되고 화면 코드는 그대로다. 화면 밖(모달 · 공급자)에서는 늘 구독한다.
 - 보스 스케줄러의 직접 완료는 `manualCompleted(weeklyKey, monthlyKey)` 쿼리다(`features/boss-scheduler/manual-completed-query.ts`).
   보스 기록 표의 판과 추적 목록(`dependsOn: tracked-ocids`)에 매여 무효화되고, 기간 키가 열쇠라 목요일 · 1일을 넘기면 화면이
   새 열쇠를 읽는다. 전에는 스토어가 기록 판과 기간을 이어 붙인 표식을 포커스마다 견줬다.
@@ -305,6 +307,7 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
 | `features/__tests__/prehydrate.spec.ts` | 결정 7: 복원을 기다린 뒤 선택 · 회차 · 보스 수익을 순차로 예열하는지 |
 | `storage/sqlite/__tests__/query-cache-real-sqlite.test.ts` | 결정 7: 같은 키는 값을 덮고 지우면 없는지 |
 | `features/query/__tests__/invalidation.spec.ts` | 결정 6: 표의 판이 오르면 그 표를 적은 쿼리만 무효화되는지, 같은 작업 안에서 오른 표들을 쿼리마다 한 번만 무효화하는지, 회차가 새 데이터를 들면 `dependsOn` 쿼리가 무효화되는지 |
+| `navigation/__tests__/ScreenQuerySubscription.test.tsx` | 결정 6: 화면이 안 보이는 동안은 무효화돼도 다시 읽지 않고 다시 보일 때 한 번 읽는지, 감싸개 밖에서는 늘 구독하는지 |
 | `storage/__tests__/record-revision-notify.spec.ts` | 결정 6: 수입 · 지출 · 강화 합계 표가 반복 안의 여러 쓰기에 알림을 한 번만 내는지, 저장 계층 어디에서도 `notifyAfterBatch` 에 함수를 그 자리에서 만들어 넘기지 않는지 |
 | `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 3: 회차가 동기화 뒤 자동 기록 · 처치 날짜 순으로 부르고, 둘이 던져도 회차는 서는지 |
 | `features/refresh/__tests__/pull.spec.ts` | 결정 3: 당김이 회차 → 창 → 오늘 강화 순인지, 추적이 없으면 창을 안 부르는지 |
