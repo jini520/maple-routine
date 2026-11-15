@@ -3,7 +3,7 @@
 import { resolveScreenLayout } from '../screen-layout'
 
 /** iOS 27.1 시뮬레이터에서 잰 값(2026-11-10). */
-const 듀오_외부 = { windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 }
+const 듀오_외부 = { platform: 'ios', windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 }
 
 describe('오른쪽 안전영역이 있으면 화면 크기와 상관없이 오른쪽 레일 화면이다', () => {
   it('아이폰 듀오 외부 화면은 side-rail 이고 콘텐츠 폭은 오른쪽 안전영역을 뺀 382 다', () => {
@@ -16,7 +16,7 @@ describe('오른쪽 안전영역이 있으면 화면 크기와 상관없이 오�
 
   // 안쪽 화면은 짧은 변이 600 을 넘지만 외부 화면과 같은 레일이 있다. 레일을 무시하면 오른쪽 위가 OS 의 시계에 가린다.
   it('아이폰 듀오 안쪽 화면(가로 951×669, 오른쪽 84)도 side-rail 이고 콘텐츠 폭은 867 이다', () => {
-    const layout = resolveScreenLayout({ windowWidthPx: 951, windowHeightPx: 669, insetRightPx: 84 })
+    const layout = resolveScreenLayout({ platform: 'ios', windowWidthPx: 951, windowHeightPx: 669, insetRightPx: 84 })
 
     expect(layout.kind).toBe('side-rail')
     expect(layout.contentWidthPx).toBe(867)
@@ -25,14 +25,26 @@ describe('오른쪽 안전영역이 있으면 화면 크기와 상관없이 오�
   // 폭이 바형 폰보다 넓다는 것만으로는 레일 화면이 아니다. 폴드8 외부 화면과 태블릿은 바형 폰 배치를 그대로 쓴다.
   it('오른쪽 안전영역이 없으면 폭과 상관없이 phone 이고 콘텐츠 폭은 창 폭이다', () => {
     for (const window of [
-      { windowWidthPx: 447, windowHeightPx: 706, insetRightPx: 0 },
-      { windowWidthPx: 1194, windowHeightPx: 834, insetRightPx: 0 },
+      { platform: 'android', windowWidthPx: 447, windowHeightPx: 706, insetRightPx: 0 },
+      { platform: 'ios', windowWidthPx: 1194, windowHeightPx: 834, insetRightPx: 0 },
     ]) {
       const layout = resolveScreenLayout(window)
       expect(layout.kind).toBe('phone')
       expect(layout.contentWidthPx).toBe(window.windowWidthPx)
       expect(layout.railWidthPx).toBe(0)
     }
+  })
+})
+
+// 안드로이드의 옆 안전영역은 화면 구멍(카메라 컷아웃) 자리다. 폭 64 인 세로 막대가 들어가지 않아 레일 배치를 켜면 막대가 콘텐츠와 겹친다.
+describe('안드로이드는 오른쪽 안전영역을 판정에 쓰지 않는다', () => {
+  it('폴드8 안쪽 화면을 세로로 돌려 오른쪽 안전영역 52 가 와도 phone 이고 콘텐츠 폭은 창 폭이다', () => {
+    const layout = resolveScreenLayout({ platform: 'android', windowWidthPx: 733, windowHeightPx: 972, insetRightPx: 52 })
+
+    expect(layout.kind).toBe('phone')
+    expect(layout.contentWidthPx).toBe(733)
+    expect(layout.railWidthPx).toBe(0)
+    expect(layout.edgeGapPx).toBe(0)
   })
 })
 

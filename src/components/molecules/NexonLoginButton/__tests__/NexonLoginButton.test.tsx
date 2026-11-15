@@ -4,6 +4,7 @@
 // `확장영역` 으로 적어 폭이 늘어도 내용이 안 늘고, 잡아 늘이면 금지 항목 둘(`텍스트 왜곡 및 변형` ·
 // `가이드에서 벗어난 사이즈 및 비율 적용`)을 한 번에 어긴다.
 
+import { BAR_MAX_WIDTH } from '../../../../lib/bottom-bar-metrics'
 import { flattenStyle, renderAtom } from '../../../__tests__/render-atom'
 import { NexonLoginButton } from '../NexonLoginButton'
 
@@ -16,6 +17,15 @@ describe('NexonLoginButton', () => {
     const style = flattenStyle(view.getByTestId('nexon-login-button-image').props.style)
     expect(style.width).toBe('100%')
     expect(style.height).toBeUndefined()
+  })
+
+  it('넓은 화면에서도 하단바 폭에서 멈추고 가운데에 선다', async () => {
+    // 폭만 정한 그림이라 부모가 넓으면 끝없이 커진다. 가로로 펼친 태블릿 · 폴드에서 버튼이 화면을 가로질렀다.
+    const view = await renderAtom(<NexonLoginButton onPress={() => {}} />)
+
+    const style = flattenStyle(view.getByLabelText('넥슨ID 로그인').props.style)
+    expect(style.maxWidth).toBe(BAR_MAX_WIDTH)
+    expect(style.alignSelf).toBe('center')
   })
 
   it('읽어 주는 이름은 버튼이 든다. 그림은 안 읽는다', async () => {

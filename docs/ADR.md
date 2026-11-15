@@ -138,7 +138,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-010](./adr/ADR-010_release_ios-scene.md) | 🟢 | release | 화면 회전 잠금과 iOS 씬 |
 | [ADR-011+138](./adr/ADR-011+138_live-update_protocol.md) | 🟢 | live-update | OTA 발행과 프로토콜 |
 | [ADR-012+139+183+210](./adr/ADR-012+139+183+210_live-update_prompt.md) | 🟢 | live-update | 업데이트 동의 모달과 적용 |
-| [ADR-013+151](./adr/ADR-013+151_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
+| [ADR-013+151+232](./adr/ADR-013+151+232_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
 | [ADR-014](./adr/ADR-014_ads_inline.md) | 🟢 | ads | 광고 배선 |
 | [ADR-015+156](./adr/ADR-015+156_site_guide.md) | 🟢 | site | 안내 사이트와 홍보 첫 화면 |
 | [ADR-016+167+181+197](./adr/ADR-016+167+181+197_server_platform.md) | ⚪ | server | 서버 구성 |
@@ -150,7 +150,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-022+081](./adr/ADR-022+081_error-resilience_failure-states.md) | 🟢 | error-resilience | 실패를 알리는 방법과 기간 데이터 상태 |
 | [ADR-023](./adr/ADR-023_error-resilience_resumable-task.md) | 🟢 | error-resilience | 이어서 하는 작업과 기록 판 알림 |
 | [ADR-024+196](./adr/ADR-024+196_auth_api-key.md) | 🟢 | auth | API 키 로그인과 키 재입력 |
-| [ADR-025+068+083+105+166+169+170+171+192+207](./adr/ADR-025+068+083+105+166+169+170+171+192+207_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
+| [ADR-025+068+083+105+166+169+170+171+192+207+233](./adr/ADR-025+068+083+105+166+169+170+171+192+207+233_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
 | [ADR-026](./adr/ADR-026_app-entry_onboarding.md) | 🟢 | app-entry | 온보딩 흐름 |
 | [ADR-027](./adr/ADR-027_app-entry_cold-start.md) | 🟢 | app-entry | 콜드 스타트 첫 화면 |
 | [ADR-028](./adr/ADR-028_character_tracking.md) | 🟢 | character | 추적 캐릭터 |

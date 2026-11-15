@@ -616,7 +616,7 @@ describe('오른쪽 레일 화면에서는 바가 세로 막대로 선다', () =
 
   it('오른쪽 안전영역 가운데에 서고 아래 끝이 아래쪽 안전영역에 닿는다', async () => {
     await render(<NavigationHarness safeAreaMetrics={듀오_외부} />)
-    const layout = resolveScreenLayout({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+    const layout = resolveScreenLayout({ platform: 'ios', windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
     const rail = resolveRailBarMetrics({ layout, bottomSafeAreaPx: 34, itemCount: 5, paddingPx: 3 })
     const style = styleOf('bottom-bar')
 

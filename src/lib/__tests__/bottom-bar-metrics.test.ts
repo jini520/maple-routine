@@ -106,7 +106,7 @@ describe('3버튼 내비게이션 바 위에서만 띄운다', () => {
 })
 
 describe('오른쪽 레일 화면의 세로 막대', () => {
-  const 듀오_외부 = resolveScreenLayout({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+  const 듀오_외부 = resolveScreenLayout({ platform: 'ios', windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
   const 아래_안전영역 = 34
   const 막대 = resolveRailBarMetrics({ layout: 듀오_외부, bottomSafeAreaPx: 아래_안전영역, itemCount: 5, paddingPx: 3 })
 
@@ -134,13 +134,13 @@ describe('오른쪽 레일 화면의 세로 막대', () => {
 // 콘텐츠 끝 여백 · 토스트 · ＋ 는 바가 아래에서 먹는 몫 위에 선다. 세로 막대는 옆에 서므로 그 몫이 없다.
 describe('바가 화면 아래에서 먹는 몫', () => {
   it('side-rail 에서는 0 이다', () => {
-    const layout = resolveScreenLayout({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+    const layout = resolveScreenLayout({ platform: 'ios', windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
 
     expect(resolveBottomBarSpace(layout, false)).toEqual({ heightPx: 0, liftPx: 0, spacePx: 0 })
   })
 
   it('phone 에서는 가로 바의 치수 그대로다', () => {
-    const layout = resolveScreenLayout({ windowWidthPx: 기준기기, windowHeightPx: 874, insetRightPx: 0 })
+    const layout = resolveScreenLayout({ platform: 'ios', windowWidthPx: 기준기기, windowHeightPx: 874, insetRightPx: 0 })
     const bar = resolveBottomBarMetrics(기준기기, true)
 
     expect(resolveBottomBarSpace(layout, true)).toEqual({
