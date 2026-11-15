@@ -45,16 +45,6 @@ export function getBossPortraitIconCrop(portraitAssetId: string | null): ImageCr
   return imageCropOf('boss_portrait_icon', portraitAssetId)
 }
 
-/**
- * 파티 분배 모달의 오른쪽 띠에 쓰는 크롭.
- *
- * **카드 표와 갈라 둔 표다.** 띠는 카드보다 좁고 높아 같은 값이 다른 구도를 낸다. 한 표를 같이
- * 쓰면 모달을 맞출 때마다 보스 카드가 함께 움직인다.
- */
-export function getBossPortraitModalCrop(portraitAssetId: string | null): ImageCrop {
-  return imageCropOf('boss_portrait_modal', portraitAssetId)
-}
-
 // 일일·주간 퀘스트 지역
 
 export function getDailyQuestBackgroundUrl(backgroundAssetId: string | null): ImageAssetRef | null {

@@ -33,7 +33,7 @@ describe('PartyShareSummary', () => {
       <PartyShareSummary label="스우" partySize={2} crystal={이대일} onPress={jest.fn()} />,
     )
 
-    expect(getByTestId('party-share-badge')).toHaveTextContent('66.7%')
+    expect(getByTestId('party-share-badge')).toHaveTextContent('66.667%')
     expect(queryByText('결정석')).toBeNull()
     expect(queryByText('파티 2인')).toBeNull()
   })
@@ -50,7 +50,7 @@ describe('PartyShareSummary', () => {
       />,
     )
 
-    expect(작은.getByText('66.7%')).toBeTruthy()
+    expect(작은.getByText('66.667%')).toBeTruthy()
   })
 
   // 보스 수익 카드는 금액과 한 줄을 나눠 쓴다. 이 줄이 커지면 카드가 통째로 커진다.
@@ -69,7 +69,7 @@ describe('PartyShareSummary', () => {
     )
 
     const 크기 = (view: typeof 기본): number =>
-      flattenStyle(view.getByText('66.7%').props.style).fontSize as number
+      flattenStyle(view.getByText('66.667%').props.style).fontSize as number
 
     expect(크기(작은)).toBeLessThan(크기(기본))
   })
@@ -106,7 +106,7 @@ describe('PartyShareSummary: `제외`', () => {
 
     expect(getByTestId('party-share-badge')).toHaveTextContent('제외')
     expect(getAllByText('제외')).toHaveLength(1)
-    expect(queryByText('66.7%')).toBeNull()
+    expect(queryByText('66.667%')).toBeNull()
   })
 
   it('한도를 넘긴 처치는 인원 배지 옆에 `제외` 배지를 붙인다', async () => {

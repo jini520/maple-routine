@@ -16,6 +16,12 @@
 /** 수수료를 안 적은 행이 쓰는 값. MVP 실버 등급 이상의 경매장 수수료다. */
 const DEFAULT_SPLIT_FEE_PERCENT = 3
 
+/** 친 % 를 담는 비율 합. % 를 소수 셋째 자리까지 받으므로 `% × 1000` 이 내 비율이 된다. */
+export const SHARE_PERCENT_TOTAL = 100_000
+
+/** 친 % 글자의 모양. 정수 세 자리까지, 소수 세 자리까지. `1.` 처럼 치는 중인 글자도 받는다. */
+const PERCENT_TEXT = /^(\d{1,3})(?:\.(\d{0,3}))?$/
+
 /** 저장 칸 셋이 오는 모양. 전부 `null` 일 수 있고 그때가 균등 분배다. */
 export interface PartyShares {
   myShare: number | null
@@ -71,11 +77,13 @@ export function crystalPayoutMeso(priceMeso: number, partySize: number, shares: 
   if (isEven) return Math.floor(priceMeso / partySize)
 
   // 게임이 두 쪽에 각각 주는 몫. 비율 약속은 이 값을 주고받아 맞춘다.
-  const granted = Math.floor(priceMeso / 2)
+  const granted = BigInt(Math.floor(priceMeso / 2))
   // 수수료를 무는 것은 보내는 쪽이고, 그쪽이 곧 비율이 작은 쪽이다.
-  const senderShare = Math.min(myShare, sharesTotal - myShare)
-  return Math.floor(
-    (granted * (200 - splitFeePercent) * myShare) / (100 * sharesTotal - splitFeePercent * senderShare),
+  const senderShare = BigInt(Math.min(myShare, sharesTotal - myShare))
+  const fee = BigInt(splitFeePercent)
+  // 비율 합 100000 과 곱하면 안전 정수를 넘어 부동소수 내림이 한 메소 어긋난다.
+  return Number(
+    (granted * (200n - fee) * BigInt(myShare)) / (100n * BigInt(sharesTotal) - fee * senderShare),
   )
 }
 
@@ -90,20 +98,53 @@ export function partySizeForShares(shares: PartyShares, evenPartySize: number): 
 }
 
 /**
- * 내 몫을 백분율로. **소수 첫째 자리까지**고 딱 떨어지면 소수를 안 적는다(`50%` · `66.7%`).
+ * 내 몫을 `%` 없는 백분율 글자로. **소수 셋째 자리까지**고 끝의 0 은 뗀다(`50` · `66.667`).
+ *
+ * 칸에 다시 적는 글자이기도 하다. 친 % 를 셋째 자리까지 받으므로 이 자리수면 친 값이 그대로 돌아온다.
  *
  * 나누는 것은 `내 비율 / 비율 합` 이다. `나 : 나머지` 로 적으면 2:1 과 4:2 가 다른 값처럼
- * 보이는데, 둘은 같은 약속이다.
+ * 보이는데, 둘은 같은 약속이다. 정수 산술이다. 부동소수로 나누면 `33.300000000000004` 같은 값이 나온다.
  *
- * 정수 산술이다. 부동소수로 나누면 `33.300000000000004` 같은 값이 나온다.
+ * @example sharePercentText(2, 3) // '66.667'
+ */
+export function sharePercentText(myShare: number, sharesTotal: number): string {
+  const thousandths = Math.round((myShare * SHARE_PERCENT_TOTAL) / sharesTotal)
+  const whole = Math.floor(thousandths / 1000)
+  const rest = String(thousandths % 1000).padStart(3, '0').replace(/0+$/, '')
+  return rest === '' ? `${whole}` : `${whole}.${rest}`
+}
+
+/**
+ * 내 몫을 백분율로(`50%` · `66.667%`). 자리수 규칙은 `sharePercentText` 와 같다.
  *
- * @example formatSharePercent(2, 3) // '66.7%'
+ * @example formatSharePercent(2, 3) // '66.667%'
  */
 export function formatSharePercent(myShare: number, sharesTotal: number): string {
-  const tenths = Math.round((myShare * 1000) / sharesTotal)
-  const whole = Math.floor(tenths / 10)
-  const rest = tenths % 10
-  return rest === 0 ? `${whole}%` : `${whole}.${rest}%`
+  return `${sharePercentText(myShare, sharesTotal)}%`
+}
+
+/**
+ * 친 % 글자를 저장 칸으로(`85` → `85000 / 100000`). 0 ~ 100, 소수 셋째 자리까지만 받고 나머지는 `null`.
+ *
+ * **글자에서 바로 정수로 옮긴다.** 부동소수로 `33.333 × 1000` 을 곱하면 `33332.99…` 가 되어 한 칸 어긋난다.
+ */
+export function sharesFromPercentText(text: string): { myShare: number; sharesTotal: number } | null {
+  const match = PERCENT_TEXT.exec(text)
+  if (match === null) return null
+  const myShare = Number(match[1]) * 1000 + Number((match[2] ?? '').padEnd(3, '0'))
+  if (myShare > SHARE_PERCENT_TOTAL) return null
+  return { myShare, sharesTotal: SHARE_PERCENT_TOTAL }
+}
+
+/**
+ * % 칸이 받는 다음 글자. 받을 수 없는 글자(넷째 자리 · 100 초과 · 숫자 아님)면 앞 글자를 그대로 둔다.
+ *
+ * 앞자리 0 은 걷고(`05` → `5`), 소수점으로 시작하면 0 을 붙인다(`.` → `0.`).
+ */
+export function acceptSharePercentText(previous: string, next: string): string {
+  if (next === '') return ''
+  const text = (next.startsWith('.') ? `0${next}` : next).replace(/^0+(?=\d)/, '')
+  return sharesFromPercentText(text) === null ? previous : text
 }
 
 /**

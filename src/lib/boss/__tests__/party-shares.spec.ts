@@ -9,10 +9,13 @@
 //    이루는지는 내 몫에도 송금액에도 안 쓰인다.
 
 import {
+  acceptSharePercentText,
   crystalPayoutMeso,
   formatSharePercent,
   formatShareRatio,
   parseShares,
+  sharePercentText,
+  sharesFromPercentText,
   type PartyShares,
 } from '../party-shares'
 
@@ -137,13 +140,40 @@ describe('crystalPayoutMeso: 결정석에서 내가 쥐는 메소', () => {
     expect(다가짐).toBe(1_500_000_000 + 1_500_000_000 - 45_000_000)
     expect(다가짐 + 안가짐).toBe(2_955_000_000)
   })
+
+  // 친 % 는 비율 합 100000 으로 담긴다. 그 합과 큰 가격을 곱하면 중간값이 안전 정수를 넘어,
+  // 부동소수로 세면 내림이 한 메소 어긋난다(이 값은 부동소수 셈이 8,366,702,264,779 를 낸다).
+  it('비율 합 100000 과 큰 가격에서도 한 메소도 어긋나지 않는다', () => {
+    expect(crystalPayoutMeso(9_071_425_049_121, 2, { myShare: 93_452, sharesTotal: 100_000, splitFeePercent: 3 })).toBe(
+      8_366_702_264_778,
+    )
+  })
+
+  // 불변식 ②. 비율 합이 커져도 두 쪽의 합은 수수료를 뺀 총액이다.
+  it('85% 와 15% 의 합은 보낸 금액의 수수료만 뺀 총액이다', () => {
+    const 받는쪽 = crystalPayoutMeso(6_000_000_000, 2, { myShare: 85_000, sharesTotal: 100_000, splitFeePercent: 3 })
+    const 보내는쪽 = crystalPayoutMeso(6_000_000_000, 2, { myShare: 15_000, sharesTotal: 100_000, splitFeePercent: 3 })
+    expect(받는쪽).toBe(5_046_207_935)
+    // 보내는 쪽은 게임이 준 절반(30억)에서 제 몫을 남기고 나머지를 보낸다. 사라진 돈은 그 송금의 3% 다.
+    // 내림 두 번으로 두 메소까지 흔들린다.
+    const 사라진돈 = 6_000_000_000 - (받는쪽 + 보내는쪽)
+    expect(Math.abs(사라진돈 - (3_000_000_000 - 보내는쪽) * 0.03)).toBeLessThanOrEqual(2)
+  })
 })
 
 describe('formatSharePercent: 내 몫을 백분율로', () => {
-  it('소수 첫째 자리까지 적는다', () => {
-    expect(formatSharePercent(2, 3)).toBe('66.7%')
-    expect(formatSharePercent(1, 3)).toBe('33.3%')
-    expect(formatSharePercent(3, 7)).toBe('42.9%')
+  // 사용자가 셋째 자리까지 칠 수 있으므로 친 값을 그대로 보이려면 셋째 자리까지 적어야 한다.
+  it('소수 셋째 자리까지 적는다', () => {
+    expect(formatSharePercent(2, 3)).toBe('66.667%')
+    expect(formatSharePercent(1, 3)).toBe('33.333%')
+    expect(formatSharePercent(3, 7)).toBe('42.857%')
+    expect(formatSharePercent(33_333, 100_000)).toBe('33.333%')
+  })
+
+  it('끝의 0 은 뗀다', () => {
+    expect(formatSharePercent(85_000, 100_000)).toBe('85%')
+    expect(formatSharePercent(12_500, 100_000)).toBe('12.5%')
+    expect(formatSharePercent(1, 8)).toBe('12.5%')
   })
 
   // 큰 숫자의 축약 표기(`formatMesoCompact`)와 같은 규칙이다.
@@ -162,7 +192,7 @@ describe('formatSharePercent: 내 몫을 백분율로', () => {
   it('소수가 튀지 않는다', () => {
     for (let total = 2; total <= 9; total += 1) {
       for (let my = 1; my <= total; my += 1) {
-        expect(formatSharePercent(my, total)).toMatch(/^\d+(\.\d)?%$/)
+        expect(formatSharePercent(my, total)).toMatch(/^\d+(\.\d{0,2}[1-9])?%$/)
       }
     }
   })
@@ -174,7 +204,7 @@ describe('formatShareRatio: 화면이 적는 글자', () => {
   })
 
   it('내 몫을 백분율로 적는다', () => {
-    expect(formatShareRatio({ myShare: 2, sharesTotal: 3, splitFeePercent: null })).toBe('66.7%')
+    expect(formatShareRatio({ myShare: 2, sharesTotal: 3, splitFeePercent: null })).toBe('66.667%')
   })
 
   it('0 은 0% 다. 인원으로 떨어지지 않는다', () => {
@@ -195,5 +225,69 @@ describe('crystalPayoutMeso: 분배 방식 `제외`', () => {
 
   it('`제외` 가 아니면 숨긴 분배 그대로 센다', () => {
     expect(crystalPayoutMeso(900, 3, { ...EVEN, excluded: false })).toBe(300)
+  })
+})
+
+describe('sharesFromPercentText: 친 % 를 저장 칸으로', () => {
+  it('% × 1000 과 100000 이 된다', () => {
+    expect(sharesFromPercentText('85')).toEqual({ myShare: 85_000, sharesTotal: 100_000 })
+    expect(sharesFromPercentText('100')).toEqual({ myShare: 100_000, sharesTotal: 100_000 })
+    expect(sharesFromPercentText('0')).toEqual({ myShare: 0, sharesTotal: 100_000 })
+  })
+
+  // 부동소수로 33.333 × 1000 을 곱하면 33332.99… 가 되어 한 칸 어긋난다. 글자에서 바로 옮긴다.
+  it('소수를 부동소수 오차 없이 옮긴다', () => {
+    expect(sharesFromPercentText('33.333')?.myShare).toBe(33_333)
+    expect(sharesFromPercentText('0.001')?.myShare).toBe(1)
+    expect(sharesFromPercentText('4.35')?.myShare).toBe(4_350)
+    expect(sharesFromPercentText('1.')?.myShare).toBe(1_000)
+  })
+
+  it('받지 않는 글자는 null 이다', () => {
+    for (const text of ['', '.', '33.3333', '100.001', '101', '-1', '1a', '1.2.3']) {
+      expect(sharesFromPercentText(text)).toBeNull()
+    }
+  })
+})
+
+describe('sharePercentText: 저장 칸을 칸에 다시 적을 글자로', () => {
+  it('백분율 글자에서 % 만 뺀 것이다', () => {
+    expect(sharePercentText(2, 3)).toBe('66.667')
+    expect(sharePercentText(85_000, 100_000)).toBe('85')
+  })
+
+  // 칸에 다시 적은 글자를 그대로 저장해도 같은 비율이다. 옛 2/3 은 66.667 로 옮겨진다.
+  it('% 로 친 값은 다시 적어도 그대로다', () => {
+    for (const text of ['85', '33.333', '0.001', '100', '0']) {
+      const shares = sharesFromPercentText(text)
+      expect(shares).not.toBeNull()
+      expect(sharePercentText(shares!.myShare, shares!.sharesTotal)).toBe(text)
+    }
+  })
+})
+
+describe('acceptSharePercentText: 칠 수 있는 글자만 받는다', () => {
+  it('받을 수 있으면 친 글자다', () => {
+    expect(acceptSharePercentText('', '8')).toBe('8')
+    expect(acceptSharePercentText('8', '85')).toBe('85')
+    expect(acceptSharePercentText('33', '33.')).toBe('33.')
+    expect(acceptSharePercentText('33.33', '33.333')).toBe('33.333')
+    expect(acceptSharePercentText('10', '100')).toBe('100')
+    expect(acceptSharePercentText('85', '')).toBe('')
+  })
+
+  it('넷째 자리 · 100 초과 · 숫자가 아닌 글자는 앞 글자로 남는다', () => {
+    expect(acceptSharePercentText('33.333', '33.3333')).toBe('33.333')
+    expect(acceptSharePercentText('85', '851')).toBe('85')
+    expect(acceptSharePercentText('100', '100.5')).toBe('100')
+    expect(acceptSharePercentText('1', '1a')).toBe('1')
+    expect(acceptSharePercentText('1.2', '1.2.')).toBe('1.2')
+  })
+
+  // 앞자리 0 은 걷는다. `05` 는 5 다. 소수점으로 시작하면 0 을 붙인다.
+  it('앞자리 0 을 걷고, 소수점으로 시작하면 0 을 붙인다', () => {
+    expect(acceptSharePercentText('0', '05')).toBe('5')
+    expect(acceptSharePercentText('', '.')).toBe('0.')
+    expect(acceptSharePercentText('0', '0.')).toBe('0.')
   })
 })

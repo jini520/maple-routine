@@ -335,7 +335,8 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
       {isPartyModalOpen && (
         <PartySizeModal
           bossName={row.bossName}
-          cycleLabel={row.cycle === 'monthly' ? '월간 보스' : '주간 보스'}
+          // 완료 행은 그 기록의 가격, 미완료 행은 그 기간의 가격 표 값이다. 받는 금액이 그 행에 적힐 값과 같다.
+          crystalPriceMeso={row.priceMeso}
           portraitAssetId={bossPortraitAssetIdOf(row.bossKey)}
           difficulties={withOwnDifficulty(activeDifficultiesOf(row.bossKey, row.periodKey, new Date()), row.difficulty)}
           difficulty={row.difficulty}

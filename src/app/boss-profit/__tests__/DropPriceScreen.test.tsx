@@ -275,7 +275,7 @@ describe('DropPriceScreen: 값 매기기', () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
     expect(getByText('파티 인원')).toBeTruthy()
-    expect(queryByTestId('share-field-ratio-분배 비율')).toBeNull()
+    expect(queryByTestId('input-card-share-percent')).toBeNull()
 
     await act(async () => {
       fireEvent.changeText(getByTestId('input-card-value'), '100')
@@ -309,7 +309,7 @@ describe('DropPriceScreen: 값 매기기', () => {
     await act(async () => {
       fireEvent.press(getByLabelText('루즈 컨트롤 머신 마크 가격 입력'))
     })
-    expect(getByTestId('share-field-ratio-분배 비율')).toBeTruthy()
+    expect(getByTestId('input-card-share-percent')).toBeTruthy()
     await act(async () => {
       fireEvent.changeText(getByTestId('input-card-value'), '100')
     })
