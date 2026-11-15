@@ -45,9 +45,11 @@ async function 누르기(view: 화면, 대상: string): Promise<void> {
   })
 }
 
-/** 비율 고르개는 testID 가 아니라 라벨로 찾는다. 한 카드에 칸이 여럿이라 이름이 가른다. */
-async function 누르기카드(view: { getByLabelText: (label: string) => unknown }, label: string): Promise<void> {
-  await fireEvent.press(view.getByLabelText(label) as never)
+/** 분배 비율 % 칸에 친다. */
+async function 치기퍼센트(view: 화면, text: string): Promise<void> {
+  await act(async () => {
+    fireEvent.changeText(view.getByTestId('input-card-share-percent'), text)
+  })
 }
 
 describe('InputCard', () => {
@@ -242,13 +244,12 @@ describe('InputCard', () => {
       maxPartySize: 6,
     }
 
-    // 드롭 하나의 값이라 결정석 카드가 없다. 파티 모달과 다른 점은 그것뿐이다.
-    it('방식이 기본이면 파티 인원 스테퍼가 선다', async () => {
+    it('방식이 기본이면 파티 인원 스테퍼가 서고 % 칸은 없다', async () => {
       const { view } = await 그리기({ share: 균등 })
 
       expect(view.getByText('파티 인원')).toBeTruthy()
       expect(view.getByText('최대 6명')).toBeTruthy()
-      expect(view.queryByTestId('share-field-ratio-분배 비율')).toBeNull()
+      expect(view.queryByTestId('input-card-share-percent')).toBeNull()
     })
 
     it('기본에서 인원을 올리면 확인이 1/N 을 준다', async () => {
@@ -270,123 +271,92 @@ describe('InputCard', () => {
       })
     })
 
-    /**
-     * 112 는 `비율` 칸이 제 내용으로 서는 높이다(여백 11 + 머리 23 + 간격 8 + 트랙 24 + 간격 8 +
-     * 합 26 + 여백 12). 안 못박으면 `기본` 칸이 84 라, 세그먼트를 누를 때마다 아래 버튼 줄이 뛴다.
-     */
-    it('기본 칸이 비율 칸과 같은 112 로 서고 스테퍼가 남는 자리 가운데에 선다', async () => {
+    // 값 줄의 높이가 방식마다 다르면 세그먼트를 누를 때마다 아래 줄과 버튼이 뛴다.
+    it('기본과 비율의 값 줄 높이가 같다', async () => {
       const { view } = await 그리기({ share: 균등 })
+      const 기본높이 = flattenStyle(view.getByTestId('input-card-split-value').props.style).height
 
-      expect(flattenStyle(view.getByTestId('input-card-party').props.style).height).toBe(112)
+      await 누르기(view, '비율')
 
-      const 본문 = flattenStyle(view.getByTestId('input-card-party-body').props.style)
-      expect(Number(본문.flexGrow)).toBe(1)
-      expect(본문.justifyContent).toBe('center')
+      expect(기본높이).toBeDefined()
+      expect(flattenStyle(view.getByTestId('input-card-split-value').props.style).height).toBe(기본높이)
     })
 
-    it('비율로 바꾸면 비율 카드 한 장이 서고 인원 스테퍼가 사라진다', async () => {
+    it('비율로 바꾸면 % 칸이 서고 인원 스테퍼가 사라진다', async () => {
       const { view } = await 그리기({ share: 균등 })
 
-      await act(async () => {
-        fireEvent.press(view.getByText('비율'))
-      })
+      await 누르기(view, '비율')
 
-      expect(view.getByTestId('share-field-ratio-분배 비율')).toBeTruthy()
+      expect(view.getByTestId('input-card-share-percent').props.value).toBe('66.667')
       expect(view.queryByText('파티 인원')).toBeNull()
-      expect(view.queryByText('결정석')).toBeNull()
     })
 
     /**
-     * 두 스테퍼는 같은 자리에 같은 모양으로 서지만 세는 것이 다르다. 인원은 몇 명이 나누나이고
-     * 합은 내 몫의 분모다. 한 값을 나눠 쓰면 비율에서 합을 고친 것이 인원을 덮는다(사용자 지정).
+     * 인원과 비율은 같은 자리에 서지만 세는 것이 다르다. 인원은 몇 명이 나누나이고 비율은 내 몫이다.
+     * 한 값을 나눠 쓰면 한쪽을 고친 것이 다른 쪽을 덮는다(사용자 지정).
      */
-    it('비율에서 합을 고쳐도 기본의 인원은 그대로다. 둘이 각자 기억한다', async () => {
+    it('비율에서 % 를 고쳐도 기본의 인원은 그대로다. 둘이 각자 기억한다', async () => {
       const { view, onConfirm } = await 그리기({ share: 균등, value: '100' })
 
-      // 기본에서 인원을 3 -> 4
       await act(async () => {
         fireEvent.press(view.getByLabelText('분배 비율 파티원 수 증가'))
       })
-
-      // 비율로 갔다가 합을 3 -> 5
-      await act(async () => {
-        fireEvent.press(view.getByText('비율'))
-      })
-      for (let 누름 = 0; 누름 < 2; 누름 += 1) {
-        await act(async () => {
-          fireEvent.press(view.getByLabelText('분배 비율 비율 합 증가'))
-        })
-      }
-      expect(view.getByTestId('share-field-total-분배 비율')).toHaveTextContent('5')
-
-      // 기본으로 돌아오면 인원은 내가 뒀던 4
-      await act(async () => {
-        fireEvent.press(view.getByText('기본'))
-      })
+      await 누르기(view, '비율')
+      await 치기퍼센트(view, '85')
+      await 누르기(view, '기본')
       await 누르기(view, 'input-card-confirm')
 
       expect(onConfirm).toHaveBeenCalledWith('100', {
         mode: 'even',
         partySize: 4,
-        // **양쪽이 다 남는다.** 인원은 내가 둔 4 이고, 비율 합은 비율 쪽에서 고친 5 다.
-        // 한 칸을 겸하던 때는 이 둘이 서로를 덮었다.
-        myShare: 2,
-        sharesTotal: 5,
+        myShare: 85_000,
+        sharesTotal: 100_000,
       })
     })
 
-    it('기본에 다녀와도 비율은 제 합을 기억한다', async () => {
+    it('기본에 다녀와도 비율은 제 % 를 기억한다', async () => {
       const { view } = await 그리기({ share: 균등 })
 
-      await act(async () => {
-        fireEvent.press(view.getByText('비율'))
-      })
-      await act(async () => {
-        fireEvent.press(view.getByLabelText('분배 비율 비율 합 증가'))
-      })
-      await act(async () => {
-        fireEvent.press(view.getByText('기본'))
-      })
-      await act(async () => {
-        fireEvent.press(view.getByText('비율'))
-      })
+      await 누르기(view, '비율')
+      await 치기퍼센트(view, '33.333')
+      await 누르기(view, '기본')
+      await 누르기(view, '비율')
 
-      expect(view.getByTestId('share-field-total-분배 비율')).toHaveTextContent('4')
+      expect(view.getByTestId('input-card-share-percent').props.value).toBe('33.333')
     })
 
-    it('방식이 비율이면 비율 고르개로 열린다', async () => {
+    it('방식이 비율이면 % 칸에 적힌 비율을 셋째 자리까지 적는다', async () => {
       const { view } = await 그리기({ share: 비율 })
 
-      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('66.7%')
+      expect(view.getByTestId('input-card-share-percent').props.value).toBe('66.667')
       expect(view.queryByText('파티 인원')).toBeNull()
     })
 
-
     /** 친 값과 같이 **카드가 든다**. 그래야 확인 한 번에 둘이 함께 나간다. */
-    it('비율은 카드가 들고 확인이 친 값과 함께 내보낸다', async () => {
+    it('친 % 는 % × 1000 · 100000 으로 확인이 친 값과 함께 내보낸다', async () => {
       const { view, onConfirm } = await 그리기({ share: 비율 })
 
-      await 누르기카드(view, '분배 비율 비율 3')
-      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('100%')
-
+      await 치기퍼센트(view, '100')
       await 치기(view, '3250000000')
       await 누르기(view, 'input-card-confirm')
 
       expect(onConfirm).toHaveBeenCalledWith('3250000000', {
         mode: 'ratio',
         partySize: 3,
-        myShare: 3,
-        sharesTotal: 3,
+        myShare: 100_000,
+        sharesTotal: 100_000,
       })
     })
 
-    // 안 맞추면 내 비율이 합보다 커져 내 몫이 100%를 넘는다.
-    it('합을 내 비율 아래로 줄이면 내 비율이 따라 내려간다', async () => {
-      const { view } = await 그리기({ share: { ...비율, myShare: 3 } })
+    it('넷째 자리와 100 을 넘는 값은 % 칸에 들어가지 않는다', async () => {
+      const { view } = await 그리기({ share: 비율 })
 
-      await 누르기카드(view, '분배 비율 비율 합 감소')
+      await 치기퍼센트(view, '33.333')
+      await 치기퍼센트(view, '33.3333')
+      expect(view.getByTestId('input-card-share-percent').props.value).toBe('33.333')
 
-      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('100%')
+      await 치기퍼센트(view, '101')
+      expect(view.getByTestId('input-card-share-percent').props.value).toBe('33.333')
     })
 
     /**
@@ -463,48 +433,40 @@ describe('InputCard', () => {
         split: { auto: true, percent: null },
       }
 
-      it('비율 아래에 판매 · 분배 수수료 줄이 자동으로 선다', async () => {
+      /** 수수료 줄 둘은 `변경` 을 누르면 뜨는 팝오버 안에 있다. */
+      async function 수수료열기(view: 화면): Promise<void> {
+        await act(async () => {
+          fireEvent.press(view.getByLabelText('수수료 변경'))
+        })
+      }
+
+      // 두 줄을 늘 펼쳐 두면 카드가 키보드 위로 너무 커진다. 평소에는 한 줄로 접는다.
+      it('수수료는 고른 요율을 한 줄로 적고, 없으면 `없음` 이다', async () => {
+        const { view } = await 그리기({ share: 비율, fees: { ...수수료, split: { auto: false, percent: null } } })
+
+        expect(view.getByTestId('input-card-fee-summary')).toHaveTextContent('판매 3% · 분배 없음')
+        expect(view.queryByTestId('input-card-sale-fee')).toBeNull()
+      })
+
+      it('`변경` 을 누르면 판매 · 분배 수수료 줄이 팝오버로 뜬다', async () => {
         const { view } = await 그리기({ share: 비율, fees: 수수료 })
+
+        await 수수료열기(view)
 
         expect(view.getByTestId('input-card-sale-fee')).toBeTruthy()
         expect(view.getByTestId('input-card-split-fee')).toBeTruthy()
         expect(view.getAllByLabelText('MVP 다이아')).toHaveLength(2)
       })
 
-      // 판의 반쪽씩이다. 위아래로 두면 카드가 키보드를 밀어낸다.
-      it('왼쪽이 분배이고 오른쪽이 수수료 둘이다', async () => {
-        const { view } = await 그리기({ share: 비율, fees: 수수료 })
-
-        const 줄 = view.getByTestId('input-card-split-fees')
-        expect(flattenStyle(줄.props.style).flexDirection).toBe('row')
-        expect(within(줄).getByTestId('share-field-track')).toBeTruthy()
-        expect(within(줄).getByTestId('input-card-sale-fee')).toBeTruthy()
-      })
-
-      // 판의 반쪽이라 합을 트랙 옆에 두면 트랙이 30px 밖에 안 남는다.
-      it('비율 카드의 합은 트랙 아래에 선다', async () => {
-        const { view } = await 그리기({ share: 비율, fees: 수수료 })
-
-        expect(view.getByLabelText('분배 비율 비율 합 증가')).toBeTruthy()
-        expect(flattenStyle(view.getByTestId('share-field-track').props.style).flexDirection).not.toBe('row')
-      })
-
       /**
-       * 줄을 없애면 오른쪽 칸의 높이가 바뀌고 그 줄이 원래 있다는 것도 안 보인다. 그래서 쓸 수
-       * 없는 줄은 세워 두고 잠근다(사용자 지정).
+       * 줄을 없애면 그 줄이 원래 있다는 것이 안 보인다. 그래서 쓸 수 없는 줄은 세워 두고 잠근다(사용자 지정).
        */
-      const 잠김 = (view: Awaited<ReturnType<typeof 그리기>>['view'], testID: string): boolean =>
+      const 잠김 = (view: 화면, testID: string): boolean =>
         Number(flattenStyle(view.getByTestId(testID).props.style).opacity) < 1
-
-      it('혼자면 분배 수수료 줄이 서 있되 잠긴다. 보낼 곳이 없다', async () => {
-        const { view } = await 그리기({ share: { ...비율, myShare: 1, sharesTotal: 1 }, fees: 수수료 })
-
-        expect(잠김(view, 'input-card-sale-fee')).toBe(false)
-        expect(잠김(view, 'input-card-split-fee')).toBe(true)
-      })
 
       it('내 몫이 100% 면 분배 수수료만 잠긴다', async () => {
         const { view } = await 그리기({ share: { ...비율, myShare: 3, sharesTotal: 3 }, fees: 수수료 })
+        await 수수료열기(view)
 
         expect(잠김(view, 'input-card-sale-fee')).toBe(false)
         expect(잠김(view, 'input-card-split-fee')).toBe(true)
@@ -513,6 +475,7 @@ describe('InputCard', () => {
       // 받는 돈이 없으면 경매장에 떼일 것도 파티원에게 보낼 것도 없다.
       it('내 몫이 0 이면 두 줄 다 잠긴다', async () => {
         const { view } = await 그리기({ share: { ...비율, myShare: 0, sharesTotal: 3 }, fees: 수수료 })
+        await 수수료열기(view)
 
         expect(잠김(view, 'input-card-sale-fee')).toBe(true)
         expect(잠김(view, 'input-card-split-fee')).toBe(true)
@@ -520,6 +483,7 @@ describe('InputCard', () => {
 
       it('나눠 가지면 두 줄 다 열린다', async () => {
         const { view } = await 그리기({ share: 비율, fees: 수수료 })
+        await 수수료열기(view)
 
         expect(잠김(view, 'input-card-sale-fee')).toBe(false)
         expect(잠김(view, 'input-card-split-fee')).toBe(false)
@@ -528,6 +492,7 @@ describe('InputCard', () => {
       it('확인이 자동이면 등급 요율을, 손으로 고르면 그 요율을 수수료와 함께 내보낸다', async () => {
         const { view, onConfirm } = await 그리기({ share: 비율, fees: 수수료 })
         await 치기(view, '1000000000')
+        await 수수료열기(view)
 
         // 분배 수수료만 끄고 5% 를 고른다
         await act(async () => {
@@ -536,6 +501,7 @@ describe('InputCard', () => {
         await act(async () => {
           fireEvent.press(within(view.getByTestId('input-card-split-fee')).getByLabelText('5%'))
         })
+        expect(view.getByTestId('input-card-fee-summary')).toHaveTextContent('판매 3% · 분배 5%')
         await 누르기(view, 'input-card-confirm')
 
         expect(onConfirm).toHaveBeenCalledWith('1000000000', { mode: 'ratio', partySize: 3, myShare: 2, sharesTotal: 3 }, {
@@ -547,10 +513,37 @@ describe('InputCard', () => {
       })
     })
 
-    it('안 넘기면 곁들이 버튼도 비율 고르개도 안 선다', async () => {
+    // 금액 · 분배 · 수수료로 센 결과를 카드에서 바로 본다. 시트로 돌아가야 보이면 고르는 동안 맞게 골랐는지 모른다.
+    describe('받는 금액', () => {
+      const 셈 = jest.fn((meso: number, share: { myShare: number; sharesTotal: number; mode: string; partySize: number }) =>
+        share.mode === 'even' ? Math.floor(meso / share.partySize) : Math.floor((meso * share.myShare) / share.sharesTotal),
+      )
+      const 받는금액 = { label: '받는 금액', of: 셈 }
+
+      it('금액 · 분배를 고칠 때마다 다시 센다', async () => {
+        const { view } = await 그리기({ share: 균등, payout: 받는금액 })
+
+        await 치기(view, '900')
+        expect(view.getByTestId('input-card-payout')).toHaveTextContent('300 메소')
+
+        await 누르기(view, '비율')
+        await 치기퍼센트(view, '50')
+        expect(view.getByTestId('input-card-payout')).toHaveTextContent('450 메소')
+      })
+
+      // 줄이 사라졌다 생기면 카드 높이가 뛴다.
+      it('금액 칸이 비면 금액 자리만 비고 줄은 남는다', async () => {
+        const { view } = await 그리기({ share: 균등, payout: 받는금액 })
+
+        expect(view.getByText('받는 금액')).toBeTruthy()
+        expect(view.getByTestId('input-card-payout')).toHaveTextContent('')
+      })
+    })
+
+    it('안 넘기면 곁들이 버튼도 비율 칸도 안 선다', async () => {
       const { view } = await 그리기()
 
-      expect(view.queryByTestId('share-field-track')).toBeNull()
+      expect(view.queryByTestId('input-card-split-value')).toBeNull()
       expect(view.queryByTestId('input-card-exclude')).toBeNull()
       expect(view.queryByTestId('input-card-prev')).toBeNull()
     })

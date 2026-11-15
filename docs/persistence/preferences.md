@@ -71,6 +71,8 @@
 | `lastPointRate` | 숫자 문자열 | `last-point-rate.ts` | 지운다 (수동 선택 항목) | 마지막으로 넣은 메이플 포인트 시세(1억 메소당) |
 | `lastHunts` | JSON `{ [ocid]: { groundKey, boosts, unionTier? } }` | `last-hunts.ts` | 지운다 (수동 선택 항목) | 캐릭터마다 마지막 사냥 |
 | `hexaStorageChecks` | JSON `{ useStorage, storageAsSpend }` | `hexa-storage-checks.ts` | 지운다 (수동 선택 항목) | 헥사 폼의 두 체크. 새 헥사 기록을 저장할 때만 적는다 |
+| `lastBossIncomeTransfers` | JSON `{ [보내는 ocid]: { receiverOcid, feeAuto, feePercent, fillsWeek } }` | `last-boss-income-transfers.ts` | 지운다 (수동 선택 항목) | 보내는 캐릭터마다 마지막 `주간 보스 수입 이전` 의 받는 캐릭터 · 수수료 · 체크. 새 기록을 저장할 때만 적는다([[ADR-047]] 결정 19) |
+| `lastEpicDungeonRewards` | JSON `{ [던전 타일 key]: { last, characters: { [ocid]: 형태별 항목 key }, accounts: { [메이플 ID]: 형태별 항목 key } } }` | `last-epic-dungeon-rewards.ts` | 지운다 (수동 선택 항목) | 던전마다 마지막에 적은 캐릭터나 메이플 ID(`last`)와 그 주인마다 고른 단계. 새 기록을 저장할 때만 적는다([[ADR-048]] 결정 13) |
 | `lastHuntSelection` · `lastHuntToggles` | JSON | `last-hunts.ts` | 지운다 (수동 선택 항목) | 옛 키. `lastHunts` 가 없을 때 한 번 읽어 옮기고 지운다 |
 | `eventWorldNames` | JSON 이름 배열 | `legacy-cleanup.ts` | 지운다 (캐시) | 1.0.12 까지의 이벤트 월드 캐릭터 이름. 첫 실행이 쿼리 `eventWorldNames()` 로 옮긴 뒤 지운다([[ADR-142]] 결정 11) |
 | `lastRunBundleVersion` | 버전 문자열 | `last-run-bundle-version.ts` | 남긴다 | 마지막으로 실행한 OTA 번들 버전. 방금 업데이트했는지 판단한다 |
@@ -83,7 +85,7 @@
 `schedulerCache:*` · `characterBasicCache:*` · `mesoRateCache:*` 는 `캐시` 가 지운다. 나머지는 데이터 삭제가 남긴다. 조회 원장은 지우면 다시
 띄우자마자 넥슨 API 를 한꺼번에 불러 호출 한도에 걸릴 수 있기 때문이다. 추적 캐릭터가 없으면 캐릭터 고르기부터 다시 해야 한다.
 
-월드 리프를 이으면 `manualTrackedContent:{ocid}` 와 ocid 를 든 기록 키(`lastHunts` · `partyAppointments` ·
+월드 리프를 이으면 `manualTrackedContent:{ocid}` 와 ocid 를 든 기록 키(`lastHunts` · `lastBossIncomeTransfers` · `lastEpicDungeonRewards` · `partyAppointments` ·
 `bossProfitCalculatorRecords`)의 옛 ocid 를 새 ocid 로 옮긴다. 새 ocid 에 값이 있으면 새 것을 둔다([[ADR-101]] 결정 22).
 
 | 키 | 값 | 어댑터 | 메모 |

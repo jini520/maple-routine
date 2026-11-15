@@ -23,9 +23,11 @@ import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import {
   categoryTotalsBetween,
   characterTotalsBetween,
+  huntTotalsBetween,
   totalsBetween,
   type DaysByDate,
 } from '../../features/stats/aggregate'
+import { useFragmentMoves } from '../../features/stats/fragment-query'
 import { loadCumulativeStart, loadStatsImages, saveCumulativeStart } from '../../features/stats/load'
 import { statsRanges } from '../../features/stats/periods'
 import {
@@ -45,6 +47,7 @@ import { BossSection } from './BossSection'
 import { CategorySection } from './CategorySection'
 import { CharacterSection } from './CharacterSection'
 import { CumulativeSection } from './CumulativeSection'
+import { HuntSection } from './HuntSection'
 import { sectionsToReveal } from './reveal'
 import { StatsSection } from './StatsSection'
 import { StatsSkeleton } from './StatsSkeleton'
@@ -53,6 +56,7 @@ import { TrendSection } from './TrendSection'
 const CYCLES = ['weekly', 'monthly'] as const
 const CYCLE_LABELS: Record<BossCycle, string> = { weekly: '주간', monthly: '월간' }
 const NO_DAYS: DaysByDate = {}
+const NO_MOVES: readonly never[] = []
 const NO_IMAGES: ReadonlyMap<string, string> = new Map()
 
 function signed(meso: number): string {
@@ -74,9 +78,12 @@ export function StatsScreen(): React.JSX.Element {
   // 기록 표의 판이 오르면 이 쿼리가 무효화되어 다시 읽는다. 가계부 시트의 쓰기도 그 길로 온다.
   const { days: loadedDays } = useLedgerDays({ from: historyFloorDateKey(todayDateKey), to: todayDateKey })
   const days = loadedDays ?? NO_DAYS
+  // 사냥 수입 카드의 보유 조각을 세는 장부. 읽기 전에 0 으로 그리면 조각이 없다는 말로 읽혀 스켈레톤을 둔다.
+  const loadedMoves = useFragmentMoves()
+  const moves = loadedMoves ?? NO_MOVES
   // 아직 안 받은 지난 날을 받는 동안(`filling`)은 값이 모자라다. `collecting` 은 받아 둔 달로 옮겨도
   // 켜지는데 그때 값은 이미 맞아서, 그것으로 막으면 값이 섰다가 스켈레톤이 덮는다.
-  const loading = loadedDays === null || ledger.status === 'filling'
+  const loading = loadedDays === null || loadedMoves === null || ledger.status === 'filling'
   const [images, setImages] = useState<ReadonlyMap<string, string>>(NO_IMAGES)
   // 누적 순수익의 시작 날짜. 기기에 기억해 다음에 열어도 같은 날부터 더한다.
   const [cumulativeStart, setCumulativeStart] = useState<string | null>(null)
@@ -104,6 +111,7 @@ export function StatsScreen(): React.JSX.Element {
   const characters = useMemo(() => characterTotalsBetween(days, currentRange), [days, currentRange])
   const incomeItems = useMemo(() => categoryTotalsBetween(days, currentRange, 'income'), [days, currentRange])
   const expenseItems = useMemo(() => categoryTotalsBetween(days, currentRange, 'expense'), [days, currentRange])
+  const hunt = useMemo(() => huntTotalsBetween(days, currentRange, moves), [days, currentRange, moves])
   // 캐릭터 줄은 메모돼 있어 기간이나 읽은 값이 바뀔 때만 그림을 다시 찾는다.
   useEffect(() => {
     let alive = true
@@ -278,6 +286,8 @@ export function StatsScreen(): React.JSX.Element {
                   replayKey={replayKey}
                 />
               </View>
+
+              <HuntSection totals={hunt} />
 
               <BossSection days={days} range={currentRange} />
 

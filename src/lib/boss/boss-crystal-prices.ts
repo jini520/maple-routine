@@ -18,7 +18,8 @@ import {
   type Row,
 } from '../game-data/contract'
 import { gameTable, derive } from '../game-data/table'
-import { isEffectiveAnytimeIn, isEffectiveIn } from './boss-profit-period'
+import { getCurrentBossProfitPeriod, isEffectiveAnytimeIn, isEffectiveIn } from './boss-profit-period'
+import type { BossCycle } from '../../types'
 
 export type CrystalPriceEntry = CrystalPriceRow
 
@@ -78,6 +79,21 @@ export function findPriceEntry(
   now: Date,
 ): CrystalPriceEntry | undefined {
   return pricesOf(bossKey, difficulty).find((entry) => isEffectiveIn(entry, periodKey, now))
+}
+
+/**
+ * 지금 기간의 결정석 가격. 모르면 `null`.
+ *
+ * 파티 설정을 고치는 자리(보스 카드 · 보스 관리 · 주간 보스 수익 계산기)가 `받는 금액` 을 셀 때 쓴다. 설정은 앞으로
+ * 적힐 기록의 약속이라 지금 기간의 가격으로 센다.
+ */
+export function currentCrystalPriceMeso(
+  bossKey: string,
+  difficulty: BossDifficulty,
+  cycle: BossCycle,
+  now: Date,
+): number | null {
+  return findPriceEntry(bossKey, difficulty, getCurrentBossProfitPeriod(cycle, now).periodKey, now)?.priceMeso ?? null
 }
 
 /** 그 기간에 가격을 아는 조합인가. 시계를 안 본다. 기록을 지우는 판정이 쓴다. */

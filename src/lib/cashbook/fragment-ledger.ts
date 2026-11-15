@@ -37,7 +37,7 @@ function datesOf(...ledgers: readonly (readonly FragmentMove[])[]): string[] {
 }
 
 /** 그 날까지의 남은 개수. */
-function balanceOn(moves: readonly FragmentMove[], date: string): number {
+export function balanceOn(moves: readonly FragmentMove[], date: string): number {
   return moves.reduce((sum, move) => (move.date <= date ? sum + move.delta : sum), 0)
 }
 

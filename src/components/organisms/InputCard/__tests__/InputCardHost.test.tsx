@@ -165,7 +165,7 @@ describe('InputCardHost', () => {
       expect(view.getByTestId('input-card-value').props.defaultValue).toBe('뒤')
     })
 
-    it('비율 고르개도 다음 카드의 씨앗으로 다시 심는다', async () => {
+    it('비율 % 칸도 다음 카드의 씨앗으로 다시 심는다', async () => {
       // 내 비율이 1 이 아니라 카드가 `비율` 로 열린다(1 이면 인원 스테퍼가 선다).
       const 비율 = { label: '분배 비율', mode: 'ratio' as const, myShare: 2, sharesTotal: 3 }
       const view = await renderOverlay(<></>)
@@ -180,13 +180,13 @@ describe('InputCardHost', () => {
       })
 
       await act(async () => {
-        fireEvent.press(view.getByLabelText('분배 비율 비율 3'))
+        fireEvent.changeText(view.getByTestId('input-card-share-percent'), '85')
       })
       await act(async () => {
         fireEvent.press(view.getByTestId('input-card-confirm'))
       })
 
-      expect(view.getByTestId('share-field-ratio-분배 비율')).toHaveTextContent('66.7%')
+      expect(view.getByTestId('input-card-share-percent').props.value).toBe('66.667')
     })
   })
 })

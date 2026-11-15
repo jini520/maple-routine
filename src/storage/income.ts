@@ -25,7 +25,7 @@ import {
 import { availableFragmentsOn } from '../lib/cashbook/fragment-ledger'
 import type { EntryExchange, OtherFragmentUse } from './cashbook-entries'
 import { incomeEntryOf, incomeRecordOf } from './cashbook-entry-shape'
-import { readFragmentMoves, writeCheckingFragments } from './fragment-ledger'
+import { readFragmentMoves, writeCheckingFragments, type StoredFragmentMove } from './fragment-ledger'
 import { moveHexaAfterWrite, type HexaSources } from './fragment-moves'
 import type { SqliteDbConnection } from './ports'
 import { notifyAfterBatch } from './record-revision-batch'
@@ -403,6 +403,11 @@ export async function getFragmentStorage(ocid: string, dateKey: string, excludeR
   const db = await getBossProfitDb()
   const moves = (await readFragmentMoves(db, ocid)).filter((move) => move.entryId !== excludeRecordId)
   return availableFragmentsOn(moves, dateKey)
+}
+
+/** 모든 캐릭터의 조각 장부. 통계 사냥 수입 카드가 기간 끝의 보유 조각을 센다. */
+export async function getFragmentMoves(): Promise<StoredFragmentMove[]> {
+  return readFragmentMoves(await getBossProfitDb())
 }
 
 /**

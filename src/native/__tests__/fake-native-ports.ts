@@ -3,6 +3,7 @@ import {
   setBackgroundTaskPort,
   setBrowserPort,
   setBackGesturePort,
+  setClipboardPort,
   setColorSchemePort,
   setHapticsPort,
   setKeyboardPort,
@@ -86,6 +87,9 @@ export function installNoopNativePorts(): void {
 
   // 리뷰 팝업은 눈에 안 보이는 OS 창이라 no-op 으로 둔다. 언제 부르는지는 `app-review/request.spec.ts` 가 자기 목으로 본다.
   setStoreReviewPort({ request: async () => {} })
+
+  // 클립보드는 눈에 안 보이므로 넣은 글자를 버린다. 무엇을 넣는지는 화면 테스트가 자기 포트를 꽂아 본다(`ItemSplitScreen.test.tsx`).
+  setClipboardPort({ setText: async () => {}, announcesCopy: () => false })
 
   setNotificationsPort({
     requestPermission: async () => false,

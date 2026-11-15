@@ -73,6 +73,7 @@ import { installMemoryPreferences } from '../../../navigation/__tests__/memory-p
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { BossDropSheet } from '../BossDropSheet'
+import { dropPayoutMeso } from '../../../lib/drop/drop-price'
 import type { RecordedDrop } from '../../../types/drops'
 
 // 연출 토글은 전역 스토어라 케이스 사이 오염을 막기 위해 매번 기본값(연출 표시)으로 되돌린다.
@@ -666,7 +667,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
 
     expect(getByText('분배 방식')).toBeTruthy()
     expect(getByText('파티 인원')).toBeTruthy()
-    expect(queryByTestId('share-field-ratio-분배 비율')).toBeNull()
+    expect(queryByTestId('input-card-share-percent')).toBeNull()
   })
 
   /** 머리가 그 아이템을 말한다. 판매 가격 이라는 말은 이미 누른 버튼이 했다. */
@@ -699,11 +700,8 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
       fireEvent.changeText(getByTestId('input-card-value'), '100')
     })
     await act(async () => {
+      // `비율` 의 씨앗은 2 / 3 이다. % 칸을 안 건드리면 그 비율 그대로 저장된다.
       fireEvent.press(getByText('비율'))
-    })
-    await act(async () => {
-      // 내 비율을 2 로 올린다. 합 3 은 그대로라 2:1 이 된다.
-      fireEvent.press(getByLabelText('분배 비율 비율 2'))
     })
     await act(async () => {
       fireEvent.press(getByTestId('input-card-confirm'))
@@ -772,7 +770,7 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     await act(async () => {
       fireEvent.press(getByText('가격 입력'))
     })
-    expect(getByTestId('share-field-ratio-분배 비율')).toBeTruthy()
+    expect(getByTestId('input-card-share-percent')).toBeTruthy()
     await act(async () => {
       fireEvent.changeText(getByTestId('input-card-value'), '100')
     })
@@ -787,6 +785,38 @@ describe('BossDropSheet: 시트 안 가격 입력', () => {
     expect(saved).toEqual(
       expect.objectContaining({ priceSplitMode: 'ratio', priceShare: 4, priceMyShare: 3, pricePartySize: 2 }),
     )
+  })
+
+  // 친 % 는 비율 합 100000 으로 저장한다. 카드의 받는 금액은 저장 뒤 타일 알약에 적힐 금액과 같아야 한다.
+  it('비율에서 친 % 를 저장하고, 카드의 받는 금액이 저장한 기록의 금액과 같다', async () => {
+    const { result, onSave } = renderSheet({
+      pricing: { ...PRICING, defaultShare: { mode: 'ratio', partySize: 2, myShare: 3, sharesTotal: 4 } },
+      initialDrops: [
+        { dropRecordId: null, category: 'equipment', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 },
+      ],
+    })
+    const { getByTestId, getByText } = await result
+
+    await act(async () => {
+      fireEvent.press(getByText('가격 입력'))
+    })
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-card-share-percent'), '85')
+    })
+    await act(async () => {
+      fireEvent.changeText(getByTestId('input-card-value'), '3000000000')
+    })
+    const 카드금액 = getByTestId('input-card-payout').props.children[0] as string
+    await act(async () => {
+      fireEvent.press(getByTestId('input-card-confirm'))
+    })
+    await act(async () => {
+      fireEvent.press(getByText(/추가 완료/))
+    })
+
+    const [saved] = onSave.mock.calls[0][0]
+    expect(saved).toEqual(expect.objectContaining({ priceSplitMode: 'ratio', priceShare: 100_000, priceMyShare: 85_000 }))
+    expect(카드금액).toBe(dropPayoutMeso(saved).toLocaleString())
   })
 
   // 0메소는 매긴 것이 아니다. 저장하면 앱은 매긴 것, 서버는 미입력으로 봐서 상태가 갈렸다.

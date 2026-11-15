@@ -34,6 +34,7 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { bossPayoutMeso, totalPayoutMeso, type CalculatorBoss } from '../../lib/boss/boss-profit-calculator'
+import { currentCrystalPriceMeso } from '../../lib/boss/boss-crystal-prices'
 import {
   activeDifficultiesNow,
   bossAliasOf,
@@ -306,7 +307,6 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
       {partyBoss !== null && selected !== null && (
         <PartySizeModal
           bossName={bossAliasOf(partyBoss.bossKey, bossNameOf(partyBoss.bossKey, partyBoss.bossKey))}
-          cycleLabel="주간 보스"
           portraitAssetId={bossPortraitAssetIdOf(partyBoss.bossKey)}
           difficulties={activeDifficultiesNow(partyBoss.bossKey)}
           difficulty={partyBoss.difficulty}
@@ -317,6 +317,8 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
             crystalSharesTotal: partyBoss.shares.sharesTotal,
             splitFeePercent: partyBoss.shares.splitFeePercent,
           }}
+          // 계산기와 같은 가격(이번 주)이다. 계산기 줄의 금액과 모달의 받는 금액이 같아야 한다.
+          crystalPriceMeso={currentCrystalPriceMeso(partyBoss.bossKey, partyBoss.difficulty, 'weekly', now)}
           // 값만 받아 계산기에 넣는다. 보스 관리의 파티 설정에는 쓰지 않는다.
           // 난이도는 보스 줄의 고르개가 정한다. 그래서 모달은 난이도를 배지로만 보인다.
           onApply={(next) => {

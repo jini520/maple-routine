@@ -80,8 +80,9 @@ export function transferPerMember(input: ItemSplitInput): number | null {
   if (isEven) return Math.floor((netProceeds * 100) / (input.partySize * 100 - input.splitFeePercent))
 
   // 비율 약속은 `나 : 나머지` 라 두 쪽이다. 파티 인원은 안 들어간다.
-  const others = sharesTotal - myShare
-  return Math.floor(
-    (100 * netProceeds * others) / (myShare * (100 - input.splitFeePercent) + 100 * others),
+  // 곱은 `BigInt` 로 한다. 친 % 는 비율 합 100000 이라 판매가와 곱하면 안전 정수를 넘는다.
+  const others = BigInt(sharesTotal - myShare)
+  return Number(
+    (100n * BigInt(netProceeds) * others) / (BigInt(myShare) * BigInt(100 - input.splitFeePercent) + 100n * others),
   )
 }

@@ -80,6 +80,8 @@ const MANUAL_KEYS = [
   'lastHuntSelection',
   'lastHuntToggles',
   'lastPointRate',
+  'lastBossIncomeTransfers',
+  'lastEpicDungeonRewards',
 ]
 
 const CACHE_KEYS = ['schedulerCache:o1', 'characterBasicCache:o1', 'mesoRateCache:o1', 'eventWorldNames']

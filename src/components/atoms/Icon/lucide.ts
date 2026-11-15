@@ -37,6 +37,7 @@ import CircleCheckBig from 'lucide-react-native/icons/circle-check-big'
 import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark'
 import CircleUserRound from 'lucide-react-native/icons/circle-user-round'
 import Clock from 'lucide-react-native/icons/clock'
+import Copy from 'lucide-react-native/icons/copy'
 import CloudDownload from 'lucide-react-native/icons/cloud-download'
 import Crosshair from 'lucide-react-native/icons/crosshair'
 import Crown from 'lucide-react-native/icons/crown'
@@ -161,6 +162,8 @@ export const CircleQuestionMarkIcon = withIconInterop(CircleQuestionMark)
 export const CircleUserRoundIcon = withIconInterop(CircleUserRound)
 /** 아직 집계 전(pending 톤). 지금 쓰는 화면 없음. */
 export const ClockIcon = withIconInterop(Clock)
+/** 값을 클립보드에 넣는 버튼. 판매 분배금 계산기의 정산 금액 옆. */
+export const CopyIcon = withIconInterop(Copy)
 /** 새 업데이트 있음. `UpdatePromptModal`(update-available). */
 export const CloudDownloadIcon = withIconInterop(CloudDownload)
 /** today 빠른 이동의 사냥 칸. */

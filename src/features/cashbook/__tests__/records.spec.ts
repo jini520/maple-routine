@@ -29,6 +29,15 @@ jest.mock('../../../storage/last-hunts', () => ({
   setLastHunt: jest.fn(),
   getLastHunts: jest.fn(),
 }))
+jest.mock('../../../storage/last-boss-income-transfers', () => ({
+  setLastBossIncomeTransfer: jest.fn(),
+  getLastBossIncomeTransfers: jest.fn(),
+}))
+jest.mock('../../../storage/last-epic-dungeon-rewards', () => ({
+  ...jest.requireActual('../../../storage/last-epic-dungeon-rewards'),
+  setLastEpicDungeonReward: jest.fn(),
+  getLastEpicDungeonRewards: jest.fn(),
+}))
 jest.mock('../../../storage/boss-profit', () => ({
   getDatedBossProfitRecords: jest.fn(),
   getRecordedCharacterOcids: jest.fn(),
@@ -55,6 +64,8 @@ const income = jest.requireMock('../../../storage/income') as Record<string, jes
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
 const rate = jest.requireMock('../../../storage/last-point-rate') as Record<string, jest.Mock>
 const lastHunts = jest.requireMock('../../../storage/last-hunts') as Record<string, jest.Mock>
+const lastTransfers = jest.requireMock('../../../storage/last-boss-income-transfers') as Record<string, jest.Mock>
+const lastEpic = jest.requireMock('../../../storage/last-epic-dungeon-rewards') as Record<string, jest.Mock>
 const bossProfit = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 const bossDrops = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 const selection = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
@@ -340,6 +351,154 @@ describe('캐릭터별 마지막 사냥을 기억한다', () => {
       'ocid-1': { groundKey: 'tallahart_road_of_night_3', boosts: ['union', 'potion'], unionTier: 2 },
     })
     expect(nextLastHunts({ ...계산기사냥, ocid: null }, 지금기억)).toBe(지금기억)
+  })
+})
+
+/**
+ * 주간 보스 수입 이전은 매주 같은 두 캐릭터 사이에서 같은 방식으로 옮긴다. 새 기록을 저장하면 보내는 캐릭터 몫으로 받는
+ * 캐릭터 · 수수료 · 체크를 남긴다. 체크는 기록에 없는 시트의 상태라 저장과 함께 따로 받는다.
+ */
+describe('주간 보스 수입 이전의 마지막 입력을 기억한다', () => {
+  beforeEach(() => {
+    spend.insertSpendRecord.mockResolvedValue(undefined)
+  })
+
+  const 수입이전: SpendDraft = {
+    ...메포지출,
+    ocid: 'ocid-1',
+    category: 'etc',
+    item: '주간 보스 수입 이전',
+    formItemKeys: null,
+    mesoAmount: 108_000_000,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    transfer: { receiverOcid: 'ocid-2', transferMeso: 3_600_000_000, feePercent: 3, feeAuto: false },
+  }
+
+  it('새 기록을 저장하면 보내는 캐릭터 몫으로 받는 캐릭터 · 수수료 · 체크를 남긴다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend(수입이전, 지금, { transferFillsWeek: true })
+
+    expect(lastTransfers.setLastBossIncomeTransfer).toHaveBeenCalledWith('ocid-1', {
+      receiverOcid: 'ocid-2',
+      feeAuto: false,
+      feePercent: 3,
+      fillsWeek: true,
+    })
+  })
+
+  // 자동이면 요율은 받는 캐릭터의 등급이 정한다. 기록의 요율은 그때의 등급 값이라 남기지 않는다.
+  it('자동 수수료는 요율 없이, `없음` 은 요율 없음으로 남기고, 체크를 안 받으면 꺼진 것이다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend({ ...수입이전, transfer: { ...수입이전.transfer!, feePercent: 5, feeAuto: true } }, 지금)
+    await recordSpend({ ...수입이전, transfer: { ...수입이전.transfer!, feePercent: 0, feeAuto: false } }, 지금)
+
+    expect(lastTransfers.setLastBossIncomeTransfer.mock.calls).toEqual([
+      ['ocid-1', { receiverOcid: 'ocid-2', feeAuto: true, feePercent: null, fillsWeek: false }],
+      ['ocid-1', { receiverOcid: 'ocid-2', feeAuto: false, feePercent: null, fillsWeek: false }],
+    ])
+  })
+
+  it('저장이 실패하면 기억하지 않는다', async () => {
+    spend.insertSpendRecord.mockRejectedValue(new Error('이전'))
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await expect(recordSpend(수입이전, 지금, { transferFillsWeek: true })).rejects.toThrow()
+
+    expect(lastTransfers.setLastBossIncomeTransfer).not.toHaveBeenCalled()
+  })
+
+  // 수정은 지난 기록을 고치는 일이다. 지난주 기록을 고쳤다고 다음 새 기록의 기본값이 바뀌면 안 된다.
+  it('고쳐 저장하면 기억하지 않는다', async () => {
+    const { editSpend } = require('../records') as typeof import('../records')
+
+    await editSpend({ ...수입이전, id: 'x', recordedAt: 지금.toISOString(), mesoMarketFeePercent: null })
+
+    expect(lastTransfers.setLastBossIncomeTransfer).not.toHaveBeenCalled()
+  })
+
+  // 화면이 저장 뒤에 드는 기억도 같은 규칙이다.
+  it('nextLastBossIncomeTransfers 는 보내는 캐릭터 몫만 바꾸고, 이전 기록이 아니면 그대로 둔다', () => {
+    const { nextLastBossIncomeTransfers } = require('../records') as typeof import('../records')
+    const 지금기억 = { 'ocid-3': { receiverOcid: 'ocid-1', feeAuto: true, feePercent: null, fillsWeek: false } }
+
+    expect(nextLastBossIncomeTransfers(수입이전, { transferFillsWeek: true }, 지금기억)).toEqual({
+      'ocid-3': { receiverOcid: 'ocid-1', feeAuto: true, feePercent: null, fillsWeek: false },
+      'ocid-1': { receiverOcid: 'ocid-2', feeAuto: false, feePercent: 3, fillsWeek: true },
+    })
+    expect(nextLastBossIncomeTransfers(메포지출, {}, 지금기억)).toBe(지금기억)
+  })
+})
+
+/**
+ * 같은 캐릭터가 매주 같은 에픽던전에서 같은 단계를 산다. 새 기록을 저장하면 그 던전의 마지막 주인과 그 주인이 고른
+ * 형태별 항목 key 를 남긴다.
+ */
+describe('에픽던전 리워드의 마지막 입력을 기억한다', () => {
+  beforeEach(() => {
+    spend.insertSpendRecord.mockResolvedValue(undefined)
+  })
+
+  const 하이마운틴: SpendDraft = { ...메포지출, ocid: 'ocid-1' }
+
+  it('새 기록을 저장하면 그 던전의 마지막 주인과 그 주인의 형태별 항목 key 를 남긴다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend(하이마운틴, 지금)
+
+    expect(lastEpic.setLastEpicDungeonReward).toHaveBeenCalledWith('high_mountain', { ocid: 'ocid-1' }, { sol_erda: 'high_mountain_2' })
+  })
+
+  it('메이플 ID 로 적은 기록은 그 메이플 ID 를 주인으로 남긴다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend({ ...메포지출, ocid: null, accountId: 'maple-a' }, 지금)
+
+    expect(lastEpic.setLastEpicDungeonReward).toHaveBeenCalledWith(
+      'high_mountain',
+      { accountId: 'maple-a' },
+      { sol_erda: 'high_mountain_2' },
+    )
+  })
+
+  // 몬스터 파크 · 퀵 패스는 고를 단계가 없고 수량만 친다.
+  it('다른 컨텐츠 항목은 남기지 않는다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend(
+      { ...하이마운틴, item: '몬스터 파크', itemKey: 'monster_park', formItemKeys: null, pointAmount: 600 },
+      지금,
+    )
+
+    expect(lastEpic.setLastEpicDungeonReward).not.toHaveBeenCalled()
+  })
+
+  it('저장이 실패하거나 고쳐 저장하면 남기지 않는다', async () => {
+    const { recordSpend, editSpend } = require('../records') as typeof import('../records')
+
+    await editSpend({ ...하이마운틴, id: 'x', recordedAt: 지금.toISOString(), mesoMarketFeePercent: 1 })
+    spend.insertSpendRecord.mockRejectedValue(new Error('에픽'))
+    await expect(recordSpend(하이마운틴, 지금)).rejects.toThrow()
+
+    expect(lastEpic.setLastEpicDungeonReward).not.toHaveBeenCalled()
+  })
+
+  it('nextLastEpicDungeonRewards 는 그 던전의 마지막 주인과 그 주인의 단계만 바꾸고, 남기지 않는 행이면 그대로 둔다', () => {
+    const { nextLastEpicDungeonRewards } = require('../records') as typeof import('../records')
+    const 지금기억 = {
+      high_mountain: { last: { ocid: 'ocid-2' }, characters: { 'ocid-2': { exp: 'high_mountain_1' } }, accounts: {} },
+    }
+
+    expect(nextLastEpicDungeonRewards(하이마운틴, 지금기억)).toEqual({
+      high_mountain: {
+        last: { ocid: 'ocid-1' },
+        characters: { 'ocid-2': { exp: 'high_mountain_1' }, 'ocid-1': { sol_erda: 'high_mountain_2' } },
+        accounts: {},
+      },
+    })
+    expect(nextLastEpicDungeonRewards(메포지출, 지금기억)).toBe(지금기억)
   })
 })
 
