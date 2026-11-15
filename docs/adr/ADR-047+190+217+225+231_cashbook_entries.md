@@ -1,8 +1,8 @@
-# ADR-047+190+217+225 가계부 기록과 금액
+# ADR-047+190+217+225+231 가계부 기록과 금액
 
 > 🟢 유효
 > 옛 번호: ADR-166 · ADR-170 결정 1 · 2 · 3 · 정정 9 · 15 · ADR-171 · ADR-280 결정 10 · ADR-202 결정 4 · 정정 2 · ADR-223 · ADR-300 · ADR-325 결정 3 · 4
-> 관련 소스: `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` · `storage/enhancement-history.ts` · `storage/enhancement-totals.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/cashbook/row-icon.ts` · `features/cashbook/merged-rows.ts` · `app/cashbook/CashbookScreen.tsx` · `features/enhancement-history/` · `lib/enhancement/` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/free-currency.ts` · `lib/cashbook/meso-market-exchange.ts` · `lib/cashbook/boss-income-transfer.ts` · `app/cashbook/spend/BossIncomeTransferForm.tsx` · `app/cashbook/spend/MesoMarketExchangeForm.tsx` · `features/cashbook/week-crystal.ts`
+> 관련 소스: `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` · `storage/enhancement-history.ts` · `storage/enhancement-totals.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/cashbook/row-icon.ts` · `features/cashbook/merged-rows.ts` · `lib/item-catalog.ts` · `app/cashbook/CashbookScreen.tsx` · `features/enhancement-history/` · `lib/enhancement/` · `lib/cashbook/spend-catalog.ts` · `lib/cashbook/free-currency.ts` · `lib/cashbook/meso-market-exchange.ts` · `lib/cashbook/boss-income-transfer.ts` · `app/cashbook/spend/BossIncomeTransferForm.tsx` · `app/cashbook/spend/MesoMarketExchangeForm.tsx` · `features/cashbook/week-crystal.ts`
 
 ## 배경
 
@@ -473,6 +473,24 @@ C 보드다.
 이다(사용자 선택 2026-11-14). 그림은 서버 그림 표의 `items/boss_income_transfer.png` · `items/meso_market_exchange.png` 이고 그 줄의 `iconAssetId` 로 건다. 그림 없는 줄이 하나라도 있으면 앱은 갈래 표 전체를 계약을 어긴 값으로
 읽고(`parseCashbookCategories`), 그러면 잠금 화면이 앱을 열지 않는다([[ADR-020]]). 그래서 줄은 그림과 함께 넣는다.
 
+### 결정 21. 펼친 강화 줄은 장비 이름 앞에 아이템 표의 그림을 세운다
+
+펼친 강화 줄에는 장비마다 이름 · 횟수 · 금액만 있었다. 판 아이템마다 그림이 서는 판매 줄(결정 13)과 달리, 어떤 장비인지
+글자로만 알아봐야 했다(#1030, 사용자 2026-11-15).
+
+- **그림은 서버 아이템 표(`items` 칸)의 그림이고, 합계 줄의 장비 key 로 찾는다.** 강화 장비 표(`equipmentItems` 칸)의 장비는
+  아이템 표에 같은 key 로 들어 있다([[ADR-187]] 결정 1). 2026-11-15 운영 표에서는 453개 모두 그림이 있다.
+- **key 로 못 찾으면 이름으로 찾는다.** 강화 장비 표에 없는 장비는 합계 줄에 key 없이 이름만 남는다([[ADR-100]] 결정 7).
+  그런 장비도 아이템 표에는 있을 수 있다. 넥슨이 준 이름과 아이템 표의 이름을 `comparableEquipmentName` 으로 공백을 지워
+  비교하고, 같으면 그 아이템의 그림이다. 서버는 이렇게 비교해 같은 이름을 다른 key 로 받지 않는다([[ADR-187]] 결정 1).
+  그래서 다른 아이템의 그림이 붙지 않는다. 2026-11-15 에 이름으로만 그림을 찾는 강화 가능 장비는 타일런트 벨트 다섯이다.
+  아이템 표에서 강화 장비 표에 없는 나머지 장비(일반 보조무기 · 특수스킬 반지 · 뱃지 등)는 강화할 수 없다(사용자 확인).
+- **못 찾으면 그림 자리 없이 이름부터 선다.** 판매 줄의 판과 같다. 비슷한 장비의 그림을 대신 붙이면 다른 장비를 그리게
+  된다. 아이템 표에 없는 장비(타일런트 신발 · 장갑 · 망토 등)가 여기에 든다.
+- **그림 크기는 줄 높이를 따른다.** 큐브 재설정 · 잠재능력 · 에디셔널 잠재능력 · 소울 잠재능력은 한 줄이라 판매 줄의 판과
+  같은 20 이다. 스타포스는 이름 줄과 성 · 횟수 줄의 두 줄이라 합친 줄의 칸(결정 18)과 같은 24 다. 같은 높이의 줄이 화면마다
+  다른 크기의 그림을 들지 않게 하려는 것이다. 그림과 이름 사이는 줄의 다른 칸 사이와 같은 8 이다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -506,6 +524,8 @@ C 보드다.
 | `features/mvp-grade/__tests__/recalculate-fees.spec.ts` | 결정 19: 자동 요율인 `주간 보스 수입 이전` 기록만 받는 캐릭터의 새 요율로 다시 세는지 본다 |
 | 서버 `cli/seed-game-data.spec.ts` | 결정 17: 지출 목록이 차 있어도 빈 규칙 줄만 채우고 이미 있는 규칙은 그대로 두는지 본다 |
 | 서버 `modules/admin/admin.controller.spec.ts` | 결정 17: 규칙 저장이 수수료율이 빠지거나 100 이면 400 인지 본다 |
+| `features/cashbook/__tests__/row-icon.spec.ts` | 결정 21: 장비 key 로 아이템 표의 그림을 찾고, key 로 못 찾으면 띄어쓰기가 다른 이름으로 찾으며, 둘 다 못 찾으면 `null` 인지 본다 |
+| `app/cashbook/__tests__/CashbookScreen.test.tsx` | 결정 21: 펼친 강화 줄에서 그림이 장비 이름 앞에 서고, 그림을 못 찾은 장비는 그림 없이 이름부터 서는지 본다 |
 
 ## 번호 기록
 
@@ -515,3 +535,4 @@ C 보드다.
 - ADR-217 (2026-11-13): 헥사 매트릭스 · 아이템 구매 기록을 하루 목록에서 캐릭터마다 한 줄로 합치는 결정 18 을 더하고, 결정 14 의 한 줄 한 기록 규칙에 이 둘을 예외로 적었다(#924 · #1001). 같은 날 결정 13 의 보스 칸 설명과 결정 14 의 수량 표기를 지금 코드에 맞췄다
 - ADR-225 (2026-11-14): 결정 17 을 메포 지출을 1억 단위로 판 것으로 세고 남은 메포를 되돌리는 식으로 다시 쓰고, `주간 보스 수입 이전`(결정 19, #954)과 `메소마켓 환전 수수료`(결정 20, #955)를 더했다. 결정 1 · 2 · 3 · 4 를 그에 맞췄다
 - (2026-11-14) 결정 18 의 펼친 칸에 메모 아이콘을 적었다([[ADR-048]] 결정 19, #1002)
+- ADR-231 (2026-11-15): 펼친 강화 줄의 장비 이름 앞에 아이템 표의 그림을 세우는 결정 21 을 더했다(#1030)

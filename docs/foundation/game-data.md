@@ -19,7 +19,7 @@
 | `lib/assets/image-crops.ts` | 크롭 표(`imageCrops` 칸) |
 | `lib/assets/asset-lookup.ts` | 그림 칸의 id · 앱 그림 key 를 그림 · 크롭으로 바꾸는 조회 |
 | `lib/assets/app-images.ts` | 붙일 표가 없는 앱 그림(`appImages` 칸)의 key 와 드롭 연출 프레임 |
-| `lib/item-catalog.ts` | 아이템 표(`items` 칸). key 로 찾기와 기록의 아이템 이름(`recordedItemNameOf`) |
+| `lib/item-catalog.ts` | 아이템 표(`items` 칸). key 로 찾기 · 넥슨 API 이름으로 찾기(`findItemByApiName`)와 기록의 아이템 이름(`recordedItemNameOf`) |
 | `features/game-data/sync.ts` | 켤 때 사본 읽기 · 잠근 채 받기 · 돌아올 때 조용히 받기(`startGameData` · `refreshGameData`) · 칸 구독 훅(`useGameTable`) |
 | `app/game-data/GameDataLock.tsx` | 다 받기 전의 잠금 화면 |
 | `server/game-data.ts` | `GET /v1/game-data` 를 ETag 와 함께 받고 칸마다 검사한다 |
@@ -52,7 +52,7 @@
 | `imageCrops` | 보스 초상(카드 · 원형 아이콘 · 파티 모달 띠)과 컨텐츠 지역 지도의 크롭 | `lib/assets/image-crops` | `/admin/assets` |
 | `faqs` | 화면 FAQ 의 묶음(key · 제목)과 문항(질문 · 답 블록). 묶음 하나가 시트 하나다([[ADR-150]]) | `lib/faq/faqs` | `/admin/faqs` |
 | `appImages` | 붙일 표가 없는 앱 그림 72장의 key 와 그림 id. 결정석 칩 · 강화 다섯 · 메소 주머니 · 포스 · 모르는 캐릭터 · 드롭 연출 프레임 등이다([[ADR-187]] 결정 8) | `lib/assets/app-images` | 없음(S4 에서 만든다) |
-| `items` | 분류가 있는 아이템 652개의 key · 이름 · 종류(그 묶음의 종류) · 묶음 · 그림 id. 이름 차례다. 인벤토리 넣기와 가계부 아이템 고르기가 여기서 고르고, 상자를 빼는 일과 장신구를 장비로 옮기는 일은 고르는 쪽이 한다([[ADR-187]] 결정 10) | `lib/item-catalog` | `/admin/items` |
+| `items` | 분류가 있는 아이템 652개의 key · 이름 · 종류(그 묶음의 종류) · 묶음 · 그림 id. 이름 차례다. 인벤토리 넣기와 가계부 아이템 고르기가 여기서 고르고, 상자를 빼는 일과 장신구를 장비로 옮기는 일은 고르는 쪽이 한다([[ADR-187]] 결정 10). 가계부의 펼친 강화 줄도 장비 그림을 여기서 찾는다([[ADR-047]] 결정 21) | `lib/item-catalog` | `/admin/items` |
 
 응답은 서버 표의 줄을 그대로 펼친 목록이다. 보스 · 난이도 · 분류로 묶거나 지역 안에 사냥터를 묶는 일은 조회 모듈이 한다.
 부르는 쪽은 값이 기기 사본에서 왔는지 서버 응답인지 모른다.
