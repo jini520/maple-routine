@@ -721,3 +721,64 @@ describe('넥슨 계정이 여럿', () => {
     expect(saveEventWorldNames).toHaveBeenCalledWith(new Set(['스페셜-account-login']))
   })
 })
+
+// 기기는 값을 못 매긴 줄을 버려, 그날 슈페리얼 장비가 있었는지는 다시 받아야 안다. 다른 날의 합계는 받은 때 그대로 둔다(사용자 지정 2026-11-15).
+describe('슈페리얼 장비가 있는 날만 갈아 끼우는 요청', () => {
+  const superiorRequest = { id: 's1', from: '2026-09-03', to: '2026-09-04', kinds: ['starforce'], superiorOnly: true }
+  const starforcePage = (dateKey: string, targetItem: string) => ({
+    rows: [
+      {
+        id: `${dateKey}-${targetItem}`,
+        characterName: '낟낟',
+        createdAt: `${dateKey}T07:00:00.000+09:00`,
+        dateKey,
+        targetItem,
+        itemKey: null,
+        itemLevel: null,
+        payload: { before_starforce_count: 12, after_starforce_count: 15, upgrade_item: '' },
+      },
+    ],
+    nextCursor: null,
+  })
+  const starforceDays = (calls: unknown[][]) =>
+    calls.filter((call) => call[1] === 'starforce').map((call) => call[2])
+
+  it('슈페리얼 장비의 줄이 있는 날만 갈아 끼우고, 없는 날은 합계 · 굳음 원장 · 이상 보고를 그대로 두되 진행은 적는다', async () => {
+    setRequests([superiorRequest])
+    fetchEnhancementHistory.mockImplementation((_key, kind, _itemKeyOf, query) => {
+      if (kind !== 'starforce') return Promise.resolve(page([]))
+      return Promise.resolve(
+        query.dateKey === '2026-09-03'
+          ? starforcePage('2026-09-03', '타일런트 리카온 벨트')
+          : starforcePage('2026-09-04', '왕푸'),
+      )
+    })
+
+    await collectEnhancementHistory([], NOW)
+
+    expect(starforceDays(replaceEnhancementTotals.mock.calls)).toEqual(['2026-09-03'])
+    expect(replaceEnhancementTotals).toHaveBeenCalledWith(
+      'account-key',
+      'starforce',
+      '2026-09-03',
+      [expect.objectContaining({ attempts: 1, attemptCostMeso: 0, superiorCostMeso: 55_382_200 })],
+      NOW,
+      expect.any(Array),
+    )
+    expect(starforceDays(store.markEnhancementChecked.mock.calls)).toEqual(['2026-09-03'])
+    // 9-04 의 왕푸는 장비 표에 없는 15성 줄이라 그 날을 갈아 끼웠다면 알렸을 것이다.
+    expect(reportEnhancementAnomalies).toHaveBeenCalledWith([])
+    expect(recomputes.saveRecomputeProgress).toHaveBeenCalledWith('account-key', 's1', '2026-09-04', true, NOW)
+  })
+
+  it('같은 날을 화면 회차나 superiorOnly 가 없는 요청이 함께 받으면 통째로 갈아 끼운다', async () => {
+    setRequests([superiorRequest, { id: 'r2', from: '2026-09-03', to: '2026-09-03', kinds: ['starforce'] }])
+    fetchEnhancementHistory.mockImplementation((_key, kind, _itemKeyOf, query) =>
+      Promise.resolve(kind === 'starforce' ? starforcePage(query.dateKey, '왕푸') : page([])),
+    )
+
+    await collectEnhancementHistory(['2026-09-04'], NOW)
+
+    expect(starforceDays(replaceEnhancementTotals.mock.calls).sort()).toEqual(['2026-09-03', '2026-09-04'])
+  })
+})

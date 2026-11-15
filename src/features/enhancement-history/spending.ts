@@ -1,10 +1,11 @@
 /**
  * 받은 강화 내역 줄을 날짜 · 캐릭터(ocid) · 분류 · 장비별 합계로 묶는다. 응답 원본은 저장하지 않고 이 합계만 저장한다.
  *
- * 비용은 MVP 할인 전 두 몫이다. 할인은 화면에 보일 때 붙인다. 값을 못 매기는 줄과 전용 재화 줄은 합계에 넣지 않는다.
+ * 비용은 MVP 할인 전 세 몫이다. 할인은 화면에 보일 때 붙인다. 값을 못 매기는 줄과 전용 재화 줄은 합계에 넣지 않는다.
  */
 import {
   cubeAppraisalCost,
+  findSuperiorItem,
   potentialResetCost,
   soulPotentialResetCost,
   starforceCostParts,
@@ -54,6 +55,8 @@ export interface EnhancementTotalDraft {
   attempts: number
   attemptCostMeso: number
   destroyDefenceCostMeso: number
+  /** 슈페리얼 장비의 스타포스 비용. 어떤 할인도 받지 않는다 */
+  superiorCostMeso: number
   /** 스타포스의 가장 이른 시도의 강화 전 성. 다른 분류는 `null` */
   fromStar: number | null
   /** 스타포스의 가장 늦은 시도의 강화 후 성. 다른 분류는 `null` */
@@ -120,9 +123,28 @@ function discountRate(payload: unknown): number {
   return rate
 }
 
+/**
+ * 응답이 슈페리얼 장비라고 하는가. 일반 장비는 `슈페리얼 장비 미해당` 이 온다. 슈페리얼 쪽 글자는 아직 못 봐서 그 밖의 글자를
+ * 슈페리얼로 본다. 표에 없는 슈페리얼 장비를 알아채는 데만 쓴다.
+ */
+function isFlaggedSuperior(payload: unknown): boolean {
+  const flag = text(payload, 'superior_item_flag')
+  return flag !== '' && flag !== '슈페리얼 장비 미해당'
+}
+
+/** 줄들 가운데 슈페리얼 장비 표의 장비를 강화한 스타포스 줄이 있나. */
+export function hasSuperiorItem(entries: readonly EnhancementSource[]): boolean {
+  return entries.some((entry) => entry.kind === 'starforce' && findSuperiorItem(entry.targetItem) !== null)
+}
+
 function starforceParts(entry: EnhancementSource): StarforceCostParts | null {
   // 강화권은 메소가 안 든다. 0 이지 모르는 것이 아니다.
-  if (text(entry.payload, 'upgrade_item') !== '') return { attemptMeso: 0, destroyDefenceMeso: 0 }
+  if (text(entry.payload, 'upgrade_item') !== '') return { attemptMeso: 0, destroyDefenceMeso: 0, superiorMeso: 0 }
+
+  // 슈페리얼 장비는 계열 금액 하나다. 성 · 이벤트 할인 · 파괴 방지를 안 본다.
+  const superior = findSuperiorItem(entry.targetItem)
+  if (superior !== null) return { attemptMeso: 0, destroyDefenceMeso: 0, superiorMeso: superior.starforceCostMeso }
+  if (isFlaggedSuperior(entry.payload)) return null
 
   // 장비 레벨은 장비 표에서만 찾는다. 표에 없는 장비는 값을 못 매긴다.
   const level = equipmentItemLevelOf(entry.itemKey)
@@ -176,7 +198,7 @@ function soulPotentialMeso(entry: EnhancementSource): number | null {
 }
 
 /**
- * 이 줄의 MVP 할인 전 비용 두 몫. **모르면 `null`. 0 이 아니다.** 못 매긴 것을 0 으로 세우면 합계가 조용히 거짓이 된다.
+ * 이 줄의 MVP 할인 전 비용 세 몫. **모르면 `null`. 0 이 아니다.** 못 매긴 것을 0 으로 세우면 합계가 조용히 거짓이 된다.
  */
 export function enhancementCostPartsOf(entry: EnhancementSource): StarforceCostParts | null {
   if (entry.kind === 'starforce') return starforceParts(entry)
@@ -188,7 +210,7 @@ export function enhancementCostPartsOf(entry: EnhancementSource): StarforceCostP
       : entry.kind === 'potential'
         ? potentialMeso(entry)
         : soulPotentialMeso(entry)
-  return cost === null ? null : { attemptMeso: cost, destroyDefenceMeso: 0 }
+  return cost === null ? null : { attemptMeso: cost, destroyDefenceMeso: 0, superiorMeso: 0 }
 }
 
 /** 값을 못 매긴 이유. 서버에 알려 운영자가 원인을 본다. */
@@ -200,6 +222,7 @@ export type UnpricedReason = 'no_level' | 'no_grade' | 'no_star' | 'no_type' | '
 export function unpricedReasonOf(entry: EnhancementSource): UnpricedReason | null {
   if (enhancementCostPartsOf(entry) !== null) return null
   if (entry.kind === 'starforce') {
+    if (isFlaggedSuperior(entry.payload)) return 'no_cost'
     if (equipmentItemLevelOf(entry.itemKey) === null) return 'no_level'
     return typeof field(entry.payload, 'before_starforce_count') === 'number' ? 'no_cost' : 'no_star'
   }
@@ -277,11 +300,13 @@ export function summarizeEnhancement(
       attempts: 0,
       attemptCostMeso: 0,
       destroyDefenceCostMeso: 0,
+      superiorCostMeso: 0,
       eventWorld: judge(entry, owner).eventWorld,
     }
     total.attempts += 1
     total.attemptCostMeso += parts.attemptMeso
     total.destroyDefenceCostMeso += parts.destroyDefenceMeso
+    total.superiorCostMeso += parts.superiorMeso
     totals.set(key, total)
   }
   return [...totals].map(([key, total]) => ({

@@ -1,7 +1,7 @@
-# ADR-100+174+189 강화 내역을 계산한 합계로 저장하고, 다시 매길 기간은 환경 변수로 건다
+# ADR-100+174+189+234 강화 내역을 계산한 합계로 저장하고, 다시 매길 기간은 환경 변수로 건다
 
 > 🟢 유효
-> 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/owners.ts` · `features/enhancement-history/legacy-totals.ts` · `lib/enhancement/world.ts` · `lib/enhancement/sighted-owner.ts` · `lib/world/worlds.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts` · `app/cashbook/CashbookScreen.tsx` · 서버 `database/schema.ts`(`world_periods`) · 서버 `modules/worlds/worlds.repository.ts` · 서버 `modules/admin/`
+> 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/recompute.ts` · `features/enhancement-history/anomalies.ts` · `features/enhancement-history/owners.ts` · `features/enhancement-history/legacy-totals.ts` · `lib/enhancement/world.ts` · `lib/enhancement/sighted-owner.ts` · `lib/world/worlds.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts` · `app/cashbook/CashbookScreen.tsx` · 서버 `database/schema.ts`(`world_periods` · `superior_series` · `superior_items`) · 서버 `modules/worlds/worlds.repository.ts` · 서버 `modules/enhancement-costs/` · 서버 `modules/admin/`
 
 ## 배경
 
@@ -25,11 +25,12 @@
 MVP 등급 기간을 고쳐도 강화 내역을 다시 받지 않기 위해서다(사용자 지정 2026-10-26). 넥슨 로그인 계정의 강화 내역은 서버
 스트림을 거쳐 받으므로, 다시 받으면 서버 부하가 크다.
 
-- 합계 한 줄은 칸 둘로 비용을 든다. `attempt_cost_meso` 는 MVP 할인을 받는 시도 비용이고, `destroy_defence_cost_meso` 는
-  할인을 받지 않는 파괴 방지 추가 비용이다([[ADR-050]] 결정 5). 큐브 · 잠재 · 소울은 MVP 와 무관해 시도 비용 칸만 쓴다.
+- 합계 한 줄은 칸 셋으로 비용을 든다. `attempt_cost_meso` 는 MVP 할인을 받는 시도 비용이고, `destroy_defence_cost_meso` 는
+  할인을 받지 않는 파괴 방지 추가 비용이다([[ADR-050]] 결정 5). `superior_cost_meso` 는 슈페리얼 장비의 스타포스 비용이고
+  역시 할인을 받지 않는다(결정 10). 큐브 · 잠재 · 소울은 MVP 와 무관해 시도 비용 칸만 쓴다.
 - 이벤트 할인(샤이닝 스타포스 등)은 그 시도에 실제로 붙은 할인이라 시도 비용에 이미 넣는다.
-- 화면은 그 날짜 · 그 캐릭터의 MVP 할인을 시도 비용 합계에 한 번 붙이고 내림한 뒤 파괴 방지 비용을 더한다. 등급을 찾는
-  규칙은 지금과 같다([[ADR-050]] 결정 2 ~ 4).
+- 화면은 그 날짜 · 그 캐릭터의 MVP 할인을 시도 비용 합계에 한 번 붙이고 내림한 뒤 파괴 방지 비용과 슈페리얼 비용을 더한다.
+  등급을 찾는 규칙은 지금과 같다([[ADR-050]] 결정 2 ~ 4).
 - 시도마다 내림하던 것이 합계에 한 번 내림하는 것으로 바뀌어, 시도당 1 메소 이하의 차이가 생긴다. 사용자가 받아들인
   오차다.
 
@@ -51,9 +52,10 @@ SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensur
 
 - 요청은 `EXPO_PUBLIC_ENHANCEMENT_RECOMPUTE` 에 JSON 배열로 담는다. 요청 하나는 `id` · 기간(`from` · `to`) · 종류(`kinds`,
   빼면 넷 다)다. 예: `[{"id":"pulse-2026-09","from":"2026-09-16","to":"2026-10-20","kinds":["cube","starforce"]}]`.
+  `superiorOnly` 를 `true` 로 주면 받은 날 가운데 슈페리얼 장비의 스타포스 줄이 있는 날만 갈아 끼운다(결정 10).
   API 가 아니라 번들에 박히는 환경 변수라 OTA 로 나간다([[ADR-014]] 결정 6).
 - 형식이 틀린 요청은 버리고 나머지만 쓴다. 고장 난 요청 하나가 회차를 막으면 안 되기 때문이다. `id` 가 없거나, 날짜가
-  `YYYY-MM-DD` 가 아니거나, `from` 이 `to` 보다 뒤거나, 모르는 종류가 있으면 틀린 것이다.
+  `YYYY-MM-DD` 가 아니거나, `from` 이 `to` 보다 뒤거나, 모르는 종류가 있거나, `superiorOnly` 가 참 · 거짓이 아니면 틀린 것이다.
 - 기간은 조회 하한(`historyFloorDateKey`)과 오늘 사이로 자른다. 하한 앞은 넥슨이 주지 않고 오늘 뒤는 아직 없다. 남는 날이
   없으면 받지 않고 바로 완료로 적는다.
 - 수집기는 끝나지 않은 요청의 날짜를 굳음(`settled`)과 상관없이 다시 받아 합계를 갈아 끼운다(결정 6 과 같은 방법). 그 일도
@@ -123,7 +125,8 @@ OTA 를 낸다. 순서가 바뀌면 다시 받은 날이 다시 모름으로 남
 ```
 기기 enhancement_totals   id · nexon_account_id · history_date · character_name · ocid · account_id · world_key
                           · enhancement_type · enhancement_category · item_group · item_key · item_name · attempts
-                          · attempt_cost_meso · destroy_defence_cost_meso · from_star · to_star · event_world · updated_at
+                          · attempt_cost_meso · destroy_defence_cost_meso · superior_cost_meso · from_star · to_star
+                          · event_world · updated_at
                           UNIQUE(ocid, history_date, enhancement_category, item_group)
 ```
 
@@ -139,6 +142,7 @@ OTA 를 낸다. 순서가 바뀌면 다시 받은 날이 다시 모름으로 남
 - 합계 표는 처음부터 계정 칸을 든다. 옛 원본에서 옮긴 줄도 결정 3 의 단계가 메인 계정 id 를 바로 적어, 빈 글자 표시를 거치지
   않는다.
 - `from_star` · `to_star` 는 결정 8 의 스타포스 첫 성과 끝 성이다. 다른 분류의 줄은 `NULL` 이다.
+- `superior_cost_meso` 는 결정 10 의 슈페리얼 비용이다. 기본값이 0 이고, 칸이 생기기 전 줄과 슈페리얼이 아닌 줄은 0 이다.
 
 ### 결정 8. 스타포스 합계는 그날 첫 성과 끝 성을 들고, 펼친 장비 줄이 `17성 → 21성` 으로 보인다
 
@@ -185,6 +189,87 @@ OTA 를 낸다. 순서가 바뀌면 다시 받은 날이 다시 모름으로 남
   엠블럼과 거래권이 없다. 스페셜과 같다([[ADR-071]]). 스페셜과 스페셜2 의 기간은 각각 `2025-11-20` ~ `2025-12-19`
   한 줄이다(넥슨 공지의 스페셜 월드 이벤트 기간 2025-11-20 10시 ~ 2025-12-18 03시).
 
+### 결정 10. 슈페리얼 장비의 스타포스는 계열마다 정한 1회 금액으로 매기고, 할인을 붙이지 않는다
+
+타일런트 같은 슈페리얼 장비는 장비 표(`equipmentItems`)에 없다. 그래서 레벨을 몰라 그 스타포스를 매기지 못했고, 가계부 ·
+today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어도 맞지 않는다. 슈페리얼 장비의 스타포스 비용은 일반 장비의 식을
+따르지 않기 때문이다. 금액은 계열마다 하나이고, 1성부터 15성까지 모든 시도가 같다. 슈페리얼 장비는 15성까지만 강화할 수
+있다(사용자 확인 2026-11-15).
+
+| 계열 | 착용 레벨 | 장비 | 스타포스 1회 비용 |
+|---|---|---|---|
+| 헬리시움 정예 | 80 | 15개 | 5,956,000 메소 |
+| 노바 | 110 | 15개 | 18,507,900 메소 |
+| 타일런트 | 150 | 20개 | 55,382,200 메소 |
+
+- **슈페리얼 장비인지와 그 계열은 슈페리얼 장비 표에서 장비 이름으로 찾는다.** 응답의 `target_item` 과 표의 이름을 NFC 로
+  맞추고 공백을 지운 뒤 글자 그대로 비교한다(`comparableEquipmentName`). 표의 50개는 KMS 클라이언트 데이터(maplestory.io 의
+  KMS v389)에서 `superiorEqp` 가 참인 장비 전부다(2026-11-15 확인). 이름은 이렇게 생겼다.
+
+  ```
+  헬리시움 정예 {전사 · 법사 · 궁수 · 도적 · 해적} {부츠 · 망토 · 벨트}
+  노바 {히아데스 · 헤르메스 · 케이론 · 리카온 · 알테어} {부츠 · 클록 · 벨트}
+  타일런트 {히아데스 · 헤르메스 · 케이론 · 리카온 · 알테어} {부츠 · 글러브 · 클록 · 벨트}
+  ```
+
+  노바 · 타일런트 35개는 나무위키 `슈페리얼` 문서의 이름과 글자까지 같다. 나무위키는 헬리시움 정예의 직업 자리를 `마법사` 라고
+  적었지만 클라이언트 이름은 `법사` 다. 넥슨 응답에 실제로 온 `타일런트 히아데스 클록` · `헬리시움 정예 도적 벨트` 도 표의
+  이름과 같다(2026-11-07 에 지운 이상 보고).
+- **이름 일부로 찾지 않는다.** 이름에 `노바` 가 든 장비 가운데 12개는 슈페리얼이 아니다. 그중 `노바 두건`(70제 모자)은 스타포스를
+  할 수 있어서, 계열 이름이 들었는지로 찾으면 일반 장비가 노바 금액으로 매겨진다.
+- **응답의 `superior_item_flag` 로는 가리지 않는다.** 일반 장비의 줄에는 `슈페리얼 장비 미해당` 이 온다. 2026-11-10 실측 45줄과
+  개발자 계정의 스타포스 내역 전체 125줄이 모두 이 글자였다. 슈페리얼 장비의 줄에 오는 글자는 아직 보지 못했다. 그래서 이 칸은
+  표에 없는 슈페리얼 장비를 알아채는 데만 쓴다. 빈 글자도 `슈페리얼 장비 미해당` 도 아닌데 표에 없는 줄은 값을 못 매기고,
+  이상 보고에 `no_cost` 로 알린다([[ADR-102]]). 장비 표에 없는 장비의 스타포스와 달리 성수와 상관없이 알린다. 운영자가 그 이름을
+  보고 슈페리얼 장비 표에 더한다.
+- **할인과 추가 비용이 붙지 않는다**(사용자 확인). 이벤트 비용 할인 · MVP 할인 · 파괴 방지 추가 비용이 모두 없고, 성수도 보지
+  않는다. 그래서 합계 줄은 이 금액을 `superior_cost_meso` 칸에 따로 든다. 시도 비용 칸에 넣으면 화면이 MVP 할인을 붙인다
+  (결정 2). 칸은 `CREATE TABLE` 문과 `ensureColumn` 으로 더한다. 기본값이 0 이라 옛 행의 값을 옮길 일이 없으므로 `DB_VERSION`
+  은 올리지 않는다([[ADR-007]] 결정 4).
+- 강화권을 쓴 줄이 0 메소이고 `펄스 인핸서` 줄을 합계에서 빼는 것은 슈페리얼 장비도 같다.
+- **두 표는 서버 게임 데이터의 `enhancementCosts` 칸에 둔다.** 게임 수치는 앱 번들에 넣지 않는다([[ADR-019]] 결정 1). 칸은 계열
+  표 `superior_series` 와 슈페리얼 장비 표 `superior_items` 의 줄을 그대로 싣는다. `superiorSeries: [{ key, name, starforceCostMeso }]`
+  와 `superiorItems: [{ name, seriesKey, iconAssetId }]` 다. 금액이 바뀌면 계열 한 줄만 고친다(사용자 선택 2026-11-15). 표를 만드는
+  마이그레이션이 계열 셋과 장비 50개를 함께 넣는다. 계열 key 는 `helisium_elite` · `nova` · `tyrant` 다.
+
+```
+서버 superior_series   id · key · name · starforce_cost_meso
+                       UNIQUE(key)
+서버 superior_items    id · series_id(FK superior_series) · name · icon_asset_id(FK assets)
+                       UNIQUE(name)
+```
+
+- 관리 화면 `/admin/enhancement-costs` 에서 계열을 더하고 금액을 고치며, 슈페리얼 장비를 더하고 지우고 그림을 바꾼다. 틀린
+  값(빈 계열 key · 1 보다 작은 금액 · 빈 장비 이름)과 그림 표에 없는 그림은 400, 없는 계열 · 장비는 404, 겹친 계열 key 와 공백을
+  지운 뒤 다른 장비와 같은 이름은 409 다. 어느 쪽이든 아무것도 안 바뀐다.
+- **펼친 강화 줄의 그림은 슈페리얼 장비 표에서도 찾는다.** 가계부는 아이템 표(`items`)에서 그림을 찾는데([[ADR-047]] 결정 21),
+  슈페리얼 장비 가운데 아이템 표에 있는 것은 타일런트 벨트 다섯뿐이다. 그래서 아이템 표에서 못 찾으면 슈페리얼 장비 표에서 이름으로
+  찾는다. 45개를 아이템 표에 넣지 않는 것은, 그러면 인벤토리 넣기와 가계부 아이템 고르기 목록에 거래할 수 없는 장비 45개가
+  서기 때문이다(사용자 선택 2026-11-15).
+  - 타일런트 벨트 다섯은 아이템 표가 쓰는 그림(`items/tyrant_lycaon_belt.png` 등)을 함께 쓴다.
+  - 나머지 45개는 maplestory.io KMS v389 의 `/item/{id}/icon` 에서 받아 `items/` 에 올린다. 운영의 타일런트 벨트 그림이 이 주소의
+    그림과 바이트까지 같아서다(2026-11-15 확인). 파일 이름은 기존 아이템 그림의 단어를 따른다. 부위는 `shoes` · `gloves` ·
+    `cape` · `belt`, 헬리시움 정예의 직업은 `knight` · `mage` · `archer` · `bandit` · `pirate` 다(예: `tyrant_hyades_shoes.png` ·
+    `nova_lycaon_cape.png` · `helisium_elite_bandit_belt.png`).
+  - 마이그레이션은 장비 줄의 그림을 그림 경로로 잇는다. 그래서 운영에는 45개 그림을 먼저 올리고 서버를 낸다. 그림이 없는 환경에서는
+    그림 칸이 비고, 앱은 그 장비를 그림 없이 이름부터 세운다.
+  - 그림 칸은 그림을 쓰는 곳 목록(`ASSET_USES`)에 든다. 빠지면 쓰는 그림을 안 쓰는 그림으로 보고 지울 수 있게 된다.
+- **앱은 두 칸이 없는 응답을 받지 않는다.** 칸이 빠지면 `parseEnhancementCosts` 가 `null` 을 내고, 게임 데이터 전체를 버린다
+  ([[ADR-020]] 결정 13). 기기 사본에 칸이 없어도 그 사본을 지우고 잠근 채 다시 받는다. 그래서 서버를 먼저 운영에 낸 뒤 앱을
+  낸다. 순서가 바뀌면 새 앱이 잠금 화면에서 멈춘다. 빈 칸으로 받게 두지 않는 이유가 있다. 그러면 서버가 나가기 전에 받은 날의
+  슈페리얼 줄이 값 없이 굳고, 아래의 다시 매기기도 빈 표로 돌고 끝나 버린다.
+- **이미 받은 날은 슈페리얼 장비의 줄이 있는 날만 갈아 끼운다**(사용자 지정 2026-11-15). 기기는 값을 못 매긴 줄을 버리므로
+  (결정 1), 그날 슈페리얼 장비의 줄이 있었는지는 넥슨에서 다시 받아야 안다. 그래서 결정 4 의 다시 매기기 요청으로 스타포스를
+  다시 받되, 받은 줄에 슈페리얼 장비 표의 장비가 있는 날만 그날 스타포스 합계를 갈아 끼운다. 다른 날은 그 사이 비용 표가
+  바뀌었어도 받은 때의 합계 그대로 둔다.
+  - 요청은 `{"id":"superior-starforce-1029","from":"2023-12-27","to":"2099-12-31","kinds":["starforce"],"superiorOnly":true}`
+    다. 결정 4 가 기간을 조회 하한과 오늘로 자르므로, 넥슨이 주는 가장 이른 날부터 배포 전에 받은 날까지 받는다.
+  - 받는 양은 같은 기간을 통째로 다시 매길 때와 같다. 넥슨 로그인 계정은 한 회차에 60일씩 받는다(결정 4).
+  - 갈아 끼우지 않은 날도 받은 날이라 진행(`done_through_date`)에 든다. 그 날의 굳음 원장(`enhancement_history_checks`)과 이상
+    보고는 건드리지 않는다. 그 날의 줄은 처음 받을 때 이미 알렸다.
+  - 같은 날을 화면 회차나 `superiorOnly` 가 없는 요청이 함께 받으면 통째로 갈아 끼운다. 그쪽도 슈페리얼 장비의 줄을 함께 매기기
+    때문이다.
+
 ## 테스트
 
 | 테스트 | 확인하는 것 |
@@ -204,6 +289,14 @@ OTA 를 낸다. 순서가 바뀌면 다시 받은 날이 다시 모름으로 남
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (계정 범위) | 그 넥슨 계정 캐릭터의 그날 줄은 다른 계정 id 로 적혔어도 갈아 끼우는지(결정 6 · 7) |
 | `lib/world/__tests__/worlds.spec.ts` | 월드마다 기간 배열을 읽고 없으면 빈 배열인지, 기간 글자가 틀리거나 `until` 이 `from` 보다 뒤가 아니면 표 전체가 `null` 인지, 날짜가 그 월드의 기간 안인지 `until` 을 빼고 가르는지(결정 9) |
 | 서버 `modules/worlds/worlds.repository.spec.ts` (기간) | 게임 데이터 칸의 월드마다 기간을 `from` 차례로 싣고 없으면 빈 배열인지, 기간을 더하고 고치고 지우면 칸의 `updatedAt` 이 바뀌는지, 겹치거나 `until` 이 `from` 보다 뒤가 아니면 400 인지(결정 9) |
+| `lib/enhancement/__tests__/cost.spec.ts` (슈페리얼) | 슈페리얼 장비를 공백과 상관없이 이름 전체로 찾아 그 계열의 금액과 그림 id 를 내고 이름 일부만 같으면 `null` 인지, `superiorSeries` · `superiorItems` 가 빠지거나 금액이 양의 정수가 아니면 표 전체가 `null` 인지(결정 10) |
+| `features/enhancement-history/__tests__/spending.spec.ts` (슈페리얼) | 표의 장비면 성 · 이벤트 할인 · 파괴 방지와 상관없이 계열 금액을 슈페리얼 몫에 드는지, `노바 두건` 처럼 계열 이름만 든 장비는 일반 식인지, 표에 없는데 `superior_item_flag` 가 `슈페리얼 장비 미해당` 도 빈 글자도 아니면 `no_cost` 인지(결정 10) |
+| `features/enhancement-history/__tests__/anomalies.spec.ts` (슈페리얼) | 표에 없는 슈페리얼 줄을 성수와 상관없이 `no_cost` 로 세는지(결정 10) |
+| `features/cashbook/__tests__/records.spec.ts` (슈페리얼) | 슈페리얼 비용에는 MVP 할인을 붙이지 않는지(결정 2 · 10) |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (슈페리얼) | 슈페리얼 비용 칸을 적고 읽는지, 칸이 없던 옛 기기의 표에도 더해지고 옛 줄은 0 인지(결정 7 · 10) |
+| `features/enhancement-history/__tests__/recompute.spec.ts` (슈페리얼) | `superiorOnly` 를 읽고, 참 · 거짓이 아니면 그 요청을 버리는지(결정 4 · 10) |
+| `features/enhancement-history/__tests__/collect.spec.ts` (슈페리얼) | `superiorOnly` 요청의 날은 슈페리얼 장비의 줄이 있을 때만 갈아 끼우고, 없으면 합계 · 굳음 원장 · 이상 보고를 그대로 두되 진행은 적는지, 같은 날을 통째로 받는 일이 함께 있으면 통째로 갈아 끼우는지(결정 10) |
+| 서버 `modules/enhancement-costs/enhancement-costs.repository.spec.ts` (슈페리얼) | 칸에 계열과 슈페리얼 장비 줄(그림 id 포함)을 싣는지, 계열을 더하거나 금액을 고치거나 장비를 더하고 지우거나 그림을 바꾸면 칸의 `updatedAt` 이 바뀌는지, 그림 표에 없는 그림은 막는지, 빈 · 겹친 계열 key, 1 보다 작은 금액, 빈 장비 이름, 공백을 지운 뒤 같은 장비 이름은 400 이고 아무것도 안 바뀌는지(결정 10) |
 
 ## 번호 기록
 
@@ -220,3 +313,5 @@ OTA 를 낸다. 순서가 바뀌면 다시 받은 날이 다시 모름으로 남
   출발했다. 표에 없는 월드 이름을 일반 월드가 아니라 모름으로 두고, 판정할 때 월드 이름을 지금 표에서 다시 찾게 했다. 목록에
   없는 이름은 스타포스 기록에서 남겨 둔 이름과 그 월드의 기간으로 판정하고, 회차가 끝나면 다시 본다(사용자 지정). 스페셜2 를
   넣기 전에 굳은 날을 다시 받는 요청을 더했다. 월드마다 기간을 여러 줄 두는 결정 9 와 결정 7 의 기기 표를 더했다
+- ADR-234 (2026-11-15): 슈페리얼 장비의 스타포스를 계열마다 정한 1회 금액으로 매기는 결정 10 을 더했다(#1029). 결정 2 와
+  결정 7 에 할인을 받지 않는 슈페리얼 비용 칸을, 결정 4 에 슈페리얼 줄이 있는 날만 갈아 끼우는 요청 칸 `superiorOnly` 를 더했다

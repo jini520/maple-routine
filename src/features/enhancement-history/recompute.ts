@@ -16,19 +16,22 @@ export interface RecomputeRequest {
   from: string
   to: string
   kinds: readonly EnhancementKind[]
+  /** 받은 날 가운데 슈페리얼 장비의 스타포스 줄이 있는 날만 갈아 끼운다. 빼면 거짓이다 */
+  superiorOnly: boolean
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 
 function requestOf(raw: unknown): RecomputeRequest | null {
   if (typeof raw !== 'object' || raw === null) return null
-  const { id, from, to, kinds } = raw as Record<string, unknown>
+  const { id, from, to, kinds, superiorOnly = false } = raw as Record<string, unknown>
   if (typeof id !== 'string' || id === '' || id.length > 100) return null
   if (typeof from !== 'string' || typeof to !== 'string' || !DATE.test(from) || !DATE.test(to) || from > to) return null
-  if (kinds === undefined) return { id, from, to, kinds: ALL_KINDS }
+  if (typeof superiorOnly !== 'boolean') return null
+  if (kinds === undefined) return { id, from, to, kinds: ALL_KINDS, superiorOnly }
   if (!Array.isArray(kinds) || kinds.length === 0) return null
   if (!kinds.every((kind) => (ALL_KINDS as readonly unknown[]).includes(kind))) return null
-  return { id, from, to, kinds: kinds as EnhancementKind[] }
+  return { id, from, to, kinds: kinds as EnhancementKind[], superiorOnly }
 }
 
 /**
