@@ -215,7 +215,8 @@ jsonb 칸 두 개에 나눠 두면 두 칸의 순서가 어긋나도 DB 가 잡�
 
 이 멈춤을 처음 일으킨 실패는 안드로이드 expo-modules-core 57.0.10 의 결함이었다. 그림 파일의 `bytes()` 호출이
 `Cannot use shared object that was already released` 로 거절됐고, 폴드8 외부 화면 에뮬레이터의 첫 실행 13번 가운데 한 번
-났다. expo-modules-core 57.0.20 이 고쳤으므로 v1.0.14 에서 expo SDK 57 패치를 올린다([[ADR-004]] 결정 4).
+났다. expo-modules-core 57.0.20 의 변경 기록에 이 거절을 고쳤다고 적혀 있어, v1.0.14 에서 expo SDK 57 패치를 올린다
+([[ADR-004]] 결정 4).
 
 잠근 채 켜지면 게임 데이터 받기는 OTA 확인이 끝난 뒤에 시작한다(사용자 지정 2026-10-30). 순서와 이유는 [[ADR-012]]
 결정 12 에 있다.
