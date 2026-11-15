@@ -97,6 +97,10 @@ import {
   loadLastPointRate,
   loadLastHunts,
   nextLastHunts,
+  loadLastBossIncomeTransfers,
+  loadLastEpicDungeonRewards,
+  nextLastBossIncomeTransfers,
+  nextLastEpicDungeonRewards,
   loadFragmentStorage,
   loadHuntFragmentFloor,
   isFragmentShortage,
@@ -125,6 +129,7 @@ import {
   type ManualDayRecord,
   type RecordCard,
   type SoldItem,
+  type SpendSheetState,
 } from '../../features/cashbook/records'
 import { loadWeekCrystalMeso } from '../../features/cashbook/week-crystal'
 import {
@@ -139,6 +144,8 @@ import {
 import type { ImageAssetRef } from '../../types/image-asset'
 import type { HexaStorageChecks } from '../../storage/hexa-storage-checks'
 import type { LastHunts } from '../../storage/last-hunts'
+import type { LastBossIncomeTransfers } from '../../storage/last-boss-income-transfers'
+import type { LastEpicDungeonRewards } from '../../storage/last-epic-dungeon-rewards'
 import { useLedgerDays } from '../../features/cashbook/ledger-query'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
 import { loadRememberedLevels } from '../../features/cashbook/remembered-levels'
@@ -827,6 +834,9 @@ export function CashbookScreen(): React.JSX.Element {
   const [lastHunts, setLastHunts] = useState<LastHunts>({})
   /** 새 헥사 폼의 두 체크. 기억이 없으면 둘 다 꺼져 있다. */
   const [hexaStorageChecks, setHexaStorageChecks] = useState<HexaStorageChecks>({ useStorage: false, storageAsSpend: false })
+  /** 보내는 캐릭터별 마지막 수입 이전과 던전별 마지막 에픽던전 리워드. 새 지출 폼이 그 몫을 세운다. */
+  const [lastBossIncomeTransfers, setLastBossIncomeTransfers] = useState<LastBossIncomeTransfers>({})
+  const [lastEpicDungeonRewards, setLastEpicDungeonRewards] = useState<LastEpicDungeonRewards>({})
   /**
    * 시트의 캐릭터 고르개가 쓸 목록. 화면이 읽는다(시트는 `storage/` 를 모른다).
    * 들어올 때 한 번이면 된다. 추적 목록이 시트를 여는 사이에 바뀌지 않는다.
@@ -963,6 +973,8 @@ export function CashbookScreen(): React.JSX.Element {
     void loadLastPointRate().then(setLastPointRate)
     void loadLastHunts().then(setLastHunts)
     void loadHexaStorageChecks().then(setHexaStorageChecks)
+    void loadLastBossIncomeTransfers().then(setLastBossIncomeTransfers)
+    void loadLastEpicDungeonRewards().then(setLastEpicDungeonRewards)
     void loadTrackedCharacters().then(setCharacters)
     void loadSheetAccounts().then(setAccounts, () => undefined)
   }, [])
@@ -995,9 +1007,9 @@ export function CashbookScreen(): React.JSX.Element {
     }
   }
 
-  async function saveSpend(draft: SpendDraft): Promise<void> {
+  async function saveSpend(draft: SpendDraft, sheet: SpendSheetState = {}): Promise<void> {
     try {
-      await recordSpend(draft, new Date())
+      await recordSpend(draft, new Date(), sheet)
     } catch (error) {
       useToastStore.getState().showError('지출을 적지 못했습니다')
       throw error
@@ -1007,6 +1019,9 @@ export function CashbookScreen(): React.JSX.Element {
     // 헥사 체크도 같다. 다음 새 헥사 폼이 이 상태로 열린다.
     const hexa = draft.hexa
     if (hexa !== null) setHexaStorageChecks({ useStorage: hexa.useStorage, storageAsSpend: hexa.storageAsSpend })
+    // 수입 이전 · 에픽던전도 저장과 같은 규칙으로 든다.
+    setLastBossIncomeTransfers((current) => nextLastBossIncomeTransfers(draft, sheet, current))
+    setLastEpicDungeonRewards((current) => nextLastEpicDungeonRewards(draft, current))
   }
 
   /**
@@ -1436,6 +1451,8 @@ export function CashbookScreen(): React.JSX.Element {
           todayDateKey={todayDateKey}
           earliestDateKey={historyFloorDateKey(todayDateKey)}
           lastPointRate={lastPointRate}
+          lastBossIncomeTransfers={lastBossIncomeTransfers}
+          lastEpicDungeonRewards={lastEpicDungeonRewards}
           // 심볼 강화 드롭다운이 만렙인 심볼을 가를 때 부른다. 시트는 `nexon/` 도 `storage/` 도 모른다.
           loadRememberedLevels={loadRememberedLevels}
           // 헥사 매트릭스 폼이 보관 조각을 가져올 캐릭터와 그 보관을 읽을 때 부른다.

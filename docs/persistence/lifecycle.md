@@ -50,7 +50,7 @@
 
 | 그룹 | 지우는 것 |
 |---|---|
-| `manual`(수동 선택 항목) | Preferences 의 `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` · `hexaStorageChecks` + 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값, 행 단위) |
+| `manual`(수동 선택 항목) | Preferences 의 `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` · `hexaStorageChecks` · `lastBossIncomeTransfers` · `lastEpicDungeonRewards` + 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값, 행 단위) |
 | `boss`(보스 처치 · 드롭) | 보스 기록 표 셋의 처치 · 드롭 행(행 단위) |
 | `cashbook`(가계부) | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` · `remembered_levels` |
 | `enhancement`(강화) | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` · `enhancement_refetches` · `character_dated_names` · `character_first_days` |

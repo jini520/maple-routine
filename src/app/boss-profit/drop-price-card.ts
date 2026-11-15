@@ -14,6 +14,7 @@ import { dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { periodStartDateKey } from '../../lib/boss/boss-profit-period'
 import { getMaxPartySize } from '../../lib/boss/bosses'
 import { dropItemNameOf } from '../../lib/drop/drop-items'
+import { cardPayoutMeso } from '../../lib/drop/drop-price'
 import type { confirmLabels } from '../../lib/drop/price-card-labels'
 
 /** 한 연쇄 안에서 매긴 값. 스토어를 다시 읽어도 이전으로 돌아가면 이 값이 보인다. */
@@ -65,6 +66,8 @@ export function dropPriceCardRequest(input: {
       sale: saleSeed,
       split: splitSeed,
     },
+    // 저장 뒤 목록 알약에 적힐 값과 같은 셈이다.
+    payout: { label: '받는 금액', of: cardPayoutMeso },
     ...input.labels,
     exclude: { label: '기록 안함', onPress: input.onExclude },
     prev: input.prev,

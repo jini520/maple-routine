@@ -24,7 +24,7 @@
 
 | 그룹(`CacheDataGroupId`) | 화면 이름 | Preferences | SQLite | 지운 뒤 |
 |---|---|---|---|---|
-| `manual` | 수동 선택 항목 | `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` · `hexaStorageChecks` | 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값) | 사용자가 다시 고른다 |
+| `manual` | 수동 선택 항목 | `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` · `hexaStorageChecks` · `lastBossIncomeTransfers` · `lastEpicDungeonRewards` | 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값) | 사용자가 다시 고른다 |
 | `boss` | 보스 처치 · 드롭 | 없음 | 보스 기록 표 셋의 처치 · 드롭 행 | 넥슨 API 가 최근 2주치 처치만 다시 준다. 드롭은 되살릴 수 없다 |
 | `cashbook` | 가계부 | 없음 | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` | 손으로 적은 기록이라 되살릴 수 없다 |
 | `enhancement` | 강화 | 없음 | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` · `enhancement_refetches` · `character_dated_names` · `character_first_days` | 가계부 · 통계에서 그 달을 볼 때 넥슨 API 에서 다시 받는다. 조회 한도(약 18개월, `HISTORY_MONTHS_BACK`)보다 이른 날은 다시 받을 수 없다 |

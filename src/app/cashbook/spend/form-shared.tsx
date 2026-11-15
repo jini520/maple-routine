@@ -15,9 +15,12 @@ import { mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { openInputCard } from '../../../features/input-card/store'
 import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import type { SheetAccount } from '../../../features/cashbook/account-names'
+import type { SpendSheetState } from '../../../features/cashbook/records'
 import type { SpendCategoryKey } from '../../../lib/cashbook/categories'
 import type { HexaStorages } from '../../../lib/cashbook/hexa-matrix'
 import type { HexaStorageChecks } from '../../../storage/hexa-storage-checks'
+import type { LastBossIncomeTransfers } from '../../../storage/last-boss-income-transfers'
+import type { LastEpicDungeonRewards } from '../../../storage/last-epic-dungeon-rewards'
 import { type SpendRecord } from '../../../storage/spend'
 
 /**
@@ -70,7 +73,12 @@ export interface SpendFormProps {
   editing?: SpendRecord
   onDelete?: () => void | Promise<void>
   lastPointRate: number | null
-  onSave: (draft: SpendDraft) => void | Promise<void>
+  /** 보내는 캐릭터마다 마지막 수입 이전. 새 `주간 보스 수입 이전` 폼이 보내는 캐릭터를 고르면 그 몫을 세운다. */
+  lastBossIncomeTransfers: LastBossIncomeTransfers
+  /** 던전마다 마지막 에픽던전 리워드. 새 컨텐츠 폼이 던전 타일을 누르면 그 몫을 세운다. */
+  lastEpicDungeonRewards: LastEpicDungeonRewards
+  /** `sheet` 는 기록에 저장하지 않고 기억에만 적는 시트의 상태 */
+  onSave: (draft: SpendDraft, sheet?: SpendSheetState) => void | Promise<void>
   onClose: () => void
   /** 시트 껍데기의 스크롤을 되돌릴 열쇠. 목록 갈래가 단계를 오갈 때 부른다. */
   onScrollKeyChange: (key: string) => void

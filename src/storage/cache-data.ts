@@ -20,6 +20,8 @@ const MANUAL_KEYS = new Set<string>([
   STORAGE_KEYS.lastHuntSelection,
   STORAGE_KEYS.lastHuntToggles,
   STORAGE_KEYS.lastPointRate,
+  STORAGE_KEYS.lastBossIncomeTransfers,
+  STORAGE_KEYS.lastEpicDungeonRewards,
 ])
 
 function isManualKey(key: string): boolean {

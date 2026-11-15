@@ -8,23 +8,24 @@
 import { useState } from 'react'
 
 import type { SpendDraft } from '../app/cashbook/spend/form-shared'
+import type { SpendSheetState } from '../features/cashbook/records'
 
 export function useSpendSubmit(props: {
-  onSave: (draft: SpendDraft) => void | Promise<void>
+  onSave: (draft: SpendDraft, sheet?: SpendSheetState) => void | Promise<void>
   onDelete?: () => void | Promise<void>
   onClose: () => void
 }): {
   saving: boolean
-  submit: (draft: SpendDraft) => Promise<void>
+  submit: (...args: [draft: SpendDraft, sheet?: SpendSheetState]) => Promise<void>
   remove: () => Promise<void>
 } {
   const [saving, setSaving] = useState(false)
 
-  async function submit(draft: SpendDraft): Promise<void> {
+  async function submit(...args: [draft: SpendDraft, sheet?: SpendSheetState]): Promise<void> {
     if (saving) return
     setSaving(true)
     try {
-      await props.onSave(draft)
+      await props.onSave(...args)
     } catch {
       setSaving(false)
       return

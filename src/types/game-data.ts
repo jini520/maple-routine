@@ -436,7 +436,12 @@ export interface AssetFilesTable extends TableHead {
   files: AssetFileRow[]
 }
 
-/** 크롭 표의 종류. 같은 그림도 놓이는 자리마다 잘 보이는 곳이 달라 표가 갈린다. */
+/**
+ * 크롭 표의 종류. 같은 그림도 놓이는 자리마다 잘 보이는 곳이 달라 표가 갈린다.
+ *
+ * `boss_portrait_modal` 은 앱이 더 읽지 않지만 서버 표에 줄이 남아 있다. 여기서 빼면 그 줄이 계약을 어겨 크롭 표
+ * 전체를 버린다.
+ */
 export const IMAGE_CROP_KINDS = ['boss_portrait', 'boss_portrait_icon', 'boss_portrait_modal', 'daily_quest_region'] as const
 export type ImageCropKind = (typeof IMAGE_CROP_KINDS)[number]
 

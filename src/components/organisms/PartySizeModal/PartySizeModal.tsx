@@ -9,36 +9,35 @@
  * 파티 인원은 (보스 + 난이도)에 붙어 있어 난이도를 바꾸면 값과 상한이 함께 갈아탄다
  * (스우: 하드 6인 / 익스트림 2인). 옆의 `최대 n명` 배지가 그 사실을 말한다.
  *
- * 머리는 **일러스트가 오른쪽에서 흘러들고 글자는 전부 왼쪽**이다. 그림이 글자 뒤로 안 가서
- * 베일로 눌러 읽히게 할 일이 없고, 그래서 이름을 크게 쓸 자리가 난다. 난이도도 머리에 서서
- * 본문은 분배 하나만 든다.
+ * 머리는 원형 초상화 · 이름 · 난이도뿐이다. 일러스트 띠를 두었더니 머리가 높아져 모달이 컸다.
  *
  * 분배는 `기본`·`비율`·`제외` 세그먼트로 가른다. 지금 어느 쪽인지가 늘 보여야 해서 스위치가 아니다.
  * `제외` 는 고르기 전 분배를 지우지 않고 숨긴다. 숨긴 분배를 드롭 가격 카드가 처음 값으로 쓴다.
  *
- * **언제 저장할지는 호출부가 정한다.** 비율은 끌기 한 번에 값이 여러 번 바뀌어서, 바뀔 때마다
- * 쓰면 한 몸짓이 저장 아홉 번이 된다.
+ * **언제 저장할지는 호출부가 정한다.** 인원 · 비율 · 수수료는 고치는 동안 여러 번 바뀌어서, 바뀔 때마다
+ * 쓰면 저장과 토스트가 여러 번 일어난다.
  */
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 import { vars } from 'nativewind'
 
-import { getBossPortraitModalCrop, getBossPortraitUrl } from '../../../lib/assets/asset-lookup'
 import type { BossDifficulty } from '../../../types'
 
-import { StyleSheet } from 'react-native'
-import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg'
-
-import { Badge, Button, Text, XIcon } from '../../atoms'
+import { Badge, Button, Text, TextInput, XIcon } from '../../atoms'
 import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
+import {
+  acceptSharePercentText,
+  crystalPayoutMeso,
+  sharePercentText,
+  sharesFromPercentText,
+} from '../../../lib/boss/party-shares'
 import { useThemeAppearance } from '../../../theme/context'
 import { buildSheetScopeVariables } from '../../../theme/theme-vars'
+import { BossPortrait } from '../../molecules/BossPortrait/BossPortrait'
 import { DifficultyExpander } from '../../molecules/DifficultyExpander/DifficultyExpander'
-import { FadedIllustration } from '../../molecules/FadedIllustration/FadedIllustration'
 import { Stepper } from '../../molecules/Stepper/Stepper'
 import { Segment } from '../../molecules/Segment/Segment'
-import { ShareField } from '../../molecules/ShareField/ShareField'
 import { FeeRow } from '../FeeRow/FeeRow'
 import { Modal } from '../Modal/Modal'
 import type { MvpGradeKey } from '../../../lib/mvp/grades'
@@ -61,36 +60,16 @@ export interface PartyModalShares {
  */
 const FEE_OPTIONS = ['0%', '3%', '5%'] as const
 
-
 /**
- * 비율로 갈아탈 때 놓이는 값. **`2 : 1`(66.7%)** 이다.
+ * 비율로 갈아탈 때 놓이는 값. **`2 / 3`(66.667%)** 이다.
  *
- * 반반(`1 : 2`)으로 두면 2인 균등과 한 메소도 안 다른 값이라, 비율을 켜 놓고 아무것도 안 고른
- * 상태가 켜기 전과 같아진다. 고르개를 세워 놓고 뜻이 없는 자리다.
+ * 반반으로 두면 2인 균등과 한 메소도 안 다른 값이라, 비율을 켜 놓고 아무것도 안 고른
+ * 상태가 켜기 전과 같아진다. 저장 칸에도 2 · 3 그대로 들어가 정확한 2/3 으로 센다.
  */
 const SEED_SHARES = { myShare: 2, sharesTotal: 3 }
 
 /** 분배를 가르는 세 조각. 글자가 곧 상태다. */
 const SPLIT_OPTIONS = ['기본', '비율', '제외'] as const
-
-/**
- * 그림이 서는 띠의 폭.
- *
- * **흐림이 어디서 시작할 수 있는지를 이 수가 정한다.** 그림은 띠 왼쪽 끝에서 판 표면색과 같아져야
- * 하므로, 띠가 좁으면 흐림이 그만큼 오른쪽에서 시작한다. 170 에서는 판 한가운데를 못 벗어났다.
- *
- * 크롭 표(`boss-portrait-modal-crops.json`)의 `N% auto` 가 이 폭 기준이다. 여기를 바꾸면 그림
- * 크기가 같은 비율로 따라 변하므로 표도 함께 봐야 한다.
- */
-const ART_WIDTH = 240
-
-/** 베일 셋의 id. SVG `url(#…)` 참조라 한 문서 안에서 겹치면 안 된다. */
-const VEIL_H = 'party-art-veil-h'
-const VEIL_V = 'party-art-veil-v'
-const VEIL_CORNER = 'party-art-veil-corner'
-
-/** 띠 위에서의 그림 밝기. 글자가 그림 위에 안 앉아 카드 기본(0.65)보다 살려 둔다. */
-const ART_OPACITY = 0.8
 
 /** 비율을 끄면 칸을 전부 비운다. 균등으로 되돌리는 길이 이것 하나다. */
 const NO_SHARES: PartyModalShares = {
@@ -99,33 +78,16 @@ const NO_SHARES: PartyModalShares = {
   splitFeePercent: null,
 }
 
-/** 비율 고르개 한 장. 카드가 판 폭을 다 쓰므로 합이 트랙 옆에 선다. */
-function ShareCard(props: {
-  label: string
-  value: { myShare: number; sharesTotal: number }
-  onChange: (next: { myShare: number; sharesTotal: number }) => void
-}): React.JSX.Element {
-  return (
-    // 칠이 `surface-2` 가 아니라 `bg` 다. 라이트에서 판(L .985)과 `surface-2`(L .90)의 단차가
-    // 커 카드가 탁해 보였다(사용자 지적). `bg`(L .95)는 단차가 절반이고 채도도 낮다. 다크에서는
-    // 판(L .20)보다 어두워져 파인 자리가 된다.
-    // **늘리지도 줄이지도 않는다.** 두 장이 가로로 서던 때의 `flex-1` 을 세로 스택에 두면
-    // `flexBasis: 0` 이라 카드가 납작해지고, 밖으로 넘친 트랙과 합 버튼이 그대로 그려진다.
-    <View testID="party-share-card" className="rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
-      <ShareField
-        label={props.label}
-        value={props.value}
-        layout="wide"
-        onChange={props.onChange}
-      />
-    </View>
+/** 칸에 적을 % 글자. 비율이 없으면 비율로 갈아탈 때 놓일 값이다. */
+function percentTextOf(shares: PartyModalShares): string {
+  return sharePercentText(
+    shares.crystalMyShare ?? SEED_SHARES.myShare,
+    shares.crystalSharesTotal ?? SEED_SHARES.sharesTotal,
   )
 }
 
 export function PartySizeModal(props: {
   bossName: string
-  /** 히어로의 키커. '주간 보스' / '월간 보스'. */
-  cycleLabel: string
   portraitAssetId: string | null
   difficulties: BossDifficulty[]
   /** 지금 고른 난이도. 바뀌면 인원과 비율이 그 난이도의 저장값으로 갈아탄다. */
@@ -134,6 +96,11 @@ export function PartySizeModal(props: {
   maxPartySize: number
   /** 이 난이도에 저장돼 있는 비율. `null` 칸은 균등이다. */
   shares: PartyModalShares
+  /**
+   * `받는 금액` 을 셀 결정석 가격. 어느 가격인지는 연 곳이 정한다(기록의 가격 · 그 기간의 가격 표).
+   * 모르면 `null` 이고 그 줄을 안 그린다. 0 메소로 적으면 받는 돈이 없는 것처럼 읽힌다.
+   */
+  crystalPriceMeso?: number | null
   /**
    * 송금 수수료 `자동` 의 명패와 요율. 설정 자리는 이번 주 등급, 보스 수익 행은 그 기록 날짜의 등급을 넘긴다.
    * 모르면 `null` 이라 값 자리가 빈다.
@@ -154,6 +121,13 @@ export function PartySizeModal(props: {
   /** 고치는 중인 값. 적용을 누를 때까지 밖으로 안 나간다. */
   const [draft, setDraft] = useState({ partySize: props.partySize, shares: props.shares })
   /**
+   * % 칸의 글자. 비율과 따로 든다. `33.` 처럼 치는 중인 글자는 비율로 못 옮기지만 칸에는 남아야 한다.
+   * 비율은 글자가 받을 수 있는 값이 될 때마다 따라간다.
+   */
+  const [percentText, setPercentText] = useState(() => percentTextOf(props.shares))
+  /** % 를 치는 중인가. 키보드가 가운데의 모달을 덮지 않게 그동안 모달을 위로 올린다. */
+  const [typing, setTyping] = useState(false)
+  /**
    * 초안을 어느 난이도에서 떴나.
    *
    * 난이도를 바꾸면 값이 통째로 갈아탄다(스우 하드 6인 · 익스트림 2인). 그 난이도의 저장값으로
@@ -164,6 +138,7 @@ export function PartySizeModal(props: {
   if (seededAt !== props.difficulty) {
     setSeededAt(props.difficulty)
     setDraft({ partySize: props.partySize, shares: props.shares })
+    setPercentText(percentTextOf(props.shares))
   }
 
   function setShares(next: PartyModalShares): void {
@@ -172,101 +147,48 @@ export function PartySizeModal(props: {
 
   const usesShares = draft.shares.crystalSharesTotal !== null
   const excluded = draft.shares.crystalExcluded === true
-  const crystal = {
-    myShare: draft.shares.crystalMyShare ?? SEED_SHARES.myShare,
-    sharesTotal: draft.shares.crystalSharesTotal ?? SEED_SHARES.sharesTotal,
-  }
   const splitFeePercent = draft.shares.splitFeePercent ?? 3
   const splitFeeAuto = draft.shares.splitFeeAuto === true
   const autoFee = props.autoFee ?? null
+  /** 금액을 셀 송금 수수료. 자동이면 그 등급 요율이고, 적용도 이 값을 내보낸다. */
+  const effectiveFeePercent = splitFeeAuto ? (autoFee?.percent ?? draft.shares.splitFeePercent) : draft.shares.splitFeePercent
+  const priceMeso = props.crystalPriceMeso ?? null
+  const payoutMeso =
+    priceMeso === null || excluded
+      ? null
+      : crystalPayoutMeso(priceMeso, draft.partySize, {
+          myShare: draft.shares.crystalMyShare,
+          sharesTotal: draft.shares.crystalSharesTotal,
+          splitFeePercent: effectiveFeePercent,
+        })
 
-  // 그림이 판 위에 바로 앉는다. 덧칠할 색이 `mediaSurface` 가 아니라 판의 `surface` 다.
-  // 다크에서는 판이 한 칸 올린 표면이라 베일도 그 값이어야 띠 끝에 이음선이 안 남는다.
+  // 판이 다른 가운데 모달과 같은 표면이다. 다크에서는 표면을 한 칸 올린 값이다.
   const { definition } = useThemeAppearance()
   const panelScope = buildSheetScopeVariables(definition)
-  const surface = panelScope['--color-surface']
 
-  const portraitUrl = getBossPortraitUrl(props.portraitAssetId)
-  // **띠 전용 표다**(`boss-portrait-modal-crops.json`). 카드 표와 갈라 둔 것은 띠가 카드보다 좁고
-  // 높아 같은 값이 다른 구도를 내기 때문이고, 한 표를 같이 쓰면 여기를 맞출 때마다 카드가 움직인다.
-  const crop = getBossPortraitModalCrop(props.portraitAssetId)
+  function changePercent(next: string): void {
+    const text = acceptSharePercentText(percentText, next)
+    setPercentText(text)
+    const parsed = sharesFromPercentText(text)
+    if (parsed === null) return
+    setShares({ ...draft.shares, crystalMyShare: parsed.myShare, crystalSharesTotal: parsed.sharesTotal })
+  }
 
   return (
-    // align="center": 이 모달은 키보드를 띄우지 않는다(`Modal` 기본은 'top').
-    // Modal.Panel: 일러스트가 모서리까지 가야 해서 카드 껍데기(p-6)를 쓰지 않고 직접 두른다.
-    <Modal onClose={props.onClose} align="center" testId="party-size-modal">
-      {/* 폭 320. 일러스트 띠와 카드 둘이 나란히 서려면 288 로는 트랙이 안 남는다.
-          `max-w-xs` 는 못박은 값이라 360 기기에서도 폭이 같다. */}
+    // 가운데에 둔다. % 를 치는 동안만 위로 올린다. 가운데에 두면 키보드가 받는 금액과 적용을 덮는다.
+    <Modal onClose={props.onClose} align={typing ? 'top' : 'center'} testId="party-size-modal">
+      {/* 폭 320. `max-w-xs` 는 못박은 값이라 360 기기에서도 폭이 같다. */}
       <Modal.Panel maxWidth="max-w-xs">
-        {/* 다른 가운데 모달(`ModalSurface`)과 같은 판이다. 테두리 없이 다크에서만 표면을 한 칸 올린다.
-            변수는 바깥 층에서 다시 선언하고 색은 안쪽 층이 칠한다. 같은 층이면 옛 값으로 풀린다. */}
+        {/* 변수는 바깥 층에서 다시 선언하고 색은 안쪽 층이 칠한다. 같은 층이면 옛 값으로 풀린다. */}
         <View style={vars(panelScope)}>
           <View testID="party-size-panel" className="overflow-hidden rounded-[14px] bg-surface">
-            <View className="relative h-[104px] overflow-hidden">
-              {/* 그림이 오른쪽 띠에만 선다. 감싸는 View 가 크기를 가진 절대 상자라 안쪽의
-                  `absolute inset-0` 이 그 띠를 기준으로 풀린다.
-
-                  **`overflow-hidden` 이 필수다.** 크롭은 이미지를 상자보다 크게 그려 창을 옮기는
-                  방식이라, 안 자르면 남는 부분이 띠 밖으로 흘러 글자를 덮는다. 베일은 띠 안만
-                  덮으므로 그 부분은 생그림 사각형으로 남는다(실기기에서 드러났다). */}
-              <View
-                testID="party-modal-art"
-                pointerEvents="none"
-                className="absolute inset-y-0 right-0 overflow-hidden"
-                style={{ width: ART_WIDTH }}
-              >
-                <FadedIllustration source={portraitUrl} crop={crop} veil={false} opacity={ART_OPACITY} />
-
-                {/* 베일 셋을 겹친다. **가로와 세로는 직선**이고, 둘이 만나는 왼쪽 아래
-                    모서리만 둥글게 깎는다.
-
-                    타원 하나로 덮어 봤더니 위·오른쪽까지 휘어 어색했다(사용자 지적). 직선 둘만
-                    겹치면 이번엔 그 모서리가 각지게 접힌다. 셋째가 그 자리만 메운다.
-
-                    겹치는 순서는 상관없다. 알파가 `1-(1-가로)(1-세로)(1-모서리)` 로 쌓여서 어느
-                    하나가 다 덮으면 그 자리는 판 표면색이다.
-
-                    **왼쪽 끝과 아래 끝은 완전히 덮여야 한다.** 덜 덮이면 띠가 끝나는 자리에
-                    이음선이 남는다. 글자 자리(판 왼쪽 155)에 옅게 깔리는 것은 감수한 것이다. */}
-                <Svg aria-hidden pointerEvents="none" style={StyleSheet.absoluteFill}>
-                  <Defs>
-                    {/* 가로. 왼쪽 5% 부터 완전히 덮고 58% 에서 걷힌다. */}
-                    <LinearGradient id={VEIL_H} x1="0" y1="0" x2="1" y2="0">
-                      <Stop offset="0.05" stopColor={surface} stopOpacity={1} />
-                      <Stop offset="0.58" stopColor={surface} stopOpacity={0} />
-                    </LinearGradient>
-                    {/* 세로. 머리와 본문 사이에 선이 없어 그림이 본문으로 그대로 이어진다. */}
-                    <LinearGradient id={VEIL_V} x1="0" y1="0" x2="0" y2="1">
-                      <Stop offset="0.55" stopColor={surface} stopOpacity={0} />
-                      <Stop offset="1" stopColor={surface} stopOpacity={1} />
-                    </LinearGradient>
-                    {/* 모서리. 왼쪽 아래 귀퉁이에서만 퍼져 각진 접힘을 깎는다. */}
-                    <RadialGradient id={VEIL_CORNER} cx="0%" cy="100%" rx="34%" ry="30%">
-                      <Stop offset="0" stopColor={surface} stopOpacity={1} />
-                      <Stop offset="1" stopColor={surface} stopOpacity={0} />
-                    </RadialGradient>
-                  </Defs>
-                  <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_H})`} />
-                  <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_V})`} />
-                  <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${VEIL_CORNER})`} />
-                </Svg>
-              </View>
-
-              {/* 다른 모달의 닫기와 같은 상자·같은 아이콘이다(`InputCard`: 44 · `h-5`). 칠한 원을
-                  안 두르는 것도 그쪽과 같다. 그림이 이 자리까지 안 올라와 눌러 줄 일이 없다. */}
-              <Pressable
-                testID="party-size-modal-close"
-                role="button"
-                onPress={props.onClose}
-                aria-label="닫기"
-                className="absolute right-1.5 top-1.5 h-11 w-11 items-center justify-center"
-              >
-                <XIcon className="h-5 w-5 text-text-muted" aria-hidden />
-              </Pressable>
-
-              {/* 글자는 전부 왼쪽이다. 그림 위에 안 앉으므로 그림자를 안 쓴다. */}
-              <View className="absolute left-4 top-4 gap-1.5">
-                <Text className="text-11 font-bold tracking-[.16em] text-text-muted">{props.cycleLabel}</Text>
+            <View className="flex-row items-start gap-3 pl-4 pr-1.5 pt-4">
+              <BossPortrait portraitAssetId={props.portraitAssetId} label={props.bossName} size={40} />
+              {/*
+                이름 아래에 난이도를 둔다. 이름 옆에 두면 난이도가 넷인 보스(감시자 칼로스 등)의 고르개가
+                펼칠 때 판 폭을 넘어 잘린다.
+              */}
+              <View className="min-w-0 flex-1 gap-1">
                 <Text className="text-base font-bold tracking-[-.02em] text-text">{props.bossName}</Text>
                 {props.onSelectDifficulty === undefined ? (
                   <View className="self-start">
@@ -281,8 +203,19 @@ export function PartySizeModal(props: {
                   />
                 )}
               </View>
+              {/* 다른 모달의 닫기와 같은 상자·같은 아이콘이다(`InputCard`: 44 · `h-5`). */}
+              <Pressable
+                testID="party-size-modal-close"
+                role="button"
+                onPress={props.onClose}
+                aria-label="닫기"
+                className="-mt-2.5 h-11 w-11 items-center justify-center"
+              >
+                <XIcon className="h-5 w-5 text-text-muted" aria-hidden />
+              </Pressable>
             </View>
 
+            {/* 줄은 바탕 카드 없이 판 위에 바로 놓고 간격으로 가른다. 드롭 가격 카드와 같은 짜임이다. */}
             <View className="gap-3.5 p-4">
               <View className="flex-row items-center justify-between gap-2.5">
                 <Text className="text-xs font-bold text-text">분배 방식</Text>
@@ -290,41 +223,56 @@ export function PartySizeModal(props: {
                   options={SPLIT_OPTIONS}
                   selected={excluded ? '제외' : usesShares ? '비율' : '기본'}
                   size="md"
-                  onSelect={(option) =>
-                    setShares(
-                      option === '제외'
-                        ? { ...draft.shares, crystalExcluded: true }
-                        : option === '기본'
-                          ? NO_SHARES
-                          : // `제외` 로 숨겨 둔 비율이 있으면 그대로 돌아온다.
-                            usesShares
-                            ? { ...draft.shares, crystalExcluded: false }
-                            : {
-                                crystalMyShare: SEED_SHARES.myShare,
-                                crystalSharesTotal: SEED_SHARES.sharesTotal,
-                                // 비율로 바꿀 때 송금 수수료는 자동으로 시작한다(내 등급 요율).
-                                splitFeePercent: null,
-                                splitFeeAuto: true,
-                              },
-                    )
-                  }
+                  onSelect={(option) => {
+                    if (option === '제외') {
+                      setShares({ ...draft.shares, crystalExcluded: true })
+                      return
+                    }
+                    if (option === '기본') {
+                      setShares(NO_SHARES)
+                      return
+                    }
+                    // `제외` 로 숨겨 둔 비율이 있으면 그대로 돌아온다.
+                    if (usesShares) {
+                      setShares({ ...draft.shares, crystalExcluded: false })
+                      return
+                    }
+                    setPercentText(sharePercentText(SEED_SHARES.myShare, SEED_SHARES.sharesTotal))
+                    setShares({
+                      crystalMyShare: SEED_SHARES.myShare,
+                      crystalSharesTotal: SEED_SHARES.sharesTotal,
+                      // 비율로 바꿀 때 송금 수수료는 자동으로 시작한다(내 등급 요율).
+                      splitFeePercent: null,
+                      splitFeeAuto: true,
+                    })
+                  }}
                 />
               </View>
 
               {excluded ? null : usesShares ? (
                 <>
-                  {/* 카드 한 장이다. 아이템 비율은 건마다 값이 달라 드롭 가격 카드가 받는다. */}
-                  <ShareCard
-                    label="결정석"
-                    value={crystal}
-                    onChange={(next) =>
-                      setShares({
-                        ...draft.shares,
-                        crystalMyShare: next.myShare,
-                        crystalSharesTotal: next.sharesTotal,
-                      })
-                    }
-                  />
+                  <View className="flex-row items-center gap-1">
+                    <Text className="flex-1 text-xs tracking-[.04em] text-text-muted">결정석</Text>
+                    {/*
+                      바탕 없는 숫자다(알약 바탕을 두지 않는다). 누르면 소수점 키로 친다. 칸이 비거나 `33.` 처럼
+                      비율로 못 옮기는 글자로 끝나면 마지막으로 받은 비율로 되돌려 적는다.
+                    */}
+                    <TextInput
+                      testID="party-share-percent"
+                      aria-label="결정석 내 몫"
+                      value={percentText}
+                      onChangeText={changePercent}
+                      onFocus={() => setTyping(true)}
+                      onBlur={() => {
+                        setTyping(false)
+                        if (sharesFromPercentText(percentText) === null) setPercentText(percentTextOf(draft.shares))
+                      }}
+                      keyboardType="decimal-pad"
+                      className="h-[25px] min-w-[44px] text-right text-lg font-semibold text-text"
+                      style={TABULAR_NUMS}
+                    />
+                    <Text className="text-xs text-text-muted">%</Text>
+                  </View>
 
                   <FeeRow
                     variant="compact"
@@ -351,9 +299,8 @@ export function PartySizeModal(props: {
                    말한다. */
                 <View className="flex-row items-center justify-between gap-2.5">
                   <View className="flex-row items-center gap-2">
-                    {/* 줄 높이를 글꼴 자연 상자(12 × 1.19 ≈ 14)에 붙인다. `text-xs` 의 기본 17 은
-                        iOS 에서 남는 여유가 전부 글자 **위**로 가서(기준선이 `줄높이 − descent`)
-                        글자가 3px 내려앉고, 옆의 배지만 위로 붙어 보인다. */}
+                    {/* 줄 높이를 글꼴 자연 상자(12 × 1.19 ≈ 14)에 붙인다. 기본 17 이면 iOS 에서 글자가 3px
+                        내려앉고 옆의 배지만 위로 붙어 보인다. */}
                     <Text className="text-xs leading-[14px] tracking-[.04em] text-text-muted">
                       파티 인원
                     </Text>
@@ -370,17 +317,25 @@ export function PartySizeModal(props: {
                 </View>
               )}
 
-              {/* 으뜸 동작. 다른 모달(`NoticeModal`)과 같은 `Button` atom · 같은 전폭이다.
-                  위 여백이 고치는 자리와 끝내는 자리를 가른다. */}
+              {payoutMeso !== null && (
+                // 받는 금액 줄 앞은 다른 줄 사이(14)보다 2 넓다. 고르는 줄들과 결과를 가른다.
+                <View className="mt-0.5 flex-row items-baseline justify-between px-0.5">
+                  <Text className="text-xs text-text-muted">받는 금액</Text>
+                  <Text testID="party-payout" className="text-lg font-bold text-text" style={TABULAR_NUMS}>
+                    {payoutMeso.toLocaleString()}
+                    <Text className="text-xs font-normal text-text-muted"> 메소</Text>
+                  </Text>
+                </View>
+              )}
+
+              {/* 으뜸 동작. 다른 모달(`NoticeModal`)과 같은 `Button` atom · 같은 전폭이다. */}
               <Button
                 variant="primary"
                 testID="party-size-modal-apply"
                 onPress={() =>
                   props.onApply(
                     // 자동이면 요율은 그 등급 요율로 내보낸다. 보스 수익 행이 이 값으로 그 기록을 다시 센다.
-                    splitFeeAuto
-                      ? { ...draft, shares: { ...draft.shares, splitFeePercent: autoFee?.percent ?? draft.shares.splitFeePercent } }
-                      : draft,
+                    splitFeeAuto ? { ...draft, shares: { ...draft.shares, splitFeePercent: effectiveFeePercent } } : draft,
                   )
                 }
                 className="mt-1 w-full items-center"
