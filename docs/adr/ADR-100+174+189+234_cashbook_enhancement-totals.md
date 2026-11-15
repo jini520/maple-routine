@@ -228,19 +228,32 @@ today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어
   은 올리지 않는다([[ADR-007]] 결정 4).
 - 강화권을 쓴 줄이 0 메소이고 `펄스 인핸서` 줄을 합계에서 빼는 것은 슈페리얼 장비도 같다.
 - **두 표는 서버 게임 데이터의 `enhancementCosts` 칸에 둔다.** 게임 수치는 앱 번들에 넣지 않는다([[ADR-019]] 결정 1). 칸은 계열
-  표 `superior_series` 와 슈페리얼 장비 표 `superior_items` 의 줄을 그대로 싣는다. `superiorSeries: [{ key, starforceCostMeso }]`
-  와 `superiorItems: [{ name, seriesKey }]` 다. 금액이 바뀌면 계열 한 줄만 고친다(사용자 선택 2026-11-15). 표를 만드는
+  표 `superior_series` 와 슈페리얼 장비 표 `superior_items` 의 줄을 그대로 싣는다. `superiorSeries: [{ key, name, starforceCostMeso }]`
+  와 `superiorItems: [{ name, seriesKey, iconAssetId }]` 다. 금액이 바뀌면 계열 한 줄만 고친다(사용자 선택 2026-11-15). 표를 만드는
   마이그레이션이 계열 셋과 장비 50개를 함께 넣는다. 계열 key 는 `helisium_elite` · `nova` · `tyrant` 다.
 
 ```
 서버 superior_series   id · key · name · starforce_cost_meso
                        UNIQUE(key)
-서버 superior_items    id · series_id(FK superior_series) · name
+서버 superior_items    id · series_id(FK superior_series) · name · icon_asset_id(FK assets)
                        UNIQUE(name)
 ```
 
-- 관리 화면 `/admin/enhancement-costs` 에서 계열을 더하고 금액을 고치며, 슈페리얼 장비를 더하고 지운다. 계열 key 가 비었거나
-  겹치거나, 금액이 1 보다 작거나, 장비 이름이 비었거나 공백을 지운 뒤 다른 장비와 같으면 400 이고 아무것도 안 바뀐다.
+- 관리 화면 `/admin/enhancement-costs` 에서 계열을 더하고 금액을 고치며, 슈페리얼 장비를 더하고 지우고 그림을 바꾼다. 틀린
+  값(빈 계열 key · 1 보다 작은 금액 · 빈 장비 이름)과 그림 표에 없는 그림은 400, 없는 계열 · 장비는 404, 겹친 계열 key 와 공백을
+  지운 뒤 다른 장비와 같은 이름은 409 다. 어느 쪽이든 아무것도 안 바뀐다.
+- **펼친 강화 줄의 그림은 슈페리얼 장비 표에서도 찾는다.** 가계부는 아이템 표(`items`)에서 그림을 찾는데([[ADR-047]] 결정 21),
+  슈페리얼 장비 가운데 아이템 표에 있는 것은 타일런트 벨트 다섯뿐이다. 그래서 아이템 표에서 못 찾으면 슈페리얼 장비 표에서 이름으로
+  찾는다. 45개를 아이템 표에 넣지 않는 것은, 그러면 인벤토리 넣기와 가계부 아이템 고르기 목록에 거래할 수 없는 장비 45개가
+  서기 때문이다(사용자 선택 2026-11-15).
+  - 타일런트 벨트 다섯은 아이템 표가 쓰는 그림(`items/tyrant_lycaon_belt.png` 등)을 함께 쓴다.
+  - 나머지 45개는 maplestory.io KMS v389 의 `/item/{id}/icon` 에서 받아 `items/` 에 올린다. 운영의 타일런트 벨트 그림이 이 주소의
+    그림과 바이트까지 같아서다(2026-11-15 확인). 파일 이름은 기존 아이템 그림의 단어를 따른다. 부위는 `shoes` · `gloves` ·
+    `cape` · `belt`, 헬리시움 정예의 직업은 `knight` · `mage` · `archer` · `bandit` · `pirate` 다(예: `tyrant_hyades_shoes.png` ·
+    `nova_lycaon_cape.png` · `helisium_elite_bandit_belt.png`).
+  - 마이그레이션은 장비 줄의 그림을 그림 경로로 잇는다. 그래서 운영에는 45개 그림을 먼저 올리고 서버를 낸다. 그림이 없는 환경에서는
+    그림 칸이 비고, 앱은 그 장비를 그림 없이 이름부터 세운다.
+  - 그림 칸은 그림을 쓰는 곳 목록(`ASSET_USES`)에 든다. 빠지면 쓰는 그림을 안 쓰는 그림으로 보고 지울 수 있게 된다.
 - **앱은 두 칸이 없는 응답을 받지 않는다.** 칸이 빠지면 `parseEnhancementCosts` 가 `null` 을 내고, 게임 데이터 전체를 버린다
   ([[ADR-020]] 결정 13). 기기 사본에 칸이 없어도 그 사본을 지우고 잠근 채 다시 받는다. 그래서 서버를 먼저 운영에 낸 뒤 앱을
   낸다. 순서가 바뀌면 새 앱이 잠금 화면에서 멈춘다. 빈 칸으로 받게 두지 않는 이유가 있다. 그러면 서버가 나가기 전에 받은 날의
@@ -276,14 +289,14 @@ today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (계정 범위) | 그 넥슨 계정 캐릭터의 그날 줄은 다른 계정 id 로 적혔어도 갈아 끼우는지(결정 6 · 7) |
 | `lib/world/__tests__/worlds.spec.ts` | 월드마다 기간 배열을 읽고 없으면 빈 배열인지, 기간 글자가 틀리거나 `until` 이 `from` 보다 뒤가 아니면 표 전체가 `null` 인지, 날짜가 그 월드의 기간 안인지 `until` 을 빼고 가르는지(결정 9) |
 | 서버 `modules/worlds/worlds.repository.spec.ts` (기간) | 게임 데이터 칸의 월드마다 기간을 `from` 차례로 싣고 없으면 빈 배열인지, 기간을 더하고 고치고 지우면 칸의 `updatedAt` 이 바뀌는지, 겹치거나 `until` 이 `from` 보다 뒤가 아니면 400 인지(결정 9) |
-| `lib/enhancement/__tests__/cost.spec.ts` (슈페리얼) | 슈페리얼 장비를 공백과 상관없이 이름 전체로 찾아 그 계열의 금액을 내고 이름 일부만 같으면 `null` 인지, `superiorSeries` · `superiorItems` 가 빠지거나 금액이 양의 정수가 아니면 표 전체가 `null` 인지(결정 10) |
+| `lib/enhancement/__tests__/cost.spec.ts` (슈페리얼) | 슈페리얼 장비를 공백과 상관없이 이름 전체로 찾아 그 계열의 금액과 그림 id 를 내고 이름 일부만 같으면 `null` 인지, `superiorSeries` · `superiorItems` 가 빠지거나 금액이 양의 정수가 아니면 표 전체가 `null` 인지(결정 10) |
 | `features/enhancement-history/__tests__/spending.spec.ts` (슈페리얼) | 표의 장비면 성 · 이벤트 할인 · 파괴 방지와 상관없이 계열 금액을 슈페리얼 몫에 드는지, `노바 두건` 처럼 계열 이름만 든 장비는 일반 식인지, 표에 없는데 `superior_item_flag` 가 `슈페리얼 장비 미해당` 도 빈 글자도 아니면 `no_cost` 인지(결정 10) |
 | `features/enhancement-history/__tests__/anomalies.spec.ts` (슈페리얼) | 표에 없는 슈페리얼 줄을 성수와 상관없이 `no_cost` 로 세는지(결정 10) |
 | `features/cashbook/__tests__/records.spec.ts` (슈페리얼) | 슈페리얼 비용에는 MVP 할인을 붙이지 않는지(결정 2 · 10) |
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (슈페리얼) | 슈페리얼 비용 칸을 적고 읽는지, 칸이 없던 옛 기기의 표에도 더해지고 옛 줄은 0 인지(결정 7 · 10) |
 | `features/enhancement-history/__tests__/recompute.spec.ts` (슈페리얼) | `superiorOnly` 를 읽고, 참 · 거짓이 아니면 그 요청을 버리는지(결정 4 · 10) |
 | `features/enhancement-history/__tests__/collect.spec.ts` (슈페리얼) | `superiorOnly` 요청의 날은 슈페리얼 장비의 줄이 있을 때만 갈아 끼우고, 없으면 합계 · 굳음 원장 · 이상 보고를 그대로 두되 진행은 적는지, 같은 날을 통째로 받는 일이 함께 있으면 통째로 갈아 끼우는지(결정 10) |
-| 서버 `modules/enhancement-costs/enhancement-costs.repository.spec.ts` (슈페리얼) | 칸에 계열과 슈페리얼 장비 줄을 싣는지, 계열을 더하거나 금액을 고치거나 장비를 더하고 지우면 칸의 `updatedAt` 이 바뀌는지, 빈 · 겹친 계열 key, 1 보다 작은 금액, 빈 장비 이름, 공백을 지운 뒤 같은 장비 이름은 400 이고 아무것도 안 바뀌는지(결정 10) |
+| 서버 `modules/enhancement-costs/enhancement-costs.repository.spec.ts` (슈페리얼) | 칸에 계열과 슈페리얼 장비 줄(그림 id 포함)을 싣는지, 계열을 더하거나 금액을 고치거나 장비를 더하고 지우거나 그림을 바꾸면 칸의 `updatedAt` 이 바뀌는지, 그림 표에 없는 그림은 막는지, 빈 · 겹친 계열 key, 1 보다 작은 금액, 빈 장비 이름, 공백을 지운 뒤 같은 장비 이름은 400 이고 아무것도 안 바뀌는지(결정 10) |
 
 ## 번호 기록
 
