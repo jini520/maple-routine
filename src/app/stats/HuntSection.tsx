@@ -129,9 +129,9 @@ export function HuntSection(props: { totals: HuntTotals }): React.JSX.Element {
                   <Text className={unit}>개</Text>
                 </>
               }
-              noteTestID="stats-hunt-unsold"
-              note={`미판매 조각 ${totals.unsoldFragments.toLocaleString()}개`}
-              noteHidden={totals.unsoldFragments === 0}
+              noteTestID="stats-hunt-held"
+              note={`보유 조각 ${totals.heldFragments.toLocaleString()}개`}
+              noteHidden={totals.heldFragments === 0}
             />
           </View>
           <View className="items-end gap-0.5">

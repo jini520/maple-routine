@@ -7,6 +7,8 @@ jest.mock('../../../features/stats/load', () => ({
 }))
 // 날짜별 줄은 쿼리가 든다. 화면은 그 결과만 받으므로 쿼리 쪽을 통째로 갈아 끼운다.
 jest.mock('../../../features/cashbook/ledger-query', () => ({ useLedgerDays: jest.fn() }))
+// 사냥 수입 카드의 보유 조각은 조각 장부 쿼리가 든다. 날짜별 줄과 같은 까닭으로 갈아 끼운다.
+jest.mock('../../../features/stats/fragment-query', () => ({ useFragmentMoves: jest.fn() }))
 // 머리 아래 `hh:mm:ss 기준` 은 회차 쿼리를 읽는다. 이 화면의 일이 아니라 비워 둔다.
 jest.mock('../../../features/refresh/freshness', () => ({ useRealtimeFetchedAt: jest.fn(() => null) }))
 // 결산 안내 줄은 서버 쿼리를 본다. 줄 자체의 동작은 `SettlementBanner.test.tsx` 가 보고, 여기서는 선 자리와 둘째 줄만 본다.
@@ -34,6 +36,7 @@ import { apiWindowRange, historyFloorDateKey } from '../../../features/cashbook/
 import { StatsScreen } from '../StatsScreen'
 
 const { useLedgerDays } = jest.requireMock('../../../features/cashbook/ledger-query') as { useLedgerDays: jest.Mock }
+const { useFragmentMoves } = jest.requireMock('../../../features/stats/fragment-query') as { useFragmentMoves: jest.Mock }
 
 const 지금 = Date.parse('2026-09-29T05:00:00Z')
 
@@ -76,6 +79,7 @@ beforeEach(() => {
   mockCollecting = false
   mockStatus = 'ready'
   useLedgerDays.mockReset().mockReturnValue({ days: 기록, isFetching: false })
+  useFragmentMoves.mockReset().mockReturnValue([])
 })
 
 afterEach(() => {
@@ -173,7 +177,7 @@ describe('StatsScreen', () => {
 
   // 읽기 전에 `0 메소` 를 그리면 기록이 없다는 말로 읽힌다. 기간 줄과 카드 제목은 그대로 선다.
   describe('불러오는 중', () => {
-    const 제목들 = ['순 수익', '추이', '캐릭터별', '수입 내역', '지출 내역', '보스별 수입', '누적 순 수익']
+    const 제목들 = ['순 수익', '추이', '캐릭터별', '수입 내역', '지출 내역', '사냥 수입', '보스별 수입', '누적 순 수익']
 
     it('첫 읽기가 끝나기 전에는 카드 본문 자리에 스켈레톤이 선다', async () => {
       useLedgerDays.mockReturnValue({ days: null, isFetching: true })
@@ -183,6 +187,15 @@ describe('StatsScreen', () => {
       expect(view.queryByTestId('stats-summary-net')).toBeNull()
       expect(view.getByTestId('stats-period-label').props.children).toBe('이번 주')
       for (const 제목 of 제목들) expect(view.getByText(제목)).toBeTruthy()
+    })
+
+    // 장부를 읽기 전에 보유 조각을 0 으로 그리면 조각이 없다는 말로 읽힌다
+    it('조각 장부를 읽기 전에는 스켈레톤이다', async () => {
+      useFragmentMoves.mockReturnValue(null)
+      const view = await 그리기()
+
+      expect(view.getByTestId('stats-skeleton')).toBeTruthy()
+      expect(view.queryByTestId('stats-hunt')).toBeNull()
     })
 
     it('읽기가 끝나면 스켈레톤이 걷히고 값이 선다', async () => {
