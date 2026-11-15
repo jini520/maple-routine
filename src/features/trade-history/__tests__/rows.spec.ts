@@ -7,6 +7,7 @@ import {
   defaultTradePeriod,
   filterTradeRows,
   tradeDateLabel,
+  tradeOwnerLineOf,
   tradeOwnerOptionsOf,
   tradeRowsOf,
   tradeSectionsOf,
@@ -179,6 +180,27 @@ describe('tradeRowsOf', () => {
     )
 
     expect(row).toMatchObject({ owner: { kind: 'account', accountId: 'acc-1' }, ownerName: '메이플ID-da9b2f21', memo: '작업장 남은 흔적 정리' })
+  })
+
+  // 같은 아이템을 어디서 사고팔았는지 줄에서 가르려고 둘째 줄 캐릭터 앞에 경로 이름을 둔다(#1037). 이름은 가계부 하루 목록 첫 줄 ·
+  // 상세 시트 머리와 같아야 세 위치에서 같은 기록으로 읽힌다.
+  it('둘째 줄은 가계부 하루 목록 첫 줄과 같은 경로 이름 · 캐릭터이고, 주인을 모르면 경로 이름만이다', () => {
+    const rows = tradeRowsOf(
+      [
+        income({ id: 'sale', category: 'item_sale', item: '아무 아이템' }, '낟낟'),
+        income({ id: 'hunt', category: 'hunting', hunt: hunt(30, 5_700_000) }, '낟낟'),
+        spend({ id: 'buff', category: 'buff', itemKey: 'seiram_elixir', quantity: 1 }, '낟낟'),
+        income({ id: 'old', category: 'item_sale', item: '아무 아이템', ocid: null }, ''),
+      ],
+      [{ ...drop({ dateKey: '2026-11-14' }), characterName: '낟낟' }],
+    )
+    const lineOf = (key: string): string => tradeOwnerLineOf(rows.find((row) => row.key === key)!)
+
+    expect(lineOf('sale')).toBe('아이템 판매 · 낟낟')
+    expect(lineOf('hunt')).toBe('사냥 · 낟낟')
+    expect(lineOf('buff')).toBe('버프(보스) · 낟낟')
+    expect(lineOf('drop:drop-1')).toBe('보스 드롭 판매 · 낟낟')
+    expect(lineOf('old')).toBe('아이템 판매')
   })
 
   // 최신이 위다. 같은 날은 나중에 적은 기록이 위이고, 드롭은 가격을 넣은 시각으로 센다.

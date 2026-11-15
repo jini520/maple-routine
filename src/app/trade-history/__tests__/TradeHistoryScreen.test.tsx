@@ -110,6 +110,7 @@ describe('TradeHistoryScreen', () => {
     expect(view.getByTestId('trade-row-name-sale')).toHaveTextContent('주문의 흔적')
     expect(view.getByTestId('trade-row-quantity-sale')).toHaveTextContent('3,000개')
     expect(view.getByTestId('trade-row-memo-sale')).toHaveTextContent('작업장 남은 흔적 정리')
+    expect(view.getByTestId('trade-row-owner-sale')).toHaveTextContent('아이템 판매 · 단풍잎')
     expect(view.getByTestId('trade-row-side-buy')).toHaveTextContent('구매')
     expect(view.queryByTestId('trade-row-quantity-buy')).toBeNull()
     expect(view.getByTestId('trade-history-day-2026-11-13')).toHaveTextContent(/^11월 13일 \(금\)/)

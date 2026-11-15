@@ -33,6 +33,7 @@ import {
   defaultTradePeriod,
   filterTradeRows,
   tradeDateLabel,
+  tradeOwnerLineOf,
   tradeSectionsOf,
   type TradeFilter,
   type TradeRow,
@@ -110,7 +111,7 @@ function TradeRowCard(props: { row: TradeRow; onPress: () => void }): React.JSX.
     <Pressable
       testID={`trade-row-${row.key}`}
       role="button"
-      aria-label={`${SIDE_LABELS[row.side]} ${row.name}${row.quantity === null ? '' : ` ${row.quantity}`} ${row.ownerName} ${row.amountText}${row.memo === null ? '' : ' 메모 있음'}`}
+      aria-label={`${SIDE_LABELS[row.side]} ${row.name}${row.quantity === null ? '' : ` ${row.quantity}`} ${tradeOwnerLineOf(row)} ${row.amountText}${row.memo === null ? '' : ' 메모 있음'}`}
       onPress={props.onPress}
       className="flex-row items-start gap-2.5 rounded-[14px] bg-surface py-3 pl-3 pr-2.5 active:opacity-60"
     >
@@ -138,8 +139,8 @@ function TradeRowCard(props: { row: TradeRow; onPress: () => void }): React.JSX.
           )}
         </View>
         <View className="flex-row items-center gap-2">
-          <Text numberOfLines={1} className="flex-1 text-xs text-text-muted">
-            {row.ownerName}
+          <Text numberOfLines={1} testID={`trade-row-owner-${row.key}`} className="flex-1 text-xs text-text-muted">
+            {tradeOwnerLineOf(row)}
           </Text>
           <Text className={`shrink-0 text-sm font-bold ${ink}`} style={TABULAR_NUMS}>
             {row.amountText}
