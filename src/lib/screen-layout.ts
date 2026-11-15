@@ -15,7 +15,8 @@ export const ROTATING_SHORT_SIDE_PX = 600
 export const SIDE_RAIL_EDGE_GAP_PX = 24
 
 /**
- * `phone` 은 바형 폰과 폴드8 외부 화면, `side-rail` 은 오른쪽에 레일이 있는 세로 고정 화면(아이폰 듀오 외부 화면).
+ * `phone` 은 바형 폰 · 폴드8 외부 화면 · 태블릿 · 접는 폰의 안쪽 화면, `side-rail` 은 오른쪽에 레일이 있는 세로 고정 화면(아이폰 듀오 외부 화면).
+ * 태블릿은 전용 배치를 두지 않아 `phone` 과 같은 배치를 쓴다.
  */
 export type ScreenLayoutKind = 'phone' | 'side-rail'
 

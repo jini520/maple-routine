@@ -23,13 +23,15 @@ describe('오른쪽 레일 화면은 세로로 고정된 화면에 오른쪽 안
     expect(layout.railWidthPx).toBe(0)
   })
 
-  // 짧은 변 600 이상은 돌아가는 화면이다. 가로로 누운 화면의 옆 안전영역은 레일이 아니다.
-  it('짧은 변이 600 이상이면 오른쪽 안전영역이 있어도 side-rail 이 아니다', () => {
+  // 짧은 변 600 이상은 돌아가는 화면이다. 가로로 누운 화면의 옆 안전영역은 레일이 아니다. 태블릿은 전용 배치가 없어 바형 폰과 같다.
+  it('짧은 변이 600 이상이면 오른쪽 안전영역이 있어도 phone 이고 콘텐츠 폭은 창 폭이다', () => {
     for (const window of [
       { windowWidthPx: 1194, windowHeightPx: 834, insetRightPx: 20 },
       { windowWidthPx: 930, windowHeightPx: 702, insetRightPx: 48 },
     ]) {
-      expect(resolveScreenLayout(window).kind).not.toBe('side-rail')
+      const layout = resolveScreenLayout(window)
+      expect(layout.kind).toBe('phone')
+      expect(layout.contentWidthPx).toBe(window.windowWidthPx)
     }
   })
 })
