@@ -62,11 +62,14 @@ export function notifyEnhancementTotalsChanged(): void {
   bumpRevision()
 }
 
+/** 구독자를 부르는 함수. `notifyAfterBatch` 가 같은 함수로 알아봐 반복 끝에 한 번만 부르도록 모듈에 하나만 둔다. */
+function notifyRevisionListeners(): void {
+  for (const listener of revisionListeners) listener()
+}
+
 function bumpRevision(): void {
   revision += 1
-  notifyAfterBatch(() => {
-    for (const listener of revisionListeners) listener()
-  })
+  notifyAfterBatch(notifyRevisionListeners)
 }
 
 const UPSERT_SQL = `

@@ -1,4 +1,4 @@
-# ADR-142+144 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
+# ADR-142+144+229 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
 
 > 🟢 유효(세 단계와 #819 후속 모두 구현)
 > 관련 소스: `features/query/`(`client.ts` · `keys.ts` · `meta.ts` · `freshness.ts` · `app-focus.ts` · `reset-timer.ts` · `persist.ts` · `invalidation.ts`) · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/refresh/pull.ts` · `features/refresh/freshness.ts` · `features/boss-profit/period-query.ts` · `round-record.ts` · `round-view.ts` · `store.ts` · `drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/cashbook/meso-rate.ts` · `features/ledger/useLedgerData.tsx` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `manual-completed-query.ts` · `features/settlement/query.ts` · `features/manual-completion/query.ts` · `features/notice/notice-query.ts` · `features/party-appointments/query.ts` · `features/mvp-grade/character-list.ts` · `features/character-profile/resolve.ts` · `features/enhancement-history/event-world-names.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/legacy-cleanup.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `hooks/useReturnToForeground.ts` · `index.ts`
@@ -166,11 +166,21 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 - 판 알림은 `batchRecordWrites` 안에서는 끝날 때 한 번이다. 자동 기록 · 처치 날짜 · 창 채우기 · 강화 수집이 그 안에서
   돈다. 안 묶으면 첫 수집의 수백 번 쓰기가 수백 번 다시 읽게 한다. 지출 기록의 판은 쓰기 **뒤에** 오른다. 앞에 올리면
   무효화된 쿼리가 쓰기 전 값을 읽는다.
+- 표마다 같은 알림 함수(모듈의 `notifyRevisionListeners`)를 `notifyAfterBatch` 에 넘긴다. 반복은 알림을 `Set` 으로 모으는데,
+  판을 올릴 때마다 함수를 새로 만들면 같은 알림으로 알아보지 못해 쓰기 수만큼 알림이 나간다. 수입 · 지출 · 강화 합계 · 인벤토리 ·
+  조회 원장 표가 그렇게 해서, 옛 기간으로 옮긴 가계부가 회차 끝에 같은 달 읽기를 897번 돌렸다(2026-11-15 아이폰 계측, #1026).
+- 같은 작업 안에서 오른 표는 모아 한 번에 무효화한다(`queueMicrotask`). 표마다 무효화하면 두 표를 읽는 쿼리가 두 번 다시
+  읽는다. 다시 읽기는 진행 중인 읽기를 버리고 새로 시작하는데(`cancelRefetch`), 버린 읽기도 끝까지 돌아 일이 겹친다.
 - 그래서 화면마다 있던 판 비교(`statsToken` · `isDropHistoryOutdated` · `cashbookDataRevision` · `statsDataRevision` ·
   `reloadToken` · `LedgerLayer` 의 `revision` · 기간 표의 `stamp`)를 걷었다. 쓰는 자리를 하나 더 만들어도 무효화를 빠뜨릴
   수 없다.
 - 보고 있지 않은 화면의 쿼리는 무효 표시만 되고, 그 화면이 다시 보일 때 읽는다. 전에 포커스마다 판을 견주던 것과 같은
-  비용이다.
+  비용이다. 하단바 탭 화면은 한 번 열면 안 보여도 마운트된 채라, 기기 DB 를 읽는 쿼리는 화면이 보일 때만 구독한다(react-query
+  `subscribed`). 구독하지 않는 동안은 무효 표시만 되고, 다시 구독할 때 무효면 한 번 읽는다. 안 그러면 통계처럼 1년 6개월을
+  읽는 쿼리가 다른 탭에서 기록을 저장할 때마다 다시 돈다(#1026). 내비게이터가 화면마다 감싸는 `screenLayout` 에서 그 화면의
+  포커스를 `QuerySubscribedContext` 로 내리고(`navigation/ScreenQuerySubscription.tsx`), 기기 DB 쿼리 훅(`useLedgerDays` ·
+  `useMonthDays` · `useBossProfitPeriod` · `useDropHistory` · `useInventory` · `useManualCompleted`)이 `useQuerySubscribed` 로
+  읽는다. `features/` 는 내비게이션을 몰라도 되고 화면 코드는 그대로다. 화면 밖(모달 · 공급자)에서는 늘 구독한다.
 - 보스 스케줄러의 직접 완료는 `manualCompleted(weeklyKey, monthlyKey)` 쿼리다(`features/boss-scheduler/manual-completed-query.ts`).
   보스 기록 표의 판과 추적 목록(`dependsOn: tracked-ocids`)에 매여 무효화되고, 기간 키가 열쇠라 목요일 · 1일을 넘기면 화면이
   새 열쇠를 읽는다. 전에는 스토어가 기록 판과 기간을 이어 붙인 표식을 포커스마다 견줬다.
@@ -296,7 +306,9 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
 | `features/content-scheduler/__tests__/views.spec.ts` · `features/boss-scheduler/__tests__/views.spec.ts` | 결정 3: 스냅샷이 뷰가 되는 규칙. 조회 불가와 답하지 않은 캐릭터는 내용을 비우고 자리를 남기는지, 레벨 순서 |
 | `features/__tests__/prehydrate.spec.ts` | 결정 7: 복원을 기다린 뒤 선택 · 회차 · 보스 수익을 순차로 예열하는지 |
 | `storage/sqlite/__tests__/query-cache-real-sqlite.test.ts` | 결정 7: 같은 키는 값을 덮고 지우면 없는지 |
-| `features/query/__tests__/invalidation.spec.ts` | 결정 6: 표의 판이 오르면 그 표를 적은 쿼리만 무효화되는지, 회차가 새 데이터를 들면 `dependsOn` 쿼리가 무효화되는지 |
+| `features/query/__tests__/invalidation.spec.ts` | 결정 6: 표의 판이 오르면 그 표를 적은 쿼리만 무효화되는지, 같은 작업 안에서 오른 표들을 쿼리마다 한 번만 무효화하는지, 회차가 새 데이터를 들면 `dependsOn` 쿼리가 무효화되는지 |
+| `navigation/__tests__/ScreenQuerySubscription.test.tsx` | 결정 6: 화면이 안 보이는 동안은 무효화돼도 다시 읽지 않고 다시 보일 때 한 번 읽는지, 감싸개 밖에서는 늘 구독하는지 |
+| `storage/__tests__/record-revision-notify.spec.ts` | 결정 6: 수입 · 지출 · 강화 합계 표가 반복 안의 여러 쓰기에 알림을 한 번만 내는지, 저장 계층 어디에서도 `notifyAfterBatch` 에 함수를 그 자리에서 만들어 넘기지 않는지 |
 | `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 3: 회차가 동기화 뒤 자동 기록 · 처치 날짜 순으로 부르고, 둘이 던져도 회차는 서는지 |
 | `features/refresh/__tests__/pull.spec.ts` | 결정 3: 당김이 회차 → 창 → 오늘 강화 순인지, 추적이 없으면 창을 안 부르는지 |
 | `features/refresh/__tests__/freshness.spec.ts` | 결정 3: 회차 시각과 오늘 강화 시각 중 늦은 쪽을 내고 둘 다 없으면 빈지 |
@@ -325,3 +337,4 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
 
 - ADR-142 (2026-10-30): 처음 작성. 데이터를 드는 자리와 다시 받는 규칙을 쿼리 캐시 하나로 모은다(이슈 #812). 같은 날 1 · 2단계를, 이튿날 3단계를 구현했다
 - ADR-144 (2026-10-31): 프로필 조회의 옛 키 폴백을 되살리고(결정 10), 넥슨 응답 캐시 둘을 쿼리로 옮기고(결정 11), 옛 키 정리를 한 자리로 모으고(결정 12), 복귀 신호를 하나로 줄였다(결정 5)(#819)
+- ADR-229 (2026-11-15): 결정 6 에 표마다 같은 알림 함수 · 같은 작업 안의 표를 한 번에 무효화 · 안 보이는 화면의 구독 끊기를 더했다. 아이폰 계측에서 같은 달 읽기가 897번 돈 것이 계기다(#1026)

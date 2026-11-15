@@ -21,6 +21,7 @@ import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { queryKeys } from '../query/keys'
 import { withSqliteTimeout } from './sqlite-guards'
+import { useQuerySubscribed } from '../query/subscription'
 
 export interface DropHistoryCharacter {
   ocid: string
@@ -122,7 +123,7 @@ export interface DropHistory extends DropHistoryData {
 }
 
 export function useDropHistory(): DropHistory {
-  const query = useQuery(dropHistoryOptions)
+  const query = useQuery({ ...dropHistoryOptions, subscribed: useQuerySubscribed() })
   const status: DropHistoryStatus = query.status === 'error' ? 'failed' : query.status === 'success' ? 'ready' : 'loading'
   return {
     ...(query.data ?? EMPTY),

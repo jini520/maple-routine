@@ -51,9 +51,24 @@ function dependencyOf(event: QueryCacheNotifyEvent): QueryDependency | null {
  * @returns 구독을 전부 떼는 함수. 테스트가 쓴다
  */
 export function startRecordInvalidation(client: QueryClient): () => void {
+  /**
+   * 같은 작업 안에서 판이 오른 표. 마이크로태스크 하나에서 모아 쿼리마다 한 번 무효화한다. 표마다 무효화하면 두 표를 읽는
+   * 쿼리가 두 번 다시 읽고, 다시 읽기는 진행 중인 읽기를 버리고 새로 시작하는데 버린 읽기도 끝까지 돌아 일이 겹친다.
+   */
+  const pending = new Set<RecordTable>()
+  let stopped = false
+  const flush = (): void => {
+    if (stopped || pending.size === 0) return
+    const tables = [...pending]
+    pending.clear()
+    void client.invalidateQueries({
+      predicate: (query) => query.meta?.tables?.some((table) => tables.includes(table)) === true,
+    })
+  }
   const stops = (Object.keys(TABLE_SUBSCRIBERS) as RecordTable[]).map((table) =>
     TABLE_SUBSCRIBERS[table](() => {
-      void client.invalidateQueries({ predicate: (query) => query.meta?.tables?.includes(table) === true })
+      if (pending.size === 0) queueMicrotask(flush)
+      pending.add(table)
     }),
   )
   const stopCache = client.getQueryCache().subscribe((event) => {
@@ -62,6 +77,7 @@ export function startRecordInvalidation(client: QueryClient): () => void {
     void client.invalidateQueries({ predicate: (query) => query.meta?.dependsOn?.includes(dependency) === true })
   })
   return () => {
+    stopped = true
     for (const stop of stops) stop()
     stopCache()
   }

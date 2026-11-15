@@ -214,6 +214,8 @@ describe('무효화', () => {
     const notifyRecordsRevision = subscribeRecordsMock.mock.calls[0][0] as () => void
 
     notifyRecordsRevision()
+    // 같은 작업 안에서 오른 표를 모아 마이크로태스크 하나에서 무효화한다.
+    await Promise.resolve()
 
     expect(isInvalidated('monthly', MONTH)).toBe(true)
     expect(queryClient.getQueryState(queryKeys.schedule('ocid-1'))?.isInvalidated).toBe(false)
