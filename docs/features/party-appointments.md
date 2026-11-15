@@ -17,7 +17,7 @@
 | `features/party-appointments/draft.ts` | 시트의 처음 값 · 시각 계산 · 저장 조건 · 스케줄로 바꾸기 |
 | `features/party-appointments/edit.ts` | 수정 · 삭제 |
 | `features/party-appointments/agenda.ts` | 요일별 묶기 · 종료 표기 · 남은 시간 표기 · 이번 주로 돌아가는 방향 |
-| `features/party-appointments/boss-groups.ts` · `boss-picker.ts` | 캐릭터 묶음 · 보스 추가의 타일 묶음과 고르기 |
+| `features/party-appointments/boss-groups.ts` · `boss-picker.ts` | 캐릭터 묶음 · 보스 추가의 타일 묶음과 고르기 · `등록됨` 을 붙일 보스 |
 | `features/party-appointments/alarm-gate.ts` | 알림을 켤 때 · 저장할 때 권한과 스위치 확인 |
 | `features/party-appointments/notification.ts` · `notification-text.ts` | 레지스트리의 `party-appointment` 계획 · 알림 문구 |
 | `features/party-appointments/open-request.ts` | 알림이나 위젯에서 열 회차 · today 위젯이 고른 새 스케줄 갈래 |
@@ -94,6 +94,9 @@
 - 알림은 `정각 · 10분 전 · 30분 전 · 1시간 전 · 직접` 이고, 켜면 처음 값은 `10분 전` 이다.
 - 알림을 켤 때와 알림을 단 채 저장할 때 기기 권한과 `파티 스케줄 알림` 스위치를 확인한다.
 - 메모는 길이 제한이 없다. 반복 스케줄을 `이 주만 적용하기` 로 고쳐도 메모는 스케줄 전체에 적용한다.
+- 보스 추가 단계는 같은 캐릭터 · 같은 보스가 든 스케줄이 이미 있는 타일의 초상 윗변에 `등록됨` 알약을 붙인다. 기간은 시트의
+  시작 날짜가 든 리셋 주이고, 월간 보스(검은 마법사)는 그 날짜가 든 달이다. 수정할 때는 고치는 스케줄 자신을 빼고 센다.
+  중복 저장을 막지 않으므로 붙은 타일도 흐리지 않고 그대로 고를 수 있다([[ADR-051]] 결정 15).
 
 ## 알림
 
