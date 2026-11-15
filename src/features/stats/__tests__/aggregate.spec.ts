@@ -653,50 +653,66 @@ describe('huntTotalsBetween', () => {
       }),
       // 계산기 전 기록
       income('b', '', { category: 'hunting', mesoAmount: 500 }),
-      // 나중에 한 정산은 미판매 조각으로 이미 셌다
-      income('b', '', { category: 'sol_erda_fragment', mesoAmount: 9_999, quantity: 30 }),
+      income('a', '', { category: 'sol_erda_fragment', mesoAmount: 9_999, quantity: 30 }),
       income('b', '', { category: 'hunt_loot_sale', itemKey: 'reindeer_milk', mesoAmount: 300 }),
       income('b', '', { category: 'hunt_loot_sale', itemKey: 'reindeer_milk', mesoAmount: 200 }),
       income('b', '', { category: 'item_sale', mesoAmount: 777 }),
     ],
   }
+  /** 위 기록의 조각 장부. 가격을 비운 사냥은 들어오고, 정산 · 헥사 강화는 나간다 */
+  const moves = [
+    { ocid: 'a', date: '2026-09-23', delta: 90 },
+    { ocid: 'a', date: '2026-09-24', delta: 100 },
+    { ocid: 'a', date: '2026-09-26', delta: -30 },
+    { ocid: 'b', date: '2026-09-26', delta: 10 },
+    { ocid: 'b', date: '2026-09-27', delta: -40 },
+    // 기간 뒤
+    { ocid: 'a', date: '2026-10-02', delta: -20 },
+  ]
 
   it('소재는 계산기 기록만 세고, 소재가 없는 기록은 직접 입력 건수로 센다', () => {
-    const totals = huntTotalsBetween(byDate, WEEK)
+    const totals = huntTotalsBetween(byDate, WEEK, moves)
     expect(totals.sojae).toBe(5)
     expect(totals.manualCount).toBe(2)
   })
 
-  it('조각은 판 것과 보관한 것을 함께 세고, 미판매는 가격을 비운 기록의 조각이다', () => {
-    const totals = huntTotalsBetween(byDate, WEEK)
-    expect(totals.fragments).toBe(160)
-    expect(totals.unsoldFragments).toBe(110)
+  it('조각은 그 기간 사냥 기록에서 얻은 것을 판 것과 보관한 것 모두 센다', () => {
+    expect(huntTotalsBetween(byDate, WEEK, moves).fragments).toBe(160)
   })
 
-  it('메소는 사냥 메소 · 조각 판매 · 전리품 판매의 합이고, 나중에 한 정산은 안 센다', () => {
-    expect(huntTotalsBetween(byDate, WEEK)).toMatchObject({
+  // 장부는 어느 사냥의 조각이 언제 팔렸는지 모른다. 그래서 기간이 끝날 때 들고 있는 개수를 센다
+  it('보유 조각은 기간의 마지막 날까지의 장부를 캐릭터마다 세고, 0 아래인 캐릭터는 0 으로 더한다', () => {
+    // a: 90 + 100 − 30 = 160, b: 10 − 40 → 0
+    expect(huntTotalsBetween(byDate, WEEK, moves).heldFragments).toBe(160)
+  })
+
+  it('조각 판매는 바로 판 대금과 정산을 더하고, 메소 합계는 세 금액의 합이다', () => {
+    expect(huntTotalsBetween(byDate, WEEK, moves)).toMatchObject({
       recorded: true,
       huntMeso: 37_500,
-      fragmentSaleMeso: 4_750,
+      fragmentSaleMeso: 14_749,
       lootSaleMeso: 500,
-      totalMeso: 42_750,
+      totalMeso: 52_749,
     })
   })
 
   // 두 카드가 같은 나눔을 써야 사냥 메소가 갈리지 않는다
-  it('사냥 메소는 수입 내역의 사냥 조각이 나눈 사냥 메소와 같다', () => {
+  it('사냥 메소와 메소 합계는 수입 내역의 사냥 조각과 같다', () => {
     const hunting = categoryTotalsBetween(byDate, WEEK, 'income').find((total) => total.key === 'hunting')
-    const part = hunting?.parts?.find((each) => each.key === 'hunting_meso')
-    expect(part?.meso).toBe(huntTotalsBetween(byDate, WEEK).huntMeso)
+    const totals = huntTotalsBetween(byDate, WEEK, moves)
+    expect(hunting?.parts?.find((each) => each.key === 'hunting_meso')?.meso).toBe(totals.huntMeso)
+    expect(hunting?.meso).toBe(totals.totalMeso)
   })
 
-  it('전리품 판매만 있는 기간도 기록이 있는 기간이다', () => {
-    const lootOnly = { '2026-09-24': [income(null, '', { category: 'hunt_loot_sale', itemKey: 'reindeer_milk', mesoAmount: 300 })] }
-    expect(huntTotalsBetween(lootOnly, WEEK)).toMatchObject({ recorded: true, sojae: 0, fragments: 0, huntMeso: 0, lootSaleMeso: 300 })
-  })
-
-  it('정산만 있는 기간은 기록이 없는 기간이다', () => {
+  it('정산이나 전리품 판매만 있는 기간도 기록이 있는 기간이다', () => {
     const settleOnly = { '2026-09-24': [income('a', '', { category: 'sol_erda_fragment', mesoAmount: 9_999, quantity: 30 })] }
-    expect(huntTotalsBetween(settleOnly, WEEK).recorded).toBe(false)
+    const lootOnly = { '2026-09-24': [income(null, '', { category: 'hunt_loot_sale', itemKey: 'reindeer_milk', mesoAmount: 300 })] }
+    expect(huntTotalsBetween(settleOnly, WEEK, [])).toMatchObject({ recorded: true, sojae: 0, fragments: 0, fragmentSaleMeso: 9_999 })
+    expect(huntTotalsBetween(lootOnly, WEEK, [])).toMatchObject({ recorded: true, huntMeso: 0, lootSaleMeso: 300 })
+  })
+
+  it('사냥 · 정산 · 전리품 판매 기록이 없으면 들고 있는 조각이 있어도 기록이 없는 기간이다', () => {
+    const otherOnly = { '2026-09-24': [income(null, '', { category: 'item_sale', mesoAmount: 777 })] }
+    expect(huntTotalsBetween(otherOnly, WEEK, moves).recorded).toBe(false)
   })
 })

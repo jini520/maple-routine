@@ -9,6 +9,7 @@ import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
 import { recordedItemNameOf } from '../../lib/item-catalog'
 import { findSpendChoice, findSpendRewardChoice, spendGroupOf } from '../../lib/cashbook/spend-catalog'
 import { hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
+import { balanceOn, type FragmentMove } from '../../lib/cashbook/fragment-ledger'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import type { IncomeRecord } from '../../storage/income'
 import type { SpendRecord } from '../../storage/spend'
@@ -342,9 +343,9 @@ export function categoryTotalsBetween(
   return sortedNonZero(totals.values())
 }
 
-/** 사냥 수입 카드의 값. 개수는 사냥 기록에서, 메소는 사냥 기록과 사냥 전리품 판매에서 센다. */
+/** 사냥 수입 카드의 값. 보유 조각은 조각 장부에서, 나머지는 그 기간의 사냥 · 정산 · 사냥 전리품 판매 기록에서 센다. */
 export interface HuntTotals {
-  /** 사냥 기록이나 사냥 전리품 판매 기록이 하나라도 있나. 없으면 카드가 빈 문구를 적는다 */
+  /** 사냥 · 정산 · 사냥 전리품 판매 기록이 하나라도 있나. 없으면 카드가 빈 문구를 적는다 */
   recorded: boolean
   /** 계산기 기록의 소재 수 합 */
   sojae: number
@@ -352,26 +353,32 @@ export interface HuntTotals {
   manualCount: number
   /** 사냥 기록의 조각 수 합. 그 자리에서 판 조각과 보관한 조각 모두 */
   fragments: number
-  /** 조각 가격을 비운 사냥 기록의 조각 수 합 */
-  unsoldFragments: number
+  /** 기간의 마지막 날 캐릭터마다 들고 있는 조각의 합. 0 아래인 캐릭터는 0 이다 */
+  heldFragments: number
   huntMeso: number
-  /** 사냥 기록에서 그 자리에서 판 조각의 대금. 수수료를 뗀 값 */
+  /** 그 기간에 판 조각의 돈. 사냥 기록에서 그 자리에서 판 대금(수수료를 뗀 값)과 정산 */
   fragmentSaleMeso: number
   lootSaleMeso: number
   totalMeso: number
 }
 
 /**
- * 범위의 사냥 수입. 나중에 한 `솔 에르다 조각` 정산은 안 센다. 그 조각은 사냥한 날 미판매 조각으로 이미 셌고, 정산
- * 금액까지 더하면 같은 조각을 개수와 메소로 두 번 센다.
+ * 범위의 사냥 수입. 조각은 기간 흐름으로 센다. 장부는 어느 사냥의 조각이 언제 팔렸는지 몰라서, 그 기간에 판 돈과 기간 끝에
+ * 들고 있는 개수를 적는다.
+ *
+ * @param moves 모든 캐릭터의 조각 장부
  */
-export function huntTotalsBetween(byDate: DaysByDate, range: StatsRange): HuntTotals {
+export function huntTotalsBetween(
+  byDate: DaysByDate,
+  range: StatsRange,
+  moves: readonly (FragmentMove & { ocid: string })[],
+): HuntTotals {
   const totals: HuntTotals = {
     recorded: false,
     sojae: 0,
     manualCount: 0,
     fragments: 0,
-    unsoldFragments: 0,
+    heldFragments: 0,
     huntMeso: 0,
     fragmentSaleMeso: 0,
     lootSaleMeso: 0,
@@ -385,18 +392,27 @@ export function huntTotalsBetween(byDate: DaysByDate, range: StatsRange): HuntTo
       totals.lootSaleMeso += recordMesoOf(entry)
       continue
     }
+    if (record.category === 'sol_erda_fragment') {
+      totals.recorded = true
+      totals.fragmentSaleMeso += recordMesoOf(entry)
+      continue
+    }
     if (record.category !== 'hunting') continue
     totals.recorded = true
     const { hunt } = record
     if (hunt?.mode === 'calculator') totals.sojae += hunt.sojae
     else totals.manualCount += 1
     totals.fragments += hunt?.fragments ?? 0
-    if (hunt !== null && hunt.fragmentPrice === null) totals.unsoldFragments += hunt.fragments
     const { huntMeso, fragmentSaleMeso } = huntSplitOf(record, recordMesoOf(entry))
     totals.huntMeso += huntMeso
     totals.fragmentSaleMeso += fragmentSaleMeso
   }
   totals.totalMeso = totals.huntMeso + totals.fragmentSaleMeso + totals.lootSaleMeso
+  // 0 아래인 캐릭터를 더하면 옛 기록 때문에 다른 캐릭터의 개수가 깎인다
+  for (const ocid of new Set(moves.map((move) => move.ocid))) {
+    const held = balanceOn(moves.filter((move) => move.ocid === ocid), range.to)
+    totals.heldFragments += Math.max(held, 0)
+  }
   return totals
 }
 
