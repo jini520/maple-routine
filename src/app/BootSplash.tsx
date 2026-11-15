@@ -5,7 +5,7 @@ import Animated, { useReducedMotion } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Svg, { Path } from 'react-native-svg'
 
-import body from '../../assets/splash/body.png'
+import bodyWide from '../../assets/splash/body-wide.png'
 import snow0 from '../../assets/splash/snow-0.png'
 import snow1 from '../../assets/splash/snow-1.png'
 import snow2 from '../../assets/splash/snow-2.png'
@@ -177,11 +177,11 @@ export function BootSplash(props: {
       />
       <Image
         testID="boot-splash-illustration"
-        source={body}
+        source={bodyWide}
         style={{
           position: 'absolute',
           left: layout.image.left,
-          bottom: layout.image.bottom,
+          bottom: 0,
           width: layout.image.width,
           height: layout.image.height,
         }}
