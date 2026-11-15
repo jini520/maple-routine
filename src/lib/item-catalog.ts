@@ -8,6 +8,7 @@
 import type { ItemRow, ItemsTable } from '../types/game-data'
 import { compact, isNonEmptyString, isRow, optional, rowsOf, uniqueBy, updatedAtOf, type Row } from './game-data/contract'
 import { derive, gameTable } from './game-data/table'
+import { comparableEquipmentName } from './equipment/equipment-items'
 
 function toItem(row: Row): ItemRow | null {
   if (
@@ -39,6 +40,16 @@ const byKey = derive(itemsTable, (table) => new Map(table.items.map((item) => [i
 /** 표의 한 줄. 모르는 key 는 `null` 이다. */
 export function findItem(key: string | null | undefined): ItemRow | null {
   return key == null ? null : (byKey().get(key) ?? null)
+}
+
+const byComparableName = derive(
+  itemsTable,
+  (table) => new Map(table.items.map((item) => [comparableEquipmentName(item.name), item])),
+)
+
+/** 넥슨 API 이름으로 찾은 표의 한 줄. 공백을 지워 비교하고, 모르는 이름은 `null` 이다. */
+export function findItemByApiName(name: string): ItemRow | null {
+  return byComparableName().get(comparableEquipmentName(name)) ?? null
 }
 
 /**
