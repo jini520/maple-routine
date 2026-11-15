@@ -1,8 +1,8 @@
-# ADR-020+097+103+140 게임 데이터 서버 표와 기기 사본
+# ADR-020+097+103+140+244 게임 데이터 서버 표와 기기 사본
 
 > 🟢 유효
 > 옛 번호: ADR-341 · ADR-349 결정 1 · 2 · 5 · 6 · 정정 1 · 2 · 3 · 4 · ADR-350
-> 관련 소스: `lib/game-data/` · `lib/assets/asset-files.ts` · `lib/assets/image-crops.ts` · `lib/assets/asset-lookup.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `app/AppShell.tsx` · `server/game-data.ts` · `storage/game-data-copy.ts` · `storage/sqlite/game-data-tables.ts` · `storage/adapters/rn-asset-files.ts` · `types/game-data.ts` · `src/__fixtures__/game-data/` · 서버 `modules/game-data/` · `modules/assets/` · `modules/admin/` · 이슈 #741
+> 관련 소스: `lib/game-data/` · `lib/assets/asset-files.ts` · `lib/assets/image-crops.ts` · `lib/assets/asset-lookup.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `app/AppShell.tsx` · `server/game-data.ts` · `storage/game-data-copy.ts` · `storage/sqlite/game-data-tables.ts` · `storage/adapters/rn-asset-files.ts` · `types/game-data.ts` · `src/__fixtures__/game-data/` · 서버 `modules/game-data/` · `modules/assets/` · `modules/admin/` · 이슈 #741 · #1033
 
 ## 배경
 
@@ -207,6 +207,16 @@ jsonb 칸 두 개에 나눠 두면 두 칸의 순서가 어긋나도 DB 가 잡�
 
 묻지 않고 받다가 실패해도 지금처럼 잠금 화면에 `다시 시도` 를 보인다. 잠근 채라 앱을 쓸 수 없으므로 조용히 넘길 수 없다.
 
+그림을 받다가 한 장이라도 실패하면 새 그림을 더 받지 않는다(2026-11-15, 이슈 #1033). 그때 받고 있던 그림이 끝나기를
+기다린 뒤 `failed` 로 남기고 `다시 시도` 를 보인다. 받고 있던 그림의 진행 알림이 `failed` 를 `downloading` 으로 덮으면
+`다시 시도` 가 사라진다. 그러면 진행 막대는 실패한 그림의 크기만큼 모자란 99% 에서 멈추고, 앱을 다시 켜야만 넘어간다.
+받고 있던 그림이 끝나기를 기다리는 이유는 `다시 시도` 가 앞의 받기와 겹치지 않게 하기 위해서다. 겹치면 두 받기가 같은
+임시 파일(`.part`)을 함께 쓴다.
+
+이 멈춤을 처음 일으킨 실패는 안드로이드 expo-modules-core 57.0.10 의 결함이었다. 그림 파일의 `bytes()` 호출이
+`Cannot use shared object that was already released` 로 거절됐고, 폴드8 외부 화면 에뮬레이터의 첫 실행 13번 가운데 한 번
+났다. expo-modules-core 57.0.20 이 고쳤으므로 v1.0.14 에서 expo SDK 57 패치를 올린다([[ADR-004]] 결정 4).
+
 잠근 채 켜지면 게임 데이터 받기는 OTA 확인이 끝난 뒤에 시작한다(사용자 지정 2026-10-30). 순서와 이유는 [[ADR-012]]
 결정 12 에 있다.
 
@@ -278,7 +288,7 @@ key 를 번호 차례로 모은다(`appImageFrames`). 글자 차례면 `10 < 2` 
 | 파일 | 확인하는 것 |
 |---|---|
 | `features/game-data/__tests__/sync.spec.ts` | 결정 12: 처음 켤 때는 받는 양이 작아도 묻는지, 계약 판이 바뀐 잠금은 5MB 이하면 묻지 않고 넘으면 묻는지, 잠근 채 켜지면 OTA 확인이 끝난 뒤에 받는지 본다 |
-| | 결정 12 · 13: 사본이 없으면 게임 데이터만 받고 확인을 기다렸다가 그림을 받는지, 확인한 뒤의 다시 시도는 묻지 않는지, 잠근 채 받고 그림을 다 받은 뒤 사본을 쓰는지, 그림 하나라도 실패하면 사본도 표도 그대로이고 다시 시도로 받는지, 칸 하나라도 계약을 어기면 실패인지, 이미 있는 그림은 받지 않고 진행에 MB 가 쌓이는지, 사본이 있으면 ETag 로 묻고 304 면 쓰지 않는지, 바뀌면 조용히 받아 한 번에 바꾸고 옛 그림을 지우는지, 계약 판이 다르면 처음부터 받는지, 겹친 받기가 한 번인지 본다. 결정 4: `useGameTable` 이 그 칸이 바뀔 때만 다시 그리는지 본다 |
+| | 결정 12 · 13: 사본이 없으면 게임 데이터만 받고 확인을 기다렸다가 그림을 받는지, 확인한 뒤의 다시 시도는 묻지 않는지, 잠근 채 받고 그림을 다 받은 뒤 사본을 쓰는지, 그림 하나라도 실패하면 사본도 표도 그대로이고 다시 시도로 받는지, 한 장이 실패하면 새 그림을 더 받지 않고 받던 그림이 끝난 뒤에도 실패로 남는지, 칸 하나라도 계약을 어기면 실패인지, 이미 있는 그림은 받지 않고 진행에 MB 가 쌓이는지, 사본이 있으면 ETag 로 묻고 304 면 쓰지 않는지, 바뀌면 조용히 받아 한 번에 바꾸고 옛 그림을 지우는지, 계약 판이 다르면 처음부터 받는지, 겹친 받기가 한 번인지 본다. 결정 4: `useGameTable` 이 그 칸이 바뀔 때만 다시 그리는지 본다 |
 | `storage/sqlite/__tests__/game-data-copy-real-sqlite.test.ts` | 결정 3: 표식이 없으면 사본이 없는 것인지, 쓰다가 실패하면 앞 사본이 그대로인지, 지우면 사본이 없는지 진짜 SQLite 로 본다 |
 | `server/__tests__/game-data.spec.ts` | 결정 2: 칸마다 받은 표와 원문 · ETag · 바이트를 주는지, ETag 를 보내고 304 를 바뀐 것 없음으로 읽는지, 실패 · 5xx · 객체가 아닌 응답이 `null` 인지, 계약을 어긴 칸만 `null` 인지 본다 |
 | `lib/assets/__tests__/asset-files.spec.ts` | 결정 5: 파일 이름이 해시와 다르거나 크기가 없거나 경로가 겹치면 목록을 버리는지, NFD 경로도 찾는지 본다 |
@@ -298,3 +308,4 @@ key 를 번호 차례로 모은다(`appImageFrames`). 글자 차례면 `10 < 2` 
 - ADR-097 (2026-10-25): 가계부 갈래 · 아이템 종류 · 형태 이름을 서버 표로 옮기고 `cashbookCategories` 칸을 더했다(결정 1 · 9, [[ADR-096]])
 - ADR-103 (2026-10-27): 번들 사본을 걷고 게임 데이터 · 그림을 받아 기기에 둔다(결정 1 · 2 · 3 · 4 · 5 · 6 · 7 · 8 다시 씀, 결정 12 ~ 17 더함, 이슈 #741)
 - ADR-140 (2026-10-30): 받기 전 확인을 처음 실행과 5MB 넘는 잠금에만 띄우고, 잠근 채 켜지면 OTA 확인 뒤에 받는다(결정 12 고침, 이슈 #803)
+- ADR-244 (2026-11-15): 결정 12 에 그림 한 장이 실패하면 새 그림을 더 받지 않고, 받던 그림이 끝난 뒤 실패로 남기는 규칙을 더했다. 실패 뒤에도 받던 그림의 진행 알림이 실패를 덮어 99% 에서 멈췄다(이슈 #1033)
