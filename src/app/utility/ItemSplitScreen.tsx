@@ -13,7 +13,7 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Badge, Text, TextInput } from '../../components/atoms'
+import { Badge, CopyIcon, Text, TextInput } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { ShareField } from '../../components/molecules/ShareField/ShareField'
 import { Stepper } from '../../components/molecules/Stepper/Stepper'
@@ -21,6 +21,8 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
+import { useToastStore } from '../../features/toast/store'
+import { copyText, systemAnnouncesCopy } from '../../native/clipboard'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { formatMesoUnits } from '../../lib/drop/drop-price'
 import {
@@ -96,6 +98,24 @@ function FeeRow(props: {
       />
     </View>
   )
+}
+
+/** 16px 복사 아이콘의 누르는 영역을 권장 크기 44px 로 넓히는 값. */
+const COPY_HIT_SLOP = 14
+
+/**
+ * 정산 금액을 쉼표 없는 숫자로 클립보드에 넣는 함수. 다른 앱의 숫자 칸에 붙일 값이라 쉼표 · 단위를 넣지 않는다.
+ *
+ * 성공 토스트는 OS 가 스스로 복사를 알리는 기기에서 건너뛴다. 실패하면 OS 알림이 없으므로 어느 기기에서나 알린다.
+ */
+async function copyTransfer(transfer: number): Promise<void> {
+  try {
+    await copyText(String(transfer))
+  } catch {
+    useToastStore.getState().showError('정산 금액을 복사하지 못했습니다')
+    return
+  }
+  if (!systemAnnouncesCopy()) useToastStore.getState().showSuccess('정산 금액을 복사했어요')
 }
 
 /** 테두리 없는 카드. 이 화면의 카드는 바탕색만으로 갈린다. */
@@ -279,6 +299,15 @@ export function ItemSplitScreen(): React.JSX.Element {
                   {transfer.toLocaleString()}
                 </Text>
                 <Text className="text-xs text-text-muted">메소</Text>
+                <Pressable
+                  role="button"
+                  aria-label="정산 금액 복사"
+                  hitSlop={COPY_HIT_SLOP}
+                  className="ml-1 self-center"
+                  onPress={() => void copyTransfer(transfer)}
+                >
+                  <CopyIcon className="h-4 w-4 text-text-muted" aria-hidden />
+                </Pressable>
               </View>
               <Text className="text-xs text-text-muted">{formatMesoUnits(transfer)}</Text>
             </>

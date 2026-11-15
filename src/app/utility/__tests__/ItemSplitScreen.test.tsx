@@ -11,6 +11,8 @@ import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { ItemSplitScreen } from '../ItemSplitScreen'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { __resetMesoUnitsForTest, mesoUnitOf } from '../../../features/input-card/meso-unit'
+import { useToastStore } from '../../../features/toast/store'
+import { setClipboardPort } from '../../../native/ports'
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
@@ -232,5 +234,78 @@ describe('ItemSplitScreen: 판매가 단위', () => {
     await press(view.getByLabelText('만'))
 
     expect(mesoUnitOf('itemSplit')).toBe('man')
+  })
+})
+
+describe('ItemSplitScreen: 정산 금액 복사', () => {
+  /** 클립보드에 들어간 글자. 거절하는 기기에서는 비어 있다. */
+  let copied: string[]
+  /** 클립보드에 넣으면 OS 가 스스로 알림을 띄우는 기기(안드로이드 13 이상)인지. */
+  let announcesCopy: boolean
+  /** OS 가 클립보드에 넣기를 거절하는지. */
+  let rejects: boolean
+
+  beforeEach(() => {
+    copied = []
+    announcesCopy = false
+    rejects = false
+    setClipboardPort({
+      setText: async (text) => {
+        if (rejects) throw new Error('클립보드 거절')
+        copied.push(text)
+      },
+      announcesCopy: () => announcesCopy,
+    })
+  })
+
+  function toastMessages(): string[] {
+    return useToastStore.getState().toasts.map((toast) => toast.message)
+  }
+
+  // 다른 앱의 숫자 칸에 붙여 넣는 값이다. 쉼표나 `메소` 가 섞이면 그 칸이 값을 자르거나 거절한다.
+  it('복사 아이콘을 누르면 화면의 정산 금액이 쉼표 없는 숫자로 클립보드에 들어간다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+    await typeSalePrice(view, '1000000000')
+
+    await press(view.getByLabelText('정산 금액 복사'))
+
+    expect(copied).toEqual([transferText(view).replaceAll(',', '')])
+    expect(copied[0]).toMatch(/^[0-9]+$/)
+    expect(toastMessages()).toEqual(['정산 금액을 복사했어요'])
+  })
+
+  // 안내 문구가 선 자리에는 복사할 금액이 없다.
+  it('정산 금액 대신 안내 문구가 나오면 복사 아이콘이 없다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+    expect(view.queryByLabelText('정산 금액 복사')).toBeNull()
+
+    await typeSalePrice(view, '1000000000')
+    await press(view.getByLabelText('분배 파티원 수 감소'))
+
+    expect(view.queryByLabelText('정산 금액 복사')).toBeNull()
+  })
+
+  // 안드로이드 13 이상은 OS 가 복사 알림을 띄운다. 앱까지 띄우면 한 번 누른 것을 두 번 알린다.
+  it('OS 가 복사를 알리는 기기에서는 성공 토스트를 띄우지 않는다', async () => {
+    announcesCopy = true
+    const view = await renderOverlay(<ItemSplitScreen />)
+    await typeSalePrice(view, '1000000000')
+
+    await press(view.getByLabelText('정산 금액 복사'))
+
+    expect(copied).toHaveLength(1)
+    expect(toastMessages()).toEqual([])
+  })
+
+  // 실패하면 OS 알림이 뜨지 않는다. 앱이 알리지 않으면 사용자는 붙여 넣을 때에야 실패를 안다.
+  it('클립보드에 넣지 못하면 OS 가 복사를 알리는 기기에서도 실패 토스트를 띄운다', async () => {
+    announcesCopy = true
+    rejects = true
+    const view = await renderOverlay(<ItemSplitScreen />)
+    await typeSalePrice(view, '1000000000')
+
+    await press(view.getByLabelText('정산 금액 복사'))
+
+    expect(toastMessages()).toEqual(['정산 금액을 복사하지 못했습니다'])
   })
 })
