@@ -112,6 +112,18 @@ export interface StoreReviewPort {
   request(): Promise<void>
 }
 
+/**
+ * 클립보드.
+ *
+ * 복사를 OS 가 스스로 알리는 기기인지는 능력으로 답한다. 그런 기기에서 앱이 또 알리면 한 번 누른 것이 두 번 알려진다.
+ */
+export interface ClipboardPort {
+  /** OS 가 거절하면 던진다. */
+  setText(text: string): Promise<void>
+  /** 값이 들어가면 OS 가 스스로 복사 알림을 띄우는 기기인지. */
+  announcesCopy(): boolean
+}
+
 export interface KeyboardPort {
   /** 키보드 표시 여부 구독. 해제 함수를 돌려준다. 키보드가 없는 환경이면 no-op 해제 함수. */
   addVisibilityListener(onChange: (visible: boolean) => void): Promise<() => void>
@@ -368,6 +380,7 @@ const statusBarSlot = createPortSlot<StatusBarPort>('StatusBarPort')
 const systemBarsSlot = createPortSlot<SystemBarsPort>('SystemBarsPort')
 const hapticsSlot = createPortSlot<HapticsPort>('HapticsPort')
 const storeReviewSlot = createPortSlot<StoreReviewPort>('StoreReviewPort')
+const clipboardSlot = createPortSlot<ClipboardPort>('ClipboardPort')
 const keyboardSlot = createPortSlot<KeyboardPort>('KeyboardPort')
 const notificationsSlot = createPortSlot<NotificationsPort>('NotificationsPort')
 const pushSlot = createPortSlot<PushPort>('PushPort')
@@ -401,6 +414,9 @@ export const getHapticsPort = hapticsSlot.get
 
 export const setStoreReviewPort = storeReviewSlot.set
 export const getStoreReviewPort = storeReviewSlot.get
+
+export const setClipboardPort = clipboardSlot.set
+export const getClipboardPort = clipboardSlot.get
 
 export const setKeyboardPort = keyboardSlot.set
 export const getKeyboardPort = keyboardSlot.get
@@ -440,6 +456,7 @@ export function __resetNativePortsForTest(): void {
     systemBarsSlot,
     hapticsSlot,
     storeReviewSlot,
+    clipboardSlot,
     keyboardSlot,
     notificationsSlot,
     pushSlot,

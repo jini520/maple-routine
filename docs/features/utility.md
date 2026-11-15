@@ -14,6 +14,7 @@
 | `lib/cashbook/item-split.ts` | 보낼 금액 계산 |
 | `constants/domain/meso-quick-adds.ts` | 금액 단위 칩. 드롭 가격 입력과 같이 쓴다 |
 | `components/molecules/ShareField/` | 비율 입력. 보스 파티 설정과 같이 쓴다 |
+| `native/clipboard.ts` | 정산 금액 복사. 시스템이 복사를 알리는 기기인지도 답한다 |
 | `app/utility/BossProfitCalculatorScreen.tsx` | 주간 보스 수익 계산기 화면 |
 | `app/utility/BossProfitCalculatorRecordsScreen.tsx` | 계산 기록 화면 |
 | `app/utility/boss-profit-calculator/` | 계산기 화면의 조각(합계 카드 · 보스 줄 · 보스 선택 시트) |
@@ -55,6 +56,11 @@
 
 결과로는 `정산 금액` 하나만 보여 주고, 어디에도 저장하지 않는다. 계산식과 내림 규칙은
 [[ADR-001]] 결정 1 · 2 · 4 에 있다.
+
+정산 금액 오른쪽의 복사 아이콘을 누르면 그 금액을 쉼표 없는 숫자(`161666666`)로 클립보드에 넣는다. 안내 문구가
+나올 때는 아이콘이 없다. 복사하면 `정산 금액을 복사했어요` 토스트가 뜨는데, 안드로이드 13 이상은 시스템이 스스로
+복사 알림을 띄우므로 앱 토스트를 띄우지 않는다. 넣지 못하면 어느 기기에서나 `정산 금액을 복사하지 못했습니다` 가
+뜬다. 이유는 [[ADR-001]] 결정 12 에 있다.
 
 ## 주간 보스 수익 계산기
 
