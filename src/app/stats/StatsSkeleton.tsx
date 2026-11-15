@@ -13,7 +13,7 @@ import { Svg } from '../../lib/nativewind-interop'
 import { StatsSection } from './StatsSection'
 
 /** `typography.cjs` 의 줄 높이(px). 막대가 아니라 그 글자가 설 상자의 높이다 */
-const LINE = { 10: 15, 11: 16, xs: 17, lg: 25, '2xl': 31 } as const
+const LINE = { 10: 15, 11: 16, xs: 17, base: 23, lg: 25, '2xl': 31 } as const
 
 /** `TrendSection` 의 말풍선 자리 · 그래프 높이 · 왼쪽 눈금 폭 · 아래 축 높이 · 위 여백 */
 const TREND = { bubble: 54, chart: 162, axisLeft: 46, axisBottom: 32, topPad: 8 } as const
@@ -27,6 +27,8 @@ const CUMULATIVE_POINTS = 32
 const PODIUM = { figure: 62, blocks: [60, 74, 50] } as const
 /** `CategorySection` 의 반원 도넛. 폭 300 기준 좌표다 */
 const DONUT = { width: 300, cx: 116, cy: 122, outer: 108, inner: 52 } as const
+/** `HuntSection` 타일의 위아래 여백 · 큰 값과 둘째 줄 사이 */
+const HUNT_TILE = { padY: 20, gap: 2 } as const
 
 /** 글자 한 줄의 자리. 막대는 줄 높이보다 낮게 세워야 글자로 읽힌다 */
 function LineBar(props: { height: number; className: string }): React.JSX.Element {
@@ -186,6 +188,22 @@ export function StatsSkeleton(): React.JSX.Element {
 
       <StatsSection title="수입 내역">
         <DonutChart />
+      </StatsSection>
+      <StatsSection title="사냥 수입">
+        <View className="flex-row gap-2">
+          {[0, 1].map((index) => (
+            <Skeleton
+              key={index}
+              className="flex-1"
+              style={{ height: HUNT_TILE.padY + LINE.base + HUNT_TILE.gap + LINE[11] }}
+              fillClassName="rounded-xl"
+            />
+          ))}
+        </View>
+        <View className="items-end gap-0.5">
+          <LineBar height={LINE[11]} className="h-2 w-48" />
+          <LineBar height={LINE.lg} className="h-5 w-28" />
+        </View>
       </StatsSection>
       <StatsSection title="지출 내역">
         <DonutChart />

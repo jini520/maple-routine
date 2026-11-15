@@ -23,6 +23,7 @@ import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import {
   categoryTotalsBetween,
   characterTotalsBetween,
+  huntTotalsBetween,
   totalsBetween,
   type DaysByDate,
 } from '../../features/stats/aggregate'
@@ -45,6 +46,7 @@ import { BossSection } from './BossSection'
 import { CategorySection } from './CategorySection'
 import { CharacterSection } from './CharacterSection'
 import { CumulativeSection } from './CumulativeSection'
+import { HuntSection } from './HuntSection'
 import { sectionsToReveal } from './reveal'
 import { StatsSection } from './StatsSection'
 import { StatsSkeleton } from './StatsSkeleton'
@@ -104,6 +106,7 @@ export function StatsScreen(): React.JSX.Element {
   const characters = useMemo(() => characterTotalsBetween(days, currentRange), [days, currentRange])
   const incomeItems = useMemo(() => categoryTotalsBetween(days, currentRange, 'income'), [days, currentRange])
   const expenseItems = useMemo(() => categoryTotalsBetween(days, currentRange, 'expense'), [days, currentRange])
+  const hunt = useMemo(() => huntTotalsBetween(days, currentRange), [days, currentRange])
   // 캐릭터 줄은 메모돼 있어 기간이나 읽은 값이 바뀔 때만 그림을 다시 찾는다.
   useEffect(() => {
     let alive = true
@@ -269,6 +272,7 @@ export function StatsScreen(): React.JSX.Element {
                   replayKey={replayKey}
                 />
               </View>
+              <HuntSection totals={hunt} />
               <View onLayout={onSectionLayout('expense')}>
                 <CategorySection
                   title="지출 내역"

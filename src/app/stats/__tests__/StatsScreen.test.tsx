@@ -97,6 +97,14 @@ describe('StatsScreen', () => {
     expect(view.getByTestId('stats-summary-net').props.children.join('')).toContain('+3억')
   })
 
+  // 수입 내역의 사냥 조각을 나눠 보는 카드라 도넛 바로 아래에 둔다
+  it('사냥 수입 카드는 수입 내역과 지출 내역 사이에 선다', async () => {
+    const view = await 그리기()
+
+    const cards = view.getAllByTestId(/^stats-(category-income|category-expense|hunt)$/)
+    expect(cards.map((card) => card.props.testID)).toEqual(['stats-category-income', 'stats-hunt', 'stats-category-expense'])
+  })
+
   it('이전 기간으로 옮기면 지난 주의 합계가 선다', async () => {
     const view = await 그리기()
 
