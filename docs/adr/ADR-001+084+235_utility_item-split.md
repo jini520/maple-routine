@@ -1,6 +1,6 @@
 # ADR-001+084+235 판매 분배금 계산기
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-168 · ADR-305 결정 12
 > 관련 소스: `app/utility/` · `assets/utility/` · `lib/cashbook/item-split.ts` · `constants/domain/meso-quick-adds.ts` · `native/clipboard.ts` · `native/adapters/rn-clipboard.ts`
 
