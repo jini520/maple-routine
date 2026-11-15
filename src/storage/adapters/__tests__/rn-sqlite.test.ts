@@ -220,6 +220,7 @@ describe('db.ts 와 맞물리는가', () => {
       // 스타포스 첫 성 · 끝 성.
       'ALTER TABLE enhancement_totals ADD COLUMN from_star INTEGER',
       'ALTER TABLE enhancement_totals ADD COLUMN to_star INTEGER',
+      'ALTER TABLE enhancement_totals ADD COLUMN superior_cost_meso INTEGER NOT NULL DEFAULT 0',
       'ALTER TABLE character_accounts ADD COLUMN world_key TEXT',
       // 캐릭터 기록의 그때 월드와 리프 자동 판정이 읽는 만든 날.
       'ALTER TABLE cashbook_entries ADD COLUMN world_key TEXT',
@@ -296,6 +297,7 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'ring_level' },
             { name: 'from_star' },
             { name: 'to_star' },
+            { name: 'superior_cost_meso' },
             { name: 'created_date' },
             { name: 'crystal_excluded' },
             { name: 'over_crystal_limit' },

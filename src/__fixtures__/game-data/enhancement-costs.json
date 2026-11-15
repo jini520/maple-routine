@@ -368,5 +368,274 @@
       "exponent": 2.7,
       "divisor": 200
     }
+  ],
+  "superiorSeries": [
+    {
+      "key": "helisium_elite",
+      "name": "헬리시움 정예",
+      "starforceCostMeso": 5956000
+    },
+    {
+      "key": "nova",
+      "name": "노바",
+      "starforceCostMeso": 18507900
+    },
+    {
+      "key": "tyrant",
+      "name": "타일런트",
+      "starforceCostMeso": 55382200
+    }
+  ],
+  "superiorItems": [
+    {
+      "name": "헬리시움 정예 궁수 망토",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 궁수 벨트",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 궁수 부츠",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 도적 망토",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 도적 벨트",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 도적 부츠",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 법사 망토",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 법사 벨트",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 법사 부츠",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 전사 망토",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 전사 벨트",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 전사 부츠",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 해적 망토",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 해적 벨트",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "헬리시움 정예 해적 부츠",
+      "seriesKey": "helisium_elite",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 리카온 벨트",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 리카온 부츠",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 리카온 클록",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 알테어 벨트",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 알테어 부츠",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 알테어 클록",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 케이론 벨트",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 케이론 부츠",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 케이론 클록",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 헤르메스 벨트",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 헤르메스 부츠",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 헤르메스 클록",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 히아데스 벨트",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 히아데스 부츠",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "노바 히아데스 클록",
+      "seriesKey": "nova",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 리카온 글러브",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 리카온 벨트",
+      "seriesKey": "tyrant",
+      "iconAssetId": "49d165ed-66b2-40f0-9013-753e2d94d3bb"
+    },
+    {
+      "name": "타일런트 리카온 부츠",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 리카온 클록",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 알테어 글러브",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 알테어 벨트",
+      "seriesKey": "tyrant",
+      "iconAssetId": "9ba2ed2d-b39f-495a-8918-9e43c427a211"
+    },
+    {
+      "name": "타일런트 알테어 부츠",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 알테어 클록",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 케이론 글러브",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 케이론 벨트",
+      "seriesKey": "tyrant",
+      "iconAssetId": "5541566f-a836-4277-8e69-23a4034c648b"
+    },
+    {
+      "name": "타일런트 케이론 부츠",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 케이론 클록",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 헤르메스 글러브",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 헤르메스 벨트",
+      "seriesKey": "tyrant",
+      "iconAssetId": "a9af9811-c8ab-4399-a8a4-e082a397f916"
+    },
+    {
+      "name": "타일런트 헤르메스 부츠",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 헤르메스 클록",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 히아데스 글러브",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 히아데스 벨트",
+      "seriesKey": "tyrant",
+      "iconAssetId": "edb5c0db-175a-460d-936e-8101a64774a3"
+    },
+    {
+      "name": "타일런트 히아데스 부츠",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    },
+    {
+      "name": "타일런트 히아데스 클록",
+      "seriesKey": "tyrant",
+      "iconAssetId": null
+    }
   ]
 }

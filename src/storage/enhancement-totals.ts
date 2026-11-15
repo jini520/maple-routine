@@ -31,6 +31,8 @@ export interface EnhancementTotal {
   attempts: number
   attemptCostMeso: number
   destroyDefenceCostMeso: number
+  /** 슈페리얼 장비의 스타포스 비용. 칸이 생기기 전 줄과 슈페리얼이 아닌 줄은 0 */
+  superiorCostMeso: number
   /** 스타포스만. 칸이 생기기 전에 받은 줄도 `null` */
   fromStar: number | null
   toStar: number | null
@@ -72,9 +74,9 @@ function bumpRevision(): void {
 const UPSERT_SQL = `
   INSERT INTO enhancement_totals
     (nexon_account_id, history_date, character_name, ocid, account_id, world_key, enhancement_type, enhancement_category,
-     item_group, item_key, item_name, attempts, attempt_cost_meso, destroy_defence_cost_meso, from_star, to_star, event_world,
-     updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     item_group, item_key, item_name, attempts, attempt_cost_meso, destroy_defence_cost_meso, superior_cost_meso, from_star,
+     to_star, event_world, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT (ocid, history_date, enhancement_category, item_group) DO UPDATE SET
     nexon_account_id = excluded.nexon_account_id,
     character_name = excluded.character_name,
@@ -86,6 +88,7 @@ const UPSERT_SQL = `
     attempts = excluded.attempts,
     attempt_cost_meso = excluded.attempt_cost_meso,
     destroy_defence_cost_meso = excluded.destroy_defence_cost_meso,
+    superior_cost_meso = excluded.superior_cost_meso,
     from_star = excluded.from_star,
     to_star = excluded.to_star,
     event_world = excluded.event_world,
@@ -123,6 +126,7 @@ async function replaceIn(
       total.attempts,
       total.attemptCostMeso,
       total.destroyDefenceCostMeso,
+      total.superiorCostMeso,
       total.fromStar,
       total.toStar,
       eventWorldValue(total.eventWorld),
@@ -184,6 +188,7 @@ function rowToTotal(row: Record<string, unknown>): EnhancementTotal {
     attempts: row.attempts as number,
     attemptCostMeso: row.attempt_cost_meso as number,
     destroyDefenceCostMeso: row.destroy_defence_cost_meso as number,
+    superiorCostMeso: row.superior_cost_meso as number,
     fromStar: (row.from_star as number | null | undefined) ?? null,
     toStar: (row.to_star as number | null | undefined) ?? null,
     eventWorld: eventWorld === null || eventWorld === undefined ? null : eventWorld === 1,

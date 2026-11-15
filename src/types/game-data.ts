@@ -352,11 +352,25 @@ export interface StarforceStepRow {
   exponent: number
   divisor: number
 }
+/** 슈페리얼 장비의 계열. 스타포스 1회 비용이 계열마다 하나이고, 성수 · 할인과 상관없다. */
+export interface SuperiorSeriesRow {
+  key: string
+  starforceCostMeso: number
+}
+/** 슈페리얼 장비 하나. 넥슨 응답의 장비 이름과 공백을 지운 뒤 통째로 맞춘다. */
+export interface SuperiorItemRow {
+  name: string
+  seriesKey: string
+  /** 펼친 강화 줄의 장비 그림. 아이템 표에 없는 슈페리얼 장비도 그림이 서게 둔다 */
+  iconAssetId: string | null
+}
 export interface EnhancementCostsTable extends TableHead {
   rules: EnhancementRules
   potentialResetCosts: PotentialResetCostRow[]
   soulPotentialResetCosts: SoulPotentialResetCostRow[]
   starforceSteps: StarforceStepRow[]
+  superiorSeries: SuperiorSeriesRow[]
+  superiorItems: SuperiorItemRow[]
 }
 
 export const MVP_GRADE_KEYS = ['normal', 'bronze', 'silver', 'gold', 'diamond', 'red', 'black'] as const

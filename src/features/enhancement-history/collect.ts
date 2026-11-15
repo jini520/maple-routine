@@ -19,7 +19,7 @@ import { getOwnerSightings } from '../../storage/character-accounts'
 import { checkKey, loadEnhancementChecks, markEnhancementChecked } from '../../storage/enhancement-history'
 import { loadEnhancementRefetches, removeEnhancementRefetch } from '../../storage/enhancement-refetches'
 import { findPreLeapWorldKey, replaceEnhancementTotals } from '../../storage/enhancement-totals'
-import { eventWorldOf, summarizeEnhancement, type EnhancementSource, type EntryOwner } from './spending'
+import { eventWorldOf, hasSuperiorItem, summarizeEnhancement, type EnhancementSource, type EntryOwner } from './spending'
 import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
 import type { EnhancementAnomaly } from '../../types/server-records'
 import { saveEventWorldNames } from './event-world-names'
@@ -56,6 +56,8 @@ const MAX_PAGES = 50
 export interface EnhancementHistoryJob {
   kind: EnhancementKind
   dateKey: string
+  /** 받은 줄에 슈페리얼 장비의 스타포스 줄이 있을 때만 갈아 끼운다. `superiorOnly` 요청의 날만 참이다 */
+  superiorOnly?: true
 }
 
 /**
@@ -118,11 +120,17 @@ async function planRound(
   await ensureEnhancementTotals()
   const checks = await loadEnhancementChecks(nexonAccountId, days)
   const jobs: EnhancementHistoryJob[] = []
-  const planned = new Set<string>()
-  const add = (kind: EnhancementKind, dateKey: string) => {
-    if (planned.has(checkKey(kind, dateKey))) return
-    planned.add(checkKey(kind, dateKey))
-    jobs.push({ kind, dateKey })
+  const planned = new Map<string, EnhancementHistoryJob>()
+  const add = (kind: EnhancementKind, dateKey: string, superiorOnly = false) => {
+    const existing = planned.get(checkKey(kind, dateKey))
+    if (existing !== undefined) {
+      // 통째로 갈아 끼우는 일이 하나라도 있으면 통째로 갈아 끼운다. 그쪽도 슈페리얼 줄을 함께 매긴다.
+      if (!superiorOnly) delete existing.superiorOnly
+      return
+    }
+    const job: EnhancementHistoryJob = superiorOnly ? { kind, dateKey, superiorOnly: true } : { kind, dateKey }
+    planned.set(checkKey(kind, dateKey), job)
+    jobs.push(job)
   }
   for (const dateKey of days) {
     for (const kind of kindsOn(dateKey)) {
@@ -135,7 +143,7 @@ async function planRound(
   const hasPast = jobs.some((job) => job.dateKey !== todayDateKey)
   for (const chunk of chunks) {
     for (const dateKey of chunk.dates) {
-      for (const kind of kindsOn(dateKey)) if (chunk.request.kinds.includes(kind)) add(kind, dateKey)
+      for (const kind of kindsOn(dateKey)) if (chunk.request.kinds.includes(kind)) add(kind, dateKey, chunk.request.superiorOnly)
     }
   }
   for (const { kind, dateKey } of refetches) add(kind, dateKey)
@@ -403,6 +411,8 @@ async function collectAccount(
     async (job) => {
       const { firstCursor, rows } = await fetchDay(credential, job)
       const sources: EnhancementSource[] = rows.map((row) => ({ ...row, kind: job.kind }))
+      // 슈페리얼 장비의 줄이 없는 날은 받은 때의 합계 · 굳음 · 이상 보고를 그대로 둔다. 받은 날이라 진행에는 든다.
+      if (job.superiorOnly === true && !hasSuperiorItem(sources)) return true
       const owners = await ownersOf(sources, job.dateKey, ownerOf)
       // 그날 이름을 묻다 실패한 이름이 있으면 그 날을 갈아 끼우지 않는다. 그 이름의 줄이 지워진 채 굳는다.
       if ([...owners.values()].includes('retry')) {

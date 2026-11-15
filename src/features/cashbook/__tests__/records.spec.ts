@@ -1522,6 +1522,7 @@ const 합계 = (over: Partial<EnhancementTotal> = {}): EnhancementTotal => ({
   attempts: 1,
   attemptCostMeso: 450_000,
   destroyDefenceCostMeso: 0,
+  superiorCostMeso: 0,
   fromStar: null,
   toStar: null,
   eventWorld: false,
@@ -1569,6 +1570,16 @@ describe('강화 지출이 칸에 든다', () => {
 
     expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso).toBe(900_000 + 2_000_000)
     expect(mvp.starforceMvpDiscountOf).toHaveBeenCalledWith(expect.any(Map), 'maple-1', '2026-08-23')
+  })
+
+  // 슈페리얼 장비의 스타포스는 어떤 할인도 받지 않는다(사용자 확인 2026-11-15).
+  it('슈페리얼 비용에는 MVP 할인을 붙이지 않는다', async () => {
+    mvp.starforceMvpDiscountOf.mockReturnValue(10)
+    enhancementTotals.loadEnhancementTotals.mockResolvedValue([
+      스타포스합계({ attemptCostMeso: 1_000_000, superiorCostMeso: 55_382_200 }),
+    ])
+
+    expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso).toBe(900_000 + 55_382_200)
   })
 
   it('MVP 할인은 스타포스에만 붙는다', async () => {

@@ -39,6 +39,17 @@ describe('합계에서 뺀 줄', () => {
     ])
   })
 
+  // 장비 표에 없는 장비의 10성 조건은 슈페리얼에 걸지 않는다. 운영자가 슈페리얼 장비 표에 더할 이름이다.
+  it('표에 없는 슈페리얼 장비의 스타포스는 성수와 상관없이 no_cost 로 센다', () => {
+    const rows = [
+      starforce({ itemKey: null, targetItem: '새 슈페리얼 벨트' }, { superior_item_flag: '슈페리얼 장비 해당', after_starforce_count: 1 }),
+    ]
+
+    expect(enhancementAnomaliesOf(rows, NO_EVENT).map((one) => [one.anomalyType, one.itemName])).toEqual([
+      ['no_cost', '새 슈페리얼 벨트'],
+    ])
+  })
+
   it('이유를 가른다', () => {
     const rows = [
       entry({ itemLevel: null }),

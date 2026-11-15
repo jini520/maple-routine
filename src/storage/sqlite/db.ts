@@ -617,6 +617,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // 스타포스 첫 성 · 끝 성. 옛 줄은 NULL 이고 다시 매기기 요청이 그 날을 다시 받아 채운다.
   await ensureColumn(db, 'enhancement_totals', 'from_star', 'INTEGER')
   await ensureColumn(db, 'enhancement_totals', 'to_star', 'INTEGER')
+  // 슈페리얼 장비의 스타포스 비용. 옛 줄은 0 이고, 다시 매기기 요청이 슈페리얼 줄이 있는 날을 다시 받아 채운다.
+  await ensureColumn(db, 'enhancement_totals', 'superior_cost_meso', 'INTEGER NOT NULL DEFAULT 0')
   await ensureColumn(db, 'character_accounts', 'world_key', 'TEXT')
   // 캐릭터 기록의 그때 월드. 옛 행은 버전 19 가 프로필 월드로 채운다.
   await ensureColumn(db, 'cashbook_entries', 'world_key', 'TEXT')

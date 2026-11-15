@@ -480,7 +480,11 @@ async function loadEnhancementSpending(fromDateKey: string, toDateKey: string): 
       costMeso:
         total.enhancementType === 'starforce'
           ? withMvpDiscount(
-              { attemptMeso: total.attemptCostMeso, destroyDefenceMeso: total.destroyDefenceCostMeso },
+              {
+                attemptMeso: total.attemptCostMeso,
+                destroyDefenceMeso: total.destroyDefenceCostMeso,
+                superiorMeso: total.superiorCostMeso,
+              },
               starforceMvpDiscountOf(histories, total.accountId, total.historyDate),
             )
           : total.attemptCostMeso + total.destroyDefenceCostMeso,

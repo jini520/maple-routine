@@ -1,4 +1,10 @@
-import { enhancementCostPartsOf, summarizeEnhancement, type EnhancementSource, type EntryOwner } from '../spending'
+import {
+  enhancementCostPartsOf,
+  summarizeEnhancement,
+  unpricedReasonOf,
+  type EnhancementSource,
+  type EntryOwner,
+} from '../spending'
 
 const entry = (over: Partial<EnhancementSource> = {}): EnhancementSource => ({
   kind: 'cube',
@@ -231,7 +237,11 @@ describe('스타포스', () => {
 
     // MVP 할인을 화면에서 시도 비용에만 붙이므로 두 몫을 따로 든다.
     it('적용이면 할인 전 비용의 200% 를 시도 비용과 따로 든다', () => {
-      expect(partsOf('파괴 방지 적용')).toEqual({ attemptMeso: 91_482_020, destroyDefenceMeso: 261_377_200 })
+      expect(partsOf('파괴 방지 적용')).toEqual({
+        attemptMeso: 91_482_020,
+        destroyDefenceMeso: 261_377_200,
+        superiorMeso: 0,
+      })
     })
 
     it('미적용이나 모르는 값이면 추가분이 없다', () => {
@@ -248,6 +258,71 @@ describe('스타포스', () => {
   // 레벨은 장비 표에서만 찾는다. 이름이 같은 큐브 줄의 레벨을 빌려 오지 않는다.
   it('표에 없는 장비는 값이 없다', () => {
     expect(attemptMesoOf({ ...starforce({ before_starforce_count: 3 }), targetItem: '왕푸', itemKey: null })).toBeNull()
+  })
+})
+
+// 슈페리얼 장비는 계열마다 1회 금액이 하나이고 할인 · 추가 비용이 없다(사용자 확인 2026-11-15).
+describe('슈페리얼 장비의 스타포스', () => {
+  const starforce = (targetItem: string, payload: Record<string, unknown> = {}) =>
+    entry({
+      kind: 'starforce',
+      itemLevel: null,
+      itemKey: null,
+      targetItem,
+      payload: { before_starforce_count: 12, upgrade_item: '', starforce_event_list: null, ...payload },
+    })
+
+  it('표의 장비면 성 · 이벤트 할인 · 파괴 방지와 상관없이 계열 금액을 슈페리얼 몫에 든다', () => {
+    const tyrant = { attemptMeso: 0, destroyDefenceMeso: 0, superiorMeso: 55_382_200 }
+
+    expect(enhancementCostPartsOf(starforce('타일런트 리카온 벨트', { before_starforce_count: 0 }))).toEqual(tyrant)
+    expect(
+      enhancementCostPartsOf(
+        starforce('타일런트 리카온 벨트', {
+          before_starforce_count: 14,
+          starforce_event_list: [{ cost_discount_rate: '30' }],
+          destroy_defence: '파괴 방지 적용',
+        }),
+      ),
+    ).toEqual(tyrant)
+    expect(enhancementCostPartsOf(starforce('헬리시움 정예 도적 벨트'))?.superiorMeso).toBe(5_956_000)
+  })
+
+  it('계열 이름만 든 일반 장비는 슈페리얼이 아니다', () => {
+    const hood = starforce('노바 두건', { superior_item_flag: '슈페리얼 장비 미해당' })
+
+    expect(enhancementCostPartsOf(hood)).toBeNull()
+    expect(unpricedReasonOf(hood)).toBe('no_level')
+  })
+
+  it('표에 없는데 응답이 슈페리얼이라고 하면 값을 못 매기고 이유는 no_cost 다', () => {
+    const unknown = starforce('새 슈페리얼 벨트', { superior_item_flag: '슈페리얼 장비 해당' })
+
+    expect(enhancementCostPartsOf(unknown)).toBeNull()
+    expect(unpricedReasonOf(unknown)).toBe('no_cost')
+  })
+
+  it('표에 없고 응답이 슈페리얼이 아니라고 하거나 비우면 지금처럼 no_level 이다', () => {
+    expect(unpricedReasonOf(starforce('왕푸', { superior_item_flag: '슈페리얼 장비 미해당' }))).toBe('no_level')
+    expect(unpricedReasonOf(starforce('왕푸', { superior_item_flag: '' }))).toBe('no_level')
+    expect(unpricedReasonOf(starforce('왕푸'))).toBe('no_level')
+  })
+
+  it('합계는 슈페리얼 몫을 따로 더하고 시도 비용에는 넣지 않는다', () => {
+    const rows = summarizeEnhancement(
+      [starforce('노바 리카온 클록'), starforce('노바 리카온 클록', { before_starforce_count: 13 })],
+      NO_EVENT,
+    )
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        itemGroup: 'name:노바리카온클록',
+        attempts: 2,
+        attemptCostMeso: 0,
+        destroyDefenceCostMeso: 0,
+        superiorCostMeso: 37_015_800,
+      }),
+    ])
   })
 })
 

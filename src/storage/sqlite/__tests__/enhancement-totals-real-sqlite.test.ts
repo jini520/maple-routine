@@ -68,6 +68,7 @@ const draft = (over: Partial<EnhancementTotalDraft> = {}): EnhancementTotalDraft
   attempts: 1,
   attemptCostMeso: 450_000,
   destroyDefenceCostMeso: 0,
+  superiorCostMeso: 0,
   fromStar: null,
   toStar: null,
   eventWorld: false,
@@ -121,6 +122,30 @@ describe('갈아 끼우기', () => {
     expect(await loadEnhancementTotals('2026-10-20', '2026-10-20')).toEqual([
       expect.objectContaining({ fromStar: 17, toStar: 21 }),
     ])
+  })
+
+  // 슈페리얼 비용은 MVP 할인을 받지 않아 칸이 따로다. 칸이 생기기 전 기기의 표에는 열 때 더한다.
+  it('슈페리얼 비용 칸을 적고 읽는다. 칸이 없던 옛 기기의 표에도 더해지고 옛 줄은 0 이다', async () => {
+    await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [draft()], NOW)
+    await closeBossProfitDb()
+    real.inspect((db) => db.exec('ALTER TABLE enhancement_totals DROP COLUMN superior_cost_meso'))
+
+    expect(await loadEnhancementTotals('2026-10-20', '2026-10-20')).toEqual([
+      expect.objectContaining({ enhancementType: 'cube', superiorCostMeso: 0 }),
+    ])
+
+    const belt = { itemGroup: 'name:타일런트리카온벨트', itemKey: null, itemName: '타일런트 리카온 벨트' }
+    await replaceEnhancementTotals(
+      'account-main',
+      'starforce',
+      '2026-10-20',
+      [draft({ ...belt, enhancementType: 'starforce', enhancementCategory: 'starforce', attemptCostMeso: 0, superiorCostMeso: 55_382_200 })],
+      NOW,
+    )
+
+    expect(await loadEnhancementTotals('2026-10-20', '2026-10-20')).toContainEqual(
+      expect.objectContaining({ enhancementType: 'starforce', attemptCostMeso: 0, superiorCostMeso: 55_382_200 }),
+    )
   })
 
   it('이벤트 월드 판정의 세 값을 그대로 되읽는다', async () => {
