@@ -127,7 +127,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 
 | ADR | 상태 | 카테고리 | 제목 |
 |---|---|---|---|
-| [ADR-001+084+235+241](./adr/ADR-001+084+235+241_utility_item-split.md) | 🟢 | utility | 판매 분배금 계산기 · 정산 금액 복사 · 비율 % 입력 |
+| [ADR-001+084+235+241+247](./adr/ADR-001+084+235+241+247_utility_item-split.md) | ⚪ | utility | 판매 분배금 계산기 · 정산 금액 복사 · 비율 % 입력 · 유틸리티 도구 분류 |
 | [ADR-002+094+165+237](./adr/ADR-002+094+165+237_stats_overview.md) | 🟢 | stats | 통계 화면 |
 | [ADR-003](./adr/ADR-003_docs_writing-rules.md) | 🟢 | docs | 문서 · 주석 · 앱 문구 쓰는 규칙 |
 | [ADR-004+065](./adr/ADR-004+065_architecture_local-first-adapters.md) | 🟢 | architecture | 기기 저장소와 네이티브 어댑터 경계 |
@@ -187,7 +187,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
 | [ADR-056+072+164+182](./adr/ADR-056+072+164+182_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
 | [ADR-057+125+198+227](./adr/ADR-057+125+198+227_notice_feed.md) | 🟢 | notice | 운영자 공지와 넥슨 공지 |
-| [ADR-058+087+176+179](./adr/ADR-058+087+176+179_today_widgets.md) | 🟢 | today | today 위젯 격자 |
+| [ADR-058+087+176+179+248](./adr/ADR-058+087+176+179+248_today_widgets.md) | ⚪ | today | today 위젯 격자 · MASPI 위젯 |
 | [ADR-089+218](./adr/ADR-089+218_today_quick-links.md) | 🟢 | today | today 빠른 이동 · 가계부 분류 칸 |
 | [ADR-059+136+224](./adr/ADR-059+136+224_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
 | [ADR-060+073+079+085+088+107+109+130+133](./adr/ADR-060+073+079+085+088+107+109+130+133_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
@@ -195,7 +195,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-062+082+091+106+119+123+129+131+134+141+148+240](./adr/ADR-062+082+091+106+119+123+129+131+134+141+148+240_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
 | [ADR-063+080+113+116+146+184+223](./adr/ADR-063+080+113+116+146+184+223_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 체계 · 화면 배율 · 글자 크기 페이지 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
-| [ADR-071+205](./adr/ADR-071+205_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
+| [ADR-071+205+243](./adr/ADR-071+205+243_server_drop-price-market.md) | ⚪ | server | 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
 | [ADR-074](./adr/ADR-074_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |
 | [ADR-078](./adr/ADR-078_persistence_boss-tables.md) | 🟢 | persistence | 보스 기록 테이블 재설계 |
 | [ADR-096](./adr/ADR-096_persistence_cashbook-tables.md) | 🟢 | persistence | 가계부 기록 테이블 재설계 |
