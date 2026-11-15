@@ -7,7 +7,7 @@
 //
 // 라이브러리를 진짜로 세워 마운트되는지는 옆 파일(`BottomSheet.wiring.test.tsx`)이 본다.
 import { useState, type ReactNode } from 'react'
-import { Platform, Pressable, Text, View } from 'react-native'
+import { Dimensions, Platform, Pressable, Text, View } from 'react-native'
 import { act, fireEvent, renderHook, within } from '@testing-library/react-native'
 import { GESTURE_SOURCE, type GestureEventsHandlersHookType } from '@gorhom/bottom-sheet'
 import type { Metrics } from 'react-native-safe-area-context'
@@ -65,7 +65,10 @@ import { setScreenCornersPort } from '../../../../native/ports'
 import { installNoopNativePorts } from '../../../../native/__tests__/fake-native-ports'
 
 // 동심원 경우가 꽂은 반경을 다음 케이스가 물려받지 않게 기본값(모름)으로 되돌린다.
-afterEach(() => installNoopNativePorts())
+afterEach(() => {
+  installNoopNativePorts()
+  jest.restoreAllMocks()
+})
 
 const noop = (): void => {}
 
@@ -170,9 +173,24 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     expect(sheet.props.detached).toBe(true)
     expect(sheet.props.bottomInset).toBe(34)
     // 라이브러리 몸통이 아니라 우리 내용 층이 옆 간격을 진다. 몸통에 준 정적 스타일은 실기기에서 버려졌다.
-    expect(flattenStyle(getByTestId('bottom-sheet-body').props.style).marginHorizontal).toBe(10)
+    const 몸통 = flattenStyle(getByTestId('bottom-sheet-body').props.style)
+    expect(몸통.marginLeft).toBe(10)
+    expect(몸통.marginRight).toBe(10)
     expect(바탕.borderBottomLeftRadius).toBe(바탕.borderTopLeftRadius)
     expect(바탕.borderBottomRightRadius).toBe(바탕.borderTopRightRadius)
+  })
+
+  // 오른쪽 레일 화면. 몸통이 레일로 넘어가면 높은 시트의 오른쪽 위가 OS 막대에 가린다. 스크림은 레일까지 덮는다.
+  it('오른쪽 레일 화면에서는 몸통이 레일을 비우고 콘텐츠 폭 안에 선다', async () => {
+    jest.spyOn(Dimensions, 'get').mockReturnValue({ width: 466, height: 678, scale: 3, fontScale: 1 })
+    const { getByTestId } = await open({
+      frame: { x: 0, y: 0, width: 466, height: 678 },
+      insets: { top: 0, left: 0, right: 84, bottom: 34 },
+    })
+    const 몸통 = flattenStyle(getByTestId('bottom-sheet-body').props.style)
+
+    expect(몸통.marginLeft).toBe(10)
+    expect(몸통.marginRight).toBe(10 + 84)
   })
 
   /**

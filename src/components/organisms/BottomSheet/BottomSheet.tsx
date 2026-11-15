@@ -45,6 +45,7 @@ import { useBlurTint, useThemeAppearance } from '../../../theme/context'
 import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 
 import { LinearGradient } from '../../../lib/nativewind-interop'
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { nextScrimOpacity } from './scrim-opacity'
 import { useStepDissolve } from './step-dissolve'
 import { floatingLayerHeight, SHEET_SIDE_GAP_PX, SHEET_RADIUS, sheetShape } from './bottom-sheet-drag'
@@ -335,6 +336,8 @@ function sheetCorners(bottomRadius: number) {
 /** 바탕 · 내용 층이 함께 쓰는 값. 옆 간격 · 아래 모서리와 끄는 동안 따라간 거리다. */
 interface FloatingLayer {
   sideGap: number
+  /** 오른쪽 레일 폭. 시트 몸통은 콘텐츠 폭 안에 서고, 스크림만 레일까지 덮는다. */
+  railWidthPx: number
   bottomRadius: number
   dragX: SharedValue<number>
   dragY: SharedValue<number>
@@ -348,6 +351,7 @@ interface FloatingLayer {
 function useFloatingLayerStyle(layer: FloatingLayer, fill: boolean) {
   const { animatedAnimationState, animatedLayoutState, animatedPosition } = useBottomSheetInternal()
   const { sideGap, dragX, dragY } = layer
+  const rightGap = sideGap + layer.railWidthPx
   return useAnimatedStyle(() => {
     const height = floatingLayerHeight(
       animatedAnimationState.get(),
@@ -357,12 +361,12 @@ function useFloatingLayerStyle(layer: FloatingLayer, fill: boolean) {
     const transform = [{ translateX: dragX.get() }, { translateY: dragY.get() }]
     if (fill) {
       return height === null
-        ? { flex: 1, marginHorizontal: sideGap, transform }
-        : { flex: 0, height, marginHorizontal: sideGap, transform }
+        ? { flex: 1, marginLeft: sideGap, marginRight: rightGap, transform }
+        : { flex: 0, height, marginLeft: sideGap, marginRight: rightGap, transform }
     }
     return height === null
-      ? { position: 'absolute', top: 0, bottom: 0, left: sideGap, right: sideGap, transform }
-      : { position: 'absolute', top: 0, height, left: sideGap, right: sideGap, transform }
+      ? { position: 'absolute', top: 0, bottom: 0, left: sideGap, right: rightGap, transform }
+      : { position: 'absolute', top: 0, height, left: sideGap, right: rightGap, transform }
   })
 }
 
@@ -414,7 +418,8 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
    * 라이브러리 몸통에는 못 준다. 몸통의 `Animated.View` 에서 NativeWind 가 넘겨준 정적 스타일을 버려 실기기에서 안 먹었다.
    * 그래서 바탕과 내용 두 층에 같은 값을 준다.
    */
-  const sideGap = Math.max(SHEET_SIDE_GAP_PX, (frame.width - MAX_WIDTH) / 2)
+  const { railWidthPx } = useScreenLayout()
+  const sideGap = Math.max(SHEET_SIDE_GAP_PX, (frame.width - railWidthPx - MAX_WIDTH) / 2)
 
   /** 끄는 동안 시트가 좌우 · 위로 따라간 거리. 바탕과 내용이 같은 값으로 움직인다. */
   const dragX = useSharedValue(0)
@@ -479,11 +484,11 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
     // 라이브러리가 주는 바탕 스타일은 몸통을 꽉 채우는 절대 배치라 쓰지 않는다. 바닥을 붙들 때 높이를 직접 정해야 해서다.
     () => (
       <SheetBackground
-        layer={{ sideGap, bottomRadius, dragX, dragY }}
+        layer={{ sideGap, railWidthPx, bottomRadius, dragX, dragY }}
         color={buildSheetScopeVariables(definition)['--color-bg']!}
       />
     ),
-    [sideGap, bottomRadius, dragX, dragY, definition],
+    [sideGap, railWidthPx, bottomRadius, dragX, dragY, definition],
   )
 
   const renderBackdrop = useCallback(
@@ -532,7 +537,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
       accessibilityLabel={props.label}
       backgroundStyle={{ backgroundColor: sheetSurface, ...sheetCorners(bottomRadius) }}
     >
-      <SheetLayer layer={{ sideGap, bottomRadius, dragX, dragY }}>
+      <SheetLayer layer={{ sideGap, railWidthPx, bottomRadius, dragX, dragY }}>
       {/*
         그랩 핸들. 라이브러리 기본 핸들도 `handleComponent` 슬롯도 안 그려져서 첫 자식으로 직접 놓는다.
         핸들 자체는 그림이다. 핸들 자리를 잡은 끌기는 그 밑의 머리가 받고, 처리기가 머리에서 시작한 끌기를 핸들 끌기로 넘긴다.

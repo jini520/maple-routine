@@ -7,7 +7,10 @@ import {
   BAR_MIN_HEIGHT,
   BAR_SIDE_MARGIN,
   resolveBottomBarMetrics,
+  resolveBottomBarSpace,
+  resolveRailBarMetrics,
 } from '../bottom-bar-metrics'
+import { resolveScreenLayout } from '../screen-layout'
 
 /** 비례 상수를 역산한 기기. 이 폭에서 비율 도입 이전의 값이 그대로 나와야 한다. */
 const 기준기기 = 402
@@ -99,5 +102,51 @@ describe('3버튼 내비게이션 바 위에서만 띄운다', () => {
     expect(띄움.widthPx).toBe(안띄움.widthPx)
     expect(띄움.heightPx).toBe(안띄움.heightPx)
     expect(띄움.sideMarginPx).toBe(안띄움.sideMarginPx)
+  })
+})
+
+describe('오른쪽 레일 화면의 세로 막대', () => {
+  const 듀오_외부 = resolveScreenLayout({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+  const 아래_안전영역 = 34
+  const 막대 = resolveRailBarMetrics({ layout: 듀오_외부, bottomSafeAreaPx: 아래_안전영역, itemCount: 5, paddingPx: 3 })
+
+  // 아래 끝이 안전영역에 닿는 것은 가로 바와 같은 높이다. 띄우면 시안에서 고른 자리와 갈린다.
+  it('아래 끝이 아래쪽 안전영역 위에 닿는다', () => {
+    expect(막대.topPx + 막대.heightPx).toBe(듀오_외부.windowHeightPx - 아래_안전영역)
+  })
+
+  // OS 막대의 자리는 앱에 주어지지 않는다. 앱이 아는 것은 오른쪽 안전영역뿐이다.
+  it('가로 가운데가 오른쪽 안전영역의 가운데이고, 막대가 콘텐츠 폭 안으로 들어오지 않는다', () => {
+    expect(막대.leftPx + 막대.widthPx / 2).toBe(듀오_외부.contentWidthPx + 듀오_외부.railWidthPx / 2)
+    expect(막대.leftPx).toBeGreaterThanOrEqual(듀오_외부.contentWidthPx)
+  })
+
+  it('칸 다섯과 위아래 안쪽 여백이 막대 높이를 정확히 채운다', () => {
+    expect(막대.itemHeightPx * 5 + 3 * 2).toBe(막대.heightPx)
+  })
+
+  // 막대 위쪽에는 OS 가 막대와 시계를 그린다(y 152 까지).
+  it('막대 위 끝이 OS 막대보다 아래다', () => {
+    expect(막대.topPx).toBeGreaterThan(152)
+  })
+})
+
+// 콘텐츠 끝 여백 · 토스트 · ＋ 는 바가 아래에서 먹는 몫 위에 선다. 세로 막대는 옆에 서므로 그 몫이 없다.
+describe('바가 화면 아래에서 먹는 몫', () => {
+  it('side-rail 에서는 0 이다', () => {
+    const layout = resolveScreenLayout({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+
+    expect(resolveBottomBarSpace(layout, false)).toEqual({ heightPx: 0, liftPx: 0, spacePx: 0 })
+  })
+
+  it('phone 에서는 가로 바의 치수 그대로다', () => {
+    const layout = resolveScreenLayout({ windowWidthPx: 기준기기, windowHeightPx: 874, insetRightPx: 0 })
+    const bar = resolveBottomBarMetrics(기준기기, true)
+
+    expect(resolveBottomBarSpace(layout, true)).toEqual({
+      heightPx: bar.heightPx,
+      liftPx: bar.liftPx,
+      spacePx: bar.spacePx,
+    })
   })
 })

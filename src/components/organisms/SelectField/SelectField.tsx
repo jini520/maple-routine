@@ -14,12 +14,12 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  useWindowDimensions,
   View,
 } from 'react-native'
 import Animated, { Easing, Keyframe, useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { ChevronDownIcon, Text } from '../../atoms'
 import { boxShadowOf } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
@@ -147,7 +147,8 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
   const [contentHeight, setContentHeight] = useState<number | null>(null)
   const [contentWidth, setContentWidth] = useState(0)
   const insets = useSafeAreaInsets()
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions()
+  // 목록은 콘텐츠 폭 안에 선다. 오른쪽 레일 화면에서 창 폭으로 자리를 잡으면 레일 위로 펼쳐진다.
+  const { contentWidthPx, windowHeightPx: windowHeight } = useScreenLayout()
 
   const close = useCallback((): void => {
     setIsOpen(false)
@@ -204,7 +205,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           anchorLeft: anchor.left,
           anchorWidth: anchor.width,
           contentWidth,
-          windowWidth,
+          windowWidth: contentWidthPx,
           edgeGap: EDGE_GAP_PX,
           align: props.listAlign,
           fitContent: props.listFitsContent,

@@ -64,15 +64,19 @@ export function resolveScreenBottomInset(options: {
   barSpacePx: number
   /** `Platform.OS`. */
   platform: string
+  /** `ScreenLayout.edgeGapPx`. 오른쪽 레일 화면에서 콘텐츠 끝에 더 남기는 몫. */
+  edgeGapPx?: number
 }): ScreenBottomInset {
+  const edgeGapPx = options.edgeGapPx ?? 0
+
   if (options.hasTabBar) {
-    return { portBottomPx: 0, contentBottomPx: options.bottomSafeAreaPx + options.barSpacePx }
+    return { portBottomPx: 0, contentBottomPx: options.bottomSafeAreaPx + options.barSpacePx + edgeGapPx }
   }
 
   return options.platform === 'ios'
-    ? { portBottomPx: 0, contentBottomPx: options.bottomSafeAreaPx }
+    ? { portBottomPx: 0, contentBottomPx: options.bottomSafeAreaPx + edgeGapPx }
     : {
         portBottomPx: options.insetBottomPx,
-        contentBottomPx: options.bottomSafeAreaPx - options.insetBottomPx,
+        contentBottomPx: options.bottomSafeAreaPx - options.insetBottomPx + edgeGapPx,
       }
 }

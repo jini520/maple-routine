@@ -27,7 +27,7 @@ import Animated, {
 
 import { BottomBarOverlay } from '../BottomBar/BottomBarOverlay'
 import { tapFeedback } from '../../../native/haptics'
-import { FAB_SHADOW, useFabBottomPx } from '../../../lib/fab-metrics'
+import { FAB_SHADOW, useFabPlacement } from '../../../lib/fab-metrics'
 import { boxShadowOf } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ThemeDefinition } from '../../../types/theme'
@@ -221,7 +221,7 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
   const { definition } = useThemeAppearance()
 
   // 떠 있는 하단바 위에 앉는다. 화면 기준 `bottom: 0` 은 바 뒤라 거기 두면 반쯤 가린다.
-  const dialBottomPx = useFabBottomPx()
+  const dial = useFabPlacement()
 
   const chrome = chromeTiming(isOpen, reduceMotion)
   const scrim = useStepProgress(chrome.scrim, isOpen, Easing.linear)
@@ -265,8 +265,8 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
         testID="speed-dial-actions"
         // 줄 사이의 빈 자리와 오른쪽 여백도 이 상자의 넓이다. 상자가 터치를 먹으면 뒤 화면이 안 눌린다.
         pointerEvents="box-none"
-        style={{ bottom: dialBottomPx, gap: DIAL_GAP_PX }}
-        className="absolute right-4 items-end"
+        style={{ bottom: dial.bottomPx, right: dial.rightPx, gap: DIAL_GAP_PX }}
+        className="absolute items-end"
       >
         {props.actions.map((action, index) => (
           <DialPill

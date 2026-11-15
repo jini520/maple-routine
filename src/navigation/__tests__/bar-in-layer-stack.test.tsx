@@ -14,7 +14,14 @@ import { useAppEntryStore } from '../../features/app-entry/store'
 import jobThemes from '../../data/job-themes.json'
 import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
-import { BAR_MAX_WIDTH, BAR_SIDE_MARGIN, resolveBottomBarMetrics } from '../../lib/bottom-bar-metrics'
+import {
+  BAR_MAX_WIDTH,
+  BAR_SIDE_MARGIN,
+  RAIL_BAR_ITEM_HEIGHT,
+  resolveBottomBarMetrics,
+  resolveRailBarMetrics,
+} from '../../lib/bottom-bar-metrics'
+import { resolveScreenLayout } from '../../lib/screen-layout'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../theme/appearance-store'
 import { resetBarStoreForTests, setLastSub } from '../../components/organisms/BottomBar/bar-store'
 import { useBarOrderStore } from '../../features/bar-order/store'
@@ -586,5 +593,49 @@ describe('사용자가 정한 순서로 그린다', () => {
 
     expect(screen.getByTestId('bar-sub-Stats').props.accessibilityState).toEqual({ selected: true })
     expect(drawnTestIds('bar-sub-')).toEqual(['bar-sub-Stats', 'bar-sub-Profit', 'bar-sub-Cashbook', 'bar-sub-Inventory'])
+  })
+})
+
+// 아이폰 듀오 외부 화면. 콘텐츠가 비운 오른쪽 안전영역에 바가 세로로 선다. 치수 값은 `bottom-bar-metrics.test.ts` 가
+// 지키므로 여기서 물을 것은 바가 그 함수를 실제로 보는가다.
+describe('오른쪽 레일 화면에서는 바가 세로 막대로 선다', () => {
+  const 듀오_외부 = {
+    frame: { x: 0, y: 0, width: 466, height: 678 },
+    insets: { top: 0, left: 0, right: 84, bottom: 34 },
+  }
+  const styleOf = (testID: string): Record<string, unknown> =>
+    Object.assign({}, ...[screen.getByTestId(testID).props.style].flat(2)) as Record<string, unknown>
+
+  beforeEach(() => {
+    jest.spyOn(Dimensions, 'get').mockReturnValue({ width: 466, height: 678, scale: 3, fontScale: 1 })
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  it('오른쪽 안전영역 가운데에 서고 아래 끝이 아래쪽 안전영역에 닿는다', async () => {
+    await render(<NavigationHarness safeAreaMetrics={듀오_외부} />)
+    const layout = resolveScreenLayout({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+    const rail = resolveRailBarMetrics({ layout, bottomSafeAreaPx: 34, itemCount: 5, paddingPx: 3 })
+    const style = styleOf('bottom-bar')
+
+    expect(style.flexDirection).toBe('column')
+    expect(style.left).toBe(rail.leftPx)
+    expect(style.top).toBe(rail.topPx)
+    expect(style.width).toBe(rail.widthPx)
+    expect(style.height).toBe(rail.heightPx)
+  })
+
+  // 가로 바의 왼쪽에서 오른쪽 순서가 막대의 위에서 아래 순서다. 하위 행의 맨 위 칸은 ← 다.
+  it('하위 행에서 ← 가 맨 위 칸에 서고, 하위는 그 아래로 내려간다', async () => {
+    await render(<NavigationHarness safeAreaMetrics={듀오_외부} />)
+    await press('bar-group-schedule')
+
+    const back = styleOf('bar-back-plate')
+    const transform = (styleOf('bar-pill').transform ?? []) as Record<string, unknown>[]
+
+    expect(Number(back.top)).toBeLessThan(RAIL_BAR_ITEM_HEIGHT)
+    expect(transform.some((step) => 'translateY' in step)).toBe(true)
   })
 })

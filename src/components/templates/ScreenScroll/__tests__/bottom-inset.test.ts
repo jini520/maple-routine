@@ -2,7 +2,9 @@
 // 검사하려면 `Platform.OS` 를 조작해야 하고(그러면 무엇을 지키는 테스트인지가 흐려진다),
 // 무엇보다 RN 이 못 가르는 자리라 그 대가가 이름을 갖고 드러나야 한다.
 
+import { resolveBottomBarSpace } from '../../../../lib/bottom-bar-metrics'
 import { resolveBottomSafeAreaPx } from '../../../../lib/safe-area'
+import { resolveScreenLayout } from '../../../../lib/screen-layout'
 import { resolveScreenBottomInset } from '../bottom-inset'
 
 const 홈인디케이터 = 34
@@ -117,5 +119,23 @@ describe('탭바가 없으면(하위 페이지) 플랫폼이 가른다', () => {
     // 바가 없으면 그 몫은 **한 조각에도 안 들어간다**. 하위 페이지에는 바가 없으므로
     //  비켜 줄 것도 없다.
     expect(inset.portBottomPx + inset.contentBottomPx).toBe(args.bottomSafeAreaPx)
+  })
+})
+
+// 세로 막대는 옆에 서므로 콘텐츠 끝에 바의 몫을 남기지 않는다. 대신 기기 끝에 붙지 않게 여백 24 를 남긴다.
+describe('오른쪽 레일 화면', () => {
+  const 듀오_외부 = resolveScreenLayout({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+  const 레일_화면 = (hasTabBar: boolean): Parameters<typeof resolveScreenBottomInset>[0] => ({
+    ...화면(hasTabBar, 'ios', 홈인디케이터),
+    barSpacePx: resolveBottomBarSpace(듀오_외부, false).spacePx,
+    edgeGapPx: 듀오_외부.edgeGapPx,
+  })
+
+  it('탭 화면은 콘텐츠 끝 여백이 아래쪽 안전영역 + 24 이고 바의 몫이 없다', () => {
+    expect(resolveScreenBottomInset(레일_화면(true))).toEqual({ portBottomPx: 0, contentBottomPx: 홈인디케이터 + 24 })
+  })
+
+  it('하위 페이지도 아래쪽 안전영역 + 24 다', () => {
+    expect(resolveScreenBottomInset(레일_화면(false))).toEqual({ portBottomPx: 0, contentBottomPx: 홈인디케이터 + 24 })
   })
 })

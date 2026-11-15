@@ -5,6 +5,7 @@
 // 하한을 아예 보지 않기 때문에 렌더 트리에서는 이 정정이 한 픽셀도 안 보인다.
 
 import { resolveTopSafeAreaPx } from '../safe-area'
+import { resolveScreenLayout } from '../screen-layout'
 
 /** 안드로이드 실기기 값. 상태바 94px @ density 3.0 (1080×2640). */
 const 안드로이드_인셋 = 94 / 3
@@ -32,5 +33,25 @@ describe('안드로이드 상단 안전영역에는 하한이 있다', () => {
     expect(resolveTopSafeAreaPx({ insetTopPx: iOS_인셋, platform: 'ios' })).toBe(iOS_인셋)
     // 하한보다 얇은 iOS 기기(옛 SE 계열)도 마찬가지다. 값이 작아서 하한을 타는 것이 아니다.
     expect(resolveTopSafeAreaPx({ insetTopPx: 20, platform: 'ios' })).toBe(20)
+  })
+})
+
+// 아이폰 듀오 외부 화면은 위쪽 안전영역이 0 이라 그대로 두면 헤더가 화면 위 끝에 붙는다.
+describe('오른쪽 레일 화면은 위쪽 안전영역에 위아래 여백을 더한다', () => {
+  const 듀오_외부 = resolveScreenLayout({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+  const 바형_폰 = resolveScreenLayout({ windowWidthPx: 402, windowHeightPx: 874, insetRightPx: 0 })
+
+  it('side-rail 이면 인셋 0 에 24 를 더한다', () => {
+    expect(resolveTopSafeAreaPx({ insetTopPx: 0, platform: 'ios', edgeGapPx: 듀오_외부.edgeGapPx })).toBe(24)
+  })
+
+  it('phone 이면 지금 값 그대로다', () => {
+    expect(resolveTopSafeAreaPx({ insetTopPx: iOS_인셋, platform: 'ios', edgeGapPx: 바형_폰.edgeGapPx })).toBe(iOS_인셋)
+    expect(resolveTopSafeAreaPx({ insetTopPx: 안드로이드_인셋, platform: 'android', edgeGapPx: 바형_폰.edgeGapPx })).toBe(48)
+  })
+
+  // 안드로이드 하한은 인셋의 바닥이고, 여백은 그 위에 더하는 몫이다.
+  it('안드로이드에서는 하한을 먼저 깔고 그 위에 더한다', () => {
+    expect(resolveTopSafeAreaPx({ insetTopPx: 0, platform: 'android', edgeGapPx: 24 })).toBe(48 + 24)
   })
 })

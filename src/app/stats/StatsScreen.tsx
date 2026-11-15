@@ -4,7 +4,7 @@
  * @see docs/features/stats.md
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, useWindowDimensions, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
+import { View, type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
 
 import { Text } from '../../components/atoms'
 import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
@@ -37,6 +37,7 @@ import {
 import { monthKeyOf } from '../../lib/calendar'
 import { formatMesoCompact, formatMesoSigned } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
+import { useScreenLayout } from '../../lib/screen-layout'
 import { AMOUNT_COLUMN_MAX_SCALE } from '../../lib/text-size'
 import type { BossCycle } from '../../types'
 import { SettlementBanner } from '../SettlementBanner'
@@ -118,7 +119,7 @@ export function StatsScreen(): React.JSX.Element {
    * 그래프가 화면에 들어오는 순간. 섹션마다 스크롤 내용 안의 윗변을 기억해 두고, 스크롤과 레이아웃 때
    * 화면 아래 끝을 넘어 들어온 섹션을 한 번씩 보임으로 바꾼다. 보이면 그 섹션의 그래프가 자란다.
    */
-  const { height: viewportHeight } = useWindowDimensions()
+  const { windowHeightPx: viewportHeight } = useScreenLayout()
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(() => new Set())
   const contentTop = useRef(0)
   const sectionTops = useRef(new Map<string, number>())

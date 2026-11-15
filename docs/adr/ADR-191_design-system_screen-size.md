@@ -1,7 +1,7 @@
 # ADR-191 태블릿과 접는 폰 외부 화면의 배치
 
 > ⚪ 미구현
-> 관련 소스: `lib/screen-layout.ts` · `lib/today/widget-grid-metrics.ts` · `lib/today/widget-layout.ts` · `app/today/widgets/layout.ts` · `components/templates/ScreenScroll/ScreenScroll.tsx` · `components/templates/ScreenScroll/bottom-inset.ts` · `components/templates/EntryScroll/EntryScroll.tsx` · `components/organisms/BottomBar/BottomBar.tsx` · `lib/bottom-bar-metrics.ts` · `lib/fab-metrics.ts` · `lib/safe-area.ts` · `theme/text-scale.ts`
+> 관련 소스: `lib/screen-layout.ts` · `lib/today/widget-grid-metrics.ts` · `lib/today/widget-layout.ts` · `app/today/widgets/layout.ts` · `components/templates/ScreenScroll/ScreenScroll.tsx` · `components/templates/ScreenScroll/bottom-inset.ts` · `components/templates/EntryScroll/EntryScroll.tsx` · `components/organisms/BottomBar/BottomBar.tsx` · `components/organisms/BottomSheet/BottomSheet.tsx` · `components/organisms/Modal/Modal.tsx` · `components/organisms/InputCard/InputCard.tsx` · `components/organisms/Toast/ToastStack.tsx` · `lib/bottom-bar-metrics.ts` · `lib/fab-metrics.ts` · `lib/safe-area.ts` · `theme/text-scale.ts`
 
 ## 배경
 
@@ -109,8 +109,9 @@
 위쪽 안전영역이 0 이라 지금은 헤더가 화면 위 끝에 붙는다. 아래도 하단바가 옆으로 빠지면 콘텐츠가 아래쪽 안전영역
 바로 위에서 끝난다. 그래서 위아래에 24 를 더해 콘텐츠가 기기 끝에 붙지 않게 한다(사용자 지정 2026-11-15, 시안 P24).
 
-위는 `resolveTopSafeAreaPx` 가 위쪽 안전영역에 24 를 더한 값을 낸다. 헤더 패딩, 시트 높이 상한, 위쪽 안전영역 페이드가
-모두 이 값을 읽으므로 한 곳에서 더하면 함께 내려간다.
+위는 `resolveTopSafeAreaPx` 가 위쪽 안전영역에 24 를 더한 값을 낸다. 헤더 패딩, 위쪽 안전영역 페이드, 위에서 내려오는
+시트(`TopSheet`)가 모두 이 값을 읽으므로 한 곳에서 더하면 함께 내려간다. 아래에서 올라오는 시트와 모달은 이 값이 아니라
+인셋을 그대로 읽으므로 24 가 더해지지 않는다. 그 둘은 화면 위 끝까지 차오르는 일이 드물고, 본문이 콘텐츠 폭 안에 서서 OS 막대와 겹치지 않는다.
 
 아래는 화면 틀(`ScreenScroll` · `EntryScroll`)만 24 를 더한다. 콘텐츠 끝 여백이 아래쪽 안전영역 + 24 이고, 콘텐츠는 그
 선에서 투명해진다. 세로 막대 · ＋ · 토스트는 더하지 않는다. 시안에서 고른 자리가 아래쪽 안전영역을 기준으로 그린 자리라서다.
@@ -157,6 +158,9 @@ OS 막대에 가린다. 스크림이 레일을 덮지 않으면 시트가 열린
 | `lib/__tests__/bottom-bar-metrics.test.ts` | 세로 막대의 아래 끝이 아래쪽 안전영역에 닿고, 가운데가 오른쪽 안전영역의 가운데다. 칸 다섯이 막대 안에 든다 |
 | `lib/__tests__/top-safe-area.test.ts` | `side-rail` 에서만 위쪽 값에 24 가 더해진다. 아래쪽 값(`bottom-safe-area.test.ts`)은 그대로다 |
 | `components/templates/ScreenScroll/__tests__/bottom-inset.test.ts` | `side-rail` 에서 콘텐츠 끝 여백이 아래쪽 안전영역 + 24 이고 하단바 몫이 없다 |
+| `components/templates/ScreenScroll/__tests__/safe-area-fade.test.ts` | `side-rail` 의 아래 페이드가 콘텐츠 끝 여백과 같은 선(아래쪽 안전영역 + 24)에서 끝난다 |
+| `navigation/__tests__/bar-in-layer-stack.test.tsx` | `side-rail` 에서 바가 `resolveRailBarMetrics` 의 자리에 세로로 서고, 하위 행의 ← 가 맨 위 칸에 서며 알약이 세로로 움직인다 |
+| `components/organisms/BottomSheet/__tests__/BottomSheet.test.tsx` | `side-rail` 에서 시트 몸통의 오른쪽 간격에 레일 폭이 더해진다 |
 | `lib/__tests__/fab-metrics.test.ts` | `side-rail` 에서 ＋ 의 아래가 아래쪽 안전영역 + 12, 오른쪽이 콘텐츠 오른쪽 끝에서 16 이다 |
 | `theme/__tests__/text-scale.test.tsx` | `side-rail` 에서 글자 배수 상한이 창 폭이 아니라 콘텐츠 폭으로 걸린다 |
 | `src/__tests__/window-width-policy.test.ts` | `useWindowDimensions` 를 읽는 파일이 `lib/screen-layout.ts` 와 창 전체를 덮는 셋(`ThemeBackdrop` · `BootSplash` · `DropEffectOverlay`)뿐이다. 새 화면이 창 폭을 읽으면 레일로 넘치기 때문이다 |

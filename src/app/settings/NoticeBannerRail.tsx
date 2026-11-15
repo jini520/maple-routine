@@ -5,7 +5,7 @@
  * 모습의 값은 `notice-banner-motion` 이 스크롤 위치 하나에서 낸다.
  */
 import { useEffect, useState } from 'react'
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native'
+import { Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
   scrollTo,
   useAnimatedRef,
@@ -17,6 +17,7 @@ import Animated, {
 
 import { Text } from '../../components/atoms'
 import { noticeBannerRatio, noticeDisplayTitle } from '../../features/notice/notice-display'
+import { useScreenLayout } from '../../lib/screen-layout'
 import type { Notice } from '../../types/notice'
 import { NoticeBannerArt } from './NoticeBannerArt'
 import {
@@ -152,8 +153,8 @@ export function NoticeBannerRail(props: {
   notices: readonly Notice[]
   onOpen: (notice: Notice) => void
 }): React.JSX.Element {
-  const { width: windowWidth } = useWindowDimensions()
-  const [width, setWidth] = useState(windowWidth)
+  const { contentWidthPx } = useScreenLayout()
+  const [width, setWidth] = useState(contentWidthPx)
   const count = props.notices.length
   const pages = loopPages(props.notices)
   const pageCount = loopPageCount(count)

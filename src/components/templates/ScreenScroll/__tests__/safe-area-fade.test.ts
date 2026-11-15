@@ -216,3 +216,12 @@ describe('마스크 곡선은 smoothstep² 이다', () => {
     expect(증가량[증가량.length - 1]).toBeLessThan(가운데)
   })
 })
+
+// 콘텐츠는 콘텐츠 끝 여백이 끝나는 선에서 투명해진다. 페이드가 그보다 짧으면 마지막 줄이 선명한 채로 기기 끝에 닿는다.
+describe('오른쪽 레일 화면의 아래 페이드', () => {
+  it('아래쪽 안전영역 + 24 에서 끝난다. 바가 없으니 바 높이는 들지 않는다', () => {
+    const fade = resolveSafeAreaFade({ ...화면(true, 'ios'), barHeightPx: 0, barLiftPx: 0, edgeGapPx: 24 })
+
+    expect(fade.bottomPx).toBe(인셋.bottom + 24)
+  })
+})

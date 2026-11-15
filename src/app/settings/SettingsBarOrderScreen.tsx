@@ -5,7 +5,7 @@
  * 아래 카드를 끄는 동안 화면 밖으로 밀려난다. today 와 더보기는 옮길 수 없어 목록에 넣지 않고 미리보기에만 그린다.
  */
 import { useState } from 'react'
-import { useWindowDimensions, View } from 'react-native'
+import { View } from 'react-native'
 import { runOnJS } from 'react-native-reanimated'
 import Sortable from 'react-native-sortables'
 
@@ -13,6 +13,7 @@ import { isSameBarOrder } from '../../features/bar-order/config'
 import { useBarOrderStore } from '../../features/bar-order/store'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { BAR_MAX_WIDTH } from '../../lib/bottom-bar-metrics'
+import { useScreenLayout } from '../../lib/screen-layout'
 import { selectionFeedback } from '../../native/haptics'
 import { BAR_GROUPS, type BarOrder, type GroupId } from '../../navigation/bar-groups'
 import type { TabRouteName } from '../../navigation/routes'
@@ -111,9 +112,9 @@ export function SettingsBarOrderScreen(): React.JSX.Element {
   const { order, save } = useBarOrderStore()
   const [draft, setDraft] = useState<BarOrder>(order)
   const [actionBarHeightPx, setActionBarHeightPx] = useState(0)
-  const { width: windowWidthPx } = useWindowDimensions()
+  const { contentWidthPx } = useScreenLayout()
   // 바와 같은 상한이다. 넓은 화면에서 미리보기만 길어지면 칸이 바보다 벌어진다.
-  const previewWidthPx = Math.min(windowWidthPx - PREVIEW_GUTTER_PX, BAR_MAX_WIDTH)
+  const previewWidthPx = Math.min(contentWidthPx - PREVIEW_GUTTER_PX, BAR_MAX_WIDTH)
 
   async function handleApply(): Promise<void> {
     await save(draft)
