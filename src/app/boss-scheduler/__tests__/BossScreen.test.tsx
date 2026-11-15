@@ -12,6 +12,7 @@ import {
 import { useBossSchedule, type BossSchedule } from '../../../features/boss-scheduler/use-boss-schedule'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 import { bossesInSection, bossKeyOfApiName } from '../../../lib/boss/bosses'
+import { currentCrystalPriceMeso } from '../../../lib/boss/boss-crystal-prices'
 import { INITIAL_BOSS_CATALOG, setBossCatalog } from '../../../lib/boss/catalog'
 import type { BossCatalog } from '../../../types/boss-catalog'
 import { WEEKLY_BOSS_CLEAR_LIMIT, type MatchedBoss } from '../../../lib/boss/boss-matching'
@@ -904,7 +905,15 @@ describe('BossScreen: 카드 탭 → 파티 인원 모달', () => {
     await opened()
 
     expect(screen.getByTestId('party-size-modal')).toBeTruthy()
-    expect(screen.getByText('주간 보스')).toBeTruthy()
+  })
+
+  // 설정은 앞으로 적힐 기록의 약속이라, 받는 금액은 이번 기간의 결정석 가격으로 센다.
+  it('모달의 받는 금액은 이번 기간의 결정석 가격으로 센다', async () => {
+    await opened()
+
+    const price = currentCrystalPriceMeso('zakum', 'chaos', 'weekly', new Date())
+    expect(price).not.toBeNull()
+    expect(screen.getByTestId('party-payout')).toHaveTextContent(`${(price ?? 0).toLocaleString()} 메소`)
   })
 
   // 파티 인원은 완료 여부와 무관한 상시 데이터다.

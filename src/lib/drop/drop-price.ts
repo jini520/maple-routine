@@ -77,7 +77,8 @@ export function dropPayoutMeso(drop: DropPriceFields): number {
   const mine = myShareOf(drop)
   const saleFee = drop.saleFeePercent ?? null
   const splitFee = drop.splitFeePercent ?? null
-  if (saleFee === null && splitFee === null) return Math.floor((drop.priceMeso * mine) / total)
+  // 곱은 `BigInt` 로 한다. 친 % 는 비율 합 100000 이라 판매가와 곱하면 안전 정수를 넘는다.
+  if (saleFee === null && splitFee === null) return Number((BigInt(drop.priceMeso) * BigInt(mine)) / BigInt(total))
 
   // 판매 분배금 계산기(`lib/cashbook/item-split`)와 같은 역산이다. 받는 쪽이 분배 수수료를 물고도 약속한 몫이 되게 보낸다.
   const net = drop.priceMeso - Math.floor((drop.priceMeso * (saleFee ?? 0)) / 100)
@@ -88,11 +89,14 @@ export function dropPayoutMeso(drop: DropPriceFields): number {
     const perMember = Math.floor((net * 100) / (total * 100 - d))
     return net - perMember * (total - 1)
   }
-  const others = total - mine
+  const n = BigInt(net)
+  const m = BigInt(mine)
+  const others = BigInt(total - mine)
+  const keep = BigInt(100 - d)
   // **보내는 쪽은 몫이 큰 쪽이다.** 내 몫이 작으면 상대가 팔아 나에게 보낸 것으로 센다. 내가 큰 금액을 보내는 것으로
   // 세면 수수료가 그만큼 더 나가 둘 다 손해다(결정석의 `crystalPayoutMeso` 와 같은 규칙).
-  if (mine < others) return Math.floor((net * mine * (100 - d)) / (others * (100 - d) + 100 * mine))
-  return net - Math.floor((100 * net * others) / (mine * (100 - d) + 100 * others))
+  if (m < others) return Number((n * m * keep) / (others * keep + 100n * m))
+  return net - Number((100n * n * others) / (m * keep + 100n * others))
 }
 
 /**
@@ -112,6 +116,24 @@ export function dropShareFieldsOf(share: {
     priceShare: share.sharesTotal,
     priceMyShare: share.mode === 'ratio' ? share.myShare : undefined,
   }
+}
+
+/**
+ * 가격 카드의 받는 금액. 저장한 뒤 그 기록의 알약에 적힐 값과 같아야 해서, 저장할 칸을 그대로 만들어
+ * `dropPayoutMeso` 로 센다. 식을 따로 두면 카드와 알약이 다른 금액을 말한다.
+ */
+export function cardPayoutMeso(
+  priceMeso: number,
+  share: { mode: 'even' | 'ratio'; partySize: number; myShare: number; sharesTotal: number },
+  fees: { saleFeePercent: number | null; splitFeePercent: number | null } | undefined,
+): number {
+  return dropPayoutMeso({
+    priceState: 'entered',
+    priceMeso,
+    ...dropShareFieldsOf(share),
+    saleFeePercent: fees?.saleFeePercent ?? null,
+    splitFeePercent: fees?.splitFeePercent ?? null,
+  })
 }
 
 /**

@@ -9,6 +9,7 @@ import { act, fireEvent, within } from '@testing-library/react-native'
 import { flattenStyle, renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 import { ItemSplitScreen } from '../ItemSplitScreen'
+import { transferPerMember } from '../../../lib/cashbook/item-split'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { __resetMesoUnitsForTest, mesoUnitOf } from '../../../features/input-card/meso-unit'
 import { useToastStore } from '../../../features/toast/store'
@@ -112,8 +113,14 @@ describe('ItemSplitScreen: 결과', () => {
 })
 
 describe('ItemSplitScreen: 분배 방식', () => {
-  // 비율은 `나 : 나머지` 두 쪽이라 파티원 수가 식에 안 들어간다. 그래서 칸째 갈아 끼운다.
-  it('비율을 고르면 파티원 수 대신 내 몫을 받고, 기본으로 돌아오면 파티원 수가 그대로다', async () => {
+  async function typePercent(view: Rendered, text: string): Promise<void> {
+    await act(async () => {
+      fireEvent.changeText(view.getByLabelText('분배 비율 내 몫'), text)
+    })
+  }
+
+  // 비율은 `나 : 나머지` 두 쪽이라 파티원 수가 식에 안 들어간다. 그래서 줄째 갈아 끼운다.
+  it('비율을 고르면 파티원 수 대신 분배 비율 % 를 50 에서 받고, 기본으로 돌아오면 파티원 수가 그대로다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
     await press(view.getByLabelText('분배 파티원 수 증가'))
 
@@ -121,15 +128,61 @@ describe('ItemSplitScreen: 분배 방식', () => {
 
     await press(split.getByLabelText('비율'))
     expect(view.queryByLabelText('분배 파티원 수 증가')).toBeNull()
-    expect(view.getByLabelText('내 몫 내 비율')).toBeTruthy()
+    expect(view.getByLabelText('분배 비율 내 몫').props.value).toBe('50')
 
     await press(split.getByLabelText('기본'))
-    expect(view.queryByLabelText('내 몫 내 비율')).toBeNull()
+    expect(view.queryByLabelText('분배 비율 내 몫')).toBeNull()
     expect(view.getByText('3')).toBeTruthy()
   })
 
-  // 두 칸의 높이가 다르면 세그먼트를 누를 때마다 아래 카드가 위아래로 뛴다.
-  it('기본 칸과 비율 칸의 높이가 같다', async () => {
+  // 비율은 늘 비율이다(사용자 지정). 파티원 수를 바꿔 둔 뒤 50% 를 골라도 그 수로 나누지 않는다.
+  it('파티원 수를 3 으로 바꿔 둔 뒤 비율 50% 를 골라도 2명 기준으로 센다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+    await typeSalePrice(view, '1000000000')
+    await press(view.getByLabelText('분배 파티원 수 증가'))
+
+    await press(within(view.getByTestId('item-split-split')).getByLabelText('비율'))
+
+    // 2인 · 판매 3% · 분배 3%: ⌊97,000,000,000 / 197⌋
+    expect(transferText(view)).toBe('492,385,786')
+  })
+
+  it('친 % 로 보낼 금액을 센다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+    await typeSalePrice(view, '1000000000')
+    await press(within(view.getByTestId('item-split-split')).getByLabelText('비율'))
+
+    await typePercent(view, '85')
+
+    // 판매 3% · 분배 3% · 내 몫 85000 / 100000 의 보낼 금액이다.
+    expect(transferText(view)).toBe(
+      (
+        transferPerMember({
+          salePriceMeso: 1_000_000_000,
+          partySize: 2,
+          saleFeePercent: 3,
+          splitFeePercent: 3,
+          myShare: 85_000,
+          sharesTotal: 100_000,
+        }) ?? 0
+      ).toLocaleString(),
+    )
+  })
+
+  it('넷째 자리와 100 을 넘는 값은 % 칸에 들어가지 않는다', async () => {
+    const view = await renderOverlay(<ItemSplitScreen />)
+    await press(within(view.getByTestId('item-split-split')).getByLabelText('비율'))
+
+    await typePercent(view, '33.333')
+    await typePercent(view, '33.3333')
+    expect(view.getByLabelText('분배 비율 내 몫').props.value).toBe('33.333')
+
+    await typePercent(view, '101')
+    expect(view.getByLabelText('분배 비율 내 몫').props.value).toBe('33.333')
+  })
+
+  // 두 줄의 높이가 다르면 세그먼트를 누를 때마다 아래 카드가 위아래로 뛴다.
+  it('기본 줄과 비율 줄의 높이가 같다', async () => {
     const view = await renderOverlay(<ItemSplitScreen />)
     const heightOf = (): unknown => flattenStyle(view.getByTestId('item-split-split-body').props.style).height
 

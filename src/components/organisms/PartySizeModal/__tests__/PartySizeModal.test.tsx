@@ -1,13 +1,3 @@
-// 갈린 케이스 둘만 적는다.
-//
-// *"일러스트가 있으면 카드와 같은 필터·불투명도로 그린다"* → **온전히 성립한다.**
-//   3단계는 자리만 만들고 그림을 못 앉혔는데(크롭의 CSS 값을 RN 기하로 옮기는 일이 남아 있었다),
-// 컨텐츠 카드에서 그 변환을 풀어 두어 이제 **보스 카드와 같은 `FadedIllustration`** 를
-//  부른다(요구하는 "같은 값"이 컴포넌트 공유로 성립한다).
-//   화면 전용 testID(`party-size-modal-art`)는 사라졌다. 아트와 베일이 둘 다 `absolute inset-0`
-//   이라 감싸는 순간 기준 상자가 바뀌어 그림이 사라진다(컴포넌트 주석).
-// `aria-pressed` → **`accessibilityState.selected`**(`DifficultySegment` 가 `aria-selected` 를
-//   쓴다. RN 접근성 상태에 *pressed* 가 없다).
 import { assetIdOfPath } from '../../../../assets/__tests__/asset-uri'
 import { useState } from 'react'
 import { act, fireEvent } from '@testing-library/react-native'
@@ -15,11 +5,9 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../../../theme/appearance-store'
 import { buildSheetScopeVariables } from '../../../../theme/theme-vars'
-import { findAllOfType, flattenStyle, renderOverlay, 기본테마, type AtomElement } from '../../../__tests__/render-atom'
+import { flattenStyle, renderOverlay, 기본테마, type AtomElement } from '../../../__tests__/render-atom'
+import { crystalPayoutMeso } from '../../../../lib/boss/party-shares'
 import { PartySizeModal } from '../PartySizeModal'
-
-/** 아트·베일은 `aria-hidden` 이라 기본 질의에서 빠진다(장식이라 그것이 옳다). */
-const HIDDEN = { includeHiddenElements: true } as const
 
 type Props = React.ComponentProps<typeof PartySizeModal>
 
@@ -33,7 +21,6 @@ const EVEN_SHARES = {
 function props(overrides: Partial<Props> = {}): Props {
   return {
     bossName: '스우',
-    cycleLabel: '주간 보스',
     portraitAssetId: assetIdOfPath('bosses/lotus.webp') ?? null,
     difficulties: ['normal', 'hard', 'extreme'],
     difficulty: 'hard',
@@ -160,55 +147,13 @@ describe('PartySizeModal', () => {
     expect(stateOf(getByLabelText('스우 파티원 수 증가')).disabled).toBe(true)
   })
 
-  it('일러스트가 없는 보스면 히어로를 비우고 이름만 남긴다', async () => {
-    const { getByText, queryByTestId } = await renderOverlay(
-      <PartySizeModal {...props({ portraitAssetId: null })} />,
-    )
+  // 일러스트 띠가 머리를 높이 104 로 키워 모달이 컸다(사용자 지적). 머리는 원형 초상화와 이름뿐이다.
+  it('머리에 원형 초상화와 이름이 서고 일러스트 띠는 없다', async () => {
+    const { getByTestId, getByText, queryByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
 
+    expect(getByTestId('boss-portrait')).toBeTruthy()
     expect(getByText('스우')).toBeTruthy()
-    expect(queryByTestId('faded-illustration', HIDDEN)).toBeNull()
-  })
-
-  it('그림이 있는 초상은 히어로에 일러스트를 그린다', async () => {
-    const { getByTestId, queryByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
-
-    expect(getByTestId('faded-illustration', HIDDEN)).toBeTruthy()
-    // 직선 베일은 안 쓴다. 이 띠는 타원 하나로 덮는다.
-    expect(queryByTestId('faded-illustration-veil', HIDDEN)).toBeNull()
-  })
-
-  // 페이드 끝점이 카드와 다르다(히어로 42%/82%). 같은 값을 쓰면 넓고 낮은
-  // 히어로에서 그림이 너무 일찍 끊긴다.
-  // **실기기에서 드러난 결함**(2026-09-22). 크롭은 이미지를 상자보다 크게 그려 창을 옮기는
-  // 방식이라, 안 자르면 남는 부분이 띠 밖으로 흘러 글자를 덮는다. 베일은 띠 안만 덮으므로 그
-  // 부분이 생그림 사각형으로 남았다.
-  it('그림 띠가 넘치는 부분을 자른다', async () => {
-    const { getByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
-
-    expect(flattenStyle(getByTestId('party-modal-art', HIDDEN).props.style).overflow).toBe('hidden')
-  })
-
-  // 가로·세로는 직선이고 모서리만 깎는다. 타원 하나로 덮으면 위·오른쪽까지 휘어 어색했다
-  // (사용자 지적). **왼쪽 끝이 완전히 덮여야** 띠가 끝나는 자리에 이음선이 안 남는다.
-  it('베일 셋을 겹치고 왼쪽 끝을 완전히 덮는다', async () => {
-    const { toJSON } = await renderOverlay(<PartySizeModal {...props()} />)
-
-    const [horizontal] = findAllOfType(toJSON(), 'RNSVGLinearGradient')
-    const [corner] = findAllOfType(toJSON(), 'RNSVGRadialGradient')
-
-    // 가로는 왼쪽(offset 0.05)에서 알파 1 이고, SVG 는 그 앞을 첫 정지점으로 채운다.
-    expect((horizontal.props.gradient as number[])[0]).toBe(0.05)
-    expect(corner.props.cx).toBe('0%')
-    expect(corner.props.cy).toBe('100%')
-  })
-
-  // 반대쪽. 그림 목록에 없는 id 는 아트를 안 만든다(그림 없는 보스가 타던 분기 그대로).
-  it('그림 목록에 없는 id 는 일러스트를 그리지 않는다', async () => {
-    const { queryByTestId } = await renderOverlay(
-      <PartySizeModal {...props({ portraitAssetId: '없는보스' })} />,
-    )
-
-    expect(queryByTestId('faded-illustration', HIDDEN)).toBeNull()
+    expect(queryByTestId('party-modal-art', { includeHiddenElements: true })).toBeNull()
   })
 
   it('난이도가 하나뿐인 보스도 고르개를 그린다', async () => {
@@ -221,20 +166,21 @@ describe('PartySizeModal', () => {
 })
 
 describe('분배 비율', () => {
-  it('스위치를 끄면 비율 고르개가 안 선다. 균등으로 잡는 대다수가 안 지난다', async () => {
+  it('`기본` 이면 결정석 % 칸이 안 선다. 균등으로 잡는 대다수가 안 지난다', async () => {
     const { queryByTestId } = await renderOverlay(<PartySizeModal {...props()} />)
 
-    expect(queryByTestId('share-field-ratio-결정석')).toBeNull()
+    expect(queryByTestId('party-share-percent')).toBeNull()
   })
 
   // 반반(1:2)은 2인 균등과 같은 값이라 켠 티가 안 난다. 비율을 켰으면 뜻이 있는 값이어야 한다.
-  it('비율로 갈아타면 2 : 1 이 놓이고 송금 수수료는 자동이다', async () => {
+  it('비율로 갈아타면 2 / 3 이 놓이고 송금 수수료는 자동이다', async () => {
     const onApply = jest.fn()
-    const { getByLabelText, getByText } = await renderOverlay(
+    const { getByLabelText, getByTestId, getByText } = await renderOverlay(
       <PartySizeModal {...props({ onApply, autoFee: { grade: 'diamond', percent: 3 } })} />,
     )
 
     await fireEvent.press(getByLabelText('비율'))
+    expect(getByTestId('party-share-percent').props.value).toBe('66.667')
     await fireEvent.press(getByText('적용'))
 
     expect(onApply).toHaveBeenCalledWith({
@@ -280,13 +226,38 @@ describe('분배 비율', () => {
     expect(getByLabelText('스우 파티원 수 증가')).toBeTruthy()
   })
 
-  // 비율은 결정석에만 있다. 아이템은 건마다 값이 달라 드롭 가격 카드가 받는다.
-  it('결정석 카드 하나만 선다. 아이템 비율은 여기서 안 정한다', async () => {
+  it('결정석 % 칸은 저장된 비율을 셋째 자리까지 적는다', async () => {
     const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3 }
-    const { getByTestId, queryByTestId } = await renderOverlay(<PartySizeModal {...props({ shares })} />)
+    const { getByTestId } = await renderOverlay(<PartySizeModal {...props({ shares })} />)
 
-    expect(getByTestId('share-field-ratio-결정석')).toHaveTextContent('66.7%')
-    expect(queryByTestId('share-field-ratio-아이템')).toBeNull()
+    expect(getByTestId('party-share-percent').props.value).toBe('66.667')
+  })
+
+  // 친 % 는 비율 합 100000 으로 담는다. 부동소수로 옮기면 33.333 이 33332 가 된다.
+  it('친 % 를 적용하면 % × 1000 · 100000 으로 내보낸다', async () => {
+    const onApply = jest.fn()
+    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3, splitFeePercent: 3 }
+    const { getByTestId, getByText } = await renderOverlay(<PartySizeModal {...props({ shares, onApply })} />)
+
+    await fireEvent.changeText(getByTestId('party-share-percent'), '33.333')
+    await fireEvent.press(getByText('적용'))
+
+    expect(onApply).toHaveBeenCalledWith({
+      partySize: 4,
+      shares: expect.objectContaining({ crystalMyShare: 33_333, crystalSharesTotal: 100_000 }),
+    })
+  })
+
+  it('넷째 자리와 100 을 넘는 값은 칸에 들어가지 않는다', async () => {
+    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3 }
+    const { getByTestId } = await renderOverlay(<PartySizeModal {...props({ shares })} />)
+
+    await fireEvent.changeText(getByTestId('party-share-percent'), '33.333')
+    await fireEvent.changeText(getByTestId('party-share-percent'), '33.3333')
+    expect(getByTestId('party-share-percent').props.value).toBe('33.333')
+
+    await fireEvent.changeText(getByTestId('party-share-percent'), '101')
+    expect(getByTestId('party-share-percent').props.value).toBe('33.333')
   })
 
   it('기본으로 갈아타면 비율 칸을 전부 비운다. 되돌리는 길이 이것뿐이다', async () => {
@@ -334,19 +305,6 @@ describe('분배 비율', () => {
   })
 })
 
-// 카드가 두 장이던 때는 `flex-row` 안에서 `flex-1` 이 폭을 반반 나눴다. 한 장이 되어 세로
-// 스택에 서면 그 `flex-1` 이 세로로 걸려 `flexBasis: 0` 이 된다. 카드가 납작해지고 RN 기본값이
-// `overflow: visible` 이라 트랙과 합 버튼이 카드 밖으로 삐져나왔다(사용자가 실기 화면에서 잡았다).
-it('비율 카드는 세로로 늘거나 줄지 않는다', async () => {
-  const { getByTestId } = await renderOverlay(
-    <PartySizeModal
-      {...props({ shares: { crystalMyShare: 2, crystalSharesTotal: 3, splitFeePercent: 3 } })}
-    />,
-  )
-
-  expect(flattenStyle(getByTestId('party-share-card').props.style).flex).toBeUndefined()
-})
-
 // 다른 가운데 모달과 같은 패널이다. 테두리 없이 바탕색 차이로만 스크림과 갈리고, 다크에서는 표면을 한 칸 올려 가장자리가 스크림에 안 묻힌다.
 describe('분배 방식 `제외`', () => {
   // 나눌 결정석이 없어서 셋 다 금액을 안 바꾼다.
@@ -358,7 +316,7 @@ describe('분배 방식 `제외`', () => {
 
     expect(getByLabelText('제외').props.accessibilityState?.selected).toBe(true)
     expect(queryByText('파티 인원')).toBeNull()
-    expect(queryByTestId('share-field-ratio-결정석')).toBeNull()
+    expect(queryByTestId('party-share-percent')).toBeNull()
     expect(queryByText('수수료')).toBeNull()
   })
 
@@ -391,7 +349,51 @@ describe('분배 방식 `제외`', () => {
 
     await fireEvent.press(getByLabelText('비율'))
 
-    expect(getByTestId('share-field-ratio-결정석')).toHaveTextContent('25%')
+    expect(getByTestId('party-share-percent').props.value).toBe('25')
+  })
+})
+
+describe('받는 금액', () => {
+  const PRICE = 3_000_000_000
+
+  it('인원 · % · 송금 수수료를 고칠 때마다 다시 센다', async () => {
+    const { getByLabelText, getByRole, getByTestId } = await renderOverlay(
+      <PartySizeModal {...props({ crystalPriceMeso: PRICE, autoFee: { grade: 'gold', percent: 3 } })} />,
+    )
+    const amount = () => getByTestId('party-payout')
+    const 메소 = (meso: number) => `${meso.toLocaleString()} 메소`
+
+    expect(amount()).toHaveTextContent(메소(PRICE / 4))
+    await fireEvent.press(getByLabelText('스우 파티원 수 증가'))
+    expect(amount()).toHaveTextContent(메소(PRICE / 5))
+
+    await fireEvent.press(getByLabelText('비율'))
+    await fireEvent.changeText(getByTestId('party-share-percent'), '85')
+    const 자동 = crystalPayoutMeso(PRICE, 2, { myShare: 85_000, sharesTotal: 100_000, splitFeePercent: 3 })
+    expect(amount()).toHaveTextContent(메소(자동))
+
+    await fireEvent.press(getByRole('checkbox'))
+    await fireEvent.press(getByLabelText('5%'))
+    const 오퍼센트 = crystalPayoutMeso(PRICE, 2, { myShare: 85_000, sharesTotal: 100_000, splitFeePercent: 5 })
+    expect(오퍼센트).not.toBe(자동)
+    expect(amount()).toHaveTextContent(메소(오퍼센트))
+  })
+
+  // 모르는 가격을 0 메소로 적으면 받는 돈이 없는 것처럼 읽힌다.
+  it('결정석 가격을 모르면 줄이 없다', async () => {
+    const { queryByText } = await renderOverlay(<PartySizeModal {...props({ crystalPriceMeso: null })} />)
+
+    expect(queryByText('받는 금액')).toBeNull()
+  })
+
+  it('`제외` 면 줄이 없다. 판 결정석이 없다', async () => {
+    const { getByLabelText, getByText, queryByText } = await renderOverlay(
+      <PartySizeModal {...props({ crystalPriceMeso: PRICE })} />,
+    )
+
+    expect(getByText('받는 금액')).toBeTruthy()
+    await fireEvent.press(getByLabelText('제외'))
+    expect(queryByText('받는 금액')).toBeNull()
   })
 })
 

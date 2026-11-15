@@ -305,7 +305,7 @@ describe('분배 방식은 기록이 들고 다닌다', () => {
 
   it('같은 두 수라도 방식이 다르면 라벨이 다르다', () => {
     expect(dropSplitLabel({ ...같은두수, priceSplitMode: 'even' })).toBe('3인')
-    expect(dropSplitLabel({ ...같은두수, priceSplitMode: 'ratio' })).toBe('33.3%')
+    expect(dropSplitLabel({ ...같은두수, priceSplitMode: 'ratio' })).toBe('33.333%')
   })
 
   // 옛 기록은 방식을 모른다. 모르는 것을 단정하지 않는다.
@@ -363,7 +363,7 @@ describe('인원과 비율은 칸이 다르다', () => {
       pricePartySize: 9,
     } as const
 
-    expect(dropSplitLabel(비율)).toBe('33.3%')
+    expect(dropSplitLabel(비율)).toBe('33.333%')
     expect(dropPayoutMeso(비율)).toBe(300)
   })
 
@@ -377,6 +377,32 @@ describe('인원과 비율은 칸이 다르다', () => {
     } as const
 
     expect(dropSplitLabel({ ...둘다, priceSplitMode: 'even' })).toBe('4인')
-    expect(dropSplitLabel({ ...둘다, priceSplitMode: 'ratio' })).toBe('33.3%')
+    expect(dropSplitLabel({ ...둘다, priceSplitMode: 'ratio' })).toBe('33.333%')
+  })
+})
+
+describe('비율 합 100000', () => {
+  // 친 % 는 비율 합 100000 으로 담긴다. 그 합과 큰 판매가를 곱하면 중간값이 안전 정수를 넘어, 부동소수로
+  // 세면 내림이 한 메소 어긋난다(이 값은 부동소수 셈이 5,537,344,513,827 을 낸다).
+  it('큰 판매가에서도 한 메소도 어긋나지 않는다', () => {
+    expect(
+      dropPayoutMeso({
+        priceState: 'entered',
+        priceMeso: 8_770_367_145_001,
+        priceSplitMode: 'ratio',
+        priceShare: 100_000,
+        priceMyShare: 66_246,
+        saleFeePercent: 3,
+        splitFeePercent: 5,
+      }),
+    ).toBe(5_537_344_513_828)
+  })
+
+  // 이 결정 전의 비율(합 3)과 같은 약속을 % 로 적으면 셋째 자리에서 끊긴 만큼만 다르다.
+  it('66.667% 는 2:1 과 판매가의 0.001% 안에서 같다', () => {
+    const base = { priceState: 'entered' as const, priceMeso: 3_000_000_000, priceSplitMode: 'ratio' as const, saleFeePercent: 3, splitFeePercent: 3 }
+    const 옛 = dropPayoutMeso({ ...base, priceShare: 3, priceMyShare: 2 })
+    const 새 = dropPayoutMeso({ ...base, priceShare: 100_000, priceMyShare: 66_667 })
+    expect(Math.abs(새 - 옛)).toBeLessThanOrEqual(3_000_000_000 * 0.00001)
   })
 })

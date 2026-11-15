@@ -430,7 +430,7 @@ describe('BossManageScreen: 수동 모드', () => {
     await renderScreen()
 
     // 이 화면은 소수 첫째 자리까지다. 보스 수익 카드만 줄이 좁아 소수를 뗀다.
-    expect(screen.getByText('66.7%')).toBeTruthy()
+    expect(screen.getByText('66.667%')).toBeTruthy()
     expect(screen.queryByText('결정석')).toBeNull()
 
     await press(screen.getByLabelText('스우 파티 인원과 비율 변경'))
