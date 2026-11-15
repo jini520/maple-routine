@@ -6,10 +6,12 @@
  * 같은 보스라도 다른 캐릭터로는 따로 고른다.
  */
 import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
-import { BOSS_ENTRIES, activeDifficultiesOf } from '../../lib/boss/bosses'
+import { BOSS_ENTRIES, activeDifficultiesOf, bossCycleOf } from '../../lib/boss/bosses'
+import { resetWeekStartOf, shiftDateKey } from '../../lib/calendar'
 import type { BossPartyShareColumns } from '../../storage/boss-party-settings'
-import type { PartyAppointmentBoss } from '../../types/party-appointment'
+import type { PartyAppointment, PartyAppointmentBoss } from '../../types/party-appointment'
 import { partySizeKey } from '../boss-scheduler/store'
+import { occurrencesInWeek } from './occurrences'
 
 /** 고르기 전 타일 하나. 고르면 이 난이도로 들어간다 */
 export interface PickerTile {
@@ -69,4 +71,40 @@ export function togglePick(
     return picked.filter((boss) => !(boss.ocid === ocid && boss.bossKey === tile.bossKey))
   }
   return [...picked, { bossKey: tile.bossKey, difficulty: tile.difficulty, ocid }]
+}
+
+export interface ScheduledBossInput {
+  appointments: readonly PartyAppointment[]
+  ocid: string
+  /** 시트의 시작 날짜. 주간 보스는 이 날짜가 든 리셋 주, 월간 보스는 이 날짜가 든 달을 본다 */
+  dateKey: string
+  /** 고치는 약속. 빼지 않으면 원래 들어 있던 보스가 모두 등록됨이 된다 */
+  excludeId?: string
+}
+
+/**
+ * 그 캐릭터로 같은 기간의 다른 약속에 이미 든 보스. 보스 추가 타일의 `등록됨` 이 쓴다.
+ *
+ * @example scheduledBossKeys({ appointments, ocid, dateKey: draft.startDateKey, excludeId: editing?.id })
+ */
+export function scheduledBossKeys(input: ScheduledBossInput): Set<string> {
+  const others = input.appointments.filter((appointment) => appointment.id !== input.excludeId)
+  const result = new Set<string>()
+  const collect = (bosses: readonly PartyAppointmentBoss[], monthly: boolean): void => {
+    for (const boss of bosses) {
+      if (boss.ocid === input.ocid && (bossCycleOf(boss.bossKey) === 'monthly') === monthly) result.add(boss.bossKey)
+    }
+  }
+
+  for (const occurrence of occurrencesInWeek(others, resetWeekStartOf(input.dateKey))) {
+    collect(occurrence.bosses, false)
+  }
+  // 월간 보스는 그 달에 걸친 주를 모두 펼친 뒤 날짜가 그 달인 회차만 센다. 리셋 주는 두 달에 걸칠 수 있다.
+  const month = input.dateKey.slice(0, 7)
+  for (let week = resetWeekStartOf(`${month}-01`); week <= `${month}-31`; week = shiftDateKey(week, 7)) {
+    for (const occurrence of occurrencesInWeek(others, week)) {
+      if (occurrence.dateKey.startsWith(month)) collect(occurrence.bosses, true)
+    }
+  }
+  return result
 }

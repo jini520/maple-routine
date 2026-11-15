@@ -2,13 +2,13 @@
  * 보스 고르기의 본문. 캐릭터 자리와 `모든 보스` 토글, 그 아래 보스 타일 묶음.
  *
  * 묶음마다 흰 카드에 5열로 타일을 놓는다. 고른 타일은 초상 오른쪽 아래에 체크 원이 붙는다. 다시 누르면 빠진다.
- * 파티 스케줄과 주간 보스 수익 계산기가 함께 쓰고, 화면마다 다른 것(캐릭터 자리 · 묶음 · 잠긴 타일)은 여는 쪽이 넘긴다.
+ * 파티 스케줄과 주간 보스 수익 계산기가 함께 쓰고, 화면마다 다른 것(캐릭터 자리 · 묶음 · 잠긴 타일 · 등록됨)은 여는 쪽이 넘긴다.
  */
 import { useRef, useState } from 'react'
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated'
 import { Pressable, View } from 'react-native'
 
-import { CheckIcon, Switch, Text } from '../../atoms'
+import { Badge, CheckIcon, Switch, Text } from '../../atoms'
 import { BossPortrait } from '../../molecules/BossPortrait/BossPortrait'
 import type { PickerTile } from '../../../features/party-appointments/boss-picker'
 import { bossAliasOf, bossPortraitAssetIdOf } from '../../../lib/boss/bosses'
@@ -36,6 +36,8 @@ export interface BossPickerBodyProps {
   isSelected: (tile: PickerTile) => boolean
   /** 고를 수 없는 타일. 흐리게 그리고 눌러도 부르지 않는다 */
   isLocked?: (tile: PickerTile) => boolean
+  /** 초상 위에 `등록됨` 을 붙일 타일. 알리기만 하고 고르기는 막지 않는다 */
+  isRegistered?: (tile: PickerTile) => boolean
   /**
    * 누른 타일 초상의 창 기준 자리와 그것을 다시 재는 손잡이. 선택 줄로 날아가는 그림이 여기서 출발한다
    */
@@ -50,14 +52,19 @@ const CHECK_SIZE = 22
 const CHECK_GAP = 3
 /** 잠긴 타일의 진하기 */
 const LOCKED_OPACITY = 0.35
+/** `등록됨` 알약이 초상 위로 올라가는 거리. 묶음 제목 · 윗줄 타일의 아래 여백보다 크면 글자에 닿는다 */
+const REGISTERED_RISE = 8
+/** 알약을 초상에서 떼어 내는 카드 색 고리 */
+const REGISTERED_RING = 2
 
 function Tile(props: {
   tile: PickerTile
   selected: boolean
   locked: boolean
+  registered: boolean
   onPress: (from: PopoverAnchorRect, measureFrom: Flight['measureFrom']) => void
 }): React.JSX.Element {
-  const { tile, selected, locked } = props
+  const { tile, selected, locked, registered } = props
   const name = bossAliasOf(tile.bossKey, tile.bossKey)
   const { definition } = useThemeAppearance()
   // 누른 좌표로 되짚지 않고 초상을 직접 잰다. 누름의 locationX 는 손가락이 닿은 안쪽 그림 기준이라 어긋난다.
@@ -103,6 +110,15 @@ function Tile(props: {
           </Animated.View>
         </View>
         <BossPortrait portraitAssetId={bossPortraitAssetIdOf(tile.bossKey)} label={name} size={TILE_PORTRAIT} />
+        {registered && (
+          <View pointerEvents="none" className="absolute left-0 right-0 items-center" style={{ top: -REGISTERED_RISE }}>
+            <View className="rounded-full" style={{ boxShadow: `0 0 0 ${REGISTERED_RING}px ${definition.surface}` }}>
+              <Badge variant="secondarySolid" size="xs">
+                등록됨
+              </Badge>
+            </View>
+          </View>
+        )}
         {selected && (
           <View
             testID={`boss-picker-check-${tile.bossKey}`}
@@ -129,6 +145,7 @@ function TileGroup(props: {
   group: BossPickerTileGroup
   isSelected: BossPickerBodyProps['isSelected']
   isLocked: BossPickerBodyProps['isLocked']
+  isRegistered: BossPickerBodyProps['isRegistered']
   onPressTile: BossPickerBodyProps['onPressTile']
 }): React.JSX.Element | null {
   if (props.group.tiles.length === 0) return null
@@ -143,6 +160,7 @@ function TileGroup(props: {
             tile={tile}
             selected={props.isSelected(tile)}
             locked={props.isLocked?.(tile) === true}
+            registered={props.isRegistered?.(tile) === true}
             onPress={(from, measureFrom) => props.onPressTile(tile, from, measureFrom)}
           />
         ))}
@@ -180,6 +198,7 @@ export function BossPickerBody(props: BossPickerBodyProps): React.JSX.Element {
             group={group}
             isSelected={props.isSelected}
             isLocked={props.isLocked}
+            isRegistered={props.isRegistered}
             onPressTile={props.onPressTile}
           />
         ))}
