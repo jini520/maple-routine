@@ -36,6 +36,32 @@ export function BossIncomeTransferForm(props: SpendFormProps): React.JSX.Element
   const { saving, submit, remove } = useSpendSubmit(props)
   const { loadWeekCrystalMeso, dateKey } = props
 
+  /**
+   * 보내는 캐릭터 고르기. 새 기록은 받는 캐릭터 · 수수료 · 체크가 그 캐릭터의 마지막 입력으로 서고, 기억이 없으면 처음 상태다.
+   * 빈 칸에서 처음 고른 캐릭터의 기억이 없으면 먼저 고른 값을 그대로 둔다.
+   *
+   * 켜져 있던 체크가 꺼지면 금액도 비운다. 그 금액은 앞 캐릭터의 결정석 몫이라 남기면 다른 캐릭터의 금액으로 저장된다.
+   */
+  function selectSender(next: string | null): void {
+    setSender(next)
+    if (editing) {
+      if (next === receiver) setReceiver(null)
+      return
+    }
+    if (next === sender) return
+    const remembered = next === null ? undefined : props.lastBossIncomeTransfers[next]
+    if (remembered === undefined && sender === null) return
+    const known =
+      remembered !== undefined &&
+      remembered.receiverOcid !== next &&
+      props.characters.some((character) => character.ocid === remembered.receiverOcid)
+    setReceiver(known ? remembered.receiverOcid : null)
+    fee.restore(remembered?.feeAuto ?? true, remembered?.feePercent ?? null)
+    const nextFillsWeek = remembered?.fillsWeek ?? false
+    if (fillsWeek && !nextFillsWeek) setAmountText('')
+    setFillsWeek(nextFillsWeek)
+  }
+
   // 체크가 켜져 있는 동안 보내는 캐릭터나 날짜를 바꾸면 그 주 결정석 몫을 다시 채운다.
   useEffect(() => {
     if (!fillsWeek || sender === null || loadWeekCrystalMeso === undefined) return
@@ -64,25 +90,29 @@ export function BossIncomeTransferForm(props: SpendFormProps): React.JSX.Element
     canSave,
     saving,
     onSave: () =>
-      void submit({
-        ocid: sender,
-        spentOn: props.dateKey,
-        category: 'etc',
-        item: spendCategoryNameOf('boss_income_transfer'),
-        itemKey: null,
-        formItemKeys: null,
-        itemKind: null,
-        levelFrom: null,
-        levelTo: null,
-        quantity: 1,
-        mesoAmount: feeMeso,
-        tariffMeso: null,
-        pointAmount: null,
-        pointPer100mMeso: null,
-        cashAmount: null,
-        hexa: null,
-        transfer: { receiverOcid: receiver!, transferMeso, feePercent: percent, feeAuto: fee.auto },
-      }),
+      void submit(
+        {
+          ocid: sender,
+          spentOn: props.dateKey,
+          category: 'etc',
+          item: spendCategoryNameOf('boss_income_transfer'),
+          itemKey: null,
+          formItemKeys: null,
+          itemKind: null,
+          levelFrom: null,
+          levelTo: null,
+          quantity: 1,
+          mesoAmount: feeMeso,
+          tariffMeso: null,
+          pointAmount: null,
+          pointPer100mMeso: null,
+          cashAmount: null,
+          hexa: null,
+          transfer: { receiverOcid: receiver!, transferMeso, feePercent: percent, feeAuto: fee.auto },
+        },
+        // 체크는 기록에 저장하지 않는 시트의 상태라 기억에 적도록 따로 넘긴다.
+        { transferFillsWeek: fillsWeek },
+      ),
     onDelete: props.onDelete === undefined ? undefined : () => void remove(),
   })
 
@@ -104,10 +134,7 @@ export function BossIncomeTransferForm(props: SpendFormProps): React.JSX.Element
           placeholder="캐릭터 선택"
           options={requiredCharacterOptions(props.characters)}
           selected={sender}
-          onSelect={(next) => {
-            setSender(next)
-            if (next === receiver) setReceiver(null)
-          }}
+          onSelect={selectSender}
           decorOf={characterDecorOf(props.characters)}
         />
         <SelectRow

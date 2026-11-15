@@ -547,6 +547,24 @@ export function findSpendRewardChoice(
 }
 
 /**
+ * 형태별 항목 key 를 그 대표의 형태별 단계로. 이 대표의 단계가 아니거나 대표에 없는 형태의 key 는 빼서, 그 형태는 0단계로 선다.
+ *
+ * 기억한 key 가 참조표에서 사라졌을 때 목록에 없는 단계가 줄에 남지 않게 하는 거름.
+ */
+export function spendRewardTiersOf(
+  choice: SpendCatalogChoice,
+  formItemKeys: Readonly<Record<string, string>>,
+): Record<string, string> {
+  const forms = formsOf(choice)
+  const tierByForm: Record<string, string> = {}
+  for (const [form, itemKey] of Object.entries(formItemKeys)) {
+    const item = choice.items.find((each) => each.key === itemKey)
+    if (item !== undefined && forms.includes(form)) tierByForm[form] = tierNameOf(item)
+  }
+  return tierByForm
+}
+
+/**
  * 이름만 저장된 옛 기록의 key. key 칸을 채우는 이관(`storage/sqlite`)만 쓴다.
  *
  * 옛 모양은 셋이다. ① 항목 이름 하나 ② 형태별 단계를 이은 이름(`하이마운틴 EXP 1단계, 솔 2단계`)

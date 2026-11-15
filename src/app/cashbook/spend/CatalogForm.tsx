@@ -42,6 +42,7 @@ import {
   spendRewardCoins,
   spendRewardItemKeys,
   spendRewardPrice,
+  spendRewardTiersOf,
   tierNameOf,
   SPEND_REWARD_COIN,
   type SpendCatalogChoice,
@@ -311,17 +312,53 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const picked = forms.length > 0 ? rewardName !== null : item !== null
   const canSave = owner !== null && picked && !blocked && quantity > 0 && (!typesPrice || unitPrice > 0)
 
+  /** 고를 수 있는 캐릭터나 메이플 ID 인가. 목록에 없는 값이 칸에 남지 않게 한다. */
+  function isOwnerOption(value: string): boolean {
+    const { ocid, accountId } = ownerFieldsOf(value)
+    if (accountId !== undefined) return props.accounts.some((account) => account.accountId === accountId)
+    return props.characters.some((character) => character.ocid === ocid)
+  }
+
+  /** 에픽던전 기억에서 그 주인이 그 던전에서 고른 단계. 기억이 없으면 `null` 이다. */
+  function rememberedTiersOf(next: SpendCatalogChoice, nextOwner: string | null): Record<string, string> | null {
+    const remembered = props.lastEpicDungeonRewards[next.key]
+    if (remembered === undefined || nextOwner === null) return null
+    const { ocid, accountId } = ownerFieldsOf(nextOwner)
+    const keys = accountId !== undefined ? remembered.accounts[accountId] : ocid === null ? undefined : remembered.characters[ocid]
+    return keys === undefined ? null : spendRewardTiersOf(next, keys)
+  }
+
   /** ① 대표를 고르는 단계. 갈래가 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
   function selectChoice(next: SpendCatalogChoice): void {
     setChoice(next)
     setItem(next.items.length === 1 ? next.items[0] : null)
-    // 형태별 단계는 **전부 0단계에서 시작한다**. 산 것을 앱이 미리 정하지 않는다. 축도 안 고른
-    // 채로 시작한다.
+    // 형태별 단계는 0단계에서 시작한다. 축도 안 고른 채로 시작한다.
     setTierByForm({})
     setOptionByAxis({})
     resetQuantity()
     setPriceText('')
     props.onScrollKeyChange(next.key)
+    // 에픽던전은 그 던전을 마지막에 적은 주인과 그 주인의 단계로 연다. 기억이 없으면 앞 타일에서 고른 주인도 비운다.
+    if (formsOf(next).length > 0) {
+      const last = props.lastEpicDungeonRewards[next.key]?.last
+      const lastValue =
+        last === undefined ? null : ownerValueOf('ocid' in last ? { ocid: last.ocid } : { ocid: null, accountId: last.accountId })
+      const nextOwner = lastValue !== null && isOwnerOption(lastValue) ? lastValue : null
+      setOwner(nextOwner)
+      setTierByForm(rememberedTiersOf(next, nextOwner) ?? {})
+    }
+  }
+
+  /**
+   * 캐릭터 칸 고르기. 새 에픽던전 리워드는 단계가 바꾼 주인의 기억으로 바뀌고, 기억이 없으면 0단계다.
+   * 빈 칸에서 처음 고른 주인의 기억이 없으면 먼저 고른 단계를 그대로 둔다.
+   */
+  function selectOwner(next: string | null): void {
+    setOwner(next)
+    if (editing || choice === null || forms.length === 0 || next === owner) return
+    const tiers = rememberedTiersOf(choice, next)
+    if (tiers === null && owner === null) return
+    setTierByForm(tiers ?? {})
   }
 
   /** ② 그 안의 단계를 고르는 단계. 형태가 없는 대표의 길이다. */
@@ -456,7 +493,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
               characters={props.characters}
               accounts={props.accounts}
               selected={owner}
-              onSelect={setOwner}
+              onSelect={selectOwner}
               testID="spend-sheet-chain"
             />
 
