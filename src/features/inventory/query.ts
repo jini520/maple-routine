@@ -6,6 +6,7 @@ import { queryOptions, useQuery } from '@tanstack/react-query'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { queryKeys } from '../query/keys'
 import { loadInventory, type InventoryView } from './load'
+import { useQuerySubscribed } from '../query/subscription'
 
 export function inventoryOptions(now: Date) {
   const todayDateKey = getCurrentKstDateKey(now)
@@ -22,6 +23,6 @@ export function inventoryOptions(now: Date) {
 
 /** 아직 못 읽었으면 `undefined` 다. 화면은 그동안 빈 칸만 그린다. */
 export function useInventory(now: Date): { data: InventoryView | undefined; isError: boolean; refetch: () => unknown } {
-  const { data, isError, refetch } = useQuery(inventoryOptions(now))
+  const { data, isError, refetch } = useQuery({ ...inventoryOptions(now), subscribed: useQuerySubscribed() })
   return { data, isError, refetch }
 }
