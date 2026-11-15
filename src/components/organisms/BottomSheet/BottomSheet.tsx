@@ -418,7 +418,7 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
    * 라이브러리 몸통에는 못 준다. 몸통의 `Animated.View` 에서 NativeWind 가 넘겨준 정적 스타일을 버려 실기기에서 안 먹었다.
    * 그래서 바탕과 내용 두 층에 같은 값을 준다.
    */
-  const { railWidthPx } = useScreenLayout()
+  const { railWidthPx, edgeGapPx } = useScreenLayout()
   const sideGap = Math.max(SHEET_SIDE_GAP_PX, (frame.width - railWidthPx - MAX_WIDTH) / 2)
 
   /** 끄는 동안 시트가 좌우 · 위로 따라간 거리. 바탕과 내용이 같은 값으로 움직인다. */
@@ -526,7 +526,8 @@ export function BottomSheet(props: BottomSheetProps): React.JSX.Element {
         애초에 없다. 아래로 끌어 닫는 길은 그대로다.
       */
       overDragResistanceFactor={0}
-      maxDynamicContentSize={maxSheetHeight(frame.height, insets.top, bottomGap)}
+      // 오른쪽 레일 화면은 위쪽 인셋이 0 이라 위 여백(`edgeGapPx`)을 더해야 핸들이 화면 위 끝에 붙지 않는다.
+      maxDynamicContentSize={maxSheetHeight(frame.height, insets.top + edgeGapPx, bottomGap)}
       // 떠 있는 시트. 아래 간격은 하단 안전영역이고 옆 간격보다 작지 않다.
       detached
       bottomInset={bottomGap}

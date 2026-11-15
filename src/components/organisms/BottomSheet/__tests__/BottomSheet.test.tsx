@@ -193,6 +193,18 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     expect(몸통.marginRight).toBe(10 + 84)
   })
 
+  // 위쪽 안전영역이 0 이라 인셋만 빼면 시트 핸들이 화면 위 끝에 붙는다. 헤더와 같은 위 여백 24 를 남긴다.
+  it('오른쪽 레일 화면에서는 시트 높이 상한이 위 여백 24 를 남긴다', async () => {
+    jest.spyOn(Dimensions, 'get').mockReturnValue({ width: 466, height: 678, scale: 3, fontScale: 1 })
+    const { getByTestId } = await open({
+      frame: { x: 0, y: 0, width: 466, height: 678 },
+      insets: { top: 0, left: 0, right: 84, bottom: 34 },
+    })
+    const sheet = getByTestId('sheet')
+
+    expect(sheet.props.maxDynamicContentSize).toBe(678 - 24 - sheet.props.bottomInset)
+  })
+
   /**
    * 이 앱은 edge-to-edge 라 키보드가 떠도 **창이 안 줄어든다**. 시트를 올리는 것은 OS 가 아니라
    * 라이브러리이고, 올리는 방식이 시트를 통째로 키보드 높이만큼 미는 것이다. 그래서 상한을
