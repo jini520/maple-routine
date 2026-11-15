@@ -34,7 +34,6 @@ import {
   Pressable,
   ScrollView,
   View,
-  useWindowDimensions,
   type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
@@ -43,6 +42,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, { type AnimatedStyle } from 'react-native-reanimated'
 
 import { appImage, solErdaFragmentIcon } from '../../../lib/assets/asset-lookup'
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ImageAssetRef } from '../../../types/image-asset'
@@ -388,7 +388,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   /** 여러 줄 칸이 지금 보이는 줄 수. 내용 높이를 받아 3 ~ 4 로 자른다. */
   const [lines, setLines] = useState(MULTILINE_MIN_LINES)
 
-  const { height: windowHeightPx } = useWindowDimensions()
+  const { windowHeightPx, railWidthPx } = useScreenLayout()
   const insets = useSafeAreaInsets()
   const { definition } = useThemeAppearance()
 
@@ -703,7 +703,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
         NativeWind 가 클래스를 `style` 로 푸는 바람에 한쪽이 덮여, 판의 바탕·모서리·여백이
         통째로 사라진다(시뮬레이터에서 두 번 그렇게 났다).
       */}
-      <Animated.View style={props.panelStyle}>
+      {/* 카드는 콘텐츠 폭 안에 선다. 스크림만 오른쪽 레일까지 덮는다. */}
+      <Animated.View style={[props.panelStyle, { marginRight: railWidthPx }]}>
         {/*
           판의 **빈 자리를 누르면 키보드만 내린다**(사용자 지정). 카드는 제자리에 남는다. 자리는
           마지막으로 잰 키보드 높이를 붙들고 있어 안 흔들린다.

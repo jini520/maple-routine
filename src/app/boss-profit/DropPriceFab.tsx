@@ -18,7 +18,7 @@ import Animated, { Easing, useAnimatedStyle } from 'react-native-reanimated'
 import { TagIcon, Text } from '../../components/atoms'
 import { BottomBarOverlay } from '../../components/organisms/BottomBar/BottomBarOverlay'
 import { useUnpricedDropCount } from '../../features/boss-profit/use-unpriced-drop-count'
-import { useFabBottomPx } from '../../lib/fab-metrics'
+import { useFabPlacement } from '../../lib/fab-metrics'
 import { useLoopedValue } from '../../hooks/useLoopedValue'
 import { tapFeedback } from '../../native/haptics'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
@@ -43,7 +43,7 @@ export function DropPriceFab(props: {
 }): React.JSX.Element {
   const navigation = useScreenNavigation()
   const { definition } = useThemeAppearance()
-  const fabBottomPx = useFabBottomPx()
+  const fab = useFabPlacement()
   // 모르는 수(`null`)와 0 은 배지를 안 세운다.
   const unpriced = useUnpricedDropCount(props.periodKey)
   const showsBadge = unpriced !== null && unpriced > 0
@@ -67,8 +67,8 @@ export function DropPriceFab(props: {
       <View
         testID="drop-price-fab"
         pointerEvents="box-none"
-        style={{ bottom: fabBottomPx }}
-        className="absolute right-4"
+        style={{ bottom: fab.bottomPx, right: fab.rightPx }}
+        className="absolute"
       >
         {/* 그림자만 드는 상자. 모양은 `borderRadius` 에서 나온다. */}
         <View

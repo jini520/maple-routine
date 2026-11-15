@@ -15,6 +15,8 @@
 import { Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useScreenLayout } from './screen-layout'
+
 /**
  * 안드로이드 상단 하한.
  *
@@ -38,16 +40,18 @@ export const ANDROID_TOP_SAFE_AREA_MIN_PX = 48
  */
 export const ANDROID_BOTTOM_SAFE_AREA_MIN_PX = 34
 
-/** 화면 상단이 비워야 하는 세로. 인셋과 하한 중 **큰 쪽**이다(안드로이드만). */
+/** 화면 상단이 비워야 하는 세로. 인셋과 하한 중 **큰 쪽**(안드로이드만)에 위아래 여백을 더한 값. */
 export function resolveTopSafeAreaPx(options: {
   /** `useSafeAreaInsets().top`. */
   insetTopPx: number
   /** `Platform.OS`. */
   platform: string
+  /** `ScreenLayout.edgeGapPx`. 오른쪽 레일 화면만 0 이 아니다. */
+  edgeGapPx?: number
 }): number {
-  return options.platform === 'android'
-    ? Math.max(options.insetTopPx, ANDROID_TOP_SAFE_AREA_MIN_PX)
-    : options.insetTopPx
+  const base =
+    options.platform === 'android' ? Math.max(options.insetTopPx, ANDROID_TOP_SAFE_AREA_MIN_PX) : options.insetTopPx
+  return base + (options.edgeGapPx ?? 0)
 }
 
 /** 화면 하단이 비워야 하는 세로. 인셋과 하한 중 **큰 쪽**이다(안드로이드만). */
@@ -69,8 +73,9 @@ export function resolveBottomSafeAreaPx(options: {
  */
 export function useTopSafeAreaPx(): number {
   const insets = useSafeAreaInsets()
+  const { edgeGapPx } = useScreenLayout()
 
-  return resolveTopSafeAreaPx({ insetTopPx: insets.top, platform: Platform.OS })
+  return resolveTopSafeAreaPx({ insetTopPx: insets.top, platform: Platform.OS, edgeGapPx })
 }
 
 /** `useTopSafeAreaPx()` 의 하단 판. */

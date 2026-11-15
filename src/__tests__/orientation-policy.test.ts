@@ -31,4 +31,14 @@ describe('화면 회전', () => {
     expect(delegate).toMatch(/< 600/)
     expect(delegate).toContain('.portrait')
   })
+
+  // 접고 펴서 화면이 바뀌어도 UIKit 은 앞서 받은 방향 허용을 그대로 쓴다. 펼친 채 가로로 두고 접으면 커버 화면이 가로로 남았다.
+  it('iOS 씬은 화면이 바뀌면 방향 허용을 다시 묻고, 600pt 미만 화면이 가로면 세로로 되돌린다', () => {
+    const scene = read('ios/app/SceneDelegate.swift')
+
+    expect(scene).toMatch(/func windowScene\(\s*_ windowScene: UIWindowScene,\s*didUpdate previousCoordinateSpace/)
+    expect(scene).toContain('setNeedsUpdateOfSupportedInterfaceOrientations()')
+    expect(scene).toMatch(/< 600/)
+    expect(scene).toContain('requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))')
+  })
 })

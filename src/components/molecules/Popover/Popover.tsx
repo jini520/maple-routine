@@ -6,12 +6,13 @@
  * 누르는 것이 전부 닫기로 먹힌다.
  */
 import { useState, type ReactNode } from 'react'
-import { Modal, Pressable, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native'
+import { Modal, Pressable, View, type LayoutChangeEvent } from 'react-native'
 import { vars } from 'nativewind'
 
 import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
 import { usePopoverPlacement } from '../../../hooks/usePopoverPlacement'
 import { anchorPopover } from '../../../lib/popover-anchor'
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { useThemeAppearance } from '../../../theme/context'
 import { buildPopoverScopeVariables } from '../../../theme/theme-vars'
 
@@ -73,7 +74,7 @@ export function AnchoredPopover(props: {
   className?: string
   children: ReactNode
 }): React.JSX.Element {
-  const { width: windowWidth } = useWindowDimensions()
+  const { contentWidthPx } = useScreenLayout()
   const { definition } = useThemeAppearance()
   const { anchor } = props
   const edgeGap = props.edgeGap ?? EDGE_GAP
@@ -82,7 +83,7 @@ export function AnchoredPopover(props: {
   const boxWidth = props.width ?? measuredWidth ?? 0
 
   const geometry = anchorPopover({
-    containerWidth: windowWidth,
+    containerWidth: contentWidthPx,
     anchorCenterX: anchor === null ? 0 : anchor.left + anchor.width / 2,
     popoverWidth: boxWidth,
     edgeGap,
@@ -108,10 +109,10 @@ export function AnchoredPopover(props: {
           vars(buildPopoverScopeVariables(definition)),
           {
             // 내용 폭을 재기 전에는 왼쪽 끝에 둔다. 오른쪽에 두고 재면 남은 폭에 맞춰 줄이 접힌 폭을 잰다.
-            left: !hasWidth ? 0 : center ? (windowWidth - boxWidth) / 2 : geometry.left,
+            left: !hasWidth ? 0 : center ? (contentWidthPx - boxWidth) / 2 : geometry.left,
             top: placement.top,
             width: props.width,
-            maxWidth: windowWidth - edgeGap * 2,
+            maxWidth: contentWidthPx - edgeGap * 2,
             opacity: shown ? undefined : 0,
           },
         ]}

@@ -16,7 +16,6 @@ import {
   Pressable,
   ScrollView,
   View,
-  useWindowDimensions,
 } from 'react-native'
 import { vars } from 'nativewind'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -26,6 +25,7 @@ import { useBootSplashDone } from '../../../hooks/useBootSplashDone'
 import { MODAL_TOP_GAP_PX, overlayWindowHeightPx, resolveModalMaxHeight } from '../../../lib/modal-metrics'
 import { useNativeModalGate } from '../../../lib/native-modal-gate'
 import { LinearGradient } from '../../../lib/nativewind-interop'
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { useThemeAppearance } from '../../../theme/context'
 import { buildSheetScopeVariables } from '../../../theme/theme-vars'
 
@@ -238,13 +238,13 @@ function scrimMinHeight(): number | undefined {
 
 export function Modal(props: ModalProps): React.JSX.Element | null {
   const insets = useSafeAreaInsets()
-  const window = useWindowDimensions()
+  const layout = useScreenLayout()
   const splashDone = useBootSplashDone()
   // 앱을 다시 띄우기 직전에 내린다. 떠 있는 채 다시 띄우면 iOS 에서 이 모달의 빈 화면이 남아 터치를 모두 막는다.
   const gate = useNativeModalGate(splashDone)
   const align = props.align ?? 'top'
   const maxHeight = resolveModalMaxHeight({
-    windowHeightPx: overlayWindowHeightPx(window.height),
+    windowHeightPx: overlayWindowHeightPx(layout.windowHeightPx),
     insetTopPx: insets.top,
     insetBottomPx: insets.bottom,
     align,
@@ -277,8 +277,10 @@ export function Modal(props: ModalProps): React.JSX.Element | null {
         onPress={props.onClose}
         className={`flex-1 items-center bg-scrim px-4 ${align === 'center' ? 'justify-center' : ''}`}
         // 상단 정렬은 안전영역(상태바·노치)만큼 내린 뒤 여백을 더 둬 화면 끝에 붙지 않게 한다.
+        // 카드는 콘텐츠 폭 안에 선다. 스크림만 오른쪽 레일까지 덮는다.
         style={{
           ...(align === 'center' ? null : { paddingTop: insets.top + MODAL_TOP_GAP_PX }),
+          ...(layout.railWidthPx === 0 ? null : { paddingRight: 16 + layout.railWidthPx }),
           minHeight: scrimMinHeight(),
         }}
       >

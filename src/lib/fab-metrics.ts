@@ -10,11 +10,10 @@
  *
  * 하단바의 몫은 여기 없다. `ScreenScroll` 이 이미 콘텐츠 끝에 준다.
  */
-import { useWindowDimensions } from 'react-native'
-
 import { useButtonNavigation } from '../hooks/useButtonNavigation'
-import { resolveBottomBarMetrics } from './bottom-bar-metrics'
+import { resolveBottomBarSpace } from './bottom-bar-metrics'
 import { useBottomSafeAreaPx } from './safe-area'
+import { useScreenLayout, type ScreenLayout } from './screen-layout'
 import type { ShadowLayer } from './shadow'
 
 /** FAB 의 지름. 버튼의 `h-14 w-14` 와 같아야 하고, 그 약속은 테스트가 잰다. */
@@ -50,21 +49,47 @@ export const FAB_SPACE_PX = FAB_LIFT_PX + FAB_DIAMETER_PX + FAB_CONTENT_GAP_PX
  */
 export const FAB_SHADOW: ShadowLayer = { opacity: 0.65, radius: 12, y: 4 }
 
+/** FAB 와 콘텐츠 오른쪽 끝 사이. 화면의 좌우 여백 `px-4` 와 같은 16. */
+export const FAB_SIDE_PX = 16
+
+export interface FabPlacement {
+  /** 창 아래 끝에서. */
+  bottomPx: number
+  /** 창 오른쪽 끝에서. 오른쪽 레일 화면은 레일 폭을 더해 콘텐츠 오른쪽 끝에 맞춘다. */
+  rightPx: number
+}
+
 /**
- * 떠 있는 하단바 위에 앉는 `bottom` 값.
+ * FAB 의 `bottom` · `right`.
  *
- * 바는 화면 상자 밖이 아니라 그 위에 떠 있어서 화면 기준 `bottom: 0` 은 바 뒤다. 그렇게
- * 두면 FAB 가 캡슐에 반쯤 가려 안 보인다.
- *
- * `ScreenScroll` 이 콘텐츠 끝에 남기는 몫과 같은 함수에서 나온다. 손으로 옮겨 적으면
- * 기기마다 갈린다. **바 높이가 창 폭의 함수이기 때문이다.**
- *
- * 부르는 쪽은 탭 화면에 선다고 전제한다. 바가 없는 하위 페이지에 놓을 일이 생기면 그때 가른다.
+ * 바는 화면 상자 밖이 아니라 그 위에 떠 있어서 화면 기준 `bottom: 0` 은 바 뒤다. 그래서 바가 아래에서 먹는 몫 위에
+ * 띄운다. 그 몫은 `ScreenScroll` 이 콘텐츠 끝에 남기는 몫과 같은 함수에서 와야 한다. 바 높이가 창 폭의 함수라
+ * 손으로 옮겨 적으면 기기마다 갈린다.
  */
-export function useFabBottomPx(): number {
+export function resolveFabPlacement(options: {
+  layout: ScreenLayout
+  /** `useBottomSafeAreaPx()`. */
+  bottomSafeAreaPx: number
+  /** `resolveBottomBarSpace(...).spacePx`. 오른쪽 레일 화면은 0. */
+  barSpacePx: number
+}): FabPlacement {
+  return {
+    bottomPx: options.bottomSafeAreaPx + options.barSpacePx + FAB_LIFT_PX,
+    rightPx: options.layout.railWidthPx + FAB_SIDE_PX,
+  }
+}
+
+/**
+ * 탭 화면에 선 FAB 의 자리를 내는 훅. 바가 없는 하위 페이지에 놓을 일이 생기면 그때 가른다.
+ */
+export function useFabPlacement(): FabPlacement {
+  const layout = useScreenLayout()
   const bottomSafeAreaPx = useBottomSafeAreaPx()
-  const { width: windowWidthPx } = useWindowDimensions()
   const buttonNavigation = useButtonNavigation()
 
-  return bottomSafeAreaPx + resolveBottomBarMetrics(windowWidthPx, buttonNavigation).spacePx + FAB_LIFT_PX
+  return resolveFabPlacement({
+    layout,
+    bottomSafeAreaPx,
+    barSpacePx: resolveBottomBarSpace(layout, buttonNavigation).spacePx,
+  })
 }

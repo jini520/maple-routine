@@ -11,6 +11,7 @@
 import { Image, Pressable } from 'react-native'
 
 import loginButtonImage from '../../../assets/nexon/login-button-wide-center.png'
+import { BAR_MAX_WIDTH } from '../../../lib/bottom-bar-metrics'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
 
 /** 그림 안에 적힌 글자. 읽어 주는 이름이 그림과 달라지면 안 된다. */
@@ -27,6 +28,8 @@ export function NexonLoginButton(props: {
       accessibilityLabel={LABEL}
       onPress={props.onPress}
       className="w-full"
+      // 폭만 정한 그림이라 부모가 넓으면 끝없이 커진다. 넓은 화면에서 폭이 멈추는 자리를 하단바와 맞춘다.
+      style={{ maxWidth: BAR_MAX_WIDTH, alignSelf: 'center' }}
     >
       <Image
         testID="nexon-login-button-image"

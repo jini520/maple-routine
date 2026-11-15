@@ -77,12 +77,15 @@ export function resolveSafeAreaFade(options: {
   barLiftPx: number
   /** `resolveScreenBottomInset()` 이 정한 값. 스크롤포트가 이미 비운 몫은 깎을 것이 없다. */
   portBottomPx: ScreenBottomInset['portBottomPx']
+  /** `ScreenLayout.edgeGapPx`. 콘텐츠 끝 여백과 같은 선에서 투명해지도록 같은 몫을 더한다. */
+  edgeGapPx?: number
 }): SafeAreaFade {
   return {
     topPx: options.hasHeader ? options.topSafeAreaPx : 0,
     bottomPx:
       Math.max(0, options.bottomSafeAreaPx - options.portBottomPx) +
-      (options.hasTabBar ? barFadePx(options.barHeightPx, options.barLiftPx) : 0),
+      (options.hasTabBar ? barFadePx(options.barHeightPx, options.barLiftPx) : 0) +
+      (options.edgeGapPx ?? 0),
   }
 }
 
