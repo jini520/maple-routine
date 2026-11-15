@@ -41,11 +41,14 @@ const TEST_SAFE_AREA_METRICS: Metrics = {
 
 export function NavigationHarness({
   navigationRef,
+  safeAreaMetrics = TEST_SAFE_AREA_METRICS,
 }: {
   navigationRef?: ReturnType<typeof useNavigationContainerRef<RootStackParamList>>
+  /** 오른쪽 레일 화면처럼 안전영역이 다른 기기를 그릴 때 준다. */
+  safeAreaMetrics?: Metrics
 }): React.JSX.Element {
   return (
-    <SafeAreaProvider initialMetrics={TEST_SAFE_AREA_METRICS}>
+    <SafeAreaProvider initialMetrics={safeAreaMetrics}>
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
           <PortalProvider shouldAddRootHost={false}>

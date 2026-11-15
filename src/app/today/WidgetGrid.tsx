@@ -11,9 +11,10 @@
  *    되는데 칸 폭 계산은 `창폭 − 32` 를 전제로 서 있다.
  */
 
-import { Pressable, useWindowDimensions, View } from 'react-native'
+import { Pressable, View } from 'react-native'
 
 import { Card } from '../../components/atoms'
+import { useScreenLayout } from '../../lib/screen-layout'
 import { resolveWidgetGridMetrics, tileWidthPx } from '../../lib/today/widget-grid-metrics'
 import { groupWidgetRows, moveTilesToEnd } from '../../lib/today/widget-layout'
 import { useOpenTab } from '../../hooks/useOpenTab'
@@ -30,8 +31,8 @@ export interface WidgetGridProps {
 export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
   const openTab = useOpenTab()
   const navigation = useScreenNavigation()
-  const { width } = useWindowDimensions()
-  const metrics = resolveWidgetGridMetrics(width)
+  const { contentWidthPx } = useScreenLayout()
+  const metrics = resolveWidgetGridMetrics(contentWidthPx)
 
   // 보여 줄 것이 없는 위젯은 맨 아래 줄로 내려 다른 모양으로 그린다.
   const lastIds = new Set(

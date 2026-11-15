@@ -28,7 +28,7 @@
 | `features/bar-order/config.ts` · `features/bar-order/store.ts` | 사용자가 정한 바 순서를 표에 맞춰 읽고 저장한다([[ADR-152]]) |
 | `components/organisms/BottomBar/double-tap.ts` | 두 번 누름 판정(`isSecondTap`, 300ms) |
 | `components/organisms/BottomBar/BottomBarOverlay.tsx` | 화면이 띄우는 것을 바 위에 그리는 포털([[ADR-062]]) |
-| `lib/bottom-bar-metrics.ts` | 창 폭과 3버튼 내비게이션 바 여부에서 바 치수를 계산한다 |
+| `lib/bottom-bar-metrics.ts` | 창 폭과 3버튼 내비게이션 바 여부에서 바 치수를 계산한다. 오른쪽 레일 화면의 세로 막대 치수도 여기서 계산한다 |
 | `hooks/useButtonNavigation.ts` | 아래에 3버튼 내비게이션 바가 있는지 낸다. 로컬 모듈 `app-system-bars` 가 안드로이드에 묻는다 |
 | `hooks/useOpenTab.ts` | 화면이 페이지 이름으로 탭을 연다 |
 | `hooks/useScreenNavigation.ts` · `hooks/useSettingsNavigation.ts` | 화면이 하위 페이지를 열고 닫는다(둘은 같은 훅) |
@@ -115,6 +115,16 @@ RootStack
 | 위치 | 하단 안전영역 바로 위. 안드로이드는 안전영역 최소 34. 3버튼 내비게이션 바 위에서는 좌우 최소 여백과 같은 14 를 더 띄운다 |
 | 안쪽 여백 · 알약 | 여백 3, 알약 높이는 바 높이 − 6, 알약 폭은 칸 폭 + 23 |
 | 아이콘 · 라벨 | 아이콘 25, 선 굵기 1.5, 간격 4, 라벨 10px |
+
+오른쪽 레일 화면(`design-system.md` 의 `화면 크기`)에서는 바를 세로 막대로 세워 오른쪽 안전영역에 둔다. 가로 바의 왼쪽에서
+오른쪽 순서가 막대의 위에서 아래 순서이고, 하위 행은 맨 위 칸이 ← 다([[ADR-191]] 결정 4).
+
+| 값 | 계산 |
+|---|---|
+| 폭 · 칸 | 폭 64, 칸 높이 56 다섯 칸. 막대 높이 286 |
+| 위치 | 가로는 오른쪽 안전영역의 가운데, 세로는 아래 끝이 아래쪽 안전영역 바로 위 |
+| 안쪽 여백 · 알약 | 여백 3, 알약 58 × 56, ← 원 42 |
+| 아이콘 · 라벨 | 가로 바와 같다 |
 
 재질은 iOS 26 이상에서 `GlassView`(바 `regular` · 알약 `clear`), 그 밖에서는 불투명 캡슐이다. 색은
 `resolveBarColors` 가 테마에서 계산한다. 자세한 규칙은 [[ADR-059]] 결정 11 · 12 에 있다.

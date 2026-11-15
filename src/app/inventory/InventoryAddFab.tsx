@@ -6,17 +6,17 @@ import { Pressable, View } from 'react-native'
 
 import { PlusIcon } from '../../components/atoms'
 import { BottomBarOverlay } from '../../components/organisms/BottomBar/BottomBarOverlay'
-import { FAB_SHADOW, useFabBottomPx } from '../../lib/fab-metrics'
+import { FAB_SHADOW, useFabPlacement } from '../../lib/fab-metrics'
 import { boxShadowOf } from '../../lib/shadow'
 import { tapFeedback } from '../../native/haptics'
 import { useThemeAppearance } from '../../theme/context'
 
 export function InventoryAddFab(props: { onPress: () => void }): React.JSX.Element {
   const { definition } = useThemeAppearance()
-  const fabBottomPx = useFabBottomPx()
+  const fab = useFabPlacement()
   return (
     <BottomBarOverlay>
-      <View pointerEvents="box-none" style={{ bottom: fabBottomPx }} className="absolute right-4">
+      <View pointerEvents="box-none" style={{ bottom: fab.bottomPx, right: fab.rightPx }} className="absolute">
         <View style={{ borderRadius: 999, boxShadow: boxShadowOf(definition.shadowColor, FAB_SHADOW) }}>
           <Pressable
             testID="inventory-add-fab"

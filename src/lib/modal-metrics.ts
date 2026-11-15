@@ -27,7 +27,7 @@ export function resolveModalMaxHeight(input: {
 /**
  * 오버레이(RN `Modal`) 창의 높이.
  *
- * 안드로이드 모달 창은 내비 바까지 덮어 표시 높이와 같다. `useWindowDimensions` 는 기기에 따라
+ * 안드로이드 모달 창은 내비 바까지 덮어 표시 높이와 같다. RN 이 주는 창 높이는 기기에 따라
  * 내비 바를 뺀 값을 내므로 그것으로 재면 아래 인셋을 두 번 뺀다. iOS 는 창 높이 그대로다.
  */
 export function overlayWindowHeightPx(windowHeightPx: number): number {
