@@ -35,6 +35,7 @@
 | `hooks/useScrollToTop.ts` | 맨 위 스크롤 함수를 등록하거나 부른다 |
 | `hooks/useRootBackToBackground.ts` | 안드로이드에서 되돌아갈 화면이 없을 때 뒤로 가기를 받아 백그라운드로 보낸다 |
 | `hooks/useScreenFocused.ts` | 이 화면이 지금 보이는지. 내비게이터 밖이면 늘 `true` |
+| `hooks/useRunAfterTransition.ts` | 담은 스택의 다음 전환이 끝난 뒤 일을 한 번 부른다. 전환 이벤트가 없으면 시간 제한 뒤에 부르고, 내비게이터 밖이면 바로 부른다 |
 | `native/haptics.ts` | `tapFeedback()` · `selectionFeedback()` |
 
 ## 화면 구조
@@ -58,6 +59,7 @@ RootStack
 |---|---|
 | 컨텐츠 관리 · 보스 관리 | `ContentManage` · `BossManage` |
 | 드롭 히스토리 · 아이템 가격 입력 | `DropHistory` · `DropPrice` |
+| 거래 내역(가계부 머리의 `거래 내역`) | `TradeHistory` |
 | 개발 노트 | `SettingsReleaseNotes` |
 | 앱 정보 및 계정 | `SettingsAbout` |
 | 캐릭터 관리 | `SettingsCharacters` |
@@ -99,7 +101,7 @@ RootStack
 | 하려는 것 | 쓰는 것 |
 |---|---|
 | 하위 페이지 열기 · 닫기 | `useScreenNavigation()` 의 `navigate(라우트)` · `goBack()` |
-| 다른 탭 열기 | `useOpenTab()(페이지, 파라미터)`. 그룹 페이지로 가면 `Groups` 까지 되돌아간 뒤 연다 |
+| 다른 탭 열기 | `useOpenTab()(페이지, 파라미터)`. 그룹 페이지로 가면 `Groups` 까지 되돌아간 뒤 연다. 하위 페이지에서 부르면 그 하위 페이지를 빼고 아래의 `Main` 으로 되돌아간다(`pop`) |
 | 화면 안 버튼으로 맨 위 스크롤 | `useScrollToTop()` |
 | 컨테이너 밖에서 이동(알림 탭) | `AppNavigation` 의 `navigationRef`. 목적지가 화면 목록에 생긴 뒤에 push 한다 |
 

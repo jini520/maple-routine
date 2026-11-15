@@ -13,6 +13,7 @@
 
 import type { NavigatorScreenParams } from '@react-navigation/native'
 
+import type { CashbookTradeTarget } from '../features/trade-history/target'
 import type { IncomeCategoryKey } from '../lib/cashbook/categories'
 import type { NoticeKind } from '../types/notice'
 import type { BossCycle } from '../types/scheduler'
@@ -44,12 +45,7 @@ export type TabParamList = {
   Boss: undefined
   Appointments: undefined
   Profit: undefined
-  /**
-   * 이 분류의 새 수입 폼을 열어 둔 채로 이 탭에 보내는 파라미터. today 빠른 이동의 가계부 분류 칸이 보낸다.
-   *
-   * `Settings` 의 `openPicker` 처럼 스택에 남으므로 화면이 `setParams` 로 지운다(`CashbookScreen`).
-   */
-  Cashbook: { incomeCategory?: IncomeCategoryKey } | undefined
+  Cashbook: CashbookParams | undefined
   Stats: undefined
   Inventory: undefined
   Utility: undefined
@@ -89,7 +85,7 @@ export type ScheduleSubsParamList = {
 
 export type LedgerSubsParamList = {
   Profit: undefined
-  Cashbook: { incomeCategory?: IncomeCategoryKey } | undefined
+  Cashbook: CashbookParams | undefined
   Stats: undefined
   Inventory: undefined
 }
@@ -126,6 +122,16 @@ export interface MvpGradeHistoryParams {
 }
 
 /**
+ * 가계부 탭에 보내는 파라미터. 둘 다 `Settings` 의 `openPicker` 처럼 스택에 남으므로 화면이 `setParams` 로 지운다(`CashbookScreen`).
+ */
+export interface CashbookParams {
+  /** 이 분류의 새 수입 폼을 열어 둔 채로 연다. today 빠른 이동의 가계부 분류 칸이 보낸다 */
+  incomeCategory?: IncomeCategoryKey
+  /** 이 기록의 날짜를 고르고 수정 시트(드롭은 가격 입력 카드)를 연다. 거래 내역의 `거래로 이동` 이 보낸다 */
+  trade?: CashbookTradeTarget
+}
+
+/**
  * 아이템 가격 입력이 여는 주기와 기간.
  *
  * 보스 수익의 떠 있는 버튼이 보던 값을 넘기고, today 타일은 안 넘긴다. 없으면 화면이 열리는 순간의
@@ -157,6 +163,8 @@ export type RootStackParamList = {
   ContentManage: undefined
   DropHistory: undefined
   DropPrice: DropPriceParams | undefined
+  /** 거래 내역. 가계부 머리의 `거래 내역` 이 연다 */
+  TradeHistory: undefined
   SettingsReleaseNotes: undefined
   SettingsAbout: undefined
   /**
@@ -302,6 +310,7 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
   { path: '/appointments', screen: 'AppointmentsScreen', target: { kind: 'tab', route: 'Appointments' }, origin: 'rn' },
   { path: '/cashbook', screen: 'CashbookScreen', target: { kind: 'tab', route: 'Cashbook' }, origin: 'rn' },
+  { path: '/cashbook/trades', screen: 'TradeHistoryScreen', target: { kind: 'push', route: 'TradeHistory' }, origin: 'rn' },
   { path: '/stats', screen: 'StatsScreen', target: { kind: 'tab', route: 'Stats' }, origin: 'rn' },
   { path: '/inventory', screen: 'InventoryScreen', target: { kind: 'tab', route: 'Inventory' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },

@@ -8,6 +8,7 @@
 import type { ReactNode } from 'react'
 
 import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
+import { ScreenQuerySubscription } from './ScreenQuerySubscription'
 
 /**
  * `backBehavior="none"` 이다. `"history"` 는 모든 탭 전환을 쌓는다. 층을 오르내리는 일은 바깥
@@ -20,9 +21,17 @@ import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBack
  *
  * iOS 에서는 `ScreenBackdrop` 이 자식을 그대로 통과시켜 뷰가 안 는다.
  */
+/** `screenLayout` 이 받는 화면 내비게이션 가운데 포커스를 묻고 듣는 부분. */
+type ScreenNavigation = React.ComponentProps<typeof ScreenQuerySubscription>['navigation']
+
 export const TAB_LAYER_PROPS = {
   backBehavior: 'none',
   tabBar: () => null,
   screenOptions: { headerShown: false },
-  screenLayout: ({ children }: { children: ReactNode }) => <ScreenBackdrop>{children}</ScreenBackdrop>,
+  // 화면마다 포커스를 기기 DB 쿼리의 구독으로 내린다. 탭 화면은 안 보여도 마운트된 채라 끊지 않으면 다시 읽는다.
+  screenLayout: ({ children, navigation }: { children: ReactNode; navigation: ScreenNavigation }) => (
+    <ScreenBackdrop>
+      <ScreenQuerySubscription navigation={navigation}>{children}</ScreenQuerySubscription>
+    </ScreenBackdrop>
+  ),
 } as const

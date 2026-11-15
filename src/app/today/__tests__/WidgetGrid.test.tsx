@@ -152,7 +152,7 @@ describe('타일 탭', () => {
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'LedgerSubs',
       params: { screen: 'Profit' },
-    })
+    }, { pop: true })
   })
 
   // 두 타일이 가리키는 것이 값을 매길 드롭이다. 이번 주로 열리는 것은 기간을 넘기지 않아서다.

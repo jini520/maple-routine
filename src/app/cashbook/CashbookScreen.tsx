@@ -30,6 +30,7 @@ import { useRoute, type RouteProp } from '@react-navigation/native'
 
 import {
   Badge,
+  Button,
   CalendarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
@@ -55,6 +56,10 @@ import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHe
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
+import { useMvpGradeContext } from '../../features/mvp-grade/store'
+import { tapFeedback } from '../../native/haptics'
+import { useRunAfterTransition } from '../../hooks/useRunAfterTransition'
+import { openDropPriceCardOf } from './open-drop-price-card'
 import type { IncomeCategoryKey } from '../../lib/cashbook/categories'
 import type { TabParamList } from '../../navigation/routes'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -792,7 +797,14 @@ export function CashbookScreen(): React.JSX.Element {
    * today 빠른 이동의 가계부 분류 칸이 보낸 분류. 있으면 그 분류의 새 수입 폼을 연 채로 그린다. 이 화면은 today 에서
    * 올 때 새로 마운트되므로 고른 날이 곧 오늘이고, 시트도 오늘 날짜로 열린다.
    */
-  const quickLinkCategory = useRoute<RouteProp<TabParamList, 'Cashbook'>>().params?.incomeCategory
+  const routeParams = useRoute<RouteProp<TabParamList, 'Cashbook'>>().params
+  const quickLinkCategory = routeParams?.incomeCategory
+  /**
+   * 거래 내역의 `거래로 이동` 이 보낸 기록. 이 화면은 거래 내역 아래에 마운트된 채라 처음 값이 아니라 효과에서 받는다.
+   */
+  const tradeTarget = routeParams?.trade
+  const gradeContext = useMvpGradeContext()
+  const runAfterTransition = useRunAfterTransition()
   /**
    * 시트가 무엇을 하고 있나. 셋이다.
    *
@@ -829,6 +841,34 @@ export function CashbookScreen(): React.JSX.Element {
   useEffect(() => {
     if (quickLinkCategory !== undefined) navigation.setParams({ incomeCategory: undefined })
   }, [quickLinkCategory, navigation])
+
+  /**
+   * `거래로 이동` 으로 온 기록. 손입력은 수정 시트를, 드롭은 가격 입력 카드를 바로 열고, 그 날짜가 든 기간으로 옮겨 날짜를 고르는
+   * 일은 거래 내역이 빠지는 전환이 끝난 뒤에 한다. 기간을 옮기면 조회 회차와 달 읽기가 시작되는데, 전환 · 시트가 열리는 때와
+   * 겹치면 둘 다 느려진다. 시트는 그 기록의 날짜로 열려 달 데이터가 없어도 된다. 날짜는 조회 한도 안이다. 거래 내역이 가계부
+   * 시트와 같은 범위에서만 기록을 읽기 때문이다.
+   */
+  useEffect(() => {
+    if (tradeTarget === undefined) return
+    navigation.setParams({ trade: undefined })
+    // 전환 이벤트가 오지 않는 이동(이미 가계부가 보이던 때)에도 옮기도록 시간 제한을 둔다. 전환은 0.35초쯤이다.
+    runAfterTransition(() => {
+      if (isWeekly) setWeekStartKey(resetWeekStartOf(tradeTarget.dateKey))
+      selectDate(tradeTarget.dateKey)
+    }, 600)
+    if (tradeTarget.kind === 'entry') {
+      setSheet(tradeTarget.entry)
+      return
+    }
+    void openDropPriceCardOf({
+      drop: tradeTarget.drop,
+      characterName: tradeTarget.characterName,
+      gradeContext,
+      onError: (message) => useToastStore.getState().showError(message),
+    })
+    // 받은 기록이 바뀔 때만 돈다. 기간 · 등급이 바뀔 때 다시 열면 닫은 시트가 되살아난다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tradeTarget])
 
   const monthWeeks = buildCalendarMonth(monthKey)
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
@@ -1205,14 +1245,27 @@ export function CashbookScreen(): React.JSX.Element {
             <PageHeaderTitleRow
               fetchedAt={fetchedAt}
               trailing={
-                // 보스 수익이 이 자리에 두는 `보스 관리` 는 여기 없다. 세그먼트만 선다.
-                <Segment
-                  size="lg" className="self-start"
-                  options={PERIOD_TABS}
-                  selected={isWeekly ? 'weekly' : 'monthly'}
-                  onSelect={(value) => (value === 'weekly' ? showWeekly() : showMonthly())}
-                  labelOf={(value) => PERIOD_TAB_LABELS[value]}
-                />
+                // 거래 내역으로 가는 글자 버튼이 세그먼트 왼쪽에 선다. 보스 수익의 `보스 관리` 와 같은 생김새다.
+                <View className="flex-row items-center gap-1">
+                  <Button
+                    variant="text"
+                    size="sm"
+                    testID="cashbook-trade-history"
+                    onPress={() => {
+                      tapFeedback()
+                      navigation.navigate('TradeHistory')
+                    }}
+                  >
+                    거래 내역
+                  </Button>
+                  <Segment
+                    size="lg" className="self-start"
+                    options={PERIOD_TABS}
+                    selected={isWeekly ? 'weekly' : 'monthly'}
+                    onSelect={(value) => (value === 'weekly' ? showWeekly() : showMonthly())}
+                    labelOf={(value) => PERIOD_TAB_LABELS[value]}
+                  />
+                </View>
               }
             >
               <Text className="text-lg font-bold text-text">가계부</Text>

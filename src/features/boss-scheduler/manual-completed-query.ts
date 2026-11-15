@@ -14,6 +14,7 @@ import { manualCompletionKey } from '../../lib/boss/manual-completion'
 import { getManualBossProfitRecordKeys } from '../../storage/boss-profit'
 import { queryKeys } from '../query/keys'
 import { readTrackedOcids } from '../schedule-sync/schedule-query'
+import { useQuerySubscribed } from '../query/subscription'
 
 export type ManualCompletedByOcid = Readonly<Record<string, string[]>>
 
@@ -53,6 +54,6 @@ export function manualCompletedOptions(now: Date) {
 
 /** 아직 못 읽었으면 빈 표다. 카드가 넥슨이 준 완료만 그리다가 읽히면 직접 적은 것이 얹힌다. */
 export function useManualCompleted(now: Date): ManualCompletedByOcid {
-  const { data } = useQuery(manualCompletedOptions(now))
+  const { data } = useQuery({ ...manualCompletedOptions(now), subscribed: useQuerySubscribed() })
   return data ?? EMPTY
 }

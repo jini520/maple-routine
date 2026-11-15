@@ -9,7 +9,7 @@
 |---|---|
 | `app/inventory/InventoryScreen.tsx` | 머리 · 탭 · 격자 · 칸 팝오버 · 삭제 확인 · 시트 넷 · 떠 있는 `+` 버튼 |
 | `app/inventory/InventoryGrid.tsx` | 한 줄 다섯 칸 격자. 화면 아래 끝까지 빈 칸으로 채운다. 칸의 그림 · 개수 · 경로 글자 · 얼굴 |
-| `app/inventory/InventorySaleSheet.tsx` | 넣은 아이템 · 기타 조각 판매 시트와 아이템 블록(`InventoryItemBlock`). 메모 칸은 `components/molecules/MemoField/` 다 |
+| `app/inventory/InventorySaleSheet.tsx` | 넣은 아이템 · 기타 조각 판매 시트와 아이템 블록(`InventoryItemBlock`, 거래 내역 상세 시트와 같이 쓰는 `ItemBlock`). 메모 칸은 `components/molecules/MemoField/` 다 |
 | `app/inventory/InventoryEditSheet.tsx` | 남은 개수를 고치는 시트 |
 | `app/inventory/InventoryAddSheet.tsx` | 아이템 넣기 시트. 아이템 칸은 입력 카드 안 목록에서 고른다 |
 | `app/inventory/HuntFragmentSaleSheet.tsx` | 사냥 조각 판매. 가계부 `IncomeSheet` 를 `사냥 전리품 판매` 로 바로 연다 |

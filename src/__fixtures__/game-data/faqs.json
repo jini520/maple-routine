@@ -136,6 +136,10 @@
     {
       "key": "inventory",
       "title": "인벤토리"
+    },
+    {
+      "key": "trade-history",
+      "title": "거래 내역"
     }
   ],
   "items": [

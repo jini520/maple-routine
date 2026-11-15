@@ -61,6 +61,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | `cashbook` | 수익 · 지출 캘린더 · 손입력 | `features/cashbook.md` |
 | `stats` | 기간별 수익 · 지출 통계 | `features/stats.md` |
 | `inventory` | 팔지 않고 가진 아이템 · 판매 · 수정 · 삭제 | `features/inventory.md` |
+| `trade-history` | 아이템을 사고판 기록의 목록 · 필터 · 상세 시트 | `features/trade-history.md` |
 | `mvp-grade` | MVP 등급 · 수수료 · 할인 | `features/mvp-grade.md` |
 | `party-appointments` | 파티 약속 · 약속 알림 | `features/party-appointments.md` |
 | `settings` | 설정 화면 · 안내 · 계정 데이터 | `features/settings.md` |
@@ -206,7 +207,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |
 | [ADR-137+168](./adr/ADR-137+168_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
-| [ADR-142+144](./adr/ADR-142+144_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
+| [ADR-142+144+229](./adr/ADR-142+144+229_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
 | [ADR-147](./adr/ADR-147_design-system_round-entry-buttons.md) | 🟢 | design-system | 진입 버튼과 대표 캐릭터의 움직임 |
 | [ADR-150](./adr/ADR-150_design-system_page-faq.md) | 🟢 | design-system | 모든 페이지의 FAQ |
 | [ADR-152](./adr/ADR-152_navigation_bar-order.md) | 🟢 | navigation | 하단바 순서 바꾸기 |
@@ -217,3 +218,4 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-188](./adr/ADR-188_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기 |
 | [ADR-191+230](./adr/ADR-191+230_design-system_screen-size.md) | 🟢 | design-system | 태블릿과 접는 폰 외부 화면의 배치 |
 | [ADR-209](./adr/ADR-209_inventory_items.md) | 🟢 | inventory | 인벤토리 |
+| [ADR-228](./adr/ADR-228_trade-history_page.md) | 🟢 | trade-history | 거래 내역 |

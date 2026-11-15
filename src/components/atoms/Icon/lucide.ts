@@ -77,6 +77,7 @@ import Trash2 from 'lucide-react-native/icons/trash-2'
 import RefreshCw from 'lucide-react-native/icons/refresh-cw'
 import RotateCcw from 'lucide-react-native/icons/rotate-ccw'
 import ScrollText from 'lucide-react-native/icons/scroll-text'
+import Search from 'lucide-react-native/icons/search'
 import Settings from 'lucide-react-native/icons/settings'
 import ShoppingCart from 'lucide-react-native/icons/shopping-cart'
 import Signal from 'lucide-react-native/icons/signal'
@@ -235,6 +236,8 @@ export const RefreshCwIcon = withIconInterop(RefreshCw)
 export const RotateCcwIcon = withIconInterop(RotateCcw)
 /** 기록된 드롭이 하나도 없을 때. `DropHistoryScreen` 빈 상태. */
 export const ScrollTextIcon = withIconInterop(ScrollText)
+/** 목록을 좁히는 입력 칸. `SearchField`. */
+export const SearchIcon = withIconInterop(Search)
 /** 토스트 액션이 기본 아이콘을 덮을 수 있음을 지키는 자리. `Toast` 테스트. */
 export const SettingsIcon = withIconInterop(Settings)
 

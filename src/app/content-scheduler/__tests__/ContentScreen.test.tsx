@@ -211,7 +211,7 @@ describe('ContentScreen: 빈 상태와 마운트', () => {
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'Groups',
       params: { screen: 'Settings', params: { openPicker: true } },
-    })
+    }, { pop: true })
     // **먼저 층을 바닥으로 되돌린다.** 이 화면은 하위 층에 살고 설정은 그룹 층에 사는데, 그룹 층은
     // 스택 바닥이라 그냥 이동하면 바닥에 있는 것을 한 번 더 쌓는다. 그러면 바는 ← 를 안 그리는데
     // 가장자리 스와이프는 뒤로 가는 어긋난 프레임이 된다.
