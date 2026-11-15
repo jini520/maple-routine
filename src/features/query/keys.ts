@@ -22,6 +22,8 @@ export const queryKeys = {
   bossProfitPeriod: (tab: BossCycle, periodKey: string) => ['boss-profit-period', tab, periodKey] as const,
   /** 드롭 기록 전 기간 묶음과 가뭄 요약. */
   dropHistory: () => ['drop-history'] as const,
+  /** 거래 내역의 줄과 캐릭터 드롭다운. 고를 수 있는 기간 전체를 한 번에 읽어 둘째 칸은 오늘이다. */
+  tradeHistory: (todayDateKey: string) => ['trade-history', todayDateKey] as const,
   /** 인벤토리 격자의 칸과 칸 얼굴. 사냥 조각을 세는 날이 둘째 칸이다. */
   inventory: (todayDateKey: string) => ['inventory', todayDateKey] as const,
   /** 오늘 강화 내역을 마지막으로 받은 시각. 수집기가 `setQueryData` 로 넣는다. */
