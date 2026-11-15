@@ -39,6 +39,23 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
   }
 
+  /**
+   * 접고 펴서 화면이 바뀔 때 방향을 다시 정하는 자리. 화면이 바뀌어도 UIKit 은 앞서 받은 방향 허용을 그대로 쓴다.
+   * 짧은 변이 600pt 미만인 화면(접은 커버)으로 바뀌었는데 가로로 누워 있으면 세로로 되돌린다.
+   */
+  func windowScene(
+    _ windowScene: UIWindowScene,
+    didUpdate previousCoordinateSpace: UICoordinateSpace,
+    interfaceOrientation previousInterfaceOrientation: UIInterfaceOrientation,
+    traitCollection previousTraitCollection: UITraitCollection
+  ) {
+    let screen = windowScene.screen.bounds.size
+    window?.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+    if min(screen.width, screen.height) < 600 && !windowScene.interfaceOrientation.isPortrait {
+      windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
+    }
+  }
+
   // Linking API
   func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
     for context in URLContexts {

@@ -139,7 +139,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-010](./adr/ADR-010_release_ios-scene.md) | 🟢 | release | 화면 회전 잠금과 iOS 씬 |
 | [ADR-011+138](./adr/ADR-011+138_live-update_protocol.md) | 🟢 | live-update | OTA 발행과 프로토콜 |
 | [ADR-012+139+183+210](./adr/ADR-012+139+183+210_live-update_prompt.md) | 🟢 | live-update | 업데이트 동의 모달과 적용 |
-| [ADR-013+151](./adr/ADR-013+151_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
+| [ADR-013+151+232](./adr/ADR-013+151+232_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
 | [ADR-014](./adr/ADR-014_ads_inline.md) | 🟢 | ads | 광고 배선 |
 | [ADR-015+156](./adr/ADR-015+156_site_guide.md) | 🟢 | site | 안내 사이트와 홍보 첫 화면 |
 | [ADR-016+167+181+197](./adr/ADR-016+167+181+197_server_platform.md) | ⚪ | server | 서버 구성 |
@@ -151,7 +151,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-022+081](./adr/ADR-022+081_error-resilience_failure-states.md) | 🟢 | error-resilience | 실패를 알리는 방법과 기간 데이터 상태 |
 | [ADR-023](./adr/ADR-023_error-resilience_resumable-task.md) | 🟢 | error-resilience | 이어서 하는 작업과 기록 판 알림 |
 | [ADR-024+196](./adr/ADR-024+196_auth_api-key.md) | 🟢 | auth | API 키 로그인과 키 재입력 |
-| [ADR-025+068+083+105+166+169+170+171+192+207](./adr/ADR-025+068+083+105+166+169+170+171+192+207_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
+| [ADR-025+068+083+105+166+169+170+171+192+207+233](./adr/ADR-025+068+083+105+166+169+170+171+192+207+233_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
 | [ADR-026](./adr/ADR-026_app-entry_onboarding.md) | 🟢 | app-entry | 온보딩 흐름 |
 | [ADR-027](./adr/ADR-027_app-entry_cold-start.md) | 🟢 | app-entry | 콜드 스타트 첫 화면 |
 | [ADR-028](./adr/ADR-028_character_tracking.md) | 🟢 | character | 추적 캐릭터 |
@@ -175,7 +175,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-044+066+076+111+120](./adr/ADR-044+066+076+111+120_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
 | [ADR-045](./adr/ADR-045_item-drop_effect.md) | 🟢 | item-drop | 고가 드롭 연출과 강조 |
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
-| [ADR-047+190+217+225](./adr/ADR-047+190+217+225_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 억 단위 판매 · 헥사와 구매 줄 합치기 · 주간 보스 수입 이전 · 메소마켓 환전 수수료 |
+| [ADR-047+190+217+225+231](./adr/ADR-047+190+217+225+231_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 억 단위 판매 · 헥사와 구매 줄 합치기 · 주간 보스 수입 이전 · 메소마켓 환전 수수료 · 펼친 강화 줄의 장비 그림 |
 | [ADR-048+070+118+126+214+226](./adr/ADR-048+070+118+126+214+226_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 · 아이템 구매 · 판매 메모 |
 | [ADR-049+127+157+199+206+211+215](./adr/ADR-049+127+157+199+206+211+215_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
@@ -216,5 +216,6 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-161+202](./adr/ADR-161+202_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
 | [ADR-187+213+216](./adr/ADR-187+213+216_game-data_item-catalog.md) | ⚪ | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 · 고르기 목록 칸 · 묶음 표 |
 | [ADR-188](./adr/ADR-188_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기 |
+| [ADR-191+230](./adr/ADR-191+230_design-system_screen-size.md) | 🟢 | design-system | 태블릿과 접는 폰 외부 화면의 배치 |
 | [ADR-209](./adr/ADR-209_inventory_items.md) | 🟢 | inventory | 인벤토리 |
 | [ADR-228](./adr/ADR-228_trade-history_page.md) | 🟢 | trade-history | 거래 내역 |

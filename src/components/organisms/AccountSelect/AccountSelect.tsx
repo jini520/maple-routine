@@ -23,7 +23,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  useWindowDimensions,
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -31,6 +30,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import type { AccountSummaryView } from '../../../features/character-manage/derivations'
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 import { useMapleIdNameOf } from '../../../features/maple-id/names'
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { worldNameOf } from '../../../lib/world/worlds'
 
 import { FACE_AVATAR_SIZE } from '../../../lib/face-crop'
@@ -128,7 +128,7 @@ export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
   const [contentHeight, setContentHeight] = useState<number | null>(null)
   const insets = useSafeAreaInsets()
   const { definition } = useThemeAppearance()
-  const { height: windowHeight } = useWindowDimensions()
+  const { windowHeightPx: windowHeight } = useScreenLayout()
 
   const close = useCallback((): void => {
     setIsOpen(false)

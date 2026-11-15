@@ -87,7 +87,7 @@ import {
   historyFloorDateKey,
   monthWindow,
 } from '../../features/cashbook/range'
-import { recordIconOf } from '../../features/cashbook/row-icon'
+import { enhancedItemIconOf, recordIconOf } from '../../features/cashbook/row-icon'
 import { loadSheetAccounts, type SheetAccount } from '../../features/cashbook/account-names'
 import { formatMesoCompact, formatMesoSigned } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
@@ -387,6 +387,8 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
  *
  * 결정석처럼 타일을 안 쓴다. 장비에는 초상이 없고 사용자가 여기서 보려는 것이 **어디에 썼나**
  * 라서, 이름과 금액이 한 줄에 나란히 서는 쪽이 답을 바로 준다.
+ *
+ * 이름 앞 그림은 판매 줄의 판처럼 못 찾으면 그림 자리 없이 이름부터 선다. 크기는 한 줄 20 · 두 줄 24 로 같은 높이의 판매 줄 · 합친 줄 칸과 같다.
  */
 function EnhancedItemRows(props: {
   rowKey: string
@@ -407,8 +409,19 @@ function EnhancedItemRows(props: {
             {formatMesoSigned(item.costMeso, '−')}
           </Text>
         )
+        const icon = enhancedItemIconOf(item)
+        const image = icon !== null && (
+          <Image
+            testID={`cashbook-item-image-${itemId}`}
+            source={icon}
+            className={`${props.starforce ? 'h-6 w-6' : 'h-5 w-5'} shrink-0`}
+            resizeMode="contain"
+            aria-hidden
+          />
+        )
         return props.starforce ? (
           <View key={itemId} testID={`cashbook-item-row-${itemId}`} className="flex-row items-center gap-2">
+            {image}
             <View className="min-w-0 flex-1">
               <Text numberOfLines={1} className="text-xs font-semibold text-text">
                 {item.targetItem}
@@ -428,6 +441,7 @@ function EnhancedItemRows(props: {
           </View>
         ) : (
           <View key={itemId} testID={`cashbook-item-row-${itemId}`} className="flex-row items-center gap-2">
+            {image}
             <Text numberOfLines={1} className="shrink text-11 text-text-muted">
               {item.targetItem}
             </Text>

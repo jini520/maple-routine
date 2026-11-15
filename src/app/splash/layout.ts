@@ -1,24 +1,26 @@
 /**
  * 2겹 스플래시의 자리 계산. 화면 크기와 상단 인셋을 받아 그림 · 잎과 이름 묶음 · 눈 조각의 크기와 위치를 낸다.
  *
- * 렌더와 떼어 둔 것은 화면 넷(390×844 · 폴드8 외부 · 듀오 외부 · SE 2)에서의 자리를 렌더 없이 보기 위해서다.
+ * 렌더와 떼어 둔 것은 바형 폰 · 낮은 화면 · 가로로 펼친 화면에서의 자리를 렌더 없이 보기 위해서다.
  */
 
 /** `assets/splash/body.png` 의 픽셀 크기. 떨어진 눈 조각을 지운 본체다. */
-const BODY_PX = { width: 1145, height: 1178 }
+export const BODY_PX = { width: 1145, height: 1178 }
 
 /**
- * 그림 폭은 화면 폭의 110 ~ 125%. 그림 높이가 화면 높이의 60% 를 넘지 않는 가장 넓은 폭이되, 110% 아래로는 줄이지
- * 않는다. 110% 는 넓고 낮은 화면에서도 옆이 비지 않는 값이다.
+ * `assets/splash/body-wide.png` 의 픽셀 크기. 본체 양옆을 이어 그린 그림이고 본체가 가로 가운데에 있다. 윗줄은 본체의
+ * 윗줄이고, 아래는 본체의 둥근 아랫부분을 잘라 낸 높이라 화면 바닥에 그대로 붙인다.
+ */
+export const ART_PX = { width: 3600, height: 1113 }
+
+/**
+ * 본체 폭은 그림 높이가 화면 높이의 60% 를 넘지 않는 가장 넓은 폭이되, 화면 폭의 125% 를 넘지 않는다. 화면보다 좁아지면
+ * 양옆은 확장 그림이 채운다.
  */
 const IMAGE_WIDTH_RATIO_MAX = 1.25
-const IMAGE_WIDTH_RATIO_MIN = 1.1
 const IMAGE_HEIGHT_CAP_RATIO = 0.6
 
-/** 아래로 흘리는 높이 비율. 모서리에 바탕이 안 비치는 가장 작은 값이다. 더 흘리면 오른쪽 아래 슬라임이 잘린다. */
-const IMAGE_BLEED_RATIO = 0.05
-
-/** 390 폭에서의 이름 글자 크기 · 잎 높이 비율 · 잎과 이름 사이 */
+/** 짧은 변 390 에서의 이름 글자 크기 · 잎 높이 비율 · 잎과 이름 사이 */
 const NAME_PX_AT_390 = 44
 const LEAF_TO_NAME = 1.17
 const GAP_PX_AT_390 = 8
@@ -26,8 +28,8 @@ const GAP_PX_AT_390 = 8
 /** 잎 경로의 격자 비율. `splash/leaf.ts` 의 viewBox 와 같다. */
 const LEAF_ASPECT = 127 / 130
 
-/** 화면 폭이 390 보다 넓은 만큼의 6할만 키운다. 넓은 화면이 좁은 화면보다 조금 크다. */
-const WIDTH_SCALE_SHARE = 0.6
+/** 짧은 변이 390 보다 긴 만큼의 6할만 키운다. 폭을 따르면 가로로 펼친 화면에서 이름이 그림보다 넓어진다. */
+const SHORT_SIDE_SCALE_SHARE = 0.6
 
 /**
  * 묶음 아랫변은 그림 상자 윗변보다 그림 높이의 3% 아래. 그림의 보이는 윗끝(깃발)은 상자 윗변에서 6.7% 아래라
@@ -62,12 +64,14 @@ export interface SplashViewport {
   topInset: number
 }
 
+/** 확장 그림의 자리. 화면 바닥에 붙는다 */
 export interface SplashImagePlacement {
   width: number
   height: number
   left: number
-  /** 음수다. 화면 아래로 흘러 나간 높이 */
-  bottom: number
+  /** 확장 그림 가운데의 본체 상자 크기. 묶음 자리와 눈 조각 크기를 이 크기로 잰다 */
+  bodyWidth: number
+  bodyHeight: number
 }
 
 export interface SplashLockupPlacement {
@@ -109,21 +113,22 @@ export interface SplashLayout {
 
 export function splashLayout(viewport: SplashViewport): SplashLayout {
   const cappedWidth = Math.round((viewport.height * IMAGE_HEIGHT_CAP_RATIO * BODY_PX.width) / BODY_PX.height)
-  const imageWidth = Math.max(
-    Math.round(viewport.width * IMAGE_WIDTH_RATIO_MIN),
-    Math.min(Math.round(viewport.width * IMAGE_WIDTH_RATIO_MAX), cappedWidth),
-  )
+  const imageWidth = Math.min(Math.round(viewport.width * IMAGE_WIDTH_RATIO_MAX), cappedWidth)
   const imageHeight = Math.round((imageWidth * BODY_PX.height) / BODY_PX.width)
-  const bleed = Math.round(imageHeight * IMAGE_BLEED_RATIO)
+  const artScale = imageWidth / BODY_PX.width
+  const artWidth = Math.round(ART_PX.width * artScale)
+  const artHeight = Math.round(ART_PX.height * artScale)
   const image: SplashImagePlacement = {
-    width: imageWidth,
-    height: imageHeight,
-    left: (viewport.width - imageWidth) / 2,
-    bottom: -bleed,
+    width: artWidth,
+    height: artHeight,
+    left: (viewport.width - artWidth) / 2,
+    bodyWidth: imageWidth,
+    bodyHeight: imageHeight,
   }
-  const imageTop = viewport.height - imageHeight + bleed
+  const imageTop = viewport.height - artHeight
 
-  const scale = 1 + ((viewport.width - 390) / 390) * WIDTH_SCALE_SHARE
+  const shortSide = Math.min(viewport.width, viewport.height)
+  const scale = 1 + ((shortSide - 390) / 390) * SHORT_SIDE_SCALE_SHARE
   const namePx = Math.round(NAME_PX_AT_390 * scale)
   const leafHeight = Math.round(namePx * LEAF_TO_NAME)
   const leafWidth = Math.round(leafHeight * LEAF_ASPECT)

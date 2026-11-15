@@ -3,7 +3,7 @@
  * 전체가 칸으로 보여야 가방으로 읽힌다.
  */
 import { useState } from 'react'
-import { Image, Pressable, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native'
+import { Image, Pressable, View, type LayoutChangeEvent } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Text } from '../../components/atoms'
@@ -14,7 +14,8 @@ import { inventoryItemIconOf, inventoryItemNameOf } from '../../features/invento
 import type { InventoryFace } from '../../features/inventory/load'
 import { useThemeStore } from '../../features/theme/store'
 import { useButtonNavigation } from '../../hooks/useButtonNavigation'
-import { resolveBottomBarMetrics } from '../../lib/bottom-bar-metrics'
+import { resolveBottomBarSpace } from '../../lib/bottom-bar-metrics'
+import { useScreenLayout } from '../../lib/screen-layout'
 import { getThemeDefinition } from '../../lib/theme/theme-registry'
 
 const COLUMNS = 5
@@ -131,7 +132,7 @@ export function InventoryGrid(props: {
   onPressCell: (cell: InventoryCell, rect: CellRect | null) => void
 }): React.JSX.Element {
   const halo = useCountHalo()
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions()
+  const layout = useScreenLayout()
   const insets = useSafeAreaInsets()
   const buttonNavigation = useButtonNavigation()
   const [width, setWidth] = useState(0)
@@ -139,8 +140,9 @@ export function InventoryGrid(props: {
   const [node, setNode] = useState<View | null>(null)
 
   const size = width === 0 ? 0 : (width - PANEL_PADDING * 2 - GAP * (COLUMNS - 1)) / COLUMNS
-  // 판이 화면 아래 끝(하단바 위)까지 닿을 만큼 줄을 채운다. 아이템이 그보다 많으면 아이템 수만큼 선다.
-  const bottom = windowHeight - insets.bottom - resolveBottomBarMetrics(windowWidth, buttonNavigation).spacePx
+  // 판이 화면 아래 끝(하단바 위, 오른쪽 레일 화면은 아래 여백 위)까지 닿을 만큼 줄을 채운다. 아이템이 그보다 많으면 아이템 수만큼 선다.
+  const bottom =
+    layout.windowHeightPx - insets.bottom - resolveBottomBarSpace(layout, buttonNavigation).spacePx - layout.edgeGapPx
   const fitRows = top === null || size <= 0 ? 0 : Math.floor((bottom - top - PANEL_PADDING * 2 + GAP) / (size + GAP))
   const rows = Math.max(Math.ceil(props.cells.length / COLUMNS), fitRows, 1)
   const empties = rows * COLUMNS - props.cells.length

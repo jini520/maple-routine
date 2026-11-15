@@ -9,6 +9,7 @@
  * 초점만으로는 **지금 칠 수 있나**를 못 가른다.
  *
  * iOS 는 `will`, 안드로이드는 `did` 를 구독한다. 양쪽 다 `did` 로 두면 iOS 에서 한 프레임 늦는다.
+ * show 이벤트라도 키보드 높이가 0 이면 뜬 것으로 보지 않는다.
  */
 
 import { useEffect, useState } from 'react'
@@ -20,8 +21,9 @@ export function useKeyboardShown(): boolean {
   useEffect(() => {
     const show = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => {
-        setIsShown(true)
+      (event) => {
+        // 화면을 돌리거나 접고 펼 때 iOS 는 높이 0 인 키보드의 show 를 보내고 hide 는 보내지 않는다. 높이로 가른다.
+        setIsShown(event.endCoordinates.height > 0)
       },
     )
     const hide = Keyboard.addListener(

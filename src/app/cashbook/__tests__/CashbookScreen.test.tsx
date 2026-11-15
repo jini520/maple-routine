@@ -2165,6 +2165,31 @@ describe('강화 줄', () => {
     expect(view.queryByTestId('cashbook-item-detail-arcane_umbra_knuckle')).toBeNull()
   })
 
+  // 판매 줄의 판과 같은 모양이다. 못 찾은 장비에 비슷한 그림을 붙이면 다른 장비를 그리게 된다.
+  it.each([
+    ['스타포스', 스타포스줄],
+    ['에디셔널 잠재능력', 에디셔널줄],
+  ])('%s 장비 줄은 이름 앞에 아이템 표의 그림이 서고, 그림을 못 찾은 장비는 이름부터 선다', async (갈래, 줄) => {
+    const 숨은것까지 = { includeHiddenElements: true }
+    그날줄을(고른날, [
+      {
+        ...줄,
+        items: [
+          { itemKey: 'giant_terror', targetItem: '거대한 공포', count: 3, costMeso: 500_000_000, fromStar: null, toStar: null },
+          { itemKey: null, targetItem: '타일런트 헤르메스 부츠', count: 2, costMeso: 240_000_000, fromStar: null, toStar: null },
+        ],
+      },
+    ])
+    const view = await 그리기()
+    await 이름으로누르기(view, new RegExp(`^낟낟 · 강화 ${갈래} .*펼치기$`))
+
+    expect(view.getByTestId('cashbook-item-image-giant_terror', 숨은것까지)).toBeTruthy()
+    const 첫칸 = view.getByTestId('cashbook-item-row-giant_terror', 숨은것까지).children[0] as { props: { testID?: string } }
+    expect(첫칸.props.testID).toBe('cashbook-item-image-giant_terror')
+    expect(view.queryByTestId('cashbook-item-image-타일런트 헤르메스 부츠', 숨은것까지)).toBeNull()
+    expect(view.getByTestId('cashbook-item-row-타일런트 헤르메스 부츠')).toHaveTextContent('타일런트 헤르메스 부츠2회−2.4억')
+  })
+
   // 한 번에 하나만 펼친다. 둘이 같은 장비를 만졌으면 판이 둘 서서 신원이 겹친다.
   it('다른 갈래를 펼치면 앞의 것이 접힌다', async () => {
     const view = await 그리기()

@@ -12,6 +12,7 @@
  * 페이드 · 토스트). 바 쪽에 두면 컴포넌트가 내비게이션을 import 하고 셸 쪽에 두면 바가 화면 셸의 내부를
  * 알게 된다. 어느 쪽도 아닌 순수 계산이라 여기 둔다.
  */
+import type { ScreenLayout } from './screen-layout'
 
 /**
  * 바가 창 가장자리에서 남기는 **최소** 여백. 3버튼 내비게이션 바 위에서 띄우는 높이도 이 값이라 세 방향 간격이 같다.
@@ -63,7 +64,7 @@ export interface BottomBarMetrics {
 }
 
 /**
- * `useWindowDimensions().width` 와 `useButtonNavigation()` 으로 정하는 바의 치수 전부.
+ * 창 폭과 `useButtonNavigation()` 으로 정하는 가로 바의 치수 전부.
  *
  * **폭의 상한이 높이의 상한을 겸한다**. 높이를 (이미 상한에 걸린) 폭에서 계산하기 때문이다.
  * 상한 값을 따로 적으면 폭은 멈췄는데 높이만 계속 자라는 조합이 만들어지고, 그것은 이 함수가
@@ -88,4 +89,64 @@ export function resolveBottomBarMetrics(windowWidthPx: number, buttonNavigation:
 /** 바 폭에서 나오는 높이. 설정의 하단 탭 순서 미리보기도 바보다 좁은 폭에서 이 값으로 같은 비율을 지킨다 */
 export function barHeightOf(widthPx: number): number {
   return Math.round(Math.max(BAR_MIN_HEIGHT, widthPx * HEIGHT_PER_WIDTH))
+}
+
+/** 하단바가 화면 아래에서 차지하는 세로. 콘텐츠 끝 여백 · 페이드 · 토스트 · ＋ 가 그 위에 선다. */
+export interface BottomBarSpace {
+  heightPx: number
+  liftPx: number
+  spacePx: number
+}
+
+/**
+ * 지금 구간에서 하단바가 화면 아래에서 차지하는 세로. 세로 막대는 옆에 서서 0 이다.
+ *
+ * @param buttonNavigation 아래에 3버튼 내비게이션 바가 있는가
+ */
+export function resolveBottomBarSpace(layout: ScreenLayout, buttonNavigation: boolean): BottomBarSpace {
+  if (layout.kind === 'side-rail') return { heightPx: 0, liftPx: 0, spacePx: 0 }
+
+  const { heightPx, liftPx, spacePx } = resolveBottomBarMetrics(layout.contentWidthPx, buttonNavigation)
+  return { heightPx, liftPx, spacePx }
+}
+
+/** 세로 막대의 폭. 가장 긴 라벨 `파티 스케줄` 이 알약(폭 − 안쪽 여백 × 2) 안에 드는 폭. */
+export const RAIL_BAR_WIDTH = 64
+
+/** 세로 막대 한 칸의 높이. 아이콘 · 간격 · 라벨(44)에 위아래 6 씩. */
+export const RAIL_BAR_ITEM_HEIGHT = 56
+
+export interface RailBarMetrics {
+  widthPx: number
+  heightPx: number
+  /** 창 왼쪽 끝에서 막대 왼쪽 끝까지. */
+  leftPx: number
+  /** 창 위 끝에서 막대 위 끝까지. */
+  topPx: number
+  itemHeightPx: number
+}
+
+/**
+ * 오른쪽 레일 화면의 세로 막대 치수. 레일 폭은 OS 가 정해 창 크기를 따라 늘어나지 않으므로 고정값이다.
+ *
+ * 가로 가운데는 레일의 가운데다. OS 가 레일 위에 그리는 막대의 자리는 앱에 주어지지 않는다.
+ */
+export function resolveRailBarMetrics(options: {
+  layout: ScreenLayout
+  /** `useBottomSafeAreaPx()`. 막대 아래 끝이 여기 닿는다. */
+  bottomSafeAreaPx: number
+  itemCount: number
+  /** 막대 안쪽 여백. 가로 바의 `BAR_PADDING` 과 같은 값. */
+  paddingPx: number
+}): RailBarMetrics {
+  const { layout, bottomSafeAreaPx, itemCount, paddingPx } = options
+  const heightPx = RAIL_BAR_ITEM_HEIGHT * itemCount + paddingPx * 2
+
+  return {
+    widthPx: RAIL_BAR_WIDTH,
+    heightPx,
+    leftPx: layout.contentWidthPx + (layout.railWidthPx - RAIL_BAR_WIDTH) / 2,
+    topPx: layout.windowHeightPx - bottomSafeAreaPx - heightPx,
+    itemHeightPx: RAIL_BAR_ITEM_HEIGHT,
+  }
 }

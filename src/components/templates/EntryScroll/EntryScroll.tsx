@@ -15,6 +15,7 @@ import { Platform, ScrollView, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { useScrollIndicatorStyle } from '../../../theme/context'
 import { BackButton } from '../../molecules/BackButton/BackButton'
 import { PageHeader } from '../PageHeader/PageHeader'
@@ -54,6 +55,10 @@ export function EntryScroll({
   // `marginTop` 은 헤더 여백이 아니라 콘텐츠 여백이라 축이 다르다. 하단은 반대로 **탭바 없는 화면의
   // 규칙**(아래) 그 자체라, 하한이 깔린 값을 본다.
   const bottomSafeAreaPx = useBottomSafeAreaPx()
+  // 오른쪽 레일 화면에서는 머리 · 스크롤 · 버튼 줄이 모두 레일을 비우고, 위아래에 여백을 더한다.
+  const layout = useScreenLayout()
+  const railStyle = layout.railWidthPx === 0 ? undefined : { marginRight: layout.railWidthPx }
+  const bare = footer === undefined && onBack === undefined
   // 버튼 줄이 없는 화면(로그인)은 하위 페이지와 같다. 안드로이드는 스크롤 상자를 내비게이션 바 위에서 끝낸다.
   // 투명한 3버튼 바 뒤까지 상자가 내려가 있으면 굴릴 때 글자가 버튼 사이로 비친다.
   const bottom = resolveScreenBottomInset({
@@ -62,6 +67,7 @@ export function EntryScroll({
     bottomSafeAreaPx,
     barSpacePx: 0,
     platform: Platform.OS,
+    edgeGapPx: layout.edgeGapPx,
   })
   const indicatorStyle = useScrollIndicatorStyle()
   // 고정 바가 덮는 높이. 잰 값이 오기 전에는 0이라 마지막 행이 한 프레임 가려질 수 있지만, 그
@@ -77,8 +83,9 @@ export function EntryScroll({
       // 마진이지 패딩이 아니다. 인디케이터는 콘텐츠가 아니라 스크롤 상자 위에 그려진다. 버튼 줄이 있으면
       // 불투명한 그 줄이 내비게이션 바까지 덮으므로 상자를 올리지 않는다.
       style={{
-        marginTop: onBack === undefined ? insets.top : 0,
+        marginTop: onBack === undefined ? insets.top + layout.edgeGapPx : 0,
         marginBottom: footer === undefined ? bottom.portBottomPx : 0,
+        ...(bare ? railStyle : null),
       }}
       contentContainerClassName={
         center === true ? 'items-center justify-center px-4' : onBack === undefined ? 'px-4 pt-8 pb-4' : 'px-4 pt-4 pb-4'
@@ -102,10 +109,10 @@ export function EntryScroll({
   )
 
   // 머리도 바도 없는 화면은 상자를 하나도 더 두르지 않는다.
-  if (footer === undefined && onBack === undefined) return scroller
+  if (bare) return scroller
 
   return (
-    <View className="flex-1">
+    <View className="flex-1" style={railStyle}>
       {onBack !== undefined && (
         <PageHeader>
           <PageHeaderTitleRow className="justify-between gap-2">
@@ -120,7 +127,7 @@ export function EntryScroll({
         <View
           testID="entry-action-bar"
           className="absolute inset-x-0 bottom-0 bg-bg px-4 pt-3"
-          style={{ paddingBottom: bottomSafeAreaPx + 12 }}
+          style={{ paddingBottom: bottomSafeAreaPx + 12 + layout.edgeGapPx }}
           onLayout={(event) => setActionBarHeightPx(event.nativeEvent.layout.height)}
         >
           {footer}
