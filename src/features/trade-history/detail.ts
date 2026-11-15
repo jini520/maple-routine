@@ -6,7 +6,7 @@ import { dropPayoutMeso } from '../../lib/drop/drop-price'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { IncomeRecord } from '../../storage/income'
 import type { SpendRecord } from '../../storage/spend'
-import { incomeMesoOf, recordCardOf, spendMesoOf, type ManualDayRecord } from '../cashbook/records'
+import { incomeMesoOf, spendMesoOf, type ManualDayRecord } from '../cashbook/records'
 import type { TradeRow } from './rows'
 
 export interface TradeDetailCell {
@@ -22,8 +22,6 @@ export interface TradeDetail {
   cells: TradeDetailCell[]
   amount: { value: number; unit: '메소' | '원' }
 }
-
-const DROP_TITLE = '보스 드롭 판매'
 
 function meso(label: string, value: number): TradeDetailCell {
   return { label, value: value.toLocaleString(), unit: '메소' }
@@ -76,8 +74,7 @@ function spendCells(record: SpendRecord): TradeDetailCell[] {
   return [meso(label, perUnit(total, record.quantity))]
 }
 
-function entryDetail(entry: ManualDayRecord): TradeDetail {
-  const title = recordCardOf({ ...entry, characterName: '' }).title
+function entryDetail(entry: ManualDayRecord, title: string): TradeDetail {
   if (entry.kind === 'income') {
     const record = entry.record
     const hunt = record.category === 'hunting' ? record.hunt : null
@@ -99,10 +96,10 @@ function shareText(drop: BossDropRecord): string | null {
   return null
 }
 
-function dropDetail(drop: BossDropRecord): TradeDetail {
+function dropDetail(drop: BossDropRecord, title: string): TradeDetail {
   const share = shareText(drop)
   return {
-    title: DROP_TITLE,
+    title,
     cells: [
       meso('판매 가격', drop.priceMeso ?? 0),
       ...(share === null ? [] : [{ label: '분배 비율', value: share, unit: null }]),
@@ -113,6 +110,9 @@ function dropDetail(drop: BossDropRecord): TradeDetail {
   }
 }
 
+/** 머리의 기록 이름은 줄 둘째 줄의 경로 이름과 같다. 줄과 시트가 같은 기록으로 읽히게 한다. */
 export function tradeDetailOf(row: TradeRow): TradeDetail {
-  return row.source.kind === 'entry' ? entryDetail(row.source.entry) : dropDetail(row.source.drop)
+  return row.source.kind === 'entry'
+    ? entryDetail(row.source.entry, row.originName)
+    : dropDetail(row.source.drop, row.originName)
 }

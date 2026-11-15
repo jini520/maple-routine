@@ -980,6 +980,11 @@ const AUTO_TITLES: Record<AutoDayRecord['kind'], string> = {
   enhancement: '강화',
 }
 
+/** 자동 줄의 분류 이름(`보스 드롭 판매` 등). 거래 내역이 드롭 줄과 상세 시트 머리에 같은 이름을 쓴다. */
+export function autoRecordTitleOf(kind: AutoDayRecord['kind']): string {
+  return AUTO_TITLES[kind]
+}
+
 /** 하루 목록 카드의 두 줄. 둘째 줄이 없으면 `null` 이다. */
 export interface RecordCard {
   title: string

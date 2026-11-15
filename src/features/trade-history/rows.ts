@@ -13,8 +13,10 @@ import { searchItems } from '../../lib/item-search'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { ImageAssetRef } from '../../types/image-asset'
 import {
+  autoRecordTitleOf,
   dropTradeQuantityOf,
   incomeMesoOf,
+  recordCardOf,
   recordCashOf,
   spendMesoOf,
   tradeLineOf,
@@ -52,6 +54,8 @@ export interface TradeRow {
   owner: TradeOwner | null
   /** 캐릭터 이름이나 메이플 ID 이름. 주인을 모르는 옛 기록은 빈 문자열 */
   ownerName: string
+  /** 기록이 나온 경로. 가계부 하루 목록 첫 줄의 분류 이름이자 상세 시트 머리의 기록 이름이다 */
+  originName: string
   /** 부호와 통화가 붙은 금액(`+9,975만` · `−5,500원`) */
   amountText: string
   memo: string | null
@@ -116,6 +120,7 @@ function entryRowOf(entry: ManualDayRecord): TradeRow | null {
     icon: huntDetail !== null ? solErdaFragmentIcon() : recordIconOf(entry),
     owner: ownerOfRecord(record),
     ownerName: entry.characterName,
+    originName: recordCardOf({ ...entry, characterName: '' }).title,
     amountText,
     memo: record.memo ?? null,
     searchName: line.searchable ? line.name : null,
@@ -136,6 +141,7 @@ function dropRowOf(sold: TradeDrop): TradeRow {
     icon: dropItemIconOf(drop.itemKey),
     owner: { kind: 'character', ocid: drop.ocid },
     ownerName: sold.characterName,
+    originName: autoRecordTitleOf('dropSale'),
     // 가계부의 드롭 판매 줄과 같은 내 몫이다(분배와 수수료를 뗀 값).
     amountText: formatMesoSigned(dropPayoutMeso(drop), '+'),
     memo: null,
@@ -143,6 +149,14 @@ function dropRowOf(sold: TradeDrop): TradeRow {
     sortAt: drop.pricedAt ?? drop.recordedAt,
     source: { kind: 'drop', drop, characterName: sold.characterName },
   }
+}
+
+/**
+ * 줄 둘째 줄의 왼쪽 글자. `경로 이름 · 캐릭터` 이고, 주인을 모르는 옛 기록은 경로 이름만이다. 같은 아이템을 어디서 사고팔았는지
+ * 줄에서 가르려고 둔다.
+ */
+export function tradeOwnerLineOf(row: TradeRow): string {
+  return row.ownerName === '' ? row.originName : `${row.originName} · ${row.ownerName}`
 }
 
 /** 아이템을 사고판 기록의 줄. 최신 날짜가 위이고, 같은 날은 나중에 적은 기록이 위다. */
