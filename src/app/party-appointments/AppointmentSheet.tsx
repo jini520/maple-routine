@@ -55,7 +55,7 @@ import { AppointmentSummaryTiles } from './AppointmentSummaryTiles'
 import { AppointmentTimeBand } from './AppointmentTimeBand'
 import { BossDifficultyPopover } from '../../components/organisms/BossPicker/BossDifficultyPopover'
 import { BossPickerBody } from '../../components/organisms/BossPicker/BossPickerBody'
-import { isPicked } from '../../features/party-appointments/boss-picker'
+import { isPicked, scheduledBossKeys } from '../../features/party-appointments/boss-picker'
 import { PickerCharacterSelect } from './PickerCharacterSelect'
 import { BossPickerTray } from '../../components/organisms/BossPicker/BossPickerTray'
 import { useBossPicker } from './useBossPicker'
@@ -398,6 +398,15 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
       <AppointmentMemoField readOnly memo={draft.memo} onPress={() => undefined} />
     </View>
   )
+  // 보스 추가 단계에서만 센다. 다른 단계에서는 타일이 없다.
+  const registeredBossKeys = inBosses
+    ? scheduledBossKeys({
+        appointments,
+        ocid: picker.ocid,
+        dateKey: draft.startDateKey,
+        excludeId: target?.occurrence.appointment.id,
+      })
+    : null
   const bossesBody = (
     <BossPickerBody
       character={<PickerCharacterSelect characters={picker.characters} ocid={picker.ocid} onSelect={picker.setOcid} />}
@@ -408,6 +417,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         { key: 'all', label: '모든 보스', tiles: picker.sections.all, onlyWithAll: true },
       ]}
       isSelected={(tile) => isPicked(picker.picked, picker.ocid, tile.bossKey)}
+      isRegistered={(tile) => registeredBossKeys?.has(tile.bossKey) === true}
       onPressTile={picker.pressTile}
     />
   )

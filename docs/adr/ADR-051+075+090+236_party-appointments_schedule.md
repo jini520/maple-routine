@@ -372,7 +372,7 @@ SQLite 를 쓰지 않는 이유는 스케줄이 한 주에 몇 건뿐이고 다�
 | `storage/__tests__/party-schedule-view.spec.ts` | 결정 6: 고른 적 없거나 모르는 값은 목록, 보드를 고르면 다음에도 보드인지 본다 |
 | `app/party-appointments/__tests__/AppointmentBossList.test.tsx` | 결정 3 · 7: 캐릭터 머리 줄과 순서, 묶음 안에서만 끌리는지, 상세도 묶는지 본다 |
 | `components/organisms/BossPicker/__tests__/BossPickerTray.test.tsx` | 결정 8: 묶음과 정렬 줄, 첫 보스의 180ms 출발, 사라질 때 애니메이션이 없는지 본다 |
-| `components/organisms/BossPicker/__tests__/BossPickerBody.test.tsx` | 결정 8: 토글을 아랫줄에 두면 캐릭터 줄에 토글이 없는지, 별칭 이름 · 체크 원 · 잠긴 타일을 본다. 결정 15: `등록됨` 이 붙은 타일만 알약이 서고, 그 타일도 흐리지 않고 누르면 부르는지 본다 |
+| `components/organisms/BossPicker/__tests__/BossPickerBody.test.tsx` | 결정 8: 토글을 아랫줄에 두면 캐릭터 줄에 토글이 없는지, 별칭 이름 · 체크 원 · 잠긴 타일을 본다. 결정 15: `등록됨` 이 붙은 타일만 알약이 서고, 그 타일도 흐리지 않고 막혀 있지 않은지 본다 |
 | `components/organisms/BossPicker/__tests__/BossDifficultyPopover.test.tsx` | 결정 8: 팝오버가 넓은 쪽에 뜨는지, 측정 전에는 안 보이는지 본다 |
 | `app/party-appointments/__tests__/useBossPicker.test.tsx` | 결정 8: 드롭다운이 대표 캐릭터나 추적 첫 캐릭터로 열리는지 본다 |
 
