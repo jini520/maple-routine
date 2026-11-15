@@ -15,7 +15,8 @@
 | `app/stats/reveal.ts` | 화면에 들어온 카드의 그래프를 자라게 하는 진행값 |
 | `features/stats/aggregate.ts` | 합계 · 추이 · 누적 · 캐릭터별 · 항목별 · 사냥 · 보스별 집계. 사냥 기록을 사냥 메소와 조각 판매 대금으로 나누는 `huntSplitOf` |
 | `features/stats/periods.ts` | 고른 기간에서 추이 범위(8주 · 6개월)와 누적 범위를 만든다 |
-| `features/stats/load.ts` | 캐릭터 그림 주소 · 누적 시작 날짜 |
+| `features/stats/load.ts` | 캐릭터 그림 주소 · 누적 시작 날짜 · 조각 장부 |
+| `features/stats/fragment-query.ts` | 사냥 수입 카드의 보유 조각을 세는 조각 장부 쿼리 `useFragmentMoves`. 수입 · 지출 표의 판이 오르면 다시 읽는다 |
 | `features/cashbook/ledger-query.ts` | 날짜별 줄 쿼리 `ledgerDays(from, to)`. 기록 표의 판이 오르면 다시 읽는다([[ADR-142]] 결정 6) |
 | `storage/stats-cumulative-start.ts` | 누적 시작 날짜(Preferences `statsCumulativeStart`) |
 | `theme/theme-vars.ts` 의 `resolveStatsSection` | 카드 바탕색 |
