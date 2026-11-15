@@ -38,8 +38,8 @@ describe('안드로이드 상단 안전영역에는 하한이 있다', () => {
 
 // 아이폰 듀오 외부 화면은 위쪽 안전영역이 0 이라 그대로 두면 헤더가 화면 위 끝에 붙는다.
 describe('오른쪽 레일 화면은 위쪽 안전영역에 위아래 여백을 더한다', () => {
-  const 듀오_외부 = resolveScreenLayout({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
-  const 바형_폰 = resolveScreenLayout({ windowWidthPx: 402, windowHeightPx: 874, insetRightPx: 0 })
+  const 듀오_외부 = resolveScreenLayout({ platform: 'ios', windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+  const 바형_폰 = resolveScreenLayout({ platform: 'ios', windowWidthPx: 402, windowHeightPx: 874, insetRightPx: 0 })
 
   it('side-rail 이면 인셋 0 에 24 를 더한다', () => {
     expect(resolveTopSafeAreaPx({ insetTopPx: 0, platform: 'ios', edgeGapPx: 듀오_외부.edgeGapPx })).toBe(24)

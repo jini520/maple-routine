@@ -6,7 +6,7 @@ import { resolveScreenLayout } from '../screen-layout'
 
 const 아래_안전영역 = 34
 
-function placementOf(window: { windowWidthPx: number; windowHeightPx: number; insetRightPx: number }) {
+function placementOf(window: { windowWidthPx: number; windowHeightPx: number; insetRightPx: number; platform: string }) {
   const layout = resolveScreenLayout(window)
   return resolveFabPlacement({
     layout,
@@ -16,7 +16,7 @@ function placementOf(window: { windowWidthPx: number; windowHeightPx: number; in
 }
 
 describe('오른쪽 레일 화면의 ＋ 는 콘텐츠 오른쪽 아래에 뜬다', () => {
-  const placement = placementOf({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+  const placement = placementOf({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84, platform: 'ios' })
 
   // 가로 바가 아래에 없으니 바의 몫이 빠지고, 아래쪽 안전영역 위로 12 만 띄운다.
   it('아래는 아래쪽 안전영역 + 12 다', () => {
@@ -29,7 +29,7 @@ describe('오른쪽 레일 화면의 ＋ 는 콘텐츠 오른쪽 아래에 뜬�
 })
 
 describe('바형 폰은 지금 자리 그대로다', () => {
-  const window = { windowWidthPx: 402, windowHeightPx: 874, insetRightPx: 0 }
+  const window = { windowWidthPx: 402, windowHeightPx: 874, insetRightPx: 0, platform: 'ios' }
   const placement = placementOf(window)
   const layout = resolveScreenLayout(window)
 

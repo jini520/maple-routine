@@ -5,14 +5,14 @@
  * 창 크기가 필요한 곳은 `useWindowDimensions` 대신 `useScreenLayout()` 을 쓴다(`window-width-policy.test.ts`).
  */
 import { useContext } from 'react'
-import { useWindowDimensions } from 'react-native'
+import { Platform, useWindowDimensions } from 'react-native'
 import { SafeAreaInsetsContext } from 'react-native-safe-area-context'
 
 /** 오른쪽 레일 화면의 위아래 여백. 위쪽 안전영역이 0 이라 없으면 헤더가 화면 위 끝에 붙는다. */
 export const SIDE_RAIL_EDGE_GAP_PX = 24
 
 /**
- * `side-rail` 은 오른쪽에 레일이 있는 화면(아이폰 듀오의 외부 · 안쪽 화면), `phone` 은 그 밖 전부다.
+ * `side-rail` 은 오른쪽에 레일이 있는 iOS 화면(아이폰 듀오의 외부 · 안쪽 화면), `phone` 은 그 밖 전부다.
  * 태블릿은 전용 배치를 두지 않아 `phone` 과 같은 배치를 쓴다.
  */
 export type ScreenLayoutKind = 'phone' | 'side-rail'
@@ -35,10 +35,13 @@ export function resolveScreenLayout(options: {
   windowHeightPx: number
   /** `useSafeAreaInsets().right`. */
   insetRightPx: number
+  /** `Platform.OS`. */
+  platform: string
 }): ScreenLayout {
   const { windowWidthPx, windowHeightPx, insetRightPx } = options
   // 화면 크기로 가르지 않는다. 듀오 안쪽 화면은 짧은 변이 600 을 넘어도 외부 화면과 같은 레일이 있다.
-  const sideRail = insetRightPx > 0
+  // 안드로이드의 옆 안전영역은 화면 구멍 자리라 세로 막대가 들어가지 않는다. 그래서 iOS 에서만 가른다.
+  const sideRail = options.platform === 'ios' && insetRightPx > 0
 
   return {
     kind: sideRail ? 'side-rail' : 'phone',
@@ -61,5 +64,5 @@ const NO_INSETS = { top: 0, right: 0, bottom: 0, left: 0 }
 export function useScreenLayout(): ScreenLayout {
   const { width, height } = useWindowDimensions()
   const insets = useContext(SafeAreaInsetsContext) ?? NO_INSETS
-  return resolveScreenLayout({ windowWidthPx: width, windowHeightPx: height, insetRightPx: insets.right })
+  return resolveScreenLayout({ windowWidthPx: width, windowHeightPx: height, insetRightPx: insets.right, platform: Platform.OS })
 }

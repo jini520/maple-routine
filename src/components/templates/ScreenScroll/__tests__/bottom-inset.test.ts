@@ -124,7 +124,7 @@ describe('탭바가 없으면(하위 페이지) 플랫폼이 가른다', () => {
 
 // 세로 막대는 옆에 서므로 콘텐츠 끝에 바의 몫을 남기지 않는다. 대신 기기 끝에 붙지 않게 여백 24 를 남긴다.
 describe('오른쪽 레일 화면', () => {
-  const 듀오_외부 = resolveScreenLayout({ windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+  const 듀오_외부 = resolveScreenLayout({ platform: 'ios', windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
   const 레일_화면 = (hasTabBar: boolean): Parameters<typeof resolveScreenBottomInset>[0] => ({
     ...화면(hasTabBar, 'ios', 홈인디케이터),
     barSpacePx: resolveBottomBarSpace(듀오_외부, false).spacePx,
