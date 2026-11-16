@@ -61,7 +61,6 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
   // 429 모달의 `다른 키 입력` 이 연 키 입력 시트. 알림을 닫은 뒤에도 서 있어야 해서 알림과 따로 든다.
   const [replacing, setReplacing] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [keyRole, setKeyRole] = useState<'main' | 'sub' | null>(null)
 
   const rateLimited = apiKeyNotice?.kind === 'rateLimited' ? apiKeyNotice : null
   // 무효 키 본문의 가는 곳. 그 알림의 것일 때만 쓴다. 정해지기 전에는 모달을 그리지 않는다. 읽던 본문이 바뀌면 안 된다.
@@ -81,20 +80,22 @@ export function ApiKeyNoticeModal(): React.JSX.Element | null {
     }
   }, [invalid])
   const destination = invalid !== null && destined?.notice === invalid ? destined.destination : null
+  // 429 키가 본 키인지 부계정 키인지. 무효 키의 가는 곳과 같이 그 알림의 것일 때만 쓴다. 다음 알림의 답이 오기 전에 앞 알림의 답이 남으면 안 된다.
+  const [roleOf, setRoleOf] = useState<{ notice: ApiKeyNotice; role: 'main' | 'sub' | null } | null>(null)
   useEffect(() => {
     if (rateLimited === null) return
     let alive = true
-    setKeyRole(null)
     void useAuthStore
       .getState()
       .rateLimitedKeyRole(rateLimited.apiKey)
       .then((role) => {
-        if (alive) setKeyRole(role)
+        if (alive) setRoleOf({ notice: rateLimited, role })
       })
     return () => {
       alive = false
     }
   }, [rateLimited])
+  const keyRole = rateLimited !== null && roleOf?.notice === rateLimited ? roleOf.role : null
 
   const retry = (): void => {
     useAuthStore.getState().retryRateLimitNotice()

@@ -825,6 +825,15 @@ export function CashbookScreen(): React.JSX.Element {
   /** 새 수입 시트를 이 분류의 폼으로 바로 연다. today 빠른 이동으로 들어올 때만 있다. */
   const [startCategory, setStartCategory] = useState<IncomeCategoryKey | undefined>(quickLinkCategory)
   /**
+   * 마지막으로 받은 `거래로 이동` 기록. 손입력이면 받은 그 렌더에서 수정 시트를 연다. 효과에서 열면 그린 뒤에 상태를 바꿔 한 번
+   * 더 그린다. 파라미터를 지우고 기간을 옮기는 일은 아래 효과가 한다.
+   */
+  const [receivedTrade, setReceivedTrade] = useState<typeof tradeTarget>(undefined)
+  if (tradeTarget !== undefined && tradeTarget !== receivedTrade) {
+    setReceivedTrade(tradeTarget)
+    if (tradeTarget.kind === 'entry') setSheet(tradeTarget.entry)
+  }
+  /**
    * 펼쳐 둔 결정석 줄. 한 번에 하나다. 값은 `rowKeyOf` 가 만든 줄의 신원
    * (`bossCrystal:{ocid}`)이고, 그것이 날짜를 안 들고 있으므로 날을 바꿀 때 여기서 지워야 한다.
    */
@@ -851,34 +860,6 @@ export function CashbookScreen(): React.JSX.Element {
   useEffect(() => {
     if (quickLinkCategory !== undefined) navigation.setParams({ incomeCategory: undefined })
   }, [quickLinkCategory, navigation])
-
-  /**
-   * `거래로 이동` 으로 온 기록. 손입력은 수정 시트를, 드롭은 가격 입력 카드를 바로 열고, 그 날짜가 든 기간으로 옮겨 날짜를 고르는
-   * 일은 거래 내역이 빠지는 전환이 끝난 뒤에 한다. 기간을 옮기면 조회 회차와 달 읽기가 시작되는데, 전환 · 시트가 열리는 때와
-   * 겹치면 둘 다 느려진다. 시트는 그 기록의 날짜로 열려 달 데이터가 없어도 된다. 날짜는 조회 한도 안이다. 거래 내역이 가계부
-   * 시트와 같은 범위에서만 기록을 읽기 때문이다.
-   */
-  useEffect(() => {
-    if (tradeTarget === undefined) return
-    navigation.setParams({ trade: undefined })
-    // 전환 이벤트가 오지 않는 이동(이미 가계부가 보이던 때)에도 옮기도록 시간 제한을 둔다. 전환은 0.35초쯤이다.
-    runAfterTransition(() => {
-      if (isWeekly) setWeekStartKey(resetWeekStartOf(tradeTarget.dateKey))
-      selectDate(tradeTarget.dateKey)
-    }, 600)
-    if (tradeTarget.kind === 'entry') {
-      setSheet(tradeTarget.entry)
-      return
-    }
-    void openDropPriceCardOf({
-      drop: tradeTarget.drop,
-      characterName: tradeTarget.characterName,
-      gradeContext,
-      onError: (message) => useToastStore.getState().showError(message),
-    })
-    // 받은 기록이 바뀔 때만 돈다. 기간 · 등급이 바뀔 때 다시 열면 닫은 시트가 되살아난다.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tradeTarget])
 
   const monthWeeks = buildCalendarMonth(monthKey)
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
@@ -1114,6 +1095,33 @@ export function CashbookScreen(): React.JSX.Element {
       setMonthKey(nextMonthOfDay)
     }
   }
+
+  /**
+   * `거래로 이동` 으로 온 기록. 손입력의 수정 시트는 위에서 받은 렌더에 열었고, 드롭은 가격 입력 카드를 바로 연다. 그 날짜가 든
+   * 기간으로 옮겨 날짜를 고르는 일은 거래 내역이 빠지는 전환이 끝난 뒤에 한다. 기간을 옮기면 조회 회차와 달 읽기가 시작되는데,
+   * 전환 · 시트가 열리는 때와 겹치면 둘 다 느려진다. 시트는 그 기록의 날짜로 열려 달 데이터가 없어도 된다. 날짜는 조회 한도
+   * 안이다. 거래 내역이 가계부 시트와 같은 범위에서만 기록을 읽기 때문이다.
+   *
+   * `selectDate` 를 부르므로 그 선언 뒤에 둔다.
+   */
+  useEffect(() => {
+    if (tradeTarget === undefined) return
+    navigation.setParams({ trade: undefined })
+    // 전환 이벤트가 오지 않는 이동(이미 가계부가 보이던 때)에도 옮기도록 시간 제한을 둔다. 전환은 0.35초쯤이다.
+    runAfterTransition(() => {
+      if (isWeekly) setWeekStartKey(resetWeekStartOf(tradeTarget.dateKey))
+      selectDate(tradeTarget.dateKey)
+    }, 600)
+    if (tradeTarget.kind === 'entry') return
+    void openDropPriceCardOf({
+      drop: tradeTarget.drop,
+      characterName: tradeTarget.characterName,
+      gradeContext,
+      onError: (message) => useToastStore.getState().showError(message),
+    })
+    // 받은 기록이 바뀔 때만 돈다. 기간 · 등급이 바뀔 때 다시 열면 닫은 드롭 카드가 되살아난다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tradeTarget])
 
   function showWeekly(): void {
     setWeekStartKey(resetWeekStartOf(selectedDateKey))
