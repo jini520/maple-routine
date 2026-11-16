@@ -51,6 +51,8 @@ export interface WidgetSelectProps {
    * MASPI 목록의 월드 고르개처럼 카드 밖에 둘 때 쓴다
    */
   onPage?: boolean
+  /** 목록의 최대 높이. 넘으면 그 안에서 스크롤된다. 없으면 화면에 남은 높이까지 선다 */
+  listMaxHeight?: number
 }
 
 export function WidgetSelect(props: WidgetSelectProps): React.JSX.Element {
@@ -67,6 +69,7 @@ export function WidgetSelect(props: WidgetSelectProps): React.JSX.Element {
       testID={props.testID}
       listAlign="end"
       listFitsContent
+      listMaxHeight={props.listMaxHeight}
       renderOption={
         hasIcon
           ? (option, isSelected) => (

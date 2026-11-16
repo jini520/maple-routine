@@ -36,6 +36,12 @@ type Kind = (typeof KINDS)[number]
 /** 장비 시세는 일반 거래권 하나라 서버가 월드를 보지 않는다. 상세 쿼리가 월드마다 갈리지 않게 이 값으로 부른다. */
 const EQUIPMENT_SCOPE = 'general'
 
+/**
+ * 월드 목록의 최대 높이. 줄 38(위아래 9 · 글자 20)로 여섯 줄 반과 위 여백 6 이다.
+ * 반 줄이 잘려 보여야 아래에 월드가 더 있다는 것이 드러난다.
+ */
+const WORLD_LIST_MAX_HEIGHT = 6 + 38 * 6.5
+
 /** 고른 목록에 신뢰 시세가 없을 때의 글자. 지금은 에오스 · 핼리오스가 그렇다 */
 export const MARKET_EMPTY_TITLE = '신뢰 범위의 데이터가 수집되지 않았습니다'
 
@@ -83,6 +89,7 @@ export function MaspiScreen(): React.JSX.Element {
               selected={world}
               onSelect={setPickedWorld}
               onPage
+              listMaxHeight={WORLD_LIST_MAX_HEIGHT}
             />
           )}
         </View>
