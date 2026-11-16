@@ -21,6 +21,19 @@ export function marketItemFace(itemKey: string, ringLevel: number | null): Marke
 }
 
 /**
+ * 목록의 차례. 기준가가 높은 시세부터이고, 같으면 보이는 이름의 가나다 차례다(사용자 지정).
+ * 서버는 거래 등급을 정하려고 판 사람 수 차례로 주지만 화면은 이 차례로 다시 세운다.
+ *
+ * @example entries.slice().sort(byPriceDesc)
+ */
+export function byPriceDesc(
+  a: { itemKey: string; ringLevel: number | null; price: number },
+  b: { itemKey: string; ringLevel: number | null; price: number },
+): number {
+  return b.price - a.price || marketItemFace(a.itemKey, a.ringLevel).name.localeCompare(marketItemFace(b.itemKey, b.ringLevel).name, 'ko')
+}
+
+/**
  * 소비 월드 고르개의 월드. 기간이 없거나 그날이 든 기간이 있는 월드를 게임 데이터 차례대로 준다.
  * 닫힌 이벤트 월드는 서버가 시세를 만들지 않아 고르면 늘 빈 상태라 뺀다.
  *

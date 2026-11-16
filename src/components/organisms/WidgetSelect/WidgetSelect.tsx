@@ -20,6 +20,11 @@ export interface WidgetSelectProps {
   onSelect: (value: string) => void
   /** 트리거와 목록을 집는 이름의 뿌리 */
   testID: string
+  /**
+   * 참이면 칸을 카드 색으로 칠한다. 칸 색 `card-inset` 은 화면 바탕과 같아 카드 밖 화면 바탕에 두면 칸이 사라진다.
+   * MASPI 목록의 월드 고르개처럼 카드 밖에 둘 때 쓴다
+   */
+  onPage?: boolean
 }
 
 export function WidgetSelect(props: WidgetSelectProps): React.JSX.Element {
@@ -35,7 +40,7 @@ export function WidgetSelect(props: WidgetSelectProps): React.JSX.Element {
       testID={props.testID}
       listAlign="end"
       listFitsContent
-      boxClassName="min-w-0 shrink rounded-lg bg-card-inset"
+      boxClassName={`min-w-0 shrink rounded-lg ${props.onPage === true ? 'bg-surface' : 'bg-card-inset'}`}
       renderTrigger={(open, isOpen) => (
         <Pressable
           role="button"

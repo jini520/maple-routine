@@ -4,7 +4,7 @@
  * 부호는 ASCII 하이픈 `-` 이다. 시세 화면의 지수 · 전일 대비가 같은 꼴로 서야 줄끼리 자리가 맞는다.
  */
 import { shiftDateKey } from '../../lib/calendar'
-import { formatMesoUnits } from '../../lib/drop/drop-price'
+import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
 
 /** 등락의 색. 오르면 빨강 · 내리면 파랑 · 같으면 회색 */
 export type MarketTone = 'rise' | 'fall' | 'flat'
@@ -64,9 +64,12 @@ export function trendOf(values: readonly number[]): MarketTone {
   return toneOf(values[values.length - 1] - values[0])
 }
 
-/** `11억 ~ 12억`. 범위는 그날 판 사람 절반이 판 25% ~ 75% 지점이다 */
+/**
+ * `26.89억 ~ 28.78억`. 범위는 그날 판 사람 절반이 판 25% ~ 75% 지점이다.
+ * 억 · 만을 다 적으면 목록 줄에서 두 줄로 접혀, 통계 · 계산기와 같은 짧은 금액(억 소수 둘째 자리)으로 적는다.
+ */
 export function formatMarketRange(low: number, high: number): string {
-  return `${formatMesoUnits(low)} ~ ${formatMesoUnits(high)}`
+  return `${formatMesoCompact(low)} ~ ${formatMesoCompact(high)}`
 }
 
 /** `11/14 기준`. 값의 날짜이고 받은 시각이 아니다. 날짜가 없으면 빈 글자 */

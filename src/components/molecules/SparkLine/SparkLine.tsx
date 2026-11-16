@@ -49,7 +49,8 @@ export function SparkLine(props: SparkLineProps): React.JSX.Element {
         yKeys={['value']}
         domain={{ y: domain }}
         // 여백을 `padding` 으로 주면 라이브러리가 그림을 그 안쪽으로 잘라 채움이 바닥에 못 닿는다. 값 범위 안쪽 여유로 준다.
-        domainPadding={{ top: props.inset, bottom: props.inset }}
+        // 끝 점이 있으면 오른쪽을 점의 반지름만큼 비운다. 안 비우면 점이 그림 끝에서 반쪽 잘린다.
+        domainPadding={{ top: props.inset, bottom: props.inset, right: props.endDotRadius ?? 0 }}
         yAxis={NO_AXIS_LINES}
       >
         {({ points, canvasSize }) => (

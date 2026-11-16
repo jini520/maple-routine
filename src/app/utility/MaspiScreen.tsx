@@ -18,7 +18,7 @@ import { WidgetSelect } from '../../components/organisms/WidgetSelect/WidgetSele
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-import { initialWorldKey, openWorlds } from '../../features/market/catalog'
+import { byPriceDesc, initialWorldKey, openWorlds } from '../../features/market/catalog'
 import { formatBasisDate } from '../../features/market/format'
 import { useMarketItems, useMaspi } from '../../features/market/query'
 import { useRepresentativeWorldKey } from '../../features/market/representative'
@@ -49,7 +49,10 @@ export function MaspiScreen(): React.JSX.Element {
   // 고르기 전에는 대표 캐릭터의 프로필이 늦게 와도 따라간다.
   const world = pickedWorld ?? initialWorldKey(worlds, representativeWorld)
   const market = useMarketItems(world)
-  const entries = market === undefined ? undefined : kind === '장비' ? (market?.equipment ?? []) : (market?.consumable.items ?? [])
+  const entries = useMemo(() => {
+    if (market === undefined) return undefined
+    return (kind === '장비' ? (market?.equipment ?? []) : (market?.consumable.items ?? [])).slice().sort(byPriceDesc)
+  }, [market, kind])
 
   return (
     <ScreenScroll
@@ -78,6 +81,7 @@ export function MaspiScreen(): React.JSX.Element {
               options={worlds.map((entry) => ({ value: entry.key, label: entry.name }))}
               selected={world}
               onSelect={setPickedWorld}
+              onPage
             />
           )}
         </View>

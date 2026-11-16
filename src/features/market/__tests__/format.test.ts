@@ -4,6 +4,7 @@ import {
   formatIndex,
   formatIndexArrow,
   formatIndexSigned,
+  formatMarketRange,
   formatTick,
   MARKET_PERIODS,
   niceScale,
@@ -50,6 +51,11 @@ describe('지수와 등락 표기', () => {
       'flat',
       'flat',
     ])
+  })
+
+  it('범위는 억 소수 둘째 자리의 짧은 금액이라 목록 줄에서 접히지 않는다', () => {
+    expect(formatMarketRange(2_688_888_889, 2_877_777_777)).toBe('26.89억 ~ 28.78억')
+    expect(formatMarketRange(299_999_999, 338_333_333)).toBe('3억 ~ 3.38억')
   })
 
   it('값의 날짜를 `11/14 기준` 으로 적고, 날짜가 없으면 비운다', () => {
