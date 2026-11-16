@@ -21,6 +21,7 @@ export const QUICK_LINK_NAMES: Readonly<Record<QuickLinkId, QuickLinkName>> = {
   boss: { name: '보스', short: '보스' },
   profit: { name: '보스 수입', short: '보스 수입' },
   cashbook: { name: '가계부', short: '가계부' },
+  'trade-history': { name: '거래 내역', short: '거래 내역' },
   stats: { name: '통계', short: '통계' },
   inventory: { name: '인벤토리', short: '인벤토리' },
   utility: { name: '유틸리티', short: '유틸리티' },
@@ -29,6 +30,7 @@ export const QUICK_LINK_NAMES: Readonly<Record<QuickLinkId, QuickLinkName>> = {
   'boss-manage': { name: '보스 관리', short: '보스 관리' },
   characters: { name: '캐릭터 관리', short: '캐릭터 관리' },
   accounts: { name: '계정 관리', short: '계정 관리' },
+  maspi: { name: 'MASPI', short: 'MASPI' },
   'item-split': { name: '판매 분배금 계산기', short: '분배금 계산' },
   'boss-profit-calculator': { name: '주간 보스 수입 계산기', short: '보스 계산기' },
   'mvp-grade': { name: 'MVP 등급', short: 'MVP 등급' },
@@ -45,10 +47,10 @@ export interface QuickLinkGroup {
 
 /** 편집 시트 본문의 카드 차례 */
 export const QUICK_LINK_GROUPS: readonly QuickLinkGroup[] = [
-  { label: '탭', ids: ['appointments', 'content', 'boss', 'profit', 'cashbook', 'stats', 'inventory', 'utility'] },
+  { label: '탭', ids: ['appointments', 'content', 'boss', 'profit', 'cashbook', 'trade-history', 'stats', 'inventory', 'utility'] },
   { label: '가계부 수입', ids: ['income-hunting', 'income-hunt-loot-sale'] },
   { label: '관리', ids: ['boss-manage', 'characters', 'accounts'] },
-  { label: '유틸리티 도구', ids: ['item-split', 'boss-profit-calculator'] },
+  { label: '유틸리티 도구', ids: ['maspi', 'item-split', 'boss-profit-calculator'] },
   { label: '더보기', ids: ['mvp-grade', 'notices', 'notice-alerts', 'theme', 'app-settings'] },
 ]
 
