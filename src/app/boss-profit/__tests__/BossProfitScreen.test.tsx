@@ -368,7 +368,7 @@ describe('빈 상태', () => {
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'Groups',
       params: { screen: 'Settings', params: { openPicker: true } },
-    })
+    }, { pop: true })
   })
 })
 
@@ -1218,7 +1218,7 @@ describe('조회 불가 카드의 캐릭터 관리로 이동', () => {
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'Groups',
       params: { screen: 'Settings', params: { openPicker: true } },
-    })
+    }, { pop: true })
   })
 })
 
