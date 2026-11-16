@@ -10,6 +10,8 @@ import { Circle } from '@shopify/react-native-skia'
 import { View } from 'react-native'
 import { Area, CartesianChart, Line } from 'victory-native'
 
+import { NO_AXIS_LINES } from './axis'
+
 export interface SparkLineProps {
   values: readonly number[]
   color: string
@@ -41,7 +43,14 @@ export function SparkLine(props: SparkLineProps): React.JSX.Element {
 
   return (
     <View testID={props.testID} style={{ height: props.height, alignSelf: 'stretch' }} aria-hidden>
-      <CartesianChart data={data} xKey="index" yKeys={['value']} domain={{ y: domain }} padding={{ top: props.inset, bottom: props.inset }}>
+      <CartesianChart
+        data={data}
+        xKey="index"
+        yKeys={['value']}
+        domain={{ y: domain }}
+        padding={{ top: props.inset, bottom: props.inset }}
+        yAxis={NO_AXIS_LINES}
+      >
         {({ points, canvasSize }) => (
           <>
             {props.fillOpacity !== undefined && (

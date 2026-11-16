@@ -12,6 +12,7 @@ import { runOnJS, useAnimatedReaction } from 'react-native-reanimated'
 import { AreaRange, CartesianChart, Line, useChartPressState, type ChartBounds } from 'victory-native'
 
 import { Text } from '../../../components/atoms'
+import { NO_AXIS_LINES } from '../../../components/molecules/SparkLine/axis'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { formatTick, niceScale, trendOf } from '../../../features/market/format'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
@@ -77,6 +78,8 @@ export function MarketChart(props: { series: readonly MarketSeriesPoint[] }): Re
           padding={{ top: 6, bottom: 6, right: TICK_LANE }}
           chartPressState={state}
           onChartBoundsChange={setBounds}
+          // 눈금선은 아래에서 고른 눈금에만 직접 긋는다. 라이브러리 기본 선이 남으면 다른 자리에 한 벌이 더 생긴다.
+          yAxis={NO_AXIS_LINES}
         >
           {({ points, chartBounds }) => (
             <>
