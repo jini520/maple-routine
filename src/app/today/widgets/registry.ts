@@ -7,6 +7,7 @@
  */
 
 import { CrystalLimitWidget } from './CrystalLimitWidget'
+import { MaspiWidget } from './MaspiWidget'
 import { NextPartyScheduleWidget } from './NextPartyScheduleWidget'
 import { QuickLinksWidget } from './QuickLinksWidget'
 import { RemainingScheduleWidget } from './RemainingScheduleWidget'
@@ -22,6 +23,7 @@ export const WIDGETS: readonly WidgetDefinition[] = [
   { id: 'representative-character', width: 4, Component: RepresentativeCharacterWidget },
   // 칸마다 갈 곳이 달라 위젯이 직접 화면을 연다. 타일 전체는 누를 수 없다.
   { id: 'quick-links', width: 4, Component: QuickLinksWidget },
+  { id: 'maspi', width: 4, target: 'UtilityMaspi', Component: MaspiWidget },
   { id: 'shared-contents', width: 4, Component: SharedContentsWidget },
   { id: 'remaining-schedule', width: 4, Component: RemainingScheduleWidget },
   // 위젯 안에서 세그먼트와 캐릭터 줄을 누르므로 타일 전체는 누를 수 없다.

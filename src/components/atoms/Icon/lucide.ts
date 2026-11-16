@@ -24,6 +24,7 @@ import CalendarClock from 'lucide-react-native/icons/calendar-clock'
 import CalendarPlus from 'lucide-react-native/icons/calendar-plus'
 import Repeat from 'lucide-react-native/icons/repeat'
 import Castle from 'lucide-react-native/icons/castle'
+import ChartLine from 'lucide-react-native/icons/chart-line'
 import TrendingUp from 'lucide-react-native/icons/trending-up'
 import Check from 'lucide-react-native/icons/check'
 import ChevronDown from 'lucide-react-native/icons/chevron-down'
@@ -222,6 +223,9 @@ export const MoonIcon = withIconInterop(Moon)
  * 그리는 것이 실제로 달력이라 그림이 화면과 같은 말을 하고, 체크가 없어 할 일 로 안 읽힌다.
  */
 export const CalendarIcon = withIconInterop(Calendar)
+
+/** 시세 그래프. MASPI 의 빈 상태 */
+export const ChartLineIcon = withIconInterop(ChartLine)
 
 /** 드롭 데이터가 아직 없는 보스. `BossDropSheet` 빈 상태. */
 export const PackageOpenIcon = withIconInterop(PackageOpen)

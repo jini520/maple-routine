@@ -103,6 +103,7 @@ jest.mock('../../../features/manual-completion/query', () => ({
   useManualCompletionBanner: jest.fn(() => ({ visible: false, dismiss: jest.fn() })) }))
 jest.mock('../../../features/party-appointments/query', () => ({
   usePartyAppointments: jest.fn(() => ({ appointments: [], loaded: true })) }))
+jest.mock('../../../features/market/query', () => ({ useMaspi: jest.fn(() => undefined) }))
 
 const mockedContent = jest.mocked(useContentSchedule)
 const mockedBoss = jest.mocked(useBossSchedule)

@@ -138,6 +138,13 @@ export interface CashbookParams {
  * 주간 · 이번 주를 센다. 보스 수익 스토어의 `periodKey` 를 읽지 않는 것은 그 값이 계산해 둔 날짜
  * 글자라 보스 수익 화면이 없을 때 낡을 수 있어서다.
  */
+/** MASPI 상세 하나. 장비는 서버가 월드를 보지 않아 `general` 로 연다 */
+export interface MarketItemParams {
+  itemKey: string
+  ringLevel: number | null
+  world: string
+}
+
 export interface DropPriceParams {
   cycle: BossCycle
   periodKey: string
@@ -174,6 +181,10 @@ export type RootStackParamList = {
    * 쌓이는 하위 페이지이고, 뒤에 오는 도구들이 그대로 물려받는다.
    */
   UtilityItemSplit: undefined
+  /** MASPI 목록. 유틸리티 `데이터` 분류의 도구이고 today 의 MASPI 위젯도 연다 */
+  UtilityMaspi: undefined
+  /** MASPI 상세. 목록의 아이템 줄이 연다 */
+  UtilityMaspiItem: MarketItemParams
   /** 주간 보스 수익 계산기. 유틸리티의 둘째 도구다 */
   UtilityBossProfitCalculator: undefined
   /** 주간 보스 수익 계산기의 계산 기록. 기록을 누르면 계산기로 돌아간다 */
@@ -314,6 +325,8 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   { path: '/stats', screen: 'StatsScreen', target: { kind: 'tab', route: 'Stats' }, origin: 'rn' },
   { path: '/inventory', screen: 'InventoryScreen', target: { kind: 'tab', route: 'Inventory' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },
+  { path: '/utility/maspi', screen: 'MaspiScreen', target: { kind: 'push', route: 'UtilityMaspi' }, origin: 'rn' },
+  { path: '/utility/maspi/item', screen: 'MaspiItemScreen', target: { kind: 'push', route: 'UtilityMaspiItem' }, origin: 'rn' },
   {
     path: '/utility/item-split',
     screen: 'ItemSplitScreen',

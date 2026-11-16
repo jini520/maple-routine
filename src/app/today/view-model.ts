@@ -21,6 +21,7 @@ import type { BossProfitRow } from '../../features/boss-profit/store'
 import { dropRowKey } from '../../features/boss-profit/store'
 import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../lib/boss/boss-matching'
 import { worldNameOf } from '../../lib/world/worlds'
+import type { MaspiResponse } from '../../server/market'
 import { mapleIdNameOf } from '../../lib/maple-id-name'
 import type { MapleIdOwners } from '../../features/maple-id/owners'
 import { getSharedContentGroups } from '../../lib/scheduler/scheduler-content-scope'
@@ -319,6 +320,8 @@ export interface TodayViewModelInput {
   partyAppointments: readonly PartyAppointment[]
   /** 빠른 이동 스토어. 위젯이 스토어를 모르게 화면이 넘긴다. */
   quickLinks: QuickLinksConfig
+  /** 시세 쿼리의 MASPI. 기기에 남긴 값도 없고 받지도 못했으면 `null` */
+  maspi: MaspiResponse | null
   /** 캐릭터마다의 메이플 ID 와 그 차례. 못 읽었으면 `null` 이고, 그때는 메이플 ID 를 가르지 않는다 */
   mapleIds: MapleIdOwners | null
   /** 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID */
@@ -375,6 +378,8 @@ export interface TodayViewModel {
   nextParty: NextPartyView[]
   /** 빠른 이동 구성. 스토어 값을 그대로 넘긴다 */
   quickLinks: QuickLinksConfig
+  /** MASPI 위젯. 쿼리 값을 그대로 넘긴다 */
+  maspi: MaspiResponse | null
 }
 
 export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel {
@@ -404,6 +409,7 @@ export function buildTodayViewModel(input: TodayViewModelInput): TodayViewModel 
     resets: buildResets(input.now),
     nextParty: buildNextParty(input),
     quickLinks: input.quickLinks,
+    maspi: input.maspi,
   }
 }
 

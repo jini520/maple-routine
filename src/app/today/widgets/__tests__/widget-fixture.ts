@@ -50,6 +50,7 @@ export const 빈_뷰모델: TodayViewModel = {
   },
   nextParty: [],
   quickLinks: DEFAULT_QUICK_LINKS,
+  maspi: null,
 }
 
 export function 뷰모델(부분: Partial<TodayViewModel>): TodayViewModel {
