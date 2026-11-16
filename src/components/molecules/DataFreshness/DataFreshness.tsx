@@ -17,12 +17,14 @@ import { formatFetchedAt } from '../../../lib/data-freshness'
 export interface DataFreshnessProps {
   /** 마지막으로 데이터를 부른 시각(ISO 8601). */
   fetchedAt: string | null | undefined
+  /** 시각 대신 적는 글자. 하루 한 번 나오는 값은 받은 시각이 아니라 값의 날짜(`11/14 기준`)를 적는다 */
+  label?: string
 }
 
-export function DataFreshness({ fetchedAt }: DataFreshnessProps): React.JSX.Element {
+export function DataFreshness({ fetchedAt, label }: DataFreshnessProps): React.JSX.Element {
   return (
     <Text testID="data-freshness" className="h-4 text-11 text-text-disabled" maxScale={1}>
-      {formatFetchedAt(fetchedAt)}
+      {label ?? formatFetchedAt(fetchedAt)}
     </Text>
   )
 }

@@ -51,4 +51,11 @@ export const queryKeys = {
   allMesoRates: () => ['meso-rate'] as const,
   /** 이벤트 월드 캐릭터 이름 배열. 강화 수집기가 `setQueryData` 로 넣는다. */
   eventWorldNames: () => ['event-world-names'] as const,
+  /** 드롭 시세 지수 MASPI. today 위젯과 MASPI 카드가 같이 본다. */
+  marketMaspi: () => ['market-maspi'] as const,
+  /** 장비 신뢰 시세와 그 월드의 소비 신뢰 시세. */
+  marketItems: (world: string) => ['market-items', world] as const,
+  /** 시세 하나의 날마다 값. 반지가 아니면 둘째 칸이 빈 글자다. */
+  marketItem: (itemKey: string, ringLevel: number | null, world: string) =>
+    ['market-item', itemKey, ringLevel === null ? '' : String(ringLevel), world] as const,
 }

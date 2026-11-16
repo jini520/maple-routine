@@ -45,8 +45,8 @@ export function WidgetGrid({ data }: WidgetGridProps): React.JSX.Element {
   // 타일 탭은 today(그룹 행)에서 하위 층으로 한 층 내려가는 이동이라, 층이 스택이 된 뒤로는
   // 그냥 그 층을 여는 것으로 끝난다. 바 기록을 손으로 맞출 일이 없다.
   function open(target: WidgetTarget): void {
-    if (target === 'DropPrice') {
-      navigation.navigate('DropPrice')
+    if (target === 'DropPrice' || target === 'UtilityMaspi') {
+      navigation.navigate(target)
       return
     }
     openTab(target)

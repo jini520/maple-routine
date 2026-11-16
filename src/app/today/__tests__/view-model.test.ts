@@ -179,6 +179,7 @@ function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInpu
     statsDays: {},
     partyAppointments: [],
     quickLinks: DEFAULT_QUICK_LINKS,
+    maspi: null,
     mapleIds: null,
     selectedSharedMapleId: null,
     ...overrides,

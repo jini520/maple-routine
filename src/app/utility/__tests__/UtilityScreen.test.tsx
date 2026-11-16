@@ -7,7 +7,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
-import { BOSS_PROFIT_CALCULATOR_TOOL_NAME, ITEM_SPLIT_TOOL_NAME } from '../tool-names'
+import { BOSS_PROFIT_CALCULATOR_TOOL_NAME, ITEM_SPLIT_TOOL_NAME, MASPI_TOOL_NAME } from '../tool-names'
 import { UtilityScreen } from '../UtilityScreen'
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
@@ -40,6 +40,19 @@ describe('UtilityScreen', () => {
 
     await press(view.getByLabelText(BOSS_PROFIT_CALCULATOR_TOOL_NAME))
     expect(navigate).toHaveBeenCalledWith('UtilityBossProfitCalculator')
+  })
+
+  // MASPI 는 시세를 보는 도구라 금액을 따지는 두 계산기와 분류가 다르다. `데이터` 가 위다.
+  it('데이터 분류의 MASPI 가 맨 위이고 계산기 분류가 그 아래다. MASPI 를 누르면 MASPI 화면을 민다', async () => {
+    const view = await renderOverlay(<UtilityScreen />)
+    const tree = JSON.stringify(view.toJSON())
+
+    expect(tree.indexOf('"데이터"')).toBeLessThan(tree.indexOf(`"${MASPI_TOOL_NAME}"`))
+    expect(tree.indexOf(`"${MASPI_TOOL_NAME}"`)).toBeLessThan(tree.indexOf('"계산기"'))
+    expect(tree.indexOf('"계산기"')).toBeLessThan(tree.indexOf('"판매"'))
+
+    await press(view.getByLabelText(MASPI_TOOL_NAME))
+    expect(navigate).toHaveBeenCalledWith('UtilityMaspi')
   })
 
   // RN 의 `Text` 는 한글을 글자 단위로 끊는다(`판매 분배금 계 / 산기`). 단어마다 `Text` 를 두고

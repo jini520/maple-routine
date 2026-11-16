@@ -1,7 +1,7 @@
 # ADR-071+205+243 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 드롭 가격 관리 화면
 
-> ⚪ 미구현
-> 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `database/migrations/0044_market_daily.sql` · `cli/market-backfill.ts` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/admin.controller.ts` · `modules/admin/views/layout.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `modules/admin/views/drop-prices.ts` · `database/schema.ts`(`drop_prices.priced_at` · `drop_prices.box_origin_item_id` · `worlds.price_group` · `items.world_bound`)
+> 🟢 유효
+> 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `database/migrations/0044_market_daily.sql` · `cli/market-backfill.ts` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/admin.controller.ts` · `modules/admin/views/layout.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `modules/admin/views/drop-prices.ts` · `database/schema.ts`(`drop_prices.priced_at` · `drop_prices.box_origin_item_id` · `worlds.price_group` · `items.world_bound`) · 앱 `server/market.ts` · `features/market/` · `app/utility/MaspiScreen.tsx` · `app/utility/MaspiItemScreen.tsx` · `app/utility/maspi/` · `components/molecules/SparkLine/` · `app/today/widgets/MaspiWidget.tsx`
 
 ## 배경
 
@@ -339,6 +339,13 @@ MASPI 는 드롭 아이템 시세 전체가 오르는지 내리는지 보이는 
   `신뢰 범위의 데이터가 수집되지 않았습니다` 를 보인다(사용자 지정). 거래 내역 · 공지 화면과 같은 빈 상태 카드(`EmptyState`
   의 기본 크기)다. 대표 캐릭터가 그런 월드에 있어도 처음 값을 다른
   월드로 바꾸지 않는다. MASPI 는 월드와 상관없이 하나다(결정 10).
+- 처음 값을 정하는 대표 캐릭터는 앱의 대표 캐릭터 하나다(today 맨 위 위젯과 머리 얼굴의 캐릭터). 메이플 ID 가 여럿이어도
+  고를 것이 없도록 그 하나로 정했다(사용자 지정). 대표 캐릭터가 없거나 그 월드를 모르면 고르개의 첫 월드다.
+- 고르개에는 지금 열린 월드만 넣는다. 게임 데이터 `worlds` 에서 기간이 없거나 오늘이 든 기간이 있는 월드를 그 표의 차례대로
+  보인다. 닫힌 이벤트 월드(스페셜 · 스페셜2)는 서버가 시세를 만들지 않아 고르면 늘 빈 상태라 뺐다(사용자 지정).
+- 시세의 아이템을 앱의 게임 데이터에서 찾지 못하면(앱이 아직 모르는 새 아이템) 이름 자리에 아이템 key 를 적고 그림 자리는
+  비운다(사용자 지정). 게임 데이터를 다시 받으면 이름과 그림이 선다. 반지는 이름 뒤에 ` 4레벨` 처럼 레벨을 붙인다. 드롭 기록의
+  반지 이름과 같은 꼴이다.
 - 모양(시안 ④ · ⑤, 사용자 지정)
   - MASPI 카드: 위에 `MASPI` 라벨, 그 아래 큰 종가와 그 오른쪽 전일 대비, 맨 아래 폭 전체 꺾은선과 옅은 채움이다. 꺾은선은
     30일 동안 내렸으면 파랑, 올랐으면 빨강이다.
@@ -352,7 +359,12 @@ MASPI 는 드롭 아이템 시세 전체가 오르는지 내리는지 보이는 
   따로 표시를 달면 거래가 적은 시세가 드러난다(결정 8).
 - 날짜는 `11/14 기준` 처럼 그 값의 날을 보인다(결정 9).
 - today 에도 MASPI 를 한 줄로 보이는 얇은 위젯이 있다([[ADR-058]] 결정 31).
-- 그래프는 victory-native(Skia)로 그린다(#665 에서 사용자 지정). 네이티브 모듈이라 지문이 바뀌어 스토어 바이너리로 낸다.
+- 그래프는 victory-native(Skia)로 그린다(#665 에서 사용자 지정). 목록의 작은 꺾은선 · MASPI 카드 · today 위젯도 같은 것으로
+  그린다. 네이티브 모듈이라 지문이 바뀌어 스토어 바이너리로 낸다. 판은 Expo 57 이 맞춘 `@shopify/react-native-skia` 2.6.2 와
+  그 판을 받는 victory-native 42.0.1 이다. victory-native 43 은 이름을 바꾼 `react-native-skia` 2.15 이상을 요구해 Expo 가 맞춘
+  판과 어긋난다. Skia 는 설치 스크립트가 함께 받은 플랫폼 패키지에서 미리 빌드된 라이브러리를 `libs/` 로 복사한다. npm 11 은
+  설치 스크립트를 기본으로 막으므로 `package.json` 의 `allowScripts` 에 Skia 를 넣었다. 빼면 iOS · 안드로이드 빌드가
+  라이브러리를 찾지 못한다.
 - 앱은 서버의 공개 조회 경로로 값을 받는다(결정 14). `/admin` 의 시세 경로는 nginx basic auth 뒤라 앱이 부를 수 없다.
 
 ### 결정 14. 시세 값은 서버가 하루 한 번 계산해 응답째 저장하고, 모든 앱에 같은 응답을 준다
@@ -385,9 +397,13 @@ MASPI 는 드롭 아이템 시세 전체가 오르는지 내리는지 보이는 
 
 ## 테스트
 
-결정 12 · 13 의 화면은 앱 화면(#1049)의 테스트가 지킨다.
-
 | 파일 | 확인하는 것 |
+| 앱 `server/__tests__/market.spec.ts` | 결정 14: 가진 ETag 를 보내 304 면 바뀐 것이 없다고 주는지, 404 는 그 월드 · 아이템의 시세가 없다는 답인지, 목록에서 계약을 어긴 줄만 빠지는지, 상세를 반지 레벨 · 월드로 부르는지 본다 |
+| 앱 `features/market/__tests__/query.test.tsx` | 결정 14: 쿼리가 기기에 저장되고 포커스마다 다시 묻는지, 304 면 가진 응답을 그대로 쓰는지, 받지 못하면 가진 응답을 지키는지, 404 면 빈 목록으로 보는지 본다 |
+| 앱 `features/market/__tests__/format.test.ts` | 결정 13: 지수 · 부호 · 화살표 · 전일 대비(%) · 값의 날짜 표기, 꺾은선 색이 처음과 끝을 견주는지, 기간을 마지막 날부터 자르는지, 눈금 간격과 이웃한 눈금 글자가 겹치지 않는지 본다 |
+| 앱 `features/market/__tests__/catalog.test.ts` | 결정 13: 이름 · 그림을 아이템 표에서 찾고 반지에 레벨을 붙이는지, 모르는 아이템은 key 를 이름 자리에 적는지, 고르개가 열린 월드만 넣는지, 처음 월드가 대표 캐릭터의 월드이고 없으면 첫 월드인지 본다 |
+| 앱 `app/utility/__tests__/MaspiScreen.test.tsx` | 결정 13: MASPI 카드의 종가 · 전일 대비 · 값의 날짜, 서버 차례대로 선 줄의 이름 · 기준가 · 전일 대비 · 범위, 소비가 대표 캐릭터의 월드로 열리고 신뢰 시세가 없으면 빈 상태인지, 줄을 누르면 장비는 `general` 로 상세를 여는지 본다 |
+| 앱 `app/utility/__tests__/MaspiItemScreen.test.tsx` | 결정 12 · 13: 상세의 기준가 · 전일 대비 칩 · 범위 · 거래 등급, 처음 기간이 30일인지, 신뢰 시세가 아니게 되면 빈 상태인지 본다 |
 |---|---|
 | 서버 `modules/drop-market/daily-reference.spec.ts` | 결정 3: 0 을 하나 더 · 덜 친 값과 1메소가 로그 울타리 밖인지, 같은 값이 몰려도 중앙값 80% ~ 120% 는 안인지, 한 사람의 여러 줄 · 여러 날이 한 표로 접히는지, 신뢰도가 판정 5개 미만이면 무게를 안 깎고 30% · 50% 에서 절반 · 0 인지, 같은 가격이 아이템 셋에서 모두 울타리 밖일 때만 더미 입력이고 그날 표가 모두 빠지는지 본다 |
 | | 결정 8: 3명이 새 값에 모이면 앞 기준가와 멀어도 그날 기준가가 되는지, 셋 중 둘이 동떨어지면 3일 표로 가는지, 합의가 없으면 3일까지 유지하고 4일째에 비우는지, 비운 뒤에는 3명이 모여야 다시 서는지, 무게 절반인 표를 반만 세는지 본다 |
@@ -417,4 +433,4 @@ MASPI 는 드롭 아이템 시세 전체가 오르는지 내리는지 보이는 
   더미 입력(결정 3), 일일 기준가와 거래 없던 날을 드러내지 않는 그래프(결정 8), 하루 한 번 발행과 동결(결정 9), MASPI 와 에오스 ·
   핼리오스를 빼고 소울 에테르를 11/1 부터 넣는 것(결정 10), 신뢰 시세(결정 11), 앱의 거래 수
   등급(결정 12), 앱의 MASPI 도구(결정 13, 이슈 #1049), 서버가 계산해 저장한 응답을 모두에게 같게 주는 것(결정 14)을 더했다. 결정 3 의 7일 IQR 울타리와 `pending` 을 시세에 넣던 규칙을 걷었다. 서버는 2026-11-16 에 구현해 배포했다(서버 #116,
-  관리 화면 판정은 서버 #118). 앱 화면(#1049)이 남아 ⚪ 로 둔다
+  관리 화면 판정은 서버 #118). 앱 화면(#1049)도 같은 날 구현했다

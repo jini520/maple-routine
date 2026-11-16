@@ -30,6 +30,8 @@ export interface PageHeaderTitleRowProps {
    * 없는 시각을 지어 적지 말 것 - 그 줄은 실시간 조회를 받은 화면만 채운다.
    */
   fetchedAt?: string | null
+  /** 갱신 시각 대신 그 줄에 적는 글자. 하루 한 번 나오는 값의 날짜(`11/14 기준`)처럼 받은 시각이 뜻이 없는 화면이 쓴다 */
+  freshnessLabel?: string
   /**
    * 제목 줄이 아니라 **덩어리 오른쪽**에 서는 것. 주기 탭이 여기 온다.
    *
@@ -47,6 +49,7 @@ export function PageHeaderTitleRow({
   children,
   className,
   fetchedAt,
+  freshnessLabel,
   trailing,
 }: PageHeaderTitleRowProps): React.JSX.Element {
   // 덩어리에 `gap` 이 없다. `min-h-8` 이 제목 글자 아래에 이미 여백을 남겨서, 간격을 더하면
@@ -60,7 +63,7 @@ export function PageHeaderTitleRow({
         {children}
       </View>
 
-      <DataFreshness fetchedAt={fetchedAt ?? null} />
+      <DataFreshness fetchedAt={fetchedAt ?? null} label={freshnessLabel} />
     </>
   )
 

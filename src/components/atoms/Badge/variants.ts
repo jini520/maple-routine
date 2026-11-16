@@ -62,6 +62,9 @@ export const BADGE_VARIANT = {
   secondary: { className: 'bg-secondary-tint text-secondary-ink', weight: 'bold' },
   /** 그림 위에 걸치는 작은 배지. 옅은 `secondary` 는 라이트 테마에서 글자 대비가 약 2.0 이다 */
   secondarySolid: { className: 'bg-secondary text-on-secondary', weight: 'bold' },
+  // 시세의 등락. 오르면 빨강 · 내리면 파랑이고 수입 · 지출의 두 색과 같다.
+  rise: { className: 'bg-rise-tint text-rise-ink' },
+  fall: { className: 'bg-fall-tint text-fall-ink' },
   muted: { className: 'bg-surface-2 text-text-muted' },
   neutral: { className: 'bg-surface-2 text-text' },
   disabled: { className: 'bg-surface-2 text-text-disabled' },
