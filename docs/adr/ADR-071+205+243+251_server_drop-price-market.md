@@ -1,7 +1,7 @@
 # ADR-071+205+243+251 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 드롭 가격 관리 화면
 
-> ⚪ 미구현
-> 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `database/migrations/0044_market_daily.sql` · `cli/market-backfill.ts` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/admin.controller.ts` · `modules/admin/views/layout.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `modules/admin/views/drop-prices.ts` · `database/schema.ts`(`drop_prices.priced_at` · `drop_prices.box_origin_item_id` · `worlds.price_group` · `items.world_bound`) · 앱 `server/market.ts` · `features/market/` · `app/utility/MaspiScreen.tsx` · `app/utility/MaspiItemScreen.tsx` · `app/utility/maspi/` · `components/molecules/SparkLine/` · `app/today/widgets/MaspiWidget.tsx`
+> 🟢 유효
+> 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `database/migrations/0044_market_daily.sql` · `database/migrations/0045_market_range_nullable.sql` · `cli/market-backfill.ts` · `cli/market-range-recompute.ts` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/admin.controller.ts` · `modules/admin/views/layout.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `modules/admin/views/drop-prices.ts` · `database/schema.ts`(`drop_prices.priced_at` · `drop_prices.box_origin_item_id` · `worlds.price_group` · `items.world_bound`) · 앱 `server/market.ts` · `features/market/` · `app/utility/MaspiScreen.tsx` · `app/utility/MaspiItemScreen.tsx` · `app/utility/maspi/` · `components/molecules/SparkLine/` · `app/today/widgets/MaspiWidget.tsx`
 
 ## 배경
 
@@ -289,7 +289,10 @@ MASPI 상세 그래프의 범위 띠가 하루씩 크게 튀었다. 신념의 �
 - **밀집도 무게를 두는 이유.** 혼자 동떨어진 표는 무게가 1 이고, 다른 표와 몰린 표는 무게가 커진다. 근처에 거래가 여럿 있어야
   범위 끝을 끌 수 있다.
 - **8개 하한을 두는 이유.** 7일 표가 적으면 7일로 모아도 한두 표가 폭을 정한다. 시세가 생긴 지 이틀째인 신념의 연마석(스카니아)
-  11/3 은 7일 표가 4개라 이 방식으로도 30.16억 ~ 33.95억으로 튀었다. 7일 표가 8개 이상인 날은 819일 중 613일이다.
+  11/3 은 7일 표가 4개라 이 방식으로도 30.16억 ~ 33.95억으로 튀었다.
+- 구현으로 같은 운영 기록을 다시 재면 819일 중 572일에 범위가 서고, 범위 끝이 기준가에서 5% 넘게 벗어난 날은 옛 범위의
+  249일에서 45일로 준다. 위의 비교 계산보다 범위가 없는 날이 많은 것은, 기준가가 없는 날의 줄과 신뢰도 무게가 0 인 사람의
+  표를 빼기 때문이다.
 - 최고가 · 최저가는 잘못 적은 값이 정하기 쉬워 앱의 범위로 쓰지 않는다.
 
 앱은 거래가 없던 날을 사용자가 알 수 없게 보인다(사용자 지정). 거래 수를 등급으로만 보이는 것(결정 12)과 같은 방향이다.
@@ -492,4 +495,4 @@ MASPI 는 드롭 아이템 시세 전체가 오르는지 내리는지 보이는 
   관리 화면 판정은 서버 #118). 앱 화면(#1049)도 같은 날 구현했다
 - ADR-251 (2026-11-16): 범위를 그날 표의 25% ~ 75% 지점에서, 그날 기준가에 서고 폭은 7일 표의 밀집도 무게로 내는 값으로
   바꿨다(이슈 #1067). 7일 표가 8개 미만이면 범위가 없고, 그래프 띠는 끊기고 칸은 `-` 다(결정 8 · 13 · 14). 지난 날의 범위만 한 번
-  다시 계산한다(결정 9)
+  다시 계산한다(결정 9). 같은 날 서버 #120 과 앱으로 구현했다
