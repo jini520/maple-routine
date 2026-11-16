@@ -1,7 +1,7 @@
 # ADR-071+205+243 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 드롭 가격 관리 화면
 
 > ⚪ 미구현
-> 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/admin.controller.ts` · `modules/admin/views/layout.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `modules/admin/views/drop-prices.ts` · `database/schema.ts`(`drop_prices.priced_at` · `drop_prices.box_origin_item_id` · `worlds.price_group` · `items.world_bound`)
+> 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `database/migrations/0044_market_daily.sql` · `cli/market-backfill.ts` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/admin.controller.ts` · `modules/admin/views/layout.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `modules/admin/views/drop-prices.ts` · `database/schema.ts`(`drop_prices.priced_at` · `drop_prices.box_origin_item_id` · `worlds.price_group` · `items.world_bound`)
 
 ## 배경
 
@@ -113,13 +113,14 @@ MASPI 도 이 기준가로 만든다. 계산 결과는 [MASPI 드롭 시세](htt
    표를 모두 뺀다. 2026-11-09 에 한 사람이 2억 ~ 50억인 아이템 6개를 모두 10억으로 적었고, 그중 하나가 IQR 울타리를 통과했다.
    울타리 밖 조건이 꼭 있어야 한다. 시세가 30억 근처인 아이템 셋에 30억을 적은 정상 기록이 두 사람 있었다.
 
-줄마다의 판정은 그 줄의 가격을 그날 울타리와 비교해 정한다. 줄은 지우지 않는다. 기준을 바꾸면 다시 셀 수 있게, 판정은
-읽을 때마다 계산한다.
+줄마다의 판정은 그 줄의 가격을 그날 울타리와 비교해 정한다. 울타리는 하루 작업(결정 9)이 그날 기준가와 함께 남긴 값이고,
+유지한 날은 마지막 새 기준가의 울타리다. 관리 화면도 이 값을 읽는다. 다시 계산하면 앱이 받은 기준가와 다른 근거로 판정하게
+된다. 줄은 지우지 않는다. 기준을 바꾸면 다시 셀 수 있게, 줄과 울타리의 비교는 읽을 때마다 한다.
 
 | 판정 | 뜻 | 기준가에 넣나 |
 |---|---|---|
 | `included` | 그날 울타리 안 | 넣는다 |
-| `pending` | 그날 기준가가 없어 판단하지 않았다 | 넣지 않는다. 표가 모자란 시세에서 혼자 동떨어진 값이 기준가가 되지 않게 한다 |
+| `pending` | 그날 기준가가 없어 판단하지 않았다. 하루 작업이 아직 내지 않은 오늘 줄도 여기다 | 넣지 않는다. 표가 모자란 시세에서 혼자 동떨어진 값이 기준가가 되지 않게 한다 |
 | `excluded` | 울타리 밖이거나 더미 입력 | 뺀다 |
 
 중앙값 몇 배 같은 고정 배수는 쓰지 않는다(사용자 지정). 아이템마다 값이 흩어진 정도가 달라 배수 하나로는 맞지 않는다.
@@ -168,7 +169,8 @@ MASPI 도 이 기준가로 만든다. 계산 결과는 [MASPI 드롭 시세](htt
 
 **`/admin/drop-market/item`** 은 시세 하나를 자세히 본다. 위는 최근 90일의 차트이고 일봉 · 주봉을 고른다. 아래는 같은
 기간의 줄 목록이다. 봉을 누르면 차트 위에 그 봉의 기간 · 시가 · 고가 · 저가 · 종가 · 거래 수와 앞 봉 종가 대비를 보인다.
-처음에는 가장 최근의 거래가 든 마지막 봉을 보인다. 줄 목록에는 판정과 그 줄의 울타리를 함께 보인다. 왜 빠졌는지 화면에서 바로 확인하기 위해서다.
+처음에는 가장 최근의 거래가 든 마지막 봉을 보인다. 줄 목록에는 판정과 그 줄의 울타리, 울타리의 근거(그날 표 · 3일 표 · 유지 ·
+더미 입력)를 함께 보인다. 왜 빠졌는지 화면에서 바로 확인하기 위해서다.
 
 차트는 TradingView 의 `lightweight-charts` 로 그린다. 주식 차트 라이브러리라 봉과 커서가 이미 있다. CDN 에서 받지 않고
 서버의 의존성으로 들여 서버가 파일을 직접 내보낸다(`/admin/assets/lightweight-charts.js`). 관리 화면이 외부 서비스에
@@ -383,15 +385,18 @@ MASPI 는 드롭 아이템 시세 전체가 오르는지 내리는지 보이는 
 
 ## 테스트
 
-결정 3 과 결정 8 ~ 11 · 14 는 구현할 때 표의 처음 다섯 줄대로 테스트를 적는다. 결정 12 · 13 의 화면은 앱 화면(#1049)의 테스트가 지킨다.
+결정 12 · 13 의 화면은 앱 화면(#1049)의 테스트가 지킨다.
 
 | 파일 | 확인하는 것 |
 |---|---|
-| 서버 `modules/drop-market/fence.spec.ts` | 결정 3: 400억 · 1메소 같은 자릿수 실수가 로그 울타리 밖인지, 같은 값이 몰려도 중앙값 ±20% 안은 남는지, 한 사람의 여러 줄이 한 표로 접히는지, 신뢰도가 그날보다 앞선 판정만으로 무게를 정하는지, 같은 가격이 아이템 셋에서 모두 울타리 밖일 때만 그날 표를 모두 빼는지 본다 |
-| 서버 `modules/drop-market/` 일일 기준가 spec | 결정 8: 3명이 새 값에 모이면 앞 기준가와 멀어도 그날 기준가가 되는지, 셋 중 둘이 동떨어지면 그날 값을 버리고 3일 표로 가는지, 합의가 없으면 3일까지 유지하고 4일째에 비우는지, 기준가가 무게 중앙값인지 본다 |
-| 서버 일일 계산 작업 spec | 결정 9: KST 0시 뒤 전날 하루만 계산하는지, 이미 낸 날에 뒤늦은 줄이 와도 값이 그대로인지, 처음 켤 때만 지난 날을 채우는지 본다 |
-| 서버 시세 응답 spec | 결정 8 · 14: 거래 없던 날이 앞뒤 기준가 사이의 값으로 이어지는지, 같은 날 두 번 부르면 몸과 ETag 가 같은지, 같은 ETag 면 304 인지, 응답에 판 사람 수 · 기준가의 근거 · 빈 날 표시가 없는지, 신뢰 시세만 담기는지, 낸 값이 없으면 `close: null` 인지 본다 |
-| 서버 `modules/drop-market/` MASPI spec | 결정 10 · 11: 기준 기간이 10,000 인지, 에오스 · 핼리오스 거래권 시세가 바스켓에 들지 않는지, 무게가 20% 에서 잘리고 나머지가 다시 나뉘는지, 기준가가 빈 아이템이 빠져도 지수가 튀지 않는지, 소울 에테르가 11/1 전에는 지수에 없고 들어온 날 지수가 튀지 않는지, 14일 중 7일 이상 새 기준가가 선 시세만 신뢰 시세인지 본다 |
+| 서버 `modules/drop-market/daily-reference.spec.ts` | 결정 3: 0 을 하나 더 · 덜 친 값과 1메소가 로그 울타리 밖인지, 같은 값이 몰려도 중앙값 80% ~ 120% 는 안인지, 한 사람의 여러 줄 · 여러 날이 한 표로 접히는지, 신뢰도가 판정 5개 미만이면 무게를 안 깎고 30% · 50% 에서 절반 · 0 인지, 같은 가격이 아이템 셋에서 모두 울타리 밖일 때만 더미 입력이고 그날 표가 모두 빠지는지 본다 |
+| | 결정 8: 3명이 새 값에 모이면 앞 기준가와 멀어도 그날 기준가가 되는지, 셋 중 둘이 동떨어지면 3일 표로 가는지, 합의가 없으면 3일까지 유지하고 4일째에 비우는지, 비운 뒤에는 3명이 모여야 다시 서는지, 무게 절반인 표를 반만 세는지 본다 |
+| 서버 `modules/drop-market/fence.spec.ts` | 결정 3: 줄이 그날 울타리 안이면 `included` · 밖이면 `excluded` 인지, 유지한 날은 마지막 새 기준가의 울타리로 보는지, 그날 울타리가 없으면 `pending` 인지, 더미 입력을 한 사람의 줄은 울타리 안이어도 `excluded` 인지 본다 |
+| 서버 `modules/drop-market/drop-market.service.spec.ts` | 결정 3 · 5: 관리 화면이 하루 작업이 DB 에 남긴 울타리 · 더미 입력을 찾아 판정하는지, 아직 내지 않은 오늘 줄이 `pending` 인지, 더미 입력의 줄이 제외 30일에 드는지 본다 |
+| 서버 `modules/drop-market/market-publish.spec.ts` | 결정 9 · 10 · 14: 처음 채우면 기준 기간 첫날이 10,000 인지, 이미 낸 날에 뒤늦은 줄이 와도 값이 그대로인지, 하루 작업이 끝내지 않은 날만 내는지, 낸 날이 있으면 처음 채우기를 거절하는지, 같은 날 응답을 다시 만들어도 몸과 ETag 가 같은지, 응답에 판 사람 수 · 기준가의 근거가 없는지, 신뢰 시세가 없는 월드는 소비 목록이 비는지 본다 |
+| 서버 `modules/drop-market/market-view.spec.ts` | 결정 8 · 11 · 12: 거래 없던 날이 앞뒤 새 기준가 사이를 곧게 이은 값인지, 마지막 새 기준가 뒤는 그 값이고 첫 값 앞은 없는지, 잇는 값에 그날 거래가 있었는지 알 수 있는 칸이 없는지, 14일 중 7일 이상 새 기준가가 선 시세만 신뢰 시세인지, 등급이 목록 1위의 60% · 30% 로 갈리는지 본다 |
+| 서버 `modules/drop-market/market-index.spec.ts` | 결정 10: 기준 기간 값이 10,000 인지, 무게가 20% 에서 잘리고 나머지에 나뉘는지, 들어오는 날 전에는 등락비가 없는지, 이틀 다 있는 아이템으로만 이어 붙여 아이템이 들어오거나 빠져도 지수가 튀지 않는지 본다 |
+| 서버 `modules/drop-market/market.controller.spec.ts` | 결정 14: 저장한 몸을 ETag 와 그대로 주는지, 같은 ETag 면 몸 없이 304 이고 nginx 가 붙인 `W/` 도 같은 ETag 로 보는지, 낸 MASPI 가 없으면 `close: null` 인지 본다 |
 | 서버 `modules/drop-market/candles.spec.ts` | 결정 2 · 4 · 5: KST 0시로 날이 갈리는지, 주봉과 금주 거래 수가 목요일 0시로 갈리는지, `excluded` 를 빼고 시가 · 종가가 거래 시각 차례인지 본다 |
 | | 결정 5: 오늘 거래가 없으면 금일 값을 비우는지, 전일 대비가 앞선 봉의 종가와 비교하고 `excluded` 를 안 보는지 본다 |
 | 서버 `modules/drop-market/drop-market.repository.spec.ts` | 결정 1: 장비는 거래권의 월드만, 소비는 그 월드만 세는지, 거래권이 `NULL` 인 월드 · 월드 없는 줄 · `completed` 가 아닌 줄을 안 세는지, 반지 레벨이 다르면 다른 시세인지 본다 |
@@ -411,4 +416,5 @@ MASPI 는 드롭 아이템 시세 전체가 오르는지 내리는지 보이는 
 - ADR-243 (2026-11-15): 시세를 정하는 방법을 다시 정했다(이슈 #1047). 사람마다 하루 한 표와 그날 표의 로그 울타리 · 신뢰도 ·
   더미 입력(결정 3), 일일 기준가와 거래 없던 날을 드러내지 않는 그래프(결정 8), 하루 한 번 발행과 동결(결정 9), MASPI 와 에오스 ·
   핼리오스를 빼고 소울 에테르를 11/1 부터 넣는 것(결정 10), 신뢰 시세(결정 11), 앱의 거래 수
-  등급(결정 12), 앱의 MASPI 도구(결정 13, 이슈 #1049), 서버가 계산해 저장한 응답을 모두에게 같게 주는 것(결정 14)을 더했다. 결정 3 의 7일 IQR 울타리와 `pending` 을 시세에 넣던 규칙을 걷었다. 구현 전이라 ⚪ 로 둔다
+  등급(결정 12), 앱의 MASPI 도구(결정 13, 이슈 #1049), 서버가 계산해 저장한 응답을 모두에게 같게 주는 것(결정 14)을 더했다. 결정 3 의 7일 IQR 울타리와 `pending` 을 시세에 넣던 규칙을 걷었다. 서버는 2026-11-16 에 구현해 배포했다(서버 #116,
+  관리 화면 판정은 서버 #118). 앱 화면(#1049)이 남아 ⚪ 로 둔다
