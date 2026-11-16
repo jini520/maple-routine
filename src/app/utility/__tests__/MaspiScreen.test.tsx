@@ -1,5 +1,5 @@
 // MASPI 목록 화면. 값은 서버가 계산해 준 것이고, 화면은 그 차례대로 적고 고르개로 소비 월드만 바꾼다.
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { useMarketItems, useMaspi } from '../../../features/market/query'
@@ -58,6 +58,12 @@ async function press(element: Parameters<typeof fireEvent.press>[0]): Promise<vo
 }
 
 describe('MaspiScreen', () => {
+  it('머리의 제목 `MASPI` 옆에 `beta` 배지가 선다', async () => {
+    const view = await renderOverlay(<MaspiScreen />)
+
+    expect(within(view.getByTestId('page-header')).getByText('beta')).toBeTruthy()
+  })
+
   it('MASPI 카드에 종가와 부호 붙은 전일 대비를 적고, 머리 아래 줄에 값의 날짜를 적는다', async () => {
     const view = await renderOverlay(<MaspiScreen />)
 

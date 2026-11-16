@@ -1,4 +1,6 @@
 // today 의 MASPI 한 줄 위젯. 종가와 전일 대비 화살표를 적고, 값이 없어도 위젯이 사라지지 않는다.
+import { within } from '@testing-library/react-native'
+
 import { renderOverlay } from '../../../../components/__tests__/render-atom'
 import { MaspiWidget } from '../MaspiWidget'
 import { 뷰모델 } from './widget-fixture'
@@ -6,6 +8,12 @@ import { 뷰모델 } from './widget-fixture'
 const 날마다 = (values: number[]) => values.map((value, index) => ({ date: `2026-11-${String(index + 1).padStart(2, '0')}`, value }))
 
 describe('MaspiWidget', () => {
+  it('왼쪽 `MASPI` 라벨 옆에 `beta` 배지가 선다', async () => {
+    const view = await renderOverlay(<MaspiWidget data={뷰모델({ maspi: null })} />)
+
+    expect(within(view.getByTestId('widget-maspi')).getByText('beta')).toBeTruthy()
+  })
+
   it('종가와 전일 대비를 화살표로 적는다. 내리면 ▼, 오르면 ▲ 다', async () => {
     const 내림 = await renderOverlay(
       <MaspiWidget data={뷰모델({ maspi: { date: '2026-11-14', close: 9082.3, change: -24.82, series: 날마다([9200, 9082.3]) } })} />,

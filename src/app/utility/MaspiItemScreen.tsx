@@ -62,6 +62,9 @@ export function MaspiItemScreen(props: { route?: { params?: Partial<MarketItemPa
             <BackButton onPress={() => navigation.goBack()} />
             <View className="flex-row items-center">
               <Text className="text-lg font-bold text-text">{MASPI_TOOL_NAME}</Text>
+              <Badge variant="primary" className="ml-1.5">
+                beta
+              </Badge>
               <FaqButton sheet={faq} />
             </View>
           </PageHeaderTitleRow>

@@ -19,7 +19,7 @@ import { Image, Pressable, View } from 'react-native'
 import bossProfitIllustration from '../../assets/utility/boss-profit-calculator.webp'
 import itemSplitIllustration from '../../assets/utility/item-split.webp'
 import maspiIllustration from '../../assets/utility/maspi.webp'
-import { Text } from '../../components/atoms'
+import { Badge, Text } from '../../components/atoms'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
@@ -73,9 +73,9 @@ const ILLUSTRATION_LANE = 96
  * 가운데 정렬이다. 정렬은 `Text` 의 `text-center` 가 아니라 이 줄의 `justify-center` 가 한다.
  * 글자가 단어별 flex 아이템이라 각 줄을 미는 것이 그쪽 축이기 때문이다.
  */
-function ToolLabel(props: { text: string; color: string }): React.JSX.Element {
+function ToolLabel(props: { text: string; color: string; beta?: boolean }): React.JSX.Element {
   return (
-    <View className="flex-1 flex-row flex-wrap justify-center gap-x-1">
+    <View className="flex-1 flex-row flex-wrap items-center justify-center gap-x-1">
       {props.text.split(' ').map((word, index) => (
         <Text
           key={`${word}-${index}`}
@@ -85,6 +85,11 @@ function ToolLabel(props: { text: string; color: string }): React.JSX.Element {
           {word}
         </Text>
       ))}
+      {props.beta === true && (
+        <Badge variant="primary" size="sm" className="ml-0.5">
+          beta
+        </Badge>
+      )}
     </View>
   )
 }
@@ -94,6 +99,8 @@ function ToolCard(props: {
   name: string
   palette: ToolPalette
   illustration: React.ReactNode
+  /** 베타 기능이면 이름 오른쪽에 `beta` 배지 */
+  beta?: boolean
   onPress: () => void
 }): React.JSX.Element {
   return (
@@ -113,7 +120,7 @@ function ToolCard(props: {
       >
         {props.illustration}
       </View>
-      <ToolLabel text={props.name} color={props.palette.ink} />
+      <ToolLabel text={props.name} color={props.palette.ink} beta={props.beta} />
     </Pressable>
   )
 }
@@ -150,6 +157,7 @@ export function UtilityScreen(): React.JSX.Element {
             <ToolCard
               name={MASPI_TOOL_NAME}
               palette={TOOL_PALETTES.maspi[mode]}
+              beta
               // 원본 정사각. 막대 위의 꺾은선이 보이도록 위에서 18 잘라 낸다.
               illustration={
                 <Image source={maspiIllustration} style={{ position: 'absolute', left: 2, top: -18, width: 116, height: 116 }} />

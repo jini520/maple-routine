@@ -9,7 +9,9 @@ import { Pressable, View } from 'react-native'
 
 import { PencilIcon, Text } from '../../../components/atoms'
 import { QUICK_LINK_NAMES, QUICK_LINKS_PER_ROW, onlyOpenable } from '../../../features/quick-links/config'
+import { useThemeAppearance } from '../../../theme/context'
 import type { QuickLinkId } from '../../../types/quick-links'
+import { QuickLinkBetaBadge } from '../QuickLinkBetaBadge'
 import { QuickLinksSheet } from '../QuickLinksSheet'
 import { QUICK_LINK_ICONS, useCanOpenQuickLink, useOpenQuickLink, useQuickLinkColors } from '../quick-links'
 import type { WidgetProps } from './types'
@@ -25,6 +27,7 @@ export function QuickLinksWidget({ data }: WidgetProps): React.JSX.Element {
   const open = useOpenQuickLink()
   const canOpen = useCanOpenQuickLink()
   const { tint, ink } = useQuickLinkColors()
+  const { definition } = useThemeAppearance()
 
   return (
     <View testID="widget-quick-links" className="gap-2.5 p-3">
@@ -56,6 +59,7 @@ export function QuickLinksWidget({ data }: WidgetProps): React.JSX.Element {
                 >
                   <View className="h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: tint }}>
                     <Icon color={ink} size={21} strokeWidth={1.9} aria-hidden />
+                    {QUICK_LINK_NAMES[id].beta === true && <QuickLinkBetaBadge ring={definition.surface} />}
                   </View>
                   <Text className="text-9 text-text-muted" numberOfLines={1}>
                     {QUICK_LINK_NAMES[id].short}

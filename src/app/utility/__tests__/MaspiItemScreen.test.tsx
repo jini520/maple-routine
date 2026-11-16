@@ -1,4 +1,6 @@
 // MASPI 상세 화면. 서버가 준 시세 하나를 머리 · 그래프 카드 · 범위와 거래 칸으로 나눠 적는다.
+import { within } from '@testing-library/react-native'
+
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { useMarketItem } from '../../../features/market/query'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
@@ -15,7 +17,7 @@ beforeEach(() => {
 })
 
 describe('MaspiItemScreen', () => {
-  it('기준가 · 전일 대비 칩 · 범위 · 거래 등급을 적고, 처음 기간은 30일이다', async () => {
+  it('기준가 · 전일 대비 칩 · 범위 · 거래 등급을 적고, 처음 기간은 30일이다. 머리의 제목 옆에는 `beta` 배지가 선다', async () => {
     jest.mocked(useMarketItem).mockReturnValue({
       date: '2026-11-15',
       itemKey: 'magic_eyepatch',
@@ -41,6 +43,7 @@ describe('MaspiItemScreen', () => {
     expect(view.getByText('보통')).toBeTruthy()
     expect(view.getByText('11/15 기준')).toBeTruthy()
     expect(view.getByLabelText('30일').props.accessibilityState?.selected).toBe(true)
+    expect(within(view.getByTestId('page-header')).getByText('beta')).toBeTruthy()
   })
 
   it('7일 표가 모자라 마지막 날의 범위가 없으면 범위 칸이 `-` 다', async () => {

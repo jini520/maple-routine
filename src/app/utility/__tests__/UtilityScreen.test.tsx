@@ -3,7 +3,7 @@
 // 이 파일이 지키는 것은 카드 하나가 아니라 **구조**다. 도구가 유틸리티 화면 안의 카드가 아니라
 // 루트 스택에 쌓이는 하위 페이지라는 것. 첫 도구가 정한 이 구조를 뒤에 오는 도구들이 물려받는다.
 
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
@@ -53,6 +53,15 @@ describe('UtilityScreen', () => {
 
     await press(view.getByLabelText(MASPI_TOOL_NAME))
     expect(navigate).toHaveBeenCalledWith('UtilityMaspi')
+  })
+
+  // MASPI 는 베타 기능이라 카드 이름 옆에 `beta` 배지가 선다. 두 계산기는 베타가 아니다.
+  it('MASPI 카드에만 이름 옆 `beta` 배지가 서고 두 계산기 카드에는 서지 않는다', async () => {
+    const view = await renderOverlay(<UtilityScreen />)
+
+    expect(within(view.getByLabelText(MASPI_TOOL_NAME)).getByText('beta')).toBeTruthy()
+    expect(within(view.getByLabelText(ITEM_SPLIT_TOOL_NAME)).queryByText('beta')).toBeNull()
+    expect(within(view.getByLabelText(BOSS_PROFIT_CALCULATOR_TOOL_NAME)).queryByText('beta')).toBeNull()
   })
 
   // RN 의 `Text` 는 한글을 글자 단위로 끊는다(`판매 분배금 계 / 산기`). 단어마다 `Text` 를 두고
