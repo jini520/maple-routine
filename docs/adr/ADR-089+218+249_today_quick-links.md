@@ -1,6 +1,6 @@
 # ADR-089+218+249 today 빠른 이동
 
-> ⚪ 미구현
+> 🟢 유효
 > 관련 소스: `app/today/widgets/QuickLinksWidget.tsx` · `app/today/QuickLinksSheet.tsx` · `app/today/quick-links.ts` · `features/quick-links/` · `storage/quick-links.ts` · `app/cashbook/CashbookScreen.tsx` · `navigation/routes.ts`
 
 ## 배경
@@ -47,7 +47,7 @@ today 의 다른 위젯은 요약을 보여 주고, 더 볼 사람만 원래 화
 | 관리 | 보스 관리(`BossManage`) | 보스 관리 | `SlidersHorizontal` |
 | 관리 | 캐릭터 관리(`SettingsCharacters`) | 캐릭터 관리 | `UserRound` |
 | 관리 | 계정 관리(`SettingsAccounts`) | 계정 관리 | `IdCard` |
-| 유틸리티 도구 | MASPI(MASPI 목록 화면) | MASPI | `ChartNoAxesCombined` |
+| 유틸리티 도구 | MASPI(`UtilityMaspi`) | MASPI | `ChartNoAxesCombined` |
 | 유틸리티 도구 | 판매 분배금 계산기(`UtilityItemSplit`) | 분배금 계산 | `Divide` |
 | 유틸리티 도구 | 주간 보스 수입 계산기(`UtilityBossProfitCalculator`) | 보스 계산기 | `Calculator` |
 | 더보기 | MVP 등급(`SettingsMvpGrade`) | MVP 등급 | `Crown` |
@@ -71,9 +71,6 @@ MASPI 는 유틸리티 도구 카드의 맨 앞에 둔다(사용자 지정). 유
 두 아이콘은 [#1056 시안](https://claude.ai/artifact/MBRHAFFbpWzDpACQqi3htr) 의 M2 · T2 다(사용자 지정). MASPI 의
 `ChartNoAxesCombined` 는 막대 위로 꺾은선이 지나는 그림이라, 유틸리티의 MASPI 카드 일러스트(보라 막대 위 분홍 꺾은선)와 구성이
 같다. 거래 내역의 `ReceiptText` 는 줄이 적힌 영수증이라 거래 한 건씩 남은 기록을 뜻한다.
-
-MASPI · 거래 내역 칸은 MASPI 화면(#1049)이 develop 에 머지된 뒤 두 칸을 한 PR 로 넣는다(사용자 지정). 그 전에는 MASPI 칸이 열
-화면이 없다.
 
 드롭 히스토리 · 아이템 가격 입력 · 컨텐츠 관리는 넣지 않는다(사용자 지정). 상세 화면(공지 상세 · 등급 이력)도
 넣지 않는다. 무엇을 열지 정하는 인자가 있어야 열리는 화면이라 칸 하나로 고정할 수 없다.
@@ -189,4 +186,4 @@ MASPI · 거래 내역 칸은 MASPI 화면(#1049)이 develop 에 머지된 뒤 �
 
 - ADR-089 (2026-10-23): #613 에서 처음 작성
 - ADR-218 (2026-11-13): #927 에서 인벤토리 · 사냥 · 사냥 전리품 판매 · 계정 관리 · 테마 칸과 결정 9 를 더했다. 결정 2 표의 `보스 수익` 을 코드의 이름 `보스 수입` 으로 맞췄다
-- ADR-249 (2026-11-16): #1056 에서 MASPI · 거래 내역 칸을 더했다(결정 2). MASPI 화면(#1049)이 머지된 뒤 구현하므로 ⚪ 로 둔다
+- ADR-249 (2026-11-16): #1056 에서 MASPI · 거래 내역 칸을 더했다(결정 2). MASPI 화면(#1049)이 머지된 뒤 두 칸을 한 PR 로 넣었다

@@ -102,6 +102,8 @@ import UserRound from 'lucide-react-native/icons/user-round'
 import Gem from 'lucide-react-native/icons/gem'
 import IdCard from 'lucide-react-native/icons/id-card'
 import Palette from 'lucide-react-native/icons/palette'
+import ChartNoAxesCombined from 'lucide-react-native/icons/chart-no-axes-combined'
+import ReceiptText from 'lucide-react-native/icons/receipt-text'
 import Wrench from 'lucide-react-native/icons/wrench'
 import X from 'lucide-react-native/icons/x'
 
@@ -287,6 +289,10 @@ export const GemIcon = withIconInterop(Gem)
 export const IdCardIcon = withIconInterop(IdCard)
 /** today 빠른 이동의 테마 칸. */
 export const PaletteIcon = withIconInterop(Palette)
+/** today 빠른 이동의 MASPI 칸. 막대 위 꺾은선이 유틸리티의 MASPI 카드 일러스트와 구성이 같다. */
+export const ChartNoAxesCombinedIcon = withIconInterop(ChartNoAxesCombined)
+/** today 빠른 이동의 거래 내역 칸. */
+export const ReceiptTextIcon = withIconInterop(ReceiptText)
 
 export const WrenchIcon = withIconInterop(Wrench)
 /** 통계 탭. */
