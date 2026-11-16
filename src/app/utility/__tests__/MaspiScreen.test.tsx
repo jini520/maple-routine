@@ -5,6 +5,7 @@ import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { useMarketItems, useMaspi } from '../../../features/market/query'
 import { useRepresentativeWorldKey } from '../../../features/market/representative'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
+import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 import type { MarketEntry, MarketItemsResponse } from '../../../server/market'
 import { MARKET_EMPTY_TITLE, MaspiScreen } from '../MaspiScreen'
 
@@ -87,6 +88,17 @@ describe('MaspiScreen', () => {
     expect(jest.mocked(useMarketItems)).toHaveBeenLastCalledWith('eos')
     expect(view.getByText('에오스')).toBeTruthy()
     expect(view.getByText(MARKET_EMPTY_TITLE)).toBeTruthy()
+  })
+
+  it('월드 드롭다운은 닫힌 칸과 목록 줄 모두 월드 이름 앞에 월드 엠블럼을 둔다', async () => {
+    const view = await renderOverlay(<MaspiScreen />)
+    await press(view.getByLabelText('소비'))
+
+    expect(view.getByTestId('maspi-world-icon').props.source).toEqual(worldEmblemUrl('scania'))
+
+    await press(view.getByLabelText('월드'))
+
+    expect(view.getByTestId('maspi-world-option-bera-icon').props.source).toEqual(worldEmblemUrl('bera'))
   })
 
   it('줄을 누르면 상세를 민다. 장비는 서버가 월드를 보지 않아 general 로, 소비는 고른 월드로 연다', async () => {

@@ -24,6 +24,7 @@ import { useMarketItems, useMaspi } from '../../features/market/query'
 import { useRepresentativeWorldKey } from '../../features/market/representative'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
+import { worldEmblemUrl } from '../../lib/assets/asset-lookup'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { MarketRow } from './maspi/MarketRow'
 import { MaspiCard } from './maspi/MaspiCard'
@@ -78,7 +79,7 @@ export function MaspiScreen(): React.JSX.Element {
             <WidgetSelect
               label="월드"
               testID="maspi-world"
-              options={worlds.map((entry) => ({ value: entry.key, label: entry.name }))}
+              options={worlds.map((entry) => ({ value: entry.key, label: entry.name, icon: worldEmblemUrl(entry.key) }))}
               selected={world}
               onSelect={setPickedWorld}
               onPage
