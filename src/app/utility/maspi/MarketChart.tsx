@@ -1,5 +1,5 @@
 /**
- * MASPI 상세의 시세 그래프. 날마다의 기준가 꺾은선과 범위 띠(25% ~ 75% 지점), 오른쪽 눈금, 아래 날짜다.
+ * MASPI 상세의 시세 그래프. 날마다의 기준가 꺾은선과 범위 띠, 오른쪽 눈금, 아래 날짜다. 띠는 범위가 있는 날끼리만 잇는다.
  * 누르거나 끌면 그날에 세로 점선과 점을 찍고 위에 날짜와 기준가 상자를 띄운다.
  *
  * 선과 띠는 victory-native(Skia)가 그리고, 눈금 · 날짜 · 상자 글자는 앱의 `Text` 로 캔버스 위에 얹는다. Skia 글자는
@@ -14,7 +14,7 @@ import { AreaRange, CartesianChart, Line, useChartPressState, type ChartBounds }
 import { Text } from '../../../components/atoms'
 import { NO_AXIS_LINES } from '../../../components/molecules/SparkLine/axis'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { formatTick, niceScale, trendOf } from '../../../features/market/format'
+import { bandSegments, formatTick, niceScale, trendOf } from '../../../features/market/format'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import type { MarketSeriesPoint } from '../../../server/market'
 import { useThemeAppearance } from '../../../theme/context'
@@ -58,7 +58,12 @@ export function MarketChart(props: { series: readonly MarketSeriesPoint[] }): Re
   )
 
   const data = props.series.map((point, index) => ({ index, price: point.price, low: point.low, high: point.high }))
-  const scale = niceScale(Math.min(...props.series.map((point) => point.low)), Math.max(...props.series.map((point) => point.high)))
+  // 범위가 없는 날도 있고 범위가 기준가 한쪽에 설 수도 있어, 눈금은 기준가와 범위를 함께 담는다.
+  const scale = niceScale(
+    Math.min(...props.series.map((point) => Math.min(point.price, point.low ?? point.price))),
+    Math.max(...props.series.map((point) => Math.max(point.price, point.high ?? point.price))),
+  )
+  const segments = bandSegments(props.series)
   const color = toneColor(trendOf(props.series.map((point) => point.price)), definition)
   const yOf = (value: number, area: ChartBounds): number =>
     area.top + ((scale.hi - value) / (scale.hi - scale.lo)) * (area.bottom - area.top)
@@ -92,7 +97,15 @@ export function MarketChart(props: { series: readonly MarketSeriesPoint[] }): Re
                   strokeWidth={1}
                 />
               ))}
-              <AreaRange upperPoints={points.high} lowerPoints={points.low} color={color} opacity={0.14} />
+              {segments.map(([start, end]) => (
+                <AreaRange
+                  key={start}
+                  upperPoints={points.high.slice(start, end + 1)}
+                  lowerPoints={points.low.slice(start, end + 1)}
+                  color={color}
+                  opacity={0.14}
+                />
+              ))}
               {pressed !== null && (
                 <SkiaLine
                   p1={vec(xOf(pressed, chartBounds), chartBounds.top)}

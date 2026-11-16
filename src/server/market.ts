@@ -26,15 +26,16 @@ export interface MaspiResponse {
   series: MaspiPoint[]
 }
 
-/** 신뢰 시세 하나. 가격은 메소 정수, 범위는 그날 25% ~ 75% 지점이다. */
+/** 신뢰 시세 하나. 가격은 메소 정수다. */
 export interface MarketEntry {
   itemKey: string
   ringLevel: number | null
   price: number
   /** 전일 대비(%). 앞 날이 없으면 `null` */
   changePct: number | null
-  low: number
-  high: number
+  /** 범위. 7일 표가 모자라면 `null` */
+  low: number | null
+  high: number | null
   grade: MarketGrade
   /** 최근 30일 기준가 */
   spark: number[]
@@ -49,8 +50,9 @@ export interface MarketItemsResponse {
 export interface MarketSeriesPoint {
   date: string
   price: number
-  low: number
-  high: number
+  /** 그날 띠. 범위가 없거나 잇지 않는 날은 `null` */
+  low: number | null
+  high: number | null
 }
 
 export interface MarketItemResponse extends Omit<MarketEntry, 'spark'> {
@@ -102,8 +104,8 @@ function entryHead(value: Record<string, unknown>): Omit<MarketEntry, 'spark'> |
     !isNumberOrNull(value.ringLevel) ||
     !isNumber(value.price) ||
     !isNumberOrNull(value.changePct) ||
-    !isNumber(value.low) ||
-    !isNumber(value.high) ||
+    !isNumberOrNull(value.low) ||
+    !isNumberOrNull(value.high) ||
     !isGrade(value.grade)
   ) {
     return null
@@ -154,7 +156,7 @@ export function parseMarketItem(value: unknown): MarketItemResponse | null {
   if (head === null) return null
   const series = value.series.filter(
     (point): point is MarketSeriesPoint =>
-      isRecord(point) && isDate(point.date) && isNumber(point.price) && isNumber(point.low) && isNumber(point.high),
+      isRecord(point) && isDate(point.date) && isNumber(point.price) && isNumberOrNull(point.low) && isNumberOrNull(point.high),
   )
   return { ...head, date: value.date, series }
 }

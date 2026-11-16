@@ -33,7 +33,7 @@ function 목록(world: string, consumable: MarketEntry[]): MarketItemsResponse {
   return {
     date: '2026-11-15',
     // 서버는 판 사람 수 차례로 준다. 화면은 기준가가 높은 차례로 다시 세운다.
-    equipment: [시세({ itemKey: 'brand_new_item', ringLevel: null, price: 100_000_000, changePct: null, low: 90_000_000, high: 110_000_000 }), 시세({})],
+    equipment: [시세({ itemKey: 'brand_new_item', ringLevel: null, price: 100_000_000, changePct: null, low: null, high: null }), 시세({})],
     consumable: { world, items: consumable },
   }
 }
@@ -66,7 +66,7 @@ describe('MaspiScreen', () => {
     expect(view.getByText('11/15 기준')).toBeTruthy()
   })
 
-  it('장비는 기준가가 높은 차례로 이름 · 기준가 · 전일 대비 · 범위를 적고, 앱이 모르는 아이템은 key 를 이름 자리에 적는다', async () => {
+  it('장비는 기준가가 높은 차례로 이름 · 기준가 · 전일 대비 · 범위를 적고, 앱이 모르는 아이템은 key 를 이름 자리에 적는다. 범위가 없는 줄은 `범위 -` 다', async () => {
     const view = await renderOverlay(<MaspiScreen />)
 
     const rows = view.getAllByTestId(/^market-row-/).map((row) => row.props.testID as string)
@@ -77,6 +77,7 @@ describe('MaspiScreen', () => {
     expect(view.getByText('범위 32억 ~ 34억')).toBeTruthy()
     expect(view.getByText('brand_new_item')).toBeTruthy()
     expect(view.getByText('0.0%')).toBeTruthy()
+    expect(view.getByText('범위 -')).toBeTruthy()
   })
 
   it('소비는 대표 캐릭터의 월드로 열리고, 그 월드에 신뢰 시세가 없으면 빈 상태 카드다', async () => {

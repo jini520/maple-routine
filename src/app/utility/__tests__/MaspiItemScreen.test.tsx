@@ -43,6 +43,28 @@ describe('MaspiItemScreen', () => {
     expect(view.getByLabelText('30일').props.accessibilityState?.selected).toBe(true)
   })
 
+  it('7일 표가 모자라 마지막 날의 범위가 없으면 범위 칸이 `-` 다', async () => {
+    jest.mocked(useMarketItem).mockReturnValue({
+      date: '2026-11-15',
+      itemKey: 'magic_eyepatch',
+      ringLevel: null,
+      price: 2_600_000_000,
+      changePct: -7.8,
+      low: null,
+      high: null,
+      grade: 'few',
+      series: [
+        { date: '2026-11-14', price: 2_820_000_000, low: 2_700_000_000, high: 2_840_000_000 },
+        { date: '2026-11-15', price: 2_600_000_000, low: null, high: null },
+      ],
+    })
+
+    const view = await renderOverlay(<MaspiItemScreen route={열기} />)
+
+    expect(view.getByText('범위')).toBeTruthy()
+    expect(view.getByText('-')).toBeTruthy()
+  })
+
   it('신뢰 시세가 아니게 됐으면 빈 상태 카드다', async () => {
     jest.mocked(useMarketItem).mockReturnValue(null)
 

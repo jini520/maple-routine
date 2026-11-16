@@ -66,6 +66,24 @@ it('목록에서 계약을 어긴 줄만 빼고, 모르는 등급도 그 줄을 
   expect(result.body.consumable.items).toEqual([{ ...줄, itemKey: 'life_whetstone', ringLevel: null, changePct: null }])
 })
 
+it('7일 표가 모자라 범위가 없는 줄과 날은 low · high 가 null 로 오고, 빼지 않고 그대로 받는다', async () => {
+  const 범위없음 = { ...줄, itemKey: 'life_whetstone', ringLevel: null, low: null, high: null }
+  jest.spyOn(global, 'fetch').mockResolvedValue(
+    ok({ date: '2026-11-15', equipment: [], consumable: { world: 'scania', items: [범위없음] } }),
+  )
+  await expect(fetchMarketItems('scania', null)).resolves.toMatchObject({ body: { consumable: { items: [범위없음] } } })
+
+  const series = [
+    { date: '2026-11-14', price: 760_000_000, low: 740_000_000, high: 770_000_000 },
+    { date: '2026-11-15', price: 750_000_000, low: null, high: null },
+  ]
+  const { spark: _spark, ...head } = 범위없음
+  jest.spyOn(global, 'fetch').mockResolvedValue(ok({ date: '2026-11-15', ...head, series }))
+  await expect(fetchMarketItem({ itemKey: 'life_whetstone', ringLevel: null, world: 'scania' }, null)).resolves.toMatchObject({
+    body: { low: null, high: null, series },
+  })
+})
+
 it('그 월드의 시세가 없어 404 면 없다고 주고, 다른 실패와 계약을 어긴 몸은 null 이다', async () => {
   jest.spyOn(global, 'fetch').mockResolvedValue({ status: 404 } as Response)
   await expect(fetchMarketItems('special', null)).resolves.toEqual({ kind: 'missing' })
