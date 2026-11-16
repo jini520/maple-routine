@@ -24,6 +24,8 @@ import { SettingsMvpGradeHistoryScreen } from '../app/settings/SettingsMvpGradeH
 import { AppSettingsScreen } from '../app/settings/AppSettingsScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
 import { ItemSplitScreen } from '../app/utility/ItemSplitScreen'
+import { MaspiItemScreen } from '../app/utility/MaspiItemScreen'
+import { MaspiScreen } from '../app/utility/MaspiScreen'
 import { BossProfitCalculatorScreen } from '../app/utility/BossProfitCalculatorScreen'
 import { BossProfitCalculatorRecordsScreen } from '../app/utility/BossProfitCalculatorRecordsScreen'
 import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
@@ -61,6 +63,8 @@ const STACK_SCREENS = {
   AppSettings: AppSettingsScreen,
   SettingsNoticeDetail: SettingsNoticeDetailScreen,
   UtilityItemSplit: ItemSplitScreen,
+  UtilityMaspi: MaspiScreen,
+  UtilityMaspiItem: MaspiItemScreen,
   UtilityBossProfitCalculator: BossProfitCalculatorScreen,
   UtilityBossProfitCalculatorRecords: BossProfitCalculatorRecordsScreen,
 } as const satisfies Record<StackRouteName, React.ComponentType>

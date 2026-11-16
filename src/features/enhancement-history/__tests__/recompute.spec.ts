@@ -5,13 +5,32 @@ const request = (over: Partial<RecomputeRequest> = {}): RecomputeRequest => ({
   from: '2026-09-16',
   to: '2026-09-20',
   kinds: ['cube', 'starforce', 'potential', 'soul_potential'],
+  superiorOnly: false,
   ...over,
 })
 
 describe('요청 읽기', () => {
   it('종류를 빼면 넷 다다', () => {
     expect(parseRecomputeRequests('[{"id":"a","from":"2026-09-16","to":"2026-09-20"}]')).toEqual([
-      { id: 'a', from: '2026-09-16', to: '2026-09-20', kinds: ['cube', 'starforce', 'potential', 'soul_potential'] },
+      {
+        id: 'a',
+        from: '2026-09-16',
+        to: '2026-09-20',
+        kinds: ['cube', 'starforce', 'potential', 'soul_potential'],
+        superiorOnly: false,
+      },
+    ])
+  })
+
+  it('superiorOnly 를 읽는다. 빼면 그 날을 통째로 갈아 끼운다', () => {
+    const raw = JSON.stringify([
+      { id: 's', from: '2026-09-16', to: '2026-09-20', kinds: ['starforce'], superiorOnly: true },
+      { id: 'a', from: '2026-09-16', to: '2026-09-20' },
+    ])
+
+    expect(parseRecomputeRequests(raw).map((one) => [one.id, one.superiorOnly])).toEqual([
+      ['s', true],
+      ['a', false],
     ])
   })
 
@@ -23,6 +42,7 @@ describe('요청 읽기', () => {
       { id: 'date', from: '2026-9-16', to: '2026-09-20' },
       { id: 'order', from: '2026-09-20', to: '2026-09-16' },
       { id: 'kind', from: '2026-09-16', to: '2026-09-20', kinds: ['flame'] },
+      { id: 'superior', from: '2026-09-16', to: '2026-09-20', superiorOnly: 'yes' },
       'x',
     ])
 

@@ -70,7 +70,7 @@
 |---|---|
 | `Text` · `TextInput` | 글자와 입력 칸. 글꼴, 앱 글자 크기 배수, 입력 칸의 기본 상자를 채운다. 고정 칸의 글자는 `maxScale` 로 배수를 제한한다. 입력 칸에 `maxBytes` 를 주면 그 바이트를 넘는 입력을 칸에서 되돌린다. `react-native` 의 `Text` · `TextInput` 은 이 둘만 가져온다 |
 | `Button` | 외형만 갖는 버튼. 변형은 `primary` · `text` · `tint` · `soft` · `dangerText`, 크기는 `sm` · `md`(기본). `busy` 면 라벨을 가리고 스피너를 겹친다 |
-| `Badge` | 상태 · 카테고리 · 난이도 배지. 크기는 `xs` · `sm` · `md`, 아이콘을 받는다 |
+| `Badge` | 상태 · 카테고리 · 난이도 배지. 크기는 `xs` · `sm` · `md`, 아이콘을 받는다. 시세 등락은 `rise`(빨강) · `fall`(파랑) · `muted`(같음) |
 | `Card` | 카드 껍데기(반경 14 · 표면색). 테두리는 없다([[ADR-060]] 결정 16) |
 | `CheckBox` | 체크박스 네모 |
 | `Switch` | 스위치. 크기 `sm` · `lg`. iOS 는 시스템 스위치를 줄여 쓴다 |
@@ -88,9 +88,9 @@
 | `EmptyState` | 빈 상태. 크기 `page` · `inline` |
 | `LoadingState` | 목록이나 카드가 들어올 곳의 대기 카드 |
 | `ErrorState` · `StaleBanner` | 실패 상태 · 낡은 목록 위의 실패 배너 |
-| `DataFreshness` | 제목 아래 `hh:mm:ss 기준` 줄 |
+| `DataFreshness` | 제목 아래 `hh:mm:ss 기준` 줄. 하루 한 번 나오는 값은 시각 대신 값의 날짜(`11/14 기준`)를 적는다 |
 | `UnavailableBadge` | 값 대신 보이는 `조회 불가` 알약 |
-| `Segment` | 테두리 없는 세그먼트(크기 `sm` 26 · `md` 28 · 화면 헤더 탭 `lg` 32) |
+| `Segment` | 테두리 없는 세그먼트(크기 `sm` 26 · `md` 28 · 화면 헤더 탭 `lg` 32). `fill` 이면 조각이 트랙 폭을 똑같이 나눈다 |
 | `InventoryTabs` | 게임 인벤토리처럼 판 위에 같은 폭으로 늘어선 탭. 판에 붙고, 고른 탭은 판과 같은 `surface`, 나머지는 `surface-2` 다([[ADR-209]] 결정 3) |
 | `Popover` | `PopoverLayer` · `AnchoredPopover` |
 | `ModalHeader` | 가운데 모달의 머리 줄. 왼쪽 40 원 배지 옆에 제목 · 설명([[ADR-062]] 결정 8) |
@@ -107,6 +107,7 @@
 | `BossPortrait` · `CharacterAvatar` | 보스 얼굴 · 캐릭터 얼굴 원. 링을 두른 초상화(캐릭터 레일 · 보스 수입 카드 머리) 말고는 머리를 원 밖으로 그린다(오버 프레임, [[ADR-219]] 결정 12 · 13) |
 | `CharacterGroupLabel` | 캐릭터별 묶음 왼쪽의 얼굴 · 이름 열 |
 | `DonutRing` | 비중 도넛. 조각 사이 틈 · 둥근 모서리, 조각이 없으면 회색 링([[ADR-074]] 결정 6) |
+| `SparkLine` | 눈금 없는 작은 꺾은선과 옅은 채움 · 끝 점. 값이 둘 미만이면 가운데 평평한 선. MASPI 카드 · 시세 줄 · today 위젯([[ADR-071]] 결정 13) |
 | `DifficultyExpander` | 난이도를 고르는 곳 모두가 쓰는 고르개. 고른 난이도 배지가 펼쳐져 모든 난이도가 된다. 오른쪽 끝에 붙으면 `align="end"` 로 왼쪽으로 펼치고 화살표도 왼쪽에 선다. 펼친 줄 뒤에 바탕을 깔지 않는다([[ADR-074]] 결정 8, [[ADR-093]] 결정 2 · 3) |
 | `FadedIllustration` | 카드 안 일러스트와 베일 |
 | `MvpGradeGrid` · `MvpPlate` | MVP 등급 고르기 · 등급 명패([[ADR-050]]) |
@@ -128,7 +129,7 @@
 | `Modal` · `NoticeModal` | 가운데 모달(테두리 없는 패널 `Modal.Card` · 껍데기 `ModalSurface`) · 알림 모달 틀([[ADR-062]] 결정 8). `NoticeModal` 은 `icon` 을 비우면 배지 없이 제목만 선다. 아래 칸이 무엇을 다루는지 보여 주는 확인(인벤토리 삭제)이 쓴다([[ADR-209]] 결정 11) |
 | `LoadingModal` · `TaskProgressModal` · `TaskResumeModal` | 불러오는 중 모달 · 오래 걸리는 작업 진행률 · 이어서 하기([[ADR-023]]) |
 | `CalendarPopover` · `TimePopover` | 날짜 · 시각 팝오버 |
-| `SelectField` · `AccountSelect` | 드롭다운 · 메이플 ID 드롭다운. 드롭다운은 위로 열리면 펼치는 움직임과 그림자도 뒤집어, 칸에 닿는 쪽에서부터 펼쳐지고 그림자는 칸에서 먼 쪽으로 진다([[ADR-062]] 결정 9) |
+| `SelectField` · `AccountSelect` · `WidgetSelect` | 드롭다운 · 메이플 ID 드롭다운 · 위젯 제목 줄 드롭다운. `WidgetSelect` 를 카드 밖 화면 바탕에 두면 `onPage` 로 칸을 카드 색으로 칠한다. 보기에 그림(`icon`)을 주면 닫힌 칸과 목록 줄 모두 이름 앞에 16 크기로 선다. 가계부 캐릭터 드롭다운의 월드 엠블럼과 같은 크기다. 보기가 많으면 `listMaxHeight` 로 목록 높이에 상한을 두고 나머지는 스크롤시킨다(MASPI 월드 고르개). 드롭다운은 위로 열리면 펼치는 움직임과 그림자도 뒤집어, 칸에 닿는 쪽에서부터 펼쳐지고 그림자는 칸에서 먼 쪽으로 진다([[ADR-062]] 결정 9) |
 | `FaqSheet` · `FaqButton` | 설명용 바텀시트 · 화면 머리 제목 옆에서 그 화면의 FAQ 시트를 여는 물음표. 진입 전 화면(로그인 · 캐릭터 설정 · MVP 등급 둘)은 같은 부품의 글자 모양 `자주 묻는 질문` 을 쓴다. 글자 모양은 진입 전 화면에서만 쓴다. 묶음에 문항이 없으면 아무것도 그리지 않는다([[ADR-150]]) |
 | `SpeedDial` | 펼치는 ＋ |
 | `Toast` | 토스트와 쌓기(`ToastStack`). 테두리 없이 그림자로 뜨고, 남은 시간은 닫기 버튼 둘레의 `TimerRing` 이 보인다. 같은 토스트는 한 장만 뜬다([[ADR-061]] 결정 11 · 12) |

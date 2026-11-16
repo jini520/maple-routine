@@ -127,7 +127,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 
 | ADR | 상태 | 카테고리 | 제목 |
 |---|---|---|---|
-| [ADR-001+084+235+241+247](./adr/ADR-001+084+235+241+247_utility_item-split.md) | ⚪ | utility | 판매 분배금 계산기 · 정산 금액 복사 · 비율 % 입력 · 유틸리티 도구 분류 |
+| [ADR-001+084+235+241+247](./adr/ADR-001+084+235+241+247_utility_item-split.md) | 🟢 | utility | 판매 분배금 계산기 · 정산 금액 복사 · 비율 % 입력 · 유틸리티 도구 분류 |
 | [ADR-002+094+165+237](./adr/ADR-002+094+165+237_stats_overview.md) | 🟢 | stats | 통계 화면 |
 | [ADR-003](./adr/ADR-003_docs_writing-rules.md) | 🟢 | docs | 문서 · 주석 · 앱 문구 쓰는 규칙 |
 | [ADR-004+065](./adr/ADR-004+065_architecture_local-first-adapters.md) | 🟢 | architecture | 기기 저장소와 네이티브 어댑터 경계 |
@@ -187,7 +187,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
 | [ADR-056+072+164+182](./adr/ADR-056+072+164+182_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
 | [ADR-057+125+198+227](./adr/ADR-057+125+198+227_notice_feed.md) | 🟢 | notice | 운영자 공지와 넥슨 공지 |
-| [ADR-058+087+176+179+248](./adr/ADR-058+087+176+179+248_today_widgets.md) | ⚪ | today | today 위젯 격자 · MASPI 위젯 |
+| [ADR-058+087+176+179+248](./adr/ADR-058+087+176+179+248_today_widgets.md) | 🟢 | today | today 위젯 격자 · MASPI 위젯 |
 | [ADR-089+218+249](./adr/ADR-089+218+249_today_quick-links.md) | ⚪ | today | today 빠른 이동 · 가계부 분류 칸 · MASPI · 거래 내역 칸 |
 | [ADR-059+136+224](./adr/ADR-059+136+224_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
 | [ADR-060+073+079+085+088+107+109+130+133](./adr/ADR-060+073+079+085+088+107+109+130+133_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
@@ -195,13 +195,13 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-062+082+091+106+119+123+129+131+134+141+148+240](./adr/ADR-062+082+091+106+119+123+129+131+134+141+148+240_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
 | [ADR-063+080+113+116+146+184+223](./adr/ADR-063+080+113+116+146+184+223_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 체계 · 화면 배율 · 글자 크기 페이지 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
-| [ADR-071+205+243](./adr/ADR-071+205+243_server_drop-price-market.md) | ⚪ | server | 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
+| [ADR-071+205+243](./adr/ADR-071+205+243_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
 | [ADR-074](./adr/ADR-074_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |
 | [ADR-078](./adr/ADR-078_persistence_boss-tables.md) | 🟢 | persistence | 보스 기록 테이블 재설계 |
 | [ADR-096](./adr/ADR-096_persistence_cashbook-tables.md) | 🟢 | persistence | 가계부 기록 테이블 재설계 |
 | [ADR-098+173](./adr/ADR-098+173_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |
 | [ADR-099+143](./adr/ADR-099+143_server-sync_records.md) | 🟢 | server-sync | 서버로 보내는 기록의 범위와 과거 드롭 올리기 |
-| [ADR-100+174+189](./adr/ADR-100+174+189_cashbook_enhancement-totals.md) | 🟢 | cashbook | 강화 합계 저장과 재계산 요청 · 스타포스 첫 성과 끝 성 · 이벤트 월드 판정과 월드 기간 |
+| [ADR-100+174+189+234](./adr/ADR-100+174+189+234_cashbook_enhancement-totals.md) | 🟢 | cashbook | 강화 합계 저장과 재계산 요청 · 스타포스 첫 성과 끝 성 · 이벤트 월드 판정과 월드 기간 · 슈페리얼 장비 스타포스 비용 |
 | [ADR-101+186+193+201](./adr/ADR-101+186+193+201_auth_multi-account.md) | ⚪ | auth | 다계정 |
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |

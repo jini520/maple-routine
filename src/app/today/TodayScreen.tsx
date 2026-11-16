@@ -24,6 +24,7 @@ import { View } from 'react-native'
 import { queryKeys } from '../../features/query/keys'
 import { useResetBoundaryTick } from '../../features/query/reset-timer'
 import { pullRefresh } from '../../features/refresh/pull'
+import { useMaspi } from '../../features/market/query'
 import { useCharacterProfiles } from '../../features/schedule-sync/use-schedule-queries'
 import { useRefetchStaleOnFocus } from '../../hooks/useRefetchStaleOnFocus'
 
@@ -76,6 +77,7 @@ export function TodayScreen(): React.JSX.Element {
   // 파티 약속은 기기에만 있다. 저장이 캐시를 덮어 파티 스케줄 탭에서 고친 것이 위젯 10 에 바로 선다.
   const { appointments: partyAppointments } = usePartyAppointments()
   const quickLinks = useQuickLinksStore((state) => state.config)
+  const maspi = useMaspi()
 
   // 프로필도 캐시에서 온다. 회차나 캐릭터 관리가 `character/basic` 을 받으면 그 자리에서 바뀐다.
   const profilesByOcid = useCharacterProfiles()
@@ -135,6 +137,7 @@ export function TodayScreen(): React.JSX.Element {
     statsDays,
     partyAppointments,
     quickLinks,
+    maspi: maspi ?? null,
     mapleIds,
     selectedSharedMapleId,
     mapleIdNames,

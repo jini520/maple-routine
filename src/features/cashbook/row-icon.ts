@@ -13,6 +13,7 @@ import { findHexaCore } from '../../lib/cashbook/hexa-matrix'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
 import { findSpendChoice, findSpendRewardChoice } from '../../lib/cashbook/spend-catalog'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
+import { findSuperiorItem } from '../../lib/enhancement/cost'
 import { findItem, findItemByApiName } from '../../lib/item-catalog'
 import type { ImageAssetRef } from '../../types/image-asset'
 import { isManualRecord, type DayRecord, type EnhancedItem } from './records'
@@ -71,8 +72,10 @@ export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
  * 펼친 강화 줄의 장비 그림. 못 찾으면 `null` 이고 화면은 그림 자리 없이 이름부터 세운다.
  *
  * key 로 못 찾으면 넥슨이 준 이름으로 찾는다. 강화 장비 표에 없는 장비는 합계 줄에 key 가 없지만 아이템 표에는 있을 수 있다.
+ * 아이템 표에도 없으면 슈페리얼 장비 표에서 찾는다. 타일런트 신발 · 노바 · 헬리시움 정예는 그 표에만 그림이 있다.
  */
 export function enhancedItemIconOf(item: EnhancedItem): ImageAssetRef | null {
   const row = findItem(item.itemKey) ?? findItemByApiName(item.targetItem)
-  return row === null ? null : getAssetImage(row.iconAssetId)
+  if (row !== null) return getAssetImage(row.iconAssetId)
+  return getAssetImage(findSuperiorItem(item.targetItem)?.iconAssetId)
 }

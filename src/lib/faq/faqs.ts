@@ -32,6 +32,7 @@ export const FAQ_SHEET_KEYS = [
   'boss-manage',
   'drop-history',
   'drop-price',
+  'utility-maspi',
   'utility-item-split',
   'utility-boss-profit-calculator',
   'utility-boss-profit-calculator-records',

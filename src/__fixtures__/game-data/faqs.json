@@ -54,6 +54,10 @@
       "title": "아이템 가격 입력"
     },
     {
+      "key": "utility-maspi",
+      "title": "MASPI"
+    },
+    {
       "key": "utility-item-split",
       "title": "판매 분배금 계산기"
     },

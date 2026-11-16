@@ -2369,6 +2369,36 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - react-native-skia (2.6.2):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React
+    - React-callinvoker
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - react-native-view-shot (5.1.0):
     - boost
     - DoubleConversion
@@ -3552,6 +3582,7 @@ DEPENDENCIES:
   - React-mutationobservernativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/mutationobserver`)
   - react-native-keyboard-controller (from `../node_modules/react-native-keyboard-controller`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
+  - "react-native-skia (from `../node_modules/@shopify/react-native-skia`)"
   - react-native-view-shot (from `../node_modules/react-native-view-shot`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-networking (from `../node_modules/react-native/ReactCommon/react/networking`)
@@ -3791,6 +3822,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-keyboard-controller"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
+  react-native-skia:
+    :path: "../node_modules/@shopify/react-native-skia"
   react-native-view-shot:
     :path: "../node_modules/react-native-view-shot"
   React-NativeModulesApple:
@@ -3985,6 +4018,7 @@ SPEC CHECKSUMS:
   React-mutationobservernativemodule: a77aaaac45fb0de3bfa71ae6ff5333d1bccca958
   react-native-keyboard-controller: 93e24ebbe21551622cbb0e9c39664dc5539f943c
   react-native-safe-area-context: befb5404eb8a16fdc07fa2bebab3568ecabcbb8a
+  react-native-skia: fc73e9bdc46ebb420a98c9c2be29fee80f565e79
   react-native-view-shot: 8a84e76be3832a5e1b1f37a935900a43c243a260
   React-NativeModulesApple: 03a418264b4505769c8152290010986079b199df
   React-networking: eeab08ae1f2c774b467bf3ea32086b5053a3075b

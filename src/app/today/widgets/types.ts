@@ -21,12 +21,13 @@ export type WidgetId =
   | 'unpriced-drops'
   | 'next-party-schedule'
   | 'quick-links'
+  | 'maspi'
 
 /**
- * 탭 이름이거나 루트 스택 화면 `DropPrice`. 그 화면은 파라미터를 안 받으면 열리는 순간의 이번 주로
- * 열리므로 타일이 넘길 것이 없다.
+ * 탭 이름이거나 루트 스택 화면 `DropPrice` · `UtilityMaspi`. 두 화면 모두 파라미터 없이 열려 타일이 넘길 것이 없다.
+ * `DropPrice` 는 파라미터를 안 받으면 열리는 순간의 이번 주로 열린다.
  */
-export type WidgetTarget = TabRouteName | 'DropPrice'
+export type WidgetTarget = TabRouteName | 'DropPrice' | 'UtilityMaspi'
 
 export interface WidgetProps {
   data: TodayViewModel

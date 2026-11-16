@@ -7,5 +7,7 @@
  * 코드 식별자(`UtilityItemSplit` · `item-split`)는 그대로다. 이름은 사용자에게
  * 보이는 말이고, 식별자는 무엇을 계산하는가 라 축이 다르다.
  */
+/** 드롭 시세 지수 도구. 지수 이름이 곧 도구 이름이다 */
+export const MASPI_TOOL_NAME = 'MASPI'
 export const ITEM_SPLIT_TOOL_NAME = '판매 분배금 계산기'
 export const BOSS_PROFIT_CALCULATOR_TOOL_NAME = '주간 보스 수입 계산기'

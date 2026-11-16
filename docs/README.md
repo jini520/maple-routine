@@ -22,7 +22,7 @@ docs/
 
 | 카테고리 | 문서 | 다루는 것 | 결정 |
 |---|---|---|---|
-| `today` | [features/today.md](./features/today.md) | 첫 화면 위젯 격자 · 빠른 이동 | [[ADR-058]] · [[ADR-089]] |
+| `today` | [features/today.md](./features/today.md) | 첫 화면 위젯 격자 · 빠른 이동 · MASPI 위젯 | [[ADR-058]] · [[ADR-089]] |
 | `content-scheduler` | [features/content-scheduler.md](./features/content-scheduler.md) | 일간 · 주간 컨텐츠 진행 | [[ADR-032]] · [[ADR-033]] · [[ADR-034]] · [[ADR-035]] |
 | `boss-scheduler` | [features/boss-scheduler.md](./features/boss-scheduler.md) | 보스 진행 · 파티 인원 · 보스 관리 | [[ADR-036]] · [[ADR-037]] · [[ADR-038]] · [[ADR-039]] · [[ADR-093]] |
 | `boss-profit` | [features/boss-profit.md](./features/boss-profit.md) | 보스 수익 기록과 기간 | [[ADR-040]] · [[ADR-041]] · [[ADR-042]] · [[ADR-043]] · [[ADR-092]] |
@@ -32,7 +32,7 @@ docs/
 | `inventory` | [features/inventory.md](./features/inventory.md) | 팔지 않고 가진 아이템 · 판매 · 수정 · 삭제 · 넣기 | [[ADR-209]] |
 | `trade-history` | [features/trade-history.md](./features/trade-history.md) | 아이템을 사고판 기록의 목록 · 필터 · 상세 시트 | [[ADR-228]] |
 | `party-appointments` | [features/party-appointments.md](./features/party-appointments.md) | 파티 일정과 알림 | [[ADR-051]] |
-| `utility` | [features/utility.md](./features/utility.md) | 도구 목록 · 판매 분배금 계산기 · 주간 보스 수익 계산기 | [[ADR-001]] · [[ADR-074]] |
+| `utility` | [features/utility.md](./features/utility.md) | 도구 목록 · MASPI · 판매 분배금 계산기 · 주간 보스 수익 계산기 | [[ADR-001]] · [[ADR-074]] · [[ADR-071]] |
 | `mvp-grade` | [features/mvp-grade.md](./features/mvp-grade.md) | MVP 등급과 수수료 | [[ADR-050]] |
 | `character` | [features/character.md](./features/character.md) | 추적 캐릭터 · 캐릭터 관리 · 선택 · 초상화 | [[ADR-028]] · [[ADR-029]] · [[ADR-030]] · [[ADR-031]] |
 | `auth` | [features/auth.md](./features/auth.md) | API 키 · 넥슨 로그인 | [[ADR-024]] · [[ADR-025]] |

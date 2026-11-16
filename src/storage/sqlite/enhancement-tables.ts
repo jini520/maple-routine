@@ -1,5 +1,5 @@
 /**
- * 강화 합계 표. 응답 원본(`enhancement_history`) 대신 이것을 읽는다. 비용은 MVP 할인 전 두 몫이다.
+ * 강화 합계 표. 응답 원본(`enhancement_history`) 대신 이것을 읽는다. 비용은 MVP 할인 전 세 몫이다.
  */
 import { NEW_UUID_SQL } from './uuid'
 
@@ -36,6 +36,8 @@ export const ENHANCEMENT_TOTALS_BODY = `(
     attempt_cost_meso INTEGER NOT NULL,
     -- 파괴 방지 추가분. 어떤 할인도 받지 않는다.
     destroy_defence_cost_meso INTEGER NOT NULL,
+    -- 슈페리얼 장비의 스타포스 비용. 어떤 할인도 받지 않는다.
+    superior_cost_meso INTEGER NOT NULL DEFAULT 0,
     -- 스타포스의 가장 이른 시도의 강화 전 성과 가장 늦은 시도의 강화 후 성. 다른 분류는 NULL.
     from_star INTEGER,
     to_star INTEGER,

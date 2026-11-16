@@ -1,5 +1,5 @@
 /**
- * 강화 기록 한 건이 쓴 **메소**로. 재료(규칙 셋 · 재설정 표 둘 · 스타포스 단계)는 `enhancementCosts` 칸이 들고
+ * 강화 기록 한 건이 쓴 **메소**로. 재료(규칙 셋 · 재설정 표 둘 · 스타포스 단계 · 슈페리얼 표 둘)는 `enhancementCosts` 칸이 들고
  * 식은 여기 있다.
  *
  * **모르면 `null` 이다. 0 이 아니다.** 못 매긴 것을 0 으로 세우면 합계가 조용히 거짓이 된다.
@@ -17,13 +17,18 @@ import {
   type PotentialResetTypeKey,
   type SoulPotentialResetCostRow,
   type StarforceStepRow,
+  type SuperiorItemRow,
+  type SuperiorSeriesRow,
 } from '../../types/game-data'
+import { comparableEquipmentName } from '../equipment/equipment-items'
 import {
   isFiniteNumber,
+  isNonEmptyString,
   isNonNegativeInteger,
   isOneOf,
   isPositiveInteger,
   isRow,
+  optional,
   rowsOf,
   updatedAtOf,
   type Row,
@@ -72,7 +77,23 @@ function toStep(row: Row): StarforceStepRow | null {
   return { fromStar: row.fromStar, exponent: row.exponent, divisor: row.divisor }
 }
 
-/** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
+function toSuperiorSeries(row: Row): SuperiorSeriesRow | null {
+  if (!isNonEmptyString(row.key) || !isPositiveInteger(row.starforceCostMeso)) return null
+  return { key: row.key, starforceCostMeso: row.starforceCostMeso }
+}
+
+function toSuperiorItem(row: Row): SuperiorItemRow | null {
+  if (!isNonEmptyString(row.name) || !isNonEmptyString(row.seriesKey)) return null
+  const iconAssetId = optional(row.iconAssetId, isNonEmptyString)
+  if (iconAssetId === false) return null
+  return { name: row.name, seriesKey: row.seriesKey, iconAssetId: iconAssetId ?? null }
+}
+
+/**
+ * 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다.
+ *
+ * 슈페리얼 칸 둘이 빠져도 `null` 이다. 빈 칸으로 받으면 그 사이 받은 날의 슈페리얼 줄이 값 없이 굳는다.
+ */
 export function parseEnhancementCosts(value: unknown): EnhancementCostsTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
@@ -81,13 +102,22 @@ export function parseEnhancementCosts(value: unknown): EnhancementCostsTable | n
   const potentialResetCosts = rowsOf(value.potentialResetCosts, toResetCost)
   const soulPotentialResetCosts = rowsOf(value.soulPotentialResetCosts, toSoulResetCost)
   const starforceSteps = rowsOf(value.starforceSteps, toStep)
-  if (rules === null || potentialResetCosts === null || soulPotentialResetCosts === null || starforceSteps === null) {
+  const superiorSeries = rowsOf(value.superiorSeries, toSuperiorSeries)
+  const superiorItems = rowsOf(value.superiorItems, toSuperiorItem)
+  if (
+    rules === null ||
+    potentialResetCosts === null ||
+    soulPotentialResetCosts === null ||
+    starforceSteps === null ||
+    superiorSeries === null ||
+    superiorItems === null
+  ) {
     return null
   }
-  return { updatedAt, rules, potentialResetCosts, soulPotentialResetCosts, starforceSteps }
+  return { updatedAt, rules, potentialResetCosts, soulPotentialResetCosts, starforceSteps, superiorSeries, superiorItems }
 }
 
-export const enhancementCostsTable = gameTable('enhancementCosts', { updatedAt: null, rules: { cubeAppraisalFreeMaxLevel: 0, cubeAppraisalCoefficient: 0, starforceDestroyDefenceSurchargePercent: 0 }, potentialResetCosts: [], soulPotentialResetCosts: [], starforceSteps: [] }, parseEnhancementCosts)
+export const enhancementCostsTable = gameTable('enhancementCosts', { updatedAt: null, rules: { cubeAppraisalFreeMaxLevel: 0, cubeAppraisalCoefficient: 0, starforceDestroyDefenceSurchargePercent: 0 }, potentialResetCosts: [], soulPotentialResetCosts: [], starforceSteps: [], superiorSeries: [], superiorItems: [] }, parseEnhancementCosts)
 
 const index = derive(enhancementCostsTable, (table) => {
   // 종류 · 등급마다 레벨 구간 줄을 minLevel 내림차순으로. 처음 걸리는 줄이 그 레벨의 줄이다.
@@ -99,12 +129,35 @@ const index = derive(enhancementCostsTable, (table) => {
     else rows.push(row)
   }
   for (const rows of resetRows.values()) rows.sort((a, b) => b.minLevel - a.minLevel)
+  const costBySeries = new Map(table.superiorSeries.map((series) => [series.key, series.starforceCostMeso]))
+  const superiorByName = new Map<string, SuperiorItem>()
+  for (const item of table.superiorItems) {
+    const starforceCostMeso = costBySeries.get(item.seriesKey)
+    if (starforceCostMeso !== undefined) {
+      superiorByName.set(comparableEquipmentName(item.name), { ...item, starforceCostMeso })
+    }
+  }
   return {
     resetRows,
     soulByGrade: new Map(table.soulPotentialResetCosts.map((row) => [row.grade, row.costMeso])),
     steps: new Map(table.starforceSteps.map((step) => [step.fromStar, step])),
+    superiorByName,
   }
 })
+
+/** 슈페리얼 장비 하나와 그 계열의 스타포스 1회 비용. */
+export interface SuperiorItem extends SuperiorItemRow {
+  starforceCostMeso: number
+}
+
+/**
+ * 넥슨 응답의 장비 이름(`target_item`)으로 찾은 슈페리얼 장비. 공백 · 정규화를 지운 이름이 통째로 같아야 한다. 없으면 `null`.
+ *
+ * 이름 일부로 찾지 않는다. `노바 두건` 처럼 계열 이름이 든 일반 장비가 있다.
+ */
+export function findSuperiorItem(apiName: string): SuperiorItem | null {
+  return index().superiorByName.get(comparableEquipmentName(apiName)) ?? null
+}
 
 /**
  * 큐브 1회당 감정비용.
@@ -146,10 +199,12 @@ export interface StarforceCostParts {
   attemptMeso: number
   /** 파괴 방지 추가분. 어떤 할인도 받지 않는다 */
   destroyDefenceMeso: number
+  /** 슈페리얼 장비의 계열 금액. 어떤 할인도 받지 않는다 */
+  superiorMeso: number
 }
 
 /**
- * 스타포스 1회 비용을 MVP 할인 전 두 몫으로. 성수가 표를 벗어나면 `null`.
+ * 일반 장비의 스타포스 1회 비용을 MVP 할인 전 몫으로. 슈페리얼 몫은 0 이다. 성수가 표를 벗어나면 `null`.
  *
  * 합계는 MVP 할인 전 값으로 저장하고 할인은 화면에 보일 때 붙인다. 그래서 등급 기간을 고쳐도 다시 받을 필요가 없다.
  * 반올림한 값은 100 의 배수라 이벤트 할인을 붙여도 정수다.
@@ -172,14 +227,15 @@ export function starforceCostParts(
   return {
     attemptMeso: Math.floor((rounded * (100 - discountRate)) / 100),
     destroyDefenceMeso: destroyDefence ? (rounded * rules.starforceDestroyDefenceSurchargePercent) / 100 : 0,
+    superiorMeso: 0,
   }
 }
 
 /**
- * 합계의 두 몫에 MVP 할인을 붙인 금액. 시도 비용에 할인을 한 번 붙이고 내림한 뒤 파괴 방지 추가분을 더한다.
+ * 합계의 몫들에 MVP 할인을 붙인 금액. 시도 비용에 할인을 한 번 붙이고 내림한 뒤 파괴 방지 추가분과 슈페리얼 몫을 더한다.
  *
  * 시도마다 내림하던 것이 합계에 한 번 내림하는 것으로 바뀌어 시도당 1 메소 이하가 다를 수 있다.
  */
 export function withMvpDiscount(parts: StarforceCostParts, mvpDiscountRate: number): number {
-  return Math.floor((parts.attemptMeso * (100 - mvpDiscountRate)) / 100) + parts.destroyDefenceMeso
+  return Math.floor((parts.attemptMeso * (100 - mvpDiscountRate)) / 100) + parts.destroyDefenceMeso + parts.superiorMeso
 }
