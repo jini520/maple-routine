@@ -65,11 +65,27 @@ export function trendOf(values: readonly number[]): MarketTone {
 }
 
 /**
- * `26.89억 ~ 28.78억`. 범위는 그날 판 사람 절반이 판 25% ~ 75% 지점이다.
+ * `26.89억 ~ 28.78억`. 범위가 없으면(7일 표가 모자란 날) `-` 다.
  * 억 · 만을 다 적으면 목록 줄에서 두 줄로 접혀, 통계 · 계산기와 같은 짧은 금액(억 소수 둘째 자리)으로 적는다.
  */
-export function formatMarketRange(low: number, high: number): string {
+export function formatMarketRange(low: number | null, high: number | null): string {
+  if (low === null || high === null) return '-'
   return `${formatMesoCompact(low)} ~ ${formatMesoCompact(high)}`
+}
+
+/**
+ * 그래프 띠를 칠할 구간. 범위가 있는 날끼리 이어진 `[처음, 끝]` 자리다.
+ * 띠는 위 끝을 앞으로, 아래 끝을 거꾸로 이어 칠해서, 범위가 없는 날을 끼고 한 번에 칠하면 조각이 캔버스 위까지 찬다.
+ */
+export function bandSegments(points: readonly { low: number | null; high: number | null }[]): [number, number][] {
+  const out: [number, number][] = []
+  points.forEach((point, index) => {
+    if (point.low === null || point.high === null) return
+    const last = out[out.length - 1]
+    if (last !== undefined && last[1] === index - 1) last[1] = index
+    else out.push([index, index])
+  })
+  return out
 }
 
 /** `11/14 기준`. 값의 날짜이고 받은 시각이 아니다. 날짜가 없으면 빈 글자 */

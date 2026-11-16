@@ -1,4 +1,5 @@
 import {
+  bandSegments,
   formatBasisDate,
   formatChangePct,
   formatIndex,
@@ -58,12 +59,31 @@ describe('지수와 등락 표기', () => {
     expect(formatMarketRange(299_999_999, 338_333_333)).toBe('3억 ~ 3.38억')
   })
 
+  it('7일 표가 모자라 범위가 없으면 `-` 다', () => {
+    expect(formatMarketRange(null, null)).toBe('-')
+  })
+
   it('값의 날짜를 `11/14 기준` 으로 적고, 날짜가 없으면 비운다', () => {
     expect([formatBasisDate('2026-11-14'), formatBasisDate('2026-01-05'), formatBasisDate(null)]).toEqual([
       '11/14 기준',
       '1/5 기준',
       '',
     ])
+  })
+})
+
+describe('bandSegments', () => {
+  it('그래프 띠를 범위가 있는 날끼리 이어진 구간으로 나눈다', () => {
+    // 띠는 위 끝을 앞으로, 아래 끝을 거꾸로 이어 칠한다. 범위가 없는 날을 끼고 한 번에 칠하면 조각이 캔버스 위까지 찬다.
+    const band = { low: 1, high: 2 }
+    const none = { low: null, high: null }
+
+    expect(bandSegments([band, band, none, band, none, band, band, band])).toEqual([
+      [0, 1],
+      [3, 3],
+      [5, 7],
+    ])
+    expect(bandSegments([none, none])).toEqual([])
   })
 })
 
