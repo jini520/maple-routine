@@ -43,8 +43,9 @@ describe('NoticeModal: 영역', () => {
 
   // 아래 칸이 무엇을 다루는지 보여 주는 확인은 배지 없이 제목만 둔다. 빈 원이 남으면 제목이 오른쪽으로 밀린다.
   it('아이콘을 안 주면 배지 자리가 없다', async () => {
-    const { icon: _icon, ...rest } = 기본프롭()
-    const { queryByTestId, getByText } = await renderOverlay(<NoticeModal {...rest} />)
+    const 프롭 = 기본프롭()
+    delete 프롭.icon
+    const { queryByTestId, getByText } = await renderOverlay(<NoticeModal {...프롭} />)
 
     expect(queryByTestId('notice-badge')).toBeNull()
     expect(getByText('이 키로는 연결할 수 없습니다')).toBeTruthy()
