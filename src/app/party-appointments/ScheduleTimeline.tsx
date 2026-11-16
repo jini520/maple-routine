@@ -113,7 +113,7 @@ export function ScheduleTimeline(props: ScheduleTimelineProps): React.JSX.Elemen
             aria-label={expanded ? '주간 시간표 접기' : '주간 시간표 펼치기'}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 8 }}
             onPress={() => setExpanded((open) => !open)}
-            className="flex-row items-center gap-0.5 active:opacity-60"
+            className="flex-row items-center gap-0.5"
           >
             <Text className="text-xs font-semibold text-text-muted">{expanded ? '오늘만' : '주간'}</Text>
             {expanded ? (

@@ -271,7 +271,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           aria-label={props.label}
           aria-expanded={isOpen}
           onPress={open}
-          className={`${triggerBoxClass(props.tall === true)} active:opacity-60`}
+          className={triggerBoxClass(props.tall === true)}
         >
           <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
           <Text numberOfLines={1} className="flex-1 text-sm font-semibold text-text">

@@ -28,7 +28,7 @@ export function ManualCompletionMark(props: { row: BossProfitRow }): React.JSX.E
         aria-label={`${props.row.bossName} 직접 기록 설명`}
         onPress={toggle}
         hitSlop={8}
-        className="shrink-0 active:opacity-60"
+        className="shrink-0"
       >
         <AlertCircleIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2} aria-hidden />
       </Pressable>

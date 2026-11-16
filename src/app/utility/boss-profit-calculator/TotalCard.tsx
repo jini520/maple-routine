@@ -144,7 +144,7 @@ export function TotalCard(props: {
                   setOtherOpen(true)
                   otherRef.current?.measureInWindow((left, top, width, height) => setOtherAnchor({ left, top, width, height }))
                 }}
-                className="h-[18px] flex-row items-center gap-1.5 active:opacity-60"
+                className="h-[18px] flex-row items-center gap-1.5"
               >
                 {label}
               </Pressable>

@@ -301,7 +301,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
                   aria-label={`${row.bossName} 기록 수정`}
                   onPress={() => setManualSheet('edit')}
                   hitSlop={8}
-                  className="shrink-0 active:opacity-60"
+                  className="shrink-0"
                 >
                   <Text className="text-xs font-semibold text-primary-ink">수정</Text>
                 </Pressable>
