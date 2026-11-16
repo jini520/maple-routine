@@ -140,7 +140,7 @@ export function SettingsAccountsScreen(): React.JSX.Element {
                   role="button"
                   onPress={startAdding}
                   hitSlop={8}
-                  className="flex-row items-center gap-0.5 self-end px-1 active:opacity-60"
+                  className="flex-row items-center gap-0.5 self-end px-1"
                 >
                   <PlusIcon className="h-3.5 w-3.5 text-primary-ink" strokeWidth={2} aria-hidden />
                   <Text className="text-xs font-semibold text-primary-ink">API 키 추가</Text>

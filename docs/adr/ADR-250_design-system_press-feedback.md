@@ -1,6 +1,6 @@
 # ADR-250 누를 때 흐려지지 않는다
 
-> ⚪ 미구현
+> 🟢 유효
 > 관련 소스: `__tests__/press-dim-policy.test.ts`
 
 ## 배경

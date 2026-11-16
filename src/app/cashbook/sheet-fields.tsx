@@ -204,7 +204,7 @@ export function SelectRow(props: {
             role="button"
             aria-label={props.label}
             onPress={open}
-            className="min-h-7 flex-row items-center gap-3 active:opacity-60"
+            className="min-h-7 flex-row items-center gap-3"
           >
             <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
             {decorOf === undefined ? (

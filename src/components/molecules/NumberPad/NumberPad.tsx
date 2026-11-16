@@ -153,7 +153,7 @@ export function NumberPad(props: NumberPadProps): React.JSX.Element {
           onPress={props.onConfirm}
           // 윗줄에 소수점이 서면 그 한 칸 몫까지 넓어진다. 두 줄의 오른쪽 끝이 맞아야 판이 격자로 읽힌다.
           style={{ flexGrow: props.onDecimal === undefined ? 마지막_열_배수 : 마지막_열_배수 + 1, flexBasis: 0 }}
-          className="items-center justify-center rounded-[10px] bg-primary active:opacity-90"
+          className="items-center justify-center rounded-[10px] bg-primary"
         >
           <Text numberOfLines={1} className="text-xs font-semibold text-on-primary">
             {props.confirmLabel ?? '확인'}

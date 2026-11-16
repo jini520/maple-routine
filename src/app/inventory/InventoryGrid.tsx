@@ -66,7 +66,7 @@ function CellView(props: {
         node?.measureInWindow((left, top, width, height) => props.onPress(cell, { left, top, width, height }))
       }}
       style={{ width: size, height: size }}
-      className="items-center justify-center rounded-[10px] bg-card-inset active:opacity-70"
+      className="items-center justify-center rounded-[10px] bg-card-inset"
     >
       {icon === null ? (
         <View style={{ width: ICON_SIZE, height: ICON_SIZE }} />

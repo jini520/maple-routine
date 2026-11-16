@@ -61,7 +61,7 @@ export function SettlementBanner(props: {
           onPress={() => setFaqOpen(true)}
           // 묶음에 문항이 없으면 줄은 서되 열 시트가 없다.
           disabled={faq === null}
-          className="shrink grow active:opacity-60"
+          className="shrink grow"
         >
           <Text className="text-xs font-semibold text-settlement-ink">{SETTLEMENT_BANNER_TITLE}</Text>
           <Text className="text-11 text-settlement-ink-muted">{props.detail}</Text>
@@ -76,7 +76,7 @@ export function SettlementBanner(props: {
             // 이미 읽은 안내를 다시 보는 일이다.
             void dismiss().catch(() => undefined)
           }}
-          className="shrink-0 active:opacity-60"
+          className="shrink-0"
         >
           <XIcon className="h-4 w-4 text-settlement-ink-muted" strokeWidth={2} aria-hidden />
         </Pressable>

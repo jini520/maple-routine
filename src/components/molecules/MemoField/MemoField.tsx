@@ -23,7 +23,7 @@ export function MemoField(props: MemoFieldProps): React.JSX.Element {
         role="button"
         aria-label="메모 추가"
         onPress={props.onPress}
-        className="h-[50px] flex-row items-center gap-2.5 rounded-xl bg-control-track px-3 active:opacity-60"
+        className="h-[50px] flex-row items-center gap-2.5 rounded-xl bg-control-track px-3"
       >
         <View className="h-[30px] w-[30px] items-center justify-center">
           <StickyNoteIcon className="h-[15px] w-[15px] text-text-muted" strokeWidth={2} aria-hidden />
@@ -51,7 +51,7 @@ export function MemoField(props: MemoFieldProps): React.JSX.Element {
     )
   }
   return (
-    <Pressable testID={props.testID} role="button" aria-label="메모 고치기" onPress={props.onPress} className="gap-1.5 active:opacity-60">
+    <Pressable testID={props.testID} role="button" aria-label="메모 고치기" onPress={props.onPress} className="gap-1.5">
       {body}
     </Pressable>
   )

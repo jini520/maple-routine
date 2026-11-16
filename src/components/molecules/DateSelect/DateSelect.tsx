@@ -60,7 +60,7 @@ export const DateSelect = forwardRef<View, DateSelectProps>(function DateSelect(
     )
   }
   return (
-    <Pressable ref={ref} role="button" aria-label={`${props.label} 고르기`} onPress={props.onPress} className="shrink-0 active:opacity-60">
+    <Pressable ref={ref} role="button" aria-label={`${props.label} 고르기`} onPress={props.onPress} className="shrink-0">
       {pill}
     </Pressable>
   )

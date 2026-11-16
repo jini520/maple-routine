@@ -266,7 +266,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
                   testID="spend-sheet-hexa-core"
                   onPress={open}
                   disabled={cores.length === 0}
-                  className="flex-1 flex-row items-center gap-3 active:opacity-60"
+                  className="flex-1 flex-row items-center gap-3"
                   style={{ height: CORE_ROW_HEIGHT }}
                 >
                   <Text className="shrink-0 text-xs text-text-muted">코어</Text>

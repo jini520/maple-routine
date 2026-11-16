@@ -113,7 +113,7 @@ function TradeRowCard(props: { row: TradeRow; onPress: () => void }): React.JSX.
       role="button"
       aria-label={`${SIDE_LABELS[row.side]} ${row.name}${row.quantity === null ? '' : ` ${row.quantity}`} ${tradeOwnerLineOf(row)} ${row.amountText}${row.memo === null ? '' : ' 메모 있음'}`}
       onPress={props.onPress}
-      className="flex-row items-start gap-2.5 rounded-[14px] bg-surface py-3 pl-3 pr-2.5 active:opacity-60"
+      className="flex-row items-start gap-2.5 rounded-[14px] bg-surface py-3 pl-3 pr-2.5"
     >
       {/* 윗줄 높이(그림 24)의 가운데에 글자를 맞춘다. */}
       <Text testID={`trade-row-side-${row.key}`} className={`mt-[3.5px] shrink-0 text-xs font-semibold ${ink}`}>

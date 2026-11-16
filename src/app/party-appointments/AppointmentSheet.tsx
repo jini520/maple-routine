@@ -216,7 +216,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         setThisWeekOnly(false)
         setStep('view')
       }}
-      className="flex-row items-center gap-1 self-start active:opacity-60"
+      className="flex-row items-center gap-1 self-start"
     >
       <ChevronLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
       <Text className="text-base font-bold text-text">스케줄 수정</Text>
@@ -229,7 +229,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
       role="button"
       aria-label="뒤로"
       onPress={() => setStep('form')}
-      className="flex-row items-center gap-1 self-start active:opacity-60"
+      className="flex-row items-center gap-1 self-start"
     >
       <ChevronLeftIcon className="h-5 w-5 text-text" strokeWidth={2} aria-hidden />
       <Text className="text-base font-bold text-text">보스 추가</Text>

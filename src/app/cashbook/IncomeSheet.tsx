@@ -158,7 +158,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
               testID="income-sheet-back"
               onPress={() => setCategory(null)}
               hitSlop={8}
-              className="-ml-1 shrink flex-row items-center gap-1 active:opacity-60"
+              className="-ml-1 shrink flex-row items-center gap-1"
             >
               <ChevronLeftIcon className="h-5 w-5 shrink-0 text-text" strokeWidth={2} aria-hidden />
               <Text testID="income-sheet-title" numberOfLines={1} className="shrink text-base font-bold text-text">

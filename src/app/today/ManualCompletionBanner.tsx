@@ -44,7 +44,7 @@ export function ManualCompletionBanner(): React.JSX.Element | null {
           onPress={() => setFaqOpen(true)}
           // 묶음에 문항이 없으면 줄은 서되 열 시트가 없다.
           disabled={faq === null}
-          className="shrink grow active:opacity-60"
+          className="shrink grow"
         >
           {/* 문장 둘을 각자 한 줄에 둔다. 한 문단으로 흘리면 폭에 따라 접히는 자리가 달라져
               문장 가운데가 끊긴다. 첫 줄이 무슨 일이 있나이고 둘째 줄이 그래서 뭘 할 수 있나다. */}
@@ -65,7 +65,7 @@ export function ManualCompletionBanner(): React.JSX.Element | null {
             // 이미 읽은 안내를 다시 보는 일이다.
             void dismiss().catch(() => undefined)
           }}
-          className="shrink-0 active:opacity-60"
+          className="shrink-0"
         >
           <XIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
         </Pressable>

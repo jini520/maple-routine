@@ -139,7 +139,7 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
                     role="button"
                     aria-label={`${title.date} ${title.time} 기록 지우기`}
                     onPress={() => void remove(record)}
-                    className="h-11 w-11 items-center justify-center rounded-full active:opacity-60"
+                    className="h-11 w-11 items-center justify-center rounded-full"
                   >
                     <Trash2Icon className="h-[18px] w-[18px] text-text-muted" strokeWidth={2} aria-hidden />
                   </Pressable>

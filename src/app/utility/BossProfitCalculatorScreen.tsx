@@ -150,7 +150,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                   role="button"
                   aria-label="계산 기록"
                   onPress={() => navigation.navigate('UtilityBossProfitCalculatorRecords')}
-                  className="h-10 w-10 items-center justify-center active:opacity-60"
+                  className="h-10 w-10 items-center justify-center"
                 >
                   <HistoryIcon className="h-[19px] w-[19px] text-text" strokeWidth={2} aria-hidden />
                 </Pressable>
@@ -212,7 +212,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                     role="button"
                     aria-label="보스 선택"
                     onPress={() => setPickerOpen(true)}
-                    className="h-7 justify-center rounded-full bg-primary-tint px-[11px] active:opacity-60"
+                    className="h-7 justify-center rounded-full bg-primary-tint px-[11px]"
                   >
                     <Text className="text-xs font-semibold text-primary-ink">보스 선택</Text>
                   </Pressable>
@@ -224,7 +224,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                       setMenuOpen(true)
                       menuRef.current?.measureInWindow((left, top, width, height) => setMenuAnchor({ left, top, width, height }))
                     }}
-                    className="h-7 w-7 items-center justify-center rounded-full bg-bg active:opacity-60"
+                    className="h-7 w-7 items-center justify-center rounded-full bg-bg"
                   >
                     <EllipsisIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
                   </Pressable>
@@ -279,7 +279,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
               if (calculator.openedId === null) void save('new')
               else setAskingSave(true)
             }}
-            className="h-[52px] items-center justify-center rounded-full bg-primary active:opacity-80"
+            className="h-[52px] items-center justify-center rounded-full bg-primary"
           >
             <Text className="text-base font-bold text-on-primary">결과 저장</Text>
           </Pressable>

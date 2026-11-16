@@ -88,7 +88,7 @@ export function WidgetSelect(props: WidgetSelectProps): React.JSX.Element {
           aria-label={props.label}
           aria-expanded={isOpen}
           onPress={open}
-          className="flex-row items-center gap-0.5 py-1 pl-2 pr-1.5 active:opacity-60"
+          className="flex-row items-center gap-0.5 py-1 pl-2 pr-1.5"
         >
           <OptionLine option={selected} iconTestID={`${props.testID}-icon`} textClassName="text-xs font-semibold text-text" />
           <SelectChevron open={isOpen} />

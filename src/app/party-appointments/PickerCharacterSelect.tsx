@@ -65,7 +65,7 @@ export function PickerCharacterSelect(props: {
           role="button"
           aria-label="캐릭터 고르기"
           onPress={open}
-          className="flex-1 flex-row items-center gap-2.5 active:opacity-60"
+          className="flex-1 flex-row items-center gap-2.5"
         >
           <CharacterFace ocid={props.ocid} name={current?.name ?? ''} imageUrl={current?.imageUrl ?? null} />
           <Text className="text-sm font-semibold text-text">{current?.name ?? ''}</Text>

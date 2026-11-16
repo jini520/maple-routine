@@ -125,7 +125,7 @@ export function AppointmentBossList(props: AppointmentBossListProps): React.JSX.
           role="button"
           aria-label="보스 추가"
           onPress={props.onAdd}
-          className="mt-1 h-[46px] flex-row items-center justify-center gap-1.5 rounded-[10px] bg-card-inset active:opacity-60"
+          className="mt-1 h-[46px] flex-row items-center justify-center gap-1.5 rounded-[10px] bg-card-inset"
         >
           <PlusIcon className="h-3.5 w-3.5 text-primary-ink" strokeWidth={2.6} aria-hidden />
           <Text className="text-xs font-semibold text-primary-ink">보스 추가</Text>
