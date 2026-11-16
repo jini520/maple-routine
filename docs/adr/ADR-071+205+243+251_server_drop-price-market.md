@@ -1,7 +1,7 @@
 # ADR-071+205+243+251 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 드롭 가격 관리 화면
 
-> 🟢 유효
-> 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `database/migrations/0044_market_daily.sql` · `database/migrations/0045_market_range_nullable.sql` · `cli/market-backfill.ts` · `cli/market-range-recompute.ts` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/admin.controller.ts` · `modules/admin/views/layout.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `modules/admin/views/drop-prices.ts` · `database/schema.ts`(`drop_prices.priced_at` · `drop_prices.box_origin_item_id` · `worlds.price_group` · `items.world_bound`) · 앱 `server/market.ts` · `features/market/` · `app/utility/MaspiScreen.tsx` · `app/utility/MaspiItemScreen.tsx` · `app/utility/maspi/` · `components/molecules/SparkLine/` · `app/today/widgets/MaspiWidget.tsx`
+> ⚪ 미구현
+> 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `database/migrations/0044_market_daily.sql` · `database/migrations/0045_market_range_nullable.sql` · `cli/market-backfill.ts` · `cli/market-range-recompute.ts` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/admin.controller.ts` · `modules/admin/views/layout.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `modules/admin/views/drop-prices.ts` · `database/schema.ts`(`drop_prices.priced_at` · `drop_prices.box_origin_item_id` · `worlds.price_group` · `items.world_bound`) · 앱 `server/market.ts` · `features/market/` · `app/utility/MaspiScreen.tsx` · `app/utility/MaspiItemScreen.tsx` · `app/utility/maspi/` · `app/utility/UtilityScreen.tsx` · `components/molecules/SparkLine/` · `app/today/widgets/MaspiWidget.tsx` · `app/today/widgets/QuickLinksWidget.tsx` · `app/today/QuickLinksSheet.tsx`
 
 ## 배경
 
@@ -414,6 +414,20 @@ MASPI 는 드롭 아이템 시세 전체가 오르는지 내리는지 보이는 
   따로 표시를 달면 거래가 적은 시세가 드러난다(결정 8).
 - 날짜는 `11/14 기준` 처럼 그 값의 날을 보인다(결정 9).
 - today 에도 MASPI 를 한 줄로 보이는 얇은 위젯이 있다([[ADR-058]] 결정 31).
+- **MASPI 는 베타 기능이다**(사용자 지정, 이슈 #1069). MASPI 가 보이는 자리마다 이름 바로 오른쪽에 `beta` 배지를 붙인다. 모양은
+  [MASPI 베타 표시 시안](https://claude.ai/artifact/RECA5AjVbQe5zW1quCypGM) 의 안 A 다(사용자 지정). 배지는 `Badge` 의 `primary` 에
+  `beta` 글자이고, 업데이트 모달이 베타 채널 버전 앞에 붙이는 배지와 같은 모양이다. 크기는 옆 글자에 맞춰 자리마다 다르다.
+
+  | 자리 | 붙이는 곳 | 배지 크기 |
+  |---|---|---|
+  | 유틸리티 도구 카드([[ADR-001]] 결정 10) | 이름 `MASPI` 오른쪽. 이름과 배지를 한 덩어리로 카드 오른쪽 자리의 가운데에 둔다 | `sm` |
+  | 목록 · 상세 화면 머리 | 제목 `MASPI` 와 FAQ 물음표 사이 | `md` |
+  | today MASPI 위젯([[ADR-058]] 결정 31) | 왼쪽 `MASPI` 라벨 오른쪽 | `xs` |
+  | 빠른 이동의 MASPI 칸([[ADR-089]] 결정 2) | 위젯과 편집 시트(트레이 · 묶음 카드)의 동그라미 오른쪽 위 모서리 | `xs` |
+
+  빠른 이동 칸은 이름이 9 ~ 11px 이고 칸 폭이 60px 안팎이라 이름 옆에 배지가 들어갈 자리가 없다. 그래서 동그라미 모서리에
+  걸치고, 칸이 놓인 바탕색으로 2 의 테를 둘러 동그라미와 갈라 보이게 한다. 편집 시트에서 고른 칸의 체크는 오른쪽 아래라 겹치지
+  않는다. 목록 화면 안의 MASPI 카드에는 붙이지 않는다. 같은 화면의 머리에 이미 붙어 있다.
 - 그래프는 victory-native(Skia)로 그린다(#665 에서 사용자 지정). 목록의 작은 꺾은선 · MASPI 카드 · today 위젯도 같은 것으로
   그린다. 네이티브 모듈이라 지문이 바뀌어 스토어 바이너리로 낸다. 판은 Expo 57 이 맞춘 `@shopify/react-native-skia` 2.6.2 와
   그 판을 받는 victory-native 42.0.1 이다. victory-native 43 은 이름을 바꾼 `react-native-skia` 2.15 이상을 요구해 Expo 가 맞춘
@@ -461,6 +475,8 @@ MASPI 는 드롭 아이템 시세 전체가 오르는지 내리는지 보이는 
 | 앱 `features/market/__tests__/catalog.test.ts` | 결정 13: 줄이 기준가 높은 차례이고 같으면 이름 차례인지, 이름 · 그림을 아이템 표에서 찾고 반지에 레벨을 붙이는지, 모르는 아이템은 key 를 이름 자리에 적는지, 고르개가 열린 월드만 넣는지, 처음 월드가 대표 캐릭터의 월드이고 없으면 첫 월드인지 본다 |
 | 앱 `app/utility/__tests__/MaspiScreen.test.tsx` | 결정 13: MASPI 카드의 종가 · 전일 대비 · 값의 날짜, 서버 차례대로 선 줄의 이름 · 기준가 · 전일 대비 · 범위, 소비가 대표 캐릭터의 월드로 열리고 신뢰 시세가 없으면 빈 상태인지, 월드 드롭다운의 닫힌 칸과 목록 줄에 월드 엠블럼이 서는지, 줄을 누르면 장비는 `general` 로 상세를 여는지, 범위가 없는 줄은 `범위 -` 인지 본다 |
 | 앱 `app/utility/__tests__/MaspiItemScreen.test.tsx` | 결정 12 · 13: 상세의 기준가 · 전일 대비 칩 · 범위 · 거래 등급, 처음 기간이 30일인지, 신뢰 시세가 아니게 되면 빈 상태인지, 범위가 없으면 `범위` 칸이 `-` 인지 본다 |
+| 앱 `app/utility/__tests__/UtilityScreen.test.tsx` · `MaspiScreen.test.tsx` · `MaspiItemScreen.test.tsx` · `app/today/widgets/__tests__/MaspiWidget.test.tsx` | 결정 13: 도구 카드 · 목록과 상세 머리 · today 위젯의 `MASPI` 옆에 `beta` 배지가 서는지, 두 계산기 카드에는 서지 않는지 본다 |
+| 앱 `app/today/widgets/__tests__/QuickLinksWidget.test.tsx` · `app/today/__tests__/QuickLinksSheet.test.tsx` | 결정 13: 위젯 · 트레이 · 묶음 카드에서 MASPI 칸의 동그라미에만 `beta` 배지가 서는지 본다 |
 |---|---|
 | 서버 `modules/drop-market/daily-reference.spec.ts` | 결정 3: 0 을 하나 더 · 덜 친 값과 1메소가 로그 울타리 밖인지, 같은 값이 몰려도 중앙값 80% ~ 120% 는 안인지, 한 사람의 여러 줄 · 여러 날이 한 표로 접히는지, 신뢰도가 판정 5개 미만이면 무게를 안 깎고 30% · 50% 에서 절반 · 0 인지, 같은 가격이 아이템 셋에서 모두 울타리 밖일 때만 더미 입력이고 그날 표가 모두 빠지는지 본다 |
 | | 결정 8: 3명이 새 값에 모이면 앞 기준가와 멀어도 그날 기준가가 되는지, 셋 중 둘이 동떨어지면 3일 표로 가는지, 합의가 없으면 3일까지 유지하고 4일째에 비우는지, 비운 뒤에는 3명이 모여야 다시 서는지, 무게 절반인 표를 반만 세는지 본다 |
@@ -495,4 +511,5 @@ MASPI 는 드롭 아이템 시세 전체가 오르는지 내리는지 보이는 
   관리 화면 판정은 서버 #118). 앱 화면(#1049)도 같은 날 구현했다
 - ADR-251 (2026-11-16): 범위를 그날 표의 25% ~ 75% 지점에서, 그날 기준가에 서고 폭은 7일 표의 밀집도 무게로 내는 값으로
   바꿨다(이슈 #1067). 7일 표가 8개 미만이면 범위가 없고, 그래프 띠는 끊기고 칸은 `-` 다(결정 8 · 13 · 14). 지난 날의 범위만 한 번
-  다시 계산한다(결정 9). 같은 날 서버 #120 과 앱으로 구현했다
+  다시 계산한다(결정 9). 같은 날 서버 #120 과 앱으로 구현했다. 같은 날 MASPI 를 베타 기능으로 두고 보이는 자리마다 `beta`
+  배지를 붙였다(결정 13, 이슈 #1069)
