@@ -1,6 +1,6 @@
 # ADR-071+205+243+251 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 드롭 가격 관리 화면
 
-> ⚪ 미구현
+> 🟢 유효
 > 관련 소스: 서버 `modules/drop-market/` · `database/migrations/0013_drop_market.sql` · `database/migrations/0044_market_daily.sql` · `database/migrations/0045_market_range_nullable.sql` · `cli/market-backfill.ts` · `cli/market-range-recompute.ts` · `modules/drop-prices/drop-prices.repository.ts` · `modules/worlds/worlds.repository.ts` · `modules/drop-items/drop-items.repository.ts` · `modules/admin/admin.controller.ts` · `modules/admin/views/layout.ts` · `modules/admin/views/drop-market.ts` · `modules/admin/views/drop-market-item.ts` · `modules/admin/views/drop-prices.ts` · `database/schema.ts`(`drop_prices.priced_at` · `drop_prices.box_origin_item_id` · `worlds.price_group` · `items.world_bound`) · 앱 `server/market.ts` · `features/market/` · `app/utility/MaspiScreen.tsx` · `app/utility/MaspiItemScreen.tsx` · `app/utility/maspi/` · `app/utility/UtilityScreen.tsx` · `components/molecules/SparkLine/` · `app/today/widgets/MaspiWidget.tsx` · `app/today/widgets/QuickLinksWidget.tsx` · `app/today/QuickLinksSheet.tsx`
 
 ## 배경
@@ -512,4 +512,4 @@ MASPI 는 드롭 아이템 시세 전체가 오르는지 내리는지 보이는 
 - ADR-251 (2026-11-16): 범위를 그날 표의 25% ~ 75% 지점에서, 그날 기준가에 서고 폭은 7일 표의 밀집도 무게로 내는 값으로
   바꿨다(이슈 #1067). 7일 표가 8개 미만이면 범위가 없고, 그래프 띠는 끊기고 칸은 `-` 다(결정 8 · 13 · 14). 지난 날의 범위만 한 번
   다시 계산한다(결정 9). 같은 날 서버 #120 과 앱으로 구현했다. 같은 날 MASPI 를 베타 기능으로 두고 보이는 자리마다 `beta`
-  배지를 붙였다(결정 13, 이슈 #1069)
+  배지를 붙였다(결정 13, 이슈 #1069). 같은 날 구현했다
