@@ -17,7 +17,7 @@ export interface SparkLineProps {
   color: string
   height: number
   strokeWidth: number
-  /** 선이 위아래 끝에 닿지 않게 비우는 폭 */
+  /** 선이 위아래 끝에 닿지 않게 비우는 폭. 채움은 이 폭과 상관없이 바닥까지 찬다 */
   inset: number
   /** 채움의 불투명도. 안 주면 채우지 않는다 */
   fillOpacity?: number
@@ -48,7 +48,8 @@ export function SparkLine(props: SparkLineProps): React.JSX.Element {
         xKey="index"
         yKeys={['value']}
         domain={{ y: domain }}
-        padding={{ top: props.inset, bottom: props.inset }}
+        // 여백을 `padding` 으로 주면 라이브러리가 그림을 그 안쪽으로 잘라 채움이 바닥에 못 닿는다. 값 범위 안쪽 여유로 준다.
+        domainPadding={{ top: props.inset, bottom: props.inset }}
         yAxis={NO_AXIS_LINES}
       >
         {({ points, canvasSize }) => (

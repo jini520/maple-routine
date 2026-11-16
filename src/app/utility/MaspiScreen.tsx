@@ -6,7 +6,7 @@
  * 머리 아래 줄에 값의 날짜를 적는다.
  */
 import { useMemo, useState } from 'react'
-import { Pressable, View } from 'react-native'
+import { View } from 'react-native'
 
 import { ChartLineIcon, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
@@ -14,7 +14,7 @@ import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { Segment } from '../../components/molecules/Segment/Segment'
-import { SelectChevron, SelectField } from '../../components/organisms/SelectField/SelectField'
+import { WidgetSelect } from '../../components/organisms/WidgetSelect/WidgetSelect'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
@@ -72,29 +72,12 @@ export function MaspiScreen(): React.JSX.Element {
         <View className="flex-row items-center justify-between px-0.5">
           <Segment options={KINDS} selected={kind} onSelect={setKind} size="md" />
           {kind === '소비' && world !== null && (
-            <SelectField
+            <WidgetSelect
               label="월드"
               testID="maspi-world"
               options={worlds.map((entry) => ({ value: entry.key, label: entry.name }))}
               selected={world}
-              onSelect={(value) => {
-                if (value !== null) setPickedWorld(value)
-              }}
-              listAlign="end"
-              listFitsContent
-              listMaxHeight={360}
-              renderTrigger={(open, isOpen) => (
-                <Pressable
-                  role="button"
-                  aria-label="월드"
-                  aria-expanded={isOpen}
-                  onPress={open}
-                  className="flex-row items-center gap-0.5 py-1 active:opacity-60"
-                >
-                  <Text className="text-sm font-semibold text-text">{worlds.find((entry) => entry.key === world)?.name ?? world}</Text>
-                  <SelectChevron open={isOpen} />
-                </Pressable>
-              )}
+              onSelect={setPickedWorld}
             />
           )}
         </View>
