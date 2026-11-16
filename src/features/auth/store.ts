@@ -261,7 +261,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     // 지금 로그인의 부계정 키는 지우지 않는다. 지우면 계정 관리에서 그 계정이 사라져 어느 계정의 키가 문제인지 알 수 없다.
     if (notice.kind === 'invalid') {
-      let plan: Awaited<ReturnType<typeof planInvalidSubKey>> = null
+      let plan: Awaited<ReturnType<typeof planInvalidSubKey>>
       try {
         plan = await planInvalidSubKey(notice.apiKey)
         if (plan !== null) await retireInvalidSubKey(plan)
@@ -348,7 +348,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   async leaveEmptyNexonLogin() {
-    let 남은수단: ReturnType<typeof credentialOf> = null
+    let 남은수단: ReturnType<typeof credentialOf>
     try {
       // 기기에서 지우기 전에 거둬야 세션 값을 아직 들고 있다.
       const session = (await getAuthConfig())?.login?.session
