@@ -123,6 +123,8 @@ export const STORAGE_KEYS = {
   statsCumulativeStart: 'statsCumulativeStart',
   // today 빠른 이동 구성(JSON `{ rows, ids }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   quickLinks: 'quickLinks',
+  // 대표 캐릭터가 할 행동 · 표정(JSON `{ [ocid]: { actions, emotions, durationMs, rest } }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
+  figureMotions: 'figureMotions',
   // today 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID. 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   todaySharedMapleId: 'todaySharedMapleId',
   // 사용자가 바꾼 메이플 ID 이름(JSON `{ [메이플 ID]: 이름 }`). 사용자가 지은 것이라 데이터 삭제 그룹에 넣지 말 것.

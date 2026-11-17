@@ -4,6 +4,7 @@ import { useDropEffectStore } from '../features/drop-effect/store'
 import { useOverFrameStore } from '../features/over-frame/store'
 import { useBarOrderStore } from '../features/bar-order/store'
 import { useQuickLinksStore } from '../features/quick-links/store'
+import { useFigureMotionStore } from '../features/figure-motion/store'
 import { useTodaySharedMapleIdStore } from '../features/today/shared-maple-id'
 import { useMapleIdNamesStore } from '../features/maple-id/names'
 import { startKeyboardHeightRecorder } from '../features/input-card/keyboard-height'
@@ -86,6 +87,7 @@ function ReadyShell(): React.JSX.Element {
   const restoreDropEffect = useDropEffectStore((state) => state.restoreFromStorage)
   const restoreOverFrame = useOverFrameStore((state) => state.restoreFromStorage)
   const restoreQuickLinks = useQuickLinksStore((state) => state.restoreFromStorage)
+  const restoreFigureMotions = useFigureMotionStore((state) => state.restoreFromStorage)
   const restoreSharedMapleId = useTodaySharedMapleIdStore((state) => state.restoreFromStorage)
   const restoreMapleIdNames = useMapleIdNamesStore((state) => state.restoreFromStorage)
   const restoreNotice = useNoticeStore((state) => state.restore)
@@ -127,6 +129,7 @@ function ReadyShell(): React.JSX.Element {
 
   useEffect(() => {
     void restoreQuickLinks()
+    void restoreFigureMotions()
     void restoreSharedMapleId()
     void restoreMapleIdNames()
     // eslint-disable-next-line react-hooks/exhaustive-deps

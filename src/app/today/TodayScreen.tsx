@@ -57,6 +57,7 @@ import { NexonLinkButton } from './NexonLinkButton'
 import { NoticeBanner } from './NoticeBanner'
 import { SettlementBanner } from '../SettlementBanner'
 import { useQuickLinksStore } from '../../features/quick-links/store'
+import { useFigureMotionStore } from '../../features/figure-motion/store'
 import { useTodaySharedMapleIdStore } from '../../features/today/shared-maple-id'
 import { useMapleIdNamesStore } from '../../features/maple-id/names'
 import { useMapleIdOwners } from '../../hooks/useMapleIdOwners'
@@ -77,6 +78,7 @@ export function TodayScreen(): React.JSX.Element {
   // 파티 약속은 기기에만 있다. 저장이 캐시를 덮어 파티 스케줄 탭에서 고친 것이 위젯 10 에 바로 선다.
   const { appointments: partyAppointments } = usePartyAppointments()
   const quickLinks = useQuickLinksStore((state) => state.config)
+  const figureMotions = useFigureMotionStore((state) => state.motions)
   const maspi = useMaspi()
 
   // 프로필도 캐시에서 온다. 회차나 캐릭터 관리가 `character/basic` 을 받으면 그 자리에서 바뀐다.
@@ -137,6 +139,7 @@ export function TodayScreen(): React.JSX.Element {
     statsDays,
     partyAppointments,
     quickLinks,
+    figureMotions,
     maspi: maspi ?? null,
     mapleIds,
     selectedSharedMapleId,

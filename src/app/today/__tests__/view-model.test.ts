@@ -1,5 +1,6 @@
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import { DEFAULT_QUICK_LINKS } from '../../../features/quick-links/config'
+import { DEFAULT_FIGURE_MOTION } from '../../../features/figure-motion/config'
 import { bossesInSection, bossKeyOfApiName } from '../../../lib/boss/bosses'
 // today 뷰모델의 **조립 규칙**. 위젯이 스토어를 모르므로 화면이 값을 한
 // 번 모으는데, 그 조립을 순수 함수로 두면 **위젯이 한 줄도 없는 지금 로직 전부를 검증할 수 있다.**
@@ -179,6 +180,7 @@ function input(overrides: Partial<TodayViewModelInput> = {}): TodayViewModelInpu
     statsDays: {},
     partyAppointments: [],
     quickLinks: DEFAULT_QUICK_LINKS,
+    figureMotions: {},
     maspi: null,
     mapleIds: null,
     selectedSharedMapleId: null,
@@ -463,6 +465,26 @@ describe('남은 스케줄. 순서는 **관리 순서**뿐이다', () => {
     )
 
     expect(model.representative?.unavailable).toBe(true)
+  })
+})
+
+// 고른 값은 캐릭터마다다(사용자 지정). 대표를 바꾸면 그 캐릭터가 고른 값으로 움직인다.
+describe('대표 캐릭터의 동작', () => {
+  const 걷기 = { actions: ['A03' as const], emotions: ['E02' as const], durationMs: 5000 as const, rest: false }
+
+  it('대표 캐릭터가 고른 값을 싣고, 고르지 않은 캐릭터는 처음 값이다', () => {
+    const 대표 = (representativeOcid: string) =>
+      buildTodayViewModel(
+        input({
+          orderedOcids: ['a', 'b'],
+          representativeOcid,
+          profilesByOcid: { a: profile(), b: profile({ name: '둘째' }) },
+          figureMotions: { a: 걷기 },
+        }),
+      ).representative?.motion
+
+    expect(대표('a')).toEqual(걷기)
+    expect(대표('b')).toEqual(DEFAULT_FIGURE_MOTION)
   })
 })
 

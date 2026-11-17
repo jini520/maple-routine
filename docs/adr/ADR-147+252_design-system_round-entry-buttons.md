@@ -1,7 +1,7 @@
 # ADR-147+252 진입 버튼과 대표 캐릭터의 움직임
 
-> ⚪ 미구현
-> 관련 소스: `app/boss-profit/DropPriceFab.tsx` · `app/boss-profit/drop-price-fab-motion.ts` · `app/today/CharacterManageButton.tsx` · `app/today/widgets/RepresentativeCharacterWidget.tsx` · `app/today/widgets/figure-motion.ts` · `app/today/widgets/useFigureStep.ts` · `lib/character-look.ts` · `hooks/useAppFocused.ts`
+> 🟢 유효
+> 관련 소스: `app/boss-profit/DropPriceFab.tsx` · `app/boss-profit/drop-price-fab-motion.ts` · `app/today/CharacterManageButton.tsx` · `app/today/widgets/RepresentativeCharacterWidget.tsx` · `app/today/widgets/figure-motion.ts` · `app/today/widgets/useFigureStep.ts` · `app/today/widgets/RepresentativeFigure.tsx` · `app/today/FigureMotionSheet.tsx` · `features/figure-motion/` · `storage/figure-motions.ts` · `types/figure-motion.ts` · `lib/character-look.ts` · `hooks/useAppFocused.ts`
 
 ## 배경
 
@@ -46,6 +46,9 @@
   `E06.0` 은 기본 얼굴과 같은 그림이라, 눈을 감은 `E06.1` 과 반쯤 뜬 `E06.2` 를 차례로 빠르게 넣는다(사용자 지정). 2~5초마다
   무작위로 한 번, 두 장을 0.05초씩 넣어 한 번이 0.1초에 끝난다(사용자 지정). 쉬는 동안의 대기 동작과 고르지 않은
   캐릭터의 서기 1 도 기본 표정이라 깜빡인다.
+- 프레임 시간은 시안의 값이다. 넥슨이 시간을 주지 않는다. 서기는 0.45초씩 `0 · 1 · 2 · 1` 차례, 걷기는 0.14초, 날기 · 사다리 · 밧줄은
+  0.26초, 회복 · 숨돌리기는 0.3초, 공격은 0.15초에 마지막 장만 0.52초, 한 장짜리는 1초다. 표정이 여러 장이면 행동하는 동안 0.38초마다
+  다음 장으로 넘어간다. 시트의 표정 칸과 같은 값이다.
 - 아직 고르지 않은 캐릭터는 서기 1(`A00`)과 기본 표정(`E00`)을 쉬지 않고 계속한다(사용자 지정). 시트를 처음 열면 이 둘이
   골라져 있고, 동작 시간은 5초이고 쉬는 시간은 꺼져 있다.
 
@@ -168,11 +171,14 @@
 | `app/boss-profit/__tests__/drop-price-fab-motion.test.ts` | 결정 1: 한 바퀴의 대부분이 멈춰 있고, 흔들림이 좌우를 오가며 작아지고, 반복할 때 안 튀는지 본다 |
 | `app/boss-profit/__tests__/DropPriceFab.test.tsx` | 결정 1: 태그가 구멍을 축으로 원 안에 서는지 본다 |
 | `app/today/__tests__/CharacterManageButton.test.tsx` | 결정 2: 얼굴이 대표 한 장인지 본다 |
-| `app/today/widgets/__tests__/figure-motion.test.ts` | 결정 3: 고른 행동 · 표정만 나오고, 같은 행동을 연달아 안 고르고, 동작 시간 · 쉬는 시간 · 점프의 바탕이 맞고, 고르지 않은 캐릭터는 서기 1 · 기본만 하는지 본다 |
-| `lib/__tests__/character-look.test.ts` | 결정 4: 프레임 주소를 보고, 머리 위치를 되돌리지 않는지 본다 |
-| `app/today/widgets/__tests__/RepresentativeFigureMotion.test.tsx` | 결정 3 · 5 · 6: 다 받으면 움직이고, 글자 위로 그리고, 못 받거나 볼 수 없으면 멈추고, 디스크에 있는 프레임은 안 받고, 그림 주소가 바뀌면 새 프레임을 받는지 본다 |
+| `app/today/widgets/__tests__/figure-motion.test.ts` | 결정 3 · 5: 고른 행동 · 표정만 나오고, 같은 행동을 연달아 안 고르고, 동작 시간 · 쉬는 시간 · 점프의 바탕 · 깜빡임 간격이 맞는지 본다. 계획이 쓰는 그림이 모두 받아 둘 목록에 들고, 가장 많이 골라도 수백 장 안쪽인지 본다 |
+| `lib/__tests__/character-look.test.ts` | 결정 4: 기본 표정은 행동 프레임과 같은 주소이고, 표정은 프레임 번호까지 붙는지 본다 |
+| `app/today/widgets/__tests__/RepresentativeFigureMotion.test.tsx` | 결정 3 ~ 7: 고른 조합을 다 받으면 움직이고, 시트 칸 그림을 그 다음에 받고, 움직이는 동안 새로 받지 않고, 모든 그림을 같은 자리에 두고, 그림 칸을 누르면 시트가 열리고 실루엣이면 안 열리는지 본다 |
+| `app/today/__tests__/FigureMotionSheet.test.tsx` | 결정 8: 행동 · 표정 세그먼트, 칸 이름, 개수 제한과 잠금, 고를 때 받기, `적용` 의 저장과 비활성을 본다 |
+| `features/figure-motion/__tests__/config.test.ts` | 결정 8 · 9: 후보와 이름, 고르기 상한, 저장된 값에서 모르는 값 · 깜빡임을 버리는지 본다 |
+| `storage/__tests__/figure-motions.spec.ts` · `storage/__tests__/cache-data.spec.ts` | 결정 9: 캐릭터마다 저장하고, 월드 리프 때 옮기고, 데이터 삭제가 지우지 않는지 본다 |
 
 ## 번호 기록
 
 - ADR-147 (2026-10-31): 처음 작성
-- ADR-252 (2026-11-17): 대표 캐릭터가 할 행동과 표정을 캐릭터마다 사용자가 고르게 했다(결정 3 · 7 · 8 · 9, #939). 행동마다 고른 동작 시간을 하고, 고르는 수는 행동 3개 · 표정 5개이고 고를 때 그 조합의 그림을 받는다. 쉬는 시간은 체크박스로 켜고 끄고, 점프는 서기나 걷기 사이에 끼운다. 고르지 않은 캐릭터는 서기 1 과 기본 표정을 계속하고, 무작위 다섯 동작과 휘두르기 이어 붙이기는 걷었다. 깜빡임은 목록에서 빼고 기본 표정 사이에 넣는다. 결정 4 를 넥슨 스펙의 값 범위와 조합 실측으로 고치고 머리 위치 보정을 걷었다. 결정 5 를 그림 받는 때로 다시 썼다(시트 칸 그림은 미리, 조합 그림은 고르는 그때)
+- ADR-252 (2026-11-17): 대표 캐릭터가 할 행동과 표정을 캐릭터마다 사용자가 고르게 했다(결정 3 · 7 · 8 · 9, #939). 행동마다 고른 동작 시간을 하고, 고르는 수는 행동 3개 · 표정 5개이고 고를 때 그 조합의 그림을 받는다. 쉬는 시간은 체크박스로 켜고 끄고, 점프는 서기나 걷기 사이에 끼운다. 고르지 않은 캐릭터는 서기 1 과 기본 표정을 계속하고, 무작위 다섯 동작과 휘두르기 이어 붙이기는 걷었다. 깜빡임은 목록에서 빼고 기본 표정 사이에 넣는다. 결정 4 를 넥슨 스펙의 값 범위와 조합 실측으로 고치고 머리 위치 보정을 걷었다. 결정 5 를 그림 받는 때로 다시 썼다(시트 칸 그림은 미리, 조합 그림은 고르는 그때). 같은 날 구현했다

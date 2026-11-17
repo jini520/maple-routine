@@ -96,6 +96,8 @@ const KEPT_KEYS = [
   'enhancementTotalsMoved',
   'legacyCleanupDone',
   'partyAppointments',
+  // 대표 캐릭터가 할 행동 · 표정. 사용자가 고른 값이다.
+  'figureMotions',
   'scheduleProbe:o1',
   'dataFetchedAt',
   'notices',

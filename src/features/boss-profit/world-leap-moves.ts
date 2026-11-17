@@ -16,6 +16,7 @@ import { moveIncomeRecordsToOcid } from '../../storage/income'
 import { moveLastBossIncomeTransfersToOcid } from '../../storage/last-boss-income-transfers'
 import { moveLastEpicDungeonRewardsToOcid } from '../../storage/last-epic-dungeon-rewards'
 import { moveLastHuntToOcid } from '../../storage/last-hunts'
+import { moveFigureMotionToOcid } from '../../storage/figure-motions'
 import { moveManualTrackedContentToOcid } from '../../storage/manual-tracked-content'
 import { movePartyAppointmentsToOcid } from '../../storage/party-appointments'
 import { moveRememberedLevelsToOcid } from '../../storage/remembered-levels'
@@ -47,6 +48,7 @@ async function moveLink(fromOcid: string, toOcid: string): Promise<number> {
   await moveLastHuntToOcid(fromOcid, toOcid).catch(ignore)
   await moveLastBossIncomeTransfersToOcid(fromOcid, toOcid).catch(ignore)
   await moveLastEpicDungeonRewardsToOcid(fromOcid, toOcid).catch(ignore)
+  await moveFigureMotionToOcid(fromOcid, toOcid).catch(ignore)
   await moveCalculatorRecords(fromOcid, toOcid).catch(ignore)
   if (await movePartyAppointmentsToOcid(fromOcid, toOcid).catch(() => false)) {
     // 약속 화면은 캐시만 그린다. 낡은 캐시를 다시 저장하면 옮긴 ocid 가 옛 ocid 로 돌아간다.

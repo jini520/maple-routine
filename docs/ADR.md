@@ -187,7 +187,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
 | [ADR-056+072+164+182](./adr/ADR-056+072+164+182_notifications_local.md) | 🟢 | notifications | 알림 예약과 공지 구독 |
 | [ADR-057+125+198+227](./adr/ADR-057+125+198+227_notice_feed.md) | 🟢 | notice | 운영자 공지와 넥슨 공지 |
-| [ADR-058+087+176+179+248](./adr/ADR-058+087+176+179+248_today_widgets.md) | ⚪ | today | today 위젯 격자 · MASPI 위젯 |
+| [ADR-058+087+176+179+248](./adr/ADR-058+087+176+179+248_today_widgets.md) | 🟢 | today | today 위젯 격자 · MASPI 위젯 |
 | [ADR-089+218+249](./adr/ADR-089+218+249_today_quick-links.md) | 🟢 | today | today 빠른 이동 · 가계부 분류 칸 · MASPI · 거래 내역 칸 |
 | [ADR-059+136+224](./adr/ADR-059+136+224_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
 | [ADR-060+073+079+085+088+107+109+130+133](./adr/ADR-060+073+079+085+088+107+109+130+133_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
@@ -208,7 +208,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |
 | [ADR-137+168](./adr/ADR-137+168_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
 | [ADR-142+144+229](./adr/ADR-142+144+229_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
-| [ADR-147+252](./adr/ADR-147+252_design-system_round-entry-buttons.md) | ⚪ | design-system | 진입 버튼과 대표 캐릭터의 움직임 · 고른 동작 |
+| [ADR-147+252](./adr/ADR-147+252_design-system_round-entry-buttons.md) | 🟢 | design-system | 진입 버튼과 대표 캐릭터의 움직임 · 고른 동작 |
 | [ADR-150](./adr/ADR-150_design-system_page-faq.md) | 🟢 | design-system | 모든 페이지의 FAQ |
 | [ADR-152](./adr/ADR-152_navigation_bar-order.md) | 🟢 | navigation | 하단바 순서 바꾸기 |
 | [ADR-158+180+222](./adr/ADR-158+180+222_server-sync_usage-log.md) | 🟢 | server-sync | 앱 사용 로그와 관리자 대시보드(사용자 · 사용 로그) |
