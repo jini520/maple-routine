@@ -311,7 +311,12 @@ export function FigureMotionSheet(props: FigureMotionSheetProps): React.JSX.Elem
             <CheckBox checked={draft.rest} />
             <Text className="text-xs font-bold text-text">쉬는 시간</Text>
           </Pressable>
-          <View className="mx-4 mt-3 items-center rounded-[14px] bg-surface p-3">
+          {/* 그림은 300×300 이라 위로 넘쳐 동작 시간 세그먼트를 덮는다. 터치를 받으면 그 세그먼트가 안 눌린다. */}
+          <View
+            testID="figure-motion-preview-layer"
+            pointerEvents="none"
+            className="mx-4 mt-3 items-center rounded-[14px] bg-surface p-3"
+          >
             <RepresentativeFigure
               name={props.name}
               imageUrl={props.imageUrl}

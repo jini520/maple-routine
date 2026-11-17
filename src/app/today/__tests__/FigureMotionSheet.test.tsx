@@ -186,6 +186,15 @@ describe('그림 받기', () => {
   })
 })
 
+describe('미리보기', () => {
+  // 그림은 300×300 이라 미리보기 상자 위로 넘쳐 동작 시간 세그먼트를 덮는다. 터치를 받으면 세그먼트가 안 눌린다.
+  it('미리보기 그림은 터치를 받지 않는다', async () => {
+    const { view } = await 시트()
+
+    expect(view.getByTestId('figure-motion-preview-layer').props.pointerEvents).toBe('none')
+  })
+})
+
 describe('적용', () => {
   it('누르기 전에는 저장하지 않고, 누르면 그 캐릭터 몫으로 동작 시간 · 쉬는 시간까지 저장하고 닫는다', async () => {
     const { view, onClose } = await 시트()
