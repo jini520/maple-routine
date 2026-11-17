@@ -46,6 +46,8 @@ import { groupBossesByCharacter } from '../../features/party-appointments/boss-g
 import { runningOccurrences, upcomingOccurrences } from '../../features/party-appointments/upcoming'
 import type { PartyAppointment, PartyAppointmentBoss } from '../../types/party-appointment'
 import type { QuickLinksConfig } from '../../types/quick-links'
+import type { FigureMotion } from '../../types/figure-motion'
+import { figureMotionOf } from '../../features/figure-motion/config'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type {
@@ -97,6 +99,8 @@ export interface RepresentativeView {
    * 새로고침이 처방이고, 이쪽은 영구라 캐릭터 관리에서 손봐야 한다.
    */
   unavailable: boolean
+  /** 이 캐릭터가 고른 행동 · 표정. 고르지 않았으면 처음 값이다 */
+  motion: FigureMotion
 }
 
 /**
@@ -320,6 +324,8 @@ export interface TodayViewModelInput {
   partyAppointments: readonly PartyAppointment[]
   /** 빠른 이동 스토어. 위젯이 스토어를 모르게 화면이 넘긴다. */
   quickLinks: QuickLinksConfig
+  /** 대표 캐릭터 동작 스토어. 캐릭터마다 고른 값이다 */
+  figureMotions: Readonly<Record<string, FigureMotion>>
   /** 시세 쿼리의 MASPI. 기기에 남긴 값도 없고 받지도 못했으면 `null` */
   maspi: MaspiResponse | null
   /** 캐릭터마다의 메이플 ID 와 그 차례. 못 읽었으면 `null` 이고, 그때는 메이플 ID 를 가르지 않는다 */
@@ -484,6 +490,7 @@ function buildRepresentative(input: TodayViewModelInput): RepresentativeView | n
     guildName: profile.guildName,
     expRate: profile.expRate,
     unavailable: resolveCharacterIssues(input)[ocid] === 'unavailable',
+    motion: figureMotionOf(input.figureMotions, ocid),
   }
 }
 

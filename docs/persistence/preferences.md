@@ -37,6 +37,7 @@
 | `mapleIdNames` | JSON `{ [메이플 ID]: 이름 }`. 깨진 값은 빈 값으로 읽는다 | `maple-id-names.ts` | 남긴다 | 사용자가 바꾼 메이플 ID 이름만 든다. 없는 ID 는 기본 이름(`메이플ID-` 와 ID 앞 8자)이다([[ADR-101]] 결정 8) |
 | `todaySharedMapleId` | 메이플 ID 글자 | `today-shared-maple-id.ts` | 남긴다 | today 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID. 고를 목록에 없으면 첫 메이플 ID 를 보인다([[ADR-101]] 결정 9) |
 | `quickLinks` | JSON `{ rows, ids }`. `rows` 는 1 · 2, `ids` 는 위젯에 놓이는 차례 그대로 | `quick-links.ts` | 남긴다 | today 빠른 이동의 구성. 깨졌으면 기본 구성이다 |
+| `figureMotions` | JSON `{ [ocid]: { actions, emotions, durationMs, rest } }`. 행동은 `A00`~`A41` 3개까지, 표정은 깜빡임(`E06`)을 뺀 `E00`~`E24` 5개까지 | `figure-motions.ts` | 남긴다 | today 대표 캐릭터가 할 행동 · 표정. 모르는 값은 버리고, 행동이나 표정이 안 남는 캐릭터 몫은 고르지 않은 것으로 본다([[ADR-147]] 결정 9) |
 | `barOrder` | JSON `{ groups, subs }`. 그룹 다섯과, 하위가 있는 그룹마다 하위 페이지의 차례 | `bar-order.ts` | 남긴다 | 하단바 순서. 읽을 때 표에 맞추고, 깨졌으면 기본 순서다([[ADR-152]] 결정 5) |
 | `trackingMode` | `'auto'` · `'manual'` | `tracking-mode.ts` | 남긴다 | 없으면 `null`(아직 안 골랐다) |
 | `dropEffect` | `'on'` · `'off'` | `drop-effect.ts` | 남긴다 | 없으면 켜짐 |
@@ -86,7 +87,7 @@
 띄우자마자 넥슨 API 를 한꺼번에 불러 호출 한도에 걸릴 수 있기 때문이다. 추적 캐릭터가 없으면 캐릭터 고르기부터 다시 해야 한다.
 
 월드 리프를 이으면 `manualTrackedContent:{ocid}` 와 ocid 를 든 기록 키(`lastHunts` · `lastBossIncomeTransfers` · `lastEpicDungeonRewards` · `partyAppointments` ·
-`bossProfitCalculatorRecords`)의 옛 ocid 를 새 ocid 로 옮긴다. 새 ocid 에 값이 있으면 새 것을 둔다([[ADR-101]] 결정 22).
+`bossProfitCalculatorRecords` · `figureMotions`)의 옛 ocid 를 새 ocid 로 옮긴다. 새 ocid 에 값이 있으면 새 것을 둔다([[ADR-101]] 결정 22).
 
 | 키 | 값 | 어댑터 | 메모 |
 |---|---|---|---|
