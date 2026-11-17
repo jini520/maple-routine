@@ -31,6 +31,7 @@ import {
   type Row,
 } from '../game-data/contract'
 import { gameTable, derive } from '../game-data/table'
+import { LEVEL_PENALTY_PATCHED_ON } from './hunting-meso'
 
 const FORCE_TYPES = ['arcane', 'authentic'] as const
 
@@ -115,9 +116,15 @@ export function huntingRegions(): readonly HuntingRegion[] {
 /**
  * 목록의 바닥. 캐릭터 레벨에서 아래로 몇 레벨까지 세우나.
  *
- * 위쪽에는 짝이 되는 상수가 없다. 천장은 갈 수 있는 데까지 이고 그것은 지역이 정한다.
+ * 메소가 나오는 몬스터까지라 10 이다. 패치 뒤의 표는 11 레벨 낮으면 -100% 다. 패치 전 날짜의 기록은
+ * 20 이다. 그때 적은 기록에는 차이 11~20 인 지역이 있고, 목록에서 빠지면 수정으로 열 때 지역 칸이
+ * `지역 선택` 으로 선다.
+ *
+ * 위쪽에는 짝이 되는 값이 없다. 천장은 갈 수 있는 데까지 이고 그것은 지역이 정한다.
  */
-export const HUNTING_LEVEL_BELOW = 20
+function levelBelowOn(earnedOn: string): number {
+  return earnedOn < LEVEL_PENALTY_PATCHED_ON ? 20 : 10
+}
 
 /**
  * 지역이 실제로 내놓는 **몬스터 레벨의 범위**.
@@ -131,7 +138,7 @@ export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: 
 }
 
 /**
- * 캐릭터 레벨로 지역을 거른다. 아래로 20 ~ 갈 수 있는 데까지.
+ * 캐릭터 레벨로 지역을 거른다. 아래로 10(패치 전 날짜는 20) ~ 갈 수 있는 데까지.
  *
  * 창이 위아래로 대칭이 아니다. 캐릭터 레벨보다 높은 지역에는 못 가기 때문이다. lv.277 은
  * 도원경(275-279)까지이고 아르테리아(280-284)는 갈 수 없다. 갈 수 없는 자리를 세우면 고를 수
@@ -140,7 +147,7 @@ export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: 
  * 두 끝을 몬스터 레벨로 잰다(`monsterLevelRangeOf`).
  *
  * - 천장. 그 지역의 가장 낮은 몬스터가 캐릭터 레벨 이하여야 간다.
- * - 바닥. 그 지역의 가장 높은 몬스터가 캐릭터 − 20 이상이어야 한다. 한 맵이라도 걸리면 선다.
+ * - 바닥. 그 지역의 가장 높은 몬스터가 캐릭터 − 바닥(`levelBelowOn`) 이상이어야 한다. 한 맵이라도 걸리면 선다.
  *
  * 지역 안의 맵까지 거르지는 않는다. 한 맵이라도 들면 지역이 서고 그 안에는 창 밖의 맵도 있다.
  * 사냥터 줄이 레벨을 적어 두므로 고르는 사람이 본다.
@@ -150,14 +157,17 @@ export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: 
  *
  * 차례는 참조표의 **역순**이다. 창의 천장이 갈 수 있는 데까지 라 목록 끝이 곧 지금 캐릭터가
  * 갈 만한 곳인데, 참조표 차례로 세우면 그것이 맨 아래에 묻힌다.
+ *
+ * @param earnedOn 기록 날짜(KST `YYYY-MM-DD`). 바닥을 고른다
  */
-export function huntingRegionsForLevel(characterLevel: number | null): HuntingRegion[] {
+export function huntingRegionsForLevel(characterLevel: number | null, earnedOn: string): HuntingRegion[] {
   const 높은데부터 = [...huntingRegions()].reverse()
   if (characterLevel === null) return 높은데부터
 
+  const floor = characterLevel - levelBelowOn(earnedOn)
   return 높은데부터.filter((region) => {
     const { min, max } = monsterLevelRangeOf(region)
-    return min <= characterLevel && max >= characterLevel - HUNTING_LEVEL_BELOW
+    return min <= characterLevel && max >= floor
   })
 }
 
