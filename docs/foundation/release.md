@@ -35,9 +35,9 @@ Play 와 App Store 에 올릴 바이너리를 만드는 절차다. 서명 · 버
 
 | 값 | 어디 | 지금 | 규칙 |
 |---|---|---|---|
-| 스토어 버전 | `app.json` `expo.version` · `build.gradle` `versionName` · `Info.plist` `CFBundleShortVersionString` | 1.0.13 | `x.y.z` 세 자리 |
-| Android `versionCode` | `build.gradle` · `app.json` | 25 · 25 | 올리기만 한다. 한 번 올린 번호는 다시 못 쓴다 |
-| iOS 빌드 번호 | `Info.plist` `CFBundleVersion` · `app.json` `ios.buildNumber` | 17 · 17 | 올리기만 한다 |
+| 스토어 버전 | `app.json` `expo.version` · `build.gradle` `versionName` · `Info.plist` `CFBundleShortVersionString` | 1.0.14 | `x.y.z` 세 자리 |
+| Android `versionCode` | `build.gradle` · `app.json` | 26 · 26 | 올리기만 한다. 한 번 올린 번호는 다시 못 쓴다 |
+| iOS 빌드 번호 | `Info.plist` `CFBundleVersion` · `app.json` `ios.buildNumber` | 18 · 18 | 올리기만 한다 |
 | OTA 버전 | `package.json` `version` | `features/live-update.md` 참고 | 스토어 버전과 따로 올린다 |
 
 빌드 번호는 두 파일에 있다. 빌드가 실제로 읽는 것은 `build.gradle` 과 `Info.plist` 이고, `app.json` 만 고치면
