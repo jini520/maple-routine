@@ -34,7 +34,7 @@ export function openInAppBrowser(url: string): void {
  * 거절을 삼키지 않는다. 부르는 쪽이 실패와 취소를 갈라야 한다.
  *
  * @param url 인증 시작 주소
- * @param redirectUrl 넥슨에 등록한 돌아올 주소
+ * @param redirectUrl 돌아오면 인증 창을 닫는 앱 주소
  * @example const callbackUrl = await openAuthSession(started.authorizeUrl, REDIRECT_URI)
  */
 export function openAuthSession(url: string, redirectUrl: string): Promise<string | null> {
