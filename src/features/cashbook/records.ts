@@ -719,7 +719,7 @@ export async function loadTrackedCharacters(): Promise<
       return {
         ocid,
         name: profile?.name ?? '',
-        // 레벨은 사냥 계산기가 쓴다. 지역을 ±20 으로 거르고 레벨 차이 페널티를 낸다. 캐시가 아직
+        // 레벨은 사냥 계산기가 쓴다. 지역을 거르고 레벨 차이 페널티를 낸다. 캐시가 아직
         // 안 따뜻하면 `null` 이고 그때는 페널티 없이 계산하며 시트가 그 사실을 한 줄로 말한다.
         level: profile?.level ?? null,
         // 시트의 캐릭터 드롭다운이 월드 엠블럼을 그린다. 모르면 이름만 선다.

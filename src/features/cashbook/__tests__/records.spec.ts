@@ -1354,7 +1354,7 @@ describe('loadTrackedCharacters', () => {
     seedBasic('ocid-2', { name: '아델', level: 275, worldKey: 'elysium' })
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
-    // 레벨은 사냥 계산기가 쓴다. 지역을 ±20 으로 거르고 페널티를 낸다.
+    // 레벨은 사냥 계산기가 쓴다. 지역을 거르고 페널티를 낸다.
     expect(await loadTrackedCharacters()).toEqual([
       { ocid: 'ocid-1', name: '루디', level: 294, worldKey: 'scania', jobClass: '렌' },
       { ocid: 'ocid-2', name: '아델', level: 275, worldKey: 'elysium', jobClass: null },

@@ -28,11 +28,15 @@ describe('monsterLevelRangeOf', () => {
 })
 
 describe('huntingRegionsForLevel', () => {
-  const 이름들 = (level: number | null): string[] =>
-    huntingRegionsForLevel(level).map((each) => each.name)
+  /** 메소 페널티가 바뀐 게임 패치의 전날과 당일. 아래 끝이 이 날짜로 갈린다. */
+  const BEFORE_PATCH = '2026-11-18'
+  const PATCH_DAY = '2026-11-19'
+
+  const 이름들 = (level: number | null, earnedOn: string = BEFORE_PATCH): string[] =>
+    huntingRegionsForLevel(level, earnedOn).map((each) => each.name)
 
   it('캐릭터 레벨을 모르면 **전부** 선다. 고르개가 `선택 안함` 인 상태다', () => {
-    expect(huntingRegionsForLevel(null)).toHaveLength(huntingRegions().length)
+    expect(huntingRegionsForLevel(null, PATCH_DAY)).toHaveLength(huntingRegions().length)
   })
 
   /**
@@ -57,9 +61,10 @@ describe('huntingRegionsForLevel', () => {
   })
 
   /**
-   * 아래로는 20 이다. 그보다 낮은 지역은 페널티가 커져 갈 이유가 없다.
+   * 패치 전 날짜의 기록은 아래로 20 이다. 옛 표에서는 차이 20 이 -20% 라 거기까지 사냥할 만했고,
+   * 그때 적은 기록의 지역이 목록에서 빠지면 수정으로 열 때 지역 칸이 비어 보인다.
    */
-  describe('아래쪽. 20 까지', () => {
+  describe('아래쪽. 패치 전 날짜는 20 까지', () => {
     it('lv.277 에게 고통의 미궁(255-259)은 서고 문브릿지(250-254)는 안 선다', () => {
       const names = 이름들(277)
       expect(names).toContain('고통의 미궁') // 최고 259 ≥ 257
@@ -71,6 +76,23 @@ describe('huntingRegionsForLevel', () => {
       // 걸려 지역이 선다. 추천 레벨(205-209)로 재면 통째로 빠지던 자리다.
       expect(이름들(230)).toContain('리버스 시티')
       expect(이름들(234)).not.toContain('리버스 시티') // 바닥 214 > 213
+    })
+  })
+
+  /**
+   * 새 표에서는 11 레벨 이상 낮은 몬스터의 메소가 0 이다. 그런 사냥터만 있는 지역은 고를 이유가 없다.
+   */
+  describe('아래쪽. 2026-11-19 부터는 10 까지', () => {
+    it('lv.294 에게 아르테리아(280-284)는 서고 도원경(275-279)은 안 선다', () => {
+      const names = 이름들(294, PATCH_DAY)
+      expect(names).toContain('아르테리아') // 최고 284 ≥ 284. 경계는 포함이다
+      expect(names).not.toContain('도원경') // 최고 279 < 284
+    })
+
+    it('같은 레벨이라도 전날의 기록에는 도원경과 오디움이 선다', () => {
+      const names = 이름들(294, BEFORE_PATCH)
+      expect(names).toContain('도원경')
+      expect(names).toContain('오디움') // 최고 274 ≥ 274
     })
   })
 
@@ -91,7 +113,7 @@ describe('huntingRegionsForLevel', () => {
   })
 
   it('레벨이 아주 낮으면 갈 수 있는 데가 없어 빈 목록이다', () => {
-    expect(huntingRegionsForLevel(10)).toEqual([])
+    expect(huntingRegionsForLevel(10, PATCH_DAY)).toEqual([])
   })
 })
 

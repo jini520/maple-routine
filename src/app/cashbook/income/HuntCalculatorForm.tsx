@@ -198,11 +198,12 @@ function knownBoostsOf(ids: readonly string[]): string[] {
 function restorableGroundOf(
   remembered: LastHunt | undefined,
   level: number | null,
+  dateKey: string,
 ): { region: HuntingRegion; ground: HuntingGround } | null {
   if (remembered === undefined) return null
   const found = findHuntingGround(remembered.groundKey)
   if (found === null) return null
-  return huntingRegionsForLevel(level).some((each) => each.key === found.region.key) ? found : null
+  return huntingRegionsForLevel(level, dateKey).some((each) => each.key === found.region.key) ? found : null
 }
 
 /** 지역 드롭다운의 지역 아이콘 크기. 닫힌 줄과 목록 줄이 같다. */
@@ -423,7 +424,7 @@ export function HuntCalculatorForm(
   const mesoRateRequest = useRef<string | null>(props.editing?.ocid ?? null)
   const { saving, submit, remove } = useSheetSubmit(props)
 
-  const huntRegions = huntingRegionsForLevel(huntLevel)
+  const huntRegions = huntingRegionsForLevel(huntLevel, props.dateKey)
   const huntRegion = regionKey === null ? null : findHuntingRegion(regionKey)
   /**
    * 목록에 서는 차례. **레벨 차이가 적은 순, 같으면 마릿수가 많은 순**.
@@ -461,7 +462,7 @@ export function HuntCalculatorForm(
   /** 조각 줄의 그림. 이름을 그림이 지므로 못 찾으면 그 자리를 비운다. */
   const fragmentIcon = solErdaFragmentIcon()
 
-  const huntInput = { characterLevel: huntLevel, missedMobs, boostPercent, boostMultiplier, sojae }
+  const huntInput = { characterLevel: huntLevel, missedMobs, boostPercent, boostMultiplier, sojae, earnedOn: props.dateKey }
   /** 사냥터를 안 골랐으면 0 이다. 계산기가 반쯤 찬 상태이고, 그때도 조각 값은 선다. */
   const huntMeso = huntGround === null ? 0 : huntingMesoOf({ ...huntInput, ground: huntGround })
   const fragments = mesoValueOf(fragmentsText)
@@ -496,7 +497,7 @@ export function HuntCalculatorForm(
       next === null ? null : (props.characters.find((each) => each.ocid === next)?.level ?? null)
     setHuntLevel(level)
     const remembered = next === null ? undefined : props.lastHunts[next]
-    const restored = restorableGroundOf(remembered, level)
+    const restored = restorableGroundOf(remembered, level, props.dateKey)
     setRegionKey(restored?.region.key ?? null)
     setGroundKey(restored?.ground.key ?? null)
     setBoosts(restored === null || remembered === undefined ? [] : knownBoostsOf(remembered.boosts))

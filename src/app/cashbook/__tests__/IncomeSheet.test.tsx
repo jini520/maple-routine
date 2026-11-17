@@ -1724,6 +1724,26 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 8,922,960')
   })
 
+  it('적는 날을 2026-11-19 로 옮기면 새 페널티 표로 다시 세고 지역 목록이 좁아진다 (결정 5 · 7)', async () => {
+    const view = await 그리기({ dateKey: '2026-11-18', todayDateKey: '2026-11-19' }, 'hunting')
+    // 루디는 294. 어둠이 내리는 나무줄기 1 은 288 이라 몬스터가 6 낮다.
+    await 루디고르기(view)
+    await 사슬고르기(view, 'carcion')
+    await 사슬고르기(view, 'carcion_darkening_tree_trunk_1')
+
+    // 전날은 옛 표라 페널티가 없다. 288 × 7.5 × 40 × 8 × 30 = 20,736,000
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 20,736,000')
+
+    await 날짜고르기(view, '2026-11-19')
+
+    // 새 표는 차이 6 에서 -50% 다.
+    expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 10,368,000')
+    // 아래 끝이 294 - 10 = 284 로 좁아진다. 도원경은 몬스터가 279 까지라 빠진다.
+    await 아이디로누르기(view, 'income-sheet-region-open')
+    expect(view.getByTestId('income-sheet-region-option-arteria')).toBeTruthy()
+    expect(view.queryByTestId('income-sheet-region-option-dowonkyung')).toBeNull()
+  })
+
   it('**큰 숫자는 합계이고 못 친다** (결정 1)', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
