@@ -5,18 +5,9 @@
  * 바닥 트레이에서 동작 시간 · 쉬는 시간을 고르고 고른 조합을 위젯 크기로 미리 본다. `적용` 을 눌러야 저장된다.
  */
 import { Image as CachedImage } from 'expo-image'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { Pressable, View } from 'react-native'
-import Animated, {
-  Easing,
-  cancelAnimation,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-  type SharedValue,
-} from 'react-native-reanimated'
+import { useReducedMotion } from 'react-native-reanimated'
 
 import { CheckBox, CheckIcon, Text } from '../../components/atoms'
 import { Segment } from '../../components/molecules/Segment/Segment'
@@ -52,8 +43,8 @@ const FACE_SCALE = 1.7
 /** 그림 안의 캐릭터 기준점(300×300 그림 px). 행동은 발이 칸 바닥에 오게, 표정은 얼굴이 칸 가운데 오게 */
 const ACTION_ANCHOR = { x: 150, top: 114 }
 const FACE_ANCHOR = { x: 146, y: 152 }
-/** 칸이 함께 쓰는 시계의 한 바퀴. 칸마다의 한 바퀴보다 넉넉히 길다 */
-const CLOCK_MS = 60_000
+/** 칸이 함께 쓰는 시계의 한 박자. 가장 짧은 칸(깜빡임)과 같다 */
+const TICK_MS = 50
 /** 보스 선택 트레이와 같은 그림자. 구분선 대신 위로 드리워 본문과 가른다 */
 const TRAY_SHADOW: ShadowLayer = { opacity: 0.23, radius: 12, y: -10 }
 
@@ -70,15 +61,39 @@ export interface FigureMotionSheetProps {
   onClose: () => void
 }
 
-/** 칸이 함께 쓰는 시계. 움직임 줄이기면 멈춰 첫 그림에 선다 */
-function useSheetClock(): SharedValue<number> {
+/** 칸이 함께 쓰는 시계. 칸마다 자기 그림이 바뀔 때만 다시 그린다 */
+interface SheetClock {
+  now: () => number
+  subscribe: (listener: () => void) => () => void
+}
+
+function createSheetClock(): SheetClock & { tick: () => void } {
+  let now = 0
+  const listeners = new Set<() => void>()
+  return {
+    now: () => now,
+    subscribe: (listener) => {
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
+    },
+    tick: () => {
+      now += TICK_MS
+      listeners.forEach((listener) => listener())
+    },
+  }
+}
+
+/** 움직임 줄이기면 멈춰 첫 그림에 선다 */
+function useSheetClock(): SheetClock {
   const reduceMotion = useReducedMotion()
-  const clock = useSharedValue(0)
+  const [clock] = useState(createSheetClock)
 
   useEffect(() => {
     if (reduceMotion) return
-    clock.value = withRepeat(withTiming(CLOCK_MS, { duration: CLOCK_MS, easing: Easing.linear }), -1, false)
-    return () => cancelAnimation(clock)
+    const timer = setInterval(clock.tick, TICK_MS)
+    return () => clearInterval(timer)
   }, [clock, reduceMotion])
 
   return clock
@@ -86,80 +101,59 @@ function useSheetClock(): SharedValue<number> {
 
 /** 시계가 가리키는 칸 차례 */
 function stepIndexAt(clock: number, starts: readonly number[], total: number): number {
-  'worklet'
   const at = clock % total
   let index = 0
   while (index < starts.length - 1 && at >= starts[index + 1]) index += 1
   return index
 }
 
-/** 한 칸에 깔린 그림 한 장. 시계가 이 그림의 차례를 가리킬 때만 보인다 */
-function TileLayer(props: {
-  clock: SharedValue<number>
-  url: string
-  visibleAt: readonly number[]
-  starts: readonly number[]
-  total: number
-  scale: number
-  left: number
-  top: number
-}): React.JSX.Element {
-  const { clock, visibleAt, starts, total } = props
-  const style = useAnimatedStyle(() => ({
-    opacity: visibleAt.includes(stepIndexAt(clock.value, starts, total)) ? 1 : 0,
-  }))
-  const size = 300 * props.scale
-
-  return (
-    <Animated.View style={[{ position: 'absolute', left: props.left, top: props.top, width: size, height: size }, style]}>
-      <CachedImage
-        source={{ uri: props.url }}
-        cachePolicy={FIGURE_CACHE_POLICY}
-        contentFit="fill"
-        style={{ width: size, height: size }}
-      />
-    </Animated.View>
+/**
+ * 칸 그림. 위젯처럼 그 동작의 그림을 겹쳐 깔고 지금 차례의 한 장만 보이며, 좌우를 뒤집어 그린다.
+ *
+ * 보이고 숨기기는 React 상태로 한다. Reanimated 의 애니메이션 스타일을 단 상자 안의 그림은 iOS 에서 그려지지 않는다(값이 고정이어도).
+ */
+function TileFigure(props: { clock: SheetClock; imageUrl: string; code: LookAction | LookEmotion }): React.JSX.Element {
+  const steps: FigureStep[] = useMemo(() => tileSteps(props.code), [props.code])
+  const starts = useMemo(
+    () => steps.reduce<number[]>((list, step, index) => [...list, index === 0 ? 0 : list[index - 1] + steps[index - 1].ms], []),
+    [steps],
   )
-}
-
-/** 칸 그림. 위젯처럼 좌우를 뒤집어 그린다 */
-function TileFigure(props: { clock: SharedValue<number>; imageUrl: string; code: LookAction | LookEmotion }): React.JSX.Element {
-  const steps: FigureStep[] = tileSteps(props.code)
-  const starts = steps.reduce<number[]>((list, step, index) => [...list, index === 0 ? 0 : list[index - 1] + steps[index - 1].ms], [])
   const total = steps.reduce((sum, step) => sum + step.ms, 0)
-  const lifts = steps.map((step) => step.liftPx)
+  const index = useSyncExternalStore(props.clock.subscribe, () => stepIndexAt(props.clock.now(), starts, total))
+  const step = steps[index]
+  const shownKey = lookFrameKey(step.frame)
+  const layers = [...new Map(steps.map((each) => [lookFrameKey(each.frame), each.frame])).entries()]
   const isFace = props.code.startsWith('E')
   const scale = isFace ? FACE_SCALE : ACTION_SCALE
+  const size = 300 * scale
   const left = -(isFace ? FACE_ANCHOR.x : ACTION_ANCHOR.x) * scale
   const top = isFace ? TILE_HEIGHT / 2 - FACE_ANCHOR.y * scale : -ACTION_ANCHOR.top * scale
-  const layers = [...new Map(steps.map((step) => [lookFrameKey(step.frame), step.frame])).entries()]
-  const clock = props.clock
-  const lift = useAnimatedStyle(() => ({
-    transform: [{ translateY: -lifts[stepIndexAt(clock.value, starts, total)] }, { scaleX: -1 }],
-  }))
 
   return (
-    // 폭 0 인 세로줄을 칸 가운데 세우고 그 줄을 축으로 뒤집는다. 칸 폭을 몰라도 캐릭터가 가운데 선다.
-    <Animated.View style={[{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 0 }, lift]}>
+    // 칸 가운데를 축으로 뒤집는다. 그림은 칸 가운데에서 기준점만큼 비켜 놓아 칸 폭을 몰라도 캐릭터가 가운데 선다.
+    <View
+      style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, transform: [{ translateY: -step.liftPx }, { scaleX: -1 }] }}
+    >
       {layers.map(([key, frame]) => (
-        <TileLayer
+        <View
           key={key}
-          clock={props.clock}
-          url={lookFrameUrl(props.imageUrl, frame)}
-          visibleAt={steps.flatMap((step, index) => (lookFrameKey(step.frame) === key ? [index] : []))}
-          starts={starts}
-          total={total}
-          scale={scale}
-          left={left}
-          top={top}
-        />
+          testID={`figure-motion-layer-${props.code}-${key}`}
+          style={{ position: 'absolute', left: '50%', marginLeft: left, top, width: size, height: size, opacity: key === shownKey ? 1 : 0 }}
+        >
+          <CachedImage
+            source={{ uri: lookFrameUrl(props.imageUrl, frame) }}
+            cachePolicy={FIGURE_CACHE_POLICY}
+            contentFit="fill"
+            style={{ width: size, height: size }}
+          />
+        </View>
       ))}
-    </Animated.View>
+    </View>
   )
 }
 
 function Tile(props: {
-  clock: SharedValue<number>
+  clock: SheetClock
   imageUrl: string
   code: LookAction | LookEmotion
   selected: boolean

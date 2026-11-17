@@ -5,6 +5,15 @@
 // ④ 칸을 고르면 그 조합의 그림을 그때 받는다
 // ⑤ `적용` 해야 그 캐릭터 몫으로 저장된다. 동작 시간 · 쉬는 시간도 함께다
 // ⑥ 하나도 고르지 않으면 `적용` 은 글자 그대로 눌리지 않는다
+// ⑦ 칸은 그 동작의 그림을 겹쳐 깔고 한 장만 보이며, 움직임 줄이기면 첫 그림에 멈춘다
+
+// 모션 줄이기는 분기로만 관측된다(`components/__tests__/reduced-motion.ts`).
+jest.mock('react-native-reanimated', () =>
+  // 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다**. `require` 로만 된다.
+  require('../../../components/__tests__/reduced-motion').reanimatedWithReducedMotion(),
+)
+import { mockReducedMotion } from '../../../components/__tests__/reduced-motion'
+
 import type { ReactNode } from 'react'
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { Image } from 'expo-image'
@@ -50,6 +59,7 @@ const cachePath = jest.spyOn(Image, 'getCachePathAsync')
 // 미리보기가 움직인다. 진짜 시계면 테스트가 끝난 뒤에도 그림이 바뀐다.
 beforeEach(() => {
   jest.useFakeTimers()
+  mockReducedMotion(false)
   save.mockClear()
   prefetch.mockReset().mockResolvedValue(true)
   cachePath.mockReset().mockResolvedValue(null)
@@ -210,5 +220,43 @@ describe('적용', () => {
     await fireEvent.press(view.getByRole('button', { name: '적용' }))
 
     expect(save).not.toHaveBeenCalled()
+  })
+})
+
+describe('칸 그림', () => {
+  function 보이는층(view: View, code: string): string[] {
+    return view
+      .queryAllByTestId(new RegExp(`^figure-motion-layer-${code}-`))
+      .filter((node) => flattenStyle(node.props.style).opacity === 1)
+      .map((node) => String(node.props.testID))
+  }
+
+  // 그림을 그때 갈아 끼우면 다시 그리는 동안 깜빡인다. 위젯과 같은 방식이다.
+  it('그 동작의 그림을 겹쳐 깔고 한 장만 보이며, 시간이 지나면 다음 장으로 넘어간다', async () => {
+    const { view } = await 시트()
+    const 처음 = 보이는층(view, 'A03')
+
+    expect(view.queryAllByTestId(/^figure-motion-layer-A03-/).length).toBeGreaterThan(1)
+    expect(처음).toHaveLength(1)
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(200)
+    })
+
+    expect(보이는층(view, 'A03')).toHaveLength(1)
+    expect(보이는층(view, 'A03')).not.toEqual(처음)
+  })
+
+  it('움직임 줄이기면 첫 그림에 멈춘다', async () => {
+    mockReducedMotion(true)
+    const { view } = await 시트()
+    const 처음 = 보이는층(view, 'A03')
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(2000)
+    })
+
+    expect(처음).toHaveLength(1)
+    expect(보이는층(view, 'A03')).toEqual(처음)
   })
 })
