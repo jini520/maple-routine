@@ -1,7 +1,7 @@
-# ADR-078 보스 기록 테이블 재설계
+# ADR-078+254 보스 기록 테이블 재설계
 
 > 🟢 유효
-> 관련 소스: `storage/sqlite/boss-tables.ts` · `storage/sqlite/db.ts` · `storage/sqlite/migrations.ts` · `storage/boss-profit.ts` · `storage/boss-drops.ts` · `storage/boss-party-settings.ts` · `storage/boss-party-period-overrides.ts` · `storage/cache-data.ts` · `features/server-sync/drop-price-sync.ts`
+> 관련 소스: `storage/sqlite/boss-tables.ts` · `storage/sqlite/db.ts` · `storage/sqlite/migrations.ts` · `storage/boss-profit.ts` · `storage/boss-drops.ts` · `storage/boss-party-settings.ts` · `storage/boss-party-period-overrides.ts` · `storage/cache-data.ts` · `storage/legacy-space.ts` · `features/enhancement-history/legacy-totals.ts` · `features/server-sync/drop-price-sync.ts`
 
 ## 배경
 
@@ -109,14 +109,23 @@ NOT NULL 로 두면 처치도 설정도 없이 드롭만 있는 기간을 옮길
 - `item_key` 가 없는 드롭은 옮기지 않는다(실기기 0개).
 - 처치 기록과 그 기간 값이 같은 기간에 둘 다 있으면 처치 기록의 값을 쓴다.
 
-### 결정 9. 옛 테이블 넷은 v1.0.13 에서 지우지 않고, v1.0.14 에서 지운다
+### 결정 9. 옛 테이블 넷은 v1.0.13 에서 남기고, DB 버전 23 이 지운다
 
 옛 코드가 새 DB 를 열어도 DB 가 열리지 않는 일이 없어야 한다. 새 드롭 테이블은 옛 `boss_drop_records` 와 다른 이름(`boss_drops`)으로
 만든다. 같은 이름이면 옛 코드의 `ensureColumn` · 인덱스 생성 · `INSERT` 가 새 테이블에서 실패한다.
 
-v1.0.13 은 스토어 바이너리로만 낸다. 바이너리에 든 번들이 새 코드라야, OTA 가 실패해 되돌아가도 옛 코드가 새 DB 를 열지
-않는다. 옛 테이블은 v1.0.14 에서 새 마이그레이션 버전으로 지운다(#685). 그때도 이관 단계와 옛 테이블 정의는 남긴다.
-v1.0.13 을 건너뛰고 올리는 기기가 그 단계를 거쳐야 하기 때문이다.
+v1.0.13 은 스토어 바이너리로만 냈다. 바이너리에 든 번들이 새 코드라야, OTA 가 실패해 되돌아가도 옛 코드가 새 DB 를 열지
+않는다. 같은 이유로 v1.0.13 에서는 옛 테이블을 지우지 않았다.
+
+v1.0.14 의 DB 버전 23(`dropLegacyTables`)이 옛 테이블 넷과 옛 가계부 표 둘(`income_records` · `spend_records`, [[ADR-096]]
+결정 6)을 지운다(#685). v1.0.14 도 스토어 바이너리로만 낸다.
+
+- 이관 단계와 이관 전용으로 고정한 옛 테이블 정의는 남긴다. v1.0.13 을 건너뛰고 올라오는 기기와 새 기기는 버전 1 부터 차례로
+  돌며 옛 표를 읽는다.
+- 그래서 옛 표 여섯의 `CREATE` · `income_records` 다시 쓰기 · `ensureColumn` · 백필은 `user_version` 이 23 보다 작은 DB 에서만
+  돈다. 부팅마다 돌면 지운 표가 다음 부팅에 빈 표로 다시 생긴다. 새 기기도 옛 표를 빈 채로 만들었다가 버전 23 에서 지운다.
+- 옛 표의 인덱스 `boss_drop_records_group` 은 만들지 않는다. 이관 단계는 이 인덱스 없이 돈다.
+- 옛 표끼리도, 새 표에서 옛 표로도 외래키가 없다. 그래서 옛 표를 지워도 새 표의 행이 따라 지워지지 않는다.
 
 ### 결정 10. 구현할 때 함께 바꾸는 것
 
@@ -129,9 +138,8 @@ v1.0.13 을 건너뛰고 올리는 기기가 그 단계를 거쳐야 하기 때�
   `boss_parties` · `boss_party_periods` 는 처치 기록의 부모라 통째로 지우면 고르지 않은 그룹의 기록까지 사라진다.
 - **옛 마이그레이션 단계가 쓰는 테이블 정의를 이관 전용으로 고정한다.** 새 기기도 0단계부터 다 돌고, 버전 4 · 12 는
   `boss-tables.ts` 의 정의로 테이블을 다시 만든다. 그 정의를 새 모양으로 바꾸면 옛 단계가 깨진다.
-- **옛 표의 `ensureColumn` · 백필 · `boss_drop_records_group` 인덱스는 옛 표와 함께 v1.0.14 까지 둔다.** 새 표는 이름이 달라
-  부딪히지 않는다. 옛 표를 지우는 날 함께 걷는다(#685). 하나라도 실패하면 DB 가 안 열려 가계부 · 지출 · 강화 기록까지
-  멈추므로, 옛 표만 지우고 이 문장을 남기면 안 된다.
+- **옛 표의 `ensureColumn` · 백필은 옛 표가 있는 DB(버전 23 전)에서만 돈다.** 새 표는 이름이 달라 부딪히지 않는다. 표를 지운
+  뒤에도 돌면 없는 표에 칸을 더하려다 실패하고, DB 가 안 열려 가계부 · 지출 · 강화 기록까지 멈춘다(결정 9).
 - **행이 있으면 완료로 읽던 함수는 `clear_status` 로 거른다.** `getBossProfitRecords` · `getAllBossProfitRecordKeys` ·
   `getWeeklyPeriodKeysWithRecords` · `findAdjacentPeriodKeyWithRecords` · `getEarliestBossProfitPeriodKeys` ·
   `getUndatedBossProfitRecords` · `getAutoFeeProfitRecords` 등이다. 거르지 않으면 안 잡은 보스가 완료로 보인다.
@@ -142,13 +150,33 @@ v1.0.13 을 건너뛰고 올리는 기기가 그 단계를 거쳐야 하기 때�
   드롭을 그 기간에서 걷어 온다. 걷지 않으면 기본키가 부딪혀 저장이 실패하고, 뒤이은 비우기가 드롭을 지운다. 옛 표에서도
   버전 12 부터 이렇게 드롭이 사라지고 있었다.
 
+### 결정 11. 옛 표를 다 지운 뒤 한 번, 사본 파일을 지우고 `VACUUM` 한다
+
+SQLite 는 표를 지워도 그 공간을 파일 안에 빈 칸으로 남긴다. `VACUUM` 으로 파일을 다시 써야 줄어든다. 2026-10-29 아이폰
+실측에서 DB 47MB 가운데 41MB 가 이전 버전 사본이었고, 대부분이 옛 강화 원본(`enhancement_history`)이었다.
+
+- 마지막으로 지워지는 옛 표는 강화 원본이다. 버전 23 은 DB 를 열 때 돌지만, 강화 원본은 합계로 옮긴 뒤
+  `ensureEnhancementTotals` 가 지운다([[ADR-101]] 결정 27). 그래서 회수는 강화 원본을 지운 바로 뒤에 한다. 버전 23 뒤에
+  곧바로 `VACUUM` 하면 아직 남은 강화 원본까지 다시 쓰고, 그 표를 지운 뒤 한 번 더 돌려야 한다.
+- 회수는 두 가지다. 가계부 이관 전에 떠 둔 사본 파일(`boss_profitSQLite-before-v15.db`, [[ADR-096]] 결정 9)을 지우고,
+  `VACUUM` 을 돌린다. 사본 파일은 SQL 로 못 지워 `SqlitePort` 의 `removeFile` 로 지운다. 경로는 `PRAGMA database_list`
+  의 DB 파일 경로에서 만든다. 파일이 없으면 지운 것으로 본다.
+- 한 번만 돈다. 끝나면 Preferences 에 `legacySpaceReclaimed` 를 둔다. 강화 원본이 처음부터 없거나 이미 지운 기기도 표식이
+  없으면 한 번 돈다. 그래야 develop 빌드로 강화 원본을 먼저 지운 기기도 사본 파일이 지워진다.
+- `VACUUM` 은 트랜잭션 안에서 돌지 않는다. 같은 연결의 트랜잭션 줄(`inTransaction`) 뒤에 세운다. 다른 쓰기 트랜잭션이 열린
+  사이에 돌면 `cannot VACUUM from within a transaction` 으로 실패한다.
+- 실패하면 표식을 두지 않고 던지지 않는다. 다음 실행에 다시 돈다.
+
 ## 테스트
 
 모두 `node:sqlite` 로 실제 엔진을 돌린다.
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `storage/sqlite/__tests__/boss-tables-real-sqlite.test.ts` | 결정 3 · 8: 옛 행을 심은 버전 13 기기에서 처치 · 설정 · 그 기간 값 · 드롭이 옮겨지는지, 드롭만 있는 기간이 분배 칸 빈 `open` 행이 되는지, 매기지 않은 드롭의 분배 칸을 버리는지, 0메소 드롭이 `pending` 인지, key 없는 드롭을 안 옮기는지, 월드를 물려받는지, 옛 표가 남는지, 이관이 한 번만 도는지 |
+| `storage/sqlite/__tests__/boss-tables-real-sqlite.test.ts` | 결정 3 · 8: 옛 행을 심은 버전 13 기기에서 처치 · 설정 · 그 기간 값 · 드롭이 옮겨지는지, 드롭만 있는 기간이 분배 칸 빈 `open` 행이 되는지, 매기지 않은 드롭의 분배 칸을 버리는지, 0메소 드롭이 `pending` 인지, key 없는 드롭을 안 옮기는지, 월드를 물려받는지, 이관이 한 번만 도는지 |
+| `storage/sqlite/__tests__/legacy-tables-real-sqlite.test.ts` | 결정 9: 옛 행을 심은 버전 13 DB 와 새 기기가 버전 23 까지 오른 뒤 옛 표 여섯과 옛 인덱스가 `sqlite_master` 에 없고 새 표의 행이 그대로인지, 다시 열어도 옛 표가 생기지 않는지 |
+| `storage/__tests__/legacy-space.spec.ts` | 결정 11: 사본 파일을 지우고 `VACUUM` 한 뒤 표식을 두는지, 표식이 있으면 다시 돌지 않는지, 실패하면 표식을 두지 않고 던지지 않는지, 열린 트랜잭션이 끝난 뒤에 `VACUUM` 하는지 |
+| `features/enhancement-history/__tests__/legacy-totals.spec.ts` | 결정 11: 강화 원본을 지운 뒤에 회수를 부르는지 |
 | | 결정 1 · 5 · 10: 조합 행 `UNIQUE`, 외래키를 켜는 문장과 `CASCADE`, 값을 매긴 드롭만 가격 · 분배 칸을 갖는 CHECK |
 | `storage/__tests__/boss-profit.spec.ts` | 결정 1 · 4 · 10: 처치 읽기가 `open` 행을 세지 않는지, 처치를 걷으면 드롭이 남은 기간이 분배 칸 빈 `open` 이 되는지, 그 기간 값이 처치 값으로 덮이는지, 이름을 key 로 채우는지 |
 | `storage/__tests__/boss-party-settings.spec.ts` | 결정 10: 분배 칸 빈 조합 행을 설정 없음으로 읽는지, 설정 옮기기가 그 행을 채우고 이미 정한 값은 안 덮는지 |
@@ -160,3 +188,5 @@ v1.0.13 을 건너뛰고 올리는 기기가 그 단계를 거쳐야 하기 때�
 ## 번호 기록
 
 - ADR-078 (2026-10-21): 보스 기록 테이블 재설계를 처음 작성하고 구현했다(#686)
+- ADR-254 (2026-11-17): 결정 9 를 DB 버전 23 이 옛 표 여섯을 지우는 것으로 다시 쓰고, 결정 10 의 옛 표 `ensureColumn` 을 버전 23
+  전 DB 로 좁혔다. 사본 파일과 `VACUUM` 으로 공간을 거두는 결정 11 을 더했다(#685)

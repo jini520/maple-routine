@@ -12,7 +12,7 @@
 | `storage/sqlite/boss-tables.ts` | 보스 표 셋의 정의를 한 곳에 둔다. 정상 생성과 버전 4 재작성에서 함께 쓴다 · 드롭 그룹 인덱스 |
 | `storage/sqlite/cashbook-tables.ts` | 가계부 기록 표 셋의 정의 · 날짜 인덱스 |
 | `storage/sqlite/record-key-tables.ts` | 버전 16 이 uuid 기본키로 다시 쓴 다섯 표(캐릭터 · 월드 리프 · 강화 조회 기록 · MVP 등급 · 메이플 ID 소속)의 정의 |
-| `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 22) |
+| `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 23) |
 | `storage/sqlite/transaction.ts` | 쓰기 여럿을 트랜잭션 하나로 묶는 `inTransaction`. 같은 연결의 트랜잭션은 차례로 돈다. 겹쳐 열면 SQLite 가 뒤의 것을 거절하기 때문이다(앱을 켤 때 계정 칸 채우기와 강화 합계 옮기기가 겹쳤다). 그래서 `work` 안에서 다시 부르면 멈춘다 |
 | `storage/sqlite/uuid.ts` | 행 식별자를 SQLite 가 만드는 식(`NEW_UUID_SQL`) |
 | `storage/adapters/rn-sqlite.ts` | `SqlitePort` 구현(op-sqlite) |
@@ -26,13 +26,13 @@
 1. 같은 이름의 커넥션이 남아 있으면 닫는다.
 2. `PRAGMA foreign_keys = ON` 으로 외래키를 켠다. op-sqlite 는 기본이 꺼져 있어, 켜지 않으면 `ON DELETE CASCADE` 가
    안 돈다. 트랜잭션 안에서는 이 문장이 먹지 않아 맨 앞에서 켠다.
-3. `TABLE_DEFINITIONS` 의 `CREATE TABLE IF NOT EXISTS` 를 모두 실행한다.
-4. `income_records.meso_amount` 가 `NOT NULL` 이면 테이블을 다시 쓴다.
-5. `ensureColumn` 으로 나중에 생긴 칸을 옛 테이블에 더한다.
-6. 옛 `boss_drop_records` 의 빈 `price_split_mode` 를 `even` 으로, `even` 행의 빈 `price_party_size` 를
-   `price_share` 로 채운다. 옛 표라 지금 코드는 읽지 않고, v1.0.14 에서 옛 표와 함께 걷는다(#685).
-7. `user_version` 보다 큰 버전 이관을 차례로 실행한다.
-8. 인덱스 `boss_drop_records_group`(옛 표) · `boss_drops_period` · `cashbook_entries_entry_date` 를 만든다.
+3. `user_version` 이 23 보다 작으면 옛 표 여섯(`LEGACY_TABLE_DEFINITIONS`)을 만들고, `income_records.meso_amount` 가
+   `NOT NULL` 이면 그 표를 다시 쓰고, 옛 표에 나중에 생긴 칸을 더하고, 옛 `boss_drop_records` 의 빈 분배 칸을 채운다. 앞
+   버전 이관이 이 모양을 읽는다. 23 이상이면 건너뛴다. 지운 옛 표가 빈 표로 다시 생기지 않게 하려는 것이다([[ADR-078]] 결정 9).
+4. `TABLE_DEFINITIONS` 의 `CREATE TABLE IF NOT EXISTS` 를 모두 실행한다.
+5. `ensureColumn` 으로 나중에 생긴 칸을 지금 테이블에 더한다.
+6. `user_version` 보다 큰 버전 이관을 차례로 실행한다.
+7. 인덱스 `boss_drops_period` · `cashbook_entries_entry_date` · `enhancement_totals_date` · `inventory_items_owner` 를 만든다.
 
 열기는 10초, 닫기(`closeBossProfitDb`)는 5초 상한이 있다. OTA 적용과 데이터 삭제는 리로드 전에 닫는다.
 
@@ -48,9 +48,9 @@
 한 표에 두 그룹의 행이 섞여 있어 표를 통째로 지우지 않는 표다(`BOSS_TABLE_NAMES`).
 
 옛 보스 기록 표 넷(`boss_profit_records` · `boss_party_settings` · `boss_party_period_overrides` · `boss_drop_records`)은
-버전 14 가 새 표 셋으로 옮긴 뒤로 읽고 쓰는 코드가 없다. 옛 코드가 새 DB 를 열어도 열리도록 표를 남겨 두고, v1.0.14
-에서 지운다(#685). 옛 가계부 표 둘(`income_records` · `spend_records`)도 같다. 버전 15 가 기록 표 셋으로 옮겼고
-v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐다.
+버전 14 가 새 표 셋으로, 옛 가계부 표 둘(`income_records` · `spend_records`)은 버전 15 가 기록 표 셋으로 옮겼다. 여섯은
+버전 23 이 지운다([[ADR-078]] 결정 9). 옛 강화 원본(`enhancement_history`)은 합계로 옮긴 뒤 코드가 지운다. 다 지운 뒤 한 번
+사본 파일(`…-before-v15.db`)을 지우고 `VACUUM` 한다([[ADR-078]] 결정 11). 그래서 아래 표에서 뺐다.
 
 | 테이블 | 기본키 | 담는 것 | 쓰는 곳 | 데이터 삭제 | 문서 |
 |---|---|---|---|---|---|
@@ -166,6 +166,7 @@ v1.0.14 에서 지운다([[ADR-096]] 결정 6). 그래서 아래 표에서 뺐�
 | 20 | `fillMesoMarketFees` | 수수료율 칸이 생기기 전에 적은 메포 지출 품목에 메소마켓 수수료율 1 을 채운다. 수입과 메소 · 캐시 품목은 비워 둔다([[ADR-047]] 결정 17) |
 | 21 | `addFragmentUseSources` | 조각 사용 표에 경로 칸(`fragment_source`)과 기타 조각의 주인 칸을 더하고 `ocid` 의 `NOT NULL` 을 떼려고 표를 다시 쓴다. 옛 줄은 모두 사냥 조각이다([[ADR-209]] 결정 12) |
 | 22 | `addCashbookMemo` | 가계부 기록 표에 메모 칸(`memo`)이 없으면 더한다. 새 기기도 버전 17 이 표 정의의 칸을 지우므로 여기서 다시 더한다. 옛 행은 `NULL` 이다([[ADR-048]] 결정 19) |
+| 23 | `dropLegacyTables` | 옛 보스 기록 표 넷과 옛 가계부 표 둘을 지운다. 버전 14 · 15 가 옮긴 뒤로 읽는 코드가 없다([[ADR-078]] 결정 9) |
 
 못 찾는 이름은 key 만 비우고 행과 이름은 남긴다.
 
