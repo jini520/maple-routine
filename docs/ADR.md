@@ -177,7 +177,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
 | [ADR-047+190+217+225+231+245](./adr/ADR-047+190+217+225+231+245_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 억 단위 판매 · 헥사와 구매 줄 합치기 · 주간 보스 수입 이전과 그 마지막 입력 기억 · 메소마켓 환전 수수료 · 펼친 강화 줄의 장비 그림 |
 | [ADR-048+070+118+126+214+226+246](./adr/ADR-048+070+118+126+214+226+246_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 · 아이템 구매 · 판매 메모 · 에픽던전 리워드의 마지막 입력 기억 |
-| [ADR-049+127+157+199+206+211+215](./adr/ADR-049+127+157+199+206+211+215_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
+| [ADR-049+127+157+199+206+211+215+253](./adr/ADR-049+127+157+199+206+211+215+253_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
 | [ADR-050+110+128](./adr/ADR-050+110+128_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
 | [ADR-051+075+090+236](./adr/ADR-051+075+090+236_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
