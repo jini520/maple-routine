@@ -261,6 +261,56 @@ codesign -dvv <export 경로>/*.ipa 2>&1 | grep Authority        # Apple Distrib
 
 iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다(2026-08-04).
 
+## 업로드하면 곧바로: 지문 등록
+
+스토어 바이너리를 업로드하면(App Store Connect · Play Console) **그 자리에서** 지문을 서버의 받는 지문 목록에 넣는다
+([[ADR-011]] 결정 6). 업로드한 순간부터 TestFlight 와 심사가 그 바이너리를 쓰는데, 앱은 자기 지문이 서버
+`latest-<platform>.json` 의 `acceptedRuntimeVersions` 에 없으면 닫을 수 없는 스토어 업데이트 모달로 막는다. 1.0.14 는
+심사 제출 때까지 미뤘다가 TestFlight 로 받은 앱이 켜자마자 막혔다(#1086).
+
+1. 바이너리에서 지문을 읽는다. 빌드하기 전에 적어 둔 값과 같아야 한다.
+
+   ```bash
+   cat <아카이브>/Products/Applications/app.app/EXUpdates.bundle/fingerprint
+   unzip -p android/app/build/outputs/bundle/release/app-release.aab base/assets/fingerprint
+   ```
+
+2. 서버 목록 끝에 더한다. 원본을 먼저 백업하고, 임시 파일에 쓴 뒤 바꿔 끼워 중간 상태가 읽히지 않게 한다. 아직 올리지
+   않은 플랫폼의 지문도 함께 넣어도 된다.
+
+   ```bash
+   ssh ubuntu@158.179.175.230 'B=~/ota-backups/<날짜>-before-in-review-<버전>; mkdir -p $B
+     cp -p /srv/maple-routine-ota/latest-ios.json /srv/maple-routine-ota/latest-android.json $B/
+     python3 - <<PY
+   import json, os
+   add = {"ios": "<iOS 지문>", "android": "<Android 지문>"}
+   for p, fp in add.items():
+       path = f"/srv/maple-routine-ota/latest-{p}.json"
+       d = json.load(open(path))
+       acc = d.get("acceptedRuntimeVersions") or [d["runtimeVersion"]]
+       if fp not in acc: acc.append(fp)
+       d["acceptedRuntimeVersions"] = acc
+       with open(path + ".tmp", "w") as f: json.dump(d, f, indent=2, ensure_ascii=False); f.write("\n")
+       os.chmod(path + ".tmp", 0o644); os.replace(path + ".tmp", path)
+   PY'
+   ```
+
+3. 운영 응답에서 두 지문이 함께 보이는지 본다. 앞의 지문(지금 스토어 버전)이 그대로 있어야 기존 사용자가 안 잠긴다.
+
+   ```bash
+   curl -s "https://mapleroutine.store/v1/ota/latest?platform=ios&t=$(date +%s)"
+   curl -s "https://mapleroutine.store/v1/ota/latest?platform=android&t=$(date +%s)"
+   ```
+
+4. 같은 값을 `scripts/ota-runtime-version.mjs` 의 `IN_REVIEW_RUNTIME_VERSIONS` 에 넣고, 그 테스트
+   (`scripts/__tests__/ota-runtime-version.test.mjs`)도 고친다. 발행 스크립트가 발행할 때마다 목록을 통째로 다시 쓰므로,
+   상수에 없으면 다음 OTA 발행이 2번에서 더한 값을 지운다. 이 커밋은 다음 OTA 를 발행할 트리에 들어가야 해서 그 버전의
+   핫픽스 기준 트리에서 딴 `hotfix/<slug>` 로 main 에 넣고, 곧바로 main 을 develop 에 머지한다. 기준 트리가 main 의 끝이
+   아니면 핫픽스 기준 커밋을 이 커밋으로 옮긴다(`CLAUDE.md` · [[ADR-188]] 결정 6).
+
+심사에서 반려돼 네이티브를 고쳐 다시 구우면 지문이 바뀐다. 그때는 2번과 4번을 새 지문으로 다시 한다. 게시를 확인하면 이 값을
+비우는 절차는 `features/live-update.md` 의 `스토어 게시 뒤 옛 바이너리 잠그기` 에 있다.
+
 ## 콘솔에 적을 값
 
 ### 개인정보 처리방침
