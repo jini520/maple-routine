@@ -272,16 +272,20 @@ iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다
 ### 수집 신고(Play 데이터 안전 · App Store 개인정보 라벨)
 
 앱은 우리 서버로 드롭 가격 기록을 보낸다(`features/server-sync/drop-price-sync.ts` 의 `dropPricePayloadOf`).
-보내는 칸은 `dropRecordId` · `itemKey` · `status` · `priceMeso` · `periodKey` · `worldKey` · `ringLevel` · `boss` ·
-`difficulty` 이고, 신원 헤더 하나가 함께 간다(`features/auth/server-identity.ts`). 전송은 `AppShell` 이 띄우는
-`runServerSync` 와 가격을 저장하는 순간에 일어난다([[ADR-018]]).
+보내는 칸은 `mapleId` · `ocid` · `dropRecordId` · `itemKey` · `status` · `priceMeso` · `periodKey` · `worldKey` ·
+`ringLevel` · `boss` · `difficulty` · `periodRecordId` · `pricedAt` · `boxOriginKey` 이고, 신원 헤더 하나가 함께 간다
+(`features/auth/server-identity.ts`). `mapleId` · `ocid` 는 원문이 아니라 SHA-256 해시다([[ADR-017]] 결정 11). 전송은 `AppShell` 이
+띄우는 `runServerSync` 와 가격을 저장하는 순간에 일어난다([[ADR-018]]).
+
+계정 정보도 보낸다. 계정마다 메이플 ID 해시 목록을 알리고, 넥슨 로그인 사용자가 부계정을 추가하면 그 키의 해시와 메이플 ID 해시
+목록을 등록한다(`features/server-sync/accounts.ts`, [[ADR-101]] 결정 6 · 25).
 
 사용 로그도 보낸다. 방문 · 화면 이름과 체류 시간 · 드롭과 가계부 저장 횟수를 플랫폼 · 앱 버전과 함께 묶어 보낸다
 (`features/usage-log/`, [[ADR-158]]).
 
 | 신고 항목 | 왜 |
 |---|---|
-| 사용자 ID | 넥슨 로그인 세션이나 API 키 해시를 보낸다. 되돌릴 수 없는 해시여도 한 사람의 기록을 묶는 값이다 |
+| 사용자 ID | 넥슨 로그인 세션이나 API 키 해시, 메이플 ID · 캐릭터 식별자의 해시를 보낸다. 되돌릴 수 없는 해시여도 한 사람의 기록을 묶는 값이다 |
 | 기타 사용자 생성 콘텐츠 | 사용자가 적은 판매가와 아이템 · 기간 · 월드 · 반지 레벨 |
 | 광고 ID | 앱에 `AD_ID` 권한이 들어 있다 |
 | 기기 식별자 | Firebase 가 FCM 등록 토큰을 보관한다 |
@@ -289,7 +293,7 @@ iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다
 | 진단(Play `앱 정보 및 성능` · App Store `기타 진단 데이터`) | 강화 합계에서 빠진 줄의 날짜 · 종류 · 사유 · 장비 이름 · 줄 수([[ADR-102]]). 앱의 계산 오류를 찾는 데 쓴다 |
 
 Play 는 `수집함 · 공유하지 않음 · 필수 · 앱 기능과 분석`(사용 로그와 진단은 `분석`), `전송 중 암호화`, `삭제 요청 가능` 으로
-적는다. 삭제는 앱 설정의 `계정 삭제` 가 한다. 서버는 30일 유예 뒤 사람과 열쇠를 지우고 보낸 기록을 익명으로 남긴다([[ADR-017]] 결정 6).
+적는다. 삭제는 앱 설정의 `계정 삭제` 가 한다. 서버는 30일 유예 뒤 사람과 열쇠를 지우고 보낸 기록은 사람과의 연결을 끊어 남긴다. 드롭에는 ocid 해시가 남는다([[ADR-017]] 결정 6).
 메일로는 받지 않는다. 운영자가 메일만으로 사람을 찾을 수 없어서다. 넥슨 로그인이 바이너리에 있으므로 계정 생성 방법은
 `OAuth` 이고, 잠근 채로 내도 그렇게 적는다. OTA 로 풀면 심사 없이 계정이 생기기 때문이다. 계정 삭제 URL 과 데이터 삭제 URL 은
 `https://mapleroutine.store/support` 다. 그 페이지의 `계정을 삭제하고 싶습니다` 절이 앱에서 지우는 순서와 지우는 데이터 · 남는
