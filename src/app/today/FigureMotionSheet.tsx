@@ -284,7 +284,12 @@ export function FigureMotionSheet(props: FigureMotionSheetProps): React.JSX.Elem
             fill
             options={TABS}
             selected={tab}
-            labelOf={(value) => (value === 'action' ? '행동' : '표정')}
+            // 고른 수와 최대 수를 함께 적는다. 어느 쪽을 보고 있어도 두 쪽의 수가 다 보인다.
+            labelOf={(value) =>
+              value === 'action'
+                ? `행동 ${draft.actions.length}/${MAX_FIGURE_ACTIONS}`
+                : `표정 ${draft.emotions.length}/${MAX_FIGURE_EMOTIONS}`
+            }
             onSelect={setTab}
           />
         </View>

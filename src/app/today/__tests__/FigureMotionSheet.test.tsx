@@ -1,5 +1,5 @@
 // 대표 캐릭터 동작 시트. 이 파일이 지키는 것 여섯.
-// ① 행동과 표정은 `행동 · 표정` 세그먼트로 한쪽씩 보인다
+// ① 행동과 표정은 `행동 · 표정` 세그먼트로 한쪽씩 보이고, 세그먼트 글자에 고른 수와 최대 수가 보인다
 // ② 칸 이름은 정한 이름이고 깜빡임 칸은 없다. 이름은 한 줄이고 넘치면 글자를 줄인다
 // ③ 행동 3개 · 표정 5개를 다 고르면 나머지 칸이 흐려지고 눌러도 붙지 않는다
 // ④ 칸을 고르면 그 조합의 그림을 그때 받는다
@@ -79,17 +79,29 @@ describe('행동과 표정', () => {
     expect(view.getByText('서기 · 이동')).toBeTruthy()
     expect(view.queryByTestId('figure-motion-tile-E02')).toBeNull()
 
-    await fireEvent.press(view.getByText('표정'))
+    await fireEvent.press(view.getByText(/^표정 \d\/5$/))
 
     expect(view.getByTestId('figure-motion-tile-E02')).toBeTruthy()
     expect(view.queryByTestId('figure-motion-tile-A03')).toBeNull()
+  })
+
+  // 행동 3개 · 표정 5개까지다. 어느 쪽을 보고 있어도 두 쪽의 수가 다 보인다(사용자 지정).
+  it('세그먼트 글자에 고른 수와 최대 수가 보이고, 고르면 바로 바뀐다', async () => {
+    const { view } = await 시트()
+
+    expect(view.getByText('행동 1/3')).toBeTruthy()
+    expect(view.getByText('표정 1/5')).toBeTruthy()
+
+    await fireEvent.press(view.getByTestId('figure-motion-tile-A24'))
+
+    expect(view.getByText('행동 2/3')).toBeTruthy()
   })
 
   it('그 캐릭터가 고른 칸이 골라져 있다', async () => {
     const { view } = await 시트()
 
     expect(고른칸(view)).toEqual(['A03'])
-    await fireEvent.press(view.getByText('표정'))
+    await fireEvent.press(view.getByText(/^표정 \d\/5$/))
     expect(고른칸(view)).toEqual(['E02'])
   })
 })
@@ -106,7 +118,7 @@ describe('칸 이름', () => {
   // 깜빡임은 기본 표정 사이에 앱이 넣는다(사용자 지정).
   it('표정에는 바꾼 이름이 서고 깜빡임 칸은 없다', async () => {
     const { view } = await 시트()
-    await fireEvent.press(view.getByText('표정'))
+    await fireEvent.press(view.getByText(/^표정 \d\/5$/))
 
     for (const 이름 of ['분노', '꾸벅꾸벅', '뿅', '허걱허걱', '곤란', '울렁울']) {
       expect(view.getByText(이름)).toBeTruthy()
@@ -142,7 +154,7 @@ describe('고를 수 있는 수', () => {
 
   it('표정은 5개까지다', async () => {
     const { view } = await 시트({ ...걷기, emotions: ['E00', 'E01', 'E02', 'E03', 'E04'] })
-    await fireEvent.press(view.getByText('표정'))
+    await fireEvent.press(view.getByText(/^표정 \d\/5$/))
 
     await fireEvent.press(view.getByTestId('figure-motion-tile-E05'))
 
@@ -192,7 +204,7 @@ describe('적용', () => {
 
   it('표정을 하나도 고르지 않아도 누를 수 없다', async () => {
     const { view } = await 시트()
-    await fireEvent.press(view.getByText('표정'))
+    await fireEvent.press(view.getByText(/^표정 \d\/5$/))
 
     await fireEvent.press(view.getByTestId('figure-motion-tile-E02'))
     await fireEvent.press(view.getByRole('button', { name: '적용' }))
