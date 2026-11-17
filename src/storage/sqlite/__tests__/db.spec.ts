@@ -38,6 +38,7 @@ beforeEach(async () => {
     isConnection: isConnectionMock,
     closeConnection: closeConnectionMock,
     createConnection: createConnectionMock,
+    removeFile: jest.fn(),
   })
 })
 

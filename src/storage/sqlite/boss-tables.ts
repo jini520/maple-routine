@@ -109,19 +109,6 @@ export const BOSS_DROP_RECORDS_BODY = `(
     PRIMARY KEY (drop_record_id)
   )`
 
-/**
- * 그룹을 찾는 인덱스. **기본키가 곧 인덱스였던 자리를 메꾼다.**
- *
- * 종전에는 `(ocid, boss_key, difficulty, period_key, drop_index)` 가 기본키라 그 앞부분으로 찾는
- * 조회가 공짜였다. 기본키를 uuid 로 옮기면 그 조회가 전체 스캔이 되므로 인덱스가 선택이 아니다.
- *
- * **`UNIQUE` 가 아니다.** 필요한 것은 조회 속도이고, 유일성을 걸면 한 행씩 고치는 사이에
- * `drop_index` 가 일시적으로 겹쳐 그 자리에서 실패한다.
- */
-export const BOSS_DROP_RECORDS_GROUP_INDEX =
-  'CREATE INDEX IF NOT EXISTS boss_drop_records_group' +
-  ' ON boss_drop_records (ocid, boss_key, difficulty, period_key, drop_index)'
-
 /** 기본키를 보스 key 로 다시 만드는 표 셋. 버전 4 가 이 차례로 돈다. */
 export const BOSS_KEYED_TABLES = [
   { name: 'boss_profit_records', body: BOSS_PROFIT_RECORDS_BODY },

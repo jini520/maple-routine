@@ -43,6 +43,7 @@ jest.mock('@op-engineering/op-sqlite', () => ({
 
 import { IOS_DOCUMENT_PATH } from '@op-engineering/op-sqlite'
 import { BOSS_PROFIT_TABLE_NAMES, closeBossProfitDb, getBossProfitDb } from '../../sqlite/db'
+import { LEGACY_TABLE_NAMES } from '../../sqlite/legacy-tables'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 
 import { rnSqlitePort } from '../rn-sqlite'
@@ -136,28 +137,12 @@ describe('db.ts 와 맞물리는가', () => {
 
     const executed = mockOpened[0].statements.map((entry) => entry.statement.trim())
     expect(executed.filter((statement) => /^ALTER TABLE \S+ ADD COLUMN/.test(statement))).toEqual([
-      'ALTER TABLE character_profiles ADD COLUMN job_class TEXT',
       'ALTER TABLE boss_profit_records ADD COLUMN world TEXT',
       'ALTER TABLE boss_profit_records ADD COLUMN defeated_on TEXT',
       // 월드도 이름 대신 월드 key 를 든다.
       'ALTER TABLE boss_profit_records ADD COLUMN world_key TEXT',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN fragment_count INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN untradable_fragment_count INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN fragment_price_meso INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_activation INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_use_storage INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_storage_as_spend INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN meso_market_fee_percent INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN inventory_item_id TEXT REFERENCES inventory_items(id)',
-      'ALTER TABLE inventory_items ADD COLUMN ring_level INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN ring_level INTEGER',
       // 사용자가 직접 적은 완료를 가르는 칸.
       'ALTER TABLE boss_profit_records ADD COLUMN source TEXT',
-      'ALTER TABLE character_profiles ADD COLUMN world_key TEXT',
-      "ALTER TABLE enhancement_history ADD COLUMN target_item TEXT NOT NULL DEFAULT ''",
-      'ALTER TABLE enhancement_history ADD COLUMN item_level INTEGER',
-      // 강화 기록도 장비 이름 대신 장비 key 를 든다.
-      'ALTER TABLE enhancement_history ADD COLUMN item_key TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN price_state TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
@@ -214,6 +199,23 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_drop_records ADD COLUMN world TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN world_key TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN drop_record_id TEXT',
+      // 지금 표의 칸은 옛 표를 준비한 뒤에 더한다.
+      'ALTER TABLE character_profiles ADD COLUMN job_class TEXT',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN fragment_count INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN untradable_fragment_count INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN fragment_price_meso INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_activation INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_use_storage INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_storage_as_spend INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN meso_market_fee_percent INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN inventory_item_id TEXT REFERENCES inventory_items(id)',
+      'ALTER TABLE inventory_items ADD COLUMN ring_level INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN ring_level INTEGER',
+      'ALTER TABLE character_profiles ADD COLUMN world_key TEXT',
+      "ALTER TABLE enhancement_history ADD COLUMN target_item TEXT NOT NULL DEFAULT ''",
+      'ALTER TABLE enhancement_history ADD COLUMN item_level INTEGER',
+      // 강화 기록도 장비 이름 대신 장비 key 를 든다.
+      'ALTER TABLE enhancement_history ADD COLUMN item_key TEXT',
       // 계정 단위 기록이 어느 넥슨 계정의 것인지.
       'ALTER TABLE cashbook_entries ADD COLUMN nexon_account_id TEXT',
       'ALTER TABLE cashbook_entries ADD COLUMN account_id TEXT',
@@ -312,8 +314,9 @@ describe('db.ts 와 맞물리는가', () => {
     // 테이블 생성과 메이린 키 이관은 그대로 돈다. 개수를 박지 않는다. db.ts 가 테이블을 더할
     // 때마다 이 숫자가 조용히 스탈해진다.
     // 버전 이관이 다시 만드는 표(`_rebuild`)는 세지 않는다. 그 수는 이관 단계가 정한다.
+    // `user_version` 을 흉내 내지 않아 옛 표를 지우기 전 DB 로 열린다. 그래서 옛 표도 만든다.
     expect(executed.filter((statement) => /^CREATE TABLE IF NOT EXISTS/.test(statement))).toHaveLength(
-      BOSS_PROFIT_TABLE_NAMES.length,
+      BOSS_PROFIT_TABLE_NAMES.length + LEGACY_TABLE_NAMES.length,
     )
     /**
      * 여기도 개수를 안 박는다. 대신 성질을 본다. 데이터 이관은 전부 `WHERE` 를 갖고, 그것이 이미

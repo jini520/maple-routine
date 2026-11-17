@@ -110,8 +110,6 @@ const KEPT_TABLES = [
   'character_profiles',
   'character_accounts',
   'mvp_grade_history',
-  'income_records',
-  'spend_records',
 ]
 
 async function seedAll(): Promise<void> {

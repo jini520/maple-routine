@@ -37,6 +37,7 @@ import type { SpendRecord } from '../spend'
 import { BOSS_DROP_RECORDS_BODY, BOSS_KEYED_TABLES } from './boss-tables'
 import { CASHBOOK_ENTRY_FRAGMENT_USES_BODY } from './cashbook-tables'
 import { ENHANCEMENT_TOTALS_BODY } from './enhancement-tables'
+import { LEGACY_TABLE_NAMES } from './legacy-tables'
 import {
   CHARACTER_ACCOUNTS_BODY,
   CHARACTER_PROFILES_BODY,
@@ -47,7 +48,7 @@ import {
 import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 22
+export const DB_VERSION = 23
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -628,6 +629,15 @@ async function assertCashbookTotalsMoved(db: SqliteDbConnection): Promise<void> 
 }
 
 /**
+ * 버전 15 앞에 떠 둔 사본 파일의 경로. 같은 폴더에 DB 파일 이름 뒤 `-before-v15` 를 붙인다.
+ *
+ * @param dbFile `PRAGMA database_list` 의 DB 파일 경로
+ */
+export function cashbookBackupPathOf(dbFile: string): string {
+  return `${dbFile.replace(/\.db$/, '')}-before-v15.db`
+}
+
+/**
  * 손입력을 옮기는 버전 15 앞에 DB 파일을 통째로 떠 둔다. 같은 폴더의 `…-before-v15.db` 다.
  *
  * 이미 있으면 덮지 않는다. 한 번 실패하고 다시 여는 기기에서 사본이 첫 사본 그대로여야 하기 때문이다. 다른 이유로 못 뜨면
@@ -638,7 +648,7 @@ async function backupBeforeCashbookMove(db: SqliteDbConnection, current: number)
   const { values } = await db.query('PRAGMA database_list')
   const file = textOrNull((values ?? []).find((row) => row.name === 'main')?.file)
   if (file === null || file === '') return
-  const target = `${file.replace(/\.db$/, '')}-before-v15.db`
+  const target = cashbookBackupPathOf(file)
   try {
     await db.execute(`VACUUM INTO '${target.replace(/'/g, "''")}'`)
   } catch (error: unknown) {
@@ -917,6 +927,11 @@ async function requireCheckAccounts(db: SqliteDbConnection): Promise<void> {
   await db.execute(`ALTER TABLE ${rebuilt} RENAME TO enhancement_history_checks`)
 }
 
+/** 버전 14 · 15 가 옮긴 뒤로 읽는 코드가 없는 옛 표 여섯을 지운다. 옛 표의 인덱스도 표와 함께 지워진다. */
+async function dropLegacyTables(db: SqliteDbConnection): Promise<void> {
+  for (const table of LEGACY_TABLE_NAMES) await db.execute(`DROP TABLE IF EXISTS ${table}`)
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -942,9 +957,22 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   fillMesoMarketFees,
   addFragmentUseSources,
   addCashbookMemo,
+  dropLegacyTables,
 ]
 
-async function userVersionOf(db: SqliteDbConnection): Promise<number> {
+/** 옛 표 여섯을 지우는 버전. 이 버전 전 DB 만 옛 표를 만든다. */
+export const LEGACY_TABLES_DROPPED_AT = STEPS.indexOf(dropLegacyTables) + 1
+
+/** 테스트가 앞 버전 기기를 만들 때만 거는 이관 상한. `null` 이면 마지막 버전까지 돈다. */
+let migrationCeiling: number | null = null
+
+/** @param version 이 버전까지만 이관한다. `null` 이면 상한을 걷는다 */
+export function __setMigrationCeilingForTest(version: number | null): void {
+  migrationCeiling = version
+}
+
+/** DB 에 적힌 마지막 이관 버전. 새 DB 는 0 이다. */
+export async function userVersionOf(db: SqliteDbConnection): Promise<number> {
   const { values } = await db.query('PRAGMA user_version')
   const version = Number((values?.[0] as Row | undefined)?.user_version)
   return Number.isInteger(version) ? version : 0
@@ -957,7 +985,7 @@ async function userVersionOf(db: SqliteDbConnection): Promise<number> {
 export async function runVersionedMigrations(db: SqliteDbConnection): Promise<void> {
   const current = await userVersionOf(db)
   await backupBeforeCashbookMove(db, current)
-  for (let version = current + 1; version <= DB_VERSION; version += 1) {
+  for (let version = current + 1; version <= (migrationCeiling ?? DB_VERSION); version += 1) {
     await db.execute('BEGIN')
     try {
       await STEPS[version - 1]!(db)

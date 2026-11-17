@@ -13,7 +13,7 @@ import { getIncomeRecordsBetween, insertIncomeRecord, updateIncomeRecord, type I
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { assignOwnerlessSpends, deleteSpendRecord, getSpendRecordsBetween, insertSpendRecord, updateSpendRecord, type SpendRecord } from '../../spend'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
-import { DB_VERSION } from '../migrations'
+import { __setMigrationCeilingForTest, DB_VERSION } from '../migrations'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 let real: RealSqlite
@@ -24,6 +24,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
+  __setMigrationCeilingForTest(null)
   await closeBossProfitDb()
   __resetStoragePortsForTest()
   real.dispose()
@@ -37,14 +38,13 @@ function all(sql: string): Row[] {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
-/** 버전 14 기기를 만든다. 옛 표에 행을 넣고 버전을 되돌린다. */
+/** 버전 14 기기를 만든다. 그 버전까지만 이관한 DB 의 옛 표에 행을 넣는다. */
 async function seedVersion14(seed: (db: DatabaseSync) => void): Promise<void> {
+  __setMigrationCeilingForTest(14)
   await getBossProfitDb()
   await closeBossProfitDb()
-  real.inspect((db) => {
-    seed(db)
-    db.exec('PRAGMA user_version = 14')
-  })
+  real.inspect(seed)
+  __setMigrationCeilingForTest(null)
 }
 
 const SPEND_COLUMNS =
@@ -147,14 +147,12 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
     ])
   })
 
-  it('옛 표는 그대로 남고, 이관은 한 번만 돈다', async () => {
+  it('이관은 한 번만 돈다', async () => {
     await seedVersion14(seedDevice)
     await getBossProfitDb()
     await closeBossProfitDb()
     await getBossProfitDb()
 
-    expect(all('SELECT count(*) AS n FROM spend_records')).toEqual([{ n: 5 }])
-    expect(all('SELECT count(*) AS n FROM income_records')).toEqual([{ n: 4 }])
     expect(all('SELECT count(*) AS n FROM cashbook_entries')).toEqual([{ n: 9 }])
   })
 
@@ -166,13 +164,12 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
 
   // 손입력은 되살릴 API 가 없다. 옮기다 무엇이 틀려도 옮기기 전 DB 를 통째로 되돌릴 수 있어야 한다.
   it('옮기기 전 DB 를 파일째 사본으로 남긴다. 새 DB 는 사본이 없다', async () => {
+    __setMigrationCeilingForTest(14)
     await getBossProfitDb()
     expect(existsSync(backupPath())).toBe(false)
     await closeBossProfitDb()
-    real.inspect((db) => {
-      seedDevice(db)
-      db.exec('PRAGMA user_version = 14')
-    })
+    real.inspect(seedDevice)
+    __setMigrationCeilingForTest(null)
 
     await getBossProfitDb()
 

@@ -52,6 +52,8 @@ export interface SqlitePort {
     encryption: string,
     version: number,
   ): Promise<SqliteDbConnection>
+  /** DB 옆에 둔 파일 하나를 절대 경로로 지우는 일. 없으면 아무것도 하지 않는다. SQL 로는 파일을 못 지운다. */
+  removeFile(path: string): Promise<void>
 }
 
 /**

@@ -26,6 +26,7 @@ jest.mock('../../enhancement-totals-moved', () => ({
   isEnhancementTotalsMoved: jest.fn(),
   markEnhancementTotalsMoved: jest.fn(),
 }))
+jest.mock('../../legacy-space', () => ({ reclaimLegacySpaceOnce: jest.fn() }))
 
 const { getAuthConfig } = jest.requireMock('../../api-key') as Record<string, jest.Mock>
 const { readEventWorldNames } = jest.requireMock('../../../features/enhancement-history/event-world-names') as Record<
@@ -33,6 +34,7 @@ const { readEventWorldNames } = jest.requireMock('../../../features/enhancement-
   jest.Mock
 >
 const moved = jest.requireMock('../../enhancement-totals-moved') as Record<string, jest.Mock>
+const { reclaimLegacySpaceOnce } = jest.requireMock('../../legacy-space') as Record<string, jest.Mock>
 
 let real: RealSqlite
 
@@ -266,6 +268,24 @@ describe('옛 원본을 합계로 옮기기', () => {
     expect(real.inspect((db) => db.prepare('SELECT nexon_account_id, enhancement_type, history_date FROM enhancement_refetches').all())).toEqual([
       { nexon_account_id: 'account-main', enhancement_type: 'cube', history_date: '2026-10-01' },
     ])
+  })
+
+  // 강화 원본이 마지막으로 지워지는 옛 표다. 그 전에 VACUUM 하면 원본까지 다시 쓰고 한 번 더 돌려야 한다.
+  it.each([
+    ['옮긴 뒤', false],
+    ['이미 옮긴 기기', true],
+  ])('%s 원본 표를 지운 다음에 공간 회수를 부른다', async (_label, alreadyMoved) => {
+    await seenAs('o-낟낟', '낟낟', 'elysium')
+    await seedHistory([{ id: 'a', kind: 'cube', date: '2026-10-01', name: '낟낟', level: 200 }])
+    moved.isEnhancementTotalsMoved.mockResolvedValue(alreadyMoved)
+    const tableLeftAtReclaim: boolean[] = []
+    reclaimLegacySpaceOnce.mockReset().mockImplementation(async () => {
+      tableLeftAtReclaim.push(historyTableExists())
+    })
+
+    await ensureEnhancementTotals()
+
+    expect(tableLeftAtReclaim).toEqual([false])
   })
 
   it('옮긴 표시가 있으면 다시 옮기지 않는다', async () => {

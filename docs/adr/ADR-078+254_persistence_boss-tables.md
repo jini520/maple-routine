@@ -166,6 +166,8 @@ SQLite 는 표를 지워도 그 공간을 파일 안에 빈 칸으로 남긴다.
 - `VACUUM` 은 트랜잭션 안에서 돌지 않는다. 같은 연결의 트랜잭션 줄(`inTransaction`) 뒤에 세운다. 다른 쓰기 트랜잭션이 열린
   사이에 돌면 `cannot VACUUM from within a transaction` 으로 실패한다.
 - 실패하면 표식을 두지 않고 던지지 않는다. 다음 실행에 다시 돈다.
+- 2026-11-17 아이폰 DB 사본 둘로 리허설했다. 버전 22 사본은 48.7MB 가 6.0MB 로, 버전 13 사본은 45.3MB 가 1.2MB 로 줄었고,
+  두 사본 모두 새 표의 행 수가 그대로였다.
 
 ## 테스트
 
@@ -176,7 +178,7 @@ SQLite 는 표를 지워도 그 공간을 파일 안에 빈 칸으로 남긴다.
 | `storage/sqlite/__tests__/boss-tables-real-sqlite.test.ts` | 결정 3 · 8: 옛 행을 심은 버전 13 기기에서 처치 · 설정 · 그 기간 값 · 드롭이 옮겨지는지, 드롭만 있는 기간이 분배 칸 빈 `open` 행이 되는지, 매기지 않은 드롭의 분배 칸을 버리는지, 0메소 드롭이 `pending` 인지, key 없는 드롭을 안 옮기는지, 월드를 물려받는지, 이관이 한 번만 도는지 |
 | `storage/sqlite/__tests__/legacy-tables-real-sqlite.test.ts` | 결정 9: 옛 행을 심은 버전 13 DB 와 새 기기가 버전 23 까지 오른 뒤 옛 표 여섯과 옛 인덱스가 `sqlite_master` 에 없고 새 표의 행이 그대로인지, 다시 열어도 옛 표가 생기지 않는지 |
 | `storage/__tests__/legacy-space.spec.ts` | 결정 11: 사본 파일을 지우고 `VACUUM` 한 뒤 표식을 두는지, 표식이 있으면 다시 돌지 않는지, 실패하면 표식을 두지 않고 던지지 않는지, 열린 트랜잭션이 끝난 뒤에 `VACUUM` 하는지 |
-| `features/enhancement-history/__tests__/legacy-totals.spec.ts` | 결정 11: 강화 원본을 지운 뒤에 회수를 부르는지 |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 결정 11: 옮긴 뒤에도, 이미 옮긴 기기에서도 강화 원본을 지운 다음에 회수를 부르는지 |
 | | 결정 1 · 5 · 10: 조합 행 `UNIQUE`, 외래키를 켜는 문장과 `CASCADE`, 값을 매긴 드롭만 가격 · 분배 칸을 갖는 CHECK |
 | `storage/__tests__/boss-profit.spec.ts` | 결정 1 · 4 · 10: 처치 읽기가 `open` 행을 세지 않는지, 처치를 걷으면 드롭이 남은 기간이 분배 칸 빈 `open` 이 되는지, 그 기간 값이 처치 값으로 덮이는지, 이름을 key 로 채우는지 |
 | `storage/__tests__/boss-party-settings.spec.ts` | 결정 10: 분배 칸 빈 조합 행을 설정 없음으로 읽는지, 설정 옮기기가 그 행을 채우고 이미 정한 값은 안 덮는지 |

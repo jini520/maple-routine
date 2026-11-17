@@ -162,6 +162,8 @@ export const STORAGE_KEYS = {
   legacyNotices: 'notices',
   // 옛 키 정리가 끝났다는 표식. 있으면 부팅이 정리를 건너뛴다.
   legacyCleanupDone: 'legacyCleanupDone',
+  // 옛 표를 다 지운 뒤 사본 파일을 지우고 VACUUM 했다는 표식. 있으면 다시 돌지 않는다.
+  legacySpaceReclaimed: 'legacySpaceReclaimed',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {
