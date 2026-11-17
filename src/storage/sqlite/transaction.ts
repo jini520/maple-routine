@@ -21,6 +21,20 @@ export function inTransaction<T>(db: SqliteDbConnection, work: () => Promise<T>)
   return run
 }
 
+/**
+ * 같은 연결의 트랜잭션 줄 뒤에서 트랜잭션 없이 도는 일. 트랜잭션 안에서 실패하는 `VACUUM` 에 쓴다.
+ *
+ * @example await outsideTransaction(db, () => db.execute('VACUUM'))
+ */
+export function outsideTransaction<T>(db: SqliteDbConnection, work: () => Promise<T>): Promise<T> {
+  const run = (tails.get(db) ?? Promise.resolve()).then(work)
+  tails.set(
+    db,
+    run.catch(() => undefined),
+  )
+  return run
+}
+
 async function runTransaction<T>(db: SqliteDbConnection, work: () => Promise<T>): Promise<T> {
   await db.execute('BEGIN')
   try {

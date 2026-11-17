@@ -14,6 +14,7 @@ import { dropEnhancementHistory, listEnhancementHistoryDates, loadEnhancementHis
 import { addEnhancementRefetch } from '../../storage/enhancement-refetches'
 import { replaceEnhancementTotals } from '../../storage/enhancement-totals'
 import { isEnhancementTotalsMoved, markEnhancementTotalsMoved } from '../../storage/enhancement-totals-moved'
+import { reclaimLegacySpaceOnce } from '../../storage/legacy-space'
 import type { EnhancementKind } from '../../nexon/history/client'
 import { eventWorldOf, summarizeEnhancement, type EnhancementSource, type EntryOwner } from './spending'
 import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
@@ -51,8 +52,10 @@ export function ensureEnhancementTotals(): Promise<void> {
 
 async function move(): Promise<void> {
   // 옮긴 기기는 원본을 지운다. 여러 버전을 건너뛰어 올라온 기기는 옮긴 뒤에 지운다.
+  // 원본이 마지막으로 지워지는 옛 표라, 공간 회수는 그 뒤에 한 번 한다.
   if (await isEnhancementTotalsMoved()) {
     await dropEnhancementHistory()
+    await reclaimLegacySpaceOnce()
     return
   }
   const accountId = mainNexonAccountIdOf(await getAuthConfig())
@@ -92,6 +95,7 @@ async function move(): Promise<void> {
   }
   await markEnhancementTotalsMoved()
   await dropEnhancementHistory()
+  await reclaimLegacySpaceOnce()
   // 옮기며 빠진 줄도 알린다. 표시를 먼저 적어, 보내기가 늦어도 옮기기를 다시 하지 않는다.
   void reportEnhancementAnomalies(anomalies)
 }
