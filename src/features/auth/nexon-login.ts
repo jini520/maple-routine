@@ -31,7 +31,7 @@ import { forgetTrackedSelection } from '../character-selection/forget'
 import { fetchUnsavedCharacterList } from '../mvp-grade/character-list'
 import { saveNexonLogin } from './prune-covered-keys'
 
-/** 넥슨에 등록한 값. 인증 세션이 이 주소로 돌아올 때만 콜백을 우리에게 준다. */
+/** 서버가 콜백을 받은 뒤 앱을 돌려보내는 주소. 인증 세션이 이 주소로 돌아올 때만 콜백을 우리에게 준다. */
 const REDIRECT_URI = 'com.mapleroutine.app://oauth/callback'
 
 /** 넥슨 동의 화면에서 `취소` 를 누르면 넥슨이 보내는 `error_name`. 서버가 돌아오는 주소에 그대로 싣는다. */
