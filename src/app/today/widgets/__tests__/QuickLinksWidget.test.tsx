@@ -4,7 +4,7 @@
 // ③ 제목 줄의 `편집` 이 편집 시트를 연다
 // ④ 가계부 분류 칸은 그 분류를 넘겨 가계부 탭을 연다. 서버 갈래 표에 그 분류가 없으면 칸을 그리지 않는다
 import type { ReactNode } from 'react'
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { renderOverlay } from '../../../../components/__tests__/render-atom'
 import { useOpenTab } from '../../../../hooks/useOpenTab'
@@ -54,6 +54,13 @@ async function 위젯(quickLinks: QuickLinksConfig) {
 }
 
 describe('칸', () => {
+  it('MASPI 칸에만 `beta` 배지가 선다', async () => {
+    const view = await 위젯({ rows: 1, ids: ['maspi', 'item-split', 'boss-profit-calculator'] })
+
+    expect(within(view.getByLabelText('MASPI')).getByText('beta')).toBeTruthy()
+    expect(view.getAllByText('beta')).toHaveLength(1)
+  })
+
   it('구성 차례대로 다섯씩 줄을 이룬다', async () => {
     const view = await 위젯({
       rows: 2,

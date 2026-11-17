@@ -13,6 +13,8 @@ export interface QuickLinkName {
   name: string
   /** 위젯 칸 아래 이름. 칸 폭이 60px 안팎이라 9px 로 한 줄에 들어가는 길이 */
   short: string
+  /** 베타 기능이면 칸 동그라미에 `beta` 배지가 선다 */
+  beta?: true
 }
 
 export const QUICK_LINK_NAMES: Readonly<Record<QuickLinkId, QuickLinkName>> = {
@@ -30,7 +32,7 @@ export const QUICK_LINK_NAMES: Readonly<Record<QuickLinkId, QuickLinkName>> = {
   'boss-manage': { name: '보스 관리', short: '보스 관리' },
   characters: { name: '캐릭터 관리', short: '캐릭터 관리' },
   accounts: { name: '계정 관리', short: '계정 관리' },
-  maspi: { name: 'MASPI', short: 'MASPI' },
+  maspi: { name: 'MASPI', short: 'MASPI', beta: true },
   'item-split': { name: '판매 분배금 계산기', short: '분배금 계산' },
   'boss-profit-calculator': { name: '주간 보스 수입 계산기', short: '보스 계산기' },
   'mvp-grade': { name: 'MVP 등급', short: 'MVP 등급' },

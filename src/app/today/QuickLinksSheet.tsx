@@ -27,6 +27,7 @@ import { boxShadowOf, type ShadowLayer } from '../../lib/shadow'
 import { selectionFeedback } from '../../native/haptics'
 import { useThemeAppearance } from '../../theme/context'
 import type { QuickLinkId, QuickLinkRows, QuickLinksConfig } from '../../types/quick-links'
+import { QuickLinkBetaBadge } from './QuickLinkBetaBadge'
 import { QUICK_LINK_ICONS, useCanOpenQuickLink, useQuickLinkColors } from './quick-links'
 
 /** 칸이 다 찼을 때 고르지 않은 타일. 흐리지 않으면 누를 수 없는 타일이 멀쩡해 보인다 */
@@ -45,7 +46,8 @@ export interface QuickLinksSheetProps {
   onClose: () => void
 }
 
-function QuickLinkCircle(props: { id: QuickLinkId; size: number }): React.JSX.Element {
+/** @param props.ring 칸이 놓인 바탕색. 베타 칸의 배지 테가 이 색이다 */
+function QuickLinkCircle(props: { id: QuickLinkId; size: number; ring: string }): React.JSX.Element {
   const { tint, ink } = useQuickLinkColors()
   const Icon = QUICK_LINK_ICONS[props.id]
   return (
@@ -54,6 +56,7 @@ function QuickLinkCircle(props: { id: QuickLinkId; size: number }): React.JSX.El
       style={{ width: props.size, height: props.size, backgroundColor: tint }}
     >
       <Icon color={ink} size={21} strokeWidth={1.9} aria-hidden />
+      {QUICK_LINK_NAMES[props.id].beta === true && <QuickLinkBetaBadge ring={props.ring} />}
     </View>
   )
 }
@@ -73,7 +76,7 @@ function Tile(props: { id: QuickLinkId; selected: boolean; locked: boolean; onPr
       className="w-1/5 items-center gap-1.5 pb-3"
     >
       <View>
-        <QuickLinkCircle id={props.id} size={48} />
+        <QuickLinkCircle id={props.id} size={48} ring={definition.surface} />
         {props.selected && (
           <View
             testID={`quick-links-check-${props.id}`}
@@ -99,6 +102,7 @@ function Tile(props: { id: QuickLinkId; selected: boolean; locked: boolean; onPr
 }
 
 function TrayItem(props: { id: QuickLinkId; onPress: () => void }): React.JSX.Element {
+  const { definition } = useThemeAppearance()
   return (
     <Pressable
       testID={`quick-links-tray-${props.id}`}
@@ -108,7 +112,7 @@ function TrayItem(props: { id: QuickLinkId; onPress: () => void }): React.JSX.El
       className="items-center gap-[5px]"
       style={{ height: SLOT_HEIGHT }}
     >
-      <QuickLinkCircle id={props.id} size={46} />
+      <QuickLinkCircle id={props.id} size={46} ring={definition.bg} />
       <Text className="text-9 text-text-muted" numberOfLines={1}>
         {QUICK_LINK_NAMES[props.id].short}
       </Text>

@@ -8,7 +8,7 @@
 import { useMemo, useState } from 'react'
 import { View } from 'react-native'
 
-import { ChartLineIcon, Text } from '../../components/atoms'
+import { Badge, ChartLineIcon, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
@@ -70,6 +70,9 @@ export function MaspiScreen(): React.JSX.Element {
             <BackButton onPress={() => navigation.goBack()} />
             <View className="flex-row items-center">
               <Text className="text-lg font-bold text-text">{MASPI_TOOL_NAME}</Text>
+              <Badge variant="primary" className="ml-1.5">
+                beta
+              </Badge>
               <FaqButton sheet={faq} />
             </View>
           </PageHeaderTitleRow>

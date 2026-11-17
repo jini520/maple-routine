@@ -1,12 +1,12 @@
 /**
- * MASPI 한 줄 위젯. 왼쪽에 `MASPI`, 오른쪽에 종가와 전일 대비 화살표, 바탕 전체에 최근 30일 꺾은선과 옅은 채움이다.
+ * MASPI 한 줄 위젯. 왼쪽에 `MASPI` 와 `beta` 배지, 오른쪽에 종가와 전일 대비 화살표, 바탕 전체에 최근 30일 꺾은선과 옅은 채움이다.
  *
  * 꺾은선 색은 30일 흐름, 화살표 색은 그날 등락이라 두 색이 엇갈리는 날이 있다. 기기에 남긴 값도 없고 받지도 못했으면
  * `0.00` 둘과 가운데의 평평한 회색 선을 그린다. 위젯은 사라지지 않는다.
  */
 import { View } from 'react-native'
 
-import { Text } from '../../../components/atoms'
+import { Badge, Text } from '../../../components/atoms'
 import { SparkLine } from '../../../components/molecules/SparkLine/SparkLine'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { formatIndex, formatIndexArrow, toneOf, trendOf } from '../../../features/market/format'
@@ -38,7 +38,12 @@ export function MaspiWidget({ data }: WidgetProps): React.JSX.Element {
         />
       </View>
       <View className="flex-row items-center gap-2 px-3">
-        <Text className="flex-1 text-11 font-bold text-text-muted">MASPI</Text>
+        <View className="flex-1 flex-row items-center gap-1">
+          <Text className="text-11 font-bold text-text-muted">MASPI</Text>
+          <Badge variant="primary" size="xs">
+            beta
+          </Badge>
+        </View>
         <Text testID="widget-maspi-close" className="text-sm font-bold text-text" style={TABULAR_NUMS}>
           {formatIndex(maspi?.close ?? null)}
         </Text>

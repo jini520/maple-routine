@@ -5,7 +5,7 @@
 // ④ `적용` 해야 저장된다. 하나도 고르지 않으면 `적용` 을 누를 수 없다
 // ⑤ 서버 갈래 표에 없는 가계부 분류는 본문 타일도 트레이 칸도 서지 않는다
 import type { ReactNode } from 'react'
-import { fireEvent, waitFor } from '@testing-library/react-native'
+import { fireEvent, waitFor, within } from '@testing-library/react-native'
 
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { DEFAULT_QUICK_LINKS } from '../../../features/quick-links/config'
@@ -52,6 +52,20 @@ async function 시트(config: QuickLinksConfig, onClose = jest.fn()) {
 function 트레이(view: Awaited<ReturnType<typeof renderOverlay>>): string[] {
   return view.queryAllByTestId(/^quick-links-tray-/).map((node) => String(node.props.testID).replace('quick-links-tray-', ''))
 }
+
+describe('베타 표시', () => {
+  it('MASPI 칸에만 `beta` 배지가 선다. 고르면 트레이 칸에도 선다', async () => {
+    const { view } = await 시트({ rows: 1, ids: ['profit'] })
+
+    expect(within(view.getByTestId('quick-links-tile-maspi')).getByText('beta')).toBeTruthy()
+    expect(view.getAllByText('beta')).toHaveLength(1)
+
+    await fireEvent.press(view.getByTestId('quick-links-tile-maspi'))
+
+    expect(within(view.getByTestId('quick-links-tray-maspi')).getByText('beta')).toBeTruthy()
+    expect(view.getAllByText('beta')).toHaveLength(2)
+  })
+})
 
 describe('고르기', () => {
   it('타일을 누르면 트레이 끝에 붙고, 다시 누르면 빠진다', async () => {
