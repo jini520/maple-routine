@@ -71,7 +71,7 @@ function Tile(props: {
   noteHidden: boolean
 }): React.JSX.Element {
   return (
-    <View className="min-w-0 flex-1 flex-row items-center gap-2 rounded-xl bg-card-body px-3 py-2.5">
+    <View className="min-w-0 flex-1 flex-row items-center gap-2 rounded-xl bg-card-inset px-3 py-2.5">
       {props.icon}
       <View className="min-w-0 flex-1 gap-0.5">
         <FitLine testID={props.valueTestID} className="text-base font-bold text-text">

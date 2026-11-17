@@ -1,9 +1,10 @@
 import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native'
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, 기본테마, type AtomElement } from '../../../components/__tests__/render-atom'
 import type { HuntTotals } from '../../../features/stats/aggregate'
 import * as assetLookup from '../../../lib/assets/asset-lookup'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import { resolveCardInset } from '../../../theme/theme-vars'
 import { HuntSection } from '../HuntSection'
 
 const 기본: HuntTotals = {
@@ -20,6 +21,17 @@ const 기본: HuntTotals = {
 
 function opacityOf(element: { props: { style?: unknown } }): unknown {
   return StyleSheet.flatten(element.props.style as StyleProp<ViewStyle>)?.opacity
+}
+
+/** 글자에서 위로 올라가 처음 만나는 바탕색. 타일에 바탕이 없으면 카드의 바탕색이 나온다 */
+function backgroundOf(element: AtomElement): unknown {
+  let node: AtomElement | null = element
+  while (node !== null) {
+    const color = flattenStyle(node.props.style).backgroundColor
+    if (color !== undefined) return color
+    node = node.parent
+  }
+  return undefined
 }
 
 /** 숨긴 글자 · 장식 그림도 찾는다. 보이지 않게 그린 것이 자리를 잡는지가 확인할 일이다 */
@@ -45,6 +57,15 @@ describe('HuntSection', () => {
       '사냥 메소 124.1억 · 조각 판매 4.77억 · 전리품 판매 2.33억',
     )
     expect(view.getByTestId('stats-hunt-total')).toHaveTextContent('131.2억 메소')
+  })
+
+  // 카드 안 칸은 앱 어디서나 card-inset 이다. card-body 는 다크에서 카드보다 어두워 칸이 파여 보인다
+  it('소재 · 조각 타일은 card-inset 칸이다', async () => {
+    const view = await renderOverlay(<HuntSection totals={기본} />)
+
+    for (const testID of ['stats-hunt-sojae', 'stats-hunt-fragments']) {
+      expect(backgroundOf(view.getByTestId(testID))).toBe(resolveCardInset(기본테마))
+    }
   })
 
   // 줄이 생기고 사라지면 기간을 옮길 때마다 아래 카드가 움직인다
