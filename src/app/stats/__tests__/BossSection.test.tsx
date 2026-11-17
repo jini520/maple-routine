@@ -1,8 +1,9 @@
 import { act, fireEvent, within } from '@testing-library/react-native'
 import { StyleSheet } from 'react-native'
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, 기본테마 } from '../../../components/__tests__/render-atom'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
+import { resolveCardInset } from '../../../theme/theme-vars'
 import { BossSection } from '../BossSection'
 
 function 결정석(ocid: string, bosses: [string, 'hard' | 'normal' | 'extreme', number][]): unknown {
@@ -42,6 +43,14 @@ describe('BossSection', () => {
     expect(within(lucid).getByText('2회 처치')).toBeTruthy()
     expect(within(lucid).getByText('6억')).toBeTruthy()
     expect(view.getByTestId('stats-boss-headline').props.children).toBe('처치 4회')
+  })
+
+  // 카드 안 칸은 앱 어디서나 card-inset 이다. card-body 는 다크에서 카드보다 어두워 칸이 파여 보인다
+  it('타일은 card-inset 칸이다', async () => {
+    const view = await renderOverlay(<BossSection days={days} range={range} />)
+
+    const tile = view.getByTestId('stats-boss-tile-lucid|hard')
+    expect(flattenStyle(tile.props.style).backgroundColor).toBe(resolveCardInset(기본테마))
   })
 
   it('보스별은 난이도를 합치고 배지를 안 단다', async () => {

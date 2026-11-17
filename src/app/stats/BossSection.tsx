@@ -56,7 +56,7 @@ export const BossSection = memo(function BossSection(props: {
               <View
                 key={row.key}
                 testID={`stats-boss-tile-${row.key}`}
-                className="items-center gap-1.5 rounded-xl bg-card-body p-2"
+                className="items-center gap-1.5 rounded-xl bg-card-inset p-2"
                 style={{ width: TILE_WIDTH }}
               >
                 <View
