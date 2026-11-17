@@ -184,7 +184,7 @@ text-muted → media-ink-muted
 
 | 변수 | 만드는 방법 | 쓰는 곳 |
 |---|---|---|
-| `card-body` | 라이트는 `bg` 와 `surface` 사이 명도에 `primary` 색상을 옅게, 다크는 `bg` 보다 명도 0.04 위 | 통계 보스 칸 · 시각 휠의 고른 줄 · 드롭다운 항목을 누르는 동안 |
+| `card-body` | 라이트는 `bg` 와 `surface` 사이 명도에 `primary` 색상을 옅게, 다크는 `bg` 보다 명도 0.04 위 | 시각 휠의 고른 줄 · 드롭다운 항목을 누르는 동안 |
 | `stats-section` | `card-body` 와 `surface`(라이트) · `surface-2`(다크)를 섞는다 | 통계 카드([[ADR-002]]) |
 | `settlement-*` 넷 | 라이트 · 다크 상수 두 벌 | 결산 안내 줄 |
 
