@@ -424,14 +424,15 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 ### 결정 22. `제외` 는 분배 방식의 값으로 두고, 고르기 전의 분배는 남기지 않는다 (사용자 지정 2026-11-18)
 
-- `split_mode` 의 값은 `even` · `ratio` · `excluded` 셋이다. `crystal_excluded` 칸은 서버 표와 기기 표에서 모두 뺀다. `제외` 가
-  결정석을 팔지 않은 처치이고 결정석 내 몫을 0 메소로 세는 것은 그대로다([[ADR-038]] 결정 12).
+- 분배 방식 칸 `split_type` 의 값은 `even` · `ratio` · `excluded` 셋이다. 칸과 enum 의 지금 이름은 `split_mode` 이고 결정 32 에서
+  바꾼다. `crystal_excluded` 칸은 서버 표와 기기 표에서 모두 뺀다. `제외` 가 결정석을 팔지 않은 처치이고 결정석 내 몫을 0 메소로
+  세는 것은 그대로다([[ADR-038]] 결정 12).
 - `제외` 를 고르면 그 전의 인원 · 비율 · 분배 수수료를 지운다. 다시 `기본` 이나 `비율` 을 고르면 옛 값을 되살리지 않고 새로
   정하게 한다. [[ADR-038]] 결정 12 가운데 고르기 전 분배를 숨겨 두는 규칙(2026-11-14)을 이 결정이 바꾼다. 숨긴 값을 들고 있을
   일이 없으므로 칸을 따로 둘 이유도 없다.
-- `split_mode` 가 `excluded` 면 `party_size` 와 `split_share_millipercent` 는 비어 있다.
-- 기기에서는 1.0.15 의 기기 변환(결정 19)에서 바꾼다. `crystal_excluded` 가 `1` 인 줄은 `split_mode` 를 `excluded` 로 적고
-  숨겨 둔 분배를 지운다. `split_mode` 의 `CHECK` 를 고치려면 표를 다시 만들어야 하는데, `boss_parties` 는 보스 줄 id 로
+- `split_type` 이 `excluded` 면 `party_size` 와 `split_share_millipercent` 는 비어 있다.
+- 기기에서는 1.0.15 의 기기 변환(결정 19)에서 바꾼다. `crystal_excluded` 가 `1` 인 줄은 `split_type` 을 `excluded` 로 적고
+  숨겨 둔 분배를 지운다. 이 칸의 `CHECK` 를 고치려면 표를 다시 만들어야 하는데, `boss_parties` 는 보스 줄 id 로
   바꾸느라 그때 다시 만든다.
 - 드롭에는 `제외` 가 없다. 드롭은 드롭 기록의 분배 칸으로 나눈다.
 - `제외` 인 보스는 인원이 없으므로 솔로로 다룬다(사용자 지정 2026-11-18). 드롭 가격을 적을 때 분배의 처음 값은 솔로이고,
@@ -460,6 +461,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `price_meso` | `crystal_price_meso` | 결정석 한 개의 가격. 나누기 전의 전체 금액이다 |
   | `payout_meso` | `crystal_received_meso` | 그 가격을 분배대로 나눈 뒤 내가 받는 메소. 앱 화면의 `받는 금액` 과 같은 값이다 |
   | `period_key` | `period_code` | 이 수익 건이 속한 기간(결정 24) |
+  | `split_mode` | `split_type` | 분배 방식. 균등 · 비율 · 제외 가운데 하나다(결정 22). enum 이름도 같이 바꾼다(결정 32) |
   | `my_share` | `split_share_millipercent` | 비율로 나눌 때의 내 %(결정 21) |
   | `defeated_date` | `cleared_date` | 처치한 날짜. 같은 표에서 처치를 `clear` 한 말로 부른다. 서버에서는 형도 글자에서 날짜로 바꾼다 |
   | `source` | `clear_recorded_by` | 처치를 누가 적었는지. 동기화가 적었으면 `auto`, 사용자가 직접 적었으면 `manual` 이다 |
@@ -475,7 +477,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - `boss_profit_entries` 에는 주기 칸을 두지 않는다. 기간 값의 첫 글자가 주기를 말한다(결정 24).
 - 기기 표의 이름은 1.0.15 의 기기 변환(결정 19)에서 바꾼다. `boss_parties` · `boss_party_periods` · `boss_drops` 는 칸과 `CHECK`
   가 바뀌어 그때 다시 만드는 표다. 드롭이 수익 건을 가리키는 기기 칸 `period_id` 는 `boss_profit_entry_id` 가 된다.
-- `boss_split_settings` 에는 분배를 정한 줄만 둔다(사용자 선택 2026-11-18). 서버에서 이 표의 `split_mode` 는 비울 수 없다.
+- `boss_split_settings` 에는 분배를 정한 줄만 둔다(사용자 선택 2026-11-18). 서버에서 이 표의 `split_type` 은 비울 수 없다.
   기기에는 분배를 정한 적이 없어도 처치나 드롭이 생기면 만들어지는 빈 줄이 있다. 수익 건이 그 줄에 매달려 캐릭터와 보스를
   거기서 읽기 때문이다. 그 줄은 설정이 아니므로 올리지 않는다.
 - 기기의 수익 건도 서버처럼 캐릭터(`ocid`)와 `boss_difficulty_id` 를 직접 든다(사용자 선택 2026-11-18). 설정 줄을 가리키던
@@ -519,7 +521,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - 분배 수수료율을 정하는 규칙은 둘이다([[ADR-038]] 결정 8 · [[ADR-050]] 결정 1). 자동이면 그 날짜의 그 메이플 ID MVP 등급 요율이고,
   수동이면 `0` · `3` · `5` 가운데 사용자가 고른 값이다. 등급을 고르지 않은 메이플 ID 는 일반이라 5% 다.
-- 결정석의 수수료는 비율로 나눌 때만 쓴다. 처치한 수익 건(`boss_profit_entries`)에서 비율로 나눈 줄(`split_mode` 가 `ratio`)은
+- 결정석의 수수료는 비율로 나눌 때만 쓴다. 처치한 수익 건(`boss_profit_entries`)에서 비율로 나눈 줄(`split_type` 이 `ratio`)은
   `split_fee_percent` 가 반드시 있다. 그 처치를 계산한 요율이기 때문이다. 서버는 빈 값을 받지 않는다.
 - 분배 설정(`boss_split_settings`)과 처치 전 수익 건은 자동이면 `split_fee_percent` 를 비우고, 수동이면 반드시 채운다(사용자 선택
   2026-11-18). 자동인 설정은 처치를 적을 때 그 날짜의 등급 요율을 구하므로(`settingSplitFee`) 저장된 값이 쓰이지 않는다.
@@ -759,8 +761,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 ### 결정 32. 종류를 가르는 enum 과 칸은 `_type` 으로 끝내고, 서버의 모든 표를 함께 정리한다 (사용자 지정 2026-11-18)
 
-- 종류를 가르는 enum 의 이름은 `_type` 으로 끝낸다. `_kind` 는 쓰지 않는다. 두 말이 같은 뜻으로 섞여 있었다. 2026-11-18 서버의 enum
-  27개 가운데 `_type` 이 7개, `_kind` 가 3개다.
+- 종류를 가르는 enum 의 이름은 `_type` 으로 끝낸다. `_kind` 와 `_mode` 는 쓰지 않는다. 세 말이 같은 뜻으로 섞여 있었다. 2026-11-18
+  서버의 enum 27개 가운데 `_type` 이 7개, `_kind` 가 3개, `_mode` 가 1개다.
 - 칸 이름은 enum 이름을 따른다. `kind` 한 낱말로 된 칸은 무엇의 종류인지를 앞에 붙여 `_type` 으로 바꾼다.
 
   | 지금 이름 | 새 이름 | 값 | 쓰는 칸 |
@@ -771,17 +773,21 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | 새로 만들려던 `remembered_level_kind` | `remembered_level_type` | `symbol` · `hexa` | `remembered_levels.kind` 를 `level_type` 으로 |
   | 새로 만들려던 `manual_tracked_kind` | `manual_tracked_type` | `daily` · `weekly` · `boss` | `manual_tracked_items.kind` 를 `tracked_type` 으로 |
   | `enhancement_type` | `enhancement_api_type` | `cube` · `starforce` · `potential` · `soul_potential` | `enhancement_type` 을 `enhancement_api_type` 으로 |
+  | `split_mode` | `split_type` | `even` · `ratio` · `excluded`(결정 22) | `boss_split_settings` · `boss_profit_entries` · `boss_drops` 의 `split_mode` 를 `split_type` 으로 |
+  | 새로 만들려던 `tracking_mode` | `tracking_type` | `auto` · `manual` | `account_settings.tracking_mode` 를 `tracking_type` 으로 |
 
 - `enhancement_type` 은 끝말이 아니라 앞말을 고친다. 넥슨에서 강화 내역을 받는 API 넷인데, 화면의 분류 다섯인
   `enhancement_category` 와 이름으로 구분되지 않는다. 무엇의 종류인지를 넣는다.
 - `shared_progress` 의 칸 `kind` 는 그 칸이 쓰는 enum 이름과 같게 `content_type` 으로 바꾼다. enum 은 그대로다.
 - 끝말이 `_category` · `_status` · `_source` · `_grade` · `_cycle` · `_scope` · `_section` 인 enum 은 그대로 둔다. 종류가 아니라 분류 ·
   상태 · 출처 · 등급 · 주기 · 범위 · 구역을 말하는 이름이다.
-- `split_mode` 와 `tracking_mode` 의 끝말은 정하지 않았다. 사용자가 화면에서 고르는 방식이고 화면의 말도 `분배 방식` · `트래킹 모드`
-  라서 `_mode` 로 두는 안과, 이것도 `_type` 으로 바꾸는 안이 있다.
+- `split_mode` 와 `tracking_mode` 도 `_type` 으로 바꾼다(사용자 지정 2026-11-18). 화면의 말이 `분배 방식` · `트래킹 모드` 라서
+  `_mode` 로 두는 안이 있었다. 하지만 둘 다 정해진 값 가운데 하나를 고르는 칸이라 다른 enum 과 다르지 않다. 끝말이 둘이면 enum 을
+  새로 지을 때마다 어느 쪽인지 따져야 한다. 화면의 말은 그대로 둔다.
 - 형 이름을 바꾸는 것은 이름만 바꾸는 마이그레이션이다. 값은 그대로다. 칸 이름을 바꿔도 앱이 받는 응답의 이름은 그대로 둔다.
-  게임 데이터의 `alias` · `from` · `until` 과 같은 방식이다(결정 23). 그래서 1.0.14 까지의 앱은 영향을 받지 않는다. 기기 표의 칸
-  `kind`(`remembered_levels`)는 1.0.15 의 기기 변환(결정 19)에서 바꾼다.
+  게임 데이터의 `alias` · `from` · `until` 과 같은 방식이다(결정 23). 그래서 1.0.14 까지의 앱은 영향을 받지 않는다.
+- 기기 표의 칸도 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로 바꾼다. `remembered_levels` 의 `kind` 와, `boss_parties` ·
+  `boss_party_periods` · `boss_drops` 의 `split_mode` 다. 분배 칸이 있는 세 표는 그때 다시 만드는 표다(결정 23).
 - 서버의 모든 표가 정리 대상이다(사용자 지정 2026-11-18). 이 문서가 처음 다룬 것은 기기끼리 맞추는 기록 표였지만, 이름과 칸을
   다듬는 일은 서버의 표 68개와 enum 27개 전체에 한다. 한 번의 서버 작업으로 고친다. 2026-11-18 에 검토를 마친 것은 보스와 아이템
   표이고, 나머지는 옛 이름으로 남아 있다. 표를 하나씩 검토하면서 결정 23 · 27 과 이 결정의 규칙으로 바꾼다.
