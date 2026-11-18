@@ -156,12 +156,12 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `mvp_grade_history` | `mvp_grade_history` 새 표 | 메이플 ID | 메이플 ID · 시작 날짜 |
 | `character_world_leaps` | `character_world_leaps` 새 표 | 캐릭터 | 옛 ocid |
 | Preferences `partyAppointments` | `party_appointments` 와 보스 · 파티원 · 주별 예외의 새 표 넷 | 사람 | 기록 id |
-| Preferences `bossProfitCalculatorRecords` | `calculator_records` 와 캐릭터 · 보스의 새 표 셋 | 사람 | 기록 id |
+| Preferences `bossProfitCalculatorRecords` | `boss_profit_calculator_records` 와 캐릭터 · 보스의 새 표 셋 | 사람 | 기록 id |
 | Preferences `manualTrackedContent:{ocid}` | `manual_tracked_items` 새 표 | 캐릭터 | ocid · 종류 · 컨텐츠 key(보스는 보스 · 난이도) |
 | Preferences `worldSharedProgress:*` · `accountSharedProgress:*` | `shared_progress` 새 표 | 메이플 ID | 메이플 ID · 월드(계정 공유는 빈 값) · 컨텐츠 key |
 | Preferences `mapleIdNames` | `maple_id_names` 새 표 | 메이플 ID | 메이플 ID |
 | Preferences `trackedCharacters` · `representativeCharacter` | `tracked_characters` 새 표. 차례와 대표 표시를 든다 | 사람 | 사람 · ocid |
-| Preferences `figureMotions` | `figure_motions` 새 표 | 캐릭터 | ocid |
+| Preferences `figureMotions` | `representative_character_motions` 새 표 | 캐릭터 | ocid |
 | 사람마다 하나인 설정(결정 15) | `account_settings` 새 표 | 사람 | 사람 |
 
 - 새 표는 위의 스물네 개와 `characters`(결정 20)를 더해 스물다섯 개다. 지금 서버 표는 68개다.
@@ -485,7 +485,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   따라 지워지던 연결도 없어진다. 기기 저장 코드에서 두 표를 이어 읽는 곳은 24군데다.
 - `bosses.alias` 는 `short_name` 으로 바꾼다. 좁은 곳에 쓰는 줄인 이름이다. 유효 기간 칸 `from` · `until` 은 `valid_from` ·
   `valid_until` 로 바꾼다(사용자 선택 2026-11-18). 무엇의 시작인지가 이름에 없고 둘 다 SQL 의 예약어다. 서버의 게임 데이터 표
-  아홉 개(`bosses` · `boss_difficulties` · `boss_drop_rewards` · `boss_crystal_prices` · `world_periods` · `hunt_loot_items` ·
+  아홉 개(`bosses` · `boss_difficulties` · `boss_difficulty_rewards` · `boss_crystal_prices` · `world_periods` · `hunt_loot_items` ·
   `spend_items` · `symbol_level_costs` · `contents`)가 같은 이름을 써서 함께 바꾼다. 앱이 받는 게임 데이터의 이름(`alias` ·
   `from` · `until`)은 그대로 둔다. 그래서 앱 코드는 바뀌지 않는다.
 
@@ -596,7 +596,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 기록할 때의 값으로 굳혀야 하는 금액은 다시 구할 수 있어도 남긴다. `crystal_price_meso` · `crystal_received_meso` ·
   `sale_received_meso` 가 그렇다(결정 23 · 26).
 - `boss_drops` 에 차례 칸(`sort_order`)을 두지 않는다. 기기 표의 같은 칸도 1.0.15 의 기기 변환에서 없앤다. 목록의 차례를 기억하던
-  칸이고 사용자가 넣는 값이 아니다. 서버의 드롭 표(`boss_drop_rewards`)에 아이템마다 시트에서의 차례가 있으므로 그 차례로
+  칸이고 사용자가 넣는 값이 아니다. 서버의 드롭 표(`boss_difficulty_rewards`)에 아이템마다 시트에서의 차례가 있으므로 그 차례로
   늘어놓으면 모든 기기에서 같은 순서가 된다. 상자에서 나온 드롭은 그 상자의 차례에 둔다.
 - 번호로 차례를 적으면 동기화에서 어긋난다. 드롭 하나를 넣거나 빼면 뒤의 번호가 모두 바뀌어 그 묶음의 모든 줄이 바뀐 줄로
   올라가고, 두 기기가 같은 보스에 드롭을 하나씩 더하면 같은 번호가 겹친다.
@@ -642,7 +642,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 나온 상자는 기록에 적지 않는다(사용자 지정 2026-11-18). 같은 난이도의 같은 보스는 종류가 다른 반지 상자를 둘 주지
   않으므로(사용자 확인 2026-11-18), 보스 난이도와 아이템이 정해지면 상자가 하나로 정해진다. 상자는 읽을 때 지금의 드롭 표 셋에서
   찾는다.
-  - 수익 건의 난이도가 주는 줄(`boss_drop_rewards`) 가운데 아이템이 상자인 줄(`drop_boxes`)을 고르고, 그 상자의
+  - 수익 건의 난이도가 주는 줄(`boss_difficulty_rewards`) 가운데 아이템이 상자인 줄(`drop_boxes`)을 고르고, 그 상자의
     내용물(`drop_box_contents`)에 드롭의 아이템이 든 상자를 고른다. 레벨 줄이면 `ring_level_items` 의 원래 반지와 상자의 레벨
     범위로 찾는다. 그런 상자가 없으면 보스가 직접 떨군 것이다.
   - 2026-11-18 운영의 드롭 표에서 상자를 주는 보스 난이도는 51개다. 36개는 상자를 하나 주고, 15개는 반지 상자 하나와 장신구 상자
@@ -806,10 +806,21 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | 표 `spend_forms` | `spend_reward_types` | 그 값마다 화면에 보이는 이름과 차례를 둔 표. 줄이 둘이다 | enum 의 새 이름을 따른다 |
   | 표 `spend_item_forms` | `spend_item_reward_types` | 지출 항목(`spend_items`)이 어느 종류로 받을 수 있는지를 잇는 표 | enum 의 새 이름을 따른다 |
   | enum `content_section` | `content_cycle` | 컨텐츠가 일간인지 주간인지(`daily` · `weekly`) | 보스는 같은 것을 `boss_cycle` 이라 부른다 |
+  | 표 `boss_drop_rewards` | `boss_difficulty_rewards` | 보스 난이도 하나가 줄 수 있는 보상 한 줄. 드롭 표다 | 사용자가 얻은 드롭을 적는 `boss_drops` 와 이름이 비슷해, 줄 수 있는 것과 얻은 것이 이름으로 구분되지 않는다 |
 
 - 칸도 함께 바꾼다. `spend_item_forms.form_id` 는 가리키는 표의 새 이름을 따라 `spend_reward_type_id` 로 바꾼다(결정 23). 가계부
   품목(`cashbook_entry_items`)의 `form_key` 는 `spend_reward_type_key` 로 바꾼다. 이 칸을 글자 key 대신 줄 id 로 가리킬지는 가계부 표를
   검토할 때 정한다. `contents.section` 은 보스 난이도 표의 `cycle` 과 같게 `cycle` 로 바꾼다.
+- 이 문서가 새로 만드는 표의 이름도 같은 기준으로 짓는다(사용자 선택 2026-11-18).
+
+  | 표 | 한 줄의 역할 | 이름을 이렇게 지은 이유 |
+  |---|---|---|
+  | `boss_profit_calculator_records` · `boss_profit_calculator_record_characters` · `boss_profit_calculator_record_bosses` | 주간 보스 수익 계산기에서 저장한 기록 하나, 그 기록 안의 캐릭터, 그 캐릭터가 계산에 넣은 보스 | 무슨 계산기의 기록인지를 이름에 넣는다. 앱에는 사냥 계산기도 있다 |
+  | `representative_character_motions` | 대표 캐릭터가 할 행동 · 표정 · 동작 시간. 캐릭터마다 한 줄이다 | 화면의 말이 `대표 캐릭터 동작` 이다 |
+  | `bottom_bar_sub_page_orders` | 하단 탭의 그룹 하나 안에서 하위 페이지를 놓는 순서 | 무엇의 순서인지를 줄이지 않고 적는다 |
+
+- 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다(결정 23). 계산기 기록 안의 캐릭터 줄을 가리키는 칸은
+  `boss_profit_calculator_record_character_id` 다. `character_id` 로 두면 `characters` 표의 줄로 읽힌다.
 - 값은 그대로다. 앱이 받는 게임 데이터의 이름(`forms` · `itemForms` · `form` · `section`)도 그대로 둔다. 그래서 앱 코드는 바뀌지
   않는다(결정 32 와 같은 방식).
 - enum `content_type` 과 그 값 `contents` · `quest` 는 그대로 둔다(사용자 지정 2026-11-18). 값은 넥슨 API 응답(스케줄러 정보 조회)의

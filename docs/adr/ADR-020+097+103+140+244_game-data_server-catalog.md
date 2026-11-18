@@ -33,6 +33,9 @@
 | `assets` | `assets`. 그림 경로 · 내용 해시 · 바이트 · 가로 · 세로 |
 | `imageCrops` | `image_crops`. 보스 초상 셋과 컨텐츠 지역 지도의 크롭 |
 
+(1.0.15 서버 작업에서 서버 표의 이름을 정리한다. `boss_drop_rewards` 는 `boss_difficulty_rewards`, `spend_forms` · `spend_item_forms` 는
+`spend_reward_types` · `spend_item_reward_types` 가 된다. 앱이 받는 칸의 이름은 그대로다. [[ADR-099]] 결정 33)
+
 앱은 번들 사본을 두지 않는다(사용자 지정 2026-10-26). 번들 사본은 서버에서 새로 더한 그림을 가질 수 없고, 서버에 닿지 못한
 날 오래된 값으로 수익을 잘못 계산한다. 그 대신 다 받은 기기 사본이 없으면 화면을 잠근다(결정 12).
 
