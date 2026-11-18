@@ -229,7 +229,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - 강화 내역의 응답 원본은 기기에도 서버에도 두지 않는다. 기기의 `enhancement_totals` 한 줄이 날짜 · 캐릭터 · 분류 · 장비 하나의 합계이고
   ([[ADR-100]]), 서버 `enhancement_totals` 가 같은 유일 기준으로 그 줄을 든다.
-- 서버 표에 기기 표의 칸을 더한다. 받은 API 종류(`enhancement_type`) · 월드 · 슈페리얼 비용 · 스타포스의 처음 성과 끝 성 · 이벤트 월드
+- 서버 표에 기기 표의 칸을 더한다. 받은 API 종류(`enhancement_api_type`, 결정 32) · 월드 · 슈페리얼 비용 · 스타포스의 처음 성과 끝 성 · 이벤트 월드
   판정이다. 지금 서버 표는 이벤트 월드가 아닌 줄만 받는데, 기기끼리 맞추려면 모든 줄이 있어야 한다. 가계부 제외 표식([[ADR-160]])을
   구현할 때 그 칸도 이 표에 더한다. 빼면 다른 기기에서 뺀 강화 비용이 다시 지출로 잡힌다. [[ADR-160]] 의 `서버에는 보내지 않는다` 는
   이것으로 바뀐다(사용자 확인 2026-11-17).
@@ -756,6 +756,37 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   보스가 직접 떨군 것이면 아이템이 같은 것이고, 상자에서 나온 것이면 찾은 상자가 같은 것이다. 드롭 시트가 상자 하나에 결과를
   하나만 두기 때문이다.
 - 서버의 결과를 받기 전에 기기 화면이 그 드롭을 어떻게 보일지는 구현 전에 정한다.
+
+### 결정 32. 종류를 가르는 enum 과 칸은 `_type` 으로 끝내고, 서버의 모든 표를 함께 정리한다 (사용자 지정 2026-11-18)
+
+- 종류를 가르는 enum 의 이름은 `_type` 으로 끝낸다. `_kind` 는 쓰지 않는다. 두 말이 같은 뜻으로 섞여 있었다. 2026-11-18 서버의 enum
+  27개 가운데 `_type` 이 7개, `_kind` 가 3개다.
+- 칸 이름은 enum 이름을 따른다. `kind` 한 낱말로 된 칸은 무엇의 종류인지를 앞에 붙여 `_type` 으로 바꾼다.
+
+  | 지금 이름 | 새 이름 | 값 | 쓰는 칸 |
+  |---|---|---|---|
+  | `notice_kind` | `notice_type` | `app` · `game` · `event` · `update` · `cashshop` | `notices.kind` |
+  | `image_crop_kind` | `image_crop_type` | `boss_portrait` 등 넷 | `image_crops.kind` |
+  | `hunt_loot_kind` | `hunt_loot_type` | `fragment` · `consumable` · `event` | `hunt_loot_items.kind` |
+  | 새로 만들려던 `remembered_level_kind` | `remembered_level_type` | `symbol` · `hexa` | `remembered_levels.kind` 를 `level_type` 으로 |
+  | 새로 만들려던 `manual_tracked_kind` | `manual_tracked_type` | `daily` · `weekly` · `boss` | `manual_tracked_items.kind` 를 `tracked_type` 으로 |
+  | `enhancement_type` | `enhancement_api_type` | `cube` · `starforce` · `potential` · `soul_potential` | `enhancement_type` 을 `enhancement_api_type` 으로 |
+
+- `enhancement_type` 은 끝말이 아니라 앞말을 고친다. 넥슨에서 강화 내역을 받는 API 넷인데, 화면의 분류 다섯인
+  `enhancement_category` 와 이름으로 구분되지 않는다. 무엇의 종류인지를 넣는다.
+- `shared_progress` 의 칸 `kind` 는 그 칸이 쓰는 enum 이름과 같게 `content_type` 으로 바꾼다. enum 은 그대로다.
+- 끝말이 `_category` · `_status` · `_source` · `_grade` · `_cycle` · `_scope` · `_section` 인 enum 은 그대로 둔다. 종류가 아니라 분류 ·
+  상태 · 출처 · 등급 · 주기 · 범위 · 구역을 말하는 이름이다.
+- `split_mode` 와 `tracking_mode` 의 끝말은 정하지 않았다. 사용자가 화면에서 고르는 방식이고 화면의 말도 `분배 방식` · `트래킹 모드`
+  라서 `_mode` 로 두는 안과, 이것도 `_type` 으로 바꾸는 안이 있다.
+- 형 이름을 바꾸는 것은 이름만 바꾸는 마이그레이션이다. 값은 그대로다. 칸 이름을 바꿔도 앱이 받는 응답의 이름은 그대로 둔다.
+  게임 데이터의 `alias` · `from` · `until` 과 같은 방식이다(결정 23). 그래서 1.0.14 까지의 앱은 영향을 받지 않는다. 기기 표의 칸
+  `kind`(`remembered_levels`)는 1.0.15 의 기기 변환(결정 19)에서 바꾼다.
+- 서버의 모든 표가 정리 대상이다(사용자 지정 2026-11-18). 이 문서가 처음 다룬 것은 기기끼리 맞추는 기록 표였지만, 이름과 칸을
+  다듬는 일은 서버의 표 68개와 enum 27개 전체에 한다. 한 번의 서버 작업으로 고친다. 2026-11-18 에 검토를 마친 것은 보스와 아이템
+  표이고, 나머지는 옛 이름으로 남아 있다. 표를 하나씩 검토하면서 결정 23 · 27 과 이 결정의 규칙으로 바꾼다.
+- 그때 함께 볼 것이 있다. 지금 있는 표의 칸 `kind`(`notices` · `image_crops` · `hunt_loot_items` · `item_groups`), 칸 `type`(`contents`),
+  이름이 `_kinds` 로 끝나는 표 셋(`cashbook_item_kinds` · `hexa_core_kinds` · `hexa_core_name_kinds`)이다.
 
 ## 테스트
 
