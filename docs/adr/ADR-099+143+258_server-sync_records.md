@@ -792,7 +792,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   다듬는 일은 서버의 표 68개와 enum 27개 전체에 한다. 한 번의 서버 작업으로 고친다. 2026-11-18 에 검토를 마친 것은 보스와 아이템
   표이고, 나머지는 옛 이름으로 남아 있다. 표를 하나씩 검토하면서 결정 23 · 27 과 이 결정의 규칙으로 바꾼다.
 - 그때 함께 볼 것이 있다. 지금 있는 표의 칸 `kind`(`notices` · `image_crops` · `hunt_loot_items` · `item_groups`), 칸 `type`(`contents`),
-  이름이 `_kinds` 로 끝나는 표 셋(`cashbook_item_kinds` · `hexa_core_kinds` · `hexa_core_name_kinds`)이다.
+  이름이 `_kinds` 로 끝나는 표 둘(`hexa_core_kinds` · `hexa_core_name_kinds`)이다.
 
 ### 결정 33. 이름만으로 뜻을 알 수 없는 enum · 표 · 칸은 이름을 고친다 (사용자 선택 2026-11-18)
 
@@ -806,6 +806,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | 표 `spend_forms` | `spend_reward_types` | 그 값마다 화면에 보이는 이름과 차례를 둔 표. 줄이 둘이다 | enum 의 새 이름을 따른다 |
   | 표 `spend_item_forms` | `spend_item_reward_types` | 지출 항목(`spend_items`)이 어느 종류로 받을 수 있는지를 잇는 표 | enum 의 새 이름을 따른다 |
   | enum `content_section` | `content_cycle` | 컨텐츠가 일간인지 주간인지(`daily` · `weekly`) | 보스는 같은 것을 `boss_cycle` 이라 부른다 |
+  | 표 `cashbook_item_kinds` | `cashbook_item_types` | 가계부의 아이템 구매 · 판매에서 고르는 종류 넷(장비 · 소비 · 기타 · 캐시). 종류마다 수량 단위와 구매 관세가 붙는지가 다르다 | 끝말을 `_type` 으로 맞춘다(결정 32). 가계부 입력에서만 쓰는 표라 `cashbook` 은 그대로 둔다 |
   | 표 `boss_drop_rewards` | `boss_difficulty_rewards` | 보스 난이도 하나가 줄 수 있는 보상 한 줄. 드롭 표다 | 사용자가 얻은 드롭을 적는 `boss_drops` 와 이름이 비슷해, 줄 수 있는 것과 얻은 것이 이름으로 구분되지 않는다 |
 
 - 칸도 함께 바꾼다. `spend_item_forms.form_id` 는 가리키는 표의 새 이름을 따라 `spend_reward_type_id` 로 바꾼다(결정 23). 가계부
@@ -820,7 +821,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `bottom_bar_sub_page_orders` | 하단 탭의 그룹 하나 안에서 하위 페이지를 놓는 순서 | 무엇의 순서인지를 줄이지 않고 적는다 |
 
 - 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다(결정 23). 계산기 기록 안의 캐릭터 줄을 가리키는 칸은
-  `boss_profit_calculator_record_character_id` 다. `character_id` 로 두면 `characters` 표의 줄로 읽힌다.
+  `boss_profit_calculator_record_character_id` 다. `character_id` 로 두면 `characters` 표의 줄로 읽힌다. 가계부 품목의
+  `item_kind_key` 는 `cashbook_item_type_key` 가 된다.
 - 값은 그대로다. 앱이 받는 게임 데이터의 이름(`forms` · `itemForms` · `form` · `section`)도 그대로 둔다. 그래서 앱 코드는 바뀌지
   않는다(결정 32 와 같은 방식).
 - enum `content_type` 과 그 값 `contents` · `quest` 는 그대로 둔다(사용자 지정 2026-11-18). 값은 넥슨 API 응답(스케줄러 정보 조회)의
