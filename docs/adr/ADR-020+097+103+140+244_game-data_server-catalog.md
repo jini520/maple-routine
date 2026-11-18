@@ -173,6 +173,8 @@ jsonb 칸 두 개에 나눠 두면 두 칸의 순서가 어긋나도 DB 가 잡�
 
 ### 결정 10. 기간 칸은 KST 글자 그대로 둔다
 
+(서버 표의 칸 이름은 1.0.15 서버 작업에서 `valid_from` · `valid_until` 로 바뀐다. 앱이 받는 이름은 그대로다. [[ADR-099]] 결정 23)
+
 `from` · `until` 은 서버에서도 `text` 이고, 앱과 같은 글자(`YYYY-MM-DD` 또는 `YYYY-MM-DDTHH:mm`)를 내려준다. 앱의 판정
 `isEffectiveIn` 이 문자열 비교라서, `timestamptz` 로 바꾸면 경계를 판정하는 방법이 두 벌이 된다.
 
