@@ -110,6 +110,22 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   대신 기기 표의 칸이 바뀌면 서버 이관과 배포가 함께 나간다.
 - 줄의 유일 기준은 넥슨이 준 값(메이플 ID · ocid)과 기록 내용이다([[ADR-101]] 결정 19). 기기가 만든 id 만으로 가리지 않는다.
   식별자는 해시로 둔다(결정 12).
+- 기기 줄에 id 가 있는 기록은 그 id 를 서버 줄의 `id` 로 그대로 쓴다(사용자 선택 2026-11-18). 서버가 따로 만든 id 와 기기 id
+  (`period_record_id` · `drop_record_id` · `entry_record_id` · `total_record_id`)를 두 칸으로 두지 않는다. 같은 줄이 기기와 서버에서
+  같은 id 를 갖고, 표끼리 가리킬 때도 그 값을 쓴다. 기기의 기록 id 는 모두 uuid 다. 아래에서 `기록 id` 는 이 `id` 를 말한다.
+  - 남의 줄을 덮는 요청은 쓸 때 하는 주인 검사로 막는다. 같은 id 의 줄이 이미 있는데 그 줄의 주인이 요청한 사람이 아니면 적지
+    않는다. 남의 id 로 보내면 자기 줄이 하나 생기던 방식([[ADR-018]])을 이것으로 바꾼다. 그 방식에서는 사람 줄이 바뀐 사람이
+    같은 기록을 다시 올리면 줄이 하나 더 생겼다.
+  - 기기 줄에 id 가 없는 기록(Preferences 의 설정과, 목록에서 풀어 낸 줄)과 `characters` 는 서버가 id 를 만든다. 기기는 그 줄을
+    유일 기준의 값으로 가리킨다.
+  - `drop_prices` 도 합친다. 같은 id 의 줄이 이미 있으면 셋으로 가른다. 줄의 메이플 ID 가 요청한 사람의 것이면 덮는다. 줄에
+    메이플 ID 가 없으면(1.0.13 앱이 올렸거나 계정을 삭제해 비운 줄) 요청의 메이플 ID 와 ocid 를 채운다. 기기가 만든 uuid 는 그
+    기기만 알아서, 같은 id 를 든 요청은 같은 기록이다. 다른 메이플 ID 의 줄이면 적지 않는다. 메이플 ID 를 싣지 않는 1.0.13 앱의
+    요청은 메이플 ID 가 없는 줄만 덮는다.
+  - 2026-11-18 운영의 `drop_prices` 5,536줄 가운데 기기 id 가 같은 줄이 4쌍 있다. 모두 같은 드롭이 사람 줄 둘에 한 번씩 올라온
+    것이다. 아이템 · 가격 · 기간이 같고, 뒤의 넷은 2026-11-08 하루에 올라왔다. 합치는 이관에서 쌍마다 나중에 올라온 줄을 남긴다.
+  - `drop_prices.period_record_id` 는 그 드롭이 속한 기간 행의 `id` 값이다. 1.0.14 까지의 앱은 기간 행을 올리지 않으므로 참조는
+    걸지 않는다(결정 2).
 - 기록마다 주인이 있다. 주인은 캐릭터(`characters` 표의 줄, 결정 20), 메이플 ID, 사람 가운데 하나다. 사람의 것은 그 사람의 메인 넥슨 계정
   줄(`nexon_accounts`)에 붙인다. 넥슨 계정 줄은 넥슨 ID 하나에 하나라서([[ADR-101]] 결정 25) 기기가 바뀌어도 같은 줄이다.
 - 캐릭터 이름은 서버에 두지 않는다(사용자 지정 2026-11-10). 이름은 기기가 자기 캐릭터 목록에서 붙인다.
@@ -127,19 +143,19 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | 기기 저장소 | 서버 표 | 주인 | 유일 기준 |
 |---|---|---|---|
 | `boss_parties` | `boss_parties` 새 표 | 캐릭터 | ocid · 보스 · 난이도 |
-| `boss_party_periods` | `boss_clears` 고침. 처치하지 않은 기간 행(`open`)도 담고, 한도 넘김(`over_crystal_limit`) · 수수료 자동 칸을 더하고, 분배 방식에 제외를 더한다(결정 22) | 캐릭터 | ocid · 보스 · 주기 · 기간([[ADR-101]] 결정 26, 결정 19) |
+| `boss_party_periods` | `boss_clears` 고침. 처치하지 않은 기간 행(`open`)도 담고, 한도 넘김(`over_crystal_limit`) · 수수료 자동 칸을 더하고, 분배 방식에 제외를 더한다(결정 22) | 캐릭터 | 캐릭터 · 난이도 · 기간. 처치한 줄은 캐릭터 · 보스 · 주기 · 기간으로도 가린다(결정 19) |
 | `boss_drops` | `drop_prices` 고침. 차례 · 종류 · 분배 여섯 칸 · 판매 수수료 칸을 더한다 | 캐릭터 | ocid · 보스 · 기간 · 아이템 · 획득처([[ADR-101]] 결정 24) |
-| `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다 | 캐릭터 또는 메이플 ID | 메이플 ID · 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
+| `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다 | 캐릭터 또는 메이플 ID | 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
 | `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄 · 반지 레벨)을 더한다 | 기록 | 기록 · 차례 |
 | `cashbook_entry_hunt_inputs` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs` · `cashbook_entry_fragment_uses` | 같은 이름의 새 표 넷 | 기록 | 기록(조각 사용은 기록 · 보관) |
-| `inventory_items` | `inventory_items` 새 표 | 메이플 ID | 장비가 아니면 메이플 ID · 월드 · 아이템. 장비는 메이플 ID · 기록 id |
+| `inventory_items` | `inventory_items` 새 표 | 메이플 ID | 장비가 아니면 메이플 ID · 월드 · 아이템. 장비는 기록 id |
 | `enhancement_totals` | `enhancement_totals` 고침(결정 11) | 캐릭터 | ocid · 날짜 · 분류 · 장비 묶음([[ADR-101]] 결정 18) |
 | `enhancement_history_checks` 의 굳은 날 | `enhancement_settled_days` 새 표(결정 11) | 메이플 ID | 메이플 ID · 종류 · 날짜 |
 | `remembered_levels` | `remembered_levels` 새 표 | 캐릭터 | ocid · 갈래 · 대상 |
 | `mvp_grade_history` | `mvp_grade_history` 새 표 | 메이플 ID | 메이플 ID · 시작 날짜 |
 | `character_world_leaps` | `character_world_leaps` 새 표 | 캐릭터 | 옛 ocid |
-| Preferences `partyAppointments` | `party_appointments` 와 보스 · 파티원 · 주별 예외의 새 표 넷 | 사람 | 사람 · 기록 id |
-| Preferences `bossProfitCalculatorRecords` | `calculator_records` 와 캐릭터 · 보스의 새 표 셋 | 사람 | 사람 · 기록 id |
+| Preferences `partyAppointments` | `party_appointments` 와 보스 · 파티원 · 주별 예외의 새 표 넷 | 사람 | 기록 id |
+| Preferences `bossProfitCalculatorRecords` | `calculator_records` 와 캐릭터 · 보스의 새 표 셋 | 사람 | 기록 id |
 | Preferences `manualTrackedContent:{ocid}` | `manual_tracked_items` 새 표 | 캐릭터 | ocid · 종류 · 컨텐츠 key(보스는 보스 · 난이도) |
 | Preferences `worldSharedProgress:*` · `accountSharedProgress:*` | `shared_progress` 새 표 | 메이플 ID | 메이플 ID · 월드(계정 공유는 빈 값) · 컨텐츠 key |
 | Preferences `mapleIdNames` | `maple_id_names` 새 표 | 메이플 ID | 메이플 ID |
@@ -337,8 +353,18 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   주기가 같으므로, 이관은 보스의 값을 그 보스의 난이도 줄마다 그대로 적는다. 게임 데이터도 난이도마다 `cycle` 을 내고, 앱은 보스가
   아니라 난이도에서 주기를 읽는다.
 - 같은 보스라도 주기가 다른 난이도는 한 캐릭터가 둘 다 잡을 수 있다(사용자 확인 2026-11-18). 그래서 처치의 유일 기준에 주기를
-  넣는다. `boss_clears` 의 기준은 캐릭터 · 보스 · 주기 · 기간이다. 주기가 같은 난이도끼리만 한 처치로 보고, 그 안에서 난이도가
-  다른 기록이 올라오면 `duplicate_record` 로 거절한다(결정 10). `boss_clears.cycle` 은 잡은 난이도 줄의 주기와 같아야 한다.
+  넣는다. `boss_clears` 의 유일 기준은 둘이다.
+  - 모든 줄은 캐릭터 · 난이도 · 기간으로 가린다. 기기 `boss_party_periods` 의 `UNIQUE (party_id, period_key)` 와 같다.
+  - 처치한 줄(`clear_status` 가 `cleared`)은 캐릭터 · 보스 · 주기 · 기간으로도 가린다. 주기가 같은 난이도끼리만 한 처치로 보고,
+    그 안에서 난이도가 다른 처치가 올라오면 `duplicate_record` 로 거절한다(결정 10).
+  - 둘째 기준을 처치한 줄에만 거는 것은 기기에 같은 보스의 처치 전 기간 행(`open`)이 다른 난이도로 함께 있을 수 있어서다. 하드로
+    잡을 생각에 그 주만 파티 인원을 고쳐 두고 실제로는 노말을 잡으면, 하드의 처치 전 행과 노말의 처치 행이 둘 다 남는다. 모든
+    줄에 걸면 둘 가운데 나중에 올린 줄이 거절된다.
+- `boss_clears` 의 `boss_id` 와 `cycle` 은 기기가 보내는 값이 아니다. 서버가 난이도 줄에서 채운다. 난이도 줄을 따라가면 알 수
+  있는 값이지만, DB 의 유일 기준은 다른 표의 값을 볼 수 없어서 줄 안에 둔다(사용자 선택 2026-11-18). 코드로만 검사하면 메이플 ID
+  잠금을 거치지 않는 쓰기가 하나라도 생겼을 때 같은 처치가 두 줄 들어간다. 난이도 줄과 어긋난 값이 들어가지 못하게
+  `boss_difficulty_id` · `boss_id` · `cycle` 셋을 묶어 `boss_difficulties` 를 참조한다.
+- 그 기간의 월드는 지금 있는 `boss_clears.world_id` 한 칸에 둔다. 글자 칸을 따로 더하지 않는다.
 - 1.0.14 까지의 앱은 게임 데이터의 보스에서 `cycle` 을 읽는다. 서버는 그 값을 계속 싣되 난이도 줄들의 주기에서 구한다. 난이도마다
   주기가 다른 보스는 옛 앱이 나타낼 수 없으므로, 그런 보스는 1.0.14 까지의 앱을 잠근 뒤에 더한다.
 - 서버의 기록 표에서 이 칸은 비울 수 없고, 기록이 가리키는 보스 · 난이도 줄은 지울 수 없다. 지금 `boss_clears` 는 표에 없는 보스를
