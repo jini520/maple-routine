@@ -143,7 +143,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | 기기 저장소 | 서버 표 | 주인 | 유일 기준 |
 |---|---|---|---|
 | `boss_parties` | `boss_split_settings` 새 표. 기기 표도 이 이름으로 바꾼다(결정 23) | 캐릭터 | 캐릭터 · 난이도 |
-| `boss_party_periods` | `boss_profit_entries`. 지금의 `boss_clears` 를 고치고 이름을 바꾼다. 기기 표도 이 이름으로 바꾼다(결정 23). 처치하지 않은 기간 행(`open`)도 담고, 한도 넘김(`over_crystal_limit`) · 수수료 자동 칸을 더하고, 분배 방식에 제외를 더한다(결정 22) | 캐릭터 | 캐릭터 · 난이도 · 기간. 처치한 줄은 캐릭터 · 보스 · 기간으로도 가린다(결정 19 · 24) |
+| `boss_party_periods` | `boss_profit_entries`. 지금의 `boss_clears` 를 고치고 이름을 바꾼다. 기기 표도 이 이름으로 바꾼다(결정 23). 처치하지 않은 기간 행(`uncleared`)도 담고, 한도 넘김(`over_crystal_sale_limit`) · 수수료가 등급을 따라가는지의 칸을 더하고, 분배 방식에 제외를 더한다(결정 22) | 캐릭터 | 캐릭터 · 난이도 · 기간. 처치한 줄은 캐릭터 · 보스 · 기간으로도 가린다(결정 19 · 24) |
 | `boss_drops` | `drop_prices` 고침. 차례 · 종류 · 분배 여섯 칸 · 판매 수수료 칸을 더한다 | 캐릭터 | ocid · 보스 · 기간 · 아이템 · 획득처([[ADR-101]] 결정 24) |
 | `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다 | 캐릭터 또는 메이플 ID | 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
 | `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄 · 반지 레벨)을 더한다 | 기록 | 기록 · 차례 |
@@ -358,7 +358,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   - 모든 줄은 캐릭터 · 난이도 · 기간으로 가린다. 기기 `boss_party_periods` 의 `UNIQUE (party_id, period_key)` 와 같다.
   - 처치한 줄(`clear_status` 가 `cleared`)은 캐릭터 · 보스 · 기간으로도 가린다. 같은 기간에 같은 보스를 난이도만 다르게 잡은
     처치가 올라오면 `duplicate_record` 로 거절한다(결정 10).
-  - 둘째 기준을 처치한 줄에만 거는 것은 기기에 같은 보스의 처치 전 기간 행(`open`)이 다른 난이도로 함께 있을 수 있어서다. 하드로
+  - 둘째 기준을 처치한 줄에만 거는 것은 기기에 같은 보스의 처치 전 기간 행(`uncleared`, 기기의 지금 값은 `open`)이 다른 난이도로 함께 있을 수 있어서다. 하드로
     잡을 생각에 그 주만 파티 인원을 고쳐 두고 실제로는 노말을 잡으면, 하드의 처치 전 행과 노말의 처치 행이 둘 다 남는다. 모든
     줄에 걸면 둘 가운데 나중에 올린 줄이 거절된다.
 - `boss_profit_entries` 의 `boss_id` 는 기기가 보내는 값이 아니다. 서버가 난이도 줄에서 채운다. 난이도 줄을 따라가면 알 수
@@ -446,9 +446,25 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   매달린 관계에서 온 이름이다.
 - 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다. 드롭이 수익 건을 가리키는 서버 칸 `drop_prices.period_record_id` 는
   `boss_profit_entry_id` 로 바꾼다. 1.0.14 까지의 앱이 보내는 값의 이름(`periodRecordId`)은 그대로 받는다.
-- 칸 이름도 무엇의 값인지와 단위가 드러나게 짓는다. `boss_profit_entries` 의 `price_meso` 는 `crystal_price_meso`, `payout_meso` 는
-  `crystal_received_meso` 로 바꾼다(사용자 선택 2026-11-18). 앞의 것은 결정석 한 개의 가격이고 나누기 전의 전체 금액이다. 뒤의
-  것은 그 가격을 분배대로 나눈 뒤 내가 받는 메소다. 앱 화면의 `받는 금액` 과 같은 값이다. 기기 표의 같은 칸도 함께 바꾼다.
+- 칸 이름도 무엇의 값인지와 단위가 드러나게 짓는다(사용자 선택 2026-11-18). `boss_profit_entries` 의 칸이다. 기기 표의 같은 칸도
+  함께 바꾸고, 분배 칸은 `boss_split_settings` 와 드롭 표에서도 같은 이름을 쓴다.
+
+  | 지금 이름 | 새 이름 | 뜻 |
+  |---|---|---|
+  | `price_meso` | `crystal_price_meso` | 결정석 한 개의 가격. 나누기 전의 전체 금액이다 |
+  | `payout_meso` | `crystal_received_meso` | 그 가격을 분배대로 나눈 뒤 내가 받는 메소. 앱 화면의 `받는 금액` 과 같은 값이다 |
+  | `period_key` | `period_code` | 이 수익 건이 속한 기간(결정 24) |
+  | `my_share` | `split_share_millipercent` | 비율로 나눌 때의 내 %(결정 21) |
+  | `defeated_date` | `cleared_date` | 처치한 날짜. 같은 표에서 처치를 `clear` 한 말로 부른다. 서버에서는 형도 글자에서 날짜로 바꾼다 |
+  | `source` | `clear_recorded_by` | 처치를 누가 적었는지. 동기화가 적었으면 `auto`, 사용자가 직접 적었으면 `manual` 이다 |
+  | `split_fee_auto` | `split_fee_follows_mvp_grade` | 분배 수수료율이 MVP 등급을 따라가는지. 꺼져 있으면 사용자가 고른 값이다 |
+  | `over_crystal_limit` | `over_crystal_sale_limit` | 주간 결정석 판매 한도를 넘긴 처치인지 |
+
+- `clear_recorded_by` 의 값은 enum 으로 둔다(사용자 지정 2026-11-18). 지금 서버에 있는 enum `clear_source` 의 이름을 칸 이름에 맞춰
+  `clear_recorded_by` 로 바꾼다. 값은 `auto` · `manual` 그대로다.
+- `clear_status` 에서 처치 전을 뜻하는 값은 `uncleared` 로 적는다. 기기의 지금 값 `open` 은 처치 전이라는 뜻이 드러나지 않는다.
+  값은 `uncleared` · `cleared` 둘이고 enum `clear_status` 로 둔다.
+- `party_size` 는 바꾸지 않는다. 분배에만 쓰는 값이 아니라 보스 카드의 인원 배지와 솔로 · 파티 필터도 읽는다.
 - 두 금액은 결정석 가격 표와 같은 줄의 분배 칸에서 다시 구할 수 있지만, 기록할 때의 값으로 굳혀 서버에도 그대로 둔다. 패치로
   가격이 바뀌어도 지난 기록이 그때 값으로 남고, 앱 버전마다 계산식이 달라도 모든 기기가 같은 금액을 보인다.
 - `boss_profit_entries` 에는 주기 칸을 두지 않는다. 기간 값의 첫 글자가 주기를 말한다(결정 24).
