@@ -445,6 +445,13 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   매달린 관계에서 온 이름이다.
 - 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다. 드롭이 수익 건을 가리키는 서버 칸 `drop_prices.period_record_id` 는
   `boss_profit_entry_id` 로 바꾼다. 1.0.14 까지의 앱이 보내는 값의 이름(`periodRecordId`)은 그대로 받는다.
+- 칸 이름도 무엇의 값인지와 단위가 드러나게 짓는다. `boss_profit_entries` 의 `price_meso` 는 `crystal_price_meso`, `payout_meso` 는
+  `crystal_received_meso` 로 바꾼다(사용자 선택 2026-11-18). 앞의 것은 결정석 한 개의 가격이고 나누기 전의 전체 금액이다. 뒤의
+  것은 그 가격을 분배대로 나눈 뒤 내가 받는 메소다. 앱 화면의 `받는 금액` 과 같은 값이다. 기기 표의 같은 칸도 함께 바꾼다.
+- 두 금액은 결정석 가격 표와 같은 줄의 분배 칸에서 다시 구할 수 있지만, 기록할 때의 값으로 굳혀 서버에도 그대로 둔다. 패치로
+  가격이 바뀌어도 지난 기록이 그때 값으로 남고, 앱 버전마다 계산식이 달라도 모든 기기가 같은 금액을 보인다.
+- `boss_profit_entries.cycle` 에는 `weekly` · `monthly` 만 들어간다. 시즌 보스(`event_weekly`)도 주기는 주간이라 그 수익 건은
+  `weekly` 다. 서버가 난이도 줄의 주기에서 채운다(결정 19).
 - 기기 표의 이름은 1.0.15 의 기기 변환(결정 19)에서 바꾼다. `boss_parties` · `boss_party_periods` · `boss_drops` 는 칸과 `CHECK`
   가 바뀌어 그때 다시 만드는 표다. 기기에서 서로를 가리키는 칸도 새 이름을 따른다. `party_id` 는 `boss_split_setting_id`,
   `period_id` 는 `boss_profit_entry_id` 가 된다.
