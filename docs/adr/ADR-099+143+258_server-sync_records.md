@@ -812,6 +812,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   검토할 때 정한다. `contents.section` 은 보스 난이도 표의 `cycle` 과 같게 `cycle` 로 바꾼다.
 - 값은 그대로다. 앱이 받는 게임 데이터의 이름(`forms` · `itemForms` · `form` · `section`)도 그대로 둔다. 그래서 앱 코드는 바뀌지
   않는다(결정 32 와 같은 방식).
+- enum `content_type` 과 그 값 `contents` · `quest` 는 그대로 둔다(사용자 지정 2026-11-18). 값은 넥슨 API 응답(스케줄러 정보 조회)의
+  `type` 을 그대로 쓴 것이다. 넥슨 값과 다르게 하면 같은 것을 넥슨 응답에서는 `contents` 로, 서버 데이터에서는 다른 글자로 읽게 된다.
 
 ## 테스트
 
