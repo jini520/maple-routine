@@ -133,7 +133,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 기록 표에 `identified_by` 칸을 두지 않는다(사용자 지정 2026-11-18). 올린 요청이 로그인이었는지 API 키였는지는 기록의 값이
   아니라 사람의 값이다. 넥슨 계정 줄의 `nexon_uid` 가 있으면 로그인한 사람이므로 거기서 읽는다. `boss_clears` · `drop_prices` ·
   `cashbook_entries` · `enhancement_totals` 에서 이 칸을 뺀다. 동기화와 상관없는 `usage_events` · `enhancement_anomalies` 에서도
-  같은 이유로 뺀다(사용자 지정). 그러면 이 칸은 서버 어느 표에도 남지 않는다.
+  같은 이유로 뺀다(사용자 지정). 그러면 이 칸은 서버 어느 표에도 남지 않는다. 쓰는 칸이 없어진 enum `identity_source` 도 지운다.
 - 이 칸을 읽는 곳은 둘이고 둘 다 넥슨 계정 줄에서 읽도록 고친다. 관리 화면의 드롭 가격 목록은 줄마다 로그인 · API 키를 보인다.
   계정을 삭제한 사람의 드롭 줄은 계정 줄이 없어 그 표시가 빈다. 사용 로그의 구성([[ADR-158]])은 지금 그 사람이 마지막으로 보낸
   사건의 값으로 나누는데, 그 사람에게 로그인한 넥슨 계정 줄이 있는지로 나누게 된다. 로그인한 적이 있는 사람이 키만 넣은 기기를
@@ -793,6 +793,25 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   표이고, 나머지는 옛 이름으로 남아 있다. 표를 하나씩 검토하면서 결정 23 · 27 과 이 결정의 규칙으로 바꾼다.
 - 그때 함께 볼 것이 있다. 지금 있는 표의 칸 `kind`(`notices` · `image_crops` · `hunt_loot_items` · `item_groups`), 칸 `type`(`contents`),
   이름이 `_kinds` 로 끝나는 표 셋(`cashbook_item_kinds` · `hexa_core_kinds` · `hexa_core_name_kinds`)이다.
+
+### 결정 33. 이름만으로 뜻을 알 수 없는 enum · 표 · 칸은 이름을 고친다 (사용자 선택 2026-11-18)
+
+- 서버의 표 68개와 enum 27개를 모두 읽고, 이름만 봐서는 무엇인지 알 수 없거나 다른 것으로 읽히는 이름을 골랐다. 하나씩 사용자가
+  정하고, 정한 것만 여기에 적는다. 아직 정하지 않은 이름은 옛 이름 그대로다.
+- 기준은 결정 23 과 같다. 이름은 그 표의 한 줄이, 그 칸의 값이 무엇인지를 말해야 한다. 같은 것은 표가 달라도 같은 말로 부른다.
+
+  | 지금 이름 | 새 이름 | 무엇인지 | 고치는 이유 |
+  |---|---|---|---|
+  | enum `spend_form` | `spend_reward_type` | 에픽던전 추가 리워드를 경험치(`exp`)로 받는지 솔 에르다(`sol_erda`)로 받는지 | `form` 만으로는 무엇의 형태인지 알 수 없다 |
+  | 표 `spend_forms` | `spend_reward_types` | 그 값마다 화면에 보이는 이름과 차례를 둔 표. 줄이 둘이다 | enum 의 새 이름을 따른다 |
+  | 표 `spend_item_forms` | `spend_item_reward_types` | 지출 항목(`spend_items`)이 어느 종류로 받을 수 있는지를 잇는 표 | enum 의 새 이름을 따른다 |
+  | enum `content_section` | `content_cycle` | 컨텐츠가 일간인지 주간인지(`daily` · `weekly`) | 보스는 같은 것을 `boss_cycle` 이라 부른다 |
+
+- 칸도 함께 바꾼다. `spend_item_forms.form_id` 는 가리키는 표의 새 이름을 따라 `spend_reward_type_id` 로 바꾼다(결정 23). 가계부
+  품목(`cashbook_entry_items`)의 `form_key` 는 `spend_reward_type_key` 로 바꾼다. 이 칸을 글자 key 대신 줄 id 로 가리킬지는 가계부 표를
+  검토할 때 정한다. `contents.section` 은 보스 난이도 표의 `cycle` 과 같게 `cycle` 로 바꾼다.
+- 값은 그대로다. 앱이 받는 게임 데이터의 이름(`forms` · `itemForms` · `form` · `section`)도 그대로 둔다. 그래서 앱 코드는 바뀌지
+  않는다(결정 32 와 같은 방식).
 
 ## 테스트
 
