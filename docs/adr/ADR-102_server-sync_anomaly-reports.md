@@ -50,6 +50,8 @@
                              · row_count · detail · created_at · updated_at
 ```
 
+`identified_by` 칸은 1.0.15 서버 작업에서 뺀다([[ADR-099]] 결정 8).
+
 ## 테스트
 
 | 테스트 | 확인하는 것 |
