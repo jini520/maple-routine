@@ -118,14 +118,15 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
     같은 기록을 다시 올리면 줄이 하나 더 생겼다.
   - 기기 줄에 id 가 없는 기록(Preferences 의 설정과, 목록에서 풀어 낸 줄)과 `characters` 는 서버가 id 를 만든다. 기기는 그 줄을
     유일 기준의 값으로 가리킨다.
-  - `drop_prices` 도 합친다. 같은 id 의 줄이 이미 있으면 셋으로 가른다. 줄의 메이플 ID 가 요청한 사람의 것이면 덮는다. 줄에
+  - 시세 표본 표(`drop_price_samples`, 지금의 `drop_prices`, 결정 26)도 합친다. 표본의 id 는 그 표본이 나온 드롭의 id 다. 같은 id
+    의 줄이 이미 있으면 셋으로 가른다. 줄의 메이플 ID 가 요청한 사람의 것이면 덮는다. 줄에
     메이플 ID 가 없으면(1.0.13 앱이 올렸거나 계정을 삭제해 비운 줄) 요청의 메이플 ID 와 ocid 를 채운다. 기기가 만든 uuid 는 그
     기기만 알아서, 같은 id 를 든 요청은 같은 기록이다. 다른 메이플 ID 의 줄이면 적지 않는다. 메이플 ID 를 싣지 않는 1.0.13 앱의
     요청은 메이플 ID 가 없는 줄만 덮는다.
   - 2026-11-18 운영의 `drop_prices` 5,536줄 가운데 기기 id 가 같은 줄이 4쌍 있다. 모두 같은 드롭이 사람 줄 둘에 한 번씩 올라온
     것이다. 아이템 · 가격 · 기간이 같고, 뒤의 넷은 2026-11-08 하루에 올라왔다. 합치는 이관에서 쌍마다 나중에 올라온 줄을 남긴다.
-  - 드롭이 수익 건을 가리키는 칸(`drop_prices.boss_profit_entry_id`, 지금의 `period_record_id`)은 그 수익 건의 `id` 값이다.
-    1.0.14 까지의 앱은 수익 건을 올리지 않으므로 참조는 걸지 않는다(결정 2).
+  - 드롭 기록(`boss_drops`)은 수익 건을 참조로 가리킨다(결정 26). 시세 표본 표의 `period_record_id` 는 1.0.14 까지의 앱이 보내는
+    값이라 그대로 두고 참조를 걸지 않는다(결정 2).
 - 기록마다 주인이 있다. 주인은 캐릭터(`characters` 표의 줄, 결정 20), 메이플 ID, 사람 가운데 하나다. 사람의 것은 그 사람의 메인 넥슨 계정
   줄(`nexon_accounts`)에 붙인다. 넥슨 계정 줄은 넥슨 ID 하나에 하나라서([[ADR-101]] 결정 25) 기기가 바뀌어도 같은 줄이다.
 - 캐릭터 이름은 서버에 두지 않는다(사용자 지정 2026-11-10). 이름은 기기가 자기 캐릭터 목록에서 붙인다.
@@ -144,7 +145,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 |---|---|---|---|
 | `boss_parties` | `boss_split_settings` 새 표. 기기 표도 이 이름으로 바꾼다(결정 23) | 캐릭터 | 캐릭터 · 난이도 |
 | `boss_party_periods` | `boss_profit_entries`. 지금의 `boss_clears` 를 고치고 이름을 바꾼다. 기기 표도 이 이름으로 바꾼다(결정 23). 처치하지 않은 기간 행(`uncleared`)도 담고, 한도 넘김(`over_crystal_sale_limit`) · 수수료가 등급을 따라가는지의 칸을 더하고, 분배 방식에 제외를 더한다(결정 22) | 캐릭터 | 캐릭터 · 난이도 · 기간. 처치한 줄은 캐릭터 · 보스 · 기간으로도 가린다(결정 19 · 24) |
-| `boss_drops` | `drop_prices` 고침. 차례 · 종류 · 분배 여섯 칸 · 판매 수수료 칸을 더한다 | 캐릭터 | ocid · 보스 · 기간 · 아이템 · 획득처([[ADR-101]] 결정 24) |
+| `boss_drops` | `boss_drops` 새 표(결정 26). 시세 표본은 `drop_price_samples` 에 따로 둔다 | 수익 건을 따라 캐릭터 | 수익 건 · 아이템 · 상자 |
 | `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다 | 캐릭터 또는 메이플 ID | 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
 | `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄 · 반지 레벨)을 더한다 | 기록 | 기록 · 차례 |
 | `cashbook_entry_hunt_inputs` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs` · `cashbook_entry_fragment_uses` | 같은 이름의 새 표 넷 | 기록 | 기록(조각 사용은 기록 · 보관) |
@@ -163,7 +164,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | Preferences `figureMotions` | `figure_motions` 새 표 | 캐릭터 | ocid |
 | 사람마다 하나인 설정(결정 15) | `account_settings` 새 표 | 사람 | 사람 |
 
-- 새 표는 위의 스물세 개와 `characters`(결정 20)를 더해 스물네 개다. 지금 서버 표는 68개다.
+- 새 표는 위의 스물네 개와 `characters`(결정 20)를 더해 스물다섯 개다. 지금 서버 표는 68개다.
 - 서버에 올리지 않는 기기 표와 그 이유다.
 
   | 기기 표 | 올리지 않는 이유 |
@@ -401,7 +402,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 기기 표와 앱 코드는 바꾸지 않는다. 기기는 지금처럼 메이플 ID 해시와 ocid 해시를 실어 올리고, 서버가 캐릭터 줄이 없으면 올리기를
   받는 자리에서 만든다. 내려줄 때는 서버가 `character_id` 를 ocid 해시로 풀어 준다. 캐릭터 줄 id 는 서버가 사용자마다 만드는
   값이라, 기기가 그것으로 저장하면 서버에 닿기 전에는 기록을 저장할 수 없게 된다.
-- `drop_prices` 만 `maple_id` 와 `ocid` 칸을 그대로 둔다. 시세 계산에 쓰여 계정을 삭제해도 줄을 남기고, 2026-11-18 운영에
+- 시세 표본 표(`drop_price_samples`, 지금의 `drop_prices`)만 `maple_id` 와 `ocid` 칸을 그대로 둔다. 드롭 기록은 `boss_drops` 가
+  수익 건을 따라 캐릭터 줄에 묶인다(결정 26). 표본은 시세 계산에 쓰여 계정을 삭제해도 줄을 남기고, 2026-11-18 운영에
   1.0.13 앱이 올린 ocid 없는 줄이 5,413줄 있다. 캐릭터 줄에 묶으면 계정 삭제 때 함께 지워지거나 가리킬 줄이 없게 된다.
 - 월드 리프로 ocid 가 바뀌면 캐릭터 줄의 `ocid` 를 새 값으로 고치고 옛 값을 `character_world_leaps` 에 적는다. 서버의 기록은
   캐릭터 줄을 가리키므로 고칠 것이 없다. 다른 기기는 그 줄을 받아 자기 기기의 옛 ocid 기록을 옮긴다. 부계정이 다른 넥슨 ID 로
@@ -449,8 +451,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - `boss_clears` 는 처치하지 않은 기간 행도 담게 되어 이름이 틀린다. `boss_party_periods` 와 `boss_parties` 는 기기에서 줄이 서로
   매달린 관계에서 온 이름이다.
-- 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다. 드롭이 수익 건을 가리키는 서버 칸 `drop_prices.period_record_id` 는
-  `boss_profit_entry_id` 로 바꾼다. 1.0.14 까지의 앱이 보내는 값의 이름(`periodRecordId`)은 그대로 받는다.
+- 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다. 드롭 기록이 수익 건을 가리키는 칸은 `boss_profit_entry_id` 다(결정 26).
 - 칸 이름도 무엇의 값인지와 단위가 드러나게 짓는다(사용자 선택 2026-11-18). `boss_profit_entries` 의 칸이다. 기기 표의 같은 칸도
   함께 바꾸고, 분배 칸은 `boss_split_settings` 와 드롭 표에서도 같은 이름을 쓴다.
 
@@ -489,7 +490,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 ### 결정 24. 기간은 주차와 월로 적는다 (사용자 지정 2026-11-18)
 
-- 기록이 속한 기간은 `period_code` 칸에 적는다. 지금 이름은 `period_key` 다. `boss_profit_entries` 와 `drop_prices` 에 있고, 서버와
+- 기록이 속한 기간은 `period_code` 칸에 적는다. 지금 이름은 `period_key` 다. `boss_profit_entries` 와 시세 표본 표(`drop_price_samples`)에 있고, 서버와
   기기가 같은 이름과 같은 값을 쓴다.
 
   | 주기 | 값 | 뜻 | 지금 값 |
@@ -519,8 +520,10 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - 분배 수수료율을 정하는 규칙은 둘이다([[ADR-038]] 결정 8 · [[ADR-050]] 결정 1). 자동이면 그 날짜의 그 메이플 ID MVP 등급 요율이고,
   수동이면 `0` · `3` · `5` 가운데 사용자가 고른 값이다. 등급을 고르지 않은 메이플 ID 는 일반이라 5% 다.
-- 비율로 나누는 줄(`split_mode` 가 `ratio`)은 `split_fee_percent` 가 반드시 있다. 서버는 빈 값을 받지 않는다. 수수료는 비율로
-  나눌 때만 쓴다.
+- 결정석을 나누는 표 둘(`boss_split_settings` · `boss_profit_entries`)에서, 비율로 나누는 줄(`split_mode` 가 `ratio`)은
+  `split_fee_percent` 가 반드시 있다. 서버는 빈 값을 받지 않는다. 결정석의 수수료는 비율로 나눌 때만 쓴다.
+- 드롭(`boss_drops`)의 수수료는 다르다. 비어 있으면 수수료 없음이고, 3% 로 읽던 규칙이 없었다. 그래서 아래의 채우기는 드롭에
+  하지 않는다. 드롭의 지난 금액은 받는 메소를 저장해 지킨다(결정 26).
 - 코드가 빈 값을 3% 로 읽던 규칙을 없앤다. `lib/boss/party-shares.ts` 의 `DEFAULT_SPLIT_FEE_PERCENT` 와 `PartySizeModal` 의
   `?? 3` 두 군데다. 앱이 MVP 등급을 모르던 때에 넣은 값이고, 등급을 모르면 일반(5%)이라는 규칙과 어긋난다. [[ADR-038]] 결정 7 의
   "수수료율이 비었으면 3%다"를 이 결정이 바꾼다.
@@ -529,6 +532,57 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   `split_fee_follows_mvp_grade` 를 켜고 그 기록 날짜의 등급 요율을 적는다. 날짜가 없는 설정 줄은 변환하는 날의 요율을 적는다.
 - 요율이 바뀌는 줄은 받는 메소(`crystal_received_meso`)를 다시 계산한다(사용자 확인 2026-11-18). 그 날짜에 실버 이상이던 메이플
   ID 의 줄은 3% 그대로라 바뀌지 않고, 일반 · 브론즈였거나 등급을 고르지 않은 메이플 ID 의 줄은 3% 에서 5% 로 바뀐다.
+
+### 결정 26. 드롭 기록과 시세 표본은 다른 표에 둔다 (사용자 선택 2026-11-18)
+
+- 기기 간 동기화에 쓰는 드롭 기록은 새 표 `boss_drops` 에 두고, 시세 계산에 쓰는 표본은 지금의 `drop_prices` 에 그대로 두며 이름을
+  `drop_price_samples` 로 바꾼다. 앞에서는 `drop_prices` 에 칸을 더해 두 역할을 함께 맡기려 했다.
+- 한 표에 두면 예외가 계속 생긴다. 옛 표본 줄에는 차례 · 종류 · 분배 · 수수료 값이 없어서 그 칸을 모두 비울 수 있게 해야 하고,
+  그러면 서버가 드롭 기록의 값을 검사하지 못한다. 주인을 캐릭터 줄로 가리키지 못하고 수익 건과도 참조로 묶지 못한다. 지워지는
+  때도 다르다. 계정을 삭제하면 드롭 기록은 지워야 하고, 표본은 누구 것인지만 지우고 남겨야 한다([[ADR-101]] 결정 24).
+- 2026-11-18 운영의 `drop_prices` 는 5,549줄이다. 5,455줄이 1.0.13 앱이 올린 줄이고 메이플 ID 도 ocid 도 없다. 메이플 ID 가 있는
+  줄은 한 사람의 94줄이다. 시세 계산은 가격을 적은 4,810줄의 아이템 · 가격 · 적은 시각 · 월드 · 반지 레벨만 읽는다.
+
+  | 표 | 한 줄의 역할 | 주인과 지워지는 때 |
+  |---|---|---|
+  | `boss_drops` | 한 수익 건에서 나온 드롭 한 개와 그 판매 기록. 가격을 적지 않은 드롭도 든다 | 수익 건에 매달린다. 캐릭터 · 보스 · 난이도 · 기간 · 월드는 수익 건에서 읽는다. 수익 건이나 계정이 지워지면 함께 지워진다 |
+  | `drop_price_samples` | 시세 계산에 쓰는 판매가 표본 한 건 | 주인이 없다. 계정을 삭제하면 메이플 ID 만 비우고 줄은 남긴다 |
+
+- `boss_drops` 의 칸이다. 기기 표도 같은 이름을 쓴다(결정 23).
+
+  | 칸 | 뜻 | 기기의 지금 이름 |
+  |---|---|---|
+  | `id` | 기기가 만든 드롭 id(결정 8) | `id` |
+  | `boss_profit_entry_id` | 이 드롭이 속한 수익 건 | `period_id` |
+  | `item_id` | 드롭 아이템 | `item_key` |
+  | `from_box_item_id` | 상자에서 나왔으면 그 상자 아이템. 보스가 직접 떨군 드롭은 비어 있다 | `box_origin_key` |
+  | `ring_level` · `category` · `sort_order` | 반지 레벨, 드롭 종류, 시트에서의 차례 | 같다 |
+  | `price_status` | 가격을 적었는지. `pending` · `entered` · `skipped` | `record_status`, 값 `completed` |
+  | `sale_price_meso` | 판매가. 나누기 전의 전체 금액 | `price_meso` |
+  | `sale_received_meso` | 판매 수수료와 분배를 반영해 내가 받는 메소 | 없다. 읽을 때 계산한다 |
+  | `priced_at` | 가격을 처음 적거나 바꾼 시각 | 같다 |
+  | `sale_fee_percent` · `sale_fee_follows_mvp_grade` | 판매 수수료율과, 그것이 MVP 등급을 따라가는지 | `sale_fee_auto` |
+  | 분배 칸 다섯 | 수익 건과 같은 이름이다. 드롭에는 `excluded` 가 없다 | 결정 21 · 23 |
+  | `change_seq` · `deleted_at` · `created_at` · `updated_at` | 동기화 칸 | |
+
+- `boss_drops` 의 유일 기준은 수익 건 · 아이템 · 상자다. 한 캐릭터는 한 기간에 한 보스에게서 같은 아이템을 둘 얻지 못하고, 같은
+  아이템은 상자가 다를 때만 두 줄이다([[ADR-101]] 결정 24). 지운 드롭은 다른 표처럼 `deleted_at` 으로 표시하고 가격 상태에
+  `deleted` 값을 두지 않는다.
+- 아이템을 가리키는 기기 칸(`item_key` · `box_origin_key`)을 줄 id 로 바꿀지는 가계부 표를 검토할 때 함께 정한다.
+- 받는 메소를 저장한다(사용자 선택 2026-11-18). 기기는 지금 읽을 때마다 계산하고, 지난 금액을 지키려고 빈 칸에 숨은 뜻을 둘
+  두었다([[ADR-044]]). 수수료 두 칸이 다 빈 기록은 수수료 없이 나누는 옛 식으로 세고, 2026-10-19 전의 균등 기록은 내 비율 칸이
+  차 있으면 비율 식으로 센다. 1.0.15 의 기기 변환에서 가격을 적은 드롭마다 지금 식으로 한 번 계산해 `sale_received_meso` 에
+  적는다. 지금 식이 그 두 갈래를 그대로 타므로 지난 금액은 바뀌지 않는다. 변환 뒤에는 저장된 값을 읽고, 가격 · 분배 · 수수료를
+  고칠 때만 다시 계산한다. 결정석의 `crystal_received_meso` 와 같은 방식이다.
+- 표본은 서버가 적는다. 1.0.15 앱은 드롭 기록만 올린다. 서버는 가격을 적은(`entered`) 드롭을 받으면 같은 트랜잭션에서
+  `drop_price_samples` 에 그 드롭의 id 로 한 줄을 적는다. 아이템 · 판매가 · 적은 시각 · 반지 레벨 · 상자는 드롭에서, 캐릭터 ·
+  보스 · 난이도 · 기간 · 월드는 수익 건에서 읽는다. 가격을 지우거나 드롭을 지우면 표본을 `deleted` 로 적는다. 가격을 적은
+  드롭은 두 표에 한 줄씩 있게 된다.
+- 표본 표의 칸은 결정 8 에서 정한 것만 고친다. 줄 id 를 드롭의 id 로 합치고, `identified_by` 를 빼고, `period_key` 를
+  `period_code` 로 바꾸고, 난이도 줄 id 가 빈 줄을 지운다(결정 19). 나머지 칸은 그대로 둔다. 운영 중인 시세 계산과 1.0.14
+  까지의 앱이 올리는 경로를 건드리지 않으려는 것이다. 그 앱들은 지금처럼 이 표에 바로 올린다.
+- 1.0.15 로 올린 기기가 처음 드롭을 올릴 때 같은 id 의 옛 표본이 있으면 결정 8 의 규칙으로 메이플 ID 와 ocid 를 채운다. 그래서
+  같은 드롭이 표본에 두 번 세이지 않는다.
 
 ## 테스트
 
