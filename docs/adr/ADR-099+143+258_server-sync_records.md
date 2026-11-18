@@ -119,7 +119,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | 기기 저장소 | 서버 표 | 주인 | 유일 기준 |
 |---|---|---|---|
 | `boss_parties` | `boss_parties` 새 표 | 캐릭터 | ocid · 보스 · 난이도 |
-| `boss_party_periods` | `boss_clears` 고침. 처치하지 않은 기간 행(`open`)도 담고, 제외(`crystal_excluded`) · 한도 넘김(`over_crystal_limit`) · 수수료 자동 칸을 더한다 | 캐릭터 | ocid · 보스 · 기간([[ADR-101]] 결정 26) |
+| `boss_party_periods` | `boss_clears` 고침. 처치하지 않은 기간 행(`open`)도 담고, 한도 넘김(`over_crystal_limit`) · 수수료 자동 칸을 더하고, 분배 방식에 제외를 더한다(결정 22) | 캐릭터 | ocid · 보스 · 기간([[ADR-101]] 결정 26) |
 | `boss_drops` | `drop_prices` 고침. 차례 · 종류 · 분배 여섯 칸 · 판매 수수료 칸을 더한다 | 캐릭터 | ocid · 보스 · 기간 · 아이템 · 획득처([[ADR-101]] 결정 24) |
 | `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다 | 캐릭터 또는 메이플 ID | 메이플 ID · 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
 | `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄 · 반지 레벨)을 더한다 | 기록 | 기록 · 차례 |
@@ -376,6 +376,20 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   비율(3 가운데 2 등)은 받는 금액이 조금 바뀐다. 10억 메소에서 3,300메소쯤이다. 화면의 % 는 이미 셋째 자리까지만 보여서 그대로다.
 - 분배 칸은 보스 파티 설정 · 기간 행 · 드롭 · 가계부 품목 · 계산기 기록에 있다. 기기 표의 칸과 계산 코드는 구현할 때 그 기능의
   문서([[ADR-038]] · [[ADR-044]] · [[ADR-001]] · [[ADR-078]])와 함께 고친다.
+
+### 결정 22. `제외` 는 분배 방식의 값으로 두고, 고르기 전의 분배는 남기지 않는다 (사용자 지정 2026-11-18)
+
+- `split_mode` 의 값은 `even` · `ratio` · `excluded` 셋이다. `crystal_excluded` 칸은 서버 표와 기기 표에서 모두 뺀다. `제외` 가
+  결정석을 팔지 않은 처치이고 결정석 내 몫을 0 메소로 세는 것은 그대로다([[ADR-038]] 결정 12).
+- `제외` 를 고르면 그 전의 인원 · 비율 · 분배 수수료를 지운다. 다시 `기본` 이나 `비율` 을 고르면 옛 값을 되살리지 않고 새로
+  정하게 한다. [[ADR-038]] 결정 12 가운데 고르기 전 분배를 숨겨 두는 규칙(2026-11-14)을 이 결정이 바꾼다. 숨긴 값을 들고 있을
+  일이 없으므로 칸을 따로 둘 이유도 없다.
+- `split_mode` 가 `excluded` 면 `party_size` 와 `split_share_millipercent` 는 비어 있다.
+- 기기에서는 1.0.15 의 기기 변환(결정 19)에서 바꾼다. `crystal_excluded` 가 `1` 인 줄은 `split_mode` 를 `excluded` 로 적고
+  숨겨 둔 분배를 지운다. `split_mode` 의 `CHECK` 를 고치려면 표를 다시 만들어야 하는데, `boss_parties` 는 보스 줄 id 로
+  바꾸느라 그때 다시 만든다.
+- 드롭에는 `제외` 가 없다. 드롭은 드롭 기록의 분배 칸으로 나눈다.
+- 화면과 계산 코드, [[ADR-038]] 결정 12 의 본문은 구현할 때 함께 고친다.
 
 ## 테스트
 
