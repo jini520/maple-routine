@@ -119,7 +119,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | 기기 저장소 | 서버 표 | 주인 | 유일 기준 |
 |---|---|---|---|
 | `boss_parties` | `boss_parties` 새 표 | 캐릭터 | ocid · 보스 · 난이도 |
-| `boss_party_periods` | `boss_clears` 고침. 처치하지 않은 기간 행(`open`)도 담고, 한도 넘김(`over_crystal_limit`) · 수수료 자동 칸을 더하고, 분배 방식에 제외를 더한다(결정 22) | 캐릭터 | ocid · 보스 · 기간([[ADR-101]] 결정 26) |
+| `boss_party_periods` | `boss_clears` 고침. 처치하지 않은 기간 행(`open`)도 담고, 한도 넘김(`over_crystal_limit`) · 수수료 자동 칸을 더하고, 분배 방식에 제외를 더한다(결정 22) | 캐릭터 | ocid · 보스 · 주기 · 기간([[ADR-101]] 결정 26, 결정 19) |
 | `boss_drops` | `drop_prices` 고침. 차례 · 종류 · 분배 여섯 칸 · 판매 수수료 칸을 더한다 | 캐릭터 | ocid · 보스 · 기간 · 아이템 · 획득처([[ADR-101]] 결정 24) |
 | `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다 | 캐릭터 또는 메이플 ID | 메이플 ID · 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
 | `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄 · 반지 레벨)을 더한다 | 기록 | 기록 · 차례 |
@@ -328,6 +328,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   있기 때문이다. `bosses.cycle` 을 `boss_difficulties.cycle` 로 옮기고 보스 표에서는 뺀다. 2026-11-18 운영의 보스는 모두 난이도마다
   주기가 같으므로, 이관은 보스의 값을 그 보스의 난이도 줄마다 그대로 적는다. 게임 데이터도 난이도마다 `cycle` 을 내고, 앱은 보스가
   아니라 난이도에서 주기를 읽는다.
+- 같은 보스라도 주기가 다른 난이도는 한 캐릭터가 둘 다 잡을 수 있다(사용자 확인 2026-11-18). 그래서 처치의 유일 기준에 주기를
+  넣는다. `boss_clears` 의 기준은 캐릭터 · 보스 · 주기 · 기간이다. 주기가 같은 난이도끼리만 한 처치로 보고, 그 안에서 난이도가
+  다른 기록이 올라오면 `duplicate_record` 로 거절한다(결정 10). `boss_clears.cycle` 은 잡은 난이도 줄의 주기와 같아야 한다.
 - 1.0.14 까지의 앱은 게임 데이터의 보스에서 `cycle` 을 읽는다. 서버는 그 값을 계속 싣되 난이도 줄들의 주기에서 구한다. 난이도마다
   주기가 다른 보스는 옛 앱이 나타낼 수 없으므로, 그런 보스는 1.0.14 까지의 앱을 잠근 뒤에 더한다.
 - 서버의 기록 표에서 이 칸은 비울 수 없고, 기록이 가리키는 보스 · 난이도 줄은 지울 수 없다. 지금 `boss_clears` 는 표에 없는 보스를
