@@ -984,6 +984,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   있다. 이름 표 `hexa_core_name_kinds` 는 없앤다.
 - 종류 표의 이름은 끝말 규칙대로 `hexa_core_types` 다(결정 32). 넥슨이 주는 값의 이름 `hexa_core_type` 과 말이 겹치지만, 종류 표가
   넥슨 타입을 칸 `api_type` 으로 따로 든다. 레벨별 비용 표 `hexa_core_level_costs` 의 칸 `kind_id` 는 `type_id` 가 된다(결정 36).
+- 표와 칸의 이름 `jobs` · `hexa_cores` · `hexa_core_types` · `is_all_jobs` 는 사용자가 승인했다(2026-11-19). 구조를 정하면서
+  Claude 가 붙인 이름이었다.
 
 ### 결정 36. 같은 말로 시작하는 표를 가리키는 칸은 겹치는 앞말을 빼고 쓴다 (사용자 지정 2026-11-19)
 
