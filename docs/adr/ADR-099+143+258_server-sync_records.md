@@ -1085,11 +1085,18 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   `ring_level` 칸은 없앤다(결정 28). 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 인벤토리의 아이템은 아이템 표에서
   고른 것만 있고(기기 표의 `item_key` 는 비울 수 없는 칸이다), 서버에는 아이템 줄을 지우거나 key 를 바꾸는 경로가 없어서 변환에서
   줄을 찾지 못하는 일이 없다.
+- 월드를 적는 칸 `world_key` 는 `world_id` 로 바꾸고 `worlds` 의 줄 id 를 적는다. `cashbook_entries` ·
+  `cashbook_entry_fragment_uses` · `inventory_items` · `enhancement_totals` · `shared_progress` 다섯 표다. 수익 건은 이미 `world_id` 로
+  적는다(결정 8). 기기에서 서버로 올리는 표의 `world_key` 도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 캐릭터 목록처럼 올리지
+  않는 기기 표는 이 문서가 다루지 않는다.
+  - 월드를 모르는 줄은 지금처럼 빈 값이다. 앱은 넥슨이 준 월드 이름을 월드 표에서 찾아 key 를 얻고, 표에 없는 이름이면 비운다
+    (`lib/world/worlds.ts` 의 `worldKeyOfApiName`).
+  - 변환에서 줄을 찾지 못하는 값은 없다. 서버에는 월드 줄을 지우거나 key 를 바꾸는 경로가 없다. 2026-11-19 에 기기 백업 148벌의
+    모든 표에 나온 월드 key 5개가 운영 표의 20줄 안에 있었다.
 - 2026-11-19 에 지금 설계와 운영 스키마에서 이 결정과 다른 칸을 찾았다. 아직 고치지 않았고 표를 검토할 때 고친다.
 
   | 칸 | 지금 적는 값 | 가리킬 표 |
   |---|---|---|
-  | `world_key`(`cashbook_entries` · `cashbook_entry_fragment_uses` · `inventory_items` · `enhancement_totals` · `shared_progress`) | 월드의 key | `worlds` |
   | `content_key`(`manual_tracked_items` · `shared_progress`) | 컨텐츠의 key | `contents` |
   | `mvp_grade_history.grade` | enum `mvp_grade` 의 값 | `mvp_grades` |
   | `market_days.scope` · `maspi_basket.scope` | 장비는 거래권 글자, 소비 아이템은 월드 key. 두 가지 값이 한 칸에 있다 | 월드는 `worlds`. 거래권은 표가 없다 |
