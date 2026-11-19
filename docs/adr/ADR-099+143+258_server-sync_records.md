@@ -229,7 +229,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - 강화 내역의 응답 원본은 기기에도 서버에도 두지 않는다. 기기의 `enhancement_totals` 한 줄이 날짜 · 캐릭터 · 분류 · 장비 하나의 합계이고
   ([[ADR-100]]), 서버 `enhancement_totals` 가 같은 유일 기준으로 그 줄을 든다. 장비는 넥슨이 준 이름으로 가린다(결정 37).
-- 서버 표에 기기 표의 칸을 더한다. 받은 API 종류(`enhancement_api_type`, 결정 32) · 월드 · 슈페리얼 비용 · 스타포스의 처음 성과 끝 성 · 이벤트 월드
+- 서버 표에 기기 표의 칸을 더한다. 받은 API 종류(`api_type`, 결정 32) · 월드 · 슈페리얼 비용 · 스타포스의 처음 성과 끝 성 · 이벤트 월드
   판정이다. 지금 서버 표는 이벤트 월드가 아닌 줄만 받는데, 기기끼리 맞추려면 모든 줄이 있어야 한다. 가계부 제외 표식([[ADR-160]])을
   구현할 때 그 칸도 이 표에 더한다. 빼면 다른 기기에서 뺀 강화 비용이 다시 지출로 잡힌다. [[ADR-160]] 의 `서버에는 보내지 않는다` 는
   이것으로 바뀐다(사용자 확인 2026-11-17).
@@ -764,16 +764,17 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - 종류를 가르는 enum 의 이름은 `_type` 으로 끝낸다. `_kind` 와 `_mode` 는 쓰지 않는다. 세 말이 같은 뜻으로 섞여 있었다. 2026-11-18
   서버의 enum 27개 가운데 `_type` 이 7개, `_kind` 가 3개, `_mode` 가 1개다.
-- 칸 이름은 enum 이름을 따른다. `kind` 한 낱말로 된 칸은 무엇의 종류인지를 앞에 붙여 `_type` 으로 바꾼다.
+- 칸 이름은 enum 이름에서 표 이름과 겹치는 말을 뺀 것이다(결정 36). 표 이름이 무엇의 종류인지를 이미 말하면 칸은 `type` 이다.
+  `notices` 의 종류 칸은 `notice_type` 이 아니라 `type` 이다. `kind` 한 낱말로 된 칸은 `type` 으로 바꾼다.
 
   | 지금 이름 | 새 이름 | 값 | 쓰는 칸 |
   |---|---|---|---|
-  | `notice_kind` | `notice_type` | `app` · `game` · `event` · `update` · `cashshop` | `notices.kind` |
-  | `image_crop_kind` | `image_crop_type` | `boss_portrait` 등 넷 | `image_crops.kind` |
-  | `hunt_loot_kind` | `hunt_loot_type` | `fragment` · `consumable` · `event` | `hunt_loot_items.kind` |
-  | 새로 만들려던 `remembered_level_kind` | `remembered_level_type` | `symbol` · `hexa` | `remembered_levels.kind` 를 `level_type` 으로 |
-  | 새로 만들려던 `manual_tracked_kind` | `manual_tracked_type` | `daily` · `weekly` · `boss` | `manual_tracked_items.kind` 를 `tracked_type` 으로 |
-  | `enhancement_type` | `enhancement_api_type` | `cube` · `starforce` · `potential` · `soul_potential` | `enhancement_type` 을 `enhancement_api_type` 으로 |
+  | `notice_kind` | `notice_type` | `app` · `game` · `event` · `update` · `cashshop` | `notices.kind` 를 `type` 으로 |
+  | `image_crop_kind` | `image_crop_type` | `boss_portrait` 등 넷 | `image_crops.kind` 를 `type` 으로 |
+  | `hunt_loot_kind` | `hunt_loot_type` | `fragment` · `consumable` · `event` | `hunt_loot_items.kind` 를 `type` 으로 |
+  | 새로 만들려던 `remembered_level_kind` | `remembered_level_type` | `symbol` · `hexa` | `remembered_levels.kind` 를 `type` 으로 |
+  | 새로 만들려던 `manual_tracked_kind` | `manual_tracked_type` | `daily` · `weekly` · `boss` | `manual_tracked_items.kind` 를 `type` 으로 |
+  | `enhancement_type` | `enhancement_api_type` | `cube` · `starforce` · `potential` · `soul_potential` | 강화 표의 `enhancement_type` 을 `api_type` 으로 |
   | `split_mode` | `split_type` | `even` · `ratio` · `excluded`(결정 22) | `boss_split_settings` · `boss_profit_entries` · `boss_drops` 의 `split_mode` 를 `split_type` 으로 |
   | 새로 만들려던 `tracking_mode` | `tracking_type` | `auto` · `manual` | `account_settings.tracking_mode` 를 `tracking_type` 으로 |
 
@@ -792,8 +793,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 서버의 모든 표가 정리 대상이다(사용자 지정 2026-11-18). 이 문서가 처음 다룬 것은 기기끼리 맞추는 기록 표였지만, 이름과 칸을
   다듬는 일은 서버의 표 68개와 enum 27개 전체에 한다. 한 번의 서버 작업으로 고친다. 2026-11-18 에 검토를 마친 것은 보스와 아이템
   표이고, 나머지는 옛 이름으로 남아 있다. 표를 하나씩 검토하면서 결정 23 · 27 과 이 결정의 규칙으로 바꾼다.
-- 그때 함께 볼 것이 있다. 지금 있는 표의 칸 `kind`(`notices` · `image_crops` · `hunt_loot_items` · `item_groups`)와 칸
-  `type`(`contents`)이다.
+- `contents.type` · `potential_reset_costs.type` · `usage_events.type` 은 그대로 둔다(사용자 지정 2026-11-19). 표 이름이 무엇의
+  종류인지를 이미 말한다. `item_groups.kind` 는 enum 이 아니라 글자라서 그 표를 검토할 때 정한다.
 
 ### 결정 33. 이름만으로 뜻을 알 수 없는 enum · 표 · 칸은 이름을 고친다 (사용자 선택 2026-11-18)
 
@@ -840,15 +841,28 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
   | 지금 이름 | 새 이름 | 든 값 |
   |---|---|---|
-  | `party_appointments.date_key` | `appointment_date` | 한 번인 약속의 날짜 |
-  | `party_appointment_exceptions.date_key` | `appointment_date` | 그 주만 바꾼 약속의 날짜 |
+  | `party_appointments.date_key` | `date` | 한 번인 약속의 날짜. 표 이름이 약속이라 `appointment` 를 붙이지 않는다(결정 36) |
+  | `party_appointment_exceptions.date_key` | `date` | 그 주만 바꾼 약속의 날짜 |
   | `party_appointment_exceptions.week_key` | `week_code` | 약속을 바꾼 주 |
   | `party_appointments.from_week` · `until_week` | `from_week_code` · `until_week_code` | 매주 약속의 시작 주와 끝 주 |
   | `account_settings.mvp_last_checked_week` | `mvp_last_checked_week_code` | 마지막으로 등급을 확인한 주 |
   | `account_settings.stats_cumulative_start` | `stats_cumulative_start_date` | 통계 누적 순 수익의 시작 날짜 |
   | `shared_progress.last_updated_bucket` | `period_code` | 공유 컨텐츠의 값이 속한 기간. 주간 컨텐츠는 `W202647`, 일간 컨텐츠는 `D20261119` 꼴로 적는다. 지금은 주간이 그 주의 목요일 날짜, 일간이 그날 날짜다 |
 
-  `mvp_grade_history.from_date` 는 이름도 값도 날짜 그대로 둔다. 등급은 달성한 날부터 바뀌어서 시작 날짜가 아무 요일이나
+- 낱말이 다르게 읽히는 칸을 고친다(사용자 지정 2026-11-19).
+
+  | 지금 이름 | 새 이름 | 든 값 | 고치는 이유 |
+  |---|---|---|---|
+  | `inventory_items.quantity` | `added_quantity` | 넣은 개수의 합. 판 것과 쓴 것도 포함한다 | 지금 남은 개수로 읽힌다 |
+  | `worlds.price_group` | `trade_group` | 장비를 서로 거래할 수 있는 월드의 묶음(거래권) | 가격의 묶음으로 읽힌다 |
+  | `notices.source_id` | `nexon_id` | 넥슨 공지의 `notice_id`. 앱 공지는 비어 있다 | `source` 는 이 스키마의 다른 곳에 없는 말이다. 넥슨이 준 id 라는 것을 적고, 표 이름이 공지라 `notice` 는 붙이지 않는다(결정 36) |
+  | `boss_difficulty_rewards.amount` | `quantity` | 고정 보상의 개수 | 지금은 `240개` 처럼 단위가 든 글자와 `200` 처럼 숫자만 든 글자가 섞여 있다. 숫자만 적고 형을 정수로 바꾼다 |
+
+  고정 보상의 개수는 2026-11-19 운영의 408줄 가운데 154줄에 있다. 100줄은 숫자 뒤에 `개` 가 붙고 54줄은 숫자뿐이라, `개` 를 떼면
+  모두 정수로 옮겨진다. 화면에 단위를 어떻게 보일지는 아직 정하지 않았다. 지금 앱은 글자를 그대로 보인다.
+- `usage_events.type` · `name` 은 그대로 둔다. 표 이름이 사용 기록이라 `event` 를 붙이지 않는다(결정 36).
+  `shared_progress.quest_state` 도 그대로 둔다. 넥슨 응답의 칸 이름과 값(0 · 1 · 2)을 그대로 쓴 것이다.
+- `mvp_grade_history.from_date` 는 이름도 값도 날짜 그대로 둔다. 등급은 달성한 날부터 바뀌어서 시작 날짜가 아무 요일이나
   된다([[ADR-050]] 결정 2). 주차 값으로 적으면 그 주의 앞쪽 날짜 기록까지 새 등급으로 계산된다.
 - 값은 그대로다. 앱이 받는 게임 데이터의 이름(`forms` · `itemForms` · `form` · `section`)도 그대로 둔다. 그래서 앱 코드는 바뀌지
   않는다(결정 32 와 같은 방식).
@@ -985,6 +999,23 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   둘이 된다.
 - `boss_drops.boss_profit_entry_id` 도 그대로 둔다. 결정 23 · 26 에서 사용자가 정한 이름이고, 이 규칙을 정할 때 줄이는 칸에 넣지
   않았다.
+- 가리키는 칸이 아니어도 같다(사용자 지정 2026-11-19). 칸 이름에 표 이름에서 이미 읽은 말을 다시 붙이지 않는다.
+  `usage_events` 의 종류 칸은 `event_type` 이 아니라 `type` 이고, `notices` 의 넥슨 id 칸은 `nexon_notice_id` 가 아니라 `nexon_id` 다.
+  enum 의 이름은 표 밖에서도 읽히는 이름이라 줄이지 않는다(`notice_type` · `usage_event_type`).
+
+  | 표 | 앞말을 뺀 칸 | 뜻 |
+  |---|---|---|
+  | `notices` · `image_crops` · `hunt_loot_items` | `type` | 그 표의 줄의 종류(결정 32) |
+  | `remembered_levels` | `type` | 심볼의 레벨인지 헥사 코어의 레벨인지(결정 38) |
+  | `manual_tracked_items` | `type` | 일간 컨텐츠 · 주간 컨텐츠 · 보스 가운데 무엇인지 |
+  | `party_appointment_members` | `type` | 글자로 적은 파티원인지 내 캐릭터인지 |
+  | `enhancement_totals` · `enhancement_settled_days` | `api_type` | 넥슨에서 강화 내역을 받는 API 넷 가운데 무엇인지 |
+  | `enhancement_totals` | `category` | 화면의 강화 분류 다섯 |
+  | `party_appointments` · `party_appointment_exceptions` | `date` | 약속의 날짜(결정 33) |
+  | `worlds` | `is_challengers` · `is_event` | 챌린저스 월드인지, 이벤트 월드인지(결정 40) |
+
+  아직 검토하지 않은 표에도 같은 꼴이 있다. `cashbook_entries.entry_type` · `entry_date`, `notices.notice_key`,
+  `enhancement_anomalies.enhancement_type` · `anomaly_type` 이다. 그 표를 검토할 때 고친다.
 - 아직 검토하지 않은 표의 칸은 그 표를 검토할 때 정한다. `nexon_account_keys` · `nexon_account_maple_ids` 의 `nexon_account_id` 는
   앞말이 겹치는데 표 이름을 그대로 쓴 칸이다. `spend_groups.category_id` 는 앞말이 다른 `cashbook_categories` 를 가리키는데 줄여 쓴
   칸이다.
@@ -1006,23 +1037,23 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 두 칸으로 나누는 안은 쓰지 않는다. 장비 표에 있는 장비는 `item_id` 에, 없는 장비는 `item_name` 에 적는 안이다. 한 줄의 기준이
   둘로 나뉘고, 장비 표에 장비를 더하면 그 전에 이름으로 적힌 줄과 그 뒤에 id 로 적힌 줄이 다른 장비로 남는다.
 - 서버 표는 줄이 없어 칸을 바로 없앤다(결정 8). 기기 표는 1.0.15 의 기기 변환(결정 19)에서 두 칸을 없애고 유일 기준을
-  `(ocid, history_date, enhancement_category, item_name)` 으로 다시 만든다.
+  `(ocid, history_date, category, item_name)` 으로 다시 만든다.
 
 ### 결정 38. 기억한 레벨의 대상은 종류와 줄 id 로 가리킨다 (사용자 지정 2026-11-19)
 
-- `remembered_levels` 의 한 줄은 캐릭터 · `level_type` · `target_id` 로 가린다. `level_type` 이 심볼의 레벨인지 헥사 코어의 레벨인지를
+- `remembered_levels` 의 한 줄은 캐릭터 · `type` · `target_id` 로 가린다. `type` 이 심볼의 레벨인지 헥사 코어의 레벨인지를
   말하고, `target_id` 는 그 종류의 표에 있는 줄 id 다. `symbol` 이면 `symbols.id`, `hexa` 면 `hexa_cores.id` 다. 종류로 표를 고르고
   id 로 줄을 찾는다.
 - 지금 기기 표의 칸 `item_key` 는 심볼이면 심볼 key 를, 헥사 코어면 코어 이름을 적는다. 아이템이 아닌데 이름이 `item_key` 이고,
   key 와 이름이라는 서로 다른 값이 한 칸에 있다. 둘 다 줄 id 로 바꾸면 한 칸에 든 값이 모두 줄 id 가 된다.
 - 코어 이름은 여러 직업에 같은 이름으로 있을 수 있다. 2026-11-19 운영에 그런 이름이 12개다. 줄 id 는 직업까지 정해진 코어 한
   줄을 가리킨다(결정 35). 기기는 캐릭터의 직업이 가진 코어 안에서 이름으로 줄을 찾아 id 를 얻는다.
-- `target_id` 한 칸이 두 표를 가리켜서 DB 의 참조는 걸 수 없다. 서버가 받을 때 `level_type` 이 말하는 표에 그 id 가 있는지
+- `target_id` 한 칸이 두 표를 가리켜서 DB 의 참조는 걸 수 없다. 서버가 받을 때 `type` 이 말하는 표에 그 id 가 있는지
   확인한다.
 - 칸을 둘(`symbol_id` · `hexa_core_id`)로 두고 한 줄에 하나만 채우는 안과 표를 둘로 나누는 안은 쓰지 않는다. 앞의 안은 줄마다 빈
   칸이 하나씩 생기고, 뒤의 안은 칸 구성이 같은 표가 둘이 된다.
 - 앱이 받는 게임 데이터는 심볼과 헥사 코어마다 `id` 를 함께 낸다. 보스와 같은 방식이다(결정 19).
-- 기기 표도 1.0.15 의 기기 변환(결정 19)에서 `kind` 를 `level_type` 으로(결정 32), `item_key` 를 `target_id` 로 바꾼다. 줄 id 를
+- 기기 표도 1.0.15 의 기기 변환(결정 19)에서 `kind` 를 `type` 으로(결정 32), `item_key` 를 `target_id` 로 바꾼다. 줄 id 를
   찾지 못한 줄은 지운다. 기억이 없는 대상은 지금처럼 넥슨이 준 레벨로 다시 채운다.
 
 ### 결정 39. 다른 표의 줄을 가리키는 값은 글자가 아니라 줄 id 로 적는다 (사용자 지정 2026-11-19)
@@ -1071,8 +1102,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `items.valuable` | `is_valuable` | 고가 아이템인지 |
   | `hunting_grounds.popular` | `is_popular` | 인기 사냥터인지 |
   | `spend_groups.active` | `is_active` | 열린 묶음인지. 닫힌 묶음은 앱에서 고를 수 없다 |
-  | `worlds.challengers` | `is_challengers_world` | 챌린저스 월드인지 |
-  | `worlds.event` · `enhancement_totals.event_world` | `is_event_world` | 이벤트 월드인지. 강화 합계에서는 모르면 비어 있다 |
+  | `worlds.challengers` | `is_challengers` | 챌린저스 월드인지. 표 이름이 월드라 `world` 를 붙이지 않는다(결정 36) |
+  | `worlds.event` | `is_event` | 이벤트 월드인지 |
+  | `enhancement_totals.event_world` | `is_event_world` | 이벤트 월드의 강화인지. 모르면 비어 있다 |
   | `shared_progress.active` | `is_registered` | 등록이 한 번이라도 확인된 컨텐츠인지([[ADR-032]] 결정 4) |
   | `representative_character_motions.rest` | `rests_between_actions` | 행동 사이에 대기 동작을 하는지 |
   | `cashbook_entry_items.hexa_activation` | `includes_hexa_activation` | 헥사 스탯 기록이 활성화 비용을 포함하는지 |
