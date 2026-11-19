@@ -65,6 +65,7 @@ docs/
 
 ## 작업마다 볼 문서
 
+- **사용자에게 물을 것이 생겼을 때**: [[ADR-188]] 결정 10. 묻기 전에 그 주제의 ADR 결정과 문서, 지금 코드, 실제 값을 모두 확인하고, 다듬은 질문을 한 번에 낸다.
 - **화면이나 기능을 만들거나 고칠 때**: 그 기능 문서와 ADR, 그리고 [foundation/architecture.md](./foundation/architecture.md) 의 계층 규칙과 [foundation/design-system.md](./foundation/design-system.md) 의 공용 부품.
 - **디자인을 고치거나 시안을 만들 때**: [foundation/design-system.md](./foundation/design-system.md) 의 `디자인 작업 전에` 부터 읽는다.
 - **넥슨 Open API 를 부르거나 그 응답을 다룰 때**: [foundation/nexon-api/agent-guide.md](./foundation/nexon-api/agent-guide.md) 를 먼저 읽고, [foundation/nexon-api.md](./foundation/nexon-api.md) 의 실측을 본다. 둘이 다르면 사용자에게 묻는다.
