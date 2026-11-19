@@ -148,7 +148,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `boss_parties` | `boss_split_settings` 새 표. 기기 표도 이 이름으로 바꾼다(결정 23) | 캐릭터 | 캐릭터 · 난이도 |
 | `boss_party_periods` | `boss_profit_entries`. 지금의 `boss_clears` 를 고치고 이름을 바꾼다. 기기 표도 이 이름으로 바꾼다(결정 23). 처치하지 않은 기간 행도 담고, 수수료가 등급을 따라가는지의 칸을 더하고, 분배 방식에 제외를 더한다(결정 22) | 캐릭터 | 캐릭터 · 난이도 · 기간. 처치한 줄은 캐릭터 · 보스 · 기간으로도 가린다(결정 19 · 24) |
 | `boss_drops` | `boss_drops` 새 표(결정 26). 시세를 재는 판매가는 `drop_sale_prices` 에 따로 둔다 | 수익 건을 따라 캐릭터 | 수익 건 · 아이템(결정 28) |
-| `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다. 분류는 줄 id 로 가리키고 `entry_type` 칸을 없앤다(결정 45) | 캐릭터 또는 메이플 ID | 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
+| `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다. 분류는 줄 id 로 가리키고 `entry_type` 칸을 없앤다(결정 45). 기기가 저장한 시각 칸을 더한다(결정 49) | 메이플 ID. 캐릭터 기록은 캐릭터 줄도 가리킨다(결정 49) | 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
 | `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄)을 더한다. 반지 레벨은 아이템 줄이 든다(결정 28). 품목의 대상은 종류와 줄 id 로 적는다(결정 44) | 기록 | 기록 · 차례 |
 | `cashbook_entry_hunt_inputs` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs` · `cashbook_entry_fragment_uses` | 같은 이름의 새 표 넷 | 기록 | 기록(조각 사용은 기록 · 보관) |
 | `inventory_items` | `inventory_items` 새 표. 아이템과 아이템 종류는 줄 id 로 가리킨다(결정 39 · 46) | 메이플 ID | 장비가 아니면 메이플 ID · 월드 · 아이템. 장비는 기록 id |
@@ -1027,7 +1027,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `party_appointments` · `party_appointment_exceptions` | `date` | 약속의 날짜(결정 33) |
   | `worlds` | `is_challengers` · `is_event` | 챌린저스 월드인지, 이벤트 월드인지(결정 40) |
 
-  아직 검토하지 않은 표에도 같은 꼴이 있다. `cashbook_entries.entry_date`, `notices.notice_key`,
+  아직 검토하지 않은 표에도 같은 꼴이 있다. `notices.notice_key`,
   `enhancement_anomalies.enhancement_type` · `anomaly_type` 이다. 그 표를 검토할 때 고친다.
 - 아직 검토하지 않은 표의 칸은 그 표를 검토할 때 정한다. `nexon_account_keys` 의 `nexon_account_id` 는
   앞말이 겹치는데 표 이름을 그대로 쓴 칸이다. 메이플 ID 표는 이름이 `maple_ids` 로 바뀌어 앞말이 겹치지 않는다(결정 48). `spend_groups.category_id` 는 앞말이 다른 `cashbook_categories` 를 가리키는데 줄여 쓴
@@ -1357,6 +1357,34 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   id 를 적고, 내려줄 때 해시로 풀어 준다. 캐릭터와 같은 방식이다(결정 20). 서버는 지금도 올린 사람의 메이플 ID 인지 확인하려고 그
   줄을 찾는다.
 
+### 결정 49. 가계부 기록은 메이플 ID 를 늘 적고, 메모와 기기가 저장한 시각을 서버에 둔다 (사용자 선택 2026-11-19)
+
+- 주인은 `maple_id` 와 `character_id` 두 칸으로 적는다. `maple_id` 는 모든 줄에 채우고, 캐릭터에 붙은 기록이면 `character_id` 도
+  채운다. 메이플 ID 에 붙은 기록은 `character_id` 가 비어 있다.
+  - 캐릭터 기록의 메이플 ID 는 캐릭터 줄에도 있어서 같은 값이 두 곳에 있다. 어긋난 값이 들어오지 못하게 `character_id` 와
+    `maple_id` 를 묶어 `characters` 의 줄 id 와 메이플 ID 를 함께 참조한다. 수익 건의 `boss_id` 를 난이도 줄과 묶어 참조한 것과 같은
+    방식이다(결정 19).
+  - 둘 가운데 하나만 채우는 안은 쓰지 않는다. 줄마다 한 칸이 빈다(결정 38).
+  - 종류 칸과 줄 id 한 칸(`owner_type` · `owner_id`)으로 적는 안도 쓰지 않는다. 한 칸이 두 표를 가리켜 DB 의 참조를 걸 수 없고,
+    계정을 삭제할 때 기록이 따라 지워지지 않아 서버 코드가 찾아 지워야 한다. 그 코드가 이 표를 놓치면 사용자가 적은 기록과
+    메모가 서버에 남는다.
+  - 받기는 메이플 ID 마다 한다(결정 9). `maple_id` 한 칸으로 그 메이플 ID 의 기록을 모두 찾는다.
+  - 기기 표는 지금처럼 캐릭터와 메이플 ID 가운데 하나만 채운다. 서버가 올리기를 받을 때 캐릭터 줄에서 메이플 ID 를 채운다.
+    2026-11-19 최근 기기 백업은 캐릭터 기록이 190건, 메이플 ID 기록이 12건이고 둘 다 빈 기록은 없다.
+- `entry_date` 는 `date` 로 바꾼다. 표 이름이 기록이라 `entry` 를 다시 붙이지 않는다(결정 36). 파티 약속의 `date` 와 같다. 값은
+  지금처럼 돈이 오간 날(KST)이다.
+- 메모는 서버에 둔다(사용자 선택). 가계부 기록의 `memo` 와 파티 약속의 `memo` 다. 사용자가 자유롭게 친 글이다. 올리지 않으면 다른
+  기기와 새 기기에서 같은 기록의 메모가 비어 보여서, 모든 기기에서 같은 데이터가 보여야 한다는 조건(배경)과 어긋난다.
+  - 1.0.15 를 내기 전에 개인정보 처리방침과 스토어의 데이터 수집 항목에 사용자가 적은 메모를 서버에 둔다는 것을 적는다.
+- 기기가 기록을 저장한 시각을 `recorded_at` 칸에 둔다(사용자 선택). 기기는 같은 날의 기록을 이 시각 차례로 보여 준다
+  (`storage/cashbook-entries.ts` 의 `readEntries`). 기록을 고쳐도 바뀌지 않는다.
+  - 서버의 `created_at` 은 다른 표처럼 서버가 줄을 만든 시각으로 둔다(결정 27). 과거 기록을 묶음으로 올리면 그 시각이 거의 같아져서,
+    그 값으로 받으면 같은 날 기록의 차례가 기기마다 달라진다. 2026-11-19 최근 기기 백업에서 기록이 둘 이상인 날이 55일이다.
+  - `created_at` 에 기기의 시각을 적는 안은 쓰지 않는다. 이 표에서만 `created_at` 의 뜻이 달라지고, 줄이 서버에 닿은 시각을 알 수
+    없게 된다.
+  - 기기 표의 `created_at` 이 이 값이다. 기기 표도 1.0.15 의 기기 변환(결정 19)에서 칸 이름을 `recorded_at` 으로 바꾼다. 칸 이름
+    `recorded_at` 과 기기 표의 이름을 맞추는 것은 Claude 가 붙였다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1388,6 +1416,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 46: 장비가 아닌 아이템을 같은 메이플 ID · 월드에 두 번 넣으면 한 줄로 합쳐지고 장비는 줄이 따로 생기는지, 아이템 표와 종류가 다른 기록이 변환 뒤에도 적힌 종류로 열리는지 |
 | (구현 때 더한다) | 결정 47: 컨텐츠 항목과 보스 항목이 종류와 줄 id 로 저장되고 읽히는지, 같은 캐릭터가 같은 대상을 두 번 넣지 못하는지, 종류가 말하는 표에 없는 id 를 받지 않는지 |
 | (구현 때 더한다) | 결정 48: 올린 해시로 메이플 ID 줄을 찾아 줄 id 로 적고 내려줄 때 해시로 푸는지, 남의 메이플 ID 해시를 실은 올리기를 받지 않는지, 메이플 ID 줄이 다른 넥슨 ID 로 옮겨 가도 기록이 같은 줄을 가리키는지 |
+| (구현 때 더한다) | 결정 49: 캐릭터 기록을 올리면 서버가 그 캐릭터의 메이플 ID 를 채우는지, 캐릭터와 메이플 ID 가 어긋난 줄을 받지 않는지, 묶음으로 올린 같은 날 기록이 받은 기기에서 저장한 시각 차례로 서는지, 메모가 다른 기기에서 보이는지 |
 
 ## 번호 기록
 
