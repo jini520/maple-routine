@@ -262,6 +262,7 @@ Preferences 키는 셋이다.
 |---|---|---|
 | `mvpWeeklyCheckOff` | `앞으로 등급은 직접 바꿀게요` | 남긴다. 사용자가 고른 값이다 |
 | `mvpLastCheckedWeek` | 마지막으로 확인한 주의 목요일 | 남긴다 |
+| (1.0.15 에서 바뀐다) | 세 키의 이름이 `isMvpWeeklyCheckOff` · `mvpLastCheckedWeekCode` · `isMvpBulkApplyAsked` 가 되고, 확인한 주는 주차 값으로 적는다([[ADR-099]] 결정 57) | |
 | `mvpBulkApplyAsked` | 일괄 적용을 물었는지 | 남긴다(결정 10) |
 
 ### 결정 13. 모달은 고르기와 확인 두 화면을 오간다 (사용자 지정)

@@ -40,6 +40,8 @@
 - 예외를 어떻게 다룰지 묻기 전에 그 경우가 실제로 생기는지 확인한다. 그 일을 일으키는 경로가 코드에 있는지, 실제로 쓰인 적이
   있는지, 사용자만 쓰는 경로면 사용자가 그 일을 하는지를 본다. 생기지 않으면 묻지 않는다.
 - 화면에 보이는 것을 근거로 들려면 그 화면의 코드를 읽는다.
+- #947 설계 페이지의 `정할 것` 을 읽는다. 그 칸의 이름 후보가 이미 적혀 있을 수 있다. 2026-11-19 에 약속 표의 두 칸을 물으면서
+  거기 적힌 후보를 싣지 않았다.
 
 ### 결정 1. 사용자가 만든 기록과 다시 받을 수 없는 기록은 서버에 두고, 같은 사람의 모든 기기가 같은 데이터를 본다 (사용자 지정 2026-11-10 · 11-17)
 
@@ -173,7 +175,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `remembered_levels` | `remembered_levels` 새 표 | 캐릭터 | ocid · 종류 · 대상의 줄 id(결정 38) |
 | `mvp_grade_history` | `mvp_grade_history` 새 표 | 메이플 ID | 메이플 ID · 시작 날짜 |
 | `character_world_leaps` | `character_world_leaps` 새 표(결정 56) | 캐릭터 | 옛 ocid |
-| Preferences `partyAppointments` | `party_appointments` 와 보스 · 파티원 · 주별 예외의 새 표 넷 | 사람 | 기록 id |
+| Preferences `partyAppointments` | `party_appointments` 와 보스 · 주별 예외의 새 표 셋. 파티원 표는 만들지 않는다(결정 57) | 사람 | 기록 id |
 | Preferences `bossProfitCalculatorRecords` | `boss_profit_calculator_records` 와 캐릭터 · 보스의 새 표 셋 | 사람 | 기록 id |
 | Preferences `manualTrackedContent:{ocid}` | `manual_tracked_items` 새 표 | 캐릭터 | 캐릭터 · 종류 · 대상의 줄 id(결정 47) |
 | Preferences `worldSharedProgress:*` · `accountSharedProgress:*` | `shared_content_progress` 새 표(결정 56) | 메이플 ID | 메이플 ID · 월드(계정 공유는 빈 값) · 컨텐츠 줄 |
@@ -182,7 +184,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | Preferences `figureMotions` | `representative_character_motions` 새 표 | 캐릭터 | ocid |
 | 사람마다 하나인 설정(결정 15) | `account_settings` 새 표 | 사람 | 사람 |
 
-- 새 표는 위의 스물네 개와 `characters`(결정 20)를 더해 스물다섯 개다. 지금 서버 표는 68개다.
+- 새 표는 위의 스물세 개와 `characters`(결정 20)를 더해 스물네 개다. 지금 서버 표는 68개다.
 - 서버에 올리지 않는 기기 표와 그 이유다.
 
   | 기기 표 | 올리지 않는 이유 |
@@ -411,7 +413,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 캐릭터가 주인인 기록 표는 `maple_id` 와 `ocid` 두 칸 대신 `character_id` 한 칸을 든다. 줄마다 두 칸을 따로 적으면 같은 캐릭터가
   표마다 다른 메이플 ID 아래에 적히는 것을 서버가 막을 수 없다. 캐릭터 표에서는 그 짝이 한 줄뿐이다. 결정 8 의 유일 기준에서
   ocid 는 `character_id` 로 건다. 캐릭터 줄이 ocid 하나에 하나라서 넥슨이 준 값으로 가리는 것과 같다.
-- 약속의 보스 · 파티원, 계산기 기록의 캐릭터, 추적 캐릭터, 가계부의 받는 캐릭터와 조각을 가져온 캐릭터도 `character_id` 로 가리킨다.
+- 약속의 보스, 계산기 기록의 캐릭터, 추적 캐릭터, 가계부의 받는 캐릭터와 조각을 가져온 캐릭터도 `character_id` 로 가리킨다.
 - 기기 표와 앱 코드는 바꾸지 않는다. 기기는 지금처럼 메이플 ID 해시와 ocid 해시를 실어 올리고, 서버가 캐릭터 줄이 없으면 올리기를
   받는 자리에서 만든다. 내려줄 때는 서버가 `character_id` 를 ocid 해시로 풀어 준다. 캐릭터 줄 id 는 서버가 사용자마다 만드는
   값이라, 기기가 그것으로 저장하면 서버에 닿기 전에는 기록을 저장할 수 없게 된다.
@@ -1042,7 +1044,6 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `notices` · `image_crops` · `hunt_loot_items` | `type` | 그 표의 줄의 종류(결정 32) |
   | `remembered_levels` | `type` | 심볼의 레벨인지 헥사 코어의 레벨인지(결정 38) |
   | `manual_tracked_items` | `type` | 일간 컨텐츠 · 주간 컨텐츠 · 보스 가운데 무엇인지 |
-  | `party_appointment_members` | `type` | 글자로 적은 파티원인지 내 캐릭터인지 |
   | `enhancement_totals` · `enhancement_settled_days` | `api_type` | 넥슨에서 강화 내역을 받는 API 넷 가운데 무엇인지 |
   | `enhancement_totals` | `category` | 화면의 강화 분류 다섯 |
   | `party_appointments` · `party_appointment_exceptions` | `date` | 약속의 날짜(결정 33) |
@@ -1138,8 +1139,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 메이플 ID 해시 글자(`maple_id`)로 메이플 ID 줄을 가리키던 칸도 줄 id 로 바꾼다(결정 48). `drop_sale_prices.ocid` 는
   없앤다(결정 26).
 - 가리킬 표가 없어 지금은 id 로 적을 수 없는 값이 있다. 강화 합계의 장비 이름(`enhancement_totals.item_name`, 결정 37)은 장비
-  표에 없는 장비가 있어 글자다. 거래권(`worlds.price_group`), 하단바와 빠른 링크의 화면 key
-  (`account_settings` · `bottom_bar_sub_page_orders`)도 서버 표가 없다. 표를 만들어 id 로 적을지는 그 표를 검토할 때 정한다.
+  표에 없는 장비가 있어 글자다. 거래권(`worlds.price_group`)도 서버 표가 없다. 표를 만들어 id 로 적을지는 그 표를
+  검토할 때 정한다. 하단바와 빠른 이동의 화면 이름(`account_settings` · `bottom_bar_sub_page_orders`)은 가리킬 표를 만들지 않고
+  글자로 적는다(결정 57).
   아이템 묶음의 종류는 표가 아니라 enum 으로 둔다(결정 50).
 
 ### 결정 40. 참 · 거짓 칸은 `is_` · `has_` 나 동사로 시작한다 (사용자 선택 2026-11-19)
@@ -1596,6 +1598,84 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - `maple_id_names` 의 이름은 그대로 둔다. 앱 화면이 이 값을 `메이플 ID 이름` 이라고 부른다(설정의 계정 관리).
 - `characters` · `mvp_grade_history` · `manual_tracked_items` · `representative_character_motions` 의 칸은 그대로 둔다.
 
+### 결정 57. 넥슨 계정에 붙는 기록은 기기에서 Preferences 에 그대로 두고 칸 이름을 서버와 맞추며, 화면 이름은 글자로 적는다 (사용자 선택 2026-11-19)
+
+넥슨 계정 줄이 주인인 기록의 표 아홉을 칸까지 정했다. `party_appointments` · `party_appointment_bosses` ·
+`party_appointment_exceptions` · `boss_profit_calculator_records` · `boss_profit_calculator_record_characters` ·
+`boss_profit_calculator_record_bosses` · `tracked_characters` · `account_settings` · `bottom_bar_sub_page_orders` 다.
+
+- 이 기록의 기기 저장소는 표가 아니라 Preferences 의 JSON 이다. 표로 옮기지 않고 그대로 두며, JSON 안의 칸 이름과 값을 서버 칸과
+  같게 맞춘다(사용자 선택). 약속은 한 주에 몇 건이고 다른 표와 합쳐 셀 일이 없어 JSON 으로 둔다는 이유([[ADR-051]] 결정 12 ·
+  [[ADR-074]] 결정 13)가 지금도 맞다. 1.0.15 의 기기 변환(결정 19)이 주차 값 · 보스 줄 id · 분배 % 때문에 이 JSON 을 다시 쓰므로 이름도
+  그때 바꾼다. 서버 칸의 `snake_case` 를 JSON 에서는 `camelCase` 로 적는다. 앞에서 본 Preferences 저장소(수동 추적 항목 · 공유
+  진행 · 메이플 ID 이름 · 대표 캐릭터 동작)도 같은 규칙을 따른다.
+
+  | Preferences 키 | 지금 칸 | 새 칸 | 서버 칸 |
+  |---|---|---|---|
+  | `partyAppointments` | `timeKst` | `time` | `time` |
+  | | `leadMinutes` | `alarmMinutesBefore` | `alarm_minutes_before` |
+  | | `schedule.dateKey` | `schedule.date` | `date` |
+  | | `schedule.fromWeek` · `untilWeek` | `fromWeekCode` · `untilWeekCode`. 값은 주차 값(결정 24) | `from_week_code` · `until_week_code` |
+  | | `exceptions` 의 열쇠(그 주의 목요일 날짜) | 주차 값 | `week_code` |
+  | | `exceptions` 안의 `dateKey` · `timeKst` · `leadMinutes` | `date` · `time` · `alarmMinutesBefore` | 같은 이름 |
+  | | `exceptions` 안의 `type` | 없앤다. 값이 `override` 하나뿐이다 | 없음 |
+  | | `bosses` 안의 `bossKey` · `difficulty` | `bossDifficultyId` | `boss_difficulty_id` |
+  | | `members` | 없앤다 | 없음 |
+  | `bossProfitCalculatorRecords` | `bosses` 안의 `bossKey` · `difficulty` | `bossDifficultyId` | `boss_difficulty_id` |
+  | | `shares.myShare` · `sharesTotal` | `splitShareMillipercent`(결정 21) | `split_share_millipercent` |
+  | `quickLinks` | `rows` · `ids` | `rowCount` · `keys` | `quick_link_row_count` · `quick_link_keys` |
+  | `barOrder` | `groups` · `subs` | `groupKeys` · `subPageKeys` | `bar_group_keys` · `sub_page_keys` |
+  | `trackingMode` | 키 이름 | `trackingType` | `tracking_type` |
+  | `statsCumulativeStart` | 키 이름 | `statsCumulativeStartDate` | `stats_cumulative_start_date` |
+  | `mvpLastCheckedWeek` | 키 이름과 값 | `mvpLastCheckedWeekCode`. 값은 주차 값 | `mvp_last_checked_week_code` |
+  | `mvpWeeklyCheckOff` | 키 이름 | `isMvpWeeklyCheckOff` | `is_mvp_weekly_check_off` |
+  | `mvpBulkApplyAsked` | 키 이름 | `isMvpBulkApplyAsked` | `is_mvp_bulk_apply_asked` |
+
+  `quickLinks` 와 `barOrder` 줄은 사용자가 고른 표에 없었다. 같은 규칙으로 Claude 가 적었다.
+- 하단바 그룹 · 하위 페이지 · 빠른 이동에 놓인 화면은 글자로 적는다(사용자 선택). 앱 코드(`navigation/bar-groups.ts` ·
+  `features/quick-links/config.ts`)가 정한 화면 이름이고 서버에는 가리킬 표가 없다. 서버는 받은 값을 저장했다가 돌려주기만 한다.
+  줄 id 로 가리키는 규칙(결정 39)은 다른 표의 줄을 가리킬 때의 규칙이다. 화면 표를 서버에 만들면 앱에 화면을 더할 때마다 서버를
+  먼저 고쳐야 한다. 칸 이름은 `_keys` 로 끝낸다. `_id` 는 이 스키마에서 다른 표의 줄 id 다.
+
+  | 지금 이름 | 새 이름 | 든 값 |
+  |---|---|---|
+  | `account_settings.bar_groups` | `bar_group_keys` | 하단바 그룹 다섯의 화면 이름. 놓인 차례대로 적는다 |
+  | `account_settings.quick_link_ids` | `quick_link_keys` | 빠른 이동에 놓인 화면 이름. 놓인 차례대로 적는다 |
+  | `bottom_bar_sub_page_orders.sub_keys` | `sub_page_keys` | 그 그룹의 하위 페이지 화면 이름. 놓인 차례대로 적는다 |
+
+  기기는 읽을 때 모르는 화면 이름을 버린다(`features/bar-order/config.ts` · `features/quick-links/config.ts`). 화면이 더해진
+  버전과 옛 버전을 함께 쓰는 사람이 옛 버전에서 순서를 고치면 새 화면이 그 목록에서 빠진다. 하단바는 새 버전이 빠진 화면을 뒤에
+  다시 더한다.
+- 이름 셋을 바꾼다(사용자 선택).
+
+  | 지금 이름 | 새 이름 | 고치는 이유 |
+  |---|---|---|
+  | `party_appointments.time_kst` · `party_appointment_exceptions.time_kst` | `time` | 짝인 날짜 칸이 `date` 다. 이 스키마의 날짜 칸은 모두 KST 이고 어느 칸에도 `_kst` 가 없다 |
+  | `party_appointments.lead_minutes` · `party_appointment_exceptions.lead_minutes` | `alarm_minutes_before` | 약속 몇 분 전에 알릴지다. `lead` 가 파티장으로 읽힐 수 있다. 앱 코드는 이 알림을 `alarm` 이라 부른다(`partyAlarmEnabled`) |
+  | `account_settings.quick_link_rows` | `quick_link_row_count` | 빠른 이동의 줄 수(1 · 2)다. `rows` 는 여러 줄의 목록으로 읽힌다 |
+
+- 파티원 표(`party_appointment_members`)는 만들지 않는다. 파티원을 적는 화면이 없어 올릴 값이 없다([[ADR-051]] 결정 3). 그 화면은
+  2026-10-02 의 처음 판에만 있었고 두 시간 뒤에 걷었으며 그 사이에 낸 버전이 없다. 2026-11-17 기기 백업의 약속 7건도 모두 빈
+  목록이다. 기기 JSON 의 `members` 칸도 1.0.15 의 기기 변환에서 없앤다. 기기에만 있는 칸을 두지 않는다. 파티원을 적는 화면을
+  만들 때 표와 칸을 함께 더한다.
+- 하단바 하위 페이지의 순서는 표 `bottom_bar_sub_page_orders` 에 둔다. 그룹마다 목록이 하나씩이라 설정 표의 칸 하나로 담을 수
+  없고, 기록을 JSON 한 칸에 담지 않는다(결정 8). 넥슨 계정과 그룹이 한 줄이다.
+- 계산기 기록의 보스 줄(`boss_profit_calculator_record_bosses`)은 분배 칸 다섯을 분배 설정과 똑같이 둔다(결정 21 · 22 · 25).
+  `split_type` · `party_size` · `split_share_millipercent` · `split_fee_percent` · `split_fee_follows_mvp_grade` 다. 기기는 인원 ·
+  비율 · 수수료를 저장하는데(`lib/boss/party-shares.ts` 의 `PartyShares`) 앞의 표에는 수수료와 분배 방식이 빠져 있었다.
+  - `split_type` 은 `even` · `ratio` 만 받는다. 계산기 화면은 `제외` 를 받지 않는다(`app/utility/BossProfitCalculatorScreen.tsx`).
+  - 수수료 칸의 규칙은 분배 설정(`boss_split_settings`)과 같다(결정 25). 2026-11-17 기기 백업의 계산기 보스 60줄은 모두 균등이고
+    수수료가 비어 있다. 계산기 화면이 수수료 자동을 어떻게 저장하는지는 구현할 때 [[ADR-074]] 와 함께 고친다(결정 21).
+  - 차례 칸(`sort_order`)을 없앤다. 계산기의 보스는 늘 보스 표의 기준 순서로 놓인다(`sortByReferenceOrder`). 한 줄의 기준은
+    `record_character_id` · `boss_difficulty_id` 다.
+- 차례 칸을 두는 줄은 둘이다. 약속의 보스 줄은 같은 캐릭터 묶음 안에서 사용자가 순서를 바꾼다([[ADR-051]] 결정 3). 계산기
+  기록의 캐릭터 줄은 기록 목록이 기록 순서로 첫 캐릭터의 이름을 보인다([[ADR-074]] 결정 12).
+- 대표 캐릭터는 추적 캐릭터 줄의 `is_representative` 로 적는다. 대표는 늘 추적 목록 안에 있다. 기기가 목록에서 빠진 대표를
+  지운다(`storage/character-selection.ts`). 넥슨 계정마다 참인 줄은 하나까지다.
+- 넥슨 계정 줄을 합칠 때(결정 48) 이 표들도 남는 줄로 옮긴다. 기록 id 가 있는 줄(약속 · 계산기 기록)은 그대로 옮긴다. 유일
+  기준이 있는 줄(설정 · 추적 캐릭터 · 하단바 하위 페이지 순서 · 굳은 날)이 양쪽에 있으면 늦게 고친 줄을 남긴다. 지금 코드가 강화
+  이상 보고를 합칠 때 쓰는 규칙이다(서버 `mergeNexonAccounts`). 이 줄은 Claude 가 지금 코드에 맞춰 적었다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1632,6 +1712,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 53: 추가 리워드를 두 종류로 받은 기록의 품목이 종류의 차례로 읽히는지, 한 기록에 같은 종류의 품목을 두 줄 받지 않는지 |
 | (구현 때 더한다) | 결정 54: 기기 변환 뒤에 기타 조각의 남은 개수가 변환 전과 같은지, 한 기록이 같은 보관에서 두 줄로 가져가지 못하는지, 켠 효과가 적힌 차례와 상관없이 같은 칸으로 옮겨지는지 |
 | (구현 때 더한다) | 결정 55: 다시 받은 날의 줄을 분류로 갈아 끼워도 다른 API 종류의 줄이 지워지지 않는지, 넥슨 계정 줄을 합칠 때 굳은 날이 한 줄로 남는지 |
+| (구현 때 더한다) | 결정 57: 기기 변환 뒤에 약속의 주차 값과 보스 줄 id 로 같은 주에 같은 회차가 펼쳐지는지, 계산기 기록이 변환 전과 같은 금액으로 열리는지, 넥슨 계정 줄을 합칠 때 설정이 한 줄로 남는지 |
 
 ## 번호 기록
 
