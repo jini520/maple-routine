@@ -79,6 +79,8 @@ nexon_account_keys        id · nexon_account_id · api_key_hash UNIQUE
 nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 ```
 
+1.0.15 에서 `nexon_account_maple_ids` 는 `maple_ids` 로, 해시를 적는 칸 `maple_id` 는 `hash` 로 바뀐다(결정 48).
+
 ### 결정 6. 쓰기 요청에는 신원 헤더만 싣는다
 
 기기가 만든 넥슨 계정 id 헤더(`x-nexon-account-id`)는 싣지 않는다. 기기마다 다른 값이라 서버가 [[ADR-101]] 결정 21 부터 읽지 않고,
@@ -388,7 +390,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 ### 결정 20. 캐릭터는 서버의 `characters` 표에 한 줄로 두고, 캐릭터의 기록은 그 줄 id 로 가리킨다 (사용자 선택 2026-11-18)
 
-- `characters` 는 캐릭터 하나가 한 줄이다. 줄 id, 그 캐릭터의 메이플 ID 해시(`maple_id`), ocid 해시(`ocid`)를 든다. `ocid` 는
+- `characters` 는 캐릭터 하나가 한 줄이다. 줄 id, 그 캐릭터의 메이플 ID 줄(`maple_id`, 결정 48), ocid 해시(`ocid`)를 든다. `ocid` 는
   유일하다. 계정을 삭제하면 메이플 ID 를 따라 줄이 지워지고, 그 줄을 가리키는 기록도 함께 지워진다.
 - 캐릭터가 주인인 기록 표는 `maple_id` 와 `ocid` 두 칸 대신 `character_id` 한 칸을 든다. 줄마다 두 칸을 따로 적으면 같은 캐릭터가
   표마다 다른 메이플 ID 아래에 적히는 것을 서버가 막을 수 없다. 캐릭터 표에서는 그 짝이 한 줄뿐이다. 결정 8 의 유일 기준에서
@@ -1027,8 +1029,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
   아직 검토하지 않은 표에도 같은 꼴이 있다. `cashbook_entries.entry_date`, `notices.notice_key`,
   `enhancement_anomalies.enhancement_type` · `anomaly_type` 이다. 그 표를 검토할 때 고친다.
-- 아직 검토하지 않은 표의 칸은 그 표를 검토할 때 정한다. `nexon_account_keys` · `nexon_account_maple_ids` 의 `nexon_account_id` 는
-  앞말이 겹치는데 표 이름을 그대로 쓴 칸이다. `spend_groups.category_id` 는 앞말이 다른 `cashbook_categories` 를 가리키는데 줄여 쓴
+- 아직 검토하지 않은 표의 칸은 그 표를 검토할 때 정한다. `nexon_account_keys` 의 `nexon_account_id` 는
+  앞말이 겹치는데 표 이름을 그대로 쓴 칸이다. 메이플 ID 표는 이름이 `maple_ids` 로 바뀌어 앞말이 겹치지 않는다(결정 48). `spend_groups.category_id` 는 앞말이 다른 `cashbook_categories` 를 가리키는데 줄여 쓴
   칸이다.
 
 ### 결정 37. 강화 합계의 장비는 넥슨이 준 이름 하나로 가린다 (사용자 선택 2026-11-19)
@@ -1074,7 +1076,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 한 칸이 여러 표를 가리키면 종류 칸으로 표를 고르고 id 한 칸으로 줄을 찾는다(결정 38). 한 칸에 key 와 이름처럼 종류가 다른
   값을 섞지 않는다(결정 37).
 - 이미 이렇게 정한 칸이다. 보스와 난이도(결정 19), 캐릭터(결정 20), 드롭의 아이템(결정 28), 헥사 코어의 직업과 종류(결정 35),
-  기억한 레벨의 대상(결정 38), 가계부 품목의 대상(결정 44), 가계부 기록의 분류(결정 45), 아이템 종류(결정 46), 수동 추적 항목의 대상(결정 47).
+  기억한 레벨의 대상(결정 38), 가계부 품목의 대상(결정 44), 가계부 기록의 분류(결정 45), 아이템 종류(결정 46), 수동 추적 항목의 대상(결정 47), 메이플 ID(결정 48).
 - `items.category` 는 `group_id` 로 바꾸고 `item_groups` 의 줄 id 를 적는다. 지금은 묶음 key 글자를 적는다. 두 표가 모두 `item` 으로
   시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 앱이 받는 게임 데이터도 묶음을 줄 id 로 낸다(결정 43).
 - `cashbook_entry_items.form_key` 는 `spend_reward_type_id` 로 바꾸고 `spend_reward_types` 의 줄 id 를 적는다. 에픽던전 추가 리워드의
@@ -1108,12 +1110,10 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | 칸 | 지금 적는 값 | 가리킬 표 |
   |---|---|---|
   | `market_days.scope` · `maspi_basket.scope` | 장비는 거래권 글자, 소비 아이템은 월드 key. 두 가지 값이 한 칸에 있다 | 월드는 `worlds`. 거래권은 표가 없다 |
-  | `market_judgements.person` | 넥슨 계정 id · 메이플 ID · 사용자 id 가운데 줄에 있는 것. 세 가지 값이 한 칸에 있다 | `nexon_accounts` · `nexon_account_maple_ids` · `users` |
+  | `market_judgements.person` | 넥슨 계정 id · 메이플 ID · 사용자 id 가운데 줄에 있는 것. 세 가지 값이 한 칸에 있다 | `nexon_accounts` · `maple_ids` · `users` |
 
-- 메이플 ID 해시 글자(`maple_id`)로 `nexon_account_maple_ids` 를 가리키는 칸도 줄 id 로 바꿀 수 있다. 지금 서버의 기록 표 넷과
-  이 문서가 새로 만드는 표 여섯(`characters` · `cashbook_entries` · `inventory_items` · `mvp_grade_history` · `shared_progress` ·
-  `maple_id_names`), `cashbook_entry_fragment_uses.source_maple_id` 가 그렇다. 기록을 메이플 ID 에 붙이는 결정(결정 5 · 8)에서
-  해시 글자로 가리키기로 한 칸이라, 바꿀지는 따로 정한다. `drop_sale_prices.ocid` 는 없앤다(결정 26).
+- 메이플 ID 해시 글자(`maple_id`)로 메이플 ID 줄을 가리키던 칸도 줄 id 로 바꾼다(결정 48). `drop_sale_prices.ocid` 는
+  없앤다(결정 26).
 - 가리킬 표가 없어 지금은 id 로 적을 수 없는 값이 있다. 강화 합계의 장비 이름(`enhancement_totals.item_name`, 결정 37)은 장비
   표에 없는 장비가 있어 글자다. 사냥 계산기 입력의 `boosts` 는 켠 메소 획득 아이템 여럿을 쉼표로 이은 글자이고 목록이 앱 코드
   (`MESO_BOOSTS`)에만 있다. 거래권(`worlds.price_group`), 아이템 묶음의 종류(`item_groups.kind`), 하단바와 빠른 링크의 화면 key
@@ -1331,6 +1331,32 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   바꾼다. 변환에서 줄을 찾지 못한 항목은 지금처럼 뺀다. 앱은 지금도 컨텐츠 표나 보스 표에서 찾지 못한 항목을 읽을 때 뺀다
   (`storage/manual-tracked-content.ts`).
 
+### 결정 48. 메이플 ID 는 `maple_ids` 표의 줄 id 로 가리킨다 (사용자 선택 2026-11-19)
+
+- 메이플 ID 에 붙는 기록 표는 메이플 ID 해시 글자 대신 메이플 ID 줄의 id 를 적는다(결정 39). `characters` · `cashbook_entries` ·
+  `inventory_items` · `mvp_grade_history` · `shared_progress` · `maple_id_names` 의 `maple_id` 와
+  `cashbook_entry_fragment_uses.source_maple_id` 일곱 곳이다.
+- 표 `nexon_account_maple_ids` 의 이름을 `maple_ids` 로 바꾼다. 한 줄이 메이플 ID 하나다. 해시를 적는 칸 `maple_id` 는 `hash` 로
+  바꾼다. 표 이름이 메이플 ID 라 그 말을 칸에 다시 붙이지 않는다(결정 36). 요청 헤더 `x-maple-id-hash` 와 같은 말이다.
+
+  ```
+  maple_ids   id · nexon_account_id · hash UNIQUE
+  ```
+
+- 다른 표가 이 줄을 가리키는 칸의 이름은 `maple_id` 다. 가리키는 표의 이름에 `_id` 를 붙이는 규칙대로 지으면 `_id` 가 두 번 붙어서
+  이 이름으로 둔다. 칸 이름은 1.0.14 까지와 같고, 든 값이 해시 글자에서 줄 id 로 바뀐다. 표와 칸의 이름은 Claude 가 낸 후보 셋
+  가운데 사용자가 골랐다.
+- 줄 id 로 가려도 넥슨이 준 값으로 가리는 것과 같다. 메이플 ID 줄은 서버 전체에서 메이플 ID 하나에 한 줄이고 `hash` 가 유일하다.
+  캐릭터 줄과 ocid 의 관계와 같다(결정 20). 결정 8 의 유일 기준에서 메이플 ID 는 이 줄의 id 로 건다.
+- 메이플 ID 줄의 id 는 바뀌지 않는다. 서버는 줄을 더하고 다른 넥슨 ID 로 옮기기만 한다. 목록에서 빠져도 지우지 않고, 계정을
+  삭제할 때만 지운다(서버 `users/nexon-account-store.ts`). 부계정이 다른 넥슨 ID 로 옮겨 가도 기록 표는 건드리지 않는다.
+- 줄 id 로 바꿔도 지켜지는 것이 늘지는 않는다. 지금 서버의 기록 표도 해시 칸에 DB 참조를 걸어서, 계정을 삭제하면 줄이 따라
+  지워진다. 바꾸는 이유는 가리키는 방식을 하나로 맞추는 것이다. 캐릭터는 줄 id 로, 메이플 ID 는 해시 글자로 가리키면 방식이 둘이
+  된다.
+- 기기 표와 앱 코드는 바꾸지 않는다. 기기는 지금처럼 메이플 ID 해시를 실어 올린다. 서버가 올리기를 받을 때 해시로 줄을 찾아 줄
+  id 를 적고, 내려줄 때 해시로 풀어 준다. 캐릭터와 같은 방식이다(결정 20). 서버는 지금도 올린 사람의 메이플 ID 인지 확인하려고 그
+  줄을 찾는다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1361,6 +1387,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 45: 기기 변환이 수입 · 지출과 분류 key 의 조합을 분류 줄 id 로 바꾸는지, 수입과 지출 양쪽에 있는 기타가 제 줄로 가는지, 수입 전체와 지출 전체를 읽는 조회가 변환 전과 같은 기록을 내는지 |
 | (구현 때 더한다) | 결정 46: 장비가 아닌 아이템을 같은 메이플 ID · 월드에 두 번 넣으면 한 줄로 합쳐지고 장비는 줄이 따로 생기는지, 아이템 표와 종류가 다른 기록이 변환 뒤에도 적힌 종류로 열리는지 |
 | (구현 때 더한다) | 결정 47: 컨텐츠 항목과 보스 항목이 종류와 줄 id 로 저장되고 읽히는지, 같은 캐릭터가 같은 대상을 두 번 넣지 못하는지, 종류가 말하는 표에 없는 id 를 받지 않는지 |
+| (구현 때 더한다) | 결정 48: 올린 해시로 메이플 ID 줄을 찾아 줄 id 로 적고 내려줄 때 해시로 푸는지, 남의 메이플 ID 해시를 실은 올리기를 받지 않는지, 메이플 ID 줄이 다른 넥슨 ID 로 옮겨 가도 기록이 같은 줄을 가리키는지 |
 
 ## 번호 기록
 
