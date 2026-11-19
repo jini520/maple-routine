@@ -149,7 +149,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다. 분류는 줄 id 로 가리키고 `entry_type` 칸을 없앤다(결정 45) | 캐릭터 또는 메이플 ID | 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
 | `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄)을 더한다. 반지 레벨은 아이템 줄이 든다(결정 28). 품목의 대상은 종류와 줄 id 로 적는다(결정 44) | 기록 | 기록 · 차례 |
 | `cashbook_entry_hunt_inputs` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs` · `cashbook_entry_fragment_uses` | 같은 이름의 새 표 넷 | 기록 | 기록(조각 사용은 기록 · 보관) |
-| `inventory_items` | `inventory_items` 새 표 | 메이플 ID | 장비가 아니면 메이플 ID · 월드 · 아이템. 장비는 기록 id |
+| `inventory_items` | `inventory_items` 새 표. 아이템과 아이템 종류는 줄 id 로 가리킨다(결정 39 · 46) | 메이플 ID | 장비가 아니면 메이플 ID · 월드 · 아이템. 장비는 기록 id |
 | `enhancement_totals` | `enhancement_totals` 고침(결정 11) | 캐릭터 | ocid · 날짜 · 분류 · 넥슨이 준 장비 이름([[ADR-101]] 결정 18, 이 문서의 결정 37) |
 | `enhancement_history_checks` 의 굳은 날 | `enhancement_settled_days` 새 표(결정 11) | 메이플 ID | 메이플 ID · 종류 · 날짜 |
 | `remembered_levels` | `remembered_levels` 새 표 | 캐릭터 | ocid · 종류 · 대상의 줄 id(결정 38) |
@@ -568,8 +568,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - `boss_drops` 의 유일 기준은 수익 건 · 아이템이다. 한 캐릭터는 한 기간에 한 보스에게서 같은 아이템을 둘 얻지
   못한다([[ADR-101]] 결정 24). 보스가 직접 떨군 것과 상자에서 나온 것을 함께 얻을 수 있는 아이템은 아이템 줄이 둘이라(결정 28) 두
   드롭이 겹치지 않는다. 지운 드롭은 다른 표처럼 `deleted_at` 으로 표시하고 가격 상태에 `deleted` 값을 두지 않는다.
-- 기기의 드롭 기록도 품목을 `item_id` 한 칸으로 적는다(결정 28). 가계부와 인벤토리의 아이템을 줄 id 로 바꿀지는 그 표를
-  검토할 때 정한다.
+- 기기의 드롭 기록도 품목을 `item_id` 한 칸으로 적는다(결정 28). 가계부 품목과 인벤토리의 아이템도 줄 id 로 적는다(결정 39 ·
+  44).
 - 받는 메소를 저장한다(사용자 선택 2026-11-18). 기기는 지금 읽을 때마다 계산하고, 지난 금액을 지키려고 빈 칸에 숨은 뜻을 둘
   두었다([[ADR-044]]). 수수료 두 칸이 다 빈 기록은 수수료 없이 나누는 옛 식으로 세고, 2026-10-19 전의 균등 기록은 내 비율 칸이
   차 있으면 비율 식으로 센다. 1.0.15 의 기기 변환에서 가격을 적은 드롭마다 지금 식으로 한 번 계산해 `sale_received_meso` 에
@@ -1075,18 +1075,20 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 한 칸이 여러 표를 가리키면 종류 칸으로 표를 고르고 id 한 칸으로 줄을 찾는다(결정 38). 한 칸에 key 와 이름처럼 종류가 다른
   값을 섞지 않는다(결정 37).
 - 이미 이렇게 정한 칸이다. 보스와 난이도(결정 19), 캐릭터(결정 20), 드롭의 아이템(결정 28), 헥사 코어의 직업과 종류(결정 35),
-  기억한 레벨의 대상(결정 38), 가계부 품목의 대상(결정 44), 가계부 기록의 분류(결정 45).
+  기억한 레벨의 대상(결정 38), 가계부 품목의 대상(결정 44), 가계부 기록의 분류(결정 45), 아이템 종류(결정 46).
 - `items.category` 는 `group_id` 로 바꾸고 `item_groups` 의 줄 id 를 적는다. 지금은 묶음 key 글자를 적는다. 두 표가 모두 `item` 으로
   시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 앱이 받는 게임 데이터도 묶음을 줄 id 로 낸다(결정 43).
 - `cashbook_entry_items.form_key` 는 `spend_reward_type_id` 로 바꾸고 `spend_reward_types` 의 줄 id 를 적는다. 에픽던전 추가 리워드의
   종류다. 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 종류는 enum 값 둘(`exp` · `sol_erda`)뿐이고 표에 둘 다 줄이
   있으며 지우는 경로가 없어서, 변환에서 줄을 찾지 못하는 품목이 없다. 2026-11-19 에 기기 백업 127벌에 나온 값은 `exp` 하나다.
+- `inventory_items.item_key` 는 `item_id` 로 바꾸고 `items` 의 줄 id 를 적는다. 레벨이 있는 반지는 레벨 줄의 id 를 적고
+  `ring_level` 칸은 없앤다(결정 28). 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 인벤토리의 아이템은 아이템 표에서
+  고른 것만 있고(기기 표의 `item_key` 는 비울 수 없는 칸이다), 서버에는 아이템 줄을 지우거나 key 를 바꾸는 경로가 없어서 변환에서
+  줄을 찾지 못하는 일이 없다.
 - 2026-11-19 에 지금 설계와 운영 스키마에서 이 결정과 다른 칸을 찾았다. 아직 고치지 않았고 표를 검토할 때 고친다.
 
   | 칸 | 지금 적는 값 | 가리킬 표 |
   |---|---|---|
-  | `cashbook_entry_items.cashbook_item_type_key` · `inventory_items.item_kind_key` | 아이템 종류의 key | `cashbook_item_types` |
-  | `inventory_items.item_key` | 아이템의 key | `items` |
   | `world_key`(`cashbook_entries` · `cashbook_entry_fragment_uses` · `inventory_items` · `enhancement_totals` · `shared_progress`) | 월드의 key | `worlds` |
   | `content_key`(`manual_tracked_items` · `shared_progress`) | 컨텐츠의 key | `contents` |
   | `mvp_grade_history.grade` | enum `mvp_grade` 의 값 | `mvp_grades` |
@@ -1275,6 +1277,30 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   (`cashbook-categories.repository.ts`). 기기 표의 `category_key` 는 비울 수 없는 칸이다. 2026-11-19 에 기기 백업 127벌에 나온
   수입 · 지출과 분류의 조합 10개가 모두 운영 표의 15줄 안에 있었다.
 
+### 결정 46. 아이템 종류 칸은 줄 id 로 바꾸고 가계부 품목과 인벤토리에 그대로 둔다 (사용자 선택 2026-11-19)
+
+- 아이템 종류를 적는 칸은 `cashbook_item_types` 의 줄 id 를 적는다(결정 39). 가계부 품목의 `item_kind_key` 는 `item_type_id` 로
+  바꾼다. 두 표가 모두 `cashbook` 으로 시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 인벤토리의 `item_kind_key` 는
+  `cashbook_item_type_id` 로 바꾼다. 결정 33 에서 정한 이름 `cashbook_item_type_key` 는 이 이름들로 바뀐다.
+- 가계부 품목의 종류 칸은 없애지 않는다. 아이템 줄에서 다시 구할 수 없는 값이다.
+  - 직접 친 품목은 아이템 줄이 없어서 종류를 이 칸에서만 안다.
+  - 아이템을 골라 적은 품목도 적힌 종류가 아이템 표의 종류와 다를 수 있다. 2026-11-19 에 기기 백업 127벌에서 아이템을 골라 적은
+    조합 21개 가운데 1개가 달랐다. `boutique_ticket` 이 기록에는 캐시, 아이템 표에는 소비다.
+  - 종류가 수량 단위와 관세 칸이 있는지를 정한다(`cashbook_item_types.unit` · `has_tariff`). 아이템 표에서 읽으면 그 기록을 다시
+    열 때 폼이 달라진다.
+  - 종류가 빈 품목은 빈 채로 둔다. 아이템 구매 · 판매가 아닌 품목과, 종류를 적기 전의 옛 아이템 구매 · 판매 기록이다.
+- 인벤토리에도 종류 칸을 둔다(사용자 선택). 인벤토리는 장비가 아니면 메이플 ID · 월드 · 아이템마다 한 줄이고, 장비는 하나가 한
+  줄이다. 이 기준을 DB 가 지키려면 줄 안에 종류가 있어야 한다. 기기 표도 지금 이 칸으로 그 기준을 건다(`storage/inventory.ts`).
+  - 종류 칸을 없애고 아이템 줄의 묶음 종류에서 읽는 안은 쓰지 않는다. 기준을 저장하는 코드가 검사해야 하고, 묶음 종류 다섯을
+    가계부 아이템 종류 넷으로 잇는 값(장신구는 장비)이 앱 코드(`features/inventory/catalog.ts`)에만 있으며, 관리 화면에서 아이템의
+    묶음을 옮기면 이미 넣은 줄의 세는 방식이 함께 바뀐다.
+  - 인벤토리 화면이 칸의 종류를 아이템 목록에서 먼저 읽는 것은 그대로다([[ADR-209]]). 저장된 종류는 한 줄의 기준과, 아이템
+    목록에 없는 아이템의 종류에 쓴다.
+  - 종류가 글자에서 줄 id 로 바뀌므로, 장비가 아닌 줄에만 거는 유일 조건은 장비 종류 줄의 id 로 가른다. 기준 표의 줄 id 는 새 DB 로
+    그대로 옮긴다(결정 43). 조건에 id 를 적는 방법은 Claude 가 적은 후보이고 구현할 때 확정한다.
+- 종류는 장비 · 소비 · 기타 · 캐시 넷이다. 서버에는 종류 줄을 지우거나 key 를 바꾸는 경로가 없다. 기기 백업에 나온 값은 이 넷과
+  빈 값뿐이라 변환에서 줄을 찾지 못하는 일이 없다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1303,6 +1329,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 42: 드래곤 퇴치 둘이 등록돼 있어도 공유 컨텐츠 위젯에 나오지 않는지, 점수 컨텐츠만 한 캐릭터가 활동한 캐릭터로 잡히지 않는지 |
 | (구현 때 더한다) | 결정 44: 기기 변환이 분류와 `hexa_activation` 으로 종류를 정하고 key 와 코어 이름을 줄 id 로 바꾸는지, 줄 id 를 찾지 못한 헥사 스킬 품목이 이름과 금액을 지닌 채 남는지, 종류가 말하는 표에 없는 id 를 받지 않는지 |
 | (구현 때 더한다) | 결정 45: 기기 변환이 수입 · 지출과 분류 key 의 조합을 분류 줄 id 로 바꾸는지, 수입과 지출 양쪽에 있는 기타가 제 줄로 가는지, 수입 전체와 지출 전체를 읽는 조회가 변환 전과 같은 기록을 내는지 |
+| (구현 때 더한다) | 결정 46: 장비가 아닌 아이템을 같은 메이플 ID · 월드에 두 번 넣으면 한 줄로 합쳐지고 장비는 줄이 따로 생기는지, 아이템 표와 종류가 다른 기록이 변환 뒤에도 적힌 종류로 열리는지 |
 
 ## 번호 기록
 
