@@ -1705,6 +1705,34 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   시각(`2026-11-19T10:00`)이다.
 - 거래권(`worlds.trade_group`)을 표로 둘지는 시세 표를 볼 때 정한다.
 
+### 결정 59. 심볼 · 헥사 · 강화 비용 · MVP 등급 · 사냥터 표의 이름 다섯을 고친다 (사용자 선택 2026-11-19)
+
+표 열넷을 칸까지 정했다. `symbol_groups` · `symbols` · `symbol_level_costs` · `hexa_core_level_costs` · `hexa_stats` ·
+`potential_reset_costs` · `soul_potential_reset_costs` · `starforce_cost_steps` · `superior_series` · `superior_items` · `mvp_grades` ·
+`hunting_regions` · `hunting_grounds` · `hunting_ground_levels` 다. 2026-11-19 운영의 값은 열네 표 모두 처음 넣은 값과 같다.
+
+- 이름 다섯을 바꾼다(사용자 선택).
+
+  | 지금 이름 | 새 이름 | 든 값 |
+  |---|---|---|
+  | `symbol_groups.default_from` · `default_to` | `default_from_level` · `default_to_level` | 심볼을 고르면 폼에 처음 서는 강화 전 · 강화 후 레벨. 운영 값은 아케인 7 · 12, 어센틱 5 · 8 이다 |
+  | `potential_reset_costs.min_level` | `min_required_level` | 장비 착용 레벨 구간의 시작. 운영 값은 1 · 160 · 200 · 250 이다. 장비의 착용 레벨 칸 `items.required_level` 과 같은 말이다 |
+  | `hunting_grounds.force` | `required_force` | 사냥터가 요구하는 아케인 · 어센틱 포스. 운영 값은 30 ~ 1000 이다 |
+  | `hunting_regions.icon_map_asset_id` | `icon_asset_id` | 지역 아이콘 그림. 심볼과 슈페리얼 장비의 같은 칸과 이름을 맞춘다 |
+  | 표 `starforce_steps` | `starforce_cost_steps` | 강화 전 성수 하나에서 스타포스 비용 식에 넣는 지수와 제수. 칸 `from_star` · `exponent` · `divisor` 는 그대로 둔다 |
+
+- `hexa_core_level_costs.sol_erda_quantity` 는 둔다. 앱 화면이 읽지 않지만 나중에 쓸 데가 있어 넣은 칸이다([[ADR-137]] 결정 10). 운영
+  180줄에 모두 값이 있다.
+- 슈페리얼 장비 표는 아이템 표와 따로 둔다. 운영 50개 가운데 아이템 표에도 있는 것은 타일런트 벨트 다섯뿐이다. 나머지를 아이템
+  표에 넣으면 인벤토리와 가계부의 고르기 목록에 거래할 수 없는 장비가 나온다([[ADR-100]] 결정 10).
+- `superior_series.starforce_cost_meso` 의 형을 `bigint` 로 바꾼다. 다른 비용 칸(`cost_meso`)이 모두 `bigint` 다. Claude 가 적었다.
+- 앱이 받는 응답의 배열 이름도 표 이름을 따른다(결정 43). 지금은 `symbolCosts.groups` · `hexaMatrix.levelCosts` 처럼 표 이름의
+  앞말을 뺀 이름이 섞여 있다. 다른 표의 줄은 key 글자가 아니라 줄 id 로 싣는다(결정 39). Claude 가 결정 43 을 배열 이름에 적용했다.
+- `valid_until` 은 심볼 비용 표에서도 둔다. 이 표에서는 다음 줄의 시작과 늘 같지만, 드롭 표와 월드 기간처럼 뒤 줄 없이 끝나는
+  표와 같은 칸을 쓴다(결정 23).
+- 그 밖의 칸은 그대로 둔다. 열네 표의 모든 칸에 서버나 앱의 읽는 곳이 있다. 소울 잠재능력 비용 표는 장비 레벨 구간과 종류가
+  없어 잠재능력 비용 표와 한 줄의 기준이 달라서 합치지 않는다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1743,6 +1771,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 55: 다시 받은 날의 줄을 분류로 갈아 끼워도 다른 API 종류의 줄이 지워지지 않는지, 넥슨 계정 줄을 합칠 때 굳은 날이 한 줄로 남는지 |
 | (구현 때 더한다) | 결정 57: 기기 변환 뒤에 약속의 주차 값과 보스 줄 id 로 같은 주에 같은 회차가 펼쳐지는지, 계산기 기록이 변환 전과 같은 금액으로 열리는지, 넥슨 계정 줄을 합칠 때 설정이 한 줄로 남는지 |
 | (구현 때 더한다) | 결정 58: 한 난이도의 같은 아이템을 갈래만 달리해 두 줄로 넣지 못하는지, 월드와 아이템을 고쳤을 때 앱에 알리는 바뀐 시각이 그대로 밀리는지 |
+| (구현 때 더한다) | 결정 59: 이름을 바꾼 칸의 값이 옮긴 뒤에도 같은지, 응답의 배열 이름과 줄 id 로 앱이 심볼 · 사냥터 · 강화 비용을 지금과 같이 읽는지 |
 
 ## 번호 기록
 
