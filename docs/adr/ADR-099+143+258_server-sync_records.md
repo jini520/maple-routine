@@ -1569,9 +1569,14 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - `character_world_leaps` 의 `linked_at` 을 서버 표와 기기 표에서 모두 없앤다(결정 27). 옛 ocid 와 새 ocid 를 이은 시각인데 기기
   코드에 이 값을 읽는 곳이 없다. 서버 표에는 줄을 만든 시각이 따로 있다.
 - `character_world_leaps.from_ocid` 는 `previous_ocid` 로 바꾼다. 리프 전의 옛 ocid 해시다. `from` 은 다른 표에서 기간과 범위의
-  시작(`from_date` · `from_level` · `from_star`)에 쓰는 말이다. 기기 표의 `from_ocid` · `to_ocid` 는 옛 ocid 와 새 ocid 의 짝이라
-  그대로 둔다. 서버 표에는 새 ocid 칸이 없다. 캐릭터 줄의 `ocid` 가 새 값이다(결정 20). 기기 표의 이름을 그대로 두는 것은 Claude 가
-  정했다.
+  시작(`from_date` · `from_level` · `from_star`)에 쓰는 말이다.
+- 기기 표도 서버 표와 같은 칸으로 맞춘다(2026-11-19). `from_ocid` 는 `previous_ocid` 로, `to_ocid` 는 `ocid` 로 바꾸고 `linked_at`
+  을 없앤다.
+  - 기기에 값이 둘 필요한 것은 그대로다. 옛 ocid 와, 그 ocid 가 어느 캐릭터의 것인지다. 기기는 캐릭터를 줄 id 가 아니라 ocid 로
+    가리켜서(결정 20), 서버 표의 `character_id` 자리에 기기 표는 `ocid` 를 둔다. 캐릭터가 주인인 다른 기록 표와 같은 짝이다.
+  - 지금 이름 `to_ocid` 는 그 캐릭터의 지금 ocid 다. 캐릭터가 다시 리프하면 앞의 줄의 `ocid` 도 새 ocid 로 옮긴다. 옛 ocid 의
+    기록을 새 ocid 로 옮기는 회차(`features/boss-profit/world-leap-moves.ts`)가 다른 캐릭터 기록과 함께 옮긴다. 서버에서는 그 줄이
+    캐릭터 줄을 가리켜서 고칠 것이 없다. 다시 리프할 때의 처리는 Claude 가 적었다.
 - `maple_id_names` 의 이름은 그대로 둔다. 앱 화면이 이 값을 `메이플 ID 이름` 이라고 부른다(설정의 계정 관리).
 - `characters` · `mvp_grade_history` · `manual_tracked_items` · `representative_character_motions` 의 칸은 그대로 둔다.
 
