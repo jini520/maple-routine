@@ -450,7 +450,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - `boss_clears` 는 처치하지 않은 기간 행도 담게 되어 이름이 틀린다. `boss_party_periods` 와 `boss_parties` 는 기기에서 줄이 서로
   매달린 관계에서 온 이름이다.
-- 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다. 드롭 기록이 수익 건을 가리키는 칸은 `boss_profit_entry_id` 다(결정 26).
+- 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다. 드롭 기록이 수익 건을 가리키는 칸은 `profit_entry_id` 다(결정 26 · 36).
   자기 표와 같은 말로 시작하는 표를 가리킬 때 칸 이름을 어떻게 줄이는지는 결정 36 에 있다.
 - 칸 이름도 무엇의 값인지와 단위가 드러나게 짓는다(사용자 선택 2026-11-18). `boss_profit_entries` 의 칸이다. 기기 표의 같은 칸도
   함께 바꾸고, 분배 칸은 `boss_split_settings` 와 드롭 표에서도 같은 이름을 쓴다.
@@ -475,7 +475,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   가격이 바뀌어도 지난 기록이 그때 값으로 남고, 앱 버전마다 계산식이 달라도 모든 기기가 같은 금액을 보인다.
 - `boss_profit_entries` 에는 주기 칸을 두지 않는다. 기간 값의 첫 글자가 주기를 말한다(결정 24).
 - 기기 표의 이름은 1.0.15 의 기기 변환(결정 19)에서 바꾼다. `boss_parties` · `boss_party_periods` · `boss_drops` 는 칸과 `CHECK`
-  가 바뀌어 그때 다시 만드는 표다. 드롭이 수익 건을 가리키는 기기 칸 `period_id` 는 `boss_profit_entry_id` 가 된다.
+  가 바뀌어 그때 다시 만드는 표다. 드롭이 수익 건을 가리키는 기기 칸 `period_id` 는 `profit_entry_id` 가 된다.
 - `boss_split_settings` 에는 분배를 정한 줄만 둔다(사용자 선택 2026-11-18). 서버에서 이 표의 `split_type` 은 비울 수 없다.
   기기에는 분배를 정한 적이 없어도 처치나 드롭이 생기면 만들어지는 빈 줄이 있다. 수익 건이 그 줄에 매달려 캐릭터와 보스를
   거기서 읽기 때문이다. 그 줄은 설정이 아니므로 올리지 않는다.
@@ -556,7 +556,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | 칸 | 뜻 | 기기의 지금 이름 |
   |---|---|---|
   | `id` | 기기가 만든 드롭 id(결정 8) | `id` |
-  | `boss_profit_entry_id` | 이 드롭이 속한 수익 건 | `period_id` |
+  | `profit_entry_id` | 이 드롭이 속한 수익 건 | `period_id` |
   | `item_id` | 얻은 아이템. 반지는 레벨까지 정해진 아이템 줄이다. 나온 상자는 적지 않는다(결정 28) | `item_key` · `box_origin_key` · `ring_level` |
   | `category` | 드롭 종류 | 같다 |
   | `price_status` | 가격을 적었는지. `pending` · `entered` · `skipped` | `record_status`, 값 `completed` |
@@ -809,7 +809,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   다듬는 일은 서버의 표 68개와 enum 27개 전체에 한다. 한 번의 서버 작업으로 고친다. 2026-11-18 에 검토를 마친 것은 보스와 아이템
   표이고, 나머지는 옛 이름으로 남아 있다. 표를 하나씩 검토하면서 결정 23 · 27 과 이 결정의 규칙으로 바꾼다.
 - `contents.type` · `potential_reset_costs.type` · `usage_events.type` 은 그대로 둔다(사용자 지정 2026-11-19). 표 이름이 무엇의
-  종류인지를 이미 말한다. `item_groups.kind` 는 enum 이 아니라 글자라서 그 표를 검토할 때 정한다.
+  종류인지를 이미 말한다. `item_groups.kind` 는 enum `item_group_type` 을 쓰는 `type` 으로 바꾼다(결정 50).
 
 ### 결정 33. 이름만으로 뜻을 알 수 없는 enum · 표 · 칸은 이름을 고친다 (사용자 선택 2026-11-18)
 
@@ -1005,13 +1005,14 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `hexa_core_level_costs` | `type_id` | `hexa_core_types` | `kind_id` |
   | `boss_profit_calculator_record_characters` | `record_id` | `boss_profit_calculator_records` | 새 표다 |
   | `boss_profit_calculator_record_bosses` | `record_character_id` | `boss_profit_calculator_record_characters` | 새 표다 |
+  | `boss_drops` | `profit_entry_id` | `boss_profit_entries` | 새 표다. 결정 26 에서는 `boss_profit_entry_id` 였다 |
 
 - 지금 앞말을 빼고 쓰는 칸은 그대로 둔다. `spend_item_options.item_id` · `spend_items.group_id` · `spend_items.tile_id` ·
   `drop_box_contents.box_id` 같은 칸이다. 가리키는 표의 이름이 바뀔 때만 따라 바꾼다(결정 23).
 - `boss_difficulty_id` 는 줄이지 않는다. `boss` 로 시작하지 않는 표(`party_appointment_bosses`)도 `boss_difficulties` 를 가리킨다. `boss` 로 시작하는 표에서만 줄이면 같은 표를 가리키는 칸의 이름이
   둘이 된다.
-- `boss_drops.boss_profit_entry_id` 도 그대로 둔다. 결정 23 · 26 에서 사용자가 정한 이름이고, 이 규칙을 정할 때 줄이는 칸에 넣지
-  않았다.
+- `boss_drops` 가 수익 건을 가리키는 칸은 `profit_entry_id` 로 줄인다(사용자 선택 2026-11-19). 두 표가 모두 `boss` 로 시작한다.
+  결정 23 · 26 에서 `boss_profit_entry_id` 로 정했던 이름이고, 이 규칙을 정할 때는 줄이는 칸에 넣지 않았었다.
 - 가리키는 칸이 아니어도 같다(사용자 지정 2026-11-19). 칸 이름에 표 이름에서 이미 읽은 말을 다시 붙이지 않는다.
   `usage_events` 의 종류 칸은 `event_type` 이 아니라 `type` 이고, `notices` 의 넥슨 id 칸은 `nexon_notice_id` 가 아니라 `nexon_id` 다.
   enum 의 이름은 표 밖에서도 읽히는 이름이라 줄이지 않는다(`notice_type` · `usage_event_type`).
@@ -1029,9 +1030,11 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
   아직 검토하지 않은 표에도 같은 꼴이 있다. `notices.notice_key`,
   `enhancement_anomalies.enhancement_type` · `anomaly_type` 이다. 그 표를 검토할 때 고친다.
-- 아직 검토하지 않은 표의 칸은 그 표를 검토할 때 정한다. `nexon_account_keys` 의 `nexon_account_id` 는
-  앞말이 겹치는데 표 이름을 그대로 쓴 칸이다. 메이플 ID 표는 이름이 `maple_ids` 로 바뀌어 앞말이 겹치지 않는다(결정 48). `spend_groups.category_id` 는 앞말이 다른 `cashbook_categories` 를 가리키는데 줄여 쓴
-  칸이다.
+- `nexon_account_id` 는 줄이지 않는다(2026-11-19). `nexon_account_keys` 는 앞말이 겹치지만, `nexon` 으로 시작하지 않는 표
+  (`maple_ids` · 파티 약속 · 계산기 기록)도 같은 이름으로 `nexon_accounts` 를 가리킨다. `boss_difficulty_id` 를 줄이지 않는 것과
+  같은 이유다.
+- `spend_groups.category_id` 는 `cashbook_category_id` 로 바꾼다(2026-11-19). 앞말이 다른 `cashbook_categories` 를 가리키는
+  칸이라 가리키는 표의 이름을 그대로 쓴다.
 
 ### 결정 37. 강화 합계의 장비는 넥슨이 준 이름 하나로 가린다 (사용자 선택 2026-11-19)
 
@@ -1116,8 +1119,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   없앤다(결정 26).
 - 가리킬 표가 없어 지금은 id 로 적을 수 없는 값이 있다. 강화 합계의 장비 이름(`enhancement_totals.item_name`, 결정 37)은 장비
   표에 없는 장비가 있어 글자다. 사냥 계산기 입력의 `boosts` 는 켠 메소 획득 아이템 여럿을 쉼표로 이은 글자이고 목록이 앱 코드
-  (`MESO_BOOSTS`)에만 있다. 거래권(`worlds.price_group`), 아이템 묶음의 종류(`item_groups.kind`), 하단바와 빠른 링크의 화면 key
+  (`MESO_BOOSTS`)에만 있다. 거래권(`worlds.price_group`), 하단바와 빠른 링크의 화면 key
   (`account_settings` · `bottom_bar_sub_page_orders`)도 서버 표가 없다. 표를 만들어 id 로 적을지는 그 표를 검토할 때 정한다.
+  아이템 묶음의 종류는 표가 아니라 enum 으로 둔다(결정 50).
 
 ### 결정 40. 참 · 거짓 칸은 `is_` · `has_` 나 동사로 시작한다 (사용자 선택 2026-11-19)
 
@@ -1156,7 +1160,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 ### 결정 41. 시세를 재는 범위는 아이템의 묶음 종류로 가르고 `items.world_bound` 는 없앤다 (사용자 확인 2026-11-19)
 
 - 소비 아이템은 월드마다, 장비와 장신구는 거래권마다 시세를 잰다([[ADR-071]] 결정 1). 어느 쪽인지는 아이템이 든 묶음의 종류
-  (`item_groups.kind`)로 안다. 같은 사실을 아이템 줄에 한 번 더 적는 `items.world_bound` 는 없앤다(결정 27).
+  (`item_groups.type`, 결정 50)로 안다. 같은 사실을 아이템 줄에 한 번 더 적는 `items.world_bound` 는 없앤다(결정 27).
 - 2026-11-19 운영에서 `world_bound` 가 참인 아이템 14개는 모두 소비 묶음이다. 소비 묶음인데 거짓이라 거래권으로 재던 아이템
   가운데 판매가가 있는 것은 12개, 518줄이다. 선택 상자 둘, 에테르넬 방어구 상자 일곱, 교환권 셋이다. 이 12개도 월드마다
   잰다(사용자 확인). [[ADR-071]] 결정 1 의 `나머지 드롭 아이템은 장비로 둔다` 는 이것으로 바뀐다.
@@ -1384,6 +1388,49 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
     없게 된다.
   - 기기 표의 `created_at` 이 이 값이다. 기기 표도 1.0.15 의 기기 변환(결정 19)에서 칸 이름을 `recorded_at` 으로 바꾼다. 칸 이름
     `recorded_at` 과 기기 표의 이름을 맞추는 것은 Claude 가 붙였다.
+
+### 결정 50. 아이템 묶음의 종류는 enum 으로 둔다 (사용자 선택 2026-11-19)
+
+- `item_groups.kind` 는 enum `item_group_type` 을 쓰는 `type` 칸으로 바꾼다. 값은 `equipment` · `accessory` · `consumable` · `etc` ·
+  `cash` 다섯이다. 종류를 가르는 칸과 enum 은 `_type` 으로 끝내고(결정 32), 표 이름이 아이템 묶음이라 칸에 그 말을 다시 붙이지
+  않는다(결정 36).
+- 지금은 글자 칸이고 목록이 서버 코드(`modules/items/items.ts` 의 `ITEM_KINDS`)에만 있다. DB 는 어떤 글자든 받는다. enum 으로 두면
+  DB 가 다섯 값 밖의 글자를 받지 않는다.
+- 표로 두지 않는다. 종류는 앱이 가계부 아이템 종류를 정하고([[ADR-187]] 결정 10) 시세를 재는 범위를 가르는(결정 41) key 다. 줄을
+  더해도 앱과 시세 코드가 그 종류를 모르면 다룰 수 없어서, 관리 화면에서 더하고 고치는 값이 아니다.
+- 종류의 이름(장비 · 장신구 · 소비 · 기타 · 캐시)은 지금처럼 서버 코드에 둔다.
+- enum 의 이름과 칸 이름은 Claude 가 붙였다.
+
+### 결정 51. 물건의 개수는 `quantity`, 횟수는 `count`, 금액은 `amount` 로 적는다 (사용자 지정 2026-11-19)
+
+- 수를 적는 칸의 이름을 세 가지 말로 나눈다. 물건이 몇 개인지는 `quantity`, 일이 몇 번 일어났는지는 `count`, 금액은 `amount` 다.
+  지금은 같은 조각 개수를 가계부 품목은 `fragment_count` 로, 사냥 입력과 헥사 비용 표는 `fragments` 로 적는다.
+- 이 기준으로 이름을 바꾸는 칸이다.
+
+  | 표 | 지금 이름 | 새 이름 | 든 값 |
+  |---|---|---|---|
+  | `cashbook_entry_items` | `fragment_count` | `fragment_quantity` | 헥사 강화에 든 조각 개수 |
+  | `cashbook_entry_items` | `untradable_fragment_count` | `untradable_fragment_quantity` | 그 가운데 교환할 수 없는 조각 개수 |
+  | `cashbook_entry_hunt_inputs` | `fragments` | `fragment_quantity` | 사냥으로 얻은 조각 개수 |
+  | `cashbook_entry_hunt_inputs` | `missed_mobs` | `missed_mob_quantity` | 놓친 마릿수 |
+  | `cashbook_entry_fragment_uses` | `fragments` | `fragment_quantity` | 보관에서 가져간 조각 개수 |
+  | `hexa_core_level_costs` | `fragments` | `fragment_quantity` | 강화에 드는 조각 개수 |
+  | `hexa_core_level_costs` | `sol_erda` | `sol_erda_quantity` | 강화에 드는 솔 에르다 개수 |
+  | `hexa_stats` | `activation_fragments` | `activation_fragment_quantity` | 활성화에 드는 조각 개수 |
+  | `hunting_grounds` | `mobs` | `mob_quantity` | 맵에 한 번에 뜨는 마릿수 |
+  | `spend_items` | `reward_coins` | `reward_coin_quantity` | 한 형태에서 받는 주화 개수 |
+  | `enhancement_totals` | `attempts` | `attempt_count` | 시도 횟수 |
+
+- 이미 이 기준에 맞아 그대로 두는 칸이다. 물건의 개수는 `cashbook_entry_items.quantity` · `inventory_items.added_quantity` ·
+  `boss_difficulty_rewards.quantity` · `spend_items.max_quantity` 다. 횟수는 `contents.max_count` · `max_count_override` ·
+  `manual_tracked_items.max_count` · `shared_progress.now_count` · `max_count` · `enhancement_anomalies.row_count` 다. 금액은
+  `cashbook_entry_items` 의 `amount_meso` · `amount_point` · `amount_cash` 다.
+  - `row_count` 는 같은 상황이 몇 줄 나왔는지라 횟수로 보았다. `now_count` · `max_count` 는 넥슨 응답의 칸 이름이기도 하다.
+- 가격 · 비용 · 수수료를 적는 칸(`crystal_price_meso` · `attempt_cost_meso` · `sale_fee_meso` 같은 칸)은 이름을 바꾸지 않는다.
+  무엇의 금액인지를 말하는 낱말과 단위(`_meso`)가 이미 붙어 있다.
+- 시세 표의 `voters` · `persons` 는 시세 표를 검토할 때 이 기준으로 고친다.
+- 기기 표의 같은 칸도 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로 바꾼다. 앱이 받는 게임 데이터도 새 이름으로 낸다(결정 43).
+- 칸마다 물건의 개수인지 횟수인지를 가른 것은 Claude 다.
 
 ## 테스트
 
