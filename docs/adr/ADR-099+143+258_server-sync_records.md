@@ -149,7 +149,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `boss_party_periods` | `boss_profit_entries`. 지금의 `boss_clears` 를 고치고 이름을 바꾼다. 기기 표도 이 이름으로 바꾼다(결정 23). 처치하지 않은 기간 행도 담고, 수수료가 등급을 따라가는지의 칸을 더하고, 분배 방식에 제외를 더한다(결정 22) | 캐릭터 | 캐릭터 · 난이도 · 기간. 처치한 줄은 캐릭터 · 보스 · 기간으로도 가린다(결정 19 · 24) |
 | `boss_drops` | `boss_drops` 새 표(결정 26). 시세를 재는 판매가는 `drop_sale_prices` 에 따로 둔다 | 수익 건을 따라 캐릭터 | 수익 건 · 아이템(결정 28) |
 | `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다. 분류는 줄 id 로 가리키고 `entry_type` 칸을 없앤다(결정 45). 기기가 저장한 시각 칸을 더한다(결정 49) | 메이플 ID. 캐릭터 기록은 캐릭터 줄도 가리킨다(결정 49) | 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
-| `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄)을 더한다. 반지 레벨은 아이템 줄이 든다(결정 28). 품목의 대상은 종류와 줄 id 로 적는다(결정 44) | 기록 | 기록 · 차례 |
+| `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄)을 더한다. 반지 레벨은 아이템 줄이 든다(결정 28). 품목의 대상은 종류와 줄 id 로 적는다(결정 44). 차례 칸을 없앤다(결정 53) | 기록 | 기록 · 추가 리워드 종류(결정 53) |
 | `cashbook_entry_hunt_inputs` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs` · `cashbook_entry_fragment_uses` | 같은 이름의 새 표 넷 | 기록 | 기록(조각 사용은 기록 · 보관) |
 | `inventory_items` | `inventory_items` 새 표. 아이템과 아이템 종류는 줄 id 로 가리킨다(결정 39 · 46) | 메이플 ID | 장비가 아니면 메이플 ID · 월드 · 아이템. 장비는 기록 id |
 | `enhancement_totals` | `enhancement_totals` 고침(결정 11) | 캐릭터 | ocid · 날짜 · 분류 · 넥슨이 준 장비 이름([[ADR-101]] 결정 18, 이 문서의 결정 37) |
@@ -1426,7 +1426,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 이미 이 기준에 맞아 그대로 두는 칸이다. 물건의 개수는 `cashbook_entry_items.quantity` · `inventory_items.added_quantity` ·
   `boss_difficulty_rewards.quantity` · `spend_items.max_quantity` 다. 횟수는 `contents.max_count` · `shared_progress.now_count` ·
   `max_count` · `enhancement_anomalies.row_count` 다. 금액은
-  `cashbook_entry_items` 의 `amount_meso` · `amount_point` · `amount_cash` 다.
+  `cashbook_entry_items` 의 `amount_meso` · `amount_maple_point` · `amount_cash` 다.
   - `row_count` 는 같은 상황이 몇 줄 나왔는지라 횟수로 보았다. `now_count` · `max_count` 는 넥슨 응답의 칸 이름이기도 하다.
 - 가격 · 비용 · 수수료를 적는 칸(`crystal_price_meso` · `attempt_cost_meso` · `sale_fee_meso` 같은 칸)은 이름을 바꾸지 않는다.
   무엇의 금액인지를 말하는 낱말과 단위(`_meso`)가 이미 붙어 있다.
@@ -1465,6 +1465,31 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 사용자가 고른 것은 칸 하나로 합치는 것과 이름 `max_count` 다. `manual_tracked_items.max_count` 를 빼는 것과 표에 없는 컨텐츠의
   판정은 Claude 가 권한 대로 적었고 따로 답을 받지 않았다.
 
+### 결정 53. 가계부 품목의 차례 칸을 없애고, 포인트 칸의 이름에 메이플포인트를 적는다 (사용자 선택 2026-11-19)
+
+- `cashbook_entry_items.sort_order` 를 없앤다(결정 27). 한 기록 안에서 품목이 놓이는 차례(0, 1)를 적던 칸이다.
+  - 품목이 둘인 기록은 에픽던전 추가 리워드를 경험치와 솔 에르다 두 종류로 받은 기록뿐이다. 앱은 종류 목록의 차례대로 품목을
+    만든다(`storage/cashbook-entry-shape.ts` 의 `spendItemsOf`). 그래서 품목의 차례는 추가 리워드 종류의 차례
+    (`spend_reward_types.sort_order`)로 정해진다.
+  - 한 줄의 기준은 기록 · 추가 리워드 종류(`entry_id` · `spend_reward_type_id`)가 된다. 종류가 없는 기록은 품목이 하나다. 한
+    기록에 같은 종류의 품목이 두 줄 들어오는 것을 DB 가 막는다.
+  - 2026-11-19 최근 기기 백업의 기록 202건은 모두 품목이 하나다.
+- 메이플포인트를 적는 칸과 값의 이름에 `maple_point` 를 적는다. `point` 만으로는 어느 포인트인지 알 수 없다.
+
+  | 표 · enum | 지금 이름 | 새 이름 |
+  |---|---|---|
+  | `cashbook_entry_items` | `amount_point` | `amount_maple_point` |
+  | `cashbook_entry_items` | `point_per_100m_meso` | `maple_point_per_100m_meso` |
+  | `cashbook_entry_exchange_inputs` | `sell_point_per_100m_meso` | `sell_maple_point_per_100m_meso` |
+  | `cashbook_entry_exchange_inputs` | `buy_point_per_100m_meso` | `buy_maple_point_per_100m_meso` |
+  | enum `spend_currency` | 값 `point` | 값 `maple_point` |
+
+- 품목 표의 나머지 칸은 그대로 둔다. 수량과 강화 레벨은 사용자가 적은 값이다. 금액 · 관세 · 판매 수수료는 기록할 때 값으로
+  굳힌다. 판매 수수료의 금액(`sale_fee_meso`)은 수정으로 열 때 단가를 받은 돈과 뗀 몫으로 되돌리는 데 쓴다([[ADR-047]]). 메포
+  시세와 메소마켓 수수료율은 기록할 때의 값이다. 헥사 칸 여섯은 헥사 강화 시트의 입력이고, `inventory_item_id` 는 인벤토리의
+  남은 개수를 세는 연결이다.
+- 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로 바꾸고 차례 칸을 없앤다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1498,6 +1523,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 48: 올린 해시로 메이플 ID 줄을 찾아 줄 id 로 적고 내려줄 때 해시로 푸는지, 남의 메이플 ID 해시를 실은 올리기를 받지 않는지, 메이플 ID 줄이 다른 넥슨 ID 로 옮겨 가도 기록이 같은 줄을 가리키는지 |
 | (구현 때 더한다) | 결정 49: 캐릭터 기록을 올리면 서버가 그 캐릭터의 메이플 ID 를 채우는지, 캐릭터와 메이플 ID 가 어긋난 줄을 받지 않는지, 묶음으로 올린 같은 날 기록이 받은 기기에서 저장한 시각 차례로 서는지, 메모가 다른 기기에서 보이는지 |
 | (구현 때 더한다) | 결정 52: 넥슨이 최대 횟수를 0 으로 줘도 표의 `max_count` 로 완료와 분모를 정하는지, `count_only` 가 아닌 줄에 `max_count` 가 들어가지 않는지, 표에 없는 컨텐츠가 넥슨의 `type` 으로 판정되는지 |
+| (구현 때 더한다) | 결정 53: 추가 리워드를 두 종류로 받은 기록의 품목이 종류의 차례로 읽히는지, 한 기록에 같은 종류의 품목을 두 줄 받지 않는지 |
 
 ## 번호 기록
 
