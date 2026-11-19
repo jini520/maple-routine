@@ -147,7 +147,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `boss_party_periods` | `boss_profit_entries`. 지금의 `boss_clears` 를 고치고 이름을 바꾼다. 기기 표도 이 이름으로 바꾼다(결정 23). 처치하지 않은 기간 행도 담고, 수수료가 등급을 따라가는지의 칸을 더하고, 분배 방식에 제외를 더한다(결정 22) | 캐릭터 | 캐릭터 · 난이도 · 기간. 처치한 줄은 캐릭터 · 보스 · 기간으로도 가린다(결정 19 · 24) |
 | `boss_drops` | `boss_drops` 새 표(결정 26). 시세를 재는 판매가는 `drop_sale_prices` 에 따로 둔다 | 수익 건을 따라 캐릭터 | 수익 건 · 아이템(결정 28) |
 | `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다 | 캐릭터 또는 메이플 ID | 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
-| `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄)을 더한다. 반지 레벨은 아이템 줄이 든다(결정 28) | 기록 | 기록 · 차례 |
+| `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄)을 더한다. 반지 레벨은 아이템 줄이 든다(결정 28). 품목의 대상은 종류와 줄 id 로 적는다(결정 44) | 기록 | 기록 · 차례 |
 | `cashbook_entry_hunt_inputs` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs` · `cashbook_entry_fragment_uses` | 같은 이름의 새 표 넷 | 기록 | 기록(조각 사용은 기록 · 보관) |
 | `inventory_items` | `inventory_items` 새 표 | 메이플 ID | 장비가 아니면 메이플 ID · 월드 · 아이템. 장비는 기록 id |
 | `enhancement_totals` | `enhancement_totals` 고침(결정 11) | 캐릭터 | ocid · 날짜 · 분류 · 넥슨이 준 장비 이름([[ADR-101]] 결정 18, 이 문서의 결정 37) |
@@ -1075,14 +1075,13 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 한 칸이 여러 표를 가리키면 종류 칸으로 표를 고르고 id 한 칸으로 줄을 찾는다(결정 38). 한 칸에 key 와 이름처럼 종류가 다른
   값을 섞지 않는다(결정 37).
 - 이미 이렇게 정한 칸이다. 보스와 난이도(결정 19), 캐릭터(결정 20), 드롭의 아이템(결정 28), 헥사 코어의 직업과 종류(결정 35),
-  기억한 레벨의 대상(결정 38).
+  기억한 레벨의 대상(결정 38), 가계부 품목의 대상(결정 44).
 - `items.category` 는 `group_id` 로 바꾸고 `item_groups` 의 줄 id 를 적는다. 지금은 묶음 key 글자를 적는다. 두 표가 모두 `item` 으로
   시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 앱이 받는 게임 데이터도 묶음을 줄 id 로 낸다(결정 43).
 - 2026-11-19 에 지금 설계와 운영 스키마에서 이 결정과 다른 칸을 찾았다. 아직 고치지 않았고 표를 검토할 때 고친다.
 
   | 칸 | 지금 적는 값 | 가리킬 표 |
   |---|---|---|
-  | `cashbook_entry_items.item_key` | 분류에 따라 지출 항목 · 심볼 · 헥사 스탯 · 사냥터 · 아이템의 key, 헥사 스킬은 코어 이름. 여섯 가지 값이 한 칸에 있다 | `spend_items` · `symbols` · `hexa_stats` · `hunting_grounds` · `items` · `hexa_cores` |
   | `cashbook_entries.category_key` | 가계부 분류의 key | `cashbook_categories` |
   | `cashbook_entry_items.spend_reward_type_key` | 에픽던전 추가 리워드 종류의 key | `spend_reward_types` |
   | `cashbook_entry_items.cashbook_item_type_key` · `inventory_items.item_kind_key` | 아이템 종류의 key | `cashbook_item_types` |
@@ -1209,6 +1208,50 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   - 전환한 뒤에 루트 주소의 어느 경로를 남길지. 1.0.14 까지의 앱은 루트 주소(`mapleroutine.store/v1`)를 본다. 그 앱이 업데이트
     안내를 받으려면 루트 주소의 OTA 확인 경로(`/v1/ota/latest` · `/v1/ota/manifest`)가 계속 답해야 한다.
 
+### 결정 44. 가계부 품목의 대상은 종류와 줄 id 로 가리킨다 (사용자 선택 2026-11-19)
+
+- `cashbook_entry_items` 는 품목이 무엇인지를 `target_type` 과 `target_id` 두 칸으로 적는다. `target_type` 이 어느 표의 줄인지를
+  말하고, `target_id` 는 그 표에 있는 줄 id 다. 종류로 표를 고르고 id 로 줄을 찾는다(결정 38 · 39).
+
+  | `target_type` | `target_id` 가 가리키는 표 | 지금 `item_key` 에 적는 값 | 쓰는 분류 |
+  |---|---|---|---|
+  | `hunting_ground` | `hunting_grounds` | 사냥터 key | 사냥 |
+  | `item` | `items` | 아이템 key | 사냥 전리품 판매 · 아이템 판매 · 아이템 구매 |
+  | `spend_item` | `spend_items` | 지출 항목 key | 컨텐츠 · 이벤트·BM · 버프 · 주문서 |
+  | `symbol` | `symbols` | 심볼 key | 심볼 강화 |
+  | `hexa_core` | `hexa_cores` | 코어 이름 | 헥사 매트릭스의 스킬 |
+  | `hexa_stat` | `hexa_stats` | 헥사 스탯 key | 헥사 매트릭스의 스탯 |
+
+- 지금의 `item_key` 는 분류에 따라 여섯 표의 값을 글자로 적는다. 다섯은 key 이고 헥사 스킬만 코어 이름이다. key 와 이름이라는
+  서로 다른 값이 한 칸에 있다(결정 37). 모두 줄 id 로 바꾸면 한 칸에 든 값이 모두 줄 id 가 된다.
+- 헥사 매트릭스는 분류 하나에 표가 둘이다. 지금 앱은 스킬인지 스탯인지를 `hexa_activation` 이 비었는지로 가른다
+  (`features/cashbook/records.ts` 의 `hexaParts`). `target_type` 이 `hexa_core` 와 `hexa_stat` 으로 갈라서 그 칸을 보지 않아도 된다.
+- 종류 칸 없이 줄 id 한 칸만 두고 표를 기록의 분류로 고르는 안은 쓰지 않는다. 헥사 매트릭스를 지금처럼 다른 칸을 보고 갈라야
+  하기 때문이다.
+- 대상이 없는 품목은 두 칸을 비운다. 기타와 솔 에르다 조각, 직접 친 품목이다. 직접 친 품목의 이름은 지금처럼 `item_name` 에
+  글자로 적는다. 한 줄에 `target_id` 와 `item_name` 을 함께 채우지 않는다.
+- `target_id` 한 칸이 여섯 표를 가리켜서 DB 의 참조는 걸 수 없다. 서버가 받을 때 `target_type` 이 말하는 표에 그 id 가 있는지
+  확인한다. 기억한 레벨과 같은 방식이다(결정 38).
+- enum 의 이름은 `cashbook_item_target_type` 이다(결정 32). 사용자가 고른 것은 종류 칸을 두는 구조다. 칸 이름 `target_type` 과
+  enum 의 이름 · 값은 Claude 가 붙인 후보다.
+- 앱이 받는 게임 데이터는 사냥터 · 아이템 · 지출 항목 · 심볼 · 헥사 코어 · 헥사 스탯마다 `id` 를 함께 낸다. 보스와 같은 방식이다
+  (결정 19).
+- 기기 표도 1.0.15 의 기기 변환(결정 19)에서 `item_key` 를 `target_type` · `target_id` 로 바꾼다. 종류는 기록의 분류에서 정한다.
+  헥사 매트릭스는 `hexa_activation` 이 비었으면 `hexa_core`, 값이 있으면 `hexa_stat` 이다. 코어는 기록이 붙은 캐릭터의 직업이
+  가진 코어 안에서 이름으로 찾는다(결정 38).
+- 사냥터 · 아이템 · 지출 항목 · 심볼 · 헥사 스탯은 변환에서 줄을 찾지 못하는 일이 없다. 서버의 관리 경로는 이 다섯 표에 줄을
+  더하고 고치고 차례를 옮기기만 한다. 줄을 지우거나 key 를 바꾸는 경로가 없다. 앱은 이 표에서 고른 것만 기록에 적는다.
+  2026-11-19 에 기기 백업 127벌의 가계부 품목에 나온 key 44개가 모두 운영 표에 있었다.
+- 줄 id 를 찾지 못한 헥사 스킬 품목은 지우지 않는다. 코어 이름을 `item_name` 에 옮겨 적고 두 칸을 비운다(사용자 선택
+  2026-11-19). 금액 · 레벨 · 조각 개수는 그대로다. 보스 기록과 기억한 레벨은 넥슨 응답으로 다시 채워져서 지우지만(결정 19 · 38),
+  가계부는 사용자가 손으로 적은 값이라 다시 채울 곳이 없다. 지금 앱도 헥사 스킬 기록은 표를 찾지 않고 적힌 이름을 그대로 보여
+  줘서(`lib/cashbook/hexa-matrix.ts` 의 `hexaTargetOf`) 화면이 달라지지 않는다.
+  - 여섯 표 가운데 코어 표(`hexa_job_cores`)만 관리 화면에서 이름을 고치고 줄을 지울 수 있다. 2026-11-19 운영의 672줄은
+    2026-10-30 에 처음 넣은 672줄과 직업 · 이름이 모두 같다. 고치거나 지운 적이 없어서 지금은 이런 품목이 없다.
+  - 코어 줄을 지울 일은 없다(사용자 확인 2026-11-19). 남는 경우는 1.0.15 를 내기 전에 넥슨이 스킬 이름을 바꿔 표의 이름을 고칠
+    때뿐이다.
+  - 1.0.15 부터는 기록이 코어의 줄 id 를 들어서, 이름을 고쳐도 기록은 같은 줄을 가리킨다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1235,6 +1278,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 37: 장비 표에 있는 장비와 없는 장비가 모두 이름으로 한 줄씩 묶이는지, 읽을 때 이름으로 장비 그림을 찾는지, 기기 변환 뒤에 같은 날을 다시 받아도 줄이 늘지 않는지 |
 | (구현 때 더한다) | 결정 38: 종류와 줄 id 로 기억을 읽고 쓰는지, 이름이 같은 코어가 직업마다 다른 줄로 기억되는지, 종류가 말하는 표에 없는 id 를 받지 않는지 |
 | (구현 때 더한다) | 결정 42: 드래곤 퇴치 둘이 등록돼 있어도 공유 컨텐츠 위젯에 나오지 않는지, 점수 컨텐츠만 한 캐릭터가 활동한 캐릭터로 잡히지 않는지 |
+| (구현 때 더한다) | 결정 44: 기기 변환이 분류와 `hexa_activation` 으로 종류를 정하고 key 와 코어 이름을 줄 id 로 바꾸는지, 줄 id 를 찾지 못한 헥사 스킬 품목이 이름과 금액을 지닌 채 남는지, 종류가 말하는 표에 없는 id 를 받지 않는지 |
 
 ## 번호 기록
 
