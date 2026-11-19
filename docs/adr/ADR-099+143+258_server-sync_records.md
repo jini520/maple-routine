@@ -152,7 +152,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `inventory_items` | `inventory_items` 새 표 | 메이플 ID | 장비가 아니면 메이플 ID · 월드 · 아이템. 장비는 기록 id |
 | `enhancement_totals` | `enhancement_totals` 고침(결정 11) | 캐릭터 | ocid · 날짜 · 분류 · 넥슨이 준 장비 이름([[ADR-101]] 결정 18, 이 문서의 결정 37) |
 | `enhancement_history_checks` 의 굳은 날 | `enhancement_settled_days` 새 표(결정 11) | 메이플 ID | 메이플 ID · 종류 · 날짜 |
-| `remembered_levels` | `remembered_levels` 새 표 | 캐릭터 | ocid · 갈래 · 대상 |
+| `remembered_levels` | `remembered_levels` 새 표 | 캐릭터 | ocid · 종류 · 대상의 줄 id(결정 38) |
 | `mvp_grade_history` | `mvp_grade_history` 새 표 | 메이플 ID | 메이플 ID · 시작 날짜 |
 | `character_world_leaps` | `character_world_leaps` 새 표 | 캐릭터 | 옛 ocid |
 | Preferences `partyAppointments` | `party_appointments` 와 보스 · 파티원 · 주별 예외의 새 표 넷 | 사람 | 기록 id |
@@ -982,6 +982,23 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 서버 표는 줄이 없어 칸을 바로 없앤다(결정 8). 기기 표는 1.0.15 의 기기 변환(결정 19)에서 두 칸을 없애고 유일 기준을
   `(ocid, history_date, enhancement_category, item_name)` 으로 다시 만든다.
 
+### 결정 38. 기억한 레벨의 대상은 종류와 줄 id 로 가리킨다 (사용자 지정 2026-11-19)
+
+- `remembered_levels` 의 한 줄은 캐릭터 · `level_type` · `target_id` 로 가린다. `level_type` 이 심볼의 레벨인지 헥사 코어의 레벨인지를
+  말하고, `target_id` 는 그 종류의 표에 있는 줄 id 다. `symbol` 이면 `symbols.id`, `hexa` 면 `hexa_cores.id` 다. 종류로 표를 고르고
+  id 로 줄을 찾는다.
+- 지금 기기 표의 칸 `item_key` 는 심볼이면 심볼 key 를, 헥사 코어면 코어 이름을 적는다. 아이템이 아닌데 이름이 `item_key` 이고,
+  key 와 이름이라는 서로 다른 값이 한 칸에 있다. 둘 다 줄 id 로 바꾸면 한 칸에 든 값이 모두 줄 id 가 된다.
+- 코어 이름은 여러 직업에 같은 이름으로 있을 수 있다. 2026-11-19 운영에 그런 이름이 12개다. 줄 id 는 직업까지 정해진 코어 한
+  줄을 가리킨다(결정 35). 기기는 캐릭터의 직업이 가진 코어 안에서 이름으로 줄을 찾아 id 를 얻는다.
+- `target_id` 한 칸이 두 표를 가리켜서 DB 의 참조는 걸 수 없다. 서버가 받을 때 `level_type` 이 말하는 표에 그 id 가 있는지
+  확인한다.
+- 칸을 둘(`symbol_id` · `hexa_core_id`)로 두고 한 줄에 하나만 채우는 안과 표를 둘로 나누는 안은 쓰지 않는다. 앞의 안은 줄마다 빈
+  칸이 하나씩 생기고, 뒤의 안은 칸 구성이 같은 표가 둘이 된다.
+- 앱이 받는 게임 데이터는 심볼과 헥사 코어마다 `id` 를 함께 낸다. 보스와 같은 방식이다(결정 19).
+- 기기 표도 1.0.15 의 기기 변환(결정 19)에서 `kind` 를 `level_type` 으로(결정 32), `item_key` 를 `target_id` 로 바꾼다. 줄 id 를
+  찾지 못한 줄은 지운다. 기억이 없는 대상은 지금처럼 넥슨이 준 레벨로 다시 채운다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1006,6 +1023,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 34: 컨텐츠의 `check_type` 과 완료 횟수로 완료를 세는지, 카드와 진행 링 · 남은 스케줄이 같은 조건을 쓰는지, 완료 횟수가 `count_only` 가 아닌 줄에 들어가지 않는지 |
 | (구현 때 더한다) | 결정 35: 한 직업의 코어 목록에 공용 코어가 들어가고 차례가 지금과 같은지, 이름이 같고 그림이 다른 코어가 직업마다 제 그림으로 나오는지, 1.0.14 까지의 앱이 받는 헥사 데이터가 그대로인지 |
 | (구현 때 더한다) | 결정 37: 장비 표에 있는 장비와 없는 장비가 모두 이름으로 한 줄씩 묶이는지, 읽을 때 이름으로 장비 그림을 찾는지, 기기 변환 뒤에 같은 날을 다시 받아도 줄이 늘지 않는지 |
+| (구현 때 더한다) | 결정 38: 종류와 줄 id 로 기억을 읽고 쓰는지, 이름이 같은 코어가 직업마다 다른 줄로 기억되는지, 종류가 말하는 표에 없는 id 를 받지 않는지 |
 
 ## 번호 기록
 
