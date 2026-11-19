@@ -1061,10 +1061,22 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - `is_drop` · `is_equipment` · `is_default` · `is_representative` · `has_tariff` 는 그대로다.
 - 수수료율이 등급을 따라가는지의 두 칸은 보스 표에서 정한 말(`follows_mvp_grade`, 결정 23 · 26)을 쓴다. 같은 것은 표가 달라도 같은
   말로 부른다(결정 33).
-- `items.world_bound` 와 `contents` 의 `cumulative_score` · `only_when_scheduled` · `trust_registration_flag` 의 이름은 아직 정하지
-  않았다. `market_judgements.dummy` 는 시세 표를 검토할 때 정한다.
+- `items.world_bound` 는 없앤다(결정 41).
+- `contents` 의 `only_when_scheduled` 와 `trust_registration_flag` 는 없앤다(사용자 지정 2026-11-19). 두 칸이 메이플 유니온의 드래곤
+  퇴치 둘에서 가르던 동작([[ADR-032]] 결정 5)을 어떻게 둘지는 아직 정하지 않았다. `contents.cumulative_score` 는 뜻이 이름과 맞지
+  않아 다시 정한다. `market_judgements.dummy` 는 시세 표를 검토할 때 정한다.
 - 앱이 받는 게임 데이터의 이름(`valuable` · `popular` · `active` 등)은 그대로 둔다(결정 32 와 같은 방식). 기기 표에 같은 칸이
   있으면 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로 바꾼다.
+
+### 결정 41. 시세를 재는 범위는 아이템의 묶음 종류로 가르고 `items.world_bound` 는 없앤다 (사용자 확인 2026-11-19)
+
+- 소비 아이템은 월드마다, 장비와 장신구는 거래권마다 시세를 잰다([[ADR-071]] 결정 1). 어느 쪽인지는 아이템이 든 묶음의 종류
+  (`item_groups.kind`)로 안다. 같은 사실을 아이템 줄에 한 번 더 적는 `items.world_bound` 는 없앤다(결정 27).
+- 2026-11-19 운영에서 `world_bound` 가 참인 아이템 14개는 모두 소비 묶음이다. 소비 묶음인데 거짓이라 거래권으로 재던 아이템
+  가운데 판매가가 있는 것은 12개, 518줄이다. 선택 상자 둘, 에테르넬 방어구 상자 일곱, 교환권 셋이다. 이 12개도 월드마다
+  잰다(사용자 확인). [[ADR-071]] 결정 1 의 `나머지 드롭 아이템은 장비로 둔다` 는 이것으로 바뀐다.
+- 상자는 1.0.15 부터 드롭 기록이 얻은 아이템 줄을 가리킨다(결정 28). 그래서 새 판매가는 상자 줄에 쌓이지 않는다.
+- 기타와 캐시 묶음의 아이템은 2026-11-19 에 판매가가 없어 범위를 정하지 않았다.
 
 ## 테스트
 
