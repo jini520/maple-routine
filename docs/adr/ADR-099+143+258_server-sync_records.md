@@ -1501,8 +1501,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - `cashbook_entry_items.sort_order` 를 없앤다(결정 27). 한 기록 안에서 품목이 놓이는 차례(0, 1)를 적던 칸이다.
   - 품목이 둘인 기록은 에픽던전 추가 리워드를 경험치와 솔 에르다 두 종류로 받은 기록뿐이다. 앱은 종류 목록의 차례대로 품목을
-    만든다(`storage/cashbook-entry-shape.ts` 의 `spendItemsOf`). 그래서 품목의 차례는 추가 리워드 종류의 차례
-    (`spend_reward_types.sort_order`)로 정해진다.
+    만든다(`storage/cashbook-entry-shape.ts` 의 `spendItemsOf`). 지금 그 차례는 앱 상수 `SPEND_FORM_KEYS`(경험치, 솔 에르다)이고
+    서버 표의 차례(`spend_reward_types.sort_order`)와 같다. 그래서 품목은 추가 리워드 종류의 차례로 늘어놓으면 된다.
   - 한 줄의 기준은 기록 · 추가 리워드 종류(`entry_id` · `spend_reward_type_id`)가 된다. 종류가 없는 기록은 품목이 하나다. 한
     기록에 같은 종류의 품목이 두 줄 들어오는 것을 DB 가 막는다.
   - 2026-11-19 최근 기기 백업의 기록 202건은 모두 품목이 하나다.
@@ -1733,6 +1733,42 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 그 밖의 칸은 그대로 둔다. 열네 표의 모든 칸에 서버나 앱의 읽는 곳이 있다. 소울 잠재능력 비용 표는 장비 레벨 구간과 종류가
   없어 잠재능력 비용 표와 한 줄의 기준이 달라서 합치지 않는다.
 
+### 결정 60. 컨텐츠와 지출 목록 표에서 겹치는 이름 칸과 그림 칸을 하나로 줄이고, 이름 셋을 고친다 (사용자 선택 2026-11-20)
+
+표 열하나를 칸까지 정했다. `content_categories` · `contents` · `cashbook_categories` · `cashbook_item_types` · `hunt_loot_items` ·
+`spend_reward_types` · `spend_groups` · `spend_tiles` · `spend_items` · `spend_item_options` · `spend_item_reward_types` 다.
+
+- 이름 셋을 바꾼다(사용자 선택).
+
+  | 지금 이름 | 새 이름 | 든 값 |
+  |---|---|---|
+  | `content_categories.weekly_limit` | `weekly_max_count` | 그 분류에서 한 주에 완료할 수 있는 횟수. 운영 값은 에픽 던전 3 이고 나머지 일곱 줄은 비어 있다. 컨텐츠 줄의 `max_count` 와 같은 말이다(결정 51) |
+  | `content_categories.shared_order` | `shared_sort_order` | 오늘 화면의 공유 컨텐츠 위젯에서 분류가 놓이는 차례. 컨텐츠 관리 화면의 차례(`sort_order`)와 앞뒤가 달라 칸이 따로 있다 |
+  | `contents.display_name` | `name` | 카드에 보이는 이름. 다른 기준 표의 보이는 이름 칸과 같은 말이다. 넥슨 응답의 이름은 `api_name` 에 따로 있다 |
+
+- `spend_items.short_name` 을 없앤다(사용자 선택). 시트 타일처럼 좁은 곳에 쓰려고 만든 칸인데([[ADR-096]] 결정 3) 그 뒤 타일 표가
+  생겨 타일에는 `spend_tiles.name` 이 선다. 앱 화면은 이 칸을 읽지 않는다. 2026-11-20 운영 80줄 가운데 5줄에만 값이 있고 4줄은
+  타일 이름과 같은 글자다. 남은 읽는 곳은 2026-09-15 판부터 앱에 든 옛 기록 이관(`storage/sqlite/migrations.ts` 의
+  `fillCashbookKeys`)이다. 그 판 뒤로 앱을 켜지 않은 기기가 1.0.15 로 올라오면, 줄인 이름으로 적혀 있던 옛 지출 기록은 항목을 찾지
+  못해 이름 글자만 남는다. 기록은 지워지지 않는다.
+- `contents.shared_short_name` 을 없애고 `short_name` 한 칸에 적는다(결정 27). 줄마다 둘 중 하나만 쓰인다. 공유 범위가 캐릭터인
+  33줄은 `short_name` 을 남은 스케줄에 쓰고 `shared_short_name` 이 비어 있다. 공유 줄 8줄은 `shared_short_name` 을 공유 컨텐츠
+  위젯에 쓰고, `short_name` 은 넥슨 이름과 같은 글자이며 그려지는 곳이 없다(`lib/scheduler/scheduler-content-scope.ts` ·
+  `features/remaining-schedule/remaining-schedule.ts`). 옮길 때 공유 줄 8줄의 `short_name` 에 지금의 `shared_short_name` 을 적는다.
+- `spend_tiles.icon_map_asset_id` 를 없애고 `icon_asset_id` 한 칸에 적는다(결정 27). 두 칸은 한 줄에 하나만 차고, 앱은 둘을 가르지
+  않고 하나로 받는다. 운영 64줄에서 `icon_asset_id` 가 57줄, `icon_map_asset_id` 가 4줄, 그림이 없는 줄이 3줄이다. 둘을 가르던
+  이유는 옛 앱이 그림을 찾던 폴더였다(결정 43). 사냥 지역의 같은 칸과 같은 처리다(결정 59).
+- `spend_items.unit_price` 는 이름을 그대로 둔다. 단위를 이름에 붙일 수 없다. 같은 줄의 `currency` 가 메소인지 메이플포인트인지를
+  정한다.
+- `contents.region_icon_asset_id` 는 관리 화면에서 그림을 고르는 칸이 된다. 지금은 서버가 지도 배경과 이름이 같은 그림을
+  `assets.path` 로 찾아 채우는데, 그 칸을 없앤다(결정 43).
+- 그 밖의 칸은 그대로 둔다. 분류와 묶음의 `card_title` 은 이름과 다른 줄이 있어 따로 둔다(분류 15줄 가운데 3줄, 묶음 13줄 가운데
+  4줄). 사냥 전리품의 종류(`hunt_loot_items.type`)는 아이템 묶음에서 구할 수 없다. 운영 5줄 가운데 4줄이 같은 묶음인데 종류는
+  둘이다. 한 타일 안에서 통화 · 단위 · 수량 상한 · 묶음이 갈리는 항목은 운영에 없다.
+- 앱이 받는 응답은 표의 줄마다 `id` 를 싣고, 다른 표의 줄을 key 글자가 아니라 줄 id 로 가리킨다(결정 39 · 43). 응답의 배열
+  이름도 표 이름을 따른다. `itemKinds` 는 `cashbookItemTypes` 가 된다. Claude 가 결정 43 을 그대로 적용해 적었다.
+- 기준 표는 새 DB 로 옮길 때 모두 줄 id 를 그대로 옮긴다(결정 43). 이 열한 표도 같다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1772,6 +1808,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 57: 기기 변환 뒤에 약속의 주차 값과 보스 줄 id 로 같은 주에 같은 회차가 펼쳐지는지, 계산기 기록이 변환 전과 같은 금액으로 열리는지, 넥슨 계정 줄을 합칠 때 설정이 한 줄로 남는지 |
 | (구현 때 더한다) | 결정 58: 한 난이도의 같은 아이템을 갈래만 달리해 두 줄로 넣지 못하는지, 월드와 아이템을 고쳤을 때 앱에 알리는 바뀐 시각이 그대로 밀리는지 |
 | (구현 때 더한다) | 결정 59: 이름을 바꾼 칸의 값이 옮긴 뒤에도 같은지, 응답의 배열 이름과 줄 id 로 앱이 심볼 · 사냥터 · 강화 비용을 지금과 같이 읽는지 |
+| (구현 때 더한다) | 결정 60: 옮긴 뒤 공유 컨텐츠 위젯과 남은 스케줄의 줄인 이름이 옮기기 전과 같은지, 지역 아이콘을 쓰던 타일 넷의 그림이 그대로 보이는지 |
 
 ## 번호 기록
 
