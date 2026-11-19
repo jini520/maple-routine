@@ -153,7 +153,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `cashbook_entry_hunt_inputs` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs` · `cashbook_entry_fragment_uses` | 같은 이름의 새 표 넷(결정 54) | 기록 | 기록(조각 사용은 기록 · 가져온 곳 · 캐릭터) |
 | `inventory_items` | `inventory_items` 새 표. 아이템과 아이템 종류는 줄 id 로 가리킨다(결정 39 · 46) | 메이플 ID | 장비가 아니면 메이플 ID · 월드 · 아이템. 장비는 기록 id |
 | `enhancement_totals` | `enhancement_totals` 고침(결정 11) | 캐릭터 | ocid · 날짜 · 분류 · 넥슨이 준 장비 이름([[ADR-101]] 결정 18, 이 문서의 결정 37) |
-| `enhancement_history_checks` 의 굳은 날 | `enhancement_settled_days` 새 표(결정 11) | 메이플 ID | 메이플 ID · 종류 · 날짜 |
+| `enhancement_history_checks` 의 굳은 날 | `enhancement_settled_days` 새 표(결정 11 · 55) | 넥슨 계정 | 넥슨 계정 · API 종류 · 날짜 |
 | `remembered_levels` | `remembered_levels` 새 표 | 캐릭터 | ocid · 종류 · 대상의 줄 id(결정 38) |
 | `mvp_grade_history` | `mvp_grade_history` 새 표 | 메이플 ID | 메이플 ID · 시작 날짜 |
 | `character_world_leaps` | `character_world_leaps` 새 표 | 캐릭터 | 옛 ocid |
@@ -231,15 +231,15 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - 강화 내역의 응답 원본은 기기에도 서버에도 두지 않는다. 기기의 `enhancement_totals` 한 줄이 날짜 · 캐릭터 · 분류 · 장비 하나의 합계이고
   ([[ADR-100]]), 서버 `enhancement_totals` 가 같은 유일 기준으로 그 줄을 든다. 장비는 넥슨이 준 이름으로 가린다(결정 37).
-- 서버 표에 기기 표의 칸을 더한다. 받은 API 종류(`api_type`, 결정 32) · 월드 · 슈페리얼 비용 · 스타포스의 처음 성과 끝 성 · 이벤트 월드
-  판정이다. 지금 서버 표는 이벤트 월드가 아닌 줄만 받는데, 기기끼리 맞추려면 모든 줄이 있어야 한다. 가계부 제외 표식([[ADR-160]])을
+- 서버 표에 기기 표의 칸을 더한다. 월드 · 슈페리얼 비용 · 스타포스의 처음 성과 끝 성 · 이벤트 월드 판정이다. 받은 API 종류는
+  분류에서 구할 수 있어 더하지 않는다(결정 55). 지금 서버 표는 이벤트 월드가 아닌 줄만 받는데, 기기끼리 맞추려면 모든 줄이 있어야 한다. 가계부 제외 표식([[ADR-160]])을
   구현할 때 그 칸도 이 표에 더한다. 빼면 다른 기기에서 뺀 강화 비용이 다시 지출로 잡힌다. [[ADR-160]] 의 `서버에는 보내지 않는다` 는
   이것으로 바뀐다(사용자 확인 2026-11-17).
 - 금액은 올린 기기가 그때의 비용표로 매긴 값이다. 받은 기기는 다시 매기지 않는다. MVP 할인은 지금처럼 화면에 보일 때 붙인다.
-- 어느 날을 다 받았는지도 서버에 둔다(`enhancement_settled_days`). 메이플 ID · 종류 · 날짜가 한 줄이다. 기기의
+- 어느 날을 다 받았는지도 서버에 둔다(`enhancement_settled_days`). 넥슨 계정 · API 종류 · 날짜가 한 줄이다(결정 55). 기기의
   `enhancement_history_checks` 에서 굳은 날(`settled`)만 올린다. 이것이 없으면 합계 줄이 없는 날이 강화를 안 한 날인지 아직 안 받은
   날인지 가릴 수 없어, 새 기기가 18개월 치를 다시 부른다.
-  - 넥슨은 강화 내역을 넥슨 계정 단위로 준다. 그래서 굳은 날은 그 계정의 메이플 ID 마다 한 줄씩 적는다.
+  - 넥슨은 강화 내역을 넥슨 계정 단위로 준다. 그래서 굳은 날도 넥슨 계정마다 적는다.
 - 새 기기는 서버에서 받은 굳은 날을 자기 `enhancement_history_checks` 에 굳은 날로 적고, 그 날은 넥슨을 부르지 않는다. 굳지 않은
   날(오늘과 어제, 아무 기기도 받지 않은 날)만 넥슨에서 받는다.
 - 다시 매기기([[ADR-100]])로 한 기기가 지난 날의 금액을 고치면 그 줄을 다시 올리고, 다른 기기는 받아서 덮는다. 다른 기기가 같은 요청을
@@ -1353,8 +1353,10 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   가운데 사용자가 골랐다.
 - 줄 id 로 가려도 넥슨이 준 값으로 가리는 것과 같다. 메이플 ID 줄은 서버 전체에서 메이플 ID 하나에 한 줄이고 `hash` 가 유일하다.
   캐릭터 줄과 ocid 의 관계와 같다(결정 20). 결정 8 의 유일 기준에서 메이플 ID 는 이 줄의 id 로 건다.
-- 메이플 ID 줄의 id 는 바뀌지 않는다. 서버는 줄을 더하고 다른 넥슨 ID 로 옮기기만 한다. 목록에서 빠져도 지우지 않고, 계정을
-  삭제할 때만 지운다(서버 `users/nexon-account-store.ts`). 부계정이 다른 넥슨 ID 로 옮겨 가도 기록 표는 건드리지 않는다.
+- 메이플 ID 줄의 id 는 바뀌지 않는다. 메이플 ID 는 넥슨 ID 하나에만 속하고 다른 넥슨 ID 로 옮겨 가지 않는다. 서버는 줄을 더하기만
+  한다. 목록에서 빠져도 지우지 않고, 계정을 삭제할 때만 지운다. 줄이 가리키는 넥슨 계정 줄이 바뀌는 것은 같은 넥슨 ID 의 줄 둘
+  (키로 만든 줄과 로그인으로 만든 줄)을 하나로 합칠 때뿐이고, 그때도 메이플 ID 줄의 id 는 그대로다(서버
+  `users/nexon-account-store.ts` 의 `mergeNexonAccounts`).
 - 줄 id 로 바꿔도 지켜지는 것이 늘지는 않는다. 지금 서버의 기록 표도 해시 칸에 DB 참조를 걸어서, 계정을 삭제하면 줄이 따라
   지워진다. 바꾸는 이유는 가리키는 방식을 하나로 맞추는 것이다. 캐릭터는 줄 id 로, 메이플 ID 는 해시 글자로 가리키면 방식이 둘이
   된다.
@@ -1516,6 +1518,30 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   입력이다. `inventory_items` 는 결정 39 · 46 · 48 에서 정한 그대로다.
 - 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 칸과 값의 새 이름은 Claude 가 낸 후보다.
 
+### 결정 55. 굳은 날은 넥슨 계정마다 한 줄로 두고, 강화 합계에는 받은 API 종류를 적지 않는다 (사용자 선택 2026-11-19)
+
+- `enhancement_settled_days` 의 한 줄은 넥슨 계정 · API 종류 · 날짜(`nexon_account_id` · `api_type` · `history_date`)다. 결정 11 에서
+  메이플 ID 마다 한 줄로 적었던 것을 바꾼다.
+  - 넥슨은 강화 내역을 넥슨 계정 단위로 준다. 한 번 받으면 그 계정의 그날 줄이 모두 온다. 기기의 확인 표
+    (`enhancement_history_checks`)도 넥슨 계정 · API 종류 · 날짜가 한 줄이다. 받는 단위와 적는 단위를 같게 둔다.
+  - 메이플 ID 마다 두면 같은 날을 그 계정의 메이플 ID 수만큼 적는다.
+  - 같은 넥슨 ID 의 줄 둘을 하나로 합칠 때(결정 48) 굳은 날도 합친 줄로 옮긴다. 같은 API 종류 · 날짜가 두 줄에 모두 있으면 한
+    줄만 남긴다.
+- `enhancement_totals` 에 받은 API 종류 칸(`api_type`)을 더하지 않는다. 기기 표의 `enhancement_type` 도 1.0.15 의 기기 변환(결정
+  19)에서 없앤다(결정 27).
+  - 분류가 API 종류를 정한다. 큐브 재설정은 `cube`, 스타포스는 `starforce`, 잠재능력과 에디셔널 잠재능력은 `potential`, 소울
+    잠재능력은 `soul_potential` 이다. 앱 코드가 API 종류에서 분류를 정하고(`features/enhancement-history/spending.ts`), 분류 하나가
+    API 종류 둘에 걸치지 않는다.
+  - 2026-11-19 최근 기기 백업의 968줄은 `cube` · 큐브 재설정 662줄, `starforce` · 스타포스 202줄, `potential` · 잠재능력 59줄,
+    `potential` · 에디셔널 잠재능력 45줄이다.
+  - 기기는 다시 받은 날의 줄을 갈아 끼우는 조회와 리프 전의 월드를 찾는 조회 두 곳(`storage/enhancement-totals.ts`)을 분류로
+    거른다.
+  - enum `enhancement_api_type` 은 굳은 날 표와 강화 이상 보고 표가 계속 쓴다.
+- `world_id` 와 `is_event_world` 는 둘 다 둔다. 이벤트 월드인지는 월드에서 다시 구할 수 없다. 최근 기기 백업에서 월드를 모르는
+  57줄도 이벤트 월드가 아니라는 판정은 갖고 있다. 리프 전 기간의 줄이다.
+- 날짜 칸의 이름 `history_date` 는 그대로 둔다(사용자 선택). 강화 합계 · 굳은 날 · 강화 이상 보고 세 표가 같은 이름을 쓴다.
+- 가계부 제외 표식의 칸 이름은 그 기능([[ADR-160]])을 구현할 때 정한다(결정 11).
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1551,6 +1577,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 52: 넥슨이 최대 횟수를 0 으로 줘도 표의 `max_count` 로 완료와 분모를 정하는지, `count_only` 가 아닌 줄에 `max_count` 가 들어가지 않는지, 표에 없는 컨텐츠가 넥슨의 `type` 으로 판정되는지 |
 | (구현 때 더한다) | 결정 53: 추가 리워드를 두 종류로 받은 기록의 품목이 종류의 차례로 읽히는지, 한 기록에 같은 종류의 품목을 두 줄 받지 않는지 |
 | (구현 때 더한다) | 결정 54: 기기 변환 뒤에 기타 조각의 남은 개수가 변환 전과 같은지, 한 기록이 같은 보관에서 두 줄로 가져가지 못하는지, 켠 효과가 적힌 차례와 상관없이 같은 칸으로 옮겨지는지 |
+| (구현 때 더한다) | 결정 55: 다시 받은 날의 줄을 분류로 갈아 끼워도 다른 API 종류의 줄이 지워지지 않는지, 넥슨 계정 줄을 합칠 때 굳은 날이 한 줄로 남는지 |
 
 ## 번호 기록
 
