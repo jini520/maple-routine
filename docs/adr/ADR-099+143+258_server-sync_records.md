@@ -826,8 +826,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - 칸도 함께 바꾼다. `spend_item_forms.form_id` 는 가리키는 표의 새 이름을 따라 `reward_type_id` 로 바꾼다(결정 23). 두 표가
   모두 `spend` 로 시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 가계부 품목(`cashbook_entry_items`)의 `form_key` 는
-  `spend_reward_type_key` 로 바꾼다. 가계부 표는 `spend` 로 시작하지 않아서 표 이름을 그대로 쓴다. 이 칸은 글자 key 대신 줄 id 로 가리킨다(결정 39). 칸의 구조와 이름은 가계부 표를
-  검토할 때 정한다. `contents.section` 은 보스 난이도 표의 `cycle` 과 같게 `cycle` 로 바꾼다.
+  `spend_reward_type_id` 로 바꾸고 `spend_reward_types` 의 줄 id 를 적는다(결정 39). 가계부 표는 `spend` 로 시작하지 않아서 표
+  이름을 그대로 쓴다. `contents.section` 은 보스 난이도 표의 `cycle` 과 같게 `cycle` 로 바꾼다.
 - 이 문서가 새로 만드는 표의 이름도 같은 기준으로 짓는다(사용자 선택 2026-11-18).
 
   | 표 | 한 줄의 역할 | 이름을 이렇게 지은 이유 |
@@ -1078,11 +1078,13 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   기억한 레벨의 대상(결정 38), 가계부 품목의 대상(결정 44), 가계부 기록의 분류(결정 45).
 - `items.category` 는 `group_id` 로 바꾸고 `item_groups` 의 줄 id 를 적는다. 지금은 묶음 key 글자를 적는다. 두 표가 모두 `item` 으로
   시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 앱이 받는 게임 데이터도 묶음을 줄 id 로 낸다(결정 43).
+- `cashbook_entry_items.form_key` 는 `spend_reward_type_id` 로 바꾸고 `spend_reward_types` 의 줄 id 를 적는다. 에픽던전 추가 리워드의
+  종류다. 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 종류는 enum 값 둘(`exp` · `sol_erda`)뿐이고 표에 둘 다 줄이
+  있으며 지우는 경로가 없어서, 변환에서 줄을 찾지 못하는 품목이 없다. 2026-11-19 에 기기 백업 127벌에 나온 값은 `exp` 하나다.
 - 2026-11-19 에 지금 설계와 운영 스키마에서 이 결정과 다른 칸을 찾았다. 아직 고치지 않았고 표를 검토할 때 고친다.
 
   | 칸 | 지금 적는 값 | 가리킬 표 |
   |---|---|---|
-  | `cashbook_entry_items.spend_reward_type_key` | 에픽던전 추가 리워드 종류의 key | `spend_reward_types` |
   | `cashbook_entry_items.cashbook_item_type_key` · `inventory_items.item_kind_key` | 아이템 종류의 key | `cashbook_item_types` |
   | `inventory_items.item_key` | 아이템의 key | `items` |
   | `world_key`(`cashbook_entries` · `cashbook_entry_fragment_uses` · `inventory_items` · `enhancement_totals` · `shared_progress`) | 월드의 key | `worlds` |
