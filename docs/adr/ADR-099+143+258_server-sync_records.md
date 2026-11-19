@@ -829,6 +829,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   않는다(결정 32 와 같은 방식).
 - enum `content_type` 과 그 값 `contents` · `quest` 는 그대로 둔다(사용자 지정 2026-11-18). 값은 넥슨 API 응답(스케줄러 정보 조회)의
   `type` 을 그대로 쓴 것이다. 넥슨 값과 다르게 하면 같은 것을 넥슨 응답에서는 `contents` 로, 서버 데이터에서는 다른 글자로 읽게 된다.
+- 표 `spend_item_options` 의 이름과 칸 `spend_items.tier` 는 그대로 둔다(사용자 지정 2026-11-19). `spend_item_options` 의 한 줄은
+  지출 항목 하나가 축 하나(`능력치` · `스탯` · `무기`)에서 갖는 값이다. 같은 타일의 항목을 가르는 값이 하나면 `tier` 칸에 적고,
+  둘이면 이 표에 적는다. 표 이름을 `spend_item_axis_values` 로 바꾸는 안과 `tier` 를 이 표로 옮기는 안을 냈고 둘 다 쓰지 않는다.
 
 ### 결정 34. 컨텐츠의 완료 조건은 `contents` 표의 칸에 둔다 (사용자 지정 2026-11-18)
 
