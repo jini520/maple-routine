@@ -493,13 +493,13 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 ### 결정 24. 기간은 주차와 월로 적는다 (사용자 지정 2026-11-18)
 
 - 기록이 속한 기간은 `period_code` 칸에 적는다. 지금 이름은 `period_key` 다. `boss_profit_entries` 와 드롭 판매가 표(`drop_sale_prices`)에 있고, 서버와
-  기기가 같은 이름과 같은 값을 쓴다.
+  기기가 같은 이름과 같은 값을 쓴다. 공유 컨텐츠의 진행(`shared_progress`)도 값이 속한 기간을 이 칸에 적는다(결정 33).
 
   | 주기 | 값 | 뜻 | 지금 값 |
   |---|---|---|---|
   | 주간 | `W202647` | 2026년 47주차 | `2026-11-19` |
   | 월간 | `M202611` | 2026년 11월 | `2026-11` |
-  | 일간(생기면) | `D20261119` | 2026년 11월 19일 | 없음 |
+  | 일간 | `D20261119` | 2026년 11월 19일 | `2026-11-19`. 일간 공유 컨텐츠의 진행에 쓴다 |
 
 - 주차는 그 해의 첫 목요일에 시작하는 주를 1주차로 센다. 주간 초기화가 KST 목요일 0시이기 때문이다. 주는 시작한 목요일의 해에
   속한다. 2026-01-01 에 시작한 주가 `W202601`, 2026-12-31 에 시작한 주가 `W202653`, 2027-01-07 에 시작한 주가 `W202701` 이다.
@@ -513,7 +513,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   글자가 그 난이도의 주기와 맞는지 검사한다. 난이도의 주기가 `weekly` 면 `W`, `monthly` 면 `M` 이다(결정 19).
 - 칸은 글자 형이고 꼴을 `CHECK` 로 검사한다. 주차는 01~53, 월은 01~12 만 받는다.
 - 주를 가리키는 다른 칸도 같은 값으로 적는다. 설정의 마지막으로 등급을 확인한 주, 파티 약속의 시작 주 · 끝 주 · 주별 예외가
-  그렇다. 칸 이름은 그 표를 검토할 때 함께 고친다.
+  그렇다. 칸 이름은 `_week_code` 로 끝낸다(결정 33).
 - 기기에 쌓인 기록은 1.0.15 의 기기 변환(결정 19)에서 옮긴다. 값은 날짜만으로 계산되므로 서버 없이 옮길 수 있다. 화면은 값에서
   그 기간의 첫날을 구해 지금처럼 날짜로 그린다. 1.0.14 까지의 앱이 올리는 옛 꼴은 서버가 받아 바꿔 적는다.
 - 게임 데이터의 유효 기간(`from` · `until`)은 기간 값이 아니라 날짜라서 지금 꼴 그대로 둔다.
@@ -835,6 +835,21 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `drop_boxes.level_min` · `level_max` | `ring_level_min` · `ring_level_max` | 상자에서 나오는 반지의 레벨 범위 |
 
   `remembered_levels.level` 은 표 이름이 뜻을 말해서 그대로 둔다.
+- 날짜를 적는 칸은 `_date` 로, 주차 값(결정 24)을 적는 칸은 `_week_code` 로 끝낸다(사용자 선택 2026-11-19). 날짜에 `_key` 가 붙어
+  있었고 주를 적는 칸은 이름이 제각각이었다. `bucket` 은 화면에도 다른 표에도 없는 말이다.
+
+  | 지금 이름 | 새 이름 | 든 값 |
+  |---|---|---|
+  | `party_appointments.date_key` | `appointment_date` | 한 번인 약속의 날짜 |
+  | `party_appointment_exceptions.date_key` | `appointment_date` | 그 주만 바꾼 약속의 날짜 |
+  | `party_appointment_exceptions.week_key` | `week_code` | 약속을 바꾼 주 |
+  | `party_appointments.from_week` · `until_week` | `from_week_code` · `until_week_code` | 매주 약속의 시작 주와 끝 주 |
+  | `account_settings.mvp_last_checked_week` | `mvp_last_checked_week_code` | 마지막으로 등급을 확인한 주 |
+  | `account_settings.stats_cumulative_start` | `stats_cumulative_start_date` | 통계 누적 순 수익의 시작 날짜 |
+  | `shared_progress.last_updated_bucket` | `period_code` | 공유 컨텐츠의 값이 속한 기간. 주간 컨텐츠는 `W202647`, 일간 컨텐츠는 `D20261119` 꼴로 적는다. 지금은 주간이 그 주의 목요일 날짜, 일간이 그날 날짜다 |
+
+  `mvp_grade_history.from_date` 는 이름도 값도 날짜 그대로 둔다. 등급은 달성한 날부터 바뀌어서 시작 날짜가 아무 요일이나
+  된다([[ADR-050]] 결정 2). 주차 값으로 적으면 그 주의 앞쪽 날짜 기록까지 새 등급으로 계산된다.
 - 값은 그대로다. 앱이 받는 게임 데이터의 이름(`forms` · `itemForms` · `form` · `section`)도 그대로 둔다. 그래서 앱 코드는 바뀌지
   않는다(결정 32 와 같은 방식).
 - enum `content_type` 과 그 값 `contents` · `quest` 는 그대로 둔다(사용자 지정 2026-11-18). 값은 넥슨 API 응답(스케줄러 정보 조회)의
