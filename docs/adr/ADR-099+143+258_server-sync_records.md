@@ -157,7 +157,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `character_world_leaps` | `character_world_leaps` 새 표 | 캐릭터 | 옛 ocid |
 | Preferences `partyAppointments` | `party_appointments` 와 보스 · 파티원 · 주별 예외의 새 표 넷 | 사람 | 기록 id |
 | Preferences `bossProfitCalculatorRecords` | `boss_profit_calculator_records` 와 캐릭터 · 보스의 새 표 셋 | 사람 | 기록 id |
-| Preferences `manualTrackedContent:{ocid}` | `manual_tracked_items` 새 표 | 캐릭터 | ocid · 종류 · 컨텐츠 key(보스는 보스 · 난이도) |
+| Preferences `manualTrackedContent:{ocid}` | `manual_tracked_items` 새 표 | 캐릭터 | 캐릭터 · 종류 · 대상의 줄 id(결정 47) |
 | Preferences `worldSharedProgress:*` · `accountSharedProgress:*` | `shared_progress` 새 표 | 메이플 ID | 메이플 ID · 월드(계정 공유는 빈 값) · 컨텐츠 key |
 | Preferences `mapleIdNames` | `maple_id_names` 새 표 | 메이플 ID | 메이플 ID |
 | Preferences `trackedCharacters` · `representativeCharacter` | `tracked_characters` 새 표. 차례와 대표 표시를 든다 | 사람 | 사람 · ocid |
@@ -1006,8 +1006,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - 지금 앞말을 빼고 쓰는 칸은 그대로 둔다. `spend_item_options.item_id` · `spend_items.group_id` · `spend_items.tile_id` ·
   `drop_box_contents.box_id` 같은 칸이다. 가리키는 표의 이름이 바뀔 때만 따라 바꾼다(결정 23).
-- `boss_difficulty_id` 는 줄이지 않는다. `boss` 로 시작하지 않는 표(`manual_tracked_items` ·
-  `party_appointment_bosses`)도 `boss_difficulties` 를 가리킨다. `boss` 로 시작하는 표에서만 줄이면 같은 표를 가리키는 칸의 이름이
+- `boss_difficulty_id` 는 줄이지 않는다. `boss` 로 시작하지 않는 표(`party_appointment_bosses`)도 `boss_difficulties` 를 가리킨다. `boss` 로 시작하는 표에서만 줄이면 같은 표를 가리키는 칸의 이름이
   둘이 된다.
 - `boss_drops.boss_profit_entry_id` 도 그대로 둔다. 결정 23 · 26 에서 사용자가 정한 이름이고, 이 규칙을 정할 때 줄이는 칸에 넣지
   않았다.
@@ -1075,7 +1074,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 한 칸이 여러 표를 가리키면 종류 칸으로 표를 고르고 id 한 칸으로 줄을 찾는다(결정 38). 한 칸에 key 와 이름처럼 종류가 다른
   값을 섞지 않는다(결정 37).
 - 이미 이렇게 정한 칸이다. 보스와 난이도(결정 19), 캐릭터(결정 20), 드롭의 아이템(결정 28), 헥사 코어의 직업과 종류(결정 35),
-  기억한 레벨의 대상(결정 38), 가계부 품목의 대상(결정 44), 가계부 기록의 분류(결정 45), 아이템 종류(결정 46).
+  기억한 레벨의 대상(결정 38), 가계부 품목의 대상(결정 44), 가계부 기록의 분류(결정 45), 아이템 종류(결정 46), 수동 추적 항목의 대상(결정 47).
 - `items.category` 는 `group_id` 로 바꾸고 `item_groups` 의 줄 id 를 적는다. 지금은 묶음 key 글자를 적는다. 두 표가 모두 `item` 으로
   시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 앱이 받는 게임 데이터도 묶음을 줄 id 로 낸다(결정 43).
 - `cashbook_entry_items.form_key` 는 `spend_reward_type_id` 로 바꾸고 `spend_reward_types` 의 줄 id 를 적는다. 에픽던전 추가 리워드의
@@ -1093,11 +1092,14 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
     (`lib/world/worlds.ts` 의 `worldKeyOfApiName`).
   - 변환에서 줄을 찾지 못하는 값은 없다. 서버에는 월드 줄을 지우거나 key 를 바꾸는 경로가 없다. 2026-11-19 에 기기 백업 148벌의
     모든 표에 나온 월드 key 5개가 운영 표의 20줄 안에 있었다.
+- `shared_progress.content_key` 는 `content_id` 로 바꾸고 `contents` 의 줄 id 를 적는다. 한 줄의 기준은 메이플 ID · 월드 · 컨텐츠
+  줄이 된다. 기기의 공유 진행 목록(Preferences `worldSharedProgress:*` · `accountSharedProgress:*`)도 1.0.15 의 기기 변환(결정
+  19)에서 컨텐츠 줄 id 로 찾게 바꾼다. 변환에서 줄을 찾지 못하는 값은 없다. 앱은 지금도 컨텐츠 표에 없는 key 를 읽을 때 버리고
+  (`storage/shared-progress-cache.ts`), 서버는 컨텐츠 줄을 지우지 않고 `until` 로 닫는다.
 - 2026-11-19 에 지금 설계와 운영 스키마에서 이 결정과 다른 칸을 찾았다. 아직 고치지 않았고 표를 검토할 때 고친다.
 
   | 칸 | 지금 적는 값 | 가리킬 표 |
   |---|---|---|
-  | `content_key`(`manual_tracked_items` · `shared_progress`) | 컨텐츠의 key | `contents` |
   | `mvp_grade_history.grade` | enum `mvp_grade` 의 값 | `mvp_grades` |
   | `market_days.scope` · `maspi_basket.scope` | 장비는 거래권 글자, 소비 아이템은 월드 key. 두 가지 값이 한 칸에 있다 | 월드는 `worlds`. 거래권은 표가 없다 |
   | `market_judgements.person` | 넥슨 계정 id · 메이플 ID · 사용자 id 가운데 줄에 있는 것. 세 가지 값이 한 칸에 있다 | `nexon_accounts` · `nexon_account_maple_ids` · `users` |
@@ -1308,6 +1310,22 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 종류는 장비 · 소비 · 기타 · 캐시 넷이다. 서버에는 종류 줄을 지우거나 key 를 바꾸는 경로가 없다. 기기 백업에 나온 값은 이 넷과
   빈 값뿐이라 변환에서 줄을 찾지 못하는 일이 없다.
 
+### 결정 47. 수동 추적 항목의 대상은 종류와 줄 id 로 가리킨다 (사용자 선택 2026-11-19)
+
+- `manual_tracked_items` 의 한 줄은 캐릭터 · `type` · `target_id` 로 가린다. `type` 은 지금처럼 `daily` · `weekly` · `boss` 다.
+  `target_id` 는 `type` 이 `daily` · `weekly` 면 `contents` 의 줄 id, `boss` 면 `boss_difficulties` 의 줄 id 다. 종류로 표를 고르고
+  id 로 줄을 찾는다(결정 38 · 39).
+- 컨텐츠를 글자 key 로 적던 `content_key` 와 보스 난이도를 가리키던 `boss_difficulty_id`(결정 19)를 `target_id` 한 칸으로 합친다.
+  `content_key` 만 줄 id 로 바꾸면 가리키는 칸이 둘이 되고 줄마다 하나가 빈다. 기억한 레벨에서 쓰지 않기로 한 구조다(결정 38).
+  `remembered_levels` 와 칸 구성이 같아진다.
+- `target_id` 한 칸이 두 표를 가리켜서 DB 의 참조는 걸 수 없다. 보스 난이도를 DB 참조로 걸던 것이 없어진다. 서버가 받을 때 `type`
+  이 말하는 표에 그 id 가 있는지 확인한다.
+- 일간인지 주간인지는 컨텐츠 줄에서도 알 수 있지만 `type` 의 값을 줄이지 않는다. 일간 · 주간 탭의 구분을 저장할 때 굳히는 것이
+  지금의 규칙이다(`types/scheduler.ts`).
+- 기기의 목록(Preferences `manualTrackedContent:{ocid}`)도 1.0.15 의 기기 변환(결정 19)에서 항목마다 종류와 대상의 줄 id 를 적게
+  바꾼다. 변환에서 줄을 찾지 못한 항목은 지금처럼 뺀다. 앱은 지금도 컨텐츠 표나 보스 표에서 찾지 못한 항목을 읽을 때 뺀다
+  (`storage/manual-tracked-content.ts`).
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1337,6 +1355,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 44: 기기 변환이 분류와 `hexa_activation` 으로 종류를 정하고 key 와 코어 이름을 줄 id 로 바꾸는지, 줄 id 를 찾지 못한 헥사 스킬 품목이 이름과 금액을 지닌 채 남는지, 종류가 말하는 표에 없는 id 를 받지 않는지 |
 | (구현 때 더한다) | 결정 45: 기기 변환이 수입 · 지출과 분류 key 의 조합을 분류 줄 id 로 바꾸는지, 수입과 지출 양쪽에 있는 기타가 제 줄로 가는지, 수입 전체와 지출 전체를 읽는 조회가 변환 전과 같은 기록을 내는지 |
 | (구현 때 더한다) | 결정 46: 장비가 아닌 아이템을 같은 메이플 ID · 월드에 두 번 넣으면 한 줄로 합쳐지고 장비는 줄이 따로 생기는지, 아이템 표와 종류가 다른 기록이 변환 뒤에도 적힌 종류로 열리는지 |
+| (구현 때 더한다) | 결정 47: 컨텐츠 항목과 보스 항목이 종류와 줄 id 로 저장되고 읽히는지, 같은 캐릭터가 같은 대상을 두 번 넣지 못하는지, 종류가 말하는 표에 없는 id 를 받지 않는지 |
 
 ## 번호 기록
 
