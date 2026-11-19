@@ -825,6 +825,16 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다(결정 23). 계산기 기록 안의 캐릭터 줄을 가리키는 칸은
   `record_character_id` 다(결정 36). `character_id` 로 두면 `characters` 표의 줄로 읽힌다. 가계부 품목의
   `item_kind_key` 는 `cashbook_item_type_key` 가 된다.
+- `level` 한 낱말로 된 칸은 무슨 레벨인지를 이름에 넣는다(사용자 선택 2026-11-19). 레벨의 종류가 넷인데 칸 이름이 같았다.
+
+  | 지금 이름 | 새 이름 | 든 값 |
+  |---|---|---|
+  | `items.level` | `required_level` | 장비의 착용 레벨. 보스 난이도 · 컨텐츠 · 심볼의 같은 칸과 이름이 같다 |
+  | `symbol_level_costs.level` · `hexa_core_level_costs.level` | `from_level` | 강화 전 레벨. 그 레벨에서 다음 레벨로 올리는 비용의 줄이다. 가계부 품목의 `from_level` 과 같은 말이다 |
+  | `hunting_ground_levels.level` | `mob_level` | 사냥터의 몬스터 레벨 |
+  | `drop_boxes.level_min` · `level_max` | `ring_level_min` · `ring_level_max` | 상자에서 나오는 반지의 레벨 범위 |
+
+  `remembered_levels.level` 은 표 이름이 뜻을 말해서 그대로 둔다.
 - 값은 그대로다. 앱이 받는 게임 데이터의 이름(`forms` · `itemForms` · `form` · `section`)도 그대로 둔다. 그래서 앱 코드는 바뀌지
   않는다(결정 32 와 같은 방식).
 - enum `content_type` 과 그 값 `contents` · `quest` 는 그대로 둔다(사용자 지정 2026-11-18). 값은 넥슨 API 응답(스케줄러 정보 조회)의
@@ -1090,8 +1100,10 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 최근에 활동한 캐릭터인지 판정할 때는 `check_type` 이 `score` 인 컨텐츠를 세지 않는다(`lib/scheduler/scheduler-activity.ts`).
   지하 수로의 점수는 주간 리셋 뒤에도 줄지 않아서, 세면 한 번이라도 한 캐릭터가 계속 활동한 것으로 잡힌다. 길드 플래그 레이스와
   무릉도장도 함께 빠진다. 완료 판정은 이것과 따로다. 점수가 있으면 완료다(결정 34).
-- 드래곤 퇴치 둘의 등록을 이번 응답의 값으로 정하던 것([[ADR-032]] 결정 5)을 어떻게 둘지는 아직 정하지 않았다.
-  `trust_registration_flag` 가 가르던 동작이다.
+- 드래곤 퇴치 둘의 등록은 지금처럼 이번 응답의 등록 값으로 정한다([[ADR-032]] 결정 5, 사용자 선택 2026-11-19).
+  `trust_registration_flag` 가 가르던 동작이다. 대상은 칸 없이 가른다. 공유 범위가 캐릭터가 아니고 `check_type` 이 `state_only` 인
+  컨텐츠다. 다른 공유 컨텐츠처럼 한 번 등록되면 계속 등록된 것으로 두면, 등록을 풀어도 같은 월드나 같은 메이플 ID 의 캐릭터
+  카드에 계속 남는다.
 - 1.0.14 까지의 앱은 게임 데이터에서 세 값을 읽고, 값이 없는 컨텐츠 줄은 버린다. 서버는 그 앱에 세 값을 계속 싣는다. 값은 공유
   범위와 `check_type` 에서 구한다.
 
