@@ -1087,7 +1087,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   줄을 찾지 못하는 일이 없다.
 - 월드를 적는 칸 `world_key` 는 `world_id` 로 바꾸고 `worlds` 의 줄 id 를 적는다. `cashbook_entries` ·
   `cashbook_entry_fragment_uses` · `inventory_items` · `enhancement_totals` · `shared_progress` 다섯 표다. 수익 건은 이미 `world_id` 로
-  적는다(결정 8). 기기에서 서버로 올리는 표의 `world_key` 도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 캐릭터 목록처럼 올리지
+  적는다(결정 19). 기기에서 서버로 올리는 표의 `world_key` 도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 캐릭터 목록처럼 올리지
   않는 기기 표는 이 문서가 다루지 않는다.
   - 월드를 모르는 줄은 지금처럼 빈 값이다. 앱은 넥슨이 준 월드 이름을 월드 표에서 찾아 key 를 얻고, 표에 없는 이름이면 비운다
     (`lib/world/worlds.ts` 의 `worldKeyOfApiName`).
