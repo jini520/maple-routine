@@ -1096,14 +1096,19 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   줄이 된다. 기기의 공유 진행 목록(Preferences `worldSharedProgress:*` · `accountSharedProgress:*`)도 1.0.15 의 기기 변환(결정
   19)에서 컨텐츠 줄 id 로 찾게 바꾼다. 변환에서 줄을 찾지 못하는 값은 없다. 앱은 지금도 컨텐츠 표에 없는 key 를 읽을 때 버리고
   (`storage/shared-progress-cache.ts`), 서버는 컨텐츠 줄을 지우지 않고 `until` 로 닫는다.
-- 2026-11-19 에 지금 설계와 운영 스키마에서 이 결정과 다른 칸을 찾았다. 아직 고치지 않았고 표를 검토할 때 고친다.
+- `mvp_grade_history.grade` 는 `grade_id` 로 바꾸고 `mvp_grades` 의 줄 id 를 적는다. 두 표가 모두 `mvp` 로 시작해서 그 말은 칸
+  이름에 넣지 않는다(결정 36). 지금은 enum `mvp_grade` 의 값을 적는다. enum 은 등급 표의 `key` 칸이 계속 쓴다. 등급 없음은
+  지금처럼 빈 값이다. 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 등급은 일곱이고 등급 표에 줄이 모두 있어서
+  변환에서 줄을 찾지 못하는 값이 없다.
+- `enhancement_anomalies.item_key` 는 없앤다(사용자 선택 2026-11-19). 읽는 곳이 없는 값이다(결정 27). 2026-11-19 운영 2,445줄이
+  모두 비어 있고, 서버는 이 칸을 적기만 하고 읽지 않는다. 줄의 대부분(2,429줄)이 장비 표에 없는 장비라 가리킬 장비 줄이 없다.
+  장비는 넥슨이 준 이름 `item_name` 으로 안다. 앱도 이 값을 보내지 않는다.
+- 아래 둘은 아직 고치지 않았다. 시세 표를 검토할 때 고친다.
 
   | 칸 | 지금 적는 값 | 가리킬 표 |
   |---|---|---|
-  | `mvp_grade_history.grade` | enum `mvp_grade` 의 값 | `mvp_grades` |
   | `market_days.scope` · `maspi_basket.scope` | 장비는 거래권 글자, 소비 아이템은 월드 key. 두 가지 값이 한 칸에 있다 | 월드는 `worlds`. 거래권은 표가 없다 |
   | `market_judgements.person` | 넥슨 계정 id · 메이플 ID · 사용자 id 가운데 줄에 있는 것. 세 가지 값이 한 칸에 있다 | `nexon_accounts` · `nexon_account_maple_ids` · `users` |
-  | `enhancement_anomalies.item_key` | 장비 key. 2026-11-19 운영 2,420줄 모두 비어 있다 | `items` |
 
 - 메이플 ID 해시 글자(`maple_id`)로 `nexon_account_maple_ids` 를 가리키는 칸도 줄 id 로 바꿀 수 있다. 지금 서버의 기록 표 넷과
   이 문서가 새로 만드는 표 여섯(`characters` · `cashbook_entries` · `inventory_items` · `mvp_grade_history` · `shared_progress` ·

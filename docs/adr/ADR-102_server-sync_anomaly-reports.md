@@ -50,7 +50,8 @@
                              · row_count · detail · created_at · updated_at
 ```
 
-`identified_by` 칸은 1.0.15 서버 작업에서 뺀다([[ADR-099]] 결정 8).
+`identified_by` 칸은 1.0.15 서버 작업에서 뺀다([[ADR-099]] 결정 8). `item_key` 칸도 1.0.15 서버 작업에서 뺀다. 운영의 모든 줄에서
+비어 있고 읽는 곳이 없다([[ADR-099]] 결정 39).
 
 ## 테스트
 
