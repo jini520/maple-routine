@@ -156,11 +156,11 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `enhancement_history_checks` 의 굳은 날 | `enhancement_settled_days` 새 표(결정 11 · 55) | 넥슨 계정 | 넥슨 계정 · API 종류 · 날짜 |
 | `remembered_levels` | `remembered_levels` 새 표 | 캐릭터 | ocid · 종류 · 대상의 줄 id(결정 38) |
 | `mvp_grade_history` | `mvp_grade_history` 새 표 | 메이플 ID | 메이플 ID · 시작 날짜 |
-| `character_world_leaps` | `character_world_leaps` 새 표 | 캐릭터 | 옛 ocid |
+| `character_world_leaps` | `character_world_leaps` 새 표(결정 56) | 캐릭터 | 옛 ocid |
 | Preferences `partyAppointments` | `party_appointments` 와 보스 · 파티원 · 주별 예외의 새 표 넷 | 사람 | 기록 id |
 | Preferences `bossProfitCalculatorRecords` | `boss_profit_calculator_records` 와 캐릭터 · 보스의 새 표 셋 | 사람 | 기록 id |
 | Preferences `manualTrackedContent:{ocid}` | `manual_tracked_items` 새 표 | 캐릭터 | 캐릭터 · 종류 · 대상의 줄 id(결정 47) |
-| Preferences `worldSharedProgress:*` · `accountSharedProgress:*` | `shared_progress` 새 표 | 메이플 ID | 메이플 ID · 월드(계정 공유는 빈 값) · 컨텐츠 key |
+| Preferences `worldSharedProgress:*` · `accountSharedProgress:*` | `shared_content_progress` 새 표(결정 56) | 메이플 ID | 메이플 ID · 월드(계정 공유는 빈 값) · 컨텐츠 줄 |
 | Preferences `mapleIdNames` | `maple_id_names` 새 표 | 메이플 ID | 메이플 ID |
 | Preferences `trackedCharacters` · `representativeCharacter` | `tracked_characters` 새 표. 차례와 대표 표시를 든다 | 사람 | 사람 · ocid |
 | Preferences `figureMotions` | `representative_character_motions` 새 표 | 캐릭터 | ocid |
@@ -493,7 +493,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 ### 결정 24. 기간은 주차와 월로 적는다 (사용자 지정 2026-11-18)
 
 - 기록이 속한 기간은 `period_code` 칸에 적는다. 지금 이름은 `period_key` 다. `boss_profit_entries` 에 있고, 서버와
-  기기가 같은 이름과 같은 값을 쓴다. 공유 컨텐츠의 진행(`shared_progress`)도 값이 속한 기간을 이 칸에 적는다(결정 33).
+  기기가 같은 이름과 같은 값을 쓴다. 공유 컨텐츠의 진행(`shared_content_progress`)도 값이 속한 기간을 이 칸에 적는다(결정 33).
 
   | 주기 | 값 | 뜻 | 지금 값 |
   |---|---|---|---|
@@ -798,7 +798,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - `enhancement_type` 은 끝말이 아니라 앞말을 고친다. 넥슨에서 강화 내역을 받는 API 넷인데, 화면의 분류 다섯인
   `enhancement_category` 와 이름으로 구분되지 않는다. 무엇의 종류인지를 넣는다.
-- `shared_progress` 의 칸 `kind` 는 그 칸이 쓰는 enum 이름과 같게 `content_type` 으로 바꾼다. enum 은 그대로다.
+- 공유 진행 표의 칸 `kind` 는 서버 표에 두지 않는다. 컨텐츠 줄의 `type` 과 같은 값이다(결정 56).
 - 끝말이 `_category` · `_status` · `_source` · `_grade` · `_cycle` · `_scope` · `_section` 인 enum 은 그대로 둔다. 종류가 아니라 분류 ·
   상태 · 출처 · 등급 · 주기 · 범위 · 구역을 말하는 이름이다.
 - `split_mode` 와 `tracking_mode` 도 `_type` 으로 바꾼다(사용자 지정 2026-11-18). 화면의 말이 `분배 방식` · `트래킹 모드` 라서
@@ -864,7 +864,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `party_appointments.from_week` · `until_week` | `from_week_code` · `until_week_code` | 매주 약속의 시작 주와 끝 주 |
   | `account_settings.mvp_last_checked_week` | `mvp_last_checked_week_code` | 마지막으로 등급을 확인한 주 |
   | `account_settings.stats_cumulative_start` | `stats_cumulative_start_date` | 통계 누적 순 수익의 시작 날짜 |
-  | `shared_progress.last_updated_bucket` | `period_code` | 공유 컨텐츠의 값이 속한 기간. 주간 컨텐츠는 `W202647`, 일간 컨텐츠는 `D20261119` 꼴로 적는다. 지금은 주간이 그 주의 목요일 날짜, 일간이 그날 날짜다 |
+  | `shared_content_progress.last_updated_bucket` | `period_code` | 공유 컨텐츠의 값이 속한 기간. 주간 컨텐츠는 `W202647`, 일간 컨텐츠는 `D20261119` 꼴로 적는다. 지금은 주간이 그 주의 목요일 날짜, 일간이 그날 날짜다 |
 
 - 낱말이 다르게 읽히는 칸을 고친다(사용자 지정 2026-11-19).
 
@@ -879,7 +879,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   모두 정수로 옮겨진다. 화면에는 단위 없이 숫자만 보인다(사용자 선택 2026-11-19). 지금 앱은 적힌 글자를 그대로 보여서 `240개` 와
   `200` 이 섞여 보인다.
 - `usage_events.type` · `name` 은 그대로 둔다. 표 이름이 사용 기록이라 `event` 를 붙이지 않는다(결정 36).
-  `shared_progress.quest_state` 도 그대로 둔다. 넥슨 응답의 칸 이름과 값(0 · 1 · 2)을 그대로 쓴 것이다.
+  `shared_content_progress.quest_state` 도 그대로 둔다. 넥슨 응답의 칸 이름과 값(0 · 1 · 2)을 그대로 쓴 것이다.
 - `mvp_grade_history.from_date` 는 이름도 값도 날짜 그대로 둔다. 등급은 달성한 날부터 바뀌어서 시작 날짜가 아무 요일이나
   된다([[ADR-050]] 결정 2). 주차 값으로 적으면 그 주의 앞쪽 날짜 기록까지 새 등급으로 계산된다.
 - 값은 그대로다. 앱이 받는 게임 데이터의 이름(`forms` · `itemForms` · `form` · `section`)도 표와 칸의 새 이름을 따라
@@ -1094,14 +1094,14 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   고른 것만 있고(기기 표의 `item_key` 는 비울 수 없는 칸이다), 서버에는 아이템 줄을 지우거나 key 를 바꾸는 경로가 없어서 변환에서
   줄을 찾지 못하는 일이 없다.
 - 월드를 적는 칸 `world_key` 는 `world_id` 로 바꾸고 `worlds` 의 줄 id 를 적는다. `cashbook_entries` ·
-  `cashbook_entry_fragment_uses` · `inventory_items` · `enhancement_totals` · `shared_progress` 다섯 표다. 수익 건은 이미 `world_id` 로
+  `cashbook_entry_fragment_uses` · `inventory_items` · `enhancement_totals` · `shared_content_progress` 다섯 표다. 수익 건은 이미 `world_id` 로
   적는다(결정 19). 기기에서 서버로 올리는 표의 `world_key` 도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 캐릭터 목록처럼 올리지
   않는 기기 표는 이 문서가 다루지 않는다.
   - 월드를 모르는 줄은 지금처럼 빈 값이다. 앱은 넥슨이 준 월드 이름을 월드 표에서 찾아 key 를 얻고, 표에 없는 이름이면 비운다
     (`lib/world/worlds.ts` 의 `worldKeyOfApiName`).
   - 변환에서 줄을 찾지 못하는 값은 없다. 서버에는 월드 줄을 지우거나 key 를 바꾸는 경로가 없다. 2026-11-19 에 기기 백업 148벌의
     모든 표에 나온 월드 key 5개가 운영 표의 20줄 안에 있었다.
-- `shared_progress.content_key` 는 `content_id` 로 바꾸고 `contents` 의 줄 id 를 적는다. 한 줄의 기준은 메이플 ID · 월드 · 컨텐츠
+- `shared_content_progress.content_key` 는 `content_id` 로 바꾸고 `contents` 의 줄 id 를 적는다. 한 줄의 기준은 메이플 ID · 월드 · 컨텐츠
   줄이 된다. 기기의 공유 진행 목록(Preferences `worldSharedProgress:*` · `accountSharedProgress:*`)도 1.0.15 의 기기 변환(결정
   19)에서 컨텐츠 줄 id 로 찾게 바꾼다. 변환에서 줄을 찾지 못하는 값은 없다. 앱은 지금도 컨텐츠 표에 없는 key 를 읽을 때 버리고
   (`storage/shared-progress-cache.ts`), 서버는 컨텐츠 줄을 지우지 않고 `until` 로 닫는다.
@@ -1140,7 +1140,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `worlds.challengers` | `is_challengers` | 챌린저스 월드인지. 표 이름이 월드라 `world` 를 붙이지 않는다(결정 36) |
   | `worlds.event` | `is_event` | 이벤트 월드인지 |
   | `enhancement_totals.event_world` | `is_event_world` | 이벤트 월드의 강화인지. 모르면 비어 있다 |
-  | `shared_progress.active` | `is_registered` | 등록이 한 번이라도 확인된 컨텐츠인지([[ADR-032]] 결정 4) |
+  | `shared_content_progress.active` | `is_registered` | 등록이 한 번이라도 확인된 컨텐츠인지([[ADR-032]] 결정 4) |
   | `representative_character_motions.rest` | `rests_between_actions` | 행동 사이에 대기 동작을 하는지 |
   | `cashbook_entry_items.hexa_activation` | `includes_hexa_activation` | 헥사 스탯 기록이 활성화 비용을 포함하는지 |
   | `cashbook_entry_items.hexa_use_storage` | `uses_stored_fragments` | 보관 중인 조각을 쓰는지 |
@@ -1341,7 +1341,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 ### 결정 48. 메이플 ID 는 `maple_ids` 표의 줄 id 로 가리킨다 (사용자 선택 2026-11-19)
 
 - 메이플 ID 에 붙는 기록 표는 메이플 ID 해시 글자 대신 메이플 ID 줄의 id 를 적는다(결정 39). `characters` · `cashbook_entries` ·
-  `inventory_items` · `mvp_grade_history` · `shared_progress` · `maple_id_names` 의 `maple_id` 와
+  `inventory_items` · `mvp_grade_history` · `shared_content_progress` · `maple_id_names` 의 `maple_id` 와
   `cashbook_entry_fragment_uses.source_maple_id` 일곱 곳이다.
 - 표 `nexon_account_maple_ids` 의 이름을 `maple_ids` 로 바꾼다. 한 줄이 메이플 ID 하나다. 해시를 적는 칸 `maple_id` 는 `hash` 로
   바꾼다. 표 이름이 메이플 ID 라 그 말을 칸에 다시 붙이지 않는다(결정 36). 요청 헤더 `x-maple-id-hash` 와 같은 말이다.
@@ -1438,7 +1438,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `enhancement_totals` | `attempts` | `attempt_count` | 시도 횟수 |
 
 - 이미 이 기준에 맞아 그대로 두는 칸이다. 물건의 개수는 `cashbook_entry_items.quantity` · `inventory_items.added_quantity` ·
-  `boss_difficulty_rewards.quantity` · `spend_items.max_quantity` 다. 횟수는 `contents.max_count` · `shared_progress.now_count` ·
+  `boss_difficulty_rewards.quantity` · `spend_items.max_quantity` 다. 횟수는 `contents.max_count` · `shared_content_progress.now_count` ·
   `max_count` · `enhancement_anomalies.row_count` 다. 금액은
   `cashbook_entry_items` 의 `amount_meso` · `amount_maple_point` · `amount_cash` 다.
   - `row_count` 는 같은 상황이 몇 줄 나왔는지라 횟수로 보았다. `now_count` · `max_count` 는 넥슨 응답의 칸 이름이기도 하다.
@@ -1554,6 +1554,26 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   57줄도 이벤트 월드가 아니라는 판정은 갖고 있다. 리프 전 기간의 줄이다.
 - 날짜 칸의 이름 `history_date` 는 그대로 둔다(사용자 선택). 강화 합계 · 굳은 날 · 강화 이상 보고 세 표가 같은 이름을 쓴다.
 - 가계부 제외 표식의 칸 이름은 그 기능([[ADR-160]])을 구현할 때 정한다(결정 11).
+
+### 결정 56. 공유 진행 표는 `shared_content_progress` 로 부르고, 종류 칸과 리프를 이은 시각 칸을 두지 않는다 (사용자 선택 2026-11-19)
+
+- 표 `shared_progress` 의 이름을 `shared_content_progress` 로 짓는다. 한 줄이 한 메이플 ID(와 월드)의 공유 컨텐츠 하나의 진행이다.
+  앞의 이름에는 무엇의 진행인지가 없다(결정 23).
+- 이 표에 넥슨이 주는 종류(`content_type`)를 적지 않는다(결정 27). 같은 값이 컨텐츠 줄의 `type` 에 있다. 기기는 컨텐츠 표에 없는
+  key 를 공유 진행에서 읽을 때 버려서(`storage/shared-progress-cache.ts`), 줄마다 컨텐츠 줄이 있다. 기기의 공유 진행 목록에 적는
+  `kind` 값도 1.0.15 의 기기 변환(결정 19)에서 뺀다.
+  - 2026-11-19 운영의 공유 컨텐츠는 여덟이다. 에픽 던전 넷과 몬스터파크는 `contents`, 익스트림 몬스터파커와 유니온 드래곤 둘은
+    `quest` 다.
+  - `max_count` 는 둔다. 넥슨이 준 최대 횟수다. 익스트림 몬스터파커처럼 컨텐츠 표에 최대 횟수를 두지 않는 컨텐츠가 진행 중의 최대
+    횟수를 이 값에서 읽는다(결정 52).
+- `character_world_leaps` 의 `linked_at` 을 서버 표와 기기 표에서 모두 없앤다(결정 27). 옛 ocid 와 새 ocid 를 이은 시각인데 기기
+  코드에 이 값을 읽는 곳이 없다. 서버 표에는 줄을 만든 시각이 따로 있다.
+- `character_world_leaps.from_ocid` 는 `previous_ocid` 로 바꾼다. 리프 전의 옛 ocid 해시다. `from` 은 다른 표에서 기간과 범위의
+  시작(`from_date` · `from_level` · `from_star`)에 쓰는 말이다. 기기 표의 `from_ocid` · `to_ocid` 는 옛 ocid 와 새 ocid 의 짝이라
+  그대로 둔다. 서버 표에는 새 ocid 칸이 없다. 캐릭터 줄의 `ocid` 가 새 값이다(결정 20). 기기 표의 이름을 그대로 두는 것은 Claude 가
+  정했다.
+- `maple_id_names` 의 이름은 그대로 둔다. 앱 화면이 이 값을 `메이플 ID 이름` 이라고 부른다(설정의 계정 관리).
+- `characters` · `mvp_grade_history` · `manual_tracked_items` · `representative_character_motions` 의 칸은 그대로 둔다.
 
 ## 테스트
 
