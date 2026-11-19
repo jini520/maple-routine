@@ -812,7 +812,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - 칸도 함께 바꾼다. `spend_item_forms.form_id` 는 가리키는 표의 새 이름을 따라 `reward_type_id` 로 바꾼다(결정 23). 두 표가
   모두 `spend` 로 시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 가계부 품목(`cashbook_entry_items`)의 `form_key` 는
-  `spend_reward_type_key` 로 바꾼다. 가계부 표는 `spend` 로 시작하지 않아서 표 이름을 그대로 쓴다. 이 칸을 글자 key 대신 줄 id 로 가리킬지는 가계부 표를
+  `spend_reward_type_key` 로 바꾼다. 가계부 표는 `spend` 로 시작하지 않아서 표 이름을 그대로 쓴다. 이 칸은 글자 key 대신 줄 id 로 가리킨다(결정 39). 칸의 구조와 이름은 가계부 표를
   검토할 때 정한다. `contents.section` 은 보스 난이도 표의 `cycle` 과 같게 `cycle` 로 바꾼다.
 - 이 문서가 새로 만드는 표의 이름도 같은 기준으로 짓는다(사용자 선택 2026-11-18).
 
@@ -998,6 +998,41 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 앱이 받는 게임 데이터는 심볼과 헥사 코어마다 `id` 를 함께 낸다. 보스와 같은 방식이다(결정 19).
 - 기기 표도 1.0.15 의 기기 변환(결정 19)에서 `kind` 를 `level_type` 으로(결정 32), `item_key` 를 `target_id` 로 바꾼다. 줄 id 를
   찾지 못한 줄은 지운다. 기억이 없는 대상은 지금처럼 넥슨이 준 레벨로 다시 채운다.
+
+### 결정 39. 다른 표의 줄을 가리키는 값은 글자가 아니라 줄 id 로 적는다 (사용자 지정 2026-11-19)
+
+- 서버의 표는 모두 줄 id(uuid)를 가진다. 다른 표의 줄을 가리키는 칸에는 그 줄의 id 를 적는다. key 나 이름 글자로 적지 않는다.
+  줄을 id 로 바로 찾으려고 모든 데이터를 uuid 와 표로 두는데, id 로 적을 수 있는 값을 글자로 적으면 그렇게 두는 이유가 없어진다.
+- 한 칸이 여러 표를 가리키면 종류 칸으로 표를 고르고 id 한 칸으로 줄을 찾는다(결정 38). 한 칸에 key 와 이름처럼 종류가 다른
+  값을 섞지 않는다(결정 37).
+- 이미 이렇게 정한 칸이다. 보스와 난이도(결정 19), 캐릭터(결정 20), 드롭의 아이템(결정 28), 헥사 코어의 직업과 종류(결정 35),
+  기억한 레벨의 대상(결정 38).
+- `items.category` 는 `group_id` 로 바꾸고 `item_groups` 의 줄 id 를 적는다. 지금은 묶음 key 글자를 적는다. 두 표가 모두 `item` 으로
+  시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 앱이 받는 게임 데이터의 묶음 key 는 그대로 낸다.
+- 2026-11-19 에 지금 설계와 운영 스키마에서 이 결정과 다른 칸을 찾았다. 아직 고치지 않았고 표를 검토할 때 고친다.
+
+  | 칸 | 지금 적는 값 | 가리킬 표 |
+  |---|---|---|
+  | `cashbook_entry_items.item_key` | 분류에 따라 지출 항목 · 심볼 · 헥사 스탯 · 사냥터 · 아이템의 key, 헥사 스킬은 코어 이름. 여섯 가지 값이 한 칸에 있다 | `spend_items` · `symbols` · `hexa_stats` · `hunting_grounds` · `items` · `hexa_cores` |
+  | `cashbook_entries.category_key` | 가계부 분류의 key | `cashbook_categories` |
+  | `cashbook_entry_items.spend_reward_type_key` | 에픽던전 추가 리워드 종류의 key | `spend_reward_types` |
+  | `cashbook_entry_items.cashbook_item_type_key` · `inventory_items.item_kind_key` | 아이템 종류의 key | `cashbook_item_types` |
+  | `inventory_items.item_key` | 아이템의 key | `items` |
+  | `world_key`(`cashbook_entries` · `cashbook_entry_fragment_uses` · `inventory_items` · `enhancement_totals` · `shared_progress`) | 월드의 key | `worlds` |
+  | `content_key`(`manual_tracked_items` · `shared_progress`) | 컨텐츠의 key | `contents` |
+  | `mvp_grade_history.grade` | enum `mvp_grade` 의 값 | `mvp_grades` |
+  | `market_days.scope` · `maspi_basket.scope` | 장비는 거래권 글자, 소비 아이템은 월드 key. 두 가지 값이 한 칸에 있다 | 월드는 `worlds`. 거래권은 표가 없다 |
+  | `market_judgements.person` | 넥슨 계정 id · 메이플 ID · 사용자 id 가운데 줄에 있는 것. 세 가지 값이 한 칸에 있다 | `nexon_accounts` · `nexon_account_maple_ids` · `users` |
+  | `enhancement_anomalies.item_key` | 장비 key. 2026-11-19 운영 2,420줄 모두 비어 있다 | `items` |
+
+- 메이플 ID 해시 글자(`maple_id`)로 `nexon_account_maple_ids` 를 가리키는 칸도 줄 id 로 바꿀 수 있다. 지금 서버의 기록 표 넷과
+  이 문서가 새로 만드는 표 여섯(`characters` · `cashbook_entries` · `inventory_items` · `mvp_grade_history` · `shared_progress` ·
+  `maple_id_names`), `cashbook_entry_fragment_uses.source_maple_id` 가 그렇다. 기록을 메이플 ID 에 붙이는 결정(결정 5 · 8)에서
+  해시 글자로 가리키기로 한 칸이라, 바꿀지는 따로 정한다. `drop_sale_prices.ocid` 도 `characters` 의 줄 id 로 적을 수 있다.
+- 가리킬 표가 없어 지금은 id 로 적을 수 없는 값이 있다. 강화 합계의 장비 이름(`enhancement_totals.item_name`, 결정 37)은 장비
+  표에 없는 장비가 있어 글자다. 사냥 계산기 입력의 `boosts` 는 켠 메소 획득 아이템 여럿을 쉼표로 이은 글자이고 목록이 앱 코드
+  (`MESO_BOOSTS`)에만 있다. 거래권(`worlds.price_group`), 아이템 묶음의 종류(`item_groups.kind`), 하단바와 빠른 링크의 화면 key
+  (`account_settings` · `bottom_bar_sub_page_orders`)도 서버 표가 없다. 표를 만들어 id 로 적을지는 그 표를 검토할 때 정한다.
 
 ## 테스트
 
