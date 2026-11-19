@@ -1034,6 +1034,38 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   (`MESO_BOOSTS`)에만 있다. 거래권(`worlds.price_group`), 아이템 묶음의 종류(`item_groups.kind`), 하단바와 빠른 링크의 화면 key
   (`account_settings` · `bottom_bar_sub_page_orders`)도 서버 표가 없다. 표를 만들어 id 로 적을지는 그 표를 검토할 때 정한다.
 
+### 결정 40. 참 · 거짓 칸은 `is_` · `has_` 나 동사로 시작한다 (사용자 선택 2026-11-19)
+
+- 참 · 거짓을 적는 칸의 이름은 `is_` 나 `has_` 로 시작하거나 동사로 시작한다. 이름이 참 · 거짓으로 답하는 문장으로 읽혀야 한다.
+  낱말만 있는 이름(`valuable` · `event` · `rest`)은 참 · 거짓 칸인지 이름으로 알 수 없다. 이미 정한 `is_season_boss` ·
+  `is_all_jobs` · `split_fee_follows_mvp_grade` 와 같은 방식이다.
+
+  | 지금 이름 | 새 이름 | 뜻 |
+  |---|---|---|
+  | `items.valuable` | `is_valuable` | 고가 아이템인지 |
+  | `hunting_grounds.popular` | `is_popular` | 인기 사냥터인지 |
+  | `spend_groups.active` | `is_active` | 열린 묶음인지. 닫힌 묶음은 앱에서 고를 수 없다 |
+  | `worlds.challengers` | `is_challengers_world` | 챌린저스 월드인지 |
+  | `worlds.event` · `enhancement_totals.event_world` | `is_event_world` | 이벤트 월드인지. 강화 합계에서는 모르면 비어 있다 |
+  | `shared_progress.active` | `is_registered` | 등록이 한 번이라도 확인된 컨텐츠인지([[ADR-032]] 결정 4) |
+  | `representative_character_motions.rest` | `rests_between_actions` | 행동 사이에 대기 동작을 하는지 |
+  | `cashbook_entry_items.hexa_activation` | `includes_hexa_activation` | 헥사 스탯 기록이 활성화 비용을 포함하는지 |
+  | `cashbook_entry_items.hexa_use_storage` | `uses_stored_fragments` | 보관 중인 조각을 쓰는지 |
+  | `cashbook_entry_items.hexa_storage_as_spend` | `counts_stored_fragments_as_spend` | 보관에서 가져온 몫을 지출로 세는지 |
+  | `content_categories.hide_count_tag` | `hides_count_tag` | 참고 태그를 숨기는지 |
+  | `account_settings.mvp_weekly_check_off` | `is_mvp_weekly_check_off` | 매주 등급 확인을 껐는지 |
+  | `account_settings.mvp_bulk_apply_asked` | `is_mvp_bulk_apply_asked` | 지난 기록 일괄 적용을 이미 물었는지 |
+  | `cashbook_entry_items.sale_fee_auto` | `sale_fee_follows_mvp_grade` | 판매 수수료율이 MVP 등급을 따라가는지. 드롭 표의 같은 칸과 이름이 같다(결정 26) |
+  | `cashbook_entry_transfer_inputs.fee_auto` | `fee_follows_mvp_grade` | 수수료율이 받는 캐릭터의 MVP 등급을 따라가는지 |
+
+- `is_drop` · `is_equipment` · `is_default` · `is_representative` · `has_tariff` 는 그대로다.
+- 수수료율이 등급을 따라가는지의 두 칸은 보스 표에서 정한 말(`follows_mvp_grade`, 결정 23 · 26)을 쓴다. 같은 것은 표가 달라도 같은
+  말로 부른다(결정 33).
+- `items.world_bound` 와 `contents` 의 `cumulative_score` · `only_when_scheduled` · `trust_registration_flag` 의 이름은 아직 정하지
+  않았다. `market_judgements.dummy` 는 시세 표를 검토할 때 정한다.
+- 앱이 받는 게임 데이터의 이름(`valuable` · `popular` · `active` 등)은 그대로 둔다(결정 32 와 같은 방식). 기기 표에 같은 칸이
+  있으면 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로 바꾼다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
