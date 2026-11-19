@@ -504,7 +504,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   따라 지워지던 연결도 없어진다. 기기 저장 코드에서 두 표를 이어 읽는 곳은 24군데다.
 - `bosses.alias` 는 `short_name` 으로 바꾼다. 좁은 곳에 쓰는 줄인 이름이다. 유효 기간 칸 `from` · `until` 은 `valid_from` ·
   `valid_until` 로 바꾼다(사용자 선택 2026-11-18). 무엇의 시작인지가 이름에 없고 둘 다 SQL 의 예약어다. 서버의 게임 데이터 표
-  아홉 개(`bosses` · `boss_difficulties` · `boss_difficulty_rewards` · `boss_crystal_prices` · `world_periods` · `hunt_loot_items` ·
+  아홉 개(`bosses` · `boss_difficulties` · `boss_difficulty_rewards` · `boss_crystal_prices` · `world_open_periods` · `hunt_loot_items` ·
   `spend_items` · `symbol_level_costs` · `contents`)가 같은 이름을 써서 함께 바꾼다. 앱이 받는 게임 데이터도 새 이름으로
   낸다(결정 43).
 
@@ -689,7 +689,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
     범위로 찾는다. 그런 상자가 없으면 보스가 직접 떨군 것이다.
   - 2026-11-18 운영의 드롭 표에서 상자를 주는 보스 난이도는 51개다. 36개는 상자를 하나 주고, 15개는 반지 상자 하나와 장신구 상자
     하나를 준다. 반지 상자를 둘 주는 난이도는 없고, 한 난이도의 두 상자에 함께 든 아이템도 없다.
-  - `drop_boxes` 와 `drop_box_contents` 는 칸을 그대로 둔다. 상자의 레벨 범위(`level_min` · `level_max`)와, 결과를 고르는 화면에서
+  - `drop_boxes` 와 `drop_box_contents` 는 칸을 그대로 둔다. 상자의 레벨 범위(`ring_level_min` · `ring_level_max`, 결정 33)와, 결과를 고르는 화면에서
     칸이 놓이는 차례(`drop_box_contents.sort_order`)도 지금 칸을 쓴다. 상자의 내용물은 지금처럼 원래 반지 줄을 가리킨다.
 - 같은 보스 난이도에서 직접도 떨어지고 상자에서도 나오는 아이템은 아이템 줄을 둘로 둔다(사용자 지정 2026-11-18). 상자를 적지
   않으면 두 드롭을 가를 것이 아이템 줄뿐이기 때문이다. 2026-11-18 운영에서 그런 아이템은 생명의 연마석 하나다. 감시자 칼로스
@@ -1676,6 +1676,35 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   기준이 있는 줄(설정 · 추적 캐릭터 · 하단바 하위 페이지 순서 · 굳은 날)이 양쪽에 있으면 늦게 고친 줄을 남긴다. 지금 코드가 강화
   이상 보고를 합칠 때 쓰는 규칙이다(서버 `mergeNexonAccounts`). 이 줄은 Claude 가 지금 코드에 맞춰 적었다.
 
+### 결정 58. 직접 완료를 여는 표와 월드가 열린 기간 표의 이름을 고치고, 읽지 않는 수정 시각 칸을 없앤다 (사용자 선택 2026-11-19)
+
+보스가 쓰는 기준 표 다섯과 아이템 묶음 · 월드 표 셋을 칸까지 정했다. `boss_difficulty_rewards` · `drop_boxes` ·
+`drop_box_contents` · `boss_crystal_prices` · `boss_manual_completion_periods` · `item_groups` · `worlds` · `world_open_periods` 다.
+
+- 표 이름 둘을 바꾼다(사용자 선택).
+
+  | 지금 이름 | 새 이름 | 한 줄이 무엇인가 |
+  |---|---|---|
+  | `manual_completion_bosses` | `boss_manual_completion_periods` | 운영자가 한 보스의 직접 완료를 열어 둔 기간 하나. 지금 이름은 보스 목록으로 읽힌다 |
+  | `world_periods` | `world_open_periods` | 한 월드가 열려 있던 기간 하나. 지금 이름에는 무슨 기간인지가 없다 |
+
+  직접 완료 표의 칸(`boss_id` · `from_date` · `opened_at` · `closed_at`)은 그대로 둔다. 2026-11-19 운영에 줄이 없다. 월드 기간은
+  운영에 2줄이다. 앱이 받는 응답의 이름도 표와 칸을 따른다(결정 43).
+- 읽는 곳이 없는 수정 시각 칸을 없앤다(결정 27). `worlds.updated_at` · `world_open_periods.updated_at` · `items.updated_at` 이다.
+  서버는 줄을 고칠 때 이 칸에 시각을 적기만 하고 읽지 않는다. 앱에 알리는 바뀐 시각은 `game_data_sections` 가 칸마다
+  든다(서버 `modules/game-data/sections.ts`). `bosses.updated_at` 은 보스 목록의 바뀐 시각으로 읽으므로 둔다.
+- 드롭 표(`boss_difficulty_rewards`)의 갈래 칸 `category` 는 둔다. 아이템 묶음에서 구할 수 없다. 2026-11-19 운영 408줄에서 고정
+  보상(`fixed`) 159줄과 소비(`consumable`) 214줄이 모두 소비 · 기타 묶음의 아이템을 가리키고, 개수가 없는 고정 보상도 5줄 있다.
+- 드롭 표의 한 줄의 기준에서 갈래를 뺀다. 기준은 `boss_difficulty_id` · `item_id` · `valid_from` 이다. 드롭 기록은 한 수익 건에서
+  같은 아이템이 한 줄이라(결정 26) 한 난이도의 같은 아이템이 두 갈래에 있으면 둘을 구분하지 못한다. 운영에 그런 줄은 없다. 이
+  기준은 Claude 가 결정 26 에 맞춰 적었다.
+- `item_groups.key` 와 `worlds.key` 는 둔다. 묶음 key 는 앱 코드가 묶음을 가를 때 글자로 쓴다(`features/inventory/catalog.ts`). 월드
+  key 는 서버가 줄을 넣고 고칠 때 가리키는 이름표다. 기록은 두 key 로 가리키지 않고 줄 id 로 가리킨다(결정 39).
+- 상자 표 둘과 결정석 가격 표는 앞에서 정한 대로다. 상자의 레벨 범위는 `ring_level_min` · `ring_level_max`(결정 33), 유효 기간은
+  `valid_from` · `valid_until`(결정 23)이다. 유효 기간의 값은 지금처럼 날짜(`2026-11-19`)이거나 분까지 적은
+  시각(`2026-11-19T10:00`)이다.
+- 거래권(`worlds.trade_group`)을 표로 둘지는 시세 표를 볼 때 정한다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1713,6 +1742,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 54: 기기 변환 뒤에 기타 조각의 남은 개수가 변환 전과 같은지, 한 기록이 같은 보관에서 두 줄로 가져가지 못하는지, 켠 효과가 적힌 차례와 상관없이 같은 칸으로 옮겨지는지 |
 | (구현 때 더한다) | 결정 55: 다시 받은 날의 줄을 분류로 갈아 끼워도 다른 API 종류의 줄이 지워지지 않는지, 넥슨 계정 줄을 합칠 때 굳은 날이 한 줄로 남는지 |
 | (구현 때 더한다) | 결정 57: 기기 변환 뒤에 약속의 주차 값과 보스 줄 id 로 같은 주에 같은 회차가 펼쳐지는지, 계산기 기록이 변환 전과 같은 금액으로 열리는지, 넥슨 계정 줄을 합칠 때 설정이 한 줄로 남는지 |
+| (구현 때 더한다) | 결정 58: 한 난이도의 같은 아이템을 갈래만 달리해 두 줄로 넣지 못하는지, 월드와 아이템을 고쳤을 때 앱에 알리는 바뀐 시각이 그대로 밀리는지 |
 
 ## 번호 기록
 

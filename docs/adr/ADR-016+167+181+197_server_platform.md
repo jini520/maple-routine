@@ -266,7 +266,7 @@ UTC ISO 문자열 그대로이고, 앱이 받아서 기기 시계 기준으로 �
 
 ### 결정 12. 직접 완료를 여는 보스는 보스 표를 가리키고, 닫은 줄은 지우지 않는다
 
-운영자가 관리 화면에서 직접 완료를 여는 보스는 `manual_completion_bosses` 표에 둔다. 보스는 `boss_id` 로 `bosses` 표를
+운영자가 관리 화면에서 직접 완료를 여는 보스는 `manual_completion_bosses` 표에 둔다(1.0.15 에서 표 이름이 `boss_manual_completion_periods` 로 바뀐다. [[ADR-099]] 결정 58). 보스는 `boss_id` 로 `bosses` 표를
 가리키므로 관리 화면의 보스 목록도 그 표에서 나온다. 앱이 받는 형식(`{ boss, from }`)은 그대로이고, 서버가 보스 key 로
 바꿔 준다.
 
