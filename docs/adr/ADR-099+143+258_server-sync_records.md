@@ -928,7 +928,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   무릉도장은 층수가 0 보다 크면 완료로 센다. 지금은 완료를 세지 않고 진행 링의 분모에서 뺀다([[ADR-033]] 결정 5). 길드 지하 수로와
   길드 플래그 레이스는 지금처럼 값이 0 보다 크면 완료다. 횟수로 세는 컨텐츠(`count_only`)에서 횟수가 1 이상이면 완료로 세던 규칙은
   없앤다.
-- 완료 횟수 칸의 이름과, 지금 있는 `max_count` · `max_count_override` 칸을 그 칸으로 대신할지는 `contents` 표를 검토할 때 정한다.
+- 완료로 세는 횟수는 `max_count` 칸에 둔다. 지금 있는 `max_count` 와 `max_count_override` 를 이 칸 하나로 합친다(결정 52).
 - 넥슨의 `type`(enum `content_type`)은 이름과 값을 그대로 둔다(결정 33). 완료 판정에는 쓰지 않는다.
 - [[ADR-033]] 결정 5 의 본문과 앱 코드는 구현할 때 함께 고친다.
 
@@ -1422,8 +1422,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `enhancement_totals` | `attempts` | `attempt_count` | 시도 횟수 |
 
 - 이미 이 기준에 맞아 그대로 두는 칸이다. 물건의 개수는 `cashbook_entry_items.quantity` · `inventory_items.added_quantity` ·
-  `boss_difficulty_rewards.quantity` · `spend_items.max_quantity` 다. 횟수는 `contents.max_count` · `max_count_override` ·
-  `manual_tracked_items.max_count` · `shared_progress.now_count` · `max_count` · `enhancement_anomalies.row_count` 다. 금액은
+  `boss_difficulty_rewards.quantity` · `spend_items.max_quantity` 다. 횟수는 `contents.max_count` · `shared_progress.now_count` ·
+  `max_count` · `enhancement_anomalies.row_count` 다. 금액은
   `cashbook_entry_items` 의 `amount_meso` · `amount_point` · `amount_cash` 다.
   - `row_count` 는 같은 상황이 몇 줄 나왔는지라 횟수로 보았다. `now_count` · `max_count` 는 넥슨 응답의 칸 이름이기도 하다.
 - 가격 · 비용 · 수수료를 적는 칸(`crystal_price_meso` · `attempt_cost_meso` · `sale_fee_meso` 같은 칸)은 이름을 바꾸지 않는다.
@@ -1431,6 +1431,37 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 시세 표의 `voters` · `persons` 는 시세 표를 검토할 때 이 기준으로 고친다.
 - 기기 표의 같은 칸도 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로 바꾼다. 앱이 받는 게임 데이터도 새 이름으로 낸다(결정 43).
 - 칸마다 물건의 개수인지 횟수인지를 가른 것은 Claude 다.
+
+### 결정 52. 컨텐츠의 최대 횟수는 `max_count` 한 칸에 두고 `max_count_override` 를 없앤다 (사용자 선택 2026-11-19)
+
+- `contents.max_count` 는 그 컨텐츠를 한 기간에 할 수 있는 횟수다. 횟수로 완료를 세는 줄(`check_type` 이 `count_only`)에만 값을 두고
+  나머지 줄은 비운다. 결정 34 의 완료로 세는 횟수가 이 칸이다. 넥슨 응답의 `max_count` 와 같은 것이라 칸 이름은 그대로 둔다.
+- 지금은 같은 숫자를 세 곳에서 따로 다룬다. `max_count` 는 수동 모드에서 한 번도 동기화되지 않은 항목의 카드에 세우는 기본값이다.
+  `max_count_override` 는 넥슨이 최대 횟수를 틀리게 줄 때 대신 쓰는 값이다. 결정 34 는 완료로 세는 횟수를 더하기로 했다. 횟수로
+  세는 12줄에서는 셋이 모두 같은 값이다.
+- 이 칸에 값이 있으면 넥슨이 준 최대 횟수 대신 쓴다. 완료 판정, 화면의 `n/최대`, 수동 모드의 기본값이 모두 이 칸을 읽는다.
+- `max_count_override` 는 없앤다. 값이 있는 줄은 길드 주간 미션 포인트 하나(10)다. 넥슨이 이 컨텐츠의 최대 횟수를 가끔 0 으로
+  주어서 둔 칸인데([[ADR-032]] 결정 7), 표의 `max_count` 를 먼저 쓰면 따로 덮을 일이 없다.
+- 2026-11-19 운영의 41줄이다.
+
+  | 컨텐츠 | 지금 `max_count` | 1.0.15 의 `max_count` |
+  |---|---|---|
+  | 몬스터파크 | 14 | 14 |
+  | 아케인리버 지역 컨텐츠 여섯 | 각 1 | 각 1 |
+  | 에픽 던전 넷 | 각 5 | 각 5 |
+  | 길드 주간 미션 포인트 | 10. `max_count_override` 도 10 | 10 |
+  | 익스트림 몬스터파커 | 5 | 비운다. 퀘스트 상태로 판정하고 진행 중의 최대 횟수는 넥슨이 준다(결정 34) |
+  | 일일 퀘스트 17 | 각 100 | 비운다. 퀘스트 상태로 판정해서 이 값을 읽는 곳이 없다 |
+  | 나머지 11 | 0 | 비운다 |
+
+- `manual_tracked_items.max_count` 는 두지 않는다. 수동 추적에 넣을 때 표의 값을 복사해 두는 값인데 읽는 곳이 없다(결정 27). 카드는
+  넥슨이 준 값이나 표의 값을 쓴다(`lib/scheduler/manual-content-merge.ts`). 기기의 목록(Preferences
+  `manualTrackedContent:{ocid}`)에서도 1.0.15 의 기기 변환(결정 19)에서 뺀다.
+- 서버 표에 없는 컨텐츠는 지금처럼 넥슨의 `type` 으로 판정한다. 넥슨이 새 컨텐츠를 내고 관리 화면에 줄을 더하기 전까지의
+  경우다. `quest` 면 퀘스트 상태로, 아니면 지금 횟수가 넥슨이 준 최대 횟수에 닿으면 완료다
+  (`features/content-scheduler/content-completion.ts`).
+- 사용자가 고른 것은 칸 하나로 합치는 것과 이름 `max_count` 다. `manual_tracked_items.max_count` 를 빼는 것과 표에 없는 컨텐츠의
+  판정은 Claude 가 권한 대로 적었고 따로 답을 받지 않았다.
 
 ## 테스트
 
@@ -1464,6 +1495,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 47: 컨텐츠 항목과 보스 항목이 종류와 줄 id 로 저장되고 읽히는지, 같은 캐릭터가 같은 대상을 두 번 넣지 못하는지, 종류가 말하는 표에 없는 id 를 받지 않는지 |
 | (구현 때 더한다) | 결정 48: 올린 해시로 메이플 ID 줄을 찾아 줄 id 로 적고 내려줄 때 해시로 푸는지, 남의 메이플 ID 해시를 실은 올리기를 받지 않는지, 메이플 ID 줄이 다른 넥슨 ID 로 옮겨 가도 기록이 같은 줄을 가리키는지 |
 | (구현 때 더한다) | 결정 49: 캐릭터 기록을 올리면 서버가 그 캐릭터의 메이플 ID 를 채우는지, 캐릭터와 메이플 ID 가 어긋난 줄을 받지 않는지, 묶음으로 올린 같은 날 기록이 받은 기기에서 저장한 시각 차례로 서는지, 메모가 다른 기기에서 보이는지 |
+| (구현 때 더한다) | 결정 52: 넥슨이 최대 횟수를 0 으로 줘도 표의 `max_count` 로 완료와 분모를 정하는지, `count_only` 가 아닌 줄에 `max_count` 가 들어가지 않는지, 표에 없는 컨텐츠가 넥슨의 `type` 으로 판정되는지 |
 
 ## 번호 기록
 
