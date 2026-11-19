@@ -453,6 +453,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - `boss_clears` 는 처치하지 않은 기간 행도 담게 되어 이름이 틀린다. `boss_party_periods` 와 `boss_parties` 는 기기에서 줄이 서로
   매달린 관계에서 온 이름이다.
 - 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다. 드롭 기록이 수익 건을 가리키는 칸은 `boss_profit_entry_id` 다(결정 26).
+  자기 표와 같은 말로 시작하는 표를 가리킬 때 칸 이름을 어떻게 줄이는지는 결정 36 에 있다.
 - 칸 이름도 무엇의 값인지와 단위가 드러나게 짓는다(사용자 선택 2026-11-18). `boss_profit_entries` 의 칸이다. 기기 표의 같은 칸도
   함께 바꾸고, 분배 칸은 `boss_split_settings` 와 드롭 표에서도 같은 이름을 쓴다.
 
@@ -809,8 +810,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | 표 `cashbook_item_kinds` | `cashbook_item_types` | 가계부의 아이템 구매 · 판매에서 고르는 종류 넷(장비 · 소비 · 기타 · 캐시). 종류마다 수량 단위와 구매 관세가 붙는지가 다르다 | 끝말을 `_type` 으로 맞춘다(결정 32). 가계부 입력에서만 쓰는 표라 `cashbook` 은 그대로 둔다 |
   | 표 `boss_drop_rewards` | `boss_difficulty_rewards` | 보스 난이도 하나가 줄 수 있는 보상 한 줄. 드롭 표다 | 사용자가 얻은 드롭을 적는 `boss_drops` 와 이름이 비슷해, 줄 수 있는 것과 얻은 것이 이름으로 구분되지 않는다 |
 
-- 칸도 함께 바꾼다. `spend_item_forms.form_id` 는 가리키는 표의 새 이름을 따라 `spend_reward_type_id` 로 바꾼다(결정 23). 가계부
-  품목(`cashbook_entry_items`)의 `form_key` 는 `spend_reward_type_key` 로 바꾼다. 이 칸을 글자 key 대신 줄 id 로 가리킬지는 가계부 표를
+- 칸도 함께 바꾼다. `spend_item_forms.form_id` 는 가리키는 표의 새 이름을 따라 `reward_type_id` 로 바꾼다(결정 23). 두 표가
+  모두 `spend` 로 시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 가계부 품목(`cashbook_entry_items`)의 `form_key` 는
+  `spend_reward_type_key` 로 바꾼다. 가계부 표는 `spend` 로 시작하지 않아서 표 이름을 그대로 쓴다. 이 칸을 글자 key 대신 줄 id 로 가리킬지는 가계부 표를
   검토할 때 정한다. `contents.section` 은 보스 난이도 표의 `cycle` 과 같게 `cycle` 로 바꾼다.
 - 이 문서가 새로 만드는 표의 이름도 같은 기준으로 짓는다(사용자 선택 2026-11-18).
 
@@ -821,7 +823,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `bottom_bar_sub_page_orders` | 하단 탭의 그룹 하나 안에서 하위 페이지를 놓는 순서 | 무엇의 순서인지를 줄이지 않고 적는다 |
 
 - 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다(결정 23). 계산기 기록 안의 캐릭터 줄을 가리키는 칸은
-  `boss_profit_calculator_record_character_id` 다. `character_id` 로 두면 `characters` 표의 줄로 읽힌다. 가계부 품목의
+  `record_character_id` 다(결정 36). `character_id` 로 두면 `characters` 표의 줄로 읽힌다. 가계부 품목의
   `item_kind_key` 는 `cashbook_item_type_key` 가 된다.
 - 값은 그대로다. 앱이 받는 게임 데이터의 이름(`forms` · `itemForms` · `form` · `section`)도 그대로 둔다. 그래서 앱 코드는 바뀌지
   않는다(결정 32 와 같은 방식).
@@ -896,7 +898,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `id` | uuid | 줄 id |
   | `job_id` | uuid → `jobs` | 이 코어를 가진 직업. 비울 수 없다. 지금은 직업 이름 글자를 적는 칸 `job` 이다 |
   | `name` | text | 넥슨이 주는 코어 이름 |
-  | `hexa_core_type_id` | uuid → `hexa_core_types` | 코어의 종류. 지금은 넥슨 타입 글자를 적는 칸 `api_type` 이다 |
+  | `type_id` | uuid → `hexa_core_types` | 코어의 종류. 지금은 넥슨 타입 글자를 적는 칸 `api_type` 이다. 두 표가 모두 `hexa_core` 로 시작해서 그 말은 칸 이름에 넣지 않는다(결정 36) |
   | `icon_asset_id` | uuid → `assets` | 코어 그림 |
   | `sort_order` | integer | 같은 종류 안의 차례. 지금은 직업 안의 차례다 |
 
@@ -923,8 +925,40 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 코어 줄이 종류 여섯 가운데 하나를 직접 가리킨다. 넥슨 타입 글자 칸 `api_type` 은 코어 줄에서 없앤다. 넥슨 타입은 종류 줄에
   있다. 이름 표 `hexa_core_name_kinds` 는 없앤다.
 - 종류 표의 이름은 끝말 규칙대로 `hexa_core_types` 다(결정 32). 넥슨이 주는 값의 이름 `hexa_core_type` 과 말이 겹치지만, 종류 표가
-  넥슨 타입을 칸 `api_type` 으로 따로 든다. 레벨별 비용 표 `hexa_core_level_costs` 의 칸 `kind_id` 는 `hexa_core_type_id` 가 된다.
+  넥슨 타입을 칸 `api_type` 으로 따로 든다. 레벨별 비용 표 `hexa_core_level_costs` 의 칸 `kind_id` 는 `type_id` 가 된다(결정 36).
 - 1.0.14 까지의 앱에는 서버가 지금과 같은 게임 데이터(`jobCores` · `nameKinds`)를 만들어 낸다.
+
+### 결정 36. 같은 말로 시작하는 표를 가리키는 칸은 겹치는 앞말을 빼고 쓴다 (사용자 지정 2026-11-19)
+
+- 다른 표의 줄을 가리키는 칸의 이름은 가리키는 표의 이름에 `_id` 를 붙여 짓는다. 자기 표와 가리키는 표의 이름이 같은 말로
+  시작하면 그 말은 칸 이름에서 뺀다. 표 이름에서 이미 읽은 말을 칸에서 다시 쓰지 않는다. `spend_item_options` 가 `spend_items` 를
+  가리키는 칸은 `spend_item_id` 가 아니라 `item_id` 다.
+- 앞말이 다른 표를 가리키는 칸은 가리키는 표의 이름을 그대로 쓴다. `item_id` 는 `spend` 로 시작하는 표에서는 `spend_items` 의
+  줄이고, 그 밖의 표에서는 `items` 의 줄이다. 앞말이 다른 표에서 줄여 쓰면 어느 표의 줄인지 칸 이름으로 알 수 없다.
+- 줄인 이름이 다른 표의 줄로 읽히면 구분되는 말을 남긴다. 계산기 기록의 보스 줄이 그 기록 안의 캐릭터 줄을 가리키는 칸은
+  `record_character_id` 다. `character_id` 까지 줄이면 `characters` 표의 줄로 읽힌다.
+- 2026-11-19 운영 스키마는 이미 이 방식에 가깝다. 다른 표의 줄을 가리키는 칸 71개 가운데 앞말을 뺀 칸이 17개다. 앞말이
+  겹치는데 표 이름을 그대로 쓴 칸은 5개다(`boss_difficulty_id` 셋, `nexon_account_id` 둘).
+- 이 규칙으로 이름을 정한 칸이다.
+
+  | 표 | 칸 | 가리키는 표 | 지금 이름 |
+  |---|---|---|---|
+  | `spend_item_reward_types` | `reward_type_id` | `spend_reward_types` | `form_id` |
+  | `hexa_cores` | `type_id` | `hexa_core_types` | 없다. 넥슨 타입 글자를 적는 칸 `api_type` 을 대신한다 |
+  | `hexa_core_level_costs` | `type_id` | `hexa_core_types` | `kind_id` |
+  | `boss_profit_calculator_record_characters` | `record_id` | `boss_profit_calculator_records` | 새 표다 |
+  | `boss_profit_calculator_record_bosses` | `record_character_id` | `boss_profit_calculator_record_characters` | 새 표다 |
+
+- 지금 앞말을 빼고 쓰는 칸은 그대로 둔다. `spend_item_options.item_id` · `spend_items.group_id` · `spend_items.tile_id` ·
+  `drop_box_contents.box_id` 같은 칸이다. 가리키는 표의 이름이 바뀔 때만 따라 바꾼다(결정 23).
+- `boss_difficulty_id` 는 줄이지 않는다. `boss` 로 시작하지 않는 표(`drop_sale_prices` · `manual_tracked_items` ·
+  `party_appointment_bosses`)도 `boss_difficulties` 를 가리킨다. `boss` 로 시작하는 표에서만 줄이면 같은 표를 가리키는 칸의 이름이
+  둘이 된다.
+- `boss_drops.boss_profit_entry_id` 도 그대로 둔다. 결정 23 · 26 에서 사용자가 정한 이름이고, 이 규칙을 정할 때 줄이는 칸에 넣지
+  않았다.
+- 아직 검토하지 않은 표의 칸은 그 표를 검토할 때 정한다. `nexon_account_keys` · `nexon_account_maple_ids` 의 `nexon_account_id` 는
+  앞말이 겹치는데 표 이름을 그대로 쓴 칸이다. `spend_groups.category_id` 는 앞말이 다른 `cashbook_categories` 를 가리키는데 줄여 쓴
+  칸이다.
 
 ## 테스트
 
