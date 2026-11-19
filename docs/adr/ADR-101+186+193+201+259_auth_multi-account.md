@@ -447,7 +447,8 @@
 ### 결정 18. 강화 줄에 ocid 를 붙여 ocid 로 중복을 판정하고, ocid 를 붙이지 못한 줄은 버린다
 
 - 강화 합계 줄(`enhancement_totals`)에 `ocid` 와 메이플 ID(`account_id`) 칸을 더하고, `UNIQUE` 를 `(ocid, history_date,
-  enhancement_category, item_group)` 로 바꾼다(사용자 지정 2026-11-09). 지금 판정에 든 `nexon_account_id` 는 기기가 만든 임의 값이라,
+  enhancement_category, item_group)` 로 바꾼다(사용자 지정 2026-11-09). (1.0.15 에서 바뀐다. 넷째 칸이 `item_group` 대신 넥슨이 준
+  장비 이름 `item_name` 이 된다. [[ADR-099]] 결정 37) 지금 판정에 든 `nexon_account_id` 는 기기가 만든 임의 값이라,
   같은 넥슨 계정이 번호를 새로 받으면 같은 줄이 두 번 들어갔다. ocid 는 넥슨이 주는 값이고 캐릭터 이름을 바꿔도 그대로다.
 - 강화 내역 응답에는 ocid 가 없고 그때의 캐릭터 이름만 있다(2026-09-06 실측). 그래서 줄을 쓸 때 그 날짜에 그 이름이었던 캐릭터를
   찾는다(사용자 지정 2026-11-09). 지금 이름으로 맞추면 이름을 바꾸기 전 날짜의 줄이나, 다른 캐릭터가 쓰던 이름의 줄을 잘못 붙이기

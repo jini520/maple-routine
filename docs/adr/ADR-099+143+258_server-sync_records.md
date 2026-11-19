@@ -150,7 +150,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄)을 더한다. 반지 레벨은 아이템 줄이 든다(결정 28) | 기록 | 기록 · 차례 |
 | `cashbook_entry_hunt_inputs` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs` · `cashbook_entry_fragment_uses` | 같은 이름의 새 표 넷 | 기록 | 기록(조각 사용은 기록 · 보관) |
 | `inventory_items` | `inventory_items` 새 표 | 메이플 ID | 장비가 아니면 메이플 ID · 월드 · 아이템. 장비는 기록 id |
-| `enhancement_totals` | `enhancement_totals` 고침(결정 11) | 캐릭터 | ocid · 날짜 · 분류 · 장비 묶음([[ADR-101]] 결정 18) |
+| `enhancement_totals` | `enhancement_totals` 고침(결정 11) | 캐릭터 | ocid · 날짜 · 분류 · 넥슨이 준 장비 이름([[ADR-101]] 결정 18, 이 문서의 결정 37) |
 | `enhancement_history_checks` 의 굳은 날 | `enhancement_settled_days` 새 표(결정 11) | 메이플 ID | 메이플 ID · 종류 · 날짜 |
 | `remembered_levels` | `remembered_levels` 새 표 | 캐릭터 | ocid · 갈래 · 대상 |
 | `mvp_grade_history` | `mvp_grade_history` 새 표 | 메이플 ID | 메이플 ID · 시작 날짜 |
@@ -228,7 +228,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 ### 결정 11. 강화는 날짜 · 캐릭터 · 분류 · 장비마다의 합계와 굳은 날만 서버에 두고, 새 기기는 굳은 날을 넥슨에서 다시 받지 않는다 (사용자 지정 2026-11-17)
 
 - 강화 내역의 응답 원본은 기기에도 서버에도 두지 않는다. 기기의 `enhancement_totals` 한 줄이 날짜 · 캐릭터 · 분류 · 장비 하나의 합계이고
-  ([[ADR-100]]), 서버 `enhancement_totals` 가 같은 유일 기준으로 그 줄을 든다.
+  ([[ADR-100]]), 서버 `enhancement_totals` 가 같은 유일 기준으로 그 줄을 든다. 장비는 넥슨이 준 이름으로 가린다(결정 37).
 - 서버 표에 기기 표의 칸을 더한다. 받은 API 종류(`enhancement_api_type`, 결정 32) · 월드 · 슈페리얼 비용 · 스타포스의 처음 성과 끝 성 · 이벤트 월드
   판정이다. 지금 서버 표는 이벤트 월드가 아닌 줄만 받는데, 기기끼리 맞추려면 모든 줄이 있어야 한다. 가계부 제외 표식([[ADR-160]])을
   구현할 때 그 칸도 이 표에 더한다. 빼면 다른 기기에서 뺀 강화 비용이 다시 지출로 잡힌다. [[ADR-160]] 의 `서버에는 보내지 않는다` 는
@@ -963,6 +963,25 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   앞말이 겹치는데 표 이름을 그대로 쓴 칸이다. `spend_groups.category_id` 는 앞말이 다른 `cashbook_categories` 를 가리키는데 줄여 쓴
   칸이다.
 
+### 결정 37. 강화 합계의 장비는 넥슨이 준 이름 하나로 가린다 (사용자 선택 2026-11-19)
+
+- `enhancement_totals` 의 한 줄은 캐릭터 · 날짜 · 분류 · 장비 이름(`item_name`)으로 가린다. `item_group` 과 `item_key` 는 없앤다.
+  서버 표와 기기 표 모두다.
+- 지금 `item_group` 은 장비 표에 있는 장비면 `key:` 뒤에 장비 key 를, 없으면 `name:` 뒤에 공백을 지운 이름을 적는다. 서버 표의
+  줄을 가리키는 값과 그냥 글자가 한 칸에 섞여 있다(사용자 지적 2026-11-19).
+- 장비 key 는 이름에서 다시 구할 수 있는 값이다(결정 27). 넥슨 강화 내역은 장비를 이름으로만 준다. 앱이 그 이름으로 장비 표를
+  찾아 key 를 얻는다(`equipmentItemKeyOfApiName`). 화면도 key 가 없으면 이름으로 장비 표를 찾는다
+  (`features/cashbook/row-icon.ts`). 서버에는 `item_key` 를 읽는 코드가 없다.
+- 장비 그림과 레벨은 읽을 때 이름으로 장비 표에서 찾는다. 장비 표에 나중에 더한 장비도 그 전에 적힌 줄에서 그림이 나온다.
+- 이름은 넥슨이 준 글자 그대로 적고 그대로 견준다. 넥슨이 같은 장비의 이름을 띄어쓰기만 다르게 주면 두 줄로 갈린다.
+  2026-11-19 로컬 기기 백업 하나의 합계 968줄, 장비 121종에는 한 장비의 이름 표기가 둘인 경우가 없었다.
+- 한 줄이 가리는 것은 장비 한 개가 아니라 장비 이름이다. 넥슨 강화 내역에는 장비 하나하나를 구분하는 값이 없다. 이름이 같은
+  장비 둘을 같은 날 강화하면 지금처럼 한 줄로 합쳐진다([[ADR-100]] 결정 8).
+- 두 칸으로 나누는 안은 쓰지 않는다. 장비 표에 있는 장비는 `item_id` 에, 없는 장비는 `item_name` 에 적는 안이다. 한 줄의 기준이
+  둘로 나뉘고, 장비 표에 장비를 더하면 그 전에 이름으로 적힌 줄과 그 뒤에 id 로 적힌 줄이 다른 장비로 남는다.
+- 서버 표는 줄이 없어 칸을 바로 없앤다(결정 8). 기기 표는 1.0.15 의 기기 변환(결정 19)에서 두 칸을 없애고 유일 기준을
+  `(ocid, history_date, enhancement_category, item_name)` 으로 다시 만든다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -986,6 +1005,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 31: 처치한 난이도에서 얻을 수 있는 드롭이 남고 못 얻는 드롭이 지워지는지, 경로만 다른 연마석이 같은 물건의 다른 줄로 바뀌는지 |
 | (구현 때 더한다) | 결정 34: 컨텐츠의 `check_type` 과 완료 횟수로 완료를 세는지, 카드와 진행 링 · 남은 스케줄이 같은 조건을 쓰는지, 완료 횟수가 `count_only` 가 아닌 줄에 들어가지 않는지 |
 | (구현 때 더한다) | 결정 35: 한 직업의 코어 목록에 공용 코어가 들어가고 차례가 지금과 같은지, 이름이 같고 그림이 다른 코어가 직업마다 제 그림으로 나오는지, 1.0.14 까지의 앱이 받는 헥사 데이터가 그대로인지 |
+| (구현 때 더한다) | 결정 37: 장비 표에 있는 장비와 없는 장비가 모두 이름으로 한 줄씩 묶이는지, 읽을 때 이름으로 장비 그림을 찾는지, 기기 변환 뒤에 같은 날을 다시 받아도 줄이 늘지 않는지 |
 
 ## 번호 기록
 
