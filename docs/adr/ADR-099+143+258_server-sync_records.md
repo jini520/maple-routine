@@ -484,8 +484,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - `bosses.alias` 는 `short_name` 으로 바꾼다. 좁은 곳에 쓰는 줄인 이름이다. 유효 기간 칸 `from` · `until` 은 `valid_from` ·
   `valid_until` 로 바꾼다(사용자 선택 2026-11-18). 무엇의 시작인지가 이름에 없고 둘 다 SQL 의 예약어다. 서버의 게임 데이터 표
   아홉 개(`bosses` · `boss_difficulties` · `boss_difficulty_rewards` · `boss_crystal_prices` · `world_periods` · `hunt_loot_items` ·
-  `spend_items` · `symbol_level_costs` · `contents`)가 같은 이름을 써서 함께 바꾼다. 앱이 받는 게임 데이터의 이름(`alias` ·
-  `from` · `until`)은 그대로 둔다. 그래서 앱 코드는 바뀌지 않는다.
+  `spend_items` · `symbol_level_costs` · `contents`)가 같은 이름을 써서 함께 바꾼다. 앱이 받는 게임 데이터도 새 이름으로
+  낸다(결정 43).
 
 ### 결정 24. 기간은 주차와 월로 적는다 (사용자 지정 2026-11-18)
 
@@ -785,8 +785,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - `split_mode` 와 `tracking_mode` 도 `_type` 으로 바꾼다(사용자 지정 2026-11-18). 화면의 말이 `분배 방식` · `트래킹 모드` 라서
   `_mode` 로 두는 안이 있었다. 하지만 둘 다 정해진 값 가운데 하나를 고르는 칸이라 다른 enum 과 다르지 않다. 끝말이 둘이면 enum 을
   새로 지을 때마다 어느 쪽인지 따져야 한다. 화면의 말은 그대로 둔다.
-- 형 이름을 바꾸는 것은 이름만 바꾸는 마이그레이션이다. 값은 그대로다. 칸 이름을 바꿔도 앱이 받는 응답의 이름은 그대로 둔다.
-  게임 데이터의 `alias` · `from` · `until` 과 같은 방식이다(결정 23). 그래서 앱 코드는 바뀌지 않는다.
+- 형과 칸의 이름만 바뀌고 값은 그대로다. 앱이 받는 게임 데이터도 새 이름으로 낸다(결정 43).
 - 기기 표의 칸도 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로 바꾼다. `remembered_levels` 의 `kind` 와, `boss_parties` ·
   `boss_party_periods` · `boss_drops` 의 `split_mode` 다. 분배 칸이 있는 세 표는 그때 다시 만드는 표다(결정 23).
 - 서버의 모든 표가 정리 대상이다(사용자 지정 2026-11-18). 이 문서가 처음 다룬 것은 기기끼리 맞추는 기록 표였지만, 이름과 칸을
@@ -864,8 +863,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   `shared_progress.quest_state` 도 그대로 둔다. 넥슨 응답의 칸 이름과 값(0 · 1 · 2)을 그대로 쓴 것이다.
 - `mvp_grade_history.from_date` 는 이름도 값도 날짜 그대로 둔다. 등급은 달성한 날부터 바뀌어서 시작 날짜가 아무 요일이나
   된다([[ADR-050]] 결정 2). 주차 값으로 적으면 그 주의 앞쪽 날짜 기록까지 새 등급으로 계산된다.
-- 값은 그대로다. 앱이 받는 게임 데이터의 이름(`forms` · `itemForms` · `form` · `section`)도 그대로 둔다. 그래서 앱 코드는 바뀌지
-  않는다(결정 32 와 같은 방식).
+- 값은 그대로다. 앱이 받는 게임 데이터의 이름(`forms` · `itemForms` · `form` · `section`)도 표와 칸의 새 이름을 따라
+  바꾼다(결정 43).
 - enum `content_type` 과 그 값 `contents` · `quest` 는 그대로 둔다(사용자 지정 2026-11-18). 값은 넥슨 API 응답(스케줄러 정보 조회)의
   `type` 을 그대로 쓴 것이다. 넥슨 값과 다르게 하면 같은 것을 넥슨 응답에서는 `contents` 로, 서버 데이터에서는 다른 글자로 읽게 된다.
 - 표 `spend_item_options` 의 이름과 칸 `spend_items.tier` 는 그대로 둔다(사용자 지정 2026-11-19). `spend_item_options` 의 한 줄은
@@ -1063,7 +1062,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 이미 이렇게 정한 칸이다. 보스와 난이도(결정 19), 캐릭터(결정 20), 드롭의 아이템(결정 28), 헥사 코어의 직업과 종류(결정 35),
   기억한 레벨의 대상(결정 38).
 - `items.category` 는 `group_id` 로 바꾸고 `item_groups` 의 줄 id 를 적는다. 지금은 묶음 key 글자를 적는다. 두 표가 모두 `item` 으로
-  시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 앱이 받는 게임 데이터의 묶음 key 는 그대로 낸다.
+  시작해서 그 말은 칸 이름에 넣지 않는다(결정 36). 앱이 받는 게임 데이터도 묶음을 줄 id 로 낸다(결정 43).
 - 2026-11-19 에 지금 설계와 운영 스키마에서 이 결정과 다른 칸을 찾았다. 아직 고치지 않았고 표를 검토할 때 고친다.
 
   | 칸 | 지금 적는 값 | 가리킬 표 |
@@ -1120,8 +1119,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - `items.world_bound` 는 없앤다(결정 41).
 - `contents` 의 `only_when_scheduled` · `trust_registration_flag` · `cumulative_score` 는 없앤다(결정 42).
   `market_judgements.dummy` 는 시세 표를 검토할 때 정한다.
-- 앱이 받는 게임 데이터의 이름(`valuable` · `popular` · `active` 등)은 그대로 둔다(결정 32 와 같은 방식). 기기 표에 같은 칸이
-  있으면 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로 바꾼다.
+- 앱이 받는 게임 데이터도 새 이름으로 낸다(결정 43). 기기 표에 같은 칸이 있으면 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로
+  바꾼다.
 
 ### 결정 41. 시세를 재는 범위는 아이템의 묶음 종류로 가르고 `items.world_bound` 는 없앤다 (사용자 확인 2026-11-19)
 
@@ -1163,14 +1162,22 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 이 결정을 받기 전의 설계에는 옛 앱을 함께 받는다는 가정이 들어 있었다. 2026-11-19 에 문서와 지금 서버의 표 68개를 다시 보고
   그 가정으로 적은 문장을 걷었다. 서버 코드에서 옛 앱 때문에 있는 것은 셋이다. 게임 데이터에 함께 싣는 옛 그림 이름, 드롭 판매가
   표에 바로 올리는 경로, 1.0.13 앱의 줄을 사람(`user_id`)으로 찾는 경로다.
+- 앱이 받는 게임 데이터는 표와 칸의 이름을 그대로 따른다(사용자 선택 2026-11-19). 지금 설계는 칸 이름을 바꿔도 응답의 이름을
+  그대로 두었다. `short_name` 을 `alias` 로, `valid_from` 을 `from` 으로 냈다. 이유 둘 가운데 옛 앱이 영향을 받지 않게 한다는 쪽이
+  없어졌고, 같은 값을 표와 앱이 다른 이름으로 부르면 서버가 그 사이에서 이름을 계속 바꿔 적어야 한다. 표기는 지금처럼 낙타
+  표기다. `short_name` 은 `shortName` 으로 낸다. 앱은 `GAME_DATA_CONTRACT` 를 올려 새 사본을 받는다(결정 19).
+- 옛 앱이 읽던 그림 이름을 없앤다(사용자 지정 2026-11-19). 게임 데이터에 그림 줄 id 와 함께 싣던 `iconFile` · `iconMap` ·
+  `emblem` · `portraitSlug` · `backgroundMap` · `backgroundPortrait` 와 크롭의 `slug` 를 싣지 않는다. 그림은 그림 줄 id 로만
+  가리킨다. 옛 글자 칸은 옛 앱이 남는 동안만 함께 내기로 한 것이다([[ADR-187]] 결정 4).
+- `assets.path` 를 없앤다(사용자 지정 2026-11-19). 옛 앱이 그림을 찾던 경로다. 관리 화면도 그림을 줄 id 로 가린다. 지금 서버는
+  디스크의 파일 이름(`<sha256>.<확장자>`)을 만들 때 확장자를 이 경로에서 읽는다. 그래서 확장자를 적는 칸을 하나 더한다. 그 칸의
+  이름은 아직 정하지 않았다.
+- 새 DB 로 옮길 때 기준 표의 줄 id 를 그대로 옮긴다(사용자 선택 2026-11-19). 그림 · 아이템 · 보스 · 난이도 · 월드 줄이다.
+  1.0.14 앱이 기기에 받아 둔 그림은 그림 줄 id 로 저장돼 있어서, id 를 새로 만들면 1.0.15 로 올린 기기가 그림을 모두 다시
+  받는다. 옮겨 오는 판매가 줄도 아이템 · 보스 · 월드 줄을 id 로 가리킨다.
 - 아직 정하지 않은 것이 있다.
-  - 앱이 받는 게임 데이터의 이름을 표의 칸 이름과 같게 낼지. 지금 설계는 칸 이름을 바꿔도 응답의 이름은 그대로 둔다(결정 23 ·
-    32 · 33 · 39 · 40). 이유 둘 가운데 옛 앱이 영향을 받지 않게 한다는 쪽은 없어졌고, 앱 코드를 바꾸지 않는다는 쪽만 남았다.
-  - 옛 앱이 읽던 그림 이름(`iconFile` · `iconMap` · `emblem` · `portraitSlug` · `backgroundMap` · `backgroundPortrait`)과
-    `assets.path` 를 이 전환에서 함께 걷을지.
-  - 새 DB 로 옮길 때 기준 표(그림 · 아이템 · 보스 · 난이도 · 월드)의 줄 id 를 그대로 옮길지. 1.0.14 앱이 기기에 받아 둔 그림은
-    그림 줄 id 로 저장돼 있고, 옮겨 오는 판매가 줄은 아이템 · 보스 · 월드 줄을 id 로 가리킨다.
   - 드롭 판매가 표의 나머지 칸(결정 26).
+  - `assets` 에 더할 확장자 칸의 이름.
   - 심사 기간에 1.0.15 빌드가 붙을 서버와 DB, 옛 DB 를 옮기는 시각. 출시 절차를 정할 때 함께 정한다.
 
 ## 테스트
