@@ -150,7 +150,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | `boss_drops` | `boss_drops` 새 표(결정 26). 시세를 재는 판매가는 `drop_sale_prices` 에 따로 둔다 | 수익 건을 따라 캐릭터 | 수익 건 · 아이템(결정 28) |
 | `cashbook_entries` | `cashbook_entries` 고침. 메모 · 월드 칸을 더한다. 분류는 줄 id 로 가리키고 `entry_type` 칸을 없앤다(결정 45). 기기가 저장한 시각 칸을 더한다(결정 49) | 메이플 ID. 캐릭터 기록은 캐릭터 줄도 가리킨다(결정 49) | 기록 id. 손으로 적는 기록이라 내용으로 가리지 않는다 |
 | `cashbook_entry_items` | `cashbook_entry_items` 고침. 기기 표에 있고 서버에 없는 칸(수수료 자동 · 메소마켓 수수료율 · 헥사 체크 둘 · 인벤토리 줄)을 더한다. 반지 레벨은 아이템 줄이 든다(결정 28). 품목의 대상은 종류와 줄 id 로 적는다(결정 44). 차례 칸을 없앤다(결정 53) | 기록 | 기록 · 추가 리워드 종류(결정 53) |
-| `cashbook_entry_hunt_inputs` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs` · `cashbook_entry_fragment_uses` | 같은 이름의 새 표 넷 | 기록 | 기록(조각 사용은 기록 · 보관) |
+| `cashbook_entry_hunt_inputs` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs` · `cashbook_entry_fragment_uses` | 같은 이름의 새 표 넷(결정 54) | 기록 | 기록(조각 사용은 기록 · 가져온 곳 · 캐릭터) |
 | `inventory_items` | `inventory_items` 새 표. 아이템과 아이템 종류는 줄 id 로 가리킨다(결정 39 · 46) | 메이플 ID | 장비가 아니면 메이플 ID · 월드 · 아이템. 장비는 기록 id |
 | `enhancement_totals` | `enhancement_totals` 고침(결정 11) | 캐릭터 | ocid · 날짜 · 분류 · 넥슨이 준 장비 이름([[ADR-101]] 결정 18, 이 문서의 결정 37) |
 | `enhancement_history_checks` 의 굳은 날 | `enhancement_settled_days` 새 표(결정 11) | 메이플 ID | 메이플 ID · 종류 · 날짜 |
@@ -1120,8 +1120,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 메이플 ID 해시 글자(`maple_id`)로 메이플 ID 줄을 가리키던 칸도 줄 id 로 바꾼다(결정 48). `drop_sale_prices.ocid` 는
   없앤다(결정 26).
 - 가리킬 표가 없어 지금은 id 로 적을 수 없는 값이 있다. 강화 합계의 장비 이름(`enhancement_totals.item_name`, 결정 37)은 장비
-  표에 없는 장비가 있어 글자다. 사냥 계산기 입력의 `boosts` 는 켠 메소 획득 아이템 여럿을 쉼표로 이은 글자이고 목록이 앱 코드
-  (`MESO_BOOSTS`)에만 있다. 거래권(`worlds.price_group`), 하단바와 빠른 링크의 화면 key
+  표에 없는 장비가 있어 글자다. 거래권(`worlds.price_group`), 하단바와 빠른 링크의 화면 key
   (`account_settings` · `bottom_bar_sub_page_orders`)도 서버 표가 없다. 표를 만들어 id 로 적을지는 그 표를 검토할 때 정한다.
   아이템 묶음의 종류는 표가 아니라 enum 으로 둔다(결정 50).
 
@@ -1490,6 +1489,33 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   남은 개수를 세는 연결이다.
 - 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로 바꾸고 차례 칸을 없앤다.
 
+### 결정 54. 조각 사용 줄은 메이플 ID 와 월드를 적지 않고, 사냥 입력의 켠 효과는 참 · 거짓 칸으로 나눈다 (사용자 선택 2026-11-19)
+
+- `cashbook_entry_fragment_uses` 에서 기타 조각을 가져온 메이플 ID 와 월드를 적는 칸을 서버 표와 기기 표에서 모두 없앤다(결정 27).
+  설계의 `source_maple_id` · `world_id` 이고 기기 표의 `account_id` · `world_key` 다.
+  - 헥사 강화는 기타 조각을 강화한 캐릭터의 메이플 ID · 월드에서만 가져온다([[ADR-209]] 결정 8). 그래서 두 값은 언제나 그 기록
+    (`cashbook_entries`)의 메이플 ID · 월드와 같다.
+  - 한 줄은 기록 · 가져온 곳 · 캐릭터(`entry_id` · `fragment_source` · `character_id`)로 가린다. `character_id` 는 사냥 조각을 가져온
+    캐릭터이고 기타 조각 줄은 비어 있다. 사냥 조각은 기록의 캐릭터와 다른 캐릭터에서 가져올 수 있어서 이 칸은 둔다.
+  - 가져온 줄의 차례는 적지 않는다. 조각을 옮기는 코드는 캐릭터로 줄을 찾는다(`storage/fragment-moves.ts`).
+  - 기기는 기타 조각의 남은 개수를 세는 조회 다섯 곳(`storage/inventory.ts`)에서 기록의 캐릭터로 메이플 ID 를 찾는다.
+- enum `fragment_source` 의 값 `other` 를 `inventory` 로 바꾼다. 인벤토리에 넣은 기타 조각이다. 값은 `hunt` · `inventory` 다.
+- `cashbook_entry_hunt_inputs.boosts` 를 없애고 참 · 거짓 칸 둘로 나눈다. `uses_wealth_potion` 은 소형 재물 획득의 비약을 켰는지,
+  `uses_union_wealth` 는 유니온의 부를 켰는지다(결정 40).
+  - `boosts` 는 켠 효과의 id 를 쉼표로 이은 글자다. 값은 `potion` 과 `union` 둘이고 목록은 앱 코드(`lib/cashbook/hunting-meso.ts` 의
+    `MESO_BOOSTS`)에 있다. 한 칸에 값이 여럿 들어 있고 같은 조합이 차례만 다르게 적힌다. 2026-11-19 최근 기기 백업의 계산기 사냥
+    93건은 `potion,union` 51건, `union,potion` 28건, `potion` 12건, 빈 값 2건이다.
+  - 글자 배열(`text[]`)로 두는 안은 쓰지 않는다. 값이 가리키는 표가 없고 같은 조합이 차례만 다르게 적힐 수 있다.
+  - 효과가 늘면 칸을 더한다. 곱하는 효과와 더하는 효과의 계산이 달라서 지금도 앱 코드를 고쳐야 효과를 더할 수 있다.
+  - 직접 입력 사냥은 두 칸이 비어 있다.
+- 사냥 입력의 칸 이름을 둘 바꾼다. `meso_rate` 는 `meso_acquisition_percent` 다. 그때의 캐릭터 메소 획득량(%)이다. `union_tier` 는
+  `union_wealth_tier` 다. 유니온의 부 단계(1 ~ 3)이고, 유니온 등급으로 읽히지 않게 한다.
+- 계산기 사냥인지 직접 입력 사냥인지는 지금처럼 `typed_meso` 가 찼는지로 안다([[ADR-049]] 결정 1). 종류 칸을 따로 더하지 않는다.
+  처치했는지를 `clear_recorded_by` 가 찼는지로 아는 것과 같다(결정 27).
+- `cashbook_entry_transfer_inputs` 와 `cashbook_entry_exchange_inputs` 의 칸은 그대로 둔다. 이전 시트와 환전 시트를 다시 열 때 쓰는
+  입력이다. `inventory_items` 는 결정 39 · 46 · 48 에서 정한 그대로다.
+- 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 칸과 값의 새 이름은 Claude 가 낸 후보다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1524,6 +1550,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 49: 캐릭터 기록을 올리면 서버가 그 캐릭터의 메이플 ID 를 채우는지, 캐릭터와 메이플 ID 가 어긋난 줄을 받지 않는지, 묶음으로 올린 같은 날 기록이 받은 기기에서 저장한 시각 차례로 서는지, 메모가 다른 기기에서 보이는지 |
 | (구현 때 더한다) | 결정 52: 넥슨이 최대 횟수를 0 으로 줘도 표의 `max_count` 로 완료와 분모를 정하는지, `count_only` 가 아닌 줄에 `max_count` 가 들어가지 않는지, 표에 없는 컨텐츠가 넥슨의 `type` 으로 판정되는지 |
 | (구현 때 더한다) | 결정 53: 추가 리워드를 두 종류로 받은 기록의 품목이 종류의 차례로 읽히는지, 한 기록에 같은 종류의 품목을 두 줄 받지 않는지 |
+| (구현 때 더한다) | 결정 54: 기기 변환 뒤에 기타 조각의 남은 개수가 변환 전과 같은지, 한 기록이 같은 보관에서 두 줄로 가져가지 못하는지, 켠 효과가 적힌 차례와 상관없이 같은 칸으로 옮겨지는지 |
 
 ## 번호 기록
 
