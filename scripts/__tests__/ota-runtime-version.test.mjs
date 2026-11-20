@@ -117,12 +117,9 @@ describe('resolveAcceptedRuntimeVersions: 받는 지문 목록을 만든다', ()
 // 못박은 지문과 같은 성질이라 같은 파일에 둔다. 출시 후에 비워야 해서 수치로 박아 둔다. 안 비우면
 // 아무도 안 잠기고, 그 방향이 안전한 쪽이라 조용히 지나간다.
 describe('IN_REVIEW_RUNTIME_VERSIONS: 심사 중인 바이너리의 지문', () => {
-  // 업로드한 1.0.14 가 TestFlight · 심사에서 잠기지 않게 한다. 게시를 확인하면 플랫폼마다 비운다.
-  it('두 플랫폼 다 업로드한 1.0.14 의 지문을 받는다', () => {
-    expect(IN_REVIEW_RUNTIME_VERSIONS).toEqual({
-      ios: ['c96833a63a6641b5e9363cb2e019e8d8f7ce0fa0'],
-      android: ['20296585a2abb2b57b3925ae1638983c913dd5a8'],
-    })
+  // 비운 것이 곧 그 플랫폼 1.0.13 기기의 잠금이다. 두 플랫폼 2026-11-20.
+  it('두 플랫폼 다 비었다: 1.0.14 가 게시돼 1.0.13 기기가 잠긴다', () => {
+    expect(IN_REVIEW_RUNTIME_VERSIONS).toEqual({})
   })
 })
 
