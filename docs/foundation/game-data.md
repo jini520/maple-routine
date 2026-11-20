@@ -32,11 +32,11 @@
 
 | 칸 | 담는 것 | 조회 모듈 | 관리 화면 |
 |---|---|---|---|
-| `bosses` | 보스 26개와 난이도 줄(요구 레벨 · 파티 인원 상한 · 유효 기간), 규칙(주간 보스 선택 한도 · 주간 결정석 판매 한도 · 기본 파티 인원 상한). 보스 key 마스터 표다 | `lib/boss/bosses` · `lib/boss/catalog` | `/admin/bosses` |
+| `bosses` | 보스 26개와 난이도 줄(요구 레벨 · 파티 인원 상한 · 유효 기간), 규칙(주간 보스 선택 한도 · 주간 결정석 판매 한도 · 기본 파티 인원 상한). 보스 key 마스터 표다. 1.0.15 에서 난이도 줄을 배열 `bossDifficulties` 로 따로 낸다([[ADR-099]] 결정 65) | `lib/boss/bosses` · `lib/boss/catalog` | `/admin/bosses` |
 | `dropItems` | 드롭 아이템 109개의 key · 이름 · 그림 · 고가 여부. 드롭 아이템 key 마스터 표다. 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) | `lib/drop/drop-items` | `/admin/drop-items` |
-| `bossDrops` | 보스 · 난이도마다의 보상 줄 387개(고정 보상 · 장비 · 소비, 고정 보상 수량, 유효 기간) | `lib/boss/boss-drops` | `/admin/boss-drops` |
-| `dropBoxes` | 개봉 결과를 직접 고르는 상자 7개(반지 상자 5 · 장신구 상자 2)의 레벨 범위와 후보 | `lib/boss/boss-drops` | `/admin/drop-boxes` |
-| `crystalPrices` | 보스 · 난이도마다 결정석 가격 줄 106개. 한 조합에 기간 줄이 여럿일 수 있다 | `lib/boss/boss-crystal-prices` | `/admin/crystal-prices` |
+| `bossDrops` | 보스 · 난이도마다의 보상 줄 408개(고정 보상 · 장비 · 소비, 고정 보상 수량, 유효 기간). 1.0.15 에서 배열 `bossDifficultyRewards` 로 내고 수량을 정수로 바꾼다([[ADR-099]] 결정 65) | `lib/boss/boss-drops` | `/admin/boss-drops` |
+| `dropBoxes` | 개봉 결과를 직접 고르는 상자 7개(반지 상자 5 · 장신구 상자 2)의 레벨 범위와 후보. 1.0.15 에서 배열 `dropBoxes` · `dropBoxContents` 로 낸다([[ADR-099]] 결정 65) | `lib/boss/boss-drops` | `/admin/drop-boxes` |
+| `crystalPrices` | 보스 · 난이도마다 결정석 가격 줄 106개. 한 조합에 기간 줄이 여럿일 수 있다. 1.0.15 에서 배열 `bossCrystalPrices` 로 낸다([[ADR-099]] 결정 65) | `lib/boss/boss-crystal-prices` | `/admin/crystal-prices` |
 | `worlds` | 월드 20개의 key · 넥슨 표기 이름 · 엠블럼 · 챌린저스 여부 · 이벤트 월드 여부 · 열린 기간(월드마다 여러 줄, [[ADR-100]] 결정 9). 월드 key 마스터 표다 | `lib/world/worlds` | `/admin/worlds` |
 | `spendCatalog` | 가계부 지출 목록. 묶음 12(카드 제목) · 타일 54 · 항목 70(원본 이름 · 줄인 이름) 과 항목의 축 값 · 형태, 형태 이름 둘, 규칙(관세율 · 세라자르 주화 가격 · 메소마켓 수수료율) | `lib/cashbook/spend-catalog` | `/admin/spend-catalog` |
 | `cashbookCategories` | 가계부 수입 · 지출 갈래 11개의 이름 · 카드 제목 · 그림 · 설명 · 단위와 아이템 종류 4개(장비 · 소비 · 기타 · 캐시)의 이름 · 단위 · 관세 여부 | `lib/cashbook/categories` | `/admin/cashbook-categories` |

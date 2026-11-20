@@ -2049,6 +2049,22 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
   - 관리 화면에서 이름 표 카드를 없앤다. 코어는 직업 줄 id 와 종류 key 로 더하고 고치며, 그림은 그림 줄 id 로 받는다. 직업을
     더하고 이름을 고치는 칸을 둔다. 직업을 지우는 경로는 두지 않는다. 코어 줄이 직업을 가리키고, 지금도 직업만 따로 지우는 일이
     없어서다. 차례 옮기기는 같은 직업 · 같은 종류 안에서 한다.
+- 넷째 묶음은 보스가 쓰는 기준 표(`boss_difficulty_rewards` · `drop_boxes` · `drop_box_contents` · `boss_crystal_prices` ·
+  `boss_manual_completion_periods`)다. 보스 기록 표가 이 표들을 가리키므로 기록 표보다 먼저 바꾼다. 이 줄과 아래 넷은 Claude 가
+  적었다.
+  - 게임 데이터 칸의 배열은 표 이름을 따른다(결정 59). `bossDrops` 칸은 `bossDifficultyRewards`(`bossDifficultyId` · `category` ·
+    `itemId` · `quantity` · `validFrom` · `validUntil`)를, `dropBoxes` 칸은 `dropBoxes`(`id` · `itemId` · `ringLevelMin` ·
+    `ringLevelMax`)와 `dropBoxContents`(`boxId` · `itemId`)를, `crystalPrices` 칸은 `bossCrystalPrices`(`bossDifficultyId` ·
+    `priceMeso` · `validFrom` · `validUntil`)를 싣는다. 배열의 차례가 드롭 시트의 타일 차례이고 상자를 열면 서는 후보 차례다.
+    직접 완료 경로(`GET /v1/manual-completion`)는 `bossManualCompletionPeriods`(`bossId` · `fromDate`)를 낸다.
+  - 첫 묶음의 `bosses` 칸은 난이도 줄을 보스 줄 안의 `difficulties` 로 냈다. 이것도 결정 59 대로 표 이름의 배열
+    `bossDifficulties`(줄마다 `bossId`)로 뺀다. 둘째 묶음의 월드 기간을 `worldOpenPeriods` 로 뺀 것과 같은 일이다.
+  - 옮길 때 고정 보상의 수량은 글자 끝의 `개` 를 떼고 정수로 바꾼다(결정 33). 2026-11-20 운영의 154줄이 모두 숫자이거나 숫자
+    뒤에 `개` 가 붙은 꼴이다. 다른 꼴이 있으면 스크립트가 멈춘다. 상자의 내용물 가운데 같은 물건으로 따로 둔 원래 아이템(생명의
+    연마석)을 가리키는 줄은 상자에서 나온 줄(`life_whetstone_from_box`)을 가리키게 바꾼다(결정 28). 운영에서 생명의 보스 반지
+    상자의 1줄이다. 보스가 직접 떨구는 드롭 표의 9줄은 원래 줄을 그대로 가리킨다.
+  - 관리 화면의 본문 칸 이름도 표를 따른다(`quantity` · `validFrom` · `validUntil` · `ringLevelMin` · `ringLevelMax` ·
+    `fromDate`). 보스 · 난이도 · 아이템은 지금처럼 key 로 받는다.
 - 2026-11-20 의 서버는 스키마가 `src/database/schema.ts` 한 파일(68표)이고, 그 파일을 읽는 코드가 49개, 마이그레이션이 46개다.
 - 서버 PR #122 는 머지하지 않는다(사용자 선택 2026-11-20). 2026-11-17 에 지금 표 위에 쓴 #947 의 서버 첫 조각이다. 로그인
   없는 사용자를 메이플 ID 해시 헤더로 찾고, 부계정을 넥슨 ID 하나에만 등록하게 하고, 다계정 사용자를 한 명으로 센다. 같은
