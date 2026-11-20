@@ -74,6 +74,6 @@ docs/
 - **게임 수치를 바꿀 때**: [foundation/game-data.md](./foundation/game-data.md). 값은 반드시 사용자에게 확인받는다.
 - **저장 형식을 바꿀 때**: [persistence/](./persistence/README.md) 의 해당 문서와 그 기능 문서.
 - **기존 사용자의 기기 데이터를 다룰 때**: [persistence/capacitor-storage.md](./persistence/capacitor-storage.md). 이름에 `capacitor` 가 붙은 파일을 지우면 안 되는 이유가 여기 있다.
-- **스토어에 올릴 바이너리를 만들 때**: [foundation/release.md](./foundation/release.md). OTA 발행은 [features/live-update.md](./features/live-update.md) 를 본다.
+- **스토어에 올릴 바이너리를 만들 때**: [foundation/release.md](./foundation/release.md). **업로드하면 그 자리에서 지문을 등록한다**(같은 문서의 `업로드하면 곧바로: 지문 등록`, [[ADR-188]] 결정 5). OTA 발행은 [features/live-update.md](./features/live-update.md) 를 본다.
 - **문서 · 주석 · 앱 문구를 쓸 때**: [foundation/writing.md](./foundation/writing.md).
 - **브랜치를 따거나 핫픽스 · 출시를 할 때, ADR 새 번호가 필요할 때**: [[ADR-188]].
