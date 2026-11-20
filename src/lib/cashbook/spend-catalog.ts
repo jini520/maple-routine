@@ -486,7 +486,7 @@ export function rewardCoinMeso(coins: number): number {
  * 하루 목록의 줄 이름이고 기록의 이름 칸에 그때 이름으로도 남는다. **0단계는 안 적는다**. 안 산
  * 것이 적히면 그 줄이 산 것으로 읽힌다.
  *
- * 고른 것이 없으면 `null` 이고, 그 `null` 이 곧 저장할 수 없다 다.
+ * 고른 것이 없으면 `null` 이고, 그 `null` 이 곧 저장할 수 없다는 뜻이다.
  */
 export function buildSpendRewardName(
   choice: SpendCatalogChoice,
@@ -682,7 +682,7 @@ export function isOptionAxisOpen(
 
 /**
  * 고른 값이 가리키는 항목. 한 항목의 축 값과 **꼭 맞아야** 정해진다. 못 정하면 `null` 이고 그것이
- * 곧 저장할 수 없다 다.
+ * 곧 저장할 수 없다는 뜻이다.
  */
 export function optionItemOf(
   choice: SpendCatalogChoice,

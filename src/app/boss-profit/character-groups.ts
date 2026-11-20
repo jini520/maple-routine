@@ -177,8 +177,8 @@ function confirmedDropsOf(
 /**
  * 이 캐릭터가 이 기간에 **번** 드롭. 미완료 행의 것은 빠진다.
  *
- * `collectGroupDrops` 와 갈라 두는 것은 두 물음이 다르기 때문이다. 이쪽은 얼마를 벌었나 이고
- * 그쪽은 기록한 것이 있나 다. 금액을 그리는 자리는 전부 이 함수를 쓴다.
+ * `collectGroupDrops` 와 갈라 두는 것은 두 물음이 다르기 때문이다. 이쪽은 얼마를 벌었는지를 묻고
+ * 그쪽은 기록한 것이 있는지를 묻는다. 금액을 그리는 자리는 전부 이 함수를 쓴다.
  *
  * @see collectGroupDrops 기록 전부. today 의 `hasRecords` 가 그쪽이다
  */

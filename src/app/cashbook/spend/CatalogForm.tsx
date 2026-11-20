@@ -247,7 +247,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const tierOptions = choice === null ? [] : [BASE_TIER, ...choice.items.map(tierNameOf)]
   /**
    * 형태별 단계를 고른 기록의 이름. 하나도 안 골랐으면 `null` 이고 그것이 곧 저장할 것이
-   * 없다 다. 0단계는 사는 것이 아니라 기본 보상이라 여기 안 든다.
+   * 없다는 뜻이다. 0단계는 사는 것이 아니라 기본 보상이라 여기 안 든다.
    */
   const rewardName = choice === null ? null : buildSpendRewardName(choice, tierByForm)
   /**
@@ -420,7 +420,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     <>
       {choice === null && !editing ? (
         // 여기에 스크롤을 두지 않는다. 시트 껍데기가 이미 `BottomSheetScrollView` 이고 높이도
-        // 내용만큼, 82% 를 상한으로 다. 안쪽에 또 두면 중첩 스크롤이 되어 손가락이 어느 쪽을
+        // 내용만큼이고 82% 가 상한이다. 안쪽에 또 두면 중첩 스크롤이 되어 손가락이 어느 쪽을
         // 미는지 갈리고, 무엇보다 목록이 상한선에서 잘려 더 있는지가 안 보인다.
         // 묶음 사이 간격은 **부모가 낸다**. 묶음마다 아래 여백을 달면 마지막 묶음 뒤에도 붙어
         // 격자 바닥에 빈 띠가 남는다. 타일 줄의 `-mb-1` 이 빠지는 4 를 메운다.

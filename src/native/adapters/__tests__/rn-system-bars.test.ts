@@ -52,7 +52,7 @@ describe('setNavigationBarStyle: 네이티브 한 줄을 그대로 옮겼다', (
 })
 
 describe('refreshSafeAreaInsets: 할 일이 없다는 것이 결론이다', () => {
-  // 못 한다 가 아니라 이미 되고 있다 다. 이 함수는 유실 복구용이었다. RN 에는 주입도 유실도
+  // 못 하는 것이 아니라 이미 되고 있다. 이 함수는 유실 복구용이었다. RN 에는 주입도 유실도
   // 없고 `SafeAreaProvider` 가 회전·접힘·키보드 변화까지 자기 리스너로 다시 내려준다.
   it('던지지 않는다. 안전영역은 정상 동작 중이고 거부는 진짜 고장과 구분을 없앤다', async () => {
     await expect(rnSystemBarsPort.refreshSafeAreaInsets()).resolves.toBeUndefined()

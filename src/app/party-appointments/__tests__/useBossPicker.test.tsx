@@ -1,4 +1,4 @@
-// 보스 추가 단계가 처음 여는 캐릭터. 대표 캐릭터이고, 마지막으로 고른 캐릭터가 아니다(정정 28).
+// 보스 추가 단계가 처음 여는 캐릭터. 대표 캐릭터이고, 마지막으로 고른 캐릭터가 아니다.
 import { renderHook } from '@testing-library/react-native'
 
 import { useBossSchedule } from '../../../features/boss-scheduler/use-boss-schedule'

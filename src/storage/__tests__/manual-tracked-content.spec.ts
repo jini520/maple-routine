@@ -36,7 +36,7 @@ describe('레거시 kind 마이그레이션', () => {
     ])
   })
 
-  it("템플릿에 없는 레거시 'content' 항목은 목록에서 제외된다 (결정 11 일관 적용)", async () => {
+  it("템플릿에 없는 레거시 'content' 항목은 목록에서 제외된다", async () => {
     await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
         { contentName: '템플릿에 없는 콘텐츠', kind: 'content' },
         { contentName: '몬스터파크', kind: 'content' },

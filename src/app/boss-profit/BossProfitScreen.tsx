@@ -192,7 +192,7 @@ export function BossProfitScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // `null` 은 0명이 아니라 저장소를 아직 안 읽었다 다. 둘을 묶으면 콜드 스타트 첫 페인트가
+  // `null` 은 0명이 아니라 저장소를 아직 안 읽었다는 뜻이다. 둘을 묶으면 콜드 스타트 첫 페인트가
   // 아직 모르는 사실을 단정한다.
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 

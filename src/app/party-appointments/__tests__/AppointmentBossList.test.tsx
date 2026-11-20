@@ -1,4 +1,4 @@
-// 시트의 보스 목록. 보스는 캐릭터별로 묶이고, 차례는 그 묶음 안에서만 바꾼다(정정 17).
+// 시트의 보스 목록. 보스는 캐릭터별로 묶이고, 차례는 그 묶음 안에서만 바꾼다.
 import { renderAtom } from '../../../components/__tests__/render-atom'
 import type { PartyAppointmentBoss } from '../../../types/party-appointment'
 import { AppointmentBossList, type AppointmentBossListProps } from '../AppointmentBossList'

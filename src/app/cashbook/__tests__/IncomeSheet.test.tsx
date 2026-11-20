@@ -1301,7 +1301,7 @@ describe('사냥 계산기', () => {
     await 사슬고르기(view, 'ocid-1')
   }
 
-  it('지역 목록이 **±20 안의 몬스터가 있는** 것만 선다 (결정 6)', async () => {
+  it('지역 목록이 **±20 안의 몬스터가 있는** 것만 선다', async () => {
     const view = await 그리기({}, 'hunting')
     // 루디는 294. 탈라하트(몬스터 290-294)는 들고 츄츄 아일랜드(210-219)는 안 든다.
     await 루디고르기(view)
@@ -1461,7 +1461,7 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-ground-summary')).toHaveTextContent('-lv.--마리')
   })
 
-  it('소재를 치면 메소가 그만큼 는다. 하나가 30분이다 (결정 7)', async () => {
+  it('소재를 치면 메소가 그만큼 는다. 하나가 30분이다', async () => {
     const view = await 그리기()
     await 밤의길3(view)
 
@@ -1696,7 +1696,7 @@ describe('사냥 계산기', () => {
     }
   })
 
-  it('레벨 차이가 벌어지면 깎인다 (결정 4)', async () => {
+  it('레벨 차이가 벌어지면 깎인다', async () => {
     const view = await 그리기({}, 'hunting')
     // 루디는 294. 몬스터가 24 낮으니 20% 에 5·6·7·8 을 더해 −46% 다. 오디움은 루디의 바닥
     // (274)에 걸쳐 있어 목록에 남는다. 남으면서 가장 많이 깎이는 자리다.
@@ -1708,7 +1708,7 @@ describe('사냥 계산기', () => {
     expect(view.getByTestId('income-sheet-hunt-meso')).toHaveTextContent('≈ 8,922,960')
   })
 
-  it('적는 날을 2026-11-19 로 옮기면 새 페널티 표로 다시 세고 지역 목록이 좁아진다 (결정 5 · 7)', async () => {
+  it('적는 날을 2026-11-19 로 옮기면 새 페널티 표로 다시 세고 지역 목록이 좁아진다', async () => {
     const view = await 그리기({ dateKey: '2026-11-18', todayDateKey: '2026-11-19' }, 'hunting')
     // 루디는 294. 어둠이 내리는 나무줄기 1 은 288 이라 몬스터가 6 낮다.
     await 루디고르기(view)
@@ -1728,7 +1728,7 @@ describe('사냥 계산기', () => {
     expect(view.queryByTestId('income-sheet-region-option-dowonkyung')).toBeNull()
   })
 
-  it('**큰 숫자는 합계이고 못 친다** (결정 1)', async () => {
+  it('**큰 숫자는 합계이고 못 친다**', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 밤의길3(view)
@@ -1835,7 +1835,7 @@ describe('사냥 계산기', () => {
     })
   })
 
-  it('수정으로 열면 **저장해 둔 것이 그대로 선다** (결정 9)', async () => {
+  it('수정으로 열면 **저장해 둔 것이 그대로 선다**', async () => {
     const view = await 그리기({
       editing: {
         id: 'inc-h',
@@ -2176,7 +2176,7 @@ describe('사냥 수동 입력', () => {
     expect(within(줄).getByLabelText('획득 메소 직접 입력')).toBeTruthy()
   })
 
-  it('켜면 계산기 줄이 걷히고 획득 메소가 치는 칸이 된다 (결정 1)', async () => {
+  it('켜면 계산기 줄이 걷히고 획득 메소가 치는 칸이 된다', async () => {
     const view = await 그리기({}, 'hunting')
     expect(view.getByTestId('income-sheet-chain-open')).toBeTruthy()
 
@@ -2189,7 +2189,7 @@ describe('사냥 수동 입력', () => {
     expect(view.getByTestId('income-sheet-hunt-meso').props.editable).not.toBe(false)
   })
 
-  it('합계는 친 메소 + 조각 × 가격이다 (결정 1)', async () => {
+  it('합계는 친 메소 + 조각 × 가격이다', async () => {
     const view = await 그리기({}, 'hunting')
     await 직접입력켜기(view)
 
@@ -2200,7 +2200,7 @@ describe('사냥 수동 입력', () => {
     expect(view.getByTestId('income-sheet-amount')).toHaveTextContent('16억 6400만')
   })
 
-  it('조각을 안 넣으면 친 메소가 곧 합계다 (결정 1)', async () => {
+  it('조각을 안 넣으면 친 메소가 곧 합계다', async () => {
     const view = await 그리기({}, 'hunting')
     await 직접입력켜기(view)
 
@@ -2210,7 +2210,7 @@ describe('사냥 수동 입력', () => {
   })
 
   // `≈` 는 **미리 세어 둔 값**이라는 뜻이다. 친 값에 붙이면 아무것도 안 가른다.
-  it('합계에 `≈` 가 안 붙는다 (결정 2)', async () => {
+  it('합계에 `≈` 가 안 붙는다', async () => {
     const view = await 그리기({}, 'hunting')
     await 직접입력켜기(view)
 
@@ -2233,7 +2233,7 @@ describe('사냥 수동 입력', () => {
     expect(onSave).not.toHaveBeenCalled()
   })
 
-  it('저장하면 수동으로 적힌 행이 되고 사냥터 이름은 비어 있다 (결정 3·7)', async () => {
+  it('저장하면 수동으로 적힌 행이 되고 사냥터 이름은 비어 있다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave }, 'hunting')
     await 직접입력켜기(view)
@@ -2269,7 +2269,7 @@ describe('사냥 수동 입력', () => {
    *  이전에 적힌 사냥 행. 조각이 없어 **합계가 곧 획득 메소**라
    * 되짚는 것이지 지어내는 것이 아니다.
    */
-  it('옛 사냥 기록은 수동 입력으로 열리고 저장된 금액이 선다 (결정 4)', async () => {
+  it('옛 사냥 기록은 수동 입력으로 열리고 저장된 금액이 선다', async () => {
     const view = await 그리기({ editing: 옛사냥행, onDelete: jest.fn() })
 
     expect(view.queryByTestId('income-sheet-meso-line')).toBeNull()
@@ -2280,7 +2280,7 @@ describe('사냥 수동 입력', () => {
   })
 
   // 칸이 없다는 것과 값을 지운다는 것은 다르다. 목록이 그 이름을 적고 있다.
-  it('옛 행을 고쳐 저장해도 사냥터 이름이 안 지워진다 (결정 7)', async () => {
+  it('옛 행을 고쳐 저장해도 사냥터 이름이 안 지워진다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ editing: 옛사냥행, onDelete: jest.fn(), onSave })
 
@@ -3159,7 +3159,7 @@ describe('메소 획득량', () => {
     expect(view.queryByTestId('income-sheet-meso-rate-input')).toBeNull()
   })
 
-  it('메획은 아이템 부스트와 **같은 합연산 통**이다 (결정 6)', async () => {
+  it('메획은 아이템 부스트와 **같은 합연산 통**이다', async () => {
     const view = await 그리기({ loadMesoRate: async () => ({ kind: 'read' as const, percent: 149 }) })
     await 밤의길3(view)
     await 루디고르기(view)
@@ -3179,7 +3179,7 @@ describe('메소 획득량', () => {
     expect(view.queryByTestId('income-sheet-meso-rate-input')).toBeNull()
   })
 
-  it('못 읽으면 **치는 칸**이 되고 기본값은 마지막 성공값이다 (결정 7)', async () => {
+  it('못 읽으면 **치는 칸**이 되고 기본값은 마지막 성공값이다', async () => {
     const view = await 그리기({
       loadMesoRate: async () => ({ kind: 'fallback' as const, percent: 161 }),
     })
@@ -3361,7 +3361,7 @@ describe('메소 획득량', () => {
     expect(자리.minWidth).toBe(56)
   })
 
-  it('저장하면 **그때의 메획**이 실린다 (결정 8)', async () => {
+  it('저장하면 **그때의 메획**이 실린다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({
       onSave,

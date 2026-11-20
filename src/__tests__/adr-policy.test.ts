@@ -192,14 +192,16 @@ describe('소스의 ADR 인용', () => {
   // 참조는 한 방향이다. 문서가 파일을 가리키는 것은 결정이 코드를 관리하는 일이고, 그 반대에는
   // 권한이 없다. 주석뿐 아니라 문자열(테스트 이름 · 에러 문구)도 같다. 이 파일만 예외다. 검사하려면
   // 인용을 패턴으로 적어야 한다.
-  it('소스는 ADR 번호를 적지 않는다', () => {
+  // 번호를 걷고 `(결정 N)` 만 남긴 인용도 막는다. 어느 문서의 결정인지 안 적혀 있어 아무것도 가리키지 않는데,
+  // 인용이 붙어 있으니 이유를 적은 것처럼 보인다. 이렇게 남은 것이 마흔여섯 곳이었다.
+  it('소스는 ADR 번호도 번호만 남은 결정 인용도 적지 않는다', () => {
     const self = join('src', '__tests__', 'adr-policy.test.ts')
     const offenders: string[] = []
     for (const file of filesUnder(SRC, /\.tsx?$/)) {
       const rel = file.slice(REPO_ROOT.length + 1)
       if (rel === self) continue
       for (const line of readFileSync(file, 'utf8').split('\n')) {
-        if (/ADR-\d{3}/.test(line)) offenders.push(`${rel}: ${line.trim().slice(0, 60)}`)
+        if (/ADR-\d{3}|\((결정|정정) \d/.test(line)) offenders.push(`${rel}: ${line.trim().slice(0, 60)}`)
       }
     }
     expect([...new Set(offenders)]).toEqual([])

@@ -1063,7 +1063,7 @@ describe('칸 금액: 보스가 칸에 든다', () => {
   })
 })
 
-describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
+describe('loadDayRecords: 캐릭터당 두 줄', () => {
   it('결정석과 판매를 갈라 두 줄로 세운다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록, 데미안기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭(), 드롭({ dropIndex: 1, priceState: null, priceMeso: null })])
@@ -1330,7 +1330,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     expect(dayTotalsOf(rows)).toEqual(amounts['2026-08-21'])
   })
 
-  it('보스 줄은 손입력이 아니다. 여기서 못 고친다 (결정 8)', async () => {
+  it('보스 줄은 손입력이 아니다. 여기서 못 고친다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     const { isManualRecord, rowKeyOf } = require('../records') as typeof import('../records')
 

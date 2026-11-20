@@ -22,7 +22,7 @@ export interface BossCharacterView {
   imageUrl?: string | null
   weeklyBosses: MatchedBoss[]
   monthlyBosses: MatchedBoss[]
-  /** `null` 은 모른다 다. `0/12` 는 안 잡았다는 단정이라 조회할 수 없는 캐릭터에 쓰지 않는다. */
+  /** `null` 은 모른다는 뜻이다. `0/12` 는 안 잡았다는 단정이라 조회할 수 없는 캐릭터에 쓰지 않는다. */
   weeklyBossClearCount: number | null
   weeklyBossClearLimitCount: number | null
   isStale: boolean

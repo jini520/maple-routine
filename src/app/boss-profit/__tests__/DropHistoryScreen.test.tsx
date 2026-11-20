@@ -486,7 +486,7 @@ describe('DropHistoryScreen: 미획득 요약', () => {
     expect(문장(getByTestId('valuable-drought'))).toContain('루즈 컨트롤 머신 마크 외 1개')
   })
 
-  it('고가 기록이 없으면 요약 요소를 렌더하지 않는다. "∞주째"를 만들지 않는다 (결정 4)', async () => {
+  it('고가 기록이 없으면 요약 요소를 렌더하지 않는다. "∞주째"를 만들지 않는다', async () => {
     mockStore({ groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록()] }], drought: null })
     const { queryByTestId } = await renderHistory()
 

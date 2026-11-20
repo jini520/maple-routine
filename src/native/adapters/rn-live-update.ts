@@ -15,7 +15,7 @@ import appJson from '../../../app.json'
  * `LiveUpdatePort` 의 `expo-updates` 구현.
  *
  * 포트가 말하는 다섯 결과(`unsupported`·`error`·`up-to-date`·`store-required`·
- * `update-available`)는 프로토콜과 무관한 앱이 무엇을 할 수 있나 다. `expo-updates` 는 그중
+ * `update-available`)는 프로토콜과 상관없이 앱이 무엇을 할 수 있는지다. `expo-updates` 는 그중
  * 넷을 직접 답하고 `store-required` 하나만 삼킨다. 런타임이 안 맞으면 서버가 204 를 주고
  * 클라이언트는 그것을 업데이트 없음 으로 읽는다. 그대로 두면 사용자에게 최신 버전입니다 라는
  * 거짓이 보이므로, 최신으로 떨어졌을 때만 `/latest` 를 한 번 더 물어 그 결과를 되살린다.

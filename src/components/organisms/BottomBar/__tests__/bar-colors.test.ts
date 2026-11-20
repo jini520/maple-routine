@@ -75,7 +75,7 @@ describe('떠 있는 바의 색', () => {
   })
 
   // 강조색은 테마의 메인 컬러다. 알약 위 대비 4.5 를 맞추려고 `text` 쪽으로 섞으면 채도를 같이
-  // 빼앗아 머쉬맘의 주황이 갈색이 된다. 지키는 것은 대비가 아니라 그 색이 그 테마의 색인가 다.
+  // 빼앗아 머쉬맘의 주황이 갈색이 된다. 지키는 것은 대비가 아니라 그 색이 그 테마의 색인지다.
   it.each(THEMES)('%s: 라이트는 메인 컬러를 그대로 쓴다', (_name, theme) => {
     if (theme.mode !== 'light') return
 
@@ -98,9 +98,9 @@ describe('떠 있는 바의 색', () => {
 
     expect(lifted.h).toBeCloseTo(origin.h, 0)
     expect(lifted.c).toBeGreaterThanOrEqual(origin.c * 0.97)
-    // `textMuted` 위로 올라간다는 조건은 뺐다. 그것과 채도를 지킨다 가 sRGB 안에서 동시에
-    // 성립하지 않는 테마가 있다(검은마법사 L0.672 대 muted L0.722). 남는 것은 원색보다
-    // 어두워지지는 않는다 다.
+    // `textMuted` 위로 올라간다는 조건은 뺐다. 그것과 `채도를 지킨다` 가 sRGB 안에서 동시에
+    // 성립하지 않는 테마가 있다(검은마법사 L0.672 대 muted L0.722). 남는 조건은 원색보다
+    // 어두워지지 않는다는 것이다.
     expect(lifted.l).toBeGreaterThanOrEqual(origin.l)
   })
 

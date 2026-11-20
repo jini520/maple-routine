@@ -47,7 +47,7 @@ export function formatScheduleSyncError(error: ScheduleSyncError): string {
 //
 // 401 에 다시 시도를 주지 않는 것(피커)이 핵심이다. 눌러도 실패하는 버튼이기 때문이다.
 //
-// 문구 어미는 에러 규칙에 따라 ~습니다 · ~주세요 다.
+// 문구 어미는 에러 규칙에 따라 `~습니다` · `~주세요` 로 쓴다.
 export type RosterErrorPlace = 'picker' | 'characterSetup'
 
 export interface RosterErrorCopy {

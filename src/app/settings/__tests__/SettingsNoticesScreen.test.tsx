@@ -216,7 +216,7 @@ describe('받기', () => {
 })
 
 // 이 화면도 소식을 받고는 머무는 동안 다시 받을 길이 없었다. 더보기와 같은 이유로 당김이 선다.
-// 인디케이터 조립은 `ScreenScroll` 이 지고, 화면이 지는 것은 무엇을 부르는가 와 실패를 말하는가 다.
+// 인디케이터 조립은 `ScreenScroll` 이 지고, 화면이 지는 것은 무엇을 부르는지와 실패를 말하는지다.
 describe('당겨서 새로고침', () => {
   async function pull(view: { getByTestId: (id: string) => AtomElement }): Promise<void> {
     await act(async () => {
