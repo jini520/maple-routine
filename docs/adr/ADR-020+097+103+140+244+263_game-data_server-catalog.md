@@ -1,6 +1,6 @@
 # ADR-020+097+103+140+244+263 게임 데이터 서버 표와 기기 사본
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-341 · ADR-349 결정 1 · 2 · 5 · 6 · 정정 1 · 2 · 3 · 4 · ADR-350
 > 관련 소스: `lib/game-data/` · `lib/assets/asset-files.ts` · `lib/assets/image-crops.ts` · `lib/assets/asset-lookup.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `app/AppShell.tsx` · `server/game-data.ts` · `storage/game-data-copy.ts` · `storage/sqlite/game-data-tables.ts` · `storage/adapters/rn-asset-files.ts` · `types/game-data.ts` · `src/__fixtures__/game-data/` · 서버 `modules/game-data/` · `modules/assets/` · `modules/admin/` · 이슈 #741 · #1033 · #1100
 
@@ -68,6 +68,8 @@ GET /v1/game-data
 - 서버는 만든 응답 몸과 ETag 를 메모리에 담아 두고 그대로 낸다. 요청마다 몸을 새로 만들면 304 로 끝나는 요청도 칸 스물하나를
   다 읽고 1MB 를 직렬화해서, 요청 하나가 서버 CPU 를 0.7초 쓴다. 푸시나 21:00 알림 직후에는 1분에 50건 가까이 몰려서 서버 앱
   박스가 이것만으로 막혔다(2026-11-20 실측, 이슈 #1100).
+  담아 둔 뒤 같은 날 19:05 공지 알림(1분 최대 457건, game-data 46건)과 21:00 알림(1분 334건, game-data 53건)에서 시간 초과(504)는
+  0건, 끊긴 요청(499)은 각각 8건 · 2건이었다. 담기 전 10:15 몰림은 50초 동안 499 가 381건, 504 가 33건이었다.
 - 요청마다 칸의 시각만 쿼리 하나로 읽고, 담아 둔 응답을 만들 때의 시각과 다르면 다시 만든다. 시각은 `game_data_sections` 의
   칸 시각과, `bosses` 칸의 `updatedAt` 을 내는 보스 줄 · 규칙 줄(`game_rules`)의 `updated_at` 이다. 쓰기마다 칸 시각을 올리므로
   관리 화면에서 고친 값이 다음 요청에 바로 닿는다(사용자 지정 2026-11-20).
