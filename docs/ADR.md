@@ -159,7 +159,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-030](./adr/ADR-030_character_selection.md) | 🟢 | character | 캐릭터 선택 |
 | [ADR-031+155+177+219](./adr/ADR-031+155+177+219_character_portrait.md) | 🟢 | character | 캐릭터 초상화 |
 | [ADR-032+204](./adr/ADR-032+204_content-scheduler_cache.md) | 🟢 | content-scheduler | 스케줄러 응답 병합과 캐시 |
-| [ADR-033+274](./adr/ADR-033+274_content-scheduler_cards.md) | ⚪ | content-scheduler | 컨텐츠 카드와 완료 판정 |
+| [ADR-033+274](./adr/ADR-033+274_content-scheduler_cards.md) | 🟢 | content-scheduler | 컨텐츠 카드와 완료 판정 |
 | [ADR-034+175](./adr/ADR-034+175_content-scheduler_tracking-mode.md) | 🟢 | content-scheduler | 자동 · 수동 추적 모드와 컨텐츠 관리 |
 | [ADR-035](./adr/ADR-035_content-scheduler_layout.md) | 🟢 | content-scheduler | 스케줄러 화면의 레일 아래 간격 |
 | [ADR-036](./adr/ADR-036_boss-scheduler_boss-list.md) | 🟢 | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 |

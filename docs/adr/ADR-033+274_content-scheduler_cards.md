@@ -1,6 +1,6 @@
 # ADR-033+274 컨텐츠 카드와 완료 판정
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-020 · ADR-021 · ADR-057 · ADR-162 · ADR-271 결정 1 · 2 · 4 · 5
 > 관련 소스: `app/content-scheduler/DailyContentCards.tsx` · `app/content-scheduler/WeeklyContentCards.tsx` · `app/content-scheduler/content-badges.tsx` · `features/content-scheduler/content-completion.ts` · `lib/scheduler/content-kinds.ts` · `lib/scheduler/required-level.ts` · `lib/scheduler/group-weekly-limit.ts` · `features/content-scheduler/store.ts`
 
@@ -117,8 +117,8 @@
 
 - 한도 3 은 게임 규칙이라 코드에 적지 않고 컨텐츠 표의 카테고리 줄(`epic_dungeon` 의 `weeklyLimit`)에 둔다.
 - 판정은 `lib/scheduler/group-weekly-limit.ts` 하나가 한다. 카드, 링, today 의 공유 컨텐츠 위젯이 같은 함수를
-  쓴다([[ADR-058]]). 따로 두면 위젯은 `3/3` 인데 카드에는 할 일이 남는 날이 생긴다. 완료 판정은 화면 쪽에 있고
-  `lib` 은 `app` 을 가져다 쓰지 않으므로, 호출하는 쪽이 완료 여부를 함께 넘긴다.
+  쓴다([[ADR-058]]). 따로 두면 위젯은 `3/3` 인데 카드에는 할 일이 남는 날이 생긴다. 완료 판정은 `features/` 에 있고
+  `lib` 은 `features` 를 가져다 쓰지 않으므로, 호출하는 쪽이 완료 여부를 함께 넘긴다.
 - 세는 대상은 등록 여부와 관계없이 그 카테고리에서 완료한 항목 전부다. 한도는 등록 수가 아니라 진행 횟수를 제한하기
   때문이다. 그래서 화면에 보이는 목록이 아니라 그 캐릭터의 병합된 `weeklyContents` 전체를 넘긴다. 등록하지 않은
   던전이 병합 결과에서 빠지지 않는 것은 [[ADR-032]] 결정 6 덕분이다. 같은 컨텐츠가 두 번 들어와도 한 번만 센다.

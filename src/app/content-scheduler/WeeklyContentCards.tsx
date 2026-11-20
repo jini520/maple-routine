@@ -7,6 +7,7 @@
  * bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard` 가 든다. 일간 카드와 같은 규약이라
  * 사유는 `DailyContentCards.tsx` 에 한 번만 적는다.
  */
+import { weeklyContentCompletion } from '../../features/content-scheduler/content-completion'
 import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
   getBossPortraitCrop,
@@ -53,7 +54,7 @@ export function EpicDungeonCard(props: {
   const backgroundId = findContent(content.contentKey)?.background?.portrait ?? null
   const backgroundUrl = getBossPortraitUrl(backgroundId)
   const crop = props.crop ?? getBossPortraitCrop(backgroundId)
-  const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
+  const questState: 0 | 2 = weeklyContentCompletion(content) === 'complete' ? 2 : 0
 
   return (
     <IllustratedCard className="h-20 overflow-hidden">
@@ -102,7 +103,7 @@ export function WeeklyRegionalContentCard(props: {
   const questState: 0 | 1 | 2 | null =
     content.contentKey === MONSTER_PARK_EXTREME_KEY
       ? content.questState
-      : content.nowCount === content.maxCount && content.maxCount > 0
+      : weeklyContentCompletion(content) === 'complete'
         ? 2
         : 0
 
@@ -286,7 +287,7 @@ export function GuildFlagRaceCard(props: {
   const backgroundId = findContent(content.contentKey)?.background?.map ?? null
   const backgroundUrl = getDailyQuestBackgroundUrl(backgroundId)
   const crop = props.crop ?? getDailyQuestRegionCrop(backgroundId)
-  const questState: 0 | 2 = content.nowCount > 0 ? 2 : 0
+  const questState: 0 | 2 = weeklyContentCompletion(content) === 'complete' ? 2 : 0
 
   return (
     <IllustratedCard className="h-20 overflow-hidden">
@@ -301,8 +302,8 @@ export function GuildFlagRaceCard(props: {
         </View>
 
         <Badge variant={QUEST_STATE_VARIANT[questState]}>
-            {QUEST_STATE_LABELS[questState]}
-          </Badge>
+          {QUEST_STATE_LABELS[questState]}
+        </Badge>
       </View>
     </IllustratedCard>
   )
