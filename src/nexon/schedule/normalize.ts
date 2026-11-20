@@ -12,7 +12,7 @@ import type {
 /**
  * API 이름에서 보스 key · 컨텐츠 key · 월드 key. 못 찾으면 `null` 이다.
  *
- * 부르는 쪽이 넘긴다. `nexon/` 은 `src/data/` 를 몰라야 응답 모양만으로 테스트할 수 있어서다. 앱은
+ * 부르는 쪽이 넘긴다. `nexon/` 은 게임 데이터 표를 몰라야 응답 모양만으로 테스트할 수 있어서다. 앱은
  * `lib/scheduler/schedule-name-resolvers` 의 `SCHEDULE_NAME_RESOLVERS` 를 넘긴다.
  */
 export interface ScheduleNameResolvers {

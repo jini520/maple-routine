@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Harness Step Executor — phase 내 step을 순차 실행하고 자가 교정한다.
+Harness Step Executor. phase 내 step을 순차 실행하고 자가 교정한다.
 
 Usage:
     python3 scripts/execute.py <phase-dir> [--push]
@@ -54,7 +54,7 @@ class StepExecutor:
     """Phase 디렉토리 안의 step들을 순차 실행하는 하네스."""
 
     MAX_RETRIES = 3
-    FEAT_MSG = "feat({phase}): step {num} — {name}"
+    FEAT_MSG = "feat({phase}): step {num} {name}"
     CHORE_MSG = "chore({phase}): step {num} output"
     TZ = timezone(timedelta(hours=9))
 
@@ -204,7 +204,7 @@ class StepExecutor:
         retry_section = ""
         if prev_error:
             retry_section = (
-                f"\n## ⚠ 이전 시도 실패 — 아래 에러를 반드시 참고하여 수정하라\n\n"
+                f"\n## ⚠ 이전 시도 실패. 아래 에러를 반드시 참고하여 수정하라\n\n"
                 f"{prev_error}\n\n---\n\n"
             )
         return (
@@ -261,7 +261,7 @@ class StepExecutor:
         """사용량 한도로 호출이 거부됐으면 그 사유를, 아니면 None.
 
         `claude -p --output-format json` 은 한도에 걸려도 **종료 코드 1 + JSON 한 줄**로 끝나므로
-        stdout 을 읽는다. 판정은 `api_error_status == 429` 하나로 한다 — 문구("resets 4:10am")는
+        stdout 을 읽는다. 판정은 `api_error_status == 429` 하나로 한다. 문구("resets 4:10am")는
         사람에게 보여줄 값이지 판정 근거가 아니다(문구가 바뀌면 조용히 안 잡힌다).
         """
         if output.get("exitCode") == 0:
@@ -329,7 +329,7 @@ class StepExecutor:
 
             # 사용량 한도(429)는 **작업 실패가 아니라 호출 거부**다. 재시도로 풀리지 않고(한도가
             # 풀릴 때까지 몇 시간이다) 그냥 두면 3회가 몇 초 만에 소진돼 step 이 "error" 로 남는데,
-            # 고칠 것이 하나도 없는 상태다. blocked 가 이 자리에 맞는 상태다 — 사람이 개입해야
+            # 고칠 것이 하나도 없는 상태다. blocked 가 이 자리에 맞는 상태다. 사람이 개입해야
             # 풀리고(시간이 지나기를 기다린다), 재개 방법은 error 와 같다.
             quota = self._quota_block_reason(output)
             if quota:
@@ -337,7 +337,7 @@ class StepExecutor:
                     if s["step"] == step_num:
                         s["status"], s["blocked_reason"], s["blocked_at"] = "blocked", quota, self._stamp()
                 self._write_json(self._index_file, index)
-                print(f"\n  ⏸ Step {step_num}: {step_name} — 사용량 한도")
+                print(f"\n  ⏸ Step {step_num}: {step_name}: 사용량 한도")
                 print(f"  {quota}")
                 print(f"  한도가 풀린 뒤 status 를 'pending' 으로 되돌리고 다시 실행하라.")
                 self._update_top_index("blocked")
@@ -379,7 +379,7 @@ class StepExecutor:
                         s.pop("error_message", None)
                 self._write_json(self._index_file, index)
                 prev_error = err_msg
-                print(f"  ↻ Step {step_num}: retry {attempt}/{self.MAX_RETRIES} — {err_msg}")
+                print(f"  ↻ Step {step_num}: retry {attempt}/{self.MAX_RETRIES}: {err_msg}")
             else:
                 for s in index["steps"]:
                     if s["step"] == step_num:

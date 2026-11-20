@@ -9,6 +9,7 @@
 //   5. 문서의 `[[ADR-NNN]]` 인용이 실재하는 번호를, `결정 N` 이 실재하는 결정을 가리킨다
 //   6. 소스는 ADR 을 인용하지 않는다
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 
 const REPO_ROOT = join(__dirname, '..', '..')
@@ -198,6 +199,32 @@ describe('소스의 ADR 인용', () => {
       const rel = file.slice(REPO_ROOT.length + 1)
       if (rel === self) continue
       for (const line of readFileSync(file, 'utf8').split('\n')) {
+        if (/ADR-\d{3}/.test(line)) offenders.push(`${rel}: ${line.trim().slice(0, 60)}`)
+      }
+    }
+    expect([...new Set(offenders)]).toEqual([])
+  })
+
+  // 설정 · 스크립트 · 네이티브 모듈도 소스다. 이 검사가 `src/` 만 보는 동안 그쪽에 옛 번호가 백 줄 넘게 쌓였고,
+  // 문서를 다시 쓰며 번호가 바뀌자 그 인용은 엉뚱한 문서를 가리켰다. 문서(`docs/` · `*.md`)는 번호로 가리키는
+  // 것이 규칙이라 뺀다. 번호를 받는 스크립트와 그 테스트는 번호를 다루는 코드라 뺀다.
+  it('src 밖의 소스도 ADR 번호를 적지 않는다', () => {
+    const exempt = new Set(['scripts/adr-number.mjs', 'scripts/__tests__/adr-number.test.mjs'])
+    const tracked = execFileSync('git', ['ls-files'], { cwd: REPO_ROOT, encoding: 'utf8' }).split('\n')
+    const sources = tracked.filter(
+      (rel) =>
+        rel !== '' &&
+        !rel.startsWith('src/') &&
+        !rel.startsWith('docs/') &&
+        !rel.endsWith('.md') &&
+        !exempt.has(rel) &&
+        !/\.(png|jpe?g|webp|gif|ttf|otf|ico|svg|mp4|jar|keystore|p8|bin)$/.test(rel),
+    )
+    const offenders: string[] = []
+    for (const rel of sources) {
+      const path = join(REPO_ROOT, rel)
+      if (!existsSync(path)) continue
+      for (const line of readFileSync(path, 'utf8').split('\n')) {
         if (/ADR-\d{3}/.test(line)) offenders.push(`${rel}: ${line.trim().slice(0, 60)}`)
       }
     }

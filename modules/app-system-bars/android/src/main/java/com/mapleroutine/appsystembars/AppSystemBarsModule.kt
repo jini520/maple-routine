@@ -18,15 +18,12 @@ private const val BUTTON_NAVIGATION_CHANGE = "onButtonNavigationChange"
 /**
  * 하단 시스템 내비게이션 바(제스처 핸들·3버튼) **글리프의 명암**을 앱 표면 밝기에 맞추고, 그 바가 3버튼인지 알린다.
  *
- * 웹뷰 쪽 짝은 `SystemBarsPlugin.setStyle` 이고 그 한 줄을 그대로 옮긴 것이다:
- * `setAppearanceLightNavigationBars(!dark)` — 어두운 표면이면 밝은 글리프, 밝은 표면이면 어두운
- * 글리프. 뒤집으면 어두운 배경에 어두운 글자가 되어 바가 통째로 안 보이는데, 실기기에서만 드러난다.
+ * 명암은 `setAppearanceLightNavigationBars(!dark)` 한 줄이다. 어두운 표면이면 밝은 글리프, 밝은 표면이면
+ * 어두운 글리프. 뒤집으면 어두운 배경에 어두운 글자가 되어 바가 통째로 안 보이는데, 실기기에서만 드러난다.
  *
- * ## 배경색은 다루지 않는다 — 그쪽은 웹뷰 시절에도 앱이 그렸다
+ * ## 배경색 · edge-to-edge · 인셋은 다루지 않는다
  *
- * `SystemBarsPlugin` 이 하던 나머지 셋(edge-to-edge 강제 · 인셋 리스너 · `--safe-area-inset-*` 주입)은
- * 여기 없다. **전부 웹뷰에 값을 흘려보내기 위한 배관**이었고 RN 에는 그 수신자가 없다 —
- * edge-to-edge 는 RN 0.86/Expo 57 의 안드로이드 기본이고, 인셋은
+ * 배경색은 앱이 그린다. edge-to-edge 는 RN 0.86/Expo 57 의 안드로이드 기본이고, 인셋은
  * `react-native-safe-area-context` 가 자기 네이티브 리스너로 컴포넌트에 내려준다.
  *
  * ## 3버튼인지
@@ -35,7 +32,7 @@ private const val BUTTON_NAVIGATION_CHANGE = "onButtonNavigationChange"
  * 3버튼에서는 버튼 줄 높이다. 인셋 리스너를 따로 걸지 않고 화면 배치가 끝날 때마다 다시 읽는다.
  * `setOnApplyWindowInsetsListener` 는 뷰마다 하나뿐이라, 걸면 RN 과 안전영역 라이브러리의 리스너를 덮는다.
  *
- * `Queues.MAIN` 은 선택이 아니다 — Expo 의 `AsyncFunction` 은 기본적으로 백그라운드 큐에서 돌고,
+ * `Queues.MAIN` 은 선택이 아니다. Expo 의 `AsyncFunction` 은 기본적으로 백그라운드 큐에서 돌고,
  * `Window` 조작은 UI 스레드 밖에서 하면 안 된다(`AppBackgroundModule` 과 같은 이유).
  */
 class AppSystemBarsModule : Module() {

@@ -1,4 +1,4 @@
-# ADR-006+069+154 테스트 러너 · 검증 명령 · 네이티브 빌드 캐시
+# ADR-006+069+154+271 테스트 러너 · 검증 명령 · 네이티브 빌드 캐시
 
 > 🟢 유효
 > 옛 번호: ADR-156 · ADR-157 · ADR-179 정정 1
@@ -18,17 +18,16 @@ vitest 였다. 앱이 하나로 합쳐진 뒤에도 러너가 둘이면 매처 �
 
 ### 결정 1. 러너는 jest 하나다
 
-`jest-expo` 프리셋 위에서 모든 테스트를 한 번에 돌린다. 파일 이름의 두 형태는 러너가 아니라 테스트의
-성격을 나타낸다.
+`jest-expo` 프리셋 위에서 모든 테스트를 한 번에 돌린다. 파일 이름은 세 형태다.
 
-| 이름 | 성격 |
+| 이름 | 무엇 |
 |---|---|
-| `*.spec.ts(x)` | RN 을 렌더하지 않는 순수 로직 · 데이터 · 저장소. node 에서 빨리 돈다 |
+| `*.spec.ts(x)` | vitest 가 돌던 테스트에서 온 이름이다. RN 을 렌더하지 않는 로직에 붙였지만, 지금은 RN 을 렌더하는 것도 있다(2026-11-20 에 335개 중 25개) |
 | `*.test.ts(x)` | RN 을 렌더하거나 RN 모듈을 목으로 바꾸는 것 |
 | `*.test.mjs` | `scripts/` 의 ESM 배포 스크립트 |
 
-두 이름을 하나로 합치지 않은 것은 성격 구분이 여전히 쓸모 있고, 합치려면 파일 백여 개를 다시 건드려야
-하기 때문이다.
+`*.spec` 과 `*.test` 는 같은 환경(`jest-expo` 의 react-native)에서 돈다. 다른 환경에서 도는 것은 jsdom 스펙
+여섯뿐이다(결정 5). 두 이름을 하나로 합치지 않은 것은 합치려면 파일 수백 개를 다시 건드려야 하기 때문이다.
 
 `jest.config.js` 의 `testMatch` 는 파일 이름으로 좁혀 둔다. 프리셋 기본값은 `__tests__` 안의 모든 파일을
 테스트로 잡아서, 그 디렉터리에 둔 도우미 파일이 "테스트가 하나도 없다" 로 실패한다.
@@ -60,7 +59,7 @@ jest 는 `jest.mock()` 팩토리가 바깥 변수를 참조하는 것을 막는�
 
 ### 결정 4. 동적 `import()` 는 테스트에서만 `require` 로 바꾼다
 
-`features/prehydrate.ts` 는 탭 스토어를 첫 렌더 뒤에 불러오려고 일부러 동적 `import()` 를 쓴다([[ADR-027]]).
+`app/prehydrate.ts` 는 탭 스토어(`features/prehydrate.ts`)를 첫 렌더 뒤에 불러오려고 일부러 동적 `import()` 를 쓴다([[ADR-027]]).
 jest 는 CommonJS 로 돌아서 네이티브 `import()` 를 만나면 실패한다.
 
 소스를 바꿀 수 없으므로 `babel.config.js` 가 테스트 환경(`api.env('test')`)에서만 `import(x)` 를
@@ -69,13 +68,14 @@ jest 는 CommonJS 로 돌아서 네이티브 `import()` 를 만나면 실패한�
 로 실패한다. `@babel/plugin-transform-modules-commonjs` 로는 안 된다. `babel-preset-expo` 가 동적 import 를
 일부러 남기도록 설정하기 때문이다. Metro 는 이 변환을 거치지 않으므로 앱 번들에는 영향이 없다.
 
-### 결정 5. DOM 에서 도는 스펙 다섯은 jsdom 환경에 둔다
+### 결정 5. DOM 에서 도는 스펙 여섯은 jsdom 환경에 둔다
 
-`@jest-environment jsdom` 과 `@testing-library/react` 로 도는 스펙이 다섯 있다.
+`@jest-environment jsdom` 과 `@testing-library/react` 로 도는 스펙이 여섯 있다.
 
 - `features/auth/__tests__/use-api-key-notice.spec.tsx`
 - `features/boss-profit/__tests__/use-period-error-toast.spec.tsx`
 - `features/notice/__tests__/use-notice-delivery.spec.tsx`
+- `features/schedule-sync/__tests__/one-toast-per-round.spec.tsx`
 - `features/schedule-sync/__tests__/use-sync-error-toast.spec.tsx`
 - `hooks/__tests__/useCountUp.spec.tsx`
 
@@ -208,3 +208,4 @@ eslint 규칙을 옮겨 적은 것이라 판정이 조금 다르다. 그래서 o
   식에서 결과가 바로 보이는 계산 테스트를 지운다
 - ADR-154 (2026-11-03): 결정 10 ~ 13 을 더했다. jest 시작 10초 · tsc 5초 · eslint 9초를 줄이고 네이티브 빌드 캐시를
   켰다. 결정 8 의 `--testPathIgnorePatterns` 를 걷었다
+- ADR-271 (2026-11-20): 결정 1 을 고쳤다. `*.spec` 이 RN 을 렌더하지 않는 로직이라는 설명이 실제와 달랐다(335개 중 25개가 RN 을 렌더한다). 결정 4 의 동적 `import()` 위치와 결정 5 의 jsdom 스펙 수(다섯 → 여섯)를 실제에 맞췄다(#1122)
