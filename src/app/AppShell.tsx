@@ -29,6 +29,13 @@ import { BootSplash } from './BootSplash'
 import { UpdatePromptModal } from './UpdatePromptModal'
 import { GameDataLock } from './game-data/GameDataLock'
 import { refreshGameData, useGameDataStatus } from '../features/game-data/sync'
+import {
+  checkServerMaintenance,
+  shownMaintenanceUntil,
+  useServerMaintenanceStore,
+  watchServerMaintenance,
+} from '../features/server-maintenance/store'
+import { ServerMaintenanceLock } from './server-maintenance/ServerMaintenanceLock'
 import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
 import { ApiKeyNoticeModal } from './auth/ApiKeyNoticeModal'
 import { AccountDeletionPrompt } from './auth/AccountDeletionPrompt'
@@ -54,6 +61,8 @@ import { useUsageLog } from '../features/usage-log/useUsageLog'
  * 3. **게임 데이터 잠금**. 테마 · 글자 크기 · 하단바 순서 복원과 OTA 모달을 뺀 나머지는 게임 데이터가 준비된 뒤에 마운트한다
  *    (`ReadyShell`). 빈 표를 읽은 이펙트가 엉뚱한 일을 하지 않게 하기 위해서다. 알림 예약 맞추기가 빈 컨텐츠 표를 읽으면
  *    예약을 전부 지운다. 준비 전에는 `GameDataLock` 이 선다.
+ * 3-0. **서버 점검 잠금**. 서버가 점검 중이면 게임 데이터가 준비됐어도 `ReadyShell` 을 내리고 `ServerMaintenanceLock` 을
+ *    세운다. 게임 데이터 잠금보다 앞이다. 점검 중에는 게임 데이터를 받을 수 없다.
  * 3-1. **저장소 복원 다섯**(인증·진입 단계·테마·트래킹 모드·드롭 연출). 서로 독립이라 순서가 없다. 각자
  *    각자 자기 이펙트를 갖는다. 하나가 던져도 나머지가 돈다.
  * 4. **광고 SDK 초기화**. 실패해도 던지지 않아 부팅을 막지 않는다.
@@ -267,12 +276,22 @@ function checkUpdateOnReturn(awayMs: number): void {
   void useLiveUpdateStore.getState().checkOnReturn(awayMs)
 }
 
+/** 백그라운드에서 돌아올 때 서버가 점검 중인지 묻는다. 주기만 믿으면 최대 5분이 늦는다. */
+function checkMaintenanceOnReturn(): void {
+  void checkServerMaintenance()
+}
+
 export function AppShell(): React.JSX.Element {
   const restoreTheme = useThemeStore((state) => state.restoreFromStorage)
   const restoreTextSize = useTextSizeStore((state) => state.restoreFromStorage)
   const restoreBarOrder = useBarOrderStore((state) => state.restoreFromStorage)
   const gameData = useGameDataStatus()
   const holdingSplash = useLiveUpdateStore((state) => state.holdingSplash)
+  const maintenanceLocked = useServerMaintenanceStore((state) => state.locked)
+  const maintenanceUntil = useServerMaintenanceStore(shownMaintenanceUntil)
+
+  // 서버가 점검 중인지 켜자마자 묻고 주기로 다시 묻는다. 부팅은 이 답을 기다리지 않는다. 기다리면 느린 망에서 모든 부팅이 늦어진다.
+  useEffect(() => watchServerMaintenance(), [])
 
   // 잠금 화면도 테마로 그리므로 게임 데이터를 기다리지 않는다.
   useEffect(() => {
@@ -298,6 +317,7 @@ export function AppShell(): React.JSX.Element {
 
   useReturnToForeground(refreshOnReturn)
   useReturnToForeground(checkUpdateOnReturn)
+  useReturnToForeground(checkMaintenanceOnReturn)
 
   return (
     <>
@@ -305,7 +325,13 @@ export function AppShell(): React.JSX.Element {
           배경을 선언하지 않은
           테마에서는 아무것도 그리지 않는다. */}
       <ThemeBackdrop />
-      {gameData.phase === 'ready' ? (
+      {maintenanceLocked ? (
+        // 덮지 않고 `ReadyShell` 을 내린다. 덮기만 하면 아래 화면의 조회와 쓰기가 점검 중에도 나간다.
+        <>
+          <ServerMaintenanceLock until={maintenanceUntil} />
+          <LockedUpdatePrompt />
+        </>
+      ) : gameData.phase === 'ready' ? (
         <ReadyShell />
       ) : (
         <>
