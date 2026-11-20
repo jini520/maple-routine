@@ -20,13 +20,9 @@ export function WeeklyQuestStatus(props: { content: WeeklyContent }): React.JSX.
     )
   }
 
-  if (content.contentKey === FAITHFUL_INVESTIGATION_KEY) {
-    if (content.nowCount === content.maxCount && content.maxCount > 0) {
-      return <Badge variant={QUEST_STATE_VARIANT[2]}>{QUEST_STATE_LABELS[2]}</Badge>
-    }
-    if (content.questState === 1) {
-      return <Badge variant="neutral">{`${content.nowCount}회 완료`}</Badge>
-    }
+  // 조사 2회(2/2)도 퀘스트는 진행 중이라 `2회 완료` 다. 완료는 다른 주간 퀘스트처럼 상태 2 다.
+  if (content.contentKey === FAITHFUL_INVESTIGATION_KEY && content.questState === 1) {
+    return <Badge variant="neutral">{`${content.nowCount}회 완료`}</Badge>
   }
 
   return content.questState !== null ? (

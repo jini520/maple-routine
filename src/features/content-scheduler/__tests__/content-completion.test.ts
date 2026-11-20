@@ -101,13 +101,16 @@ describe('주간 완료 판정', () => {
     expect(weeklyContentCompletion(weekly({ ...extreme, questState: 1, nowCount: 0, maxCount: 0 }))).toBe('incomplete')
   })
 
-  it('성실한 조사에 대한 보답은 카운트가 찼을 때 완료다(quest_state 1 이어도)', () => {
+  // 넥슨이 이 퀘스트를 주는 네 모양이다. 퀘스트를 끝내면 횟수가 0/0 으로 돌아가서 횟수로는 끝낸 퀘스트를 못 가른다.
+  it('성실한 조사에 대한 보답은 횟수가 아니라 quest_state 2 가 완료다', () => {
     const faithful = {
       contentKey: 'weekly_quest_faithful_investigation_reward',
       apiName: '[주간 퀘스트] 성실한 조사에 대한 보답',
     }
-    expect(weeklyContentCompletion(weekly({ ...faithful, questState: 1, nowCount: 2, maxCount: 2 }))).toBe('complete')
+    expect(weeklyContentCompletion(weekly({ ...faithful, questState: 0, nowCount: 0, maxCount: 0 }))).toBe('incomplete')
     expect(weeklyContentCompletion(weekly({ ...faithful, questState: 1, nowCount: 1, maxCount: 2 }))).toBe('incomplete')
+    expect(weeklyContentCompletion(weekly({ ...faithful, questState: 1, nowCount: 2, maxCount: 2 }))).toBe('incomplete')
+    expect(weeklyContentCompletion(weekly({ ...faithful, questState: 2, nowCount: 0, maxCount: 0 }))).toBe('complete')
   })
 
   it('그 밖의 주간 퀘스트는 quest_state 다', () => {
