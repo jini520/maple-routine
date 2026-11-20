@@ -106,7 +106,7 @@ describe('useScheduleSyncErrorToast', () => {
 
   // 캐릭터별 실패가 토스트를 타면서 이 종류가 처음 여기 도달한다.
   // 400 OPENAPI00003은 영구 실패라 "다시 시도"는 눌러도 같은 400이다.
-  it.each(['gameMaintenance', 'apiMaintenance'] as const)('%s 는 토스트를 띄우지 않는다. 화면 맨 위의 점검 배너가 알린다', async (kind) => {
+  it.each(['gameMaintenance', 'apiMaintenance'] as const)('%s 는 토스트를 띄우지 않는다. 머리글 아래의 점검 배너가 알린다', async (kind) => {
     render(<Harness error={{ kind }} />)
 
     expect(showErrorMock).not.toHaveBeenCalled()

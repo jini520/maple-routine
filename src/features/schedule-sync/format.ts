@@ -110,7 +110,7 @@ export function formatRosterError(error: ScheduleSyncError, place: RosterErrorPl
         title: '넥슨 로그인이 만료됐습니다',
         description: '다시 로그인해주세요',
       }
-    // 피커는 화면 맨 위의 배너가 무엇이 점검 중인지 말한다. 온보딩은 배너가 없어 제목이 말한다.
+    // 피커는 머리글 아래의 배너가 무엇이 점검 중인지 말한다. 온보딩은 배너가 없어 제목이 말한다.
     // 기다리는 것 말고는 할 일이 없어 버튼이 없다.
     case 'gameMaintenance':
     case 'apiMaintenance':
@@ -139,7 +139,7 @@ export interface StaleRosterErrorCopy {
   action?: { kind: 'retry'; label: string }
 }
 
-// place 는 점검 하나만 가른다. 피커는 화면 맨 위에 점검 배너가 서고 온보딩은 서지 않는다.
+// place 는 점검 하나만 가른다. 피커는 머리글 아래에 점검 배너가 서고 온보딩은 서지 않는다.
 export function formatStaleRosterError(error: ScheduleSyncError, place: RosterErrorPlace): StaleRosterErrorCopy | null {
   switch (error.kind) {
     // 재시도로는 절대 풀리지 않고 누를 것도 없다. 피커에서는 이 배너가 뜨는 순간 키 무효화가
@@ -163,7 +163,7 @@ export function formatStaleRosterError(error: ScheduleSyncError, place: RosterEr
       return { message: '목록이 최신이 아닙니다', action: RETRY }
     case 'signInRequired':
       return { message: '넥슨 로그인이 만료되어 목록을 갱신하지 못했습니다' }
-    // 피커는 같은 화면 맨 위에 점검 배너가 선다. 한 줄을 더 얹으면 같은 일을 두 번 말한다.
+    // 피커는 같은 화면의 머리글 아래에 점검 배너가 선다. 한 줄을 더 얹으면 같은 일을 두 번 말한다.
     case 'gameMaintenance':
       return place === 'picker' ? null : { message: '메이플스토리 API 점검 중이라 목록을 갱신하지 못했습니다' }
     case 'apiMaintenance':
