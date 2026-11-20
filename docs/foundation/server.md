@@ -37,7 +37,7 @@
 | `POST /v1/drop-prices` | 세션 또는 키 해시 | 드롭 가격 한 건 | `{ ok: true }` | 10초 |
 | `DELETE /v1/drop-prices/:dropRecordId` | 세션 또는 키 해시 | | 204 | 10초 |
 | `DELETE /v1/me` | 세션 또는 키 해시 | | 204 | 10초 |
-| `POST /v1/me/api-key-links` | 세션 | `{ apiKeyHash }` | 204. 키 해시 헤더로 오면 403 | 10초 |
+| `POST /v1/me/api-key-links` | 세션 | `{ apiKeyHash }` | 204. 키 해시 헤더로 오면 403. 1.0.15 서버에는 없다 | 10초 |
 | `POST /v1/auth/nexon/login` | 없음 | `{ platform }` | `{ authorizeUrl, redeemKey }` | 15초 |
 | `POST /v1/auth/nexon/session` | 없음 | `{ redeemKey, receipt }` | `{ status: 'ok', session }` · `{ status: 'pending' }` · 404 | 15초 |
 | `DELETE /v1/auth/nexon/session` | 세션 | | | 15초 |
@@ -45,16 +45,18 @@
 
 쓰기 요청의 신원은 넥슨으로 로그인한 사용자는 세션, API 키 사용자는 키 해시다. 키 사용자가 로그인하면 앱은 지울 키의
 해시를 `POST /v1/me/api-key-links` 로 보내고, 서버는 그 키의 넥슨 계정 줄을 로그인 계정 줄로 합친다([[ADR-017]] 결정 9).
+1.0.15 서버는 키 해시를 받지 않는다. API 키 사용자는 메인 키의 메이플 ID 해시로 밝히고, 키 표와 `POST /v1/me/api-key-links`
+가 없다. 키 사용자가 로그인하면 로그인 세션으로 메이플 ID 를 알릴 때 서버가 같은 메이플 ID 의 넥슨 계정 줄을 로그인 줄로
+합친다([[ADR-099]] 결정 62, [[ADR-101]] 결정 25).
 
 ## 신원 헤더
 
-쓰기 요청 셋(`POST /v1/drop-prices` · `DELETE /v1/drop-prices/:id` · `DELETE /v1/me`)에만 싣는다. 조회는 공개 정보라 싣지
-않는다. 자세한 규칙은 [[ADR-017]] 결정 5 에 있다.
+쓰기 요청과 계정 경로에만 싣는다. 조회는 공개 정보라 싣지 않는다. 받는 경로와 자세한 규칙은 [[ADR-017]] 결정 5 에 있다.
 
 | 경우 | 싣는 헤더 |
 |---|---|
 | 넥슨 로그인 세션이 있다 | `Authorization: Bearer <세션>` 하나 |
-| 키만 있다 | `x-api-key-hash: <메인 키의 SHA-256, 소문자 16진 64자>` 하나. 부계정 키로는 밝히지 않는다 |
+| 키만 있다 | `x-api-key-hash: <메인 키의 SHA-256, 소문자 16진 64자>` 하나. 1.0.15 부터는 `x-maple-id-hash: <메인 키의 메이플 ID 의 SHA-256>` 하나다. 부계정 키로는 밝히지 않는다 |
 | 둘 다 없다 | 보내지 않는다(`serverIdentityHeaders` 가 `null`) |
 
 API 키 원문은 서버로 가지 않는다.
