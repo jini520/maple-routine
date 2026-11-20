@@ -1,4 +1,4 @@
-# ADR-101+186+193+201+259 다계정: 넥슨 로그인 아래에 API 키 계정을 더 등록한다
+# ADR-101+186+193+201+259+277 다계정: 넥슨 로그인 아래에 API 키 계정을 더 등록한다
 
 > ⚪ 미구현
 > 관련 소스: `storage/api-key.ts` · `storage/character-accounts.ts` · `lib/nexon-credential.ts` · `features/auth/` · `features/app-entry/` · `features/character-selection/forget.ts` · `features/character-selection/untrack.ts` · `features/mvp-grade/character-list.ts` · `nexon/key-stage.ts` · `nexon/key-rate-limit.ts` · `nexon/http.ts` · `features/schedule-sync/` · `features/schedule-window/window.ts` · `features/boss-profit/defeat-dates.ts` · `features/cashbook/meso-rate.ts` · `features/cashbook/remembered-levels.ts` · `features/mvp-grade/accounts.ts` · `features/enhancement-history/` · `lib/enhancement/sighted-owner.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/migrations.ts` · `features/cashbook/records.ts` · `features/stats/aggregate.ts` · `lib/mvp/starforce.ts` · `features/cashbook/account-names.ts` · `lib/maple-id-name.ts` · `lib/text-bytes.ts` · `components/atoms/TextInput/` · `features/character-manage/derivations.ts` · `hooks/useAccountRosters.ts` · `components/organisms/AccountSelect/` · `app/mvp-grade/MvpGradeCards.tsx` · `app/today/view-model.ts` · `app/today/widgets/crystal-cells.ts` · `app/today/widgets/CrystalLimitWidget.tsx` · `app/today/widgets/SharedContentsWidget.tsx` · `app/today/widgets/layout.ts` · `components/organisms/WidgetSelect/` · `features/maple-id/owners.ts` · `hooks/useMapleIdOwners.ts` · `features/today/shared-maple-id.ts` · `storage/today-shared-maple-id.ts` · `app/boss-profit/character-groups.ts` · `app/boss-profit/HeadlineChips.tsx` · `features/boss-profit/monthly-crystals.ts` · `features/boss-profit/world-leap-moves.ts` · `features/boss-profit/world-leap-link.ts` · `storage/cashbook-entries.ts` · `storage/character-profiles.ts` · `features/ledger/LedgerDataProvider.tsx` · `useLedgerData.ts`
@@ -624,19 +624,19 @@
   지금처럼 사람 · 기록 id 로 찾는다. 채우다가 다른 줄과 같은 드롭이 되면 먼저 들어온 줄을 남기고 나중 줄을 지운다.
   - 처음부터 다시 올리려고 과거 올리기의 종류 이름을 `dropPrice` 에서 `dropPriceOwner` 로 바꿨다. 과거 올리기는 옛 종류의 진행을 읽지
     않으므로([[ADR-099]] 결정 1), 1.0.13 에서 다 올린 기기도 처음부터 다시 올린다.
-- 1.0.13 앱이 보내는 드롭에는 ocid 와 메이플 ID 가 없다. 1.0.13 을 잠글 때까지는 그 드롭을 지금처럼 사람 · 기록 id 로 받는다.
+- 1.0.13 앱이 보낸 드롭에는 ocid 와 메이플 ID 가 없다. 서버는 그 드롭을 사람 · 기록 id 로 받는다.
 - 1.0.14 앱은 드롭마다 그 캐릭터의 메이플 ID 해시(`mapleId`) · ocid 해시(`ocid`) · 상자 key(`boxOriginKey`)를 싣는다. 메이플 ID 는
   `character_accounts` 에서 찾는다. 앱이 그 캐릭터를 목록에서 본 적이 없어 메이플 ID 를 못 찾은 드롭은, 메이플 ID 와 ocid 없이 옛 모양으로
-  보낸다. 서버는 1.0.13 을 잠글 때까지 그 모양을 받는다.
+  보낸다. 서버는 이 모양도 1.0.13 앱의 드롭처럼 사람 · 기록 id 로 받는다.
 - 이 앱은 서버의 식별자 해시(0037)와 획득처(0038)를 배포한 뒤에 내야 한다. 그 전 서버는 메이플 ID · ocid 와 함께 몇 번째를 요구해서, 새
   앱의 드롭을 400 으로 거절한다.
-- 1.0.13 을 잠근 뒤 ocid 가 없는 줄을 지우고 `ocid` 칸을 `NOT NULL` 로 바꾼다(사용자 선택 2026-11-10). 사람 칸(`user_id`)도 걷는다.
-  그 뒤로는 모든 드롭 줄을 넥슨이 준 값으로 가린다.
-  - 2026-11-10 운영은 3,949줄이고, 그중 시세에 쓰는 줄(`completed`)이 3,458줄이다. 사람 칸이 빈 줄은 없다. 시세에 쓰는 줄의 사람
-    322명은 모두 30일 안에 활동했다.
-  - 지워질 줄은 기기에서 지운 줄 75 · 삭제 예약 중인 2명의 6줄 · 1.0.14 로 올리지 않는 사람의 줄이다.
-  - 같은 드롭이 사람만 달리 두 줄로 들어간 묶음(아이템 · 기간 · 보스 · 월드 · 가격 · 가격 시각이 같은 줄)은 0건이었다.
-- 지금은 `(user_id, drop_record_id)` 로 가려, 사람이 바뀌면 한 줄이 더 생기고 시세 계산에서 두 번 센다.
+- ocid 가 없는 줄은 1.0.15 로 옮길 때까지 운영 표에 그대로 둔다(사용자 선택 2026-11-20). 1.0.13 을 잠근 2026-11-20 에 운영은
+  5,975줄이고 그중 5,692줄에 ocid 가 없었다. 시세에 쓰는 줄(`completed`) 5,139줄 가운데 4,903줄도 ocid 가 없었다. ocid 를 채워 올린
+  사람은 17명이었다. 1.0.14 가 과거 드롭을 다시 올리기 전이라, 지우면 시세 표본 대부분이 사라진다.
+- `ocid` 칸을 `NOT NULL` 로 바꾸지 않고 사람 칸(`user_id`)도 걷지 않는다(사용자 선택 2026-11-20). 1.0.15 로 옮길 때 이 표는 판매가 표
+  `drop_sale_prices` 가 되면서 `ocid` · 메이플 ID 칸을 없애고, 올린 사람을 `user_id` 로 적는다([[ADR-099]] 결정 26 · 29 · 43). 지금 바꾸면
+  그때 되돌려야 한다. 시세 계산도 넥슨 계정 · 메이플 ID 가 없는 줄의 사람을 `user_id` 로 가린다.
+- ocid 가 없는 줄은 `(user_id, drop_record_id)` 로 가린다. 그래서 사람이 바뀌면 한 줄이 더 생기고 시세 계산에서 두 번 센다.
 
 ### 결정 25. 서버의 넥슨 계정 줄은 넥슨 ID 하나에 하나이고, 넥슨 로그인의 uid 와 메이플 ID 로 알아본다
 
@@ -670,8 +670,8 @@
     선택 2026-11-10).
   - 없앨 줄의 키 · 메이플 ID · 부계정 등록 · 강화 이상 보고를 남기는 줄로 옮기고 없앨 줄을 지운다. 기록은 메이플 ID 를 가리키므로 따로
     옮기지 않는다. 강화 이상 보고가 같은 열쇠로 겹치면 늦게 고친 줄을 남긴다. 합친 뒤 부계정 등록이 자기 자신을 잇게 되면 그 등록을 지운다.
-  - 없앨 줄의 사람에게 다른 넥슨 계정 줄이 없으면 그 사람도 지운다(사용자 선택 2026-11-10). 1.0.13 을 잠그기 전에는 사람 칸으로 찾는 옛
-    드롭 줄이 있어(결정 24), 그 사람의 드롭 줄은 남기는 줄의 사람으로 옮긴다. 옮기지 않으면 사람을 지울 때 사람 칸이 비어 익명 줄이 된다.
+  - 없앨 줄의 사람에게 다른 넥슨 계정 줄이 없으면 그 사람도 지운다(사용자 선택 2026-11-10). ocid 가 없는 드롭 줄은 사람 칸으로 찾으므로
+    (결정 24), 그 사람의 드롭 줄은 남기는 줄의 사람으로 옮긴다. 옮기지 않으면 사람을 지울 때 사람 칸이 비어 익명 줄이 된다.
   - 둘 다 로그인 줄이면 합치지 않고 거절한다. `nexon_uid` 가 다르면 다른 넥슨 ID 라 메이플 ID 가 겹칠 수 없고, 앱이 잘못 알린 값이다.
   - 어느 한쪽 사람이 계정 삭제를 예약했으면 합치지 않는다. [[ADR-017]] 결정 9 와 같은 이유로, 합치면 사용자가 한 삭제 요청이 말없이 사라진다.
     겹친 메이플 ID 는 예약한 줄에 남고, 유예가 끝나 그 줄이 지워진 뒤 다시 알리면 보낸 줄에 붙는다.
@@ -816,8 +816,7 @@
   옛 결정 3(부계정 기록을 메인 신원으로 보냄)은 결정 7 로 바꿨다
 - (2026-11-10) 결정 19 에 기록의 유일 기준을 넥슨이 준 값(넥슨 ID · 메이플 ID · ocid)과 기록 내용으로만 거는 원칙을 더하고(사용자 지정),
   결정 6 · 7 · 21 · 24 · 25 · 26 의 서버 표 · 경로를 그에 맞춰 적었다. 넥슨 계정 줄은 넥슨 ID 하나에 하나이고, 메이플 ID 가 겹친 줄은 합친다.
-  키를 다시 받은 계정은 옛 줄로 잇고, 메인 계정을 삭제하면 부계정 등록 정보만 지우고, 남의 메이플 ID 기록은 적지 않고, 1.0.13 을 잠근 뒤
-  ocid 가 없는 드롭 줄은 지운다(사용자 선택)
+  키를 다시 받은 계정은 옛 줄로 잇고, 메인 계정을 삭제하면 부계정 등록 정보만 지우고, 남의 메이플 ID 기록은 적지 않는다(사용자 선택)
 - ADR-193 (2026-11-11): 결정 19 · 24 · 25 · 26 의 서버 식별자(`nexon_uid` · 메이플 ID · ocid)를 해시로 바꿨다([[ADR-017]] 결정 11, #956).
   드롭에 남기는 ocid 를 공개 값이라고 한 이유를 걷었고, `enhancement_totals` 의 캐릭터 이름 칸을 걷는다. 결정 15 의 키 문제에서 429 를
   빼고 `OPENAPI00006` 을 넣었다(429 는 [[ADR-024]] 결정 11)
@@ -844,3 +843,6 @@
   등록할 수 있다(사용자 지정). `API 키 삭제` 가 서버의 등록도 해제하고(사용자 선택), 해제 경로를 다시 둔다. 부계정의 등록 · 해제와 로그인 없는 키 사용자의 신원을 키 해시에서 메이플 ID 로 옮긴다(사용자 지정). 사람 줄은 넥슨 ID 마다
   따로 두고, 사람을 세는 곳이 부계정 등록을 따라 다계정 사용자를 한 명으로 센다(사용자 지정). 결정 2 · 12 · 14 를 기기 간 동기화([[ADR-099]] 결정 14 · 15)에
   맞췄다. 다른 사람으로 로그인하면 앞 사람의 기록을 올린 뒤 비우고, 로그인 뒤 추적 목록은 서버 것으로 채운다
+- ADR-277 (2026-11-20): 결정 24 에서 1.0.13 을 잠근 뒤 ocid 가 없는 드롭 줄을 지우고 `ocid` 를 `NOT NULL` 로, 사람 칸을 걷는다는 계획을
+  걷었다(사용자 선택, #986). 잠근 날에도 시세 줄의 95% 가 ocid 없는 줄이었고, 1.0.15 의 판매가 표는 `ocid` 를 없애고 `user_id` 를
+  남긴다([[ADR-099]] 결정 26 · 43). ocid 가 없는 줄은 1.0.15 로 옮길 때까지 그대로 둔다
