@@ -17,7 +17,7 @@
 | 칸 | 서버 표 |
 |---|---|
 | `bosses` | `bosses` · `boss_difficulties` · `game_rules` |
-| `dropItems` | `items` 의 드롭 아이템 줄(`is_drop`) |
+| `dropItems` | `items` 의 드롭 아이템 줄(`is_drop`). 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) |
 | `bossDrops` | `boss_drop_rewards` |
 | `dropBoxes` | `drop_boxes` · `drop_box_contents` |
 | `crystalPrices` | `boss_crystal_prices` |
@@ -26,7 +26,7 @@
 | `cashbookCategories` | `cashbook_categories` · `cashbook_item_kinds` |
 | `symbolCosts` | `symbol_groups` · `symbols` · `symbol_level_costs` |
 | `contents` | `contents` · `content_categories` |
-| `equipmentItems` | `items` 의 강화 장비 줄(`is_equipment`) |
+| `equipmentItems` | `items` 의 강화 장비 줄(`is_equipment`). 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) |
 | `enhancementCosts` | `potential_reset_costs` · `soul_potential_reset_costs` · `starforce_steps` · `game_rules` |
 | `mvpGrades` | `mvp_grades` |
 | `huntingGrounds` | `hunting_regions` · `hunting_grounds` · `hunting_ground_levels` |
