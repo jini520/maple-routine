@@ -350,7 +350,7 @@ describe('메모', () => {
 
     const shown = await 그리기({ target: { occurrence: withMemo!, weekStart: '2099-01-01' } })
     expect(shown.getByTestId('appointment-memo-body').props.children).toBe('2번 방')
-    shown.unmount()
+    await shown.unmount()
 
     const hidden = await 그리기({ target: { occurrence: withoutMemo!, weekStart: '2099-01-01' } })
     expect(hidden.queryByTestId('appointment-memo-body')).toBeNull()

@@ -1,5 +1,5 @@
 // 여덟 자리가 각자 그리던 얼굴 원을 이 부품이 든다.
-import { within } from '@testing-library/react-native'
+import { act, within } from '@testing-library/react-native'
 import type { ReactTestRendererJSON } from 'react-test-renderer'
 import { View } from 'react-native'
 
@@ -26,7 +26,7 @@ describe('CharacterAvatar', () => {
     expect(flattenStyle(getByTestId('얼굴').props.style).backgroundColor).toBeUndefined()
   })
 
-  //  이 걷으려는 그것이다. 복사본이 셋 있었고 하나는 값이 달랐다.
+  // 크롭 값은 표 하나에서 읽는다. 전에는 복사본이 셋 있었고 그중 하나는 값이 달랐다.
   it('크롭은 `lib/face-crop` 의 표에서 나온다. 지름에 따라 배율이 바뀐다', async () => {
     const { getByTestId } = await renderAtom(
       <CharacterAvatar imageTestID="그림" imageUrl="https://example.test/a.png" name="아무개" size={56} />,
@@ -168,8 +168,11 @@ function 원안에(트리: ReactTestRendererJSON, testID: string): boolean {
 describe('오버 프레임', () => {
   const 그림 = 'https://example.test/a.png'
 
-  afterEach(() => {
-    useOverFrameStore.setState({ enabled: true })
+  // 그린 얼굴이 아직 서 있어 설정을 되돌리면 다시 그려진다. 그 갱신도 `act` 안에서 한다.
+  afterEach(async () => {
+    await act(() => {
+      useOverFrameStore.setState({ enabled: true })
+    })
   })
 
   // 테마 페이지에서 끈 사용자는 예전 모양을 본다. 호출부는 설정을 안 읽으니 이 부품이 따라야 한다.

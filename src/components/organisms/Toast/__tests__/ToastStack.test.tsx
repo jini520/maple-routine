@@ -6,10 +6,12 @@
 // - `bottom-[calc(...)]` 클래스를 보던 두 케이스는 실제 `bottom` 숫자를 잰다.
 import {
   flattenStyle,
+  flushAnimationFrame,
   renderOverlay,
   type AtomElement,
 } from '../../../__tests__/render-atom'
 import { fireEvent } from '@testing-library/react-native'
+import type { ReactElement } from 'react'
 import { Dimensions } from 'react-native'
 
 import { useToastStore, type ToastItem } from '../../../../features/toast/store'
@@ -56,6 +58,13 @@ function toast(id: string, message: string): ToastItem {
   return { id, variant: 'success', message, duration: 2000 }
 }
 
+/** 토스트는 마운트 다음 프레임에 들어선다(`Toast.tsx` 의 `setIsEntered`). 그 갱신까지 마친 트리를 돌려주는 렌더. */
+async function 그리기(ui: ReactElement): ReturnType<typeof renderOverlay> {
+  const view = await renderOverlay(ui)
+  await flushAnimationFrame()
+  return view
+}
+
 afterEach(() => {
   jest.clearAllMocks()
   setSystemBarsPort(noopSystemBarsPort)
@@ -68,14 +77,14 @@ describe('ToastStack', () => {
   // 목록 순서가 곧 위→아래 순서다.
   it('오래된 토스트가 위, 최신 토스트가 탭바에 가까운 아래쪽에 온다', async () => {
     mockStore([toast('t1', '첫째'), toast('t2', '둘째')])
-    const { getAllByTestId } = await renderOverlay(<ToastStack />)
+    const { getAllByTestId } = await 그리기(<ToastStack />)
 
     expect(getAllByTestId('toast').map((node) => textsUnder(node)[0])).toEqual(['첫째', '둘째'])
   })
 
   it('닫기 버튼을 누르면 해당 토스트의 id 로 dismiss 를 호출한다', async () => {
     const { dismiss } = mockStore([toast('t1', '첫째'), toast('t2', '둘째')])
-    const { getAllByLabelText } = await renderOverlay(<ToastStack />)
+    const { getAllByLabelText } = await 그리기(<ToastStack />)
 
     await fireEvent.press(getAllByLabelText('닫기')[1])
 
@@ -86,7 +95,7 @@ describe('ToastStack', () => {
   // 애초에 안 받았고, RN 에서는 명시해야 한다.
   it('스택 자신은 터치를 통과시킨다', async () => {
     mockStore([toast('t1', '첫째')])
-    const { getByTestId } = await renderOverlay(<ToastStack />)
+    const { getByTestId } = await 그리기(<ToastStack />)
 
     expect(getByTestId('toast-stack').props.pointerEvents).toBe('box-none')
   })
@@ -94,7 +103,7 @@ describe('ToastStack', () => {
   // 바 높이는 창 폭의 함수다. 상수로 적어 두면 바가 72 인 기기에서 토스트가 바 위로 4 만 뜨고, 더 높은 기기에서는 바에 겹친다.
   it('hasTabBar 가 true(기본값)면 하단바 몫 위에 띄운다', async () => {
     mockStore([toast('t1', '첫째')])
-    const { getByTestId } = await renderOverlay(<ToastStack />)
+    const { getByTestId } = await 그리기(<ToastStack />)
 
     const 바_몫 = resolveBottomBarMetrics(Dimensions.get('window').width, false).spacePx
     expect(flattenStyle(getByTestId('toast-stack').props.style).bottom).toBe(34 + 바_몫 + 간격)
@@ -104,7 +113,7 @@ describe('ToastStack', () => {
   it('3버튼 내비게이션 바가 있으면 하단바를 띄운 높이만큼 함께 오른다', async () => {
     setSystemBarsPort(buttonNavigationSystemBarsPort)
     mockStore([toast('t1', '첫째')])
-    const { getByTestId } = await renderOverlay(<ToastStack />)
+    const { getByTestId } = await 그리기(<ToastStack />)
 
     const 바 = resolveBottomBarMetrics(Dimensions.get('window').width, true)
     expect(바.liftPx).toBeGreaterThan(0)
@@ -115,7 +124,7 @@ describe('ToastStack', () => {
 
   it('hasTabBar 가 false 면 안전영역 바로 위에 띄운다(온보딩 등 탭바 없는 화면)', async () => {
     mockStore([toast('t1', '첫째')])
-    const { getByTestId } = await renderOverlay(<ToastStack hasTabBar={false} />)
+    const { getByTestId } = await 그리기(<ToastStack hasTabBar={false} />)
 
     expect(flattenStyle(getByTestId('toast-stack').props.style).bottom).toBe(34 + 간격)
   })

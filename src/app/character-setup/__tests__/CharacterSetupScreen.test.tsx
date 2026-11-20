@@ -244,7 +244,9 @@ describe('CharacterSetupScreen: FAQ', () => {
       expect(view.getByText('캐릭터 관리')).toBeTruthy()
       expect(view.getByText('캐릭터가 목록에 없어요.')).toBeTruthy()
     } finally {
-      faqsTable.set(before)
+      await act(() => {
+        faqsTable.set(before)
+      })
     }
   })
 })

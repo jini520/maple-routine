@@ -14,7 +14,7 @@
 // 확인해 커밋한 값이고, 테스트가 베끼면 두 벌이 된다). `theme/__tests__/ThemeProvider.test.tsx` 와
 // 같은 방식이다.
 import { getThemeDefinition } from '../../lib/theme/theme-registry'
-import { render } from '@testing-library/react-native'
+import { act, render } from '@testing-library/react-native'
 import type { ReactElement } from 'react'
 import { PortalProvider } from '@gorhom/portal'
 import { SafeAreaProvider, type Metrics } from 'react-native-safe-area-context'
@@ -77,6 +77,21 @@ export function renderOverlay(
       </ThemeProvider>
     </SafeAreaProvider>,
   )
+}
+
+/**
+ * 마운트 때 `requestAnimationFrame` 으로 미룬 갱신을 `act` 안에서 마저 돌리는 도우미.
+ *
+ * jest 의 `requestAnimationFrame` 은 `setTimeout(0)` 이라 렌더가 끝난 뒤에 돈다. 기다리지 않으면 그 갱신이 `act` 밖에서 일어난다.
+ * 가짜 타이머 아래에서는 끝나지 않는다.
+ *
+ * @example const view = await renderAtom(<Toast toast={toast} onDismiss={noop} />)
+ * await flushAnimationFrame()
+ */
+export async function flushAnimationFrame(): Promise<void> {
+  await act(async () => {
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+  })
 }
 
 /**

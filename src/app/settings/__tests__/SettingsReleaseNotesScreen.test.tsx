@@ -1,12 +1,8 @@
 // 이 화면이 지키는 것을 적는다.
 //
-// 갈린 것 셋
-// ① **`사용 중` 배지의 기준이 빌드 시점 버전으로 좁혀졌다**. `currentVersion`
-//    을 물을 수 없어 폴백 경로만 남았다. 그래서 두 케이스가 하나로 접히고,
-//    **매니페스트를 조회하지 않는다는 검사할 스토어가 없어 사라진다**
-//    (그 계약은 이제 구조가 지킨다. 이 화면은 live-update 를 import 조차 하지 않는다).
-// ② `closest('li')` → **항목 텍스트에서 위로 올라가** 그 행을 잡는다.
-// ③ **픽스처 주입 방식. getter 가 안 통한다.** 목이 돌려준 객체에 getter 를
+// 갈린 것 둘
+// ① `closest('li')` → **항목 텍스트에서 위로 올라가** 그 행을 잡는다.
+// ② **픽스처 주입 방식. getter 가 안 통한다.** 목이 돌려준 객체에 getter 를
 //    얹어 매 접근마다 픽스처를 갈아 끼웠는데, jest + Babel 조합에서는 **모듈 네임스페이스가 한 번
 //    복사되면서 getter 가 그때 딱 한 번 평가된다**(`__esModule: true` 를 붙여도 같다).
 //    그래서 **배열의 정체성을 고정해 두고 내용만 갈아 끼운다**(`mockNotes` 를 비우고 다시 채운다).
@@ -193,7 +189,7 @@ describe('SettingsReleaseNotesScreen', () => {
     expect(view.queryByText('개선')).toBeNull()
   })
 
-  // 배지의 기준이 **빌드 시점 버전**이다.
+  // 도는 번들의 버전이 비어 있으면 `package.json` 버전이 배지의 기준이다.
   it('지금 실행 중인 버전에만 "사용 중" 배지를 붙인다', async () => {
     setNotes([
       { version: baseAppVersion(packageJson.version), date: '2026-08-09', items: [{ category: 'feature', text: 'A' }] },
@@ -225,7 +221,9 @@ describe('SettingsReleaseNotesScreen', () => {
       while (card !== null && card.props.testID !== 'release-note') card = card.parent
       expect(textsIn(card as AtomElement)).toContain('9.9.9')
     } finally {
-      useLiveUpdateStore.setState({ currentVersion: null })
+      await act(() => {
+        useLiveUpdateStore.setState({ currentVersion: null })
+      })
     }
   })
 
@@ -245,7 +243,9 @@ describe('SettingsReleaseNotesScreen', () => {
       while (card !== null && card.props.testID !== 'release-note') card = card.parent
       expect(textsIn(card as AtomElement)).toContain('9.9.9')
     } finally {
-      useLiveUpdateStore.setState({ currentVersion: null })
+      await act(() => {
+        useLiveUpdateStore.setState({ currentVersion: null })
+      })
     }
   })
 

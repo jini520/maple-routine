@@ -1,7 +1,7 @@
 /**
  * 카드가 서는 자리(`InputCardHost`)와 껍데기.
  *
- * 여기서 지키는 것은 **여는 길과 닫는 길**이다. 카드가 키보드 높이를 따라가는지는 jest 가 못 본다
+ * 여기서 지키는 것은 **카드를 여는 동작과 닫는 동작**이다. 카드가 키보드 높이를 따라가는지는 jest 가 못 본다
  * (키보드 이벤트도 레이아웃도 안 온다). 그것은 실기기에서 재고 고른다.
  */
 import { act, fireEvent } from '@testing-library/react-native'
@@ -21,19 +21,18 @@ async function 열기() {
 }
 
 describe('InputCardHost', () => {
-  afterEach(() => {
-    useInputCardStore.setState({ request: null })
+  // 마지막 카드가 아직 서 있어 부탁을 비우면 호스트가 다시 그려진다. 그 갱신도 `act` 안에서 한다.
+  afterEach(async () => {
+    await act(() => {
+      useInputCardStore.setState({ request: null })
+    })
   })
 
   it('확인은 값을 넘기고 카드를 닫는다', async () => {
     const { view, onConfirm } = await 열기()
 
-    await act(async () => {
-      fireEvent.changeText(view.getByTestId('input-card-value'), '84')
-    })
-    await act(async () => {
-      fireEvent.press(view.getByTestId('input-card-confirm'))
-    })
+    await fireEvent.changeText(view.getByTestId('input-card-value'), '84')
+    await fireEvent.press(view.getByTestId('input-card-confirm'))
 
     expect(onConfirm).toHaveBeenCalledWith('84')
     expect(view.queryByTestId('input-card')).toBeNull()
@@ -42,12 +41,8 @@ describe('InputCardHost', () => {
   it('닫기는 값을 안 넘기고 카드를 닫는다', async () => {
     const { view, onConfirm } = await 열기()
 
-    await act(async () => {
-      fireEvent.changeText(view.getByTestId('input-card-value'), '84')
-    })
-    await act(async () => {
-      fireEvent.press(view.getByTestId('input-card-close'))
-    })
+    await fireEvent.changeText(view.getByTestId('input-card-value'), '84')
+    await fireEvent.press(view.getByTestId('input-card-close'))
 
     expect(onConfirm).not.toHaveBeenCalled()
     expect(view.queryByTestId('input-card')).toBeNull()
@@ -57,9 +52,7 @@ describe('InputCardHost', () => {
     const 등록 = jest.spyOn(BackHandler, 'addEventListener')
     const { view, onConfirm } = await 열기()
 
-    await act(async () => {
-      fireEvent.changeText(view.getByTestId('input-card-value'), '84')
-    })
+    await fireEvent.changeText(view.getByTestId('input-card-value'), '84')
     const 뒤로 = 등록.mock.calls.at(-1)?.[1] as () => boolean
     let 끊었나 = false
     await act(async () => {
@@ -99,9 +92,7 @@ describe('InputCardHost', () => {
     it('확인 안에서 연 카드가 그대로 선다', async () => {
       const view = await 이어열기()
 
-      await act(async () => {
-        fireEvent.press(view.getByTestId('input-card-confirm'))
-      })
+      await fireEvent.press(view.getByTestId('input-card-confirm'))
 
       expect(view.getByText('루즈 컨트롤 머신 마크')).toBeTruthy()
     })
@@ -109,12 +100,8 @@ describe('InputCardHost', () => {
     it('앞 카드에 친 값을 물고 오지 않는다', async () => {
       const view = await 이어열기()
 
-      await act(async () => {
-        fireEvent.changeText(view.getByTestId('input-card-value'), '3250000000')
-      })
-      await act(async () => {
-        fireEvent.press(view.getByTestId('input-card-confirm'))
-      })
+      await fireEvent.changeText(view.getByTestId('input-card-value'), '3250000000')
+      await fireEvent.press(view.getByTestId('input-card-confirm'))
 
       expect(view.getByTestId('input-card-value').props.value).toBe('')
     })
@@ -123,7 +110,7 @@ describe('InputCardHost', () => {
      * **카드를 다시 세우지 않는다**(사용자 지적). 다시 세우면 칸이 `autoFocus` 를 다시 걸어
      * 키보드가 닫혔다 열린다. 값만 다시 심으면 칸이 살아 있어 키보드가 그대로 있는다.
      *
-     * 다시 세우나 안 세우나를 직접 볼 길이 없어 **상태가 살아남나**로 잰다. 다시 세우면 카드가
+     * 다시 세우는지는 직접 볼 수 없어서 **상태가 살아남나**로 잰다. 다시 세우면 카드가
      * 든 것이 전부 프롭에서 다시 시작한다.
      */
     it('같은 부탁이 그대로면 치던 값이 안 흔들린다', async () => {
@@ -132,13 +119,9 @@ describe('InputCardHost', () => {
         openInputCard({ label: '창세의 뱃지', value: '', onConfirm: jest.fn() })
       })
 
-      await act(async () => {
-        fireEvent.changeText(view.getByTestId('input-card-value'), '100')
-      })
+      await fireEvent.changeText(view.getByTestId('input-card-value'), '100')
       // 스크림을 눌러 다시 그리게 한다. 부탁은 그대로다.
-      await act(async () => {
-        fireEvent.press(view.getByTestId('input-card-scrim'))
-      })
+      await fireEvent.press(view.getByTestId('input-card-scrim'))
 
       expect(view.getByTestId('input-card-value').props.value).toBe('100')
     })
@@ -158,9 +141,7 @@ describe('InputCardHost', () => {
           onConfirm: () => openInputCard({ label: '내용', text: true, value: '뒤', onConfirm: jest.fn() }),
         })
       })
-      await act(async () => {
-        fireEvent.press(view.getByTestId('input-card-confirm'))
-      })
+      await fireEvent.press(view.getByTestId('input-card-confirm'))
 
       expect(view.getByTestId('input-card-value').props.defaultValue).toBe('뒤')
     })
@@ -179,12 +160,8 @@ describe('InputCardHost', () => {
         })
       })
 
-      await act(async () => {
-        fireEvent.changeText(view.getByTestId('input-card-share-percent'), '85')
-      })
-      await act(async () => {
-        fireEvent.press(view.getByTestId('input-card-confirm'))
-      })
+      await fireEvent.changeText(view.getByTestId('input-card-share-percent'), '85')
+      await fireEvent.press(view.getByTestId('input-card-confirm'))
 
       expect(view.getByTestId('input-card-share-percent').props.value).toBe('66.667')
     })

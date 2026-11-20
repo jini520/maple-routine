@@ -371,10 +371,14 @@ describe('BossProfitBossRow: 고가 드롭 행의 약한 빛', () => {
     const valuable = await renderProfit(<BossProfitBossRow row={보스행()} drops={고가드롭} />)
     expect(valuable.getByTestId('boss-row-sheen')).toBeTruthy()
 
+    // 세 행은 금액 숫자의 키가 같아서 앞 렌더의 금액에서 굴러가고, 그 갱신이 테스트가 끝난 뒤에 남는다.
+    // 렌더마다 기억을 비워 목표 금액에서 바로 서게 한다.
+    clearCountUpMemory()
     const plain = await renderProfit(<BossProfitBossRow row={보스행()} drops={값매긴드롭} />)
     expect(plain.queryByTestId('boss-row-sheen')).toBeNull()
 
     // 카드 강조와 같은 규칙이다. 미완료 행의 드롭은 그 기간에 번 것이 아니다.
+    clearCountUpMemory()
     const incomplete = await renderProfit(
       <BossProfitBossRow row={보스행({ isComplete: false, payoutMeso: null })} drops={고가드롭} />,
     )

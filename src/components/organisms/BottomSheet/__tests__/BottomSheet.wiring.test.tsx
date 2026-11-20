@@ -8,9 +8,11 @@
 //      `BottomSheetModalProvider` 아래에서만 선다. 그 둘을 빼면
 //      `'BottomSheetModalInternalContext' cannot be null!` 로 죽는다.
 //
-// **시트 내용은 여기서 안 보인다.** 진짜 라이브러리는 레이아웃 측정과 UI 스레드 애니메이션 위에
-// 서 있어 jest 에서 콘텐츠가 마운트되지 않는다(`waitFor` 1초로도 안 나온다). 그래서 값
-// 계약은 옆 파일이 본다. 실제로 열리는 모습은 실기기 확인 몫이다.
+// **시트 내용은 여기서 안 본다.** 라이브러리는 마운트 다음 프레임에 `present` 로 내용을 세운다. jest 는
+// `@gorhom/bottom-sheet` 를 변환하지 않아서(`jest.config.js` 의 `transformIgnorePatterns`) 그 스크롤
+// 핸들러가 worklet 이 아니다. 내용이 서는 순간 Reanimated 가 `Passed handlers that are not worklets` 를
+// 던진다. 그래서 테스트는 그 프레임 전에 시트를 내리고, 값 계약은 옆 파일이 본다. 실제로 열리는 모습은
+// 실기기 확인 몫이다.
 import { Text } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet'
@@ -20,7 +22,7 @@ import { BottomSheet } from '../BottomSheet'
 
 describe('BottomSheet: 배선', () => {
   it('앱 셸이 세울 프로바이더 아래에서 예외 없이 마운트된다', async () => {
-    const { toJSON } = await renderOverlay(
+    const { toJSON, unmount } = await renderOverlay(
       <GestureHandlerRootView>
         <BottomSheetModalProvider>
           <BottomSheet onClose={() => {}} label="드롭 아이템 기록">
@@ -31,5 +33,7 @@ describe('BottomSheet: 배선', () => {
     )
 
     expect(toJSON()).not.toBeNull()
+    // 다음 프레임의 `present` 전에 내린다. 남겨 두면 그 갱신이 테스트가 끝난 뒤 `act` 밖에서 일어난다.
+    await unmount()
   })
 })

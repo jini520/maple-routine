@@ -15,8 +15,8 @@
 // ## 쓰는 법
 //
 // ```ts
-// jest.mock('react-native-reanimated', =>
-//   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion,
+// jest.mock('react-native-reanimated', () =>
+//   require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion(),
 // )
 // ```
 //

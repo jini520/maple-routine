@@ -123,6 +123,43 @@ console.warn = (...args) => {
   baseWarn(...args)
 }
 
+// React 의 `act()` 경고를 그 테스트의 실패로 만든다.
+//
+// 두 경고다. `not wrapped in act(...)` 는 상태가 `act` 밖에서 바뀌었다는 뜻이다. 테스트가 그 갱신을 기다리지
+// 않고 검사했거나, 테스트가 끝난 뒤에 갱신이 일어났다. `overlapping act() calls` 는 앞의 비동기 `act` 가
+// 끝나기 전에 다음 `act` 를 열었다는 뜻이다. 둘 다 경고만 내고 통과해서 26개 파일에 쌓였고, 새 경고가 묻혔다.
+//
+// 경고는 그대로 출력하고 모아 두었다가 케이스가 끝날 때 던진다. React 가 경고를 내는 자리에서 던지면 렌더
+// 도중이라 다른 에러로 바뀐다. 이 `afterEach` 는 Testing Library 의 정리(언마운트)보다 먼저 돈다. 그래서 케이스가
+// 끝난 뒤 정리 전에 난 경고는 다음 케이스의 실패로 나온다. 마지막 케이스 뒤에 난 경고는 `afterAll` 이 잡는다.
+const ACT_WARNING = /not wrapped in act\(|overlapping act\(\) calls/
+const actWarnings = []
+const baseError = console.error
+
+console.error = (...args) => {
+  const text = args.map((arg) => String(arg)).join(' ')
+  if (ACT_WARNING.test(text)) actWarnings.push(text.split('\n')[0])
+  baseError(...args)
+}
+
+function throwActWarnings() {
+  if (actWarnings.length === 0) return
+  const found = actWarnings.splice(0)
+  throw new Error(`act() 경고가 났다. 갱신을 기다리지 않고 검사했거나 테스트가 끝난 뒤에 갱신이 일어났다.\n${found.join('\n')}`)
+}
+
+afterEach(throwActWarnings)
+afterAll(throwActWarnings)
+
+// TanStack Query 의 구독자 알림을 마이크로태스크로 낸다.
+//
+// 기본값은 `setTimeout(0)` 이라, 쿼리가 `act` 안에서 끝나도 화면은 그 `act` 가 끝난 뒤에 다시 그려진다. 그 갱신이
+// 위의 `act()` 경고가 되고, 테스트는 다시 그려지기 전의 화면을 검사한다. 가짜 타이머를 쓰는 파일에서는 알림이
+// 아예 오지 않는다. 마이크로태스크로 내면 쿼리를 시작한 `act` 가 알림까지 흘려보낸다.
+require('@tanstack/react-query').notifyManager.setScheduler((callback) => {
+  void Promise.resolve().then(callback)
+})
+
 // 떠 있는 토스트의 **자동 소멸 타이머**를 매 케이스 뒤에 걷는다.
 //
 // 그 타이머는 토스트 스토어의 모듈 스코프에 살아서, 토스트를 띄운 채 끝난 케이스가 2~2.5초짜리

@@ -389,7 +389,12 @@ describe('SettingsScreen', () => {
 // 제목 줄을 본문에 두면 머리글 바로 아래에 서는 점검 배너가 제목 위로 올라간다(실기기). 다른 탭과 같게
 // 제목 줄을 머리글에 둔다.
 describe('SettingsScreen: 머리글과 점검 배너', () => {
-  afterEach(() => useNexonMaintenanceStore.setState({ scope: null }))
+  // 이 훅은 화면이 언마운트되기 전에 돌아서, 되돌린 값으로 배너가 다시 그려진다.
+  afterEach(async () => {
+    await act(() => {
+      useNexonMaintenanceStore.setState({ scope: null })
+    })
+  })
 
   it('제목 줄은 머리글 안에 선다', async () => {
     const view = await renderOverlay(<SettingsScreen />)

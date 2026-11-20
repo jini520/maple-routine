@@ -225,9 +225,7 @@ describe('BottomSheet: 가 정한 값을 넘긴다', () => {
     })
     const scrim = await renderOverlay(backdrop)
 
-    await act(async () => {
-      fireEvent.press(scrim.getByLabelText('닫기'))
-    })
+    await fireEvent.press(scrim.getByLabelText('닫기'))
 
     expect(mockDismiss).toHaveBeenCalledTimes(1)
   })
@@ -303,10 +301,8 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
     const 위여백 = (): number =>
       (getByTestId('income-sheet').props.contentContainerStyle as { paddingTop: number }).paddingTop
 
-    await act(async () => {
-      fireEvent(getByTestId('bottom-sheet-header'), 'layout', {
-        nativeEvent: { layout: { height: 67 } },
-      })
+    await fireEvent(getByTestId('bottom-sheet-header'), 'layout', {
+      nativeEvent: { layout: { height: 67 } },
     })
 
     expect(위여백()).toBe(67)
@@ -401,10 +397,8 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
     const view = await renderOverlay(<StepSheet />)
     const scroller = view.getByTestId('income-sheet')
 
-    await act(async () => {
-      fireEvent(scroller, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 400 } } })
-      fireEvent(scroller, 'contentSizeChange', 360, 900)
-    })
+    await fireEvent(scroller, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 400 } } })
+    await fireEvent(scroller, 'contentSizeChange', 360, 900)
 
     expect(view.getByTestId('bottom-sheet-fade-bottom')).toBeTruthy()
   })
@@ -413,10 +407,8 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
     const view = await renderOverlay(<StepSheet />)
     const scroller = view.getByTestId('income-sheet')
 
-    await act(async () => {
-      fireEvent(scroller, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 400 } } })
-      fireEvent(scroller, 'contentSizeChange', 360, 300)
-    })
+    await fireEvent(scroller, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 360, height: 400 } } })
+    await fireEvent(scroller, 'contentSizeChange', 360, 300)
 
     expect(view.queryByTestId('bottom-sheet-fade-bottom')).toBeNull()
   })
@@ -425,14 +417,12 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
     const view = await renderOverlay(<StepSheet />)
     const scroller = view.getByTestId('income-sheet')
 
-    await act(async () => {
-      fireEvent.scroll(scroller, {
-        nativeEvent: {
-          contentOffset: { x: 0, y: 500 },
-          contentSize: { width: 360, height: 900 },
-          layoutMeasurement: { width: 360, height: 400 },
-        },
-      })
+    await fireEvent.scroll(scroller, {
+      nativeEvent: {
+        contentOffset: { x: 0, y: 500 },
+        contentSize: { width: 360, height: 900 },
+        layoutMeasurement: { width: 360, height: 400 },
+      },
     })
 
     expect(view.getByTestId('bottom-sheet-fade-top')).toBeTruthy()
@@ -442,9 +432,7 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
   it('줄이 없는 단계에서는 비워 둔 자리도 없어진다', async () => {
     const view = await renderOverlay(<StepSheet />)
 
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('단계 바꾸기'))
-    })
+    await fireEvent.press(view.getByLabelText('단계 바꾸기'))
 
     expect(view.queryByTestId('bottom-sheet-footer')).toBeNull()
     expect(
@@ -525,9 +513,7 @@ describe('BottomSheet: 흐림 재질은 테마가 고른다', () => {
   /** 흐림은 **단계가 갈릴 때만** 선다. 한 번 갈아 준다. */
   async function 단계갈기(): Promise<ReturnType<typeof renderOverlay>> {
     const view = await renderOverlay(<StepKeySheet />)
-    await act(async () => {
-      fireEvent.press(view.getByLabelText('단계 바꾸기'))
-    })
+    await fireEvent.press(view.getByLabelText('단계 바꾸기'))
     return view
   }
 
