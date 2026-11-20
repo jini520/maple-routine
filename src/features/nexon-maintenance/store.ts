@@ -1,5 +1,5 @@
 /**
- * 넥슨이 점검 중인가. 화면 맨 위의 점검 배너(`app/NexonMaintenanceBanner`)가 이것을 구독한다.
+ * 넥슨이 점검 중인가. 머리글 바로 아래의 점검 배너(`app/NexonMaintenanceBanner`)가 이것을 구독한다.
  *
  * **앱 전체에 하나다.** 점검은 화면이 아니라 넥슨의 사실이라, 한 화면이 받은 점검을 다른 화면도 말한다.
  * `nexon/http.ts` 가 점검 응답과 성공 응답을 알린다(`nexonMaintenanceReporter` 를 부팅이 꽂는다).

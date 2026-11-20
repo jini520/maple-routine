@@ -31,7 +31,6 @@ const 화면 = (
   const bottomSafeAreaPx = resolveBottomSafeAreaPx({ insetBottomPx, platform })
 
   return {
-    hasHeader: true,
     hasTabBar,
     topSafeAreaPx: 인셋.top,
     bottomSafeAreaPx,
@@ -48,18 +47,10 @@ const 화면 = (
 }
 
 describe('페이드는 콘텐츠가 실제로 지나가는 자리에만 있다', () => {
-  it('헤더가 있으면 상단은 상단 안전영역만큼이다. 굴리면 콘텐츠가 상태바 밑을 지나간다', () => {
+  it('상단은 상단 안전영역만큼이다. 굴리면 콘텐츠가 상태바 밑을 지나간다', () => {
     const fade = resolveSafeAreaFade(화면(true, 'ios'))
 
     expect(fade.topPx).toBe(59)
-  })
-
-  // 설정 계열. 셸이 스크롤포트를 안전영역만큼 내리므로 콘텐츠가 그 자리에
-  // 애초에 못 온다. 깎으면 **콘텐츠의 첫 줄**을 깎게 된다.
-  it('헤더가 없으면 상단은 0이다. 셸이 이미 상자를 내렸다', () => {
-    const fade = resolveSafeAreaFade({ ...화면(true, 'ios'), hasHeader: false })
-
-    expect(fade.topPx).toBe(0)
   })
 
   // 안전영역까지만 두면 콘텐츠가 선명한 채로 캡슐 밑에 들어가고 녹는 것은 이미 바가 가린
