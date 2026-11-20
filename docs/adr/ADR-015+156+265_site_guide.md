@@ -1,6 +1,6 @@
-# ADR-015+156 안내 사이트와 홍보 첫 화면
+# ADR-015+156+265 안내 사이트와 홍보 첫 화면
 
-> 🟢 유효
+> ⚪ 미구현
 > 옛 번호: ADR-110 · ADR-229
 > 관련 소스: `site/` · `site/index.html` · `site/home.css` · `site/home.js` · `site/images/home/` · `site/robots.txt` · `site/sitemap.xml` · `PRIVACY.md` · `scripts/build-site.mjs` · `scripts/deploy-site.sh` · `app/auth/api-key-links.ts`
 
@@ -148,6 +148,22 @@ App Store 부터 놓으라고 정한다. Google Play 배지는 검정 바탕뿐�
 검색엔진 등록(Google Search Console · 네이버 서치어드바이저 · Bing 웹마스터 도구)은 운영자 계정으로 사람이
 한다. 소유 확인에는 HTML 메타 태그를 쓰고, 받은 값은 `index.html` 머리에 넣어 다시 배포한다.
 
+### 결정 11. 안내 사이트는 `info.mapleroutine.store` 로 옮기고, PC 버전이 나오기 전까지 루트 `/` 는 info 로 301 한다 (사용자 지정 2026-11-17 · 11-20)
+
+루트 주소는 넥슨 ID 데이터 동기화 뒤에 낼 PC 버전이 쓴다([[ADR-016]] 결정 14). 그래서 안내 사이트를 하위 도메인
+`info.mapleroutine.store` 로 옮긴다.
+
+- 대표 주소(`canonical`) · `og:url` · 구조화 데이터 · `sitemap.xml` · `robots.txt` 의 사이트맵 주소를 info 로 바꾼다(결정 10).
+  검색엔진에 잡힌 주소도 info 로 옮겨 간다. info 를 검색엔진에 등록하는 일은 운영자가 한다.
+- 루트 `/` 는 PC 버전이 나올 때까지 info 로 301 한다. PC 버전을 낼 때 그 자리에 PC 버전을 놓는다.
+- 루트의 `/privacy` · `/support` · `/api-key` · `/app-ads.txt` 는 지금처럼 디스크에서 낸다. 이 주소들을 어디에 둘지와 스토어
+  등록정보(개인정보 처리방침 · 지원 · 개발자 웹사이트)를 바꿀지는 나중에 정한다(사용자 지정 2026-11-20). 스토어 등록정보와
+  1.0.14 까지의 앱이 루트의 이 주소를 열고, AdMob 은 개발자 웹사이트의 도메인에서 `app-ads.txt` 를 찾는다. 그래서 정할 때까지
+  같은 사이트를 루트와 info 에 함께 올린다.
+- 1.0.15 앱이 여는 처리방침 · 키 가이드 주소(`PRIVACY_URL` · `GUIDE_URL`)는 info 로 바꾼다. 앱의 다른 주소와 같은 바이너리에서
+  바꾼다([[ADR-016]] 결정 14). 루트의 주소를 어떻게 정하든 info 에는 이 페이지들이 있다.
+- info 도 결정 6 대로 서버 앱을 거치지 않고 nginx 가 디스크에서 바로 낸다.
+
 ## 테스트
 
 이 결정들을 확인하는 자동 테스트는 없다. 배포 스크립트가 끝에 일곱 경로(`/` · `/privacy` · `/support` ·
@@ -158,3 +174,5 @@ App Store 부터 놓으라고 정한다. Google Play 배지는 검정 바탕뿐�
 
 - ADR-015 (2026-10-19): 옛 ADR-110 · 229 를 합쳐 처음 작성
 - ADR-156 (2026-11-04): 첫 화면을 홍보 페이지로 바꾸고(결정 8), 스토어 배지 규칙(결정 9)과 검색엔진 정보(결정 10)를 더했다
+- ADR-265 (2026-11-20): 결정 11 을 더했다. 안내 사이트를 `info.mapleroutine.store` 로 옮기고, PC 버전 전까지 루트 `/` 는 info 로
+  301 한다. 루트의 문서 주소와 `app-ads.txt` 는 둘 곳을 정할 때까지 그대로 낸다(#1090)
