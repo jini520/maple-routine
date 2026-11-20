@@ -32,6 +32,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { cashbookCategoriesTable, type SpendCategoryKey, type SpendFormKey } from '../../../lib/cashbook/categories'
+import { spendCatalogTable } from '../../../lib/cashbook/spend-catalog'
 import { SpendSheet } from '../SpendSheet'
 import type { SpendRecord } from '../../../storage/spend'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
@@ -583,11 +584,17 @@ describe('수량. 곱셈은 앱이 한다', () => {
   // 상한이 1이면 **줄 자체가 없다**. 오르내릴 자리가 없는 스테퍼는
   // **조절할 수 있다** 는 거짓말이다. 막힌 채로 세워 두던 것을 걷었다.
   it('상한이 1이면 수량 줄이 아예 없다', async () => {
-    const view = await 그리기({ lastPointRate: 1_180 })
-    await 갈래바꾸기(view, '이벤트·BM')
-    await 누르기(view, '미호로이드')
+    const 되돌리기 = 묶음열기('maple_point_shop')
+    try {
+      const view = await 그리기({ lastPointRate: 1_180 })
+      await 갈래바꾸기(view, '이벤트·BM')
+      await 누르기(view, '미호로이드')
 
-    expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
+      expect(view.getByTestId('spend-sheet-title')).toHaveTextContent(/^미호로이드$/)
+      expect(view.queryByTestId('spend-sheet-quantity')).toBeNull()
+    } finally {
+      되돌리기()
+    }
   })
 
   // 상한이 있는 항목은 스테퍼다. 가운데 숫자를 누르면 친다(위 케이스들). `+` 는 상한에서, `−` 는 1 에서 멈춘다.
@@ -2206,29 +2213,81 @@ describe('수량 줄', () => {
 })
 
 /**
- * **안 열린 묶음은 흐리게 두고 못 고른다**.
+ * 그 묶음을 연 표로 바꾸는 도우미. fixture 의 메이플 포인트 샵은 닫혀 있어 격자에 안 서므로 그 항목을 누르는 케이스가 쓴다.
  *
- * 숨기지 않는 이유는 그런 것이 있었지 를 기억할 수 있어야 해서다. 열리면 같은 자리에 돌아온다.
+ * @returns 원래 표로 되돌리는 함수. `finally` 에서 부른다
  */
-describe('안 열린 묶음', () => {
+function 묶음열기(groupKey: string): () => void {
+  const original = spendCatalogTable.get()
+  spendCatalogTable.set({
+    ...original,
+    groups: original.groups.map((group) => (group.key === groupKey ? { ...group, active: true } : group)),
+  })
+  return () => spendCatalogTable.set(original)
+}
 
-  it('그 묶음의 타일은 안 눌린다', async () => {
+/**
+ * **닫힌 묶음은 격자에 안 선다**(사용자 지정 2026-11-17).
+ *
+ * 격자에는 지금 고를 수 있는 묶음만 남는다. 그 묶음으로 적은 옛 기록은 숨긴 뒤에도 고칠 수 있다.
+ * fixture 에서는 메이플 포인트 샵이 닫혀 있다.
+ */
+describe('닫힌 묶음', () => {
+  it('이름도 타일도 격자에 안 서고 열린 묶음만 선다', async () => {
     const view = await 그리기()
 
     await 갈래바꾸기(view, '이벤트·BM')
-    await 누르기(view, '솔 에르다')
 
-    // 안 골라졌으므로 여전히 목록이다. 고른 뒤라면 머리가 그 이름을 들었을 것이다.
-    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('이벤트·BM')
+    expect(view.queryByText('메이플 포인트 샵')).toBeNull()
+    expect(view.queryByLabelText('솔 에르다')).toBeNull()
+    expect(view.getByLabelText('VIP 사우나')).toBeTruthy()
   })
 
-  it('열린 묶음은 그대로 눌린다', async () => {
-    const view = await 그리기()
+  // 숨기는 기준은 묶음 key 가 아니라 서버 표의 열림이다. 관리 화면에서 켜면 앱 배포 없이 돌아온다.
+  it('다시 열면 격자에 서고 고를 수 있다', async () => {
+    const 되돌리기 = 묶음열기('maple_point_shop')
+    try {
+      const view = await 그리기()
 
-    await 갈래바꾸기(view, '이벤트·BM')
-    await 누르기(view, 'VIP 사우나')
+      await 갈래바꾸기(view, '이벤트·BM')
+      await 누르기(view, '솔 에르다')
 
-    expect(view.getByTestId('spend-sheet-back')).toBeTruthy()
+      expect(view.getByTestId('spend-sheet-title')).toHaveTextContent(/^솔 에르다$/)
+    } finally {
+      되돌리기()
+    }
+  })
+
+  // 고치기 시트는 격자를 거치지 않고 기록의 항목 key 로 항목을 찾는다. 찾으면 제목이 타일 이름이고,
+  // 못 찾으면 기록에 적힌 이름(`블루베리 농장 입장권`)이 선다.
+  it('그 묶음으로 적은 기록은 고치기 시트에서 그 항목으로 열린다', async () => {
+    const view = await 그리기({
+      editing: {
+        id: 'spd-blueberry',
+        ocid: 'ocid-1',
+        spentOn: '2026-08-23',
+        category: 'event_bm',
+        item: '블루베리 농장 입장권',
+        itemKey: 'blueberry_farm',
+        formItemKeys: null,
+        itemKind: null,
+        levelFrom: null,
+        levelTo: null,
+        quantity: 2,
+        mesoAmount: null,
+        tariffMeso: null,
+        pointAmount: 14_000,
+        pointPer100mMeso: 1_180,
+        mesoMarketFeePercent: null,
+        cashAmount: null,
+        hexa: null,
+        recordedAt: '2026-08-23T01:00:00.000Z',
+      },
+      onDelete: jest.fn(),
+    })
+
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent(/^블루베리 농장$/)
+    expect(줄글자(view, 'spend-sheet-quantity')).toBe('2')
   })
 })
 
@@ -2262,12 +2321,17 @@ describe('타일 그림', () => {
 
   // 이름에서 `… 입장권` 을 뗀 둘. 그림은 이름이 아니라 타일 key 로 찾으므로 이름을 바꿔도 따라온다.
   it('농장 둘은 이름이 바뀐 뒤에도 그림이 붙는다', async () => {
-    const view = await 그리기()
+    const 되돌리기 = 묶음열기('maple_point_shop')
+    try {
+      const view = await 그리기()
 
-    await 갈래바꾸기(view, '이벤트·BM')
+      await 갈래바꾸기(view, '이벤트·BM')
 
-    expect(view.getByTestId('spend-tile-icon-mechaberry_farm')).toBeTruthy()
-    expect(view.getByTestId('spend-tile-icon-blueberry_farm')).toBeTruthy()
+      expect(view.getByTestId('spend-tile-icon-mechaberry_farm')).toBeTruthy()
+      expect(view.getByTestId('spend-tile-icon-blueberry_farm')).toBeTruthy()
+    } finally {
+      되돌리기()
+    }
   })
 
   // 에픽던전 셋은 **지역 아이콘**에서 온다(원천이 둘이다. `spendIconOf` 주석).
@@ -2290,8 +2354,7 @@ describe('타일 그림', () => {
 
     await 갈래바꾸기(view, '이벤트·BM')
 
-    expect(view.queryByTestId('spend-tile-icon-slot-black_circulator')).toBeNull()
-    expect(view.queryByTestId('spend-tile-icon-slot-high_mountain')).toBeNull()
+    expect(view.getByTestId('spend-tile-box-attendance_event_pass').children).toHaveLength(1)
   })
 })
 
