@@ -32,9 +32,11 @@ import {
 import { ownerFieldsOf, ownerValueOf } from '../character-options'
 import { ItemPickField } from '../item-pick-field'
 import { useItemPick } from '../../../hooks/useItemPick'
-import { AmountInput, FieldCard, FieldRow, MemoInput, OwnerField, useCountField } from '../sheet-fields'
+import { AmountInput, FieldCard, FieldRow, MemoInput, OwnerField } from '../sheet-fields'
+import { useCountField } from '../use-count-field'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
-import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
+import { type SpendFormProps } from './form-shared'
+import { useHeaderSlot, useSaveSlot } from './form-slots'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 
 /**

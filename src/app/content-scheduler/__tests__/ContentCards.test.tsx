@@ -11,8 +11,8 @@ import type { DailyContent, WeeklyContent } from '../../../types'
 
 import { assetUri } from '../../../assets/__tests__/asset-uri'
 import { findAllOfType, renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
-import { renderDailyContentCard } from '../DailyContentCards'
-import { renderWeeklyContentCard } from '../WeeklyContentCards'
+import { DailyContentCard } from '../DailyContentCards'
+import { WeeklyContentCard } from '../WeeklyContentCards'
 import { weeklyLimitClosedKeys } from '../../../features/content-scheduler/content-completion'
 
 const HIDDEN = { includeHiddenElements: true } as const
@@ -69,15 +69,12 @@ function progressNow(view: Awaited<ReturnType<typeof renderAtom>>): number | und
 describe('일간 카드', () => {
   it('kind: quest 는 접두어를 뗀 이름 + quest_state 배지 + 지역 배경이다', async () => {
     const view = await renderAtom(
-      renderDailyContentCard(
-        daily({
+      <DailyContentCard content={daily({
           contentKey: 'daily_quest_lacheln',
           apiName: '[일일 퀘스트] 레헬른의 평온한 밤',
           kind: 'quest',
           questState: 1,
-        }),
-        300,
-      ),
+        })} characterLevel={300} />,
     )
 
     expect(view.getByText('레헬른의 평온한 밤')).toBeTruthy()
@@ -88,7 +85,7 @@ describe('일간 카드', () => {
 
   it('몬스터파크는 진행 배지와 진행률 바를 함께 그린다', async () => {
     const view = await renderAtom(
-      renderDailyContentCard(daily({ contentKey: 'monster_park', apiName: '몬스터파크', nowCount: 7, maxCount: 14 }), 300),
+      <DailyContentCard content={daily({ contentKey: 'monster_park', apiName: '몬스터파크', nowCount: 7, maxCount: 14 })} characterLevel={300} />,
     )
 
     expect(view.getByText('7/14')).toBeTruthy()
@@ -98,7 +95,7 @@ describe('일간 카드', () => {
 
   it('표에 없는 일일 퀘스트는 배경 없이 API 이름을 그대로 그린다. 폴백이 조용하다', async () => {
     const view = await renderAtom(
-      renderDailyContentCard(daily({ apiName: '[일일 퀘스트] 없는지역', kind: 'quest', questState: 0 }), 300),
+      <DailyContentCard content={daily({ apiName: '[일일 퀘스트] 없는지역', kind: 'quest', questState: 0 })} characterLevel={300} />,
     )
 
     expect(view.getByText('[일일 퀘스트] 없는지역')).toBeTruthy()
@@ -107,7 +104,7 @@ describe('일간 카드', () => {
   })
 
   it('그 밖의 항목은 기본 카드(이름 · now/max)다', async () => {
-    const view = await renderAtom(renderDailyContentCard(daily({ apiName: '기타', nowCount: 1, maxCount: 3 }), 300))
+    const view = await renderAtom(<DailyContentCard content={daily({ apiName: '기타', nowCount: 1, maxCount: 3 })} characterLevel={300} />)
 
     expect(view.getByText('기타 · 1/3')).toBeTruthy()
   })
@@ -116,11 +113,7 @@ describe('일간 카드', () => {
 describe('주간 카드', () => {
   it('에픽 던전은 카테고리 배지 + 접두어 뗀 이름이고 now_count 로 완료를 가른다', async () => {
     const done = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({ contentKey: 'epic_dungeon_angler_company', apiName: '에픽 던전 : 앵글러 컴퍼니', nowCount: 5 }),
-        300,
-        false,
-      ),
+      <WeeklyContentCard content={weekly({ contentKey: 'epic_dungeon_angler_company', apiName: '에픽 던전 : 앵글러 컴퍼니', nowCount: 5 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
     expect(done.getByText('에픽 던전')).toBeTruthy()
     expect(done.getByText('앵글러 컴퍼니')).toBeTruthy()
@@ -128,22 +121,14 @@ describe('주간 카드', () => {
     expect(artUri(done)).toContain('senya')
 
     const todo = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({ contentKey: 'epic_dungeon_high_mountain', apiName: '에픽 던전 : 하이마운틴', nowCount: 0 }),
-        300,
-        false,
-      ),
+      <WeeklyContentCard content={weekly({ contentKey: 'epic_dungeon_high_mountain', apiName: '에픽 던전 : 하이마운틴', nowCount: 0 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
     expect(todo.getByText('시작 안함')).toBeTruthy()
   })
 
   it('지역 주간 퀘스트는 지역 배경과 now/max 기반 완료 배지를 쓴다', async () => {
     const view = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({ contentKey: 'erda_spectrum', apiName: '에르다 스펙트럼', nowCount: 1, maxCount: 1 }),
-        300,
-        false,
-      ),
+      <WeeklyContentCard content={weekly({ contentKey: 'erda_spectrum', apiName: '에르다 스펙트럼', nowCount: 1, maxCount: 1 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
 
     expect(view.getByText('에르다 스펙트럼')).toBeTruthy()
@@ -153,16 +138,13 @@ describe('주간 카드', () => {
 
   it('익스트림 몬스터파커는 접두어를 떼고 quest_state 를 그대로 쓴다', async () => {
     const view = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({
+      <WeeklyContentCard content={weekly({
           contentKey: 'monster_park_extreme',
           apiName: '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?',
           questState: 1,
           nowCount: 0,
           maxCount: 5,
-        }),
-        300, false,
-      ),
+        })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
 
     expect(view.getByText('익스트림 몬스터파커에 도전해보겠나?')).toBeTruthy()
@@ -174,13 +156,13 @@ describe('주간 카드', () => {
   it('무릉도장은 now_count 를 "N층"으로 보여주고, 참여 전이면 "시작 안함"이다', async () => {
     const muLungDojo = { contentKey: 'mu_lung_dojo', apiName: '무릉도장' }
     const played = await renderAtom(
-      renderWeeklyContentCard(weekly({ ...muLungDojo, nowCount: 37, maxCount: 100 }), 300, false),
+      <WeeklyContentCard content={weekly({ ...muLungDojo, nowCount: 37, maxCount: 100 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
     expect(played.getByText('37층')).toBeTruthy()
     expect(played.queryByText('완료')).toBeNull()
     expect(artUri(played)).toContain('muruengRaid')
 
-    const fresh = await renderAtom(renderWeeklyContentCard(weekly({ ...muLungDojo, nowCount: 0, maxCount: 100 }), 300, false))
+    const fresh = await renderAtom(<WeeklyContentCard content={weekly({ ...muLungDojo, nowCount: 0, maxCount: 100 })} characterLevel={300} isWeeklyLimitClosed={false} />)
     expect(fresh.getByText('시작 안함')).toBeTruthy()
   })
 
@@ -190,33 +172,23 @@ describe('주간 카드', () => {
       apiName: '[주간 퀘스트] 성실한 조사에 대한 보답',
     }
     const partial = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({ ...faithful, questState: 1, nowCount: 1, maxCount: 2 }),
-        300, false,
-      ),
+      <WeeklyContentCard content={weekly({ ...faithful, questState: 1, nowCount: 1, maxCount: 2 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
     expect(partial.getByText('1회 완료')).toBeTruthy()
 
     const complete = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({ ...faithful, questState: 1, nowCount: 2, maxCount: 2 }),
-        300, false,
-      ),
+      <WeeklyContentCard content={weekly({ ...faithful, questState: 1, nowCount: 2, maxCount: 2 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
     expect(complete.getByText('완료')).toBeTruthy()
   })
 
   it('메이플 유니온은 접두어를 떼고 드래곤 배경의 카테고리 카드가 된다', async () => {
     const view = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({
+      <WeeklyContentCard content={weekly({
           contentKey: 'maple_union_weekly_dragon',
           apiName: '[메이플 유니온] 주간 드래곤 퇴치',
           questState: 2,
-        }),
-        300,
-        false,
-      ),
+        })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
 
     expect(view.getByText('유니온')).toBeTruthy()
@@ -227,38 +199,26 @@ describe('주간 카드', () => {
   // 셋이 **서로 독립**이라는 것이 요점이다. 하나만 등록돼도 나머지에 영향이 없다.
   it('길드 3종은 저마다 다른 카드다', async () => {
     const waterway = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({ contentKey: 'guild_underground_waterway', apiName: '[길드] 지하 수로', nowCount: 1200 }),
-        300,
-        false,
-      ),
+      <WeeklyContentCard content={weekly({ contentKey: 'guild_underground_waterway', apiName: '[길드] 지하 수로', nowCount: 1200 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
     expect(waterway.getByText('지하 수로')).toBeTruthy()
     expect(waterway.getByText('1200점')).toBeTruthy()
 
     const points = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({ contentKey: 'guild_weekly_mission_points', apiName: '[길드] 주간 미션 포인트', nowCount: 3, maxCount: 10 }),
-        300,
-        false,
-      ),
+      <WeeklyContentCard content={weekly({ contentKey: 'guild_weekly_mission_points', apiName: '[길드] 주간 미션 포인트', nowCount: 3, maxCount: 10 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
     expect(points.getByText('3/10')).toBeTruthy()
     expect(progressNow(points)).toBe(3)
 
     const flag = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({ contentKey: 'guild_flag_race', apiName: '[길드] 플래그 레이스', nowCount: 1 }),
-        300,
-        false,
-      ),
+      <WeeklyContentCard content={weekly({ contentKey: 'guild_flag_race', apiName: '[길드] 플래그 레이스', nowCount: 1 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
     expect(flag.getByText('플래그 레이스')).toBeTruthy()
     expect(flag.getByText('완료')).toBeTruthy()
   })
 
   it('그 밖의 항목은 기본 카드다', async () => {
-    const view = await renderAtom(renderWeeklyContentCard(weekly({ apiName: '기타', nowCount: 1, maxCount: 3 }), 300, false))
+    const view = await renderAtom(<WeeklyContentCard content={weekly({ apiName: '기타', nowCount: 1, maxCount: 3 })} characterLevel={300} isWeeklyLimitClosed={false} />)
 
     expect(view.getByText('기타 · 1/3')).toBeTruthy()
   })
@@ -266,7 +226,7 @@ describe('주간 카드', () => {
   // 카드는 이름이 아니라 컨텐츠 key 로 고른다. 이름이 에픽 던전처럼 생겨도 표에 없으면 에픽 던전 카드가 아니다.
   it('표에 없는 컨텐츠는 기본 카드에 API 원문 이름으로 그린다', async () => {
     const view = await renderAtom(
-      renderWeeklyContentCard(weekly({ apiName: '에픽 던전 : 새 던전', nowCount: 1, maxCount: 5 }), 300, false),
+      <WeeklyContentCard content={weekly({ apiName: '에픽 던전 : 새 던전', nowCount: 1, maxCount: 5 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
 
     expect(view.getByText('에픽 던전 : 새 던전 · 1/5')).toBeTruthy()
@@ -281,14 +241,14 @@ describe('진행 불가 배지', () => {
   const MONSTER_PARK = { contentKey: 'monster_park', apiName: '몬스터파크' }
 
   it('요구 레벨에 못 미치면 상태 배지 자리에 **진행 불가** 가 선다', async () => {
-    const 미달 = await renderAtom(renderDailyContentCard(daily({ ...MONSTER_PARK, nowCount: 3, maxCount: 14 }), 104))
+    const 미달 = await renderAtom(<DailyContentCard content={daily({ ...MONSTER_PARK, nowCount: 3, maxCount: 14 })} characterLevel={104} />)
 
     expect(미달.queryByText('진행 불가')).not.toBeNull()
     expect(미달.queryByText('3/14')).toBeNull()
   })
 
   it('레벨이 되면 원래 배지가 그대로다', async () => {
-    const 충족 = await renderAtom(renderDailyContentCard(daily({ ...MONSTER_PARK, nowCount: 3, maxCount: 14 }), 105))
+    const 충족 = await renderAtom(<DailyContentCard content={daily({ ...MONSTER_PARK, nowCount: 3, maxCount: 14 })} characterLevel={105} />)
 
     expect(충족.queryByText('진행 불가')).toBeNull()
     expect(충족.queryByText('3/14')).not.toBeNull()
@@ -297,11 +257,7 @@ describe('진행 불가 배지', () => {
   // 주간 컨텐츠 5개(유니온 둘· 길드 셋)는 참조표에 요구 레벨이 없다. 어떤 레벨에서도 진행 가능이다.
   it('요구 레벨이 없는 항목은 낮은 레벨에서도 배지가 안 뜬다', async () => {
     const view = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({ contentKey: 'guild_underground_waterway', apiName: '[길드] 지하 수로', nowCount: 1200 }),
-        1,
-        false,
-      ),
+      <WeeklyContentCard content={weekly({ contentKey: 'guild_underground_waterway', apiName: '[길드] 지하 수로', nowCount: 1200 })} characterLevel={1} isWeeklyLimitClosed={false} />,
     )
 
     expect(view.queryByText('진행 불가')).toBeNull()
@@ -324,7 +280,7 @@ describe('마감 배지', () => {
   ]
   const closed = weeklyLimitClosedKeys(넷)
   const 카드 = (index: number, level: number) =>
-    renderAtom(renderWeeklyContentCard(넷[index], level, isClosed(closed, 넷[index])))
+    renderAtom(<WeeklyContentCard content={넷[index]} characterLevel={level} isWeeklyLimitClosed={isClosed(closed, 넷[index])} />)
 
   it('한도가 찼고 미완료면 상태 배지 자리에 마감이 선다', async () => {
     const view = await 카드(2, 300)
@@ -343,7 +299,7 @@ describe('마감 배지', () => {
   it('요구 레벨 미달이면 한도가 차도 진행 불가다', async () => {
     const 셋완료 = [...넷.slice(0, 2), epic('nightmare_paradise', '악몽선경', 1), epic('aurum_regis', '아우룸 레기스', 0)]
     const aurum = 셋완료[3]
-    const view = await renderAtom(renderWeeklyContentCard(aurum, 285, isClosed(weeklyLimitClosedKeys(셋완료), aurum)))
+    const view = await renderAtom(<WeeklyContentCard content={aurum} characterLevel={285} isWeeklyLimitClosed={isClosed(weeklyLimitClosedKeys(셋완료), aurum)} />)
 
     expect(view.getByText('진행 불가')).toBeTruthy()
     expect(view.queryByText('마감')).toBeNull()

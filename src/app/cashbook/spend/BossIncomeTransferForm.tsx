@@ -18,7 +18,8 @@ import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 import { characterDecorOf, requiredCharacterOptions } from '../character-options'
 import { useSaleFeeChoice } from '../income/sale-fee'
 import { AmountInput, FieldCard, FieldRow, SelectRow } from '../sheet-fields'
-import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
+import { type SpendFormProps } from './form-shared'
+import { useHeaderSlot, useSaveSlot } from './form-slots'
 
 export function BossIncomeTransferForm(props: SpendFormProps): React.JSX.Element {
   const editing = props.editing !== undefined

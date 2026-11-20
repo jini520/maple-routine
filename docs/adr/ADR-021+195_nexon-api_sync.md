@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-007 · ADR-067 결정 1 · 4 · ADR-097 · ADR-111 결정 5 · ADR-113 결정 1 · ADR-148 · ADR-218 결정 1 · 2 · ADR-222 결정 1 ~ 4 · 8 · 정정 2 · 6 · ADR-226 결정 2 ~ 4 · 정정 1 · 3
-> 관련 소스: `nexon/` · `features/schedule-sync/` · `features/schedule-window/` · `features/refresh/progress.ts` · `features/refresh/pull.ts` · `features/ledger/useLedgerData.tsx` · `lib/scheduler/sync-freshness.ts` · `storage/schedule-probe-ledger.ts`
+> 관련 소스: `nexon/` · `features/schedule-sync/` · `features/schedule-window/` · `features/refresh/progress.ts` · `features/refresh/pull.ts` · `features/ledger/LedgerDataProvider.tsx` · `useLedgerData.ts` · `lib/scheduler/sync-freshness.ts` · `storage/schedule-probe-ledger.ts`
 
 ## 배경
 
@@ -248,7 +248,7 @@ advance(slot, done, total?) 그 몫의 진척. 실제 분모가 오면 고친다
 ### 결정 11. 수익 · 지출 화면의 조회는 `LedgerLayer` 가 맡고, 화면은 무엇을 받을지만 고른다
 
 보스 수익 · 가계부 · 통계는 같은 기록을 읽는다. 화면마다 언제 부를지를 따로 정하자 한 화면이 읽은 뒤에 창이 기록을
-써서 화면이 빈 채로 남는 일이 생겼다. 그래서 세 화면을 담는 `LedgerLayer` 가 `features/ledger/useLedgerData` 로 회차를
+써서 화면이 빈 채로 남는 일이 생겼다. 그래서 세 화면을 담는 `LedgerLayer` 가 `LedgerDataProvider`(`features/ledger/`)로 회차를
 관리하고, 화면은 `reload(parts)` 로 받을 조각만 고른다.
 
 | 부르는 곳 | 조각 |

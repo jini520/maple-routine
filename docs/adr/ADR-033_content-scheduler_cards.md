@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-020 · ADR-021 · ADR-057 · ADR-162 · ADR-271 결정 1 · 2 · 4 · 5
-> 관련 소스: `app/content-scheduler/DailyContentCards.tsx` · `app/content-scheduler/WeeklyContentCards.tsx` · `app/content-scheduler/content-badges.tsx` · `features/content-scheduler/content-completion.ts` · `lib/scheduler/required-level.ts` · `lib/scheduler/group-weekly-limit.ts` · `features/content-scheduler/store.ts`
+> 관련 소스: `app/content-scheduler/DailyContentCards.tsx` · `app/content-scheduler/WeeklyContentCards.tsx` · `app/content-scheduler/content-badges.tsx` · `app/content-scheduler/quest-state.ts` · `features/content-scheduler/content-completion.ts` · `lib/scheduler/required-level.ts` · `lib/scheduler/group-weekly-limit.ts` · `features/content-scheduler/store.ts`
 
 ## 배경
 
@@ -34,7 +34,7 @@
 
 ### 결정 3. 일간 카드는 세 가지다
 
-`renderDailyContentCard` 가 아래 순서로 고른다.
+`DailyContentCard` 가 아래 순서로 고른다.
 
 | 대상 | 카드 | 왼쪽 | 오른쪽 |
 |---|---|---|---|
@@ -47,7 +47,7 @@
 
 ### 결정 4. 주간 카드는 일곱 가지다
 
-`renderWeeklyContentCard` 가 아래 순서로 고른다. 순서가 바뀌면 같은 항목이 다른 카드로 나오므로 완료 판정(결정 5)도
+`WeeklyContentCard` 가 아래 순서로 고른다. 순서가 바뀌면 같은 항목이 다른 카드로 나오므로 완료 판정(결정 5)도
 같은 순서를 따른다.
 
 | 대상 | 카드 | 왼쪽 | 오른쪽 |

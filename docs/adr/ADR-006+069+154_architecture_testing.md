@@ -168,8 +168,7 @@ TypeScript 7 패키지는 그 API 를 내지 않는다. 6 과 7 을 alias 로 �
 eslint 를 최종으로 남기는 이유는 둘이다. `npm run lint` 스크립트는 지문 재료라 바꾸지 않는다. oxlint 의 규칙은
 eslint 규칙을 옮겨 적은 것이라 판정이 조금 다르다. 그래서 oxlint 가 더 잡는 규칙(`react/purity` ·
 `react/immutability` · `no-unsafe-optional-chaining`)과 테스트 파일의 `only-export-components` 는 껐다. 둘의
-결과가 다르면 어느 쪽을 믿을지 매번 가려야 한다. 남는 차이는 `boss-profit-context.tsx` 의 훅 export 경고
-하나다.
+결과가 다르면 어느 쪽을 믿을지 매번 가려야 한다. 같은 소스에서 둘의 결과는 같다.
 
 ### 결정 13. 네이티브 빌드 캐시를 켜 둔다: ccache · Gradle 빌드 캐시 · watchman
 

@@ -24,10 +24,12 @@ import {
 import { pointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { ownerFieldsOf, ownerValueOf } from '../character-options'
-import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, OwnerField, TextField, useCountField } from '../sheet-fields'
+import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, OwnerField, TextField } from '../sheet-fields'
+import { useCountField } from '../use-count-field'
 import { openInputCard } from '../../../features/input-card/store'
 import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
-import { useSaveSlot, type IncomeFormProps } from './form-shared'
+import { type IncomeFormProps } from './form-shared'
+import { useSaveSlot } from './form-slots'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 
 export function EtcForm(

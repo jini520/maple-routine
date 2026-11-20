@@ -34,7 +34,8 @@ import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, SelectRow } from '.
 import { openInputCard } from '../../../features/input-card/store'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
-import { useSaveSlot, type IncomeFormProps } from './form-shared'
+import { type IncomeFormProps } from './form-shared'
+import { useSaveSlot } from './form-slots'
 import { fragmentCountContextOf, useHuntFragmentFloor, type LoadHuntFragmentFloor } from './hunt-fragment-floor'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 

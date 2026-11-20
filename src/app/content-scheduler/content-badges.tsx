@@ -1,34 +1,17 @@
 /**
- * 컨텐츠 카드가 공유하는 라벨 표와 상태 판정 (화면에서 분리).
+ * 주간 퀘스트 카드의 상태 배지. `quest_state` 를 그대로 읽지 않는 두 예외(무릉도장 · 성실한 조사)를 여기서 가른다.
  *
- * 배지 자체는 여기 없다. 그리는 것은 `components/atoms/Badge` 하나이고,
- * 여기 남은 것은 어떤 라벨과 어떤 variant 를 고를지 정하는 도메인 데이터다.
+ * 배지 자체는 `components/atoms/Badge` 하나가 그리고, 글자와 색 표는 `quest-state.ts` 에 있다.
  */
-
 import type { WeeklyContent } from '../../types'
-import {
-  FAITHFUL_INVESTIGATION_KEY,
-  MU_LUNG_DOJO_KEY,
-  isWeeklyQuestContent,
-  isWeeklyRegionalContent,
-} from '../../lib/scheduler/content-kinds'
+import { FAITHFUL_INVESTIGATION_KEY, MU_LUNG_DOJO_KEY } from '../../lib/scheduler/content-kinds'
 
-import { Badge, type BadgeVariant } from '../../components/atoms'
+import { Badge } from '../../components/atoms'
+import { QUEST_STATE_LABELS, QUEST_STATE_VARIANT } from './quest-state'
 
-export { FAITHFUL_INVESTIGATION_KEY, MU_LUNG_DOJO_KEY, isWeeklyQuestContent, isWeeklyRegionalContent }
+export function WeeklyQuestStatus(props: { content: WeeklyContent }): React.JSX.Element | null {
+  const { content } = props
 
-export const QUEST_STATE_LABELS: Record<0 | 1 | 2, string> = {
-  0: '시작 안함',
-  1: '진행 중',
-  2: '완료',
-}
-export const QUEST_STATE_VARIANT: Record<0 | 1 | 2, BadgeVariant> = {
-  0: 'muted',
-  1: 'neutral',
-  2: 'secondary',
-}
-
-export function renderWeeklyQuestStatus(content: WeeklyContent): React.ReactNode {
   if (content.contentKey === MU_LUNG_DOJO_KEY) {
     return content.nowCount > 0 ? (
       <Badge variant="neutral">{`${content.nowCount}층`}</Badge>

@@ -18,7 +18,8 @@ import { mesoMarketExchangeMeso } from '../../../lib/cashbook/meso-market-exchan
 import { mesoMarketFeeOf } from '../../../lib/cashbook/spend-catalog'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 import { FieldCard, FieldRow, SelectRow } from '../sheet-fields'
-import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
+import { RateRow, type SpendFormProps } from './form-shared'
+import { useHeaderSlot, useSaveSlot } from './form-slots'
 
 const MESO_PER_HUNDRED_MILLION = 100_000_000
 

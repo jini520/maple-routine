@@ -31,7 +31,7 @@ import { ItemRevenuePopover } from './ItemRevenuePopover'
 //
 // `조회` 버튼이 사라진 것은 사용자가 조회를 트는 개념이 없어졌기 때문이다. 창이 진입할 때
 // 창 안 기간을 다 채우므로 누를 자리가 없다.
-export const SUBTOTAL_ACTION_LABEL: Partial<Record<WeeklySubtotalState, string>> = {
+const SUBTOTAL_ACTION_LABEL: Partial<Record<WeeklySubtotalState, string>> = {
   failed: '다시 시도',
 }
 
@@ -42,7 +42,7 @@ export const SUBTOTAL_ACTION_LABEL: Partial<Record<WeeklySubtotalState, string>>
  */
 export const ACCORDION_BODY_CLASS = 'gap-1.5 px-3 pb-3'
 
-export const SUBTOTAL_STATIC_LABEL: Partial<Record<WeeklySubtotalState, string>> = {
+const SUBTOTAL_STATIC_LABEL: Partial<Record<WeeklySubtotalState, string>> = {
   upcoming: '예정',
   outOfRange: '조회 불가',
   notCollected: '집계 전',
