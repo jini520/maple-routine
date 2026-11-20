@@ -2012,12 +2012,14 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
 - 둘째 묶음은 아이템 표(`item_groups` · `items` · `ring_level_items` · `same_item_links` · `trade_groups` · `worlds` ·
   `world_open_periods`)다. 보스가 쓰는 기준 표 · 가계부 기준 표 · 시세 · 기록 표가 아이템과 월드를 가리키므로 먼저 바꾼다.
   - 게임 데이터의 아이템은 `items` 칸 하나로 낸다(사용자 선택 2026-11-20). 아이템 줄 전부를 칸 이름 그대로(`id` · `key` · `name` ·
-    `groupId` · `iconAssetId` · `isValuable` · `isDrop` · `isEquipment` · `requiredLevel`) 싣고, 같은 칸에 묶음(`groups`) · 반지
-    레벨(`ringLevelItems`) · 같은 물건 연결(`sameItemLinks`)을 배열로 싣는다. `dropItems` · `equipmentItems` 칸은 걷고 앱이
+    `groupId` · `iconAssetId` · `isValuable` · `isDrop` · `isEquipment` · `requiredLevel`) 싣고, 같은 칸에 묶음(`itemGroups`) ·
+    반지 레벨(`ringLevelItems`) · 같은 물건 연결(`sameItemLinks`)을 배열로 싣는다. 배열 이름은 결정 59 대로 표 이름이다. `dropItems` · `equipmentItems` 칸은 걷고 앱이
     `isDrop` · `isEquipment` 로 고른다. 지금은 한 아이템이 칸마다 따로 실린다. 줄 id 로 가리키는 기록이 아이템을 찾을 곳을 하나로
     두려는 것이다.
-  - 월드 칸은 월드마다 `id` 를 싣고, 열린 기간을 `openPeriods`(`validFrom` · `validUntil`)로 낸다. 참 · 거짓 칸은 `isChallengers`
-    · `isEvent` 다. 거래권은 지금처럼 앱에 싣지 않는다. 이 줄은 Claude 가 적었다.
+  - 월드 칸은 월드 줄(`worlds`)마다 `id` 를 싣는다. 열린 기간은 월드 줄 안에 넣지 않고 표 이름의 배열 `worldOpenPeriods` 로
+    따로 싣는다. 기간 한 줄은 `worldId` · `validFrom` · `validUntil` 이다. 결정 59 대로 배열 이름을 표 이름으로 두고, 다른 표의
+    줄은 줄 id 로 가리키려는 것이다(사용자 확인 2026-11-20). 참 · 거짓 칸은 `isChallengers` · `isEvent` 다. 거래권은 지금처럼
+    앱에 싣지 않는다.
   - 반지 레벨 줄은 묶음 · 그림 · 고가 여부를 원래 반지 값으로 적는다. 드롭 아이템이고 강화 장비가 아니며 착용 레벨은 비운다. 레벨
     줄은 상자에서만 나오는 드롭이기 때문이다(결정 28). 상자 연마석 줄은 원래 줄의 값을 모두 따른다. 이 줄은 Claude 가 적었다.
   - 옛 그림 이름은 이 묶음에서 아이템의 `iconFile` 과 월드의 `emblem` 을 걷는다. 그 그림 칸을 쓰는 관리 API 도 그림 줄 id 를
