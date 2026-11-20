@@ -17,7 +17,7 @@
 `trackingMode` 는 `'auto'` 또는 `'manual'` 이고, 컨텐츠 스케줄러와 보스 스케줄러에 똑같이 적용된다. 화면마다,
 캐릭터마다 따로 정하지 않는다.
 
-- Preferences 키 `trackingMode` 에 저장한다. 값이 없거나 알 수 없는 값이면 `getTrackingMode` 는 `'auto'` 가 아니라
+- Preferences 키 `trackingMode` 에 저장한다(1.0.15 에서 키 이름이 `trackingType` 으로 바뀐다. [[ADR-099]] 결정 57). 값이 없거나 알 수 없는 값이면 `getTrackingMode` 는 `'auto'` 가 아니라
   `null` 을 돌려준다. 고르지 않은 것과 자동을 고른 것을 같은 값으로 두면, 사용자가 고르지도 않은 자동이 선택된
   것처럼 보이기 때문이다. 동작은 자동이 기본이라 읽는 두 곳(`features/tracking-mode/store` ·
   `features/boss-profit/store`)이 `?? 'auto'` 로 받는다.

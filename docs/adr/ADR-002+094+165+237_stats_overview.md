@@ -204,7 +204,7 @@
 0 선 위는 수익 색, 아래는 지출 색으로 그린다.
 
 시작 날짜는 날짜 알약(`DateSelect`)을 눌러 달력(`CalendarPopover`)에서 고른다. 조회할 수 있는 가장 이른
-날(`historyFloorDateKey`)부터 오늘까지 고를 수 있다. 고른 날은 Preferences `statsCumulativeStart` 에 저장해
+날(`historyFloorDateKey`)부터 오늘까지 고를 수 있다. 고른 날은 Preferences `statsCumulativeStart`(1.0.15 에서 키 이름이 `statsCumulativeStartDate` 로 바뀐다. [[ADR-099]] 결정 57)에 저장해
 다음에도 같은 날부터 더한다. 고른 적이 없으면 기록이 처음 있는 날부터 더한다. 첫 기간은 그 기간의 처음이 아니라
 시작 날짜부터 더한다. 되돌리기 버튼은 두지 않았다. 가장 이른 날을 다시 고르면 되기 때문이다.
 

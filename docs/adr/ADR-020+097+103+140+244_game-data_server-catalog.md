@@ -21,7 +21,7 @@
 | `bossDrops` | `boss_drop_rewards` |
 | `dropBoxes` | `drop_boxes` · `drop_box_contents` |
 | `crystalPrices` | `boss_crystal_prices` |
-| `worlds` | `worlds` · `world_periods`(월드가 열린 기간, [[ADR-100]] 결정 9) |
+| `worlds` | `worlds` · `world_periods`(월드가 열린 기간, [[ADR-100]] 결정 9. 1.0.15 에서 `world_open_periods` 로 바뀐다. [[ADR-099]] 결정 58) |
 | `spendCatalog` | `spend_groups` · `spend_tiles` · `spend_items` · `spend_item_options` · `spend_item_forms` · `spend_forms` · `game_rules` |
 | `cashbookCategories` | `cashbook_categories` · `cashbook_item_kinds` |
 | `symbolCosts` | `symbol_groups` · `symbols` · `symbol_level_costs` |
@@ -33,6 +33,10 @@
 | `assets` | `assets`. 그림 경로 · 내용 해시 · 바이트 · 가로 · 세로 |
 | `imageCrops` | `image_crops`. 보스 초상 셋과 컨텐츠 지역 지도의 크롭 |
 
+(1.0.15 서버 작업에서 서버 표의 이름을 정리한다. `boss_drop_rewards` 는 `boss_difficulty_rewards`, `spend_forms` · `spend_item_forms` 는
+`spend_reward_types` · `spend_item_reward_types`, `cashbook_item_kinds` 는 `cashbook_item_types` 가 된다. 앱이 받는 칸의 이름은 그대로다.
+[[ADR-099]] 결정 33)
+
 앱은 번들 사본을 두지 않는다(사용자 지정 2026-10-26). 번들 사본은 서버에서 새로 더한 그림을 가질 수 없고, 서버에 닿지 못한
 날 오래된 값으로 수익을 잘못 계산한다. 그 대신 다 받은 기기 사본이 없으면 화면을 잠근다(결정 12).
 
@@ -40,6 +44,8 @@
 단추다. 이것들은 앱 코드와 함께 바뀌는 값이고, 잠금 화면도 테마로 그려야 한다.
 
 ### 결정 2. 앱은 `GET /v1/game-data` 하나로 열여섯 칸을 한 번에 받는다
+
+(1.0.15 에서 바뀐다. 응답의 이름이 서버 표와 칸의 새 이름을 따르고, 옛 앱이 읽던 그림 이름을 싣지 않는다. [[ADR-099]] 결정 43)
 
 ```
 GET /v1/game-data
@@ -50,7 +56,7 @@ GET /v1/game-data
 
 - 공개 조회다. 칸 하나가 표 하나이고, 칸마다 `updatedAt` 이 있다. 응답 전체의 시각을 하나로 두면 표 하나만 바뀌어도
   모든 표를 다시 그려야 한다.
-- 칸의 `updatedAt` 은 서버의 `game_data_sections` 표에 있다. 줄의 `updated_at` 최댓값으로 내면 줄을 지운 것이 드러나지
+- 칸의 `updatedAt` 은 서버의 `game_data_sections` 표에 있다(1.0.15 에서 표 이름이 `game_data_section_updates` 로 바뀌고, `game_rules` 는 규칙마다 칸을 둔 한 줄이 된다. [[ADR-099]] 결정 61). 줄의 `updated_at` 최댓값으로 내면 줄을 지운 것이 드러나지
   않아서, 쓰기마다 이 표의 시각을 올린다. `bosses` 칸만 보스 줄의 `updated_at` 최댓값이다.
 - 아직 한 번도 채우지 않은 표는 그 칸의 `updatedAt` 이 `null` 이고 목록이 비어 있다. 앱은 그 칸을 버린다.
 - 응답은 서버 표의 줄을 그대로 펼친 목록이다. 예를 들어 드롭 표는 보상 줄의 목록이고, 보스 · 난이도 · 분류로 묶는 일은
@@ -172,6 +178,8 @@ jsonb 칸 두 개에 나눠 두면 두 칸의 순서가 어긋나도 DB 가 잡�
 세우고 못 고르게 한다. 형태 key 는 앱 코드가 갈려 ENUM 으로 남는다.
 
 ### 결정 10. 기간 칸은 KST 글자 그대로 둔다
+
+(서버 표의 칸 이름은 1.0.15 서버 작업에서 `valid_from` · `valid_until` 로 바뀐다. 앱이 받는 이름은 그대로다. [[ADR-099]] 결정 23)
 
 `from` · `until` 은 서버에서도 `text` 이고, 앱과 같은 글자(`YYYY-MM-DD` 또는 `YYYY-MM-DDTHH:mm`)를 내려준다. 앱의 판정
 `isEffectiveIn` 이 문자열 비교라서, `timestamptz` 로 바꾸면 경계를 판정하는 방법이 두 벌이 된다.

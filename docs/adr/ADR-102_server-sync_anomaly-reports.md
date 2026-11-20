@@ -41,7 +41,7 @@
 
 ### 결정 3. 서버는 표에 남기고, 같은 날 · 종류 · 이유 · 장비는 한 줄을 덮는다
 
-서버 표 `enhancement_anomalies` 에 적는다(사용자 선택). 컨테이너 로그는 다시 만들면 사라지고 모아 보기 어렵다.
+서버 표 `enhancement_anomalies` 에 적는다(사용자 선택). (1.0.15 에서 바뀐다. `user_id` 를 없애고 `anomaly_type` 을 `reason` 으로 바꾼다. [[ADR-099]] 결정 61) 컨테이너 로그는 다시 만들면 사라지고 모아 보기 어렵다.
 `UNIQUE (user_id, history_date, enhancement_type, anomaly_type, item_name)` 이고 받은 값으로 덮는다. 수집기는 오늘처럼 굳지 않은
 날을 받을 때마다 그 날 전체를 다시 세므로, 덮어야 같은 줄이 여러 번 쌓이지 않는다.
 
@@ -49,6 +49,9 @@
 서버 enhancement_anomalies   id · user_id · identified_by · history_date · enhancement_type · anomaly_type · item_key · item_name
                              · row_count · detail · created_at · updated_at
 ```
+
+`identified_by` 칸은 1.0.15 서버 작업에서 뺀다([[ADR-099]] 결정 8). `item_key` 칸도 1.0.15 서버 작업에서 뺀다. 운영의 모든 줄에서
+비어 있고 읽는 곳이 없다([[ADR-099]] 결정 39).
 
 ## 테스트
 
