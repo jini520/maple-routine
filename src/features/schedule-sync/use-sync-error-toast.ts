@@ -58,7 +58,7 @@ export function useScheduleSyncErrorToast(
       return
     }
 
-    // 점검은 화면 맨 위의 배너가 알린다.
+    // 점검은 머리글 아래의 배너가 알린다.
     if (isMaintenanceSyncError(error)) {
       return
     }
