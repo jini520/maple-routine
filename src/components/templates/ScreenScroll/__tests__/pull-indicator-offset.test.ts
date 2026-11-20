@@ -33,8 +33,8 @@ describe('resolvePullIndicatorOffset', () => {
     expect(resolvePullIndicatorOffset({ fadeTopPx: 20, platform: 'android' })).toBe(0)
   })
 
-  // 헤더가 없는 화면(설정 계열)은 셸이 상자를 내려 안전영역을 먹으므로 위를 안 깎는다.
-  // 깎지 않으면 가려질 일도 없고, 그래도 내리면 엉뚱하게 낮은 자리에서 돈다.
+  // 상단 안전영역이 0 이면 위를 안 깎는다. 깎지 않으면 가려질 일도 없고, 그래도 내리면 엉뚱하게
+  // 낮은 자리에서 돈다.
   it('상단을 안 깎는 화면에서는 두 플랫폼 다 0 이다', () => {
     expect(resolvePullIndicatorOffset({ fadeTopPx: 0, platform: 'ios' })).toBe(0)
     expect(resolvePullIndicatorOffset({ fadeTopPx: 0, platform: 'android' })).toBe(0)
