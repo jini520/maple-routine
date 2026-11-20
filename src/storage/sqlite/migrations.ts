@@ -51,9 +51,9 @@ import { NEW_UUID_SQL } from './uuid'
 export const DB_VERSION = 23
 
 /**
- * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
+ * 분류와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
  *
- * - 갈래 `상점·편의` 가 `이벤트·BM` 이 됐다.
+ * - 분류 `상점·편의` 가 `이벤트·BM` 이 됐다.
  * - 보약 버프 둘이 `버프` 에서 `이벤트·BM` 으로 옮겨갔다.
  * - 농장 둘이 `… 입장권`, 퀵 패스 셋이 `… 퀵패스` 를 뗀 이름이 됐고, `미호로이드 교환권` 이
  *   `미호로이드` 가 됐다.
@@ -110,7 +110,7 @@ async function fillCashbookKeys(db: SqliteDbConnection): Promise<void> {
   for (const row of (income.values ?? []) as Row[]) {
     const category = incomeCategoryKeyOfName(String(row.category))
     const item = textOrNull(row.item)
-    // 사냥 갈래의 이름만 사냥터다. 계산기 전에 친 자유 글자는 못 찾아 비워 둔다.
+    // 사냥 분류의 이름만 사냥터다. 계산기 전에 친 자유 글자는 못 찾아 비워 둔다.
     const ground = category === 'hunting' && item !== null ? findHuntingGroundByName(item) : null
     await db.run('UPDATE income_records SET category_key = ?, item_key = ? WHERE id = ?', [
       category,

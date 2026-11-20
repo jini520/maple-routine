@@ -1,5 +1,5 @@
 /**
- * 약속을 적고 보고 고치는 시트. ＋ 의 갈래(한 번만 · 매주 반복)를 고르면 추가로, 목록의 약속을 누르면 상세로 열린다.
+ * 약속을 적고 보고 고치는 시트. ＋ 의 항목(한 번만 · 매주 반복)을 고르면 추가로, 목록의 약속을 누르면 상세로 열린다.
  *
  * 상세는 추가 시트의 읽기 모드다(고르개 · 손잡이 · `✕` · 보스 추가 칸 없음, 알림 · 반복은 타일). 바닥의 `수정` 을
  * 누르면 같은 시트가 수정 모드가 되고, 반복 약속이면 저장 위에 `이 주만 적용하기` 가 선다. 지난 주 약속은 읽기만 한다.
@@ -77,7 +77,7 @@ type AlarmBlock = Exclude<AlarmGateResult, { kind: 'ok' }> & { atSave: boolean }
 export interface AppointmentSheetProps {
   /** 없으면 추가, 있으면 그 회차의 상세로 연다 */
   target?: AppointmentSheetTarget
-  /** 추가할 때 고른 ＋ 의 갈래. 매주 반복이면 true */
+  /** 추가할 때 고른 ＋ 의 항목. 매주 반복이면 true */
   repeats?: boolean
   names: ReadonlyMap<string, string>
   /** 캐릭터 `ocid → 얼굴 그림 URL` */

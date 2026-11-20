@@ -1,7 +1,7 @@
 // 수입 기록 시트.
 //
-// 지출 시트와 **폼이 통째로 다르다**. 통화가 메소 하나뿐이라 시세도 관세도 수량도 없고,
-// 갈래는 첫 칸의 **라벨만** 바꾼다.
+// 지출 시트와 **폼이 통째로 다르다**. 1차에서 분류를 고르면 그 분류의 폼(`income/`)이 같은
+// 시트에서 열린다.
 import type { ReactNode } from 'react'
 import { act, fireEvent, within } from '@testing-library/react-native'
 
@@ -59,7 +59,7 @@ const 캐릭터둘 = [
 ]
 
 /**
- * 시트를 열고 갈래까지 고른다. 시트는 1차에서 갈래를 먼저 묻는다.
+ * 시트를 열고 분류까지 고른다. 시트는 1차에서 분류를 먼저 묻는다.
  *
  * `pick` 에 `null` 을 주면 고르는 단계에서 멈춘다. 1차 시트 자체를 보는 케이스가 그렇다.
  */
@@ -130,9 +130,8 @@ async function 아이디로누르기(view: Rendered, testID: string): Promise<vo
 /**
  * 금액 칸의 성질(글자·자리표시자·키보드)을 보는 시트.
  *
- * 그 갈래가 사냥 이었는데 로 사냥이 **계산기**가 되면서(큰 숫자는 못 치는 합계다)
- * 기타로 옮겼다. 아이템 판매의 큰 숫자도 합계라 못 친다. 직접 치는
- * 갈래는 이제 기타 하나뿐이다.
+ * 사냥은 **계산기**라 큰 숫자가 못 치는 합계다. 아이템 판매의 큰 숫자도 합계라 못 친다. `금액` 칸을
+ * 직접 치는 분류는 기타 하나뿐이라 기타로 연다.
  */
 async function 직접치는시트(): Promise<Rendered> {
   return 그리기({}, 'etc')
@@ -250,7 +249,7 @@ const 옛기타: IncomeRecord = {
   quantity: 1,
 }
 
-/** 사냥 계산기의 고르는 줄 셋. 다른 갈래는 캐릭터 줄 하나뿐이다. */
+/** 사냥 계산기의 고르는 줄 셋. 다른 분류는 캐릭터 줄 하나뿐이다. */
 const 사슬들 = ['income-sheet-chain', 'income-sheet-region', 'income-sheet-ground'] as const
 
 /**
@@ -286,7 +285,7 @@ async function 치기(view: Rendered, text: string): Promise<void> {
   await 칸에치기(view, 'income-sheet-unit-price', text)
 }
 
-describe('갈래', () => {
+describe('분류', () => {
   /**
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
    * 더하고 `npm run assets:gen` 을 안 돌리면 셋 중 하나가 조용히 빈 자리가 된다.
@@ -302,14 +301,14 @@ describe('갈래', () => {
     expect(view.getByTestId('income-sheet-category-icon-etc', 숨은것)).toBeTruthy()
   })
 
-  it('고르면 그 갈래의 폼이 서고 제목이 갈래 이름을 든다', async () => {
+  it('고르면 그 분류의 폼이 서고 제목이 분류 이름을 든다', async () => {
     const view = await 그리기({}, 'hunting')
 
     expect(view.getByTestId('income-sheet-title')).toHaveTextContent('사냥')
     expect(view.queryByTestId('income-sheet-category-hunting')).toBeNull()
   })
 
-  /** 수정으로 열면 기록이 갈래를 정했다. 고르는 단계를 건너뛴다. */
+  /** 수정으로 열면 기록이 분류를 정했다. 고르는 단계를 건너뛴다. */
   it('수정으로 열면 1차를 건너뛴다', async () => {
     const view = await 그리기({ editing: 옛사냥행 })
 
@@ -317,8 +316,8 @@ describe('갈래', () => {
     expect(view.getByTestId('income-sheet-title')).toHaveTextContent('사냥')
   })
 
-  // 갈래는 첫 칸의 라벨만 바꾼다. **사냥만 빼고**.
-  it('갈래가 첫 칸의 이름을 바꾼다', async () => {
+  // 분류가 첫 칸의 라벨을 바꾼다. **사냥만 빼고**.
+  it('분류가 첫 칸의 이름을 바꾼다', async () => {
     expect(
       (await 판매시트()).getByTestId('income-sheet-name-label'),
     ).toHaveTextContent('판매 아이템')
@@ -595,17 +594,6 @@ describe('판매 수수료', () => {
   })
 
   /**
-   * 갈래를 옮기면 골라 둔 것이 통째로 풀린다.
-   *
-   * 갈래가 폼을 가르므로 옮기는 순간 언마운트된다. 지울 것을 손으로 세지 않는다.
-   */
-  /**
-   * **갈래를 옮기는 길이 없어졌다.** 갈래는 1차 시트에서 한 번 고르고, 바꾸려면 시트를 닫고
-   * 다시 연다. 그래서 `옮겨도 값을 들고 다닌다` 는 결함이 구조에서 사라졌다.
-   *
-   * 여기서 지키는 것은 그 사실이다. 2차에는 갈래를 고르는 자리가 없다.
-   */
-  /**
    * **저장은 내용의 마지막 줄이다.** 키보드가 뜨면 시트가 그 높이만큼 자리를 만들고 스크롤이
    * 끝으로 가서 이 줄이 키보드 위에 온다. 시트 높이 계산은 안 건드린다.
    *
@@ -647,13 +635,14 @@ describe('판매 수수료', () => {
     expect(onSave).toHaveBeenCalled()
   })
 
-  it('갈래를 고르기 전에는 저장이 없다', async () => {
+  it('분류를 고르기 전에는 저장이 없다', async () => {
     const view = await 그리기({}, null)
 
     expect(view.queryByLabelText('저장')).toBeNull()
   })
 
-  it('2차에는 갈래를 옮기는 자리가 없다', async () => {
+  // 분류는 1차에서 고른다. 바꾸려면 제목의 되돌아가는 누르개로 1차에 돌아간다.
+  it('2차에는 다른 분류로 옮기는 자리가 없다', async () => {
     const view = await 판매시트()
 
     expect(view.queryByTestId('income-sheet-category-etc')).toBeNull()
@@ -713,7 +702,7 @@ describe('아이템 판매 · 메모', () => {
 })
 
 describe('저장', () => {
-  it('갈래와 이름과 금액을 넘긴다. 통화 칸이 없다', async () => {
+  it('분류와 이름과 금액을 넘긴다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave }, 'etc')
     await 치기(view, '12')
@@ -757,7 +746,7 @@ describe('저장', () => {
  * 캐릭터 귀속(사용자 말: *"캐릭터를 선택해서 입력하는 방법을 추가하는게
  * 좋을거 같아"*). 컬럼은 처음부터 있었고 **화면만 없었다**.
  *
- * 모든 갈래가 골라야 저장된다. 기타는 캐릭터 뒤에 메이플 ID 를 고를 수 있다.
+ * 모든 분류가 골라야 저장된다. 기타는 캐릭터 뒤에 메이플 ID 를 고를 수 있다.
  */
 describe('캐릭터 귀속', () => {
   it('캐릭터 칸은 빈 채로 열린다', async () => {
@@ -844,7 +833,7 @@ describe('캐릭터 귀속', () => {
 
 /**
  * **수정 모드에서는 **무엇인지** 를 못 바꾼다**.
- * 갈래를 바꾸면 그 기록은 다른 것 이 된다. 고치는 것이 아니라 새로 적는 것이다.
+ * 분류를 바꾸면 그 기록은 다른 것 이 된다. 고치는 것이 아니라 새로 적는 것이다.
  */
 describe('수정 모드', () => {
   const 판매기록 = {
@@ -868,8 +857,8 @@ describe('수정 모드', () => {
     recordedAt: '2026-08-23T01:00:00.000Z',
   }
 
-  // **제목이 고른 것** 이다. 수입은 고를 것이 갈래뿐이라 그것이 곧 제목이다.
-  it('제목이 갈래이고 칩이 아예 없다', async () => {
+  // **제목이 고른 것** 이다. 수입은 고를 것이 분류뿐이라 그것이 곧 제목이다.
+  it('제목이 분류이고 칩이 아예 없다', async () => {
     const view = await 그리기({ editing: 판매기록, onDelete: jest.fn() })
 
     expect(view.getByTestId('income-sheet-title')).toHaveTextContent('아이템 판매')
@@ -1262,30 +1251,19 @@ describe('통화', () => {
 })
 
 /**
- * **판매 대금 뒤에 단위를 적는다**. 큰 숫자가 수수료를 뗀 합계라
- * 이 줄과 축이 같은지 헷갈린다.
- */
-
-/**
- * 사냥 갈래는 **계산기**다.
+ * 분류마다 **자기 폼**이다.
  *
- * 나머지 둘은 얼마 벌었나 를 사람이 알지만 사냥 메소는 맵이 정해지면 셀 수 있는 값이라 앱이
- * 낸다. 그래서 이 갈래에서만 줄이 여럿 서고 큰 숫자가 **못 치는 합계**가 된다.
+ * 한 함수가 분류 셋의 상태를 전부 들고 조건문으로 그리던 것이 **분류를 옮겨도 값을 들고 다닌다** 의
+ * 원인이었다. 이제 분류가 폼을 가르므로 옮기면 언마운트된다.
  */
-/**
- * 갈래마다 **자기 폼**이다.
- *
- * 한 함수가 갈래 셋의 상태를 전부 들고 조건문으로 그리던 것이 **갈래를 옮겨도 값을 들고 다닌다** 의
- * 원인이었다. 이제 갈래가 폼을 가르므로 옮기면 언마운트된다.
- */
-describe('갈래마다 자기 폼', () => {
+describe('분류마다 자기 폼', () => {
   async function 루디고르기(view: Rendered): Promise<void> {
     await 사슬고르기(view, 'ocid-1')
   }
 
   /**
-   * 갈래를 옮기는 길이 1차 시트로 옮겨 갔으므로, 값이 갈래를 넘어가는지는 **다시 연 시트가
-   * 빈 폼인가**로 잰다. 폼이 갈래마다 따로 심기는 성질은 그대로다.
+   * 분류를 옮기는 길이 1차 시트로 옮겨 갔으므로, 값이 분류를 넘어가는지는 **다시 연 시트가
+   * 빈 폼인가**로 잰다. 폼이 분류마다 따로 심기는 성질은 그대로다.
    */
   it('다시 연 시트는 빈 폼이다. 고른 캐릭터가 안 남는다', async () => {
     const 먼저 = await 그리기({}, 'hunting')
@@ -1297,15 +1275,21 @@ describe('갈래마다 자기 폼', () => {
     expect(다시.getByTestId('income-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
   })
 
-  it('다른 갈래를 열면 그 갈래의 값도 비어 있다', async () => {
+  it('다른 분류를 열면 그 분류의 값도 비어 있다', async () => {
     const view = await 그리기({}, 'etc')
 
     expect(view.getByLabelText('메소').props.accessibilityState?.selected).toBe(true)
   })
 })
 
+/**
+ * 사냥 분류는 **계산기**다.
+ *
+ * 나머지 분류는 얼마 벌었나 를 사람이 알지만 사냥 메소는 맵이 정해지면 셀 수 있는 값이라 앱이
+ * 낸다. 그래서 이 분류에서만 줄이 여럿 서고 큰 숫자가 **못 치는 합계**가 된다.
+ */
 describe('사냥 계산기', () => {
-  /** 사냥 갈래를 열고 탈라하트 밤의 길 3(lv.294· 40마리)까지 고르는 도우미. */
+  /** 사냥 분류를 열고 탈라하트 밤의 길 3(lv.294· 40마리)까지 고르는 도우미. */
   /** 캐릭터 → 지역 → 사냥터. 앞을 안 고르면 뒤에 못 간다. 루디는 294 로 밤의 길 3 과 같다. */
   async function 밤의길3(view: Rendered): Promise<void> {
     await 사슬고르기(view, 'ocid-1')
@@ -2905,11 +2889,6 @@ describe('솔 에르다 조각 정산', () => {
   })
 })
 
-/**
- * 사냥 전리품 판매(이슈 #747). 조각 정산을 조각 칸으로 합치고, 소비 · 이벤트 아이템을 한 번에 여럿 적는다.
- *
- * 갈래 줄은 fixture 를 뜬 뒤에 서버 표에 더하므로 fixture 에 없다. 그래서 솔 에르다 조각 줄을 본떠 더한 표로 연다.
- */
 describe('드롭다운의 아이콘 · 레벨 · 보유', () => {
   it('사냥 캐릭터 목록은 줄마다 레벨이 서고, 닫힌 줄도 같다', async () => {
     const view = await 그리기()
@@ -2950,6 +2929,11 @@ describe('드롭다운의 아이콘 · 레벨 · 보유', () => {
   })
 })
 
+/**
+ * 사냥 전리품 판매(이슈 #747). 조각 정산을 조각 칸으로 합치고, 소비 · 이벤트 아이템을 한 번에 여럿 적는다.
+ *
+ * 분류 줄은 fixture 를 뜬 뒤에 서버 표에 더하므로 fixture 에 없다. 그래서 솔 에르다 조각 줄을 본떠 더한 표로 연다.
+ */
 describe('사냥 전리품 판매', () => {
   const 원래표 = cashbookCategoriesTable.get()
   beforeEach(() => {
@@ -3082,8 +3066,8 @@ describe('사냥 전리품 판매', () => {
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
-  /** 조각 칸은 옛 조각 정산 그대로라 기록도 솔 에르다 조각 갈래다. 이미 적힌 정산 기록을 옮길 일이 없다. */
-  it('조각 칸은 보유 개수를 보이고 솔 에르다 조각 갈래로 한 줄 저장한다', async () => {
+  /** 조각 칸은 옛 조각 정산 그대로라 기록도 솔 에르다 조각 분류다. 이미 적힌 정산 기록을 옮길 일이 없다. */
+  it('조각 칸은 보유 개수를 보이고 솔 에르다 조각 분류로 한 줄 저장한다', async () => {
     const onSave = jest.fn()
     const view = await 전리품시트({ onSave, loadFragmentStorage: async () => 120 })
 
@@ -3472,7 +3456,7 @@ describe('수정으로 열 때의 큰 숫자', () => {
     expect(나중.getByTestId('income-sheet-amount')).toHaveTextContent('121억')
   })
 
-  it('사냥 · 기타도 같다. 갈래마다 자기 이름표를 갖는다', async () => {
+  it('기타도 같다. 분류마다 자기 이름표를 갖는다', async () => {
     const 먼저 = await 그리기({
       editing: { ...판매기록(5_600_000_000), category: 'etc' as const },
       onDelete: jest.fn(),
@@ -3484,7 +3468,7 @@ describe('수정으로 열 때의 큰 숫자', () => {
       onDelete: jest.fn(),
     })
 
-    // `기타`의 큰 숫자도 이제 글자다. 갈래가 달라도 보는 법이 같다.
+    // `기타`의 큰 숫자도 이제 글자다. 분류가 달라도 보는 법이 같다.
     expect(나중.getByTestId('income-sheet-amount')).toHaveTextContent('121억')
   })
 })
@@ -3548,7 +3532,7 @@ describe('날짜 바꾸기', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ earnedOn: '2026-08-22' })
   })
 
-  // 갈래 폼은 `key={category}` 로만 다시 심긴다. 날짜는 그 열쇠가 아니다.
+  // 분류별 폼은 `key={category}` 로만 다시 심긴다. 날짜는 그 열쇠가 아니다.
   it('날짜를 바꿔도 **친 것이 안 사라진다**', async () => {
     const view = await 판매시트()
     await 대금치기(view, '1200000000')
@@ -3618,7 +3602,7 @@ describe('어림값 표식', () => {
   })
 
   // 아이템 판매는 실제로 오간 값이다. 어림이 아니다.
-  it('다른 갈래에는 안 붙는다', async () => {
+  it('다른 분류에는 안 붙는다', async () => {
     const view = await 판매시트()
     await 대금치기(view, '1200000000')
 

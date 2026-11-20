@@ -80,7 +80,7 @@ describe('헥사 기록의 조각 칸', () => {
     expect(rows.map((row) => row.hexa)).toEqual([선참.hexa, 스탯.hexa])
   })
 
-  it('다른 갈래 기록은 hexa 가 null 이다', async () => {
+  it('다른 분류 기록은 hexa 가 null 이다', async () => {
     await insertSpendRecord({ ...선참, category: 'etc', itemKey: null, item: '패스', levelFrom: null, levelTo: null, hexa: null })
 
     const [row] = await getSpendRecordsBetween('2026-10-30', '2026-10-30')
@@ -233,7 +233,7 @@ describe('강화 레벨 기억', () => {
     await expect(getRememberedLevels('ocid-1', 'hexa')).resolves.toEqual({ 선참: 28, 만참: 19 })
   })
 
-  it('캐릭터와 갈래(심볼 · 헥사)가 갈린다', async () => {
+  it('캐릭터와 종류(심볼 · 헥사)가 갈린다', async () => {
     await rememberLevels('ocid-1', 'symbol', { cernium: 7 }, 'overwrite')
     await rememberLevels('ocid-2', 'hexa', { cernium: 3 }, 'overwrite')
 

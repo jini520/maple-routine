@@ -135,7 +135,7 @@ describe('회차가 없을 때', () => {
   it.each([
     ['매주 반복', 'weekly'],
     ['한 번만', 'once'],
-  ] as const)('%s 칸을 누르면 그 갈래의 새 스케줄을 열 요청을 남긴다', async (label, kind) => {
+  ] as const)('%s 칸을 누르면 그 종류의 새 스케줄을 열 요청을 남긴다', async (label, kind) => {
     const view = await 위젯([])
 
     await act(async () => {

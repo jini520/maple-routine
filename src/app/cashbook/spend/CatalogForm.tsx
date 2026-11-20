@@ -1,7 +1,7 @@
 /**
- * 고르는 갈래의 폼. 컨텐츠 · 이벤트·BM · 버프 · 주문서.
+ * 고르는 분류의 폼. 컨텐츠 · 이벤트·BM · 버프 · 주문서.
  *
- * 이 갈래들의 항목에는 대개 가격이 붙어 있다. 그래서 금액 칸이 없고, 고르면 단가가 그대로
+ * 이 분류들의 항목에는 대개 가격이 붙어 있다. 그래서 금액 칸이 없고, 고르면 단가가 그대로
  * 금액이 되며 수량만 조절한다. 곱셈은 앱이 한다. 사용자가 대신하면 몇 포인트 썼나 를 나중에
  * 되물을 수 없다. 가격이 없는 항목(경매장 값인 버프)만 `개당 가격` 칸이 서고 곱셈은 그대로 앱이 한다.
  *
@@ -63,11 +63,11 @@ import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 /**
  * 타일에 적는 값. 단위를 붙이고, 단계가 여럿이면 나란히 적는다.
  *
- * 단위를 붙이는 것은 갈래 하나 안에서 통화가 갈리는 곳이 있어서다(버프의 영약은 메소, 보약은
+ * 단위를 붙이는 것은 분류 하나 안에서 통화가 갈리는 곳이 있어서다(버프의 영약은 메소, 보약은
  * 메포). 메소만 줄여 적는다. 메포는 200~50,000 이라 그대로가 읽히지만 메소는 백만 단위라
  * 반폭 타일에서 잘린다.
  *
- * 값이 모두 같으면 하나만 적는다. 같은 값을 셋 적으면 좁은 타일에서 잘리고, 갈래마다 값이
+ * 값이 모두 같으면 하나만 적는다. 같은 값을 셋 적으면 좁은 타일에서 잘리고, 항목마다 값이
  * 다르다고 읽힌다.
  */
 function tilePriceLabel(items: readonly SpendCatalogItem[]): string | null {
@@ -87,13 +87,7 @@ function capQuantityText(text: string, max: number | undefined): string {
   return max !== undefined && mesoValueOf(text) > max ? mesoTextOf(max) : text
 }
 
-/**
- * 타일 그림의 한 변. 자리마다 다르다.
- *
- * 타일 왼쪽(기본)은 이름 두 줄(≈32)보다 낮으면 높이를 안 건드린다. 이름 옆(에픽던전 셋)은
- * 이름 한 줄(≈16)과 나란히 서므로 더 작아야 그 줄이 안 두꺼워진다.
- */
-/** 타일 그림의 한 변. 1차 갈래 카드와 같은 수다. */
+/** 타일 그림의 한 변. 1차 분류 카드와 같은 수다. */
 const TILE_ICON_SIZE = 28
 
 /** 주화 줄의 그림. 부를 때 찾는다. 모듈 최상위에서 찾으면 그림 목록을 받기 전의 빈 값으로 굳는다. */
@@ -129,7 +123,7 @@ function ItemTile(props: {
       onPress={props.onPress}
     >
       {/*
-        1차 갈래 칸과 **같은 상자**다(사용자 지정 2026-09-21 · 2026-10-28). 이름이 제목이고 가격이 그
+        1차 분류 칸과 **같은 상자**다(사용자 지정 2026-09-21 · 2026-10-28). 이름이 제목이고 가격이 그
         아래 설명 줄이라, 두 단계가 같은 격자로 읽힌다. 치수는 `CategoryPicker` 를 따른다.
 
         그림 자리가 둘이던 것(타일 왼쪽 끝 · 이름 바로 옆)이 여기서 하나가 됐다. 가로 상자에서는
@@ -219,7 +213,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   /**
    * 수량 카드의 칩. 버프 · 주문서만 받는다.
    *
-   * 그 둘은 세는 것이 개수로 정해져 있고 자릿수가 크다(주문서 수십~수백 장). 나머지 갈래는 무엇을
+   * 그 둘은 세는 것이 개수로 정해져 있고 자릿수가 크다(주문서 수십~수백 장). 나머지 분류는 무엇을
    * 세는지가 항목마다 달라 더할 수가 없다.
    */
   const quantityChips = props.category === 'buff' || props.category === 'scroll' ? COUNT_QUICK_ADDS : []
@@ -310,7 +304,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     return keys === undefined ? null : spendRewardTiersOf(next, keys)
   }
 
-  /** ① 대표를 고르는 단계. 갈래가 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
+  /** ① 대표를 고르는 단계. 대표가 품은 항목이 하나뿐이면 **그 자리에서 항목까지 정해진다.** */
   function selectChoice(next: SpendCatalogChoice): void {
     setChoice(next)
     setItem(next.items.length === 1 ? next.items[0] : null)
@@ -369,7 +363,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   }
 
   /**
-   * 머리가 지금 어디인지를 적는다. 항목 격자에서는 갈래 이름이고 항목을 고르면 그 이름이다.
+   * 머리가 지금 어디인지를 적는다. 항목 격자에서는 분류 이름이고 항목을 고르면 그 이름이다.
    *
    * 수정 모드는 고른 것을 적되, 카탈로그가 그 항목을 못 찾으면 기록에 적힌 이름을 그대로 쓴다.
    */
@@ -446,7 +440,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                 ))}
               </View>
               {/* 퍼센트 폭과 `gap` 을 섞으면 마지막 칸이 밀린다. 간격은 자식 패딩(2)이 만들고,
-                  카드 안쪽 여백 4 와 더해 가장자리 6 · 칸 사이 4 다(갈래 카드와 같다). */}
+                  카드 안쪽 여백 4 와 더해 가장자리 6 · 칸 사이 4 다(분류 카드와 같다). */}
               <View className="flex-row flex-wrap rounded-[14px] bg-surface p-1">
                 {row.flatMap((group) =>
                   group.choices.map((each) => (
@@ -615,7 +609,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
 
           {scope !== null && (
             /*
-             * 목록 갈래의 큰 숫자는 못 친다. 단가 × 수량이라 앱이 센다. 단계를 고르기 전에도
+             * 목록 분류의 큰 숫자는 못 친다. 단가 × 수량이라 앱이 센다. 단계를 고르기 전에도
              * 0 으로 선다. 단가를 아직 모를 뿐 셀 자리는 이미 있다.
              *
              * 합계는 언제나 메소다. 메포로 사는 항목이어도 그렇다. 실제로 내는 메포는 밑의

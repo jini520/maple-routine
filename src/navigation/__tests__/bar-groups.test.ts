@@ -81,7 +81,7 @@ describe('layerOfPage: 페이지가 사는 층 화면', () => {
   })
 })
 
-describe('층은 **지금 페이지** 가 정한다 (결정 2)', () => {
+describe('층은 **지금 페이지** 가 정한다', () => {
   it('하위를 가진 그룹의 페이지에 있으면 하위 행이다', () => {
     expect(barLayer(at('Content'))).toBe('sub')
     expect(barLayer(at('Boss'))).toBe('sub')
@@ -103,7 +103,7 @@ describe('층은 **지금 페이지** 가 정한다 (결정 2)', () => {
   })
 })
 
-describe('← 는 하위 행에만 선다 (결정 3)', () => {
+describe('← 는 하위 행에만 선다', () => {
   it('그룹 행에서는 갈 곳이 없다', () => {
     expect(canGoBack(at('Today'))).toBe(false)
     expect(canGoBack(at('Utility'))).toBe(false)
@@ -119,7 +119,7 @@ describe('← 는 하위 행에만 선다 (결정 3)', () => {
   })
 })
 
-describe('그룹을 누르면 (결정 4 ·3)', () => {
+describe('그룹을 누르면', () => {
   it('설정 → 스케줄러 는 한 층 내려간다. 그 단이 곧 뒤로 갈 자리다', () => {
     expect(pressGroup(at('Settings'), 'schedule')).toEqual({
       kind: 'openSubs',
@@ -198,7 +198,7 @@ describe('rememberSub: 다시 들어갈 자리', () => {
 describe('openPage: 바를 거치지 않은 이동', () => {
   // 증상이었던 것: today 위젯으로 보스 수익에 간 뒤 ← 를 누르면 today 가 아니라 **가계부가 활성인
   // 채로** 그룹 행만 열렸다. 기록을 **바를 눌러 내려갈 때만** 적었기 때문이다. 층이 스택이면 위젯
-  // 타일도 그냥 한 단 내려가는 이동이라 그 갈래 자체가 없어진다. 규칙이 `pressGroup` 과 같다.
+  // 타일도 그냥 한 단 내려가는 이동이라 그 분기 자체가 없어진다. 규칙이 `pressGroup` 과 같다.
   it('하위를 가진 그룹으로 가면 한 층 내려간다', () => {
     expect(openPage(initialBarState(), 'Profit')).toEqual({
       kind: 'openSubs',

@@ -466,7 +466,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
     expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 
-  it('옛 지출 기록의 이름으로 갈래 · 항목 · 형태별 항목 · 종류 key 를 채운다', async () => {
+  it('옛 지출 기록의 이름으로 분류 · 항목 · 형태별 항목 · 종류 key 를 채운다', async () => {
     seedOldDevice()
 
     await getBossProfitDb()
@@ -505,7 +505,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
     expect(moved.find((row) => row.item === '없어진 항목')).toMatchObject({ category: 'content', itemKey: null })
   })
 
-  it('옛 수익 기록은 갈래 key 와 사냥터 key 를 채운다. 사냥터가 아닌 글자는 비운다', async () => {
+  it('옛 수익 기록은 분류 key 와 사냥터 key 를 채운다. 사냥터가 아닌 글자는 비운다', async () => {
     seedOldDevice()
 
     await getBossProfitDb()

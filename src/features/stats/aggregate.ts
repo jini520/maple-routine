@@ -1,5 +1,5 @@
 /**
- * 통계 화면의 집계. 가계부가 읽은 날짜별 줄(`loadMonthDays`)을 기간 · 캐릭터 · 갈래로 접는 순수 함수들.
+ * 통계 화면의 집계. 가계부가 읽은 날짜별 줄(`loadMonthDays`)을 기간 · 캐릭터 · 분류로 접는 순수 함수들.
  *
  * 금액은 가계부의 메소 축(`recordMesoOf`) 그대로다. 같은 기간의 가계부 합계와 통계 합계가 갈리지 않는다.
  */
@@ -87,7 +87,7 @@ interface CharacterEntry {
 }
 
 /**
- * 범위의 기록에 캐릭터 key 를 붙인 목록. 캐릭터별 합계와 캐릭터별 갈래가 같은 기준으로 나뉘도록 둘이 함께 쓴다.
+ * 범위의 기록에 캐릭터 key 를 붙인 목록. 캐릭터별 합계와 캐릭터별 분류가 같은 기준으로 나뉘도록 둘이 함께 쓴다.
  *
  * 메이플 ID 기록은 ID 마다 한 줄이다. 주인을 모르는 옛 손입력은 안 든다. 강화 기록도 그날 그 이름이었던 캐릭터(ocid)에
  * 붙어 있어, 이름을 바꾼 캐릭터의 줄도 그 캐릭터로 묶인다.
@@ -135,8 +135,8 @@ export interface CharacterCategories {
 }
 
 /**
- * 캐릭터별 수입 · 지출 갈래 합계. key 는 `characterTotalsBetween` 의 key 다. 갈래는 수입 내역 · 지출 내역의
- * 조각과 같고, 조각 안의 줄(`parts`)은 안 든다. 큰 순서이고 0 인 갈래는 없다.
+ * 캐릭터별 수입 · 지출 분류 합계. key 는 `characterTotalsBetween` 의 key 다. 분류는 수입 내역 · 지출 내역의
+ * 조각과 같고, 조각 안의 줄(`parts`)은 안 든다. 큰 순서이고 0 인 분류는 없다.
  */
 export function characterCategoriesBetween(byDate: DaysByDate, range: StatsRange): Map<string, CharacterCategories> {
   const sums = new Map<string, { income: Map<string, CategoryTotal>; expense: Map<string, CategoryTotal> }>()
@@ -157,18 +157,18 @@ export function characterCategoriesBetween(byDate: DaysByDate, range: StatsRange
   )
 }
 
-/** 결정석과 보스 드롭은 손입력 갈래 표에 없다. */
+/** 결정석과 보스 드롭은 손입력 분류 표에 없다. */
 const BOSS_CRYSTAL = { key: 'boss_crystal', name: '보스 결정석' }
 const BOSS_DROP = { key: 'boss_drop', name: '보스 드롭' }
 /** 사냥과 솔 에르다 조각 · 사냥 전리품 판매는 사냥이 낸 것이라 한 조각이고, 누르면 메소와 아이템으로 나눈다 */
-// 이름은 부를 때 갈래 표에서 찾는다. 모듈 최상위에서 찾으면 게임 데이터를 받기 전의 빈 이름으로 굳는다.
+// 이름은 부를 때 분류 표에서 찾는다. 모듈 최상위에서 찾으면 게임 데이터를 받기 전의 빈 이름으로 굳는다.
 const hunting = (): { key: string; name: string } => ({ key: 'hunting', name: incomeCategoryNameOf('hunting') })
 const HUNTING_MESO = { key: 'hunting_meso', name: '사냥 메소' }
 const solErdaFragment = (): { key: string; name: string } => ({
   key: 'sol_erda_fragment',
   name: incomeCategoryNameOf('sol_erda_fragment'),
 })
-/** 버프 갈래의 항목이 선택 목록에서 묶음을 못 찾을 때의 줄 */
+/** 버프 분류의 항목이 선택 목록에서 묶음을 못 찾을 때의 줄 */
 const UNKNOWN_BUFF_GROUP = { key: 'buff_etc', name: '기타' }
 /** 손으로 친 이름이 없는 기록의 줄 */
 const UNNAMED = { key: 'unnamed', name: '이름 없음' }
@@ -227,7 +227,7 @@ function huntSplitOf(record: IncomeRecord, meso: number): { huntMeso: number; fr
  * 한 줄이 드는 조각과, 그 조각 안에서 나눠 보일 줄들의 몫. 보스 결정석만 줄이 없다. 아래 보스별 수익 카드가
  * 보스 · 난이도로 이미 나눈다.
  *
- * 줄의 축은 갈래마다 하나다. 보스 드롭은 아이템, 강화는 장비, 컨텐츠 · 이벤트·BM · 주문서는 선택 목록의 타일,
+ * 줄의 축은 분류마다 하나다. 보스 드롭은 아이템, 강화는 장비, 컨텐츠 · 이벤트·BM · 주문서는 선택 목록의 타일,
  * 버프는 묶음, 심볼 강화는 심볼, 헥사 매트릭스는 코어 · 스탯, 아이템 판매 · 구매 · 기타는 친 이름, 사냥은 메소와 조각이다.
  */
 function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; parts: Part[] } {
@@ -292,7 +292,7 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
           return { slice, parts: [hexaPart(entry.record, meso)] }
         case 'item_purchase':
           return { slice, parts: [typedNamePart(recordedItemNameOf(entry.record.item, entry.record.itemKey), meso)] }
-        // 두 시트의 기록은 `etc` 로 저장해서 이 갈래 key 로는 안 온다. 기타처럼 적힌 이름으로 센다.
+        // 두 시트의 기록은 `etc` 로 저장해서 이 분류 key 로는 안 온다. 기타처럼 적힌 이름으로 센다.
         case 'etc':
         case 'boss_income_transfer':
         case 'meso_market_exchange':
@@ -316,7 +316,7 @@ function sortedNonZero(totals: Iterable<CategoryTotal>): CategoryTotal[] {
   return [...totals].filter((total) => total.meso !== 0).sort((left, right) => right.meso - left.meso)
 }
 
-/** 수입 또는 지출의 갈래별 합계. 큰 순서이고 0 인 갈래는 없다. */
+/** 수입 또는 지출의 분류별 합계. 큰 순서이고 0 인 분류는 없다. */
 export function categoryTotalsBetween(
   byDate: DaysByDate,
   range: StatsRange,

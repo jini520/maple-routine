@@ -164,7 +164,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           excluded: plan.crystalExcluded === true,
         }
 
-  // 금액 마크업은 한 벌이다. 칩이 붙든 안 붙든 같은 `Text` 라 두 갈래가 서로 어긋날 수 없다.
+  // 금액 마크업은 한 벌이다. 칩이 붙든 안 붙든 같은 `Text` 라 두 경우가 서로 어긋날 수 없다.
   //
   // 카운트업 identity 는 행 자신의 (ocid, 보스, 난이도, 기간)이다. 기간이 키에 들어 있으므로
   // 기간을 옮기면 값이 변한 것이 아니라 다른 값을 보게 된 것이라 굴러가지 않는다. 기간 이동에

@@ -12,7 +12,7 @@ describe('dropItemIconOf', () => {
 
 // 가계부 줄 표식이 실제 그림에 닿는가.
 //
-// 표식은 앱 그림 표의 key 나 가계부 분류 표의 갈래로 찾는다. 하나라도 어긋나면 그 줄만 조용히 아이콘으로 남는다. 화면에서는
+// 표식은 앱 그림 표의 key 나 가계부 분류 표의 분류 key 로 찾는다. 하나라도 어긋나면 그 줄만 조용히 아이콘으로 남는다. 화면에서는
 // **아직 안 바꿨나** 로 보여 고장으로 안 읽힌다.
 describe('가계부 줄 표식', () => {
   it.each([
@@ -30,8 +30,8 @@ describe('가계부 줄 표식', () => {
     expect(cashbookRowIconOf(key)).not.toBeNull()
   })
 
-  // 표에 없는 갈래는 `null` 이어야 화면이 아이콘으로 떨어진다. 폴백 그림을 두면 틀린 것을 그린다.
-  // 목록 갈래 넷(`spend:buff` 등)은 갈래 열쇠로 그림을 안 찾는다. 고른 타일의 그림이 줄 표식이다.
+  // 표에 없는 분류는 `null` 이어야 화면이 아이콘으로 떨어진다. 폴백 그림을 두면 틀린 것을 그린다.
+  // 목록으로 고르는 분류 넷(`spend:buff` 등)은 분류 열쇠로 그림을 안 찾는다. 고른 타일의 그림이 줄 표식이다.
   it.each(['dropSale', 'income:item_sale', 'spend:content', 'spend:event_bm', 'spend:buff', 'spend:scroll', 'spend:item_purchase'])(
     '%s 줄은 그림이 없다',
     (key) => {

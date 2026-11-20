@@ -3,7 +3,7 @@
  */
 import { NEW_UUID_SQL } from './uuid'
 
-/** 캐릭터 · 갈래 · 대상 하나가 한 줄이다. 대상은 심볼 key 또는 헥사 코어 이름이다. */
+/** 캐릭터 · 종류 · 대상 하나가 한 줄이다. 대상은 심볼 key 또는 헥사 코어 이름이다. */
 export const REMEMBERED_LEVELS_BODY = `(
     id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
     ocid TEXT NOT NULL,

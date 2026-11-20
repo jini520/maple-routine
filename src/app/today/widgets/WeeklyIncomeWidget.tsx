@@ -2,10 +2,10 @@
  * 이번 주 수익. 통계 화면의 이번 주를 한 장으로 줄인 위젯.
  *
  * 제목 줄의 세그먼트(`순 수익` · `수익` · `지출`)가 큰 숫자 · 반원 도넛 · 캐릭터 순위를 함께 바꾼다. 캐릭터
- * 줄을 누르면 그 캐릭터가 어느 갈래에서 벌고 썼는지 팝오버로 띄운다. 위젯 안에서 누르는 것이 있으므로
+ * 줄을 누르면 그 캐릭터가 어느 분류에서 벌고 썼는지 팝오버로 띄운다. 위젯 안에서 누르는 것이 있으므로
  * 타일 전체는 누를 수 없다.
  *
- * 색은 통계와 같이 수익은 `rise-ink`, 지출은 `fall-ink` 한 색이고 갈래는 명도 단계로 가른다.
+ * 색은 통계와 같이 수익은 `rise-ink`, 지출은 `fall-ink` 한 색이고 분류는 명도 단계로 가른다.
  */
 
 import { useState } from 'react'
@@ -60,7 +60,7 @@ function netText(meso: number): string {
   return formatMesoSigned(Math.abs(meso), meso > 0 ? '+' : '−')
 }
 
-/** 갈래를 조각으로. 다섯을 넘으면 앞 넷 뒤를 `그 외 n` 한 조각으로 묶는다 */
+/** 분류를 조각으로. 다섯을 넘으면 앞 넷 뒤를 `그 외 n` 한 조각으로 묶는다 */
 function slicesOf(items: readonly CategoryTotal[], color: string): Slice[] {
   const cut = items.length === SLICE_LIMIT + 1 ? items.length : SLICE_LIMIT
   const slices = items.slice(0, cut).map((item, index) => ({

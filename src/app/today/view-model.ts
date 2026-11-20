@@ -160,14 +160,14 @@ export interface SharedContentItemView {
 
 export interface SharedContentGroupView {
   category: ContentCategoryKey
-  /** 계열 머리글. 갈래 표의 이름이다. */
+  /** 계열 머리글. 분류 표의 이름이다. */
   label: string
   items: SharedContentItemView[]
   /** 계열의 주간 한도. `now` 는 완료한 줄 수다. 한도가 없는 계열이면 `null`. */
   weeklyLimit: { now: number; max: number } | null
 }
 
-/** 이번 주 수익 위젯의 캐릭터 한 줄. 합계와 갈래는 통계 화면과 같은 집계 함수가 낸다. */
+/** 이번 주 수익 위젯의 캐릭터 한 줄. 합계와 분류는 통계 화면과 같은 집계 함수가 낸다. */
 export interface WeeklyIncomeCharacterView extends StatsTotals {
   /** 통계의 캐릭터 key(`ocid:…` · `name:…`) */
   key: string
@@ -181,9 +181,9 @@ export interface WeeklyIncomeView {
   /** 기록을 아직 못 읽었다. 읽기 전의 0 을 사실처럼 그리지 않으려고 가른다 */
   loading: boolean
   totals: StatsTotals
-  /** 통계의 수입 내역 갈래. 큰 순서다 */
+  /** 통계의 수입 내역 분류. 큰 순서다 */
   income: CategoryTotal[]
-  /** 통계의 지출 내역 갈래. 큰 순서다 */
+  /** 통계의 지출 내역 분류. 큰 순서다 */
   expense: CategoryTotal[]
   /** 이번 주 기록이 있는 캐릭터 전부. 순위는 위젯이 고른 세그먼트로 세운다 */
   characters: WeeklyIncomeCharacterView[]

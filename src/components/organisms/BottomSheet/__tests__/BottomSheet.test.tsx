@@ -511,7 +511,7 @@ describe('BottomSheet: 흐림 재질은 테마가 고른다', () => {
    * 갈려 시트가 설 자리를 잃는다.
    */
   function StepKeySheet(): React.JSX.Element {
-    const [단계, set단계] = useState('갈래')
+    const [단계, set단계] = useState('분류')
     return (
       <>
         <Pressable role="button" aria-label="단계 바꾸기" onPress={() => set단계('폼')} />

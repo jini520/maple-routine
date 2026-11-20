@@ -10,7 +10,7 @@ import type { ContentEntry } from './contents'
 export const MU_LUNG_DOJO_KEY = 'mu_lung_dojo'
 export const FAITHFUL_INVESTIGATION_KEY = 'weekly_quest_faithful_investigation_reward'
 
-// 주간 탭 카테고리 분류 상수. 길드 셋은 같은 갈래인데 카드가 저마다 달라 컨텐츠 key 로 가른다.
+// 주간 탭 카테고리 분류 상수. 길드 셋은 같은 분류인데 카드가 저마다 달라 컨텐츠 key 로 가른다.
 export const GUILD_MISSION_POINTS_KEY = 'guild_weekly_mission_points'
 export const GUILD_UNDERGROUND_WATERWAY_KEY = 'guild_underground_waterway'
 export const GUILD_FLAG_RACE_KEY = 'guild_flag_race'
@@ -24,7 +24,7 @@ export function isWeeklyRegionalContent(entry: ContentEntry | null): boolean {
 /**
  * 지역 배경 + 주간 퀘스트 상태 카드의 대상. 주간 퀘스트 · 무릉도장 · 성실한 조사에 대한 보답이다.
  *
- * 성실한 조사에 대한 보답은 아케인리버 갈래의 퀘스트라 `type` 으로 지역 컨텐츠와 가른다.
+ * 성실한 조사에 대한 보답은 아케인리버 분류의 퀘스트라 `type` 으로 지역 컨텐츠와 가른다.
  */
 export function isWeeklyQuestContent(entry: ContentEntry | null): boolean {
   return (

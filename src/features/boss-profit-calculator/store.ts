@@ -19,7 +19,7 @@ import { readBossCharacters } from '../boss-scheduler/views'
 import { useTrackingModeStore } from '../tracking-mode/store'
 import type { BossDifficulty } from '../../types'
 
-/** 저장 버튼의 두 갈래. 연 기록이 없으면 늘 `new` 다 */
+/** 저장 버튼의 두 모드. 연 기록이 없으면 늘 `new` 다 */
 export type CalculatorSaveMode = 'overwrite' | 'new'
 
 interface BossProfitCalculatorState {

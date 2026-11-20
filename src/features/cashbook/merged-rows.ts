@@ -15,7 +15,7 @@ export type MergedCategory = (typeof MERGED_CATEGORIES)[number]
 
 export type SpendDayRecord = Extract<ManualDayRecord, { kind: 'spend' }>
 
-/** 같은 날 · 같은 캐릭터 · 같은 갈래의 기록 둘 이상을 묶은 줄. */
+/** 같은 날 · 같은 캐릭터 · 같은 분류의 기록 둘 이상을 묶은 줄. */
 export interface MergedDayRow {
   kind: 'merged'
   category: MergedCategory
@@ -90,7 +90,7 @@ export function mergedRowKeyOf(row: MergedDayRow): string {
   return `merged:${row.category}:${row.ocid}`
 }
 
-/** 첫 줄은 기록 줄과 같은 `캐릭터 · 갈래 카드 제목`, 둘째 줄은 묶인 건수. */
+/** 첫 줄은 기록 줄과 같은 `캐릭터 · 분류 카드 제목`, 둘째 줄은 묶인 건수. */
 export function mergedRowCardOf(row: MergedDayRow): RecordCard {
   const title = cashbookCategoryOf('spend', row.category)?.cardTitle ?? row.category
   return {
@@ -106,8 +106,8 @@ export function mergedRowMesoOf(row: MergedDayRow): number {
 /**
  * 합친 줄의 왼쪽 그림. 없으면 `null` 이고 화면이 지출 아이콘을 그린다.
  *
- * 아이템 구매는 금액이 큰 기록부터(같으면 먼저 적은 기록부터) 보아 그림이 있는 첫 아이템의 그림이다. 갈래 카드의
- * 구매 그림은 그 아이템을 산 기록으로 읽혀 쓰지 않는다. 헥사 매트릭스는 갈래 카드의 헥사 매트릭스 그림이다.
+ * 아이템 구매는 금액이 큰 기록부터(같으면 먼저 적은 기록부터) 보아 그림이 있는 첫 아이템의 그림이다. 분류 카드의
+ * 구매 그림은 그 아이템을 산 기록으로 읽혀 쓰지 않는다. 헥사 매트릭스는 분류 카드의 헥사 매트릭스 그림이다.
  */
 export function mergedRowIconOf(row: MergedDayRow): ImageAssetRef | null {
   if (row.category === 'hexa_matrix') return getAssetImage(cashbookCategoryOf('spend', row.category)?.iconAssetId)

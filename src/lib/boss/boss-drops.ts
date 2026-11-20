@@ -1,7 +1,7 @@
 /**
  * 드롭 표(`bossDrops` 칸)와 상자 표(`dropBoxes` 칸) 조회. 게임 수치는 여기서 읽기만 하고 추정하지 않는다.
  *
- * 응답은 보스 · 난이도 · 갈래 · 아이템이 한 줄인 납작한 표다. 여기서 보스마다 난이도 정규 차례의 보상 묶음으로
+ * 응답은 보스 · 난이도 · 분류 · 아이템이 한 줄인 납작한 표다. 여기서 보스마다 난이도 정규 차례의 보상 묶음으로
  * 묶어 지금 코드가 읽던 모양을 만든다. 함수가 받는 `boss` 는 보스 key 이고 난이도는 난이도 key 다.
  */
 import {
@@ -88,7 +88,7 @@ function difficultyOrder(difficulty: string): number {
   return index === -1 ? BOSS_DIFFICULTIES.length : index
 }
 
-/** 보스 한 난이도의 보상 묶음. 갈래마다 줄이 표의 차례다. */
+/** 보스 한 난이도의 보상 묶음. 분류마다 줄이 표의 차례다. */
 interface RewardEntry {
   difficulty: BossDifficulty
   rewards: Partial<Record<DropCategory, BossDropRow[]>>

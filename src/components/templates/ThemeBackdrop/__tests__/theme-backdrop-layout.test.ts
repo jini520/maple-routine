@@ -1,8 +1,4 @@
-// 테마 벽지 기하. CSS `background-size: cover` + `background-position` 을 그대로 옮겼는지 본다.
-//
-// **이 계산이 한 곳이어야 한다.** 백드롭(전면)과 헤더 조각이 같은
-// 값을 써야 이음매가 없고, 값이 두 벌이면 한쪽만 바뀌어도 아무 데서도 안 드러난다. 그래서 여기서
-// 지키는 것은 **그림이 예쁜가** 가 아니라 **두 자리가 같은 식을 쓰는가** 다.
+// 테마 배경 이미지 기하. CSS `background-size: cover` + `background-position` 을 그대로 옮겼는지 본다.
 import { parseBackgroundPosition, resolveThemeBackdropLayout } from '../theme-backdrop-layout'
 
 describe('background-position 읽기', () => {
@@ -49,7 +45,7 @@ describe('cover 배치', () => {
     expect(layout).toMatchObject({ width: 400, height: 800, top: 0 })
   })
 
-  // 크기를 모르면 그리지 않는다. 늘어붙은 그림은 벽지가 아니다.
+  // 크기를 모르면 그리지 않는다. 늘어붙은 그림은 배경 이미지가 아니다.
   it('비트맵 크기를 모르면 배치하지 않는다', () => {
     expect(resolveThemeBackdropLayout(VIEWPORT, null, 'center')).toBeNull()
     expect(resolveThemeBackdropLayout(VIEWPORT, { width: 0, height: 100 }, 'center')).toBeNull()

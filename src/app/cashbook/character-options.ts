@@ -34,7 +34,7 @@ const ACCOUNT_VALUE_PREFIX = 'account:'
 /**
  * 기록을 붙일 곳의 보기. 추적 캐릭터 뒤에 메이플 ID 가 선다. `선택 안함` 이 없다.
  *
- * @param accounts 메이플 ID 를 고를 수 없는 갈래는 빈 배열이다
+ * @param accounts 메이플 ID 를 고를 수 없는 분류는 빈 배열이다
  */
 export function ownerOptions(
   characters: ReadonlyArray<{ ocid: string; name: string }>,

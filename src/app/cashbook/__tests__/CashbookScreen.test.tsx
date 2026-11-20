@@ -284,10 +284,9 @@ async function 이름으로누르기(view: Rendered, label: string | RegExp): Pr
 }
 
 /**
- * 수입 시트의 치는 칸에 **친다**. OS 숫자 키보드다.
+ * 수입 시트 기타 폼의 금액 칸에 **친다**. OS 숫자 키보드다.
  *
- * 아이템 판매의 치는 자리는 **판매 대금 칸**이다. 큰 숫자는 수수료를 뗀 합계라
- * 못 친다. 시트는 **사냥으로 열리므로** 부르는 쪽이 갈래를 먼저 옮긴다.
+ * 시트는 **분류를 고르는 1차로 열리므로** 부르는 쪽이 기타를 먼저 고른다.
  */
 async function 금액치기(view: Rendered, text: string): Promise<void> {
   // 기타의 금액은 입력 카드로 옮겨갔다. 줄을 눌러 카드를 열고 쳐서 확인한다.
@@ -299,7 +298,7 @@ async function 금액치기(view: Rendered, text: string): Promise<void> {
   await 누르기(view, 'input-card-confirm')
 }
 
-/** 저장 흐름을 보는 케이스의 추적 캐릭터. 모든 갈래가 캐릭터나 메이플 ID 를 골라야 저장된다. */
+/** 저장 흐름을 보는 케이스의 추적 캐릭터. 모든 분류가 캐릭터나 메이플 ID 를 골라야 저장된다. */
 const 루디 = { ocid: 'ocid-1', name: '루디', level: 280, worldKey: null, jobClass: null }
 
 /** 시트의 캐릭터 칸에서 루디를 고른다. */
@@ -1108,7 +1107,7 @@ describe('펼침판이 시트를 연다', () => {
     await 누르기(view, 'calendar-day-2026-08-25')
 
     await 고르기(view, '수입 추가')
-    // 날짜는 2차 시트의 머리에 산다. 1차는 갈래만 묻는다.
+    // 날짜는 2차 시트의 머리에 산다. 1차는 분류만 묻는다.
     await 누르기(view, 'income-sheet-category-hunting')
 
     expect(view.getByTestId('income-sheet-date')).toHaveTextContent('8월 25일 (화)')
@@ -1119,7 +1118,7 @@ describe('펼침판이 시트를 연다', () => {
     const view = await 그리기()
 
     await 고르기(view, '지출 추가')
-    // 갈래는 1차 시트에서 고른다. 그 다음이 에픽던전 리워드의 두 단계다(대표 → 형태별 단계).
+    // 분류는 1차 시트에서 고른다. 그 다음이 에픽던전 리워드의 두 단계다(대표 → 형태별 단계).
     await 누르기(view, 'spend-sheet-category-content')
     await 이름으로누르기(view, '하이마운틴')
 
@@ -1280,9 +1279,9 @@ describe('그날 목록', () => {
   })
 
   // 그림이 붙는 줄은 배지 안이 아이콘이 아니라 그림이다. 무엇을 그리는지는 `row-icon.spec.ts` 가
-  // 따로 검사하므로 여기서 물을 것은 **배선** 하나다. 그림이 없는 갈래는 아이콘 그대로여야 한다.
+  // 따로 검사하므로 여기서 물을 것은 **배선** 하나다. 그림이 없는 분류는 아이콘 그대로여야 한다.
   // 폴백 그림을 두면 틀린 것을 그린다.
-  it('고른 타일의 그림이 배지 안에 서고 그림 없는 갈래는 아이콘 그대로다', async () => {
+  it('고른 타일의 그림이 배지 안에 서고 그림 없는 분류는 아이콘 그대로다', async () => {
     const view = await 그리기()
 
     // 지출은 목록에서 고른 `몬스터 파크` 라 그 타일의 그림이다. 수입은 `아이템 판매` 라 그림이 없다.
@@ -2120,7 +2119,7 @@ describe('강화 줄', () => {
   })
 
   // 넷을 안 묶는다. 비용이 서는 방식이 아예 달라 묶으면 무엇에 썼는지가 한 숫자에 가려진다.
-  it('갈래마다 줄이 따로 선다', async () => {
+  it('분류마다 줄이 따로 선다', async () => {
     const view = await 그리기()
 
     expect(view.getByTestId('cashbook-row-enhancement:additional_potential:ocid-1')).toHaveTextContent(
@@ -2175,7 +2174,7 @@ describe('강화 줄', () => {
   it.each([
     ['스타포스', 스타포스줄],
     ['에디셔널 잠재능력', 에디셔널줄],
-  ])('%s 장비 줄은 이름 앞에 아이템 표의 그림이 서고, 그림을 못 찾은 장비는 이름부터 선다', async (갈래, 줄) => {
+  ])('%s 장비 줄은 이름 앞에 아이템 표의 그림이 서고, 그림을 못 찾은 장비는 이름부터 선다', async (분류, 줄) => {
     const 숨은것까지 = { includeHiddenElements: true }
     그날줄을(고른날, [
       {
@@ -2187,7 +2186,7 @@ describe('강화 줄', () => {
       },
     ])
     const view = await 그리기()
-    await 이름으로누르기(view, new RegExp(`^낟낟 · 강화 ${갈래} .*펼치기$`))
+    await 이름으로누르기(view, new RegExp(`^낟낟 · 강화 ${분류} .*펼치기$`))
 
     expect(view.getByTestId('cashbook-item-image-giant_terror', 숨은것까지)).toBeTruthy()
     const 첫칸 = view.getByTestId('cashbook-item-row-giant_terror', 숨은것까지).children[0] as { props: { testID?: string } }
@@ -2197,7 +2196,7 @@ describe('강화 줄', () => {
   })
 
   // 한 번에 하나만 펼친다. 둘이 같은 장비를 만졌으면 판이 둘 서서 신원이 겹친다.
-  it('다른 갈래를 펼치면 앞의 것이 접힌다', async () => {
+  it('다른 분류의 줄을 펼치면 앞의 것이 접힌다', async () => {
     const view = await 그리기()
 
     await 이름으로누르기(view, /^낟낟 · 강화 스타포스 .*펼치기$/)

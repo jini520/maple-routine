@@ -120,7 +120,7 @@ export function solErdaFragmentIcon(): ImageAssetRef | null {
 }
 
 /**
- * 사냥 계산기의 버프 칩 그림. 칩이 글자가 아니라 그림이라 없으면 칩이 빈 채로 선다. 재물 획득의 비약은 가계부 사냥 갈래와
+ * 사냥 계산기의 버프 칩 그림. 칩이 글자가 아니라 그림이라 없으면 칩이 빈 채로 선다. 재물 획득의 비약은 가계부 사냥 분류와
  * 같은 그림이다(사용자 지정 2026-11-09).
  */
 export function mesoBoostIconOf(id: MesoBoostId): ImageAssetRef | null {
@@ -133,13 +133,13 @@ export function mesoBoostIconOf(id: MesoBoostId): ImageAssetRef | null {
 /**
  * 가계부 하루 상세 줄의 표식. 열쇠는 `features/cashbook/row-icon.ts` 가 만든다.
  *
- * 여기 없는 갈래는 `null` 이고 화면이 지금 아이콘을 그대로 쓴다. 비슷한 그림을 갖다 붙이면
+ * 여기 없는 분류는 `null` 이고 화면이 지금 아이콘을 그대로 쓴다. 비슷한 그림을 갖다 붙이면
  * 틀린 것을 그리는 셈이다.
  */
 const CASHBOOK_ROW_APP_IMAGES: Record<string, AppImageKey> = {
   // 결정석은 주간 것이다. 그림 둘의 픽셀을 재서 골랐다(weekly 가 보라 · monthly 는 금색).
   bossCrystal: 'boss_crystal_weekly',
-  // 강화 갈래 다섯. 열쇠는 `enhancement:갈래 key` 다. 큐브는 본잠·에디를 안 가르므로 그림도 하나다(사용자 지정).
+  // 강화 분류 다섯. 열쇠는 `enhancement:분류 key` 다. 큐브는 본잠·에디를 안 가르므로 그림도 하나다(사용자 지정).
   'enhancement:cube_reset': 'enhancement_cube_reset',
   'enhancement:starforce': 'enhancement_starforce',
   'enhancement:potential': 'enhancement_potential',
@@ -148,8 +148,8 @@ const CASHBOOK_ROW_APP_IMAGES: Record<string, AppImageKey> = {
 }
 
 /**
- * 손입력 갈래 넷은 가계부 분류 표의 그 갈래 그림이다. 열쇠는 `기록 종류:갈래 key` 라 수익 · 지출의 같은 갈래 key(`etc`)가
- * 안 겹친다. 지출의 목록 갈래는 여기 없고 고른 타일의 그림을 쓴다.
+ * 손입력 분류 넷은 가계부 분류 표의 그 분류 그림이다. 열쇠는 `기록 종류:분류 key` 라 수익 · 지출의 같은 분류 key(`etc`)가
+ * 안 겹친다. 지출에서 목록으로 고르는 분류는 여기 없고 고른 타일의 그림을 쓴다.
  */
 const CASHBOOK_ROW_CATEGORIES: Record<string, readonly ['income' | 'spend', string]> = {
   'income:hunting': ['income', 'hunting'],

@@ -30,7 +30,7 @@ const 원래플랫폼 = Platform.OS
 
 beforeEach(() => {
   installNoopNativePorts()
-  // 아래 치수 · 색 · 손잡이 묶음은 안드로이드 갈래다. iOS 를 보는 묶음은 자기가 바꾼다.
+  // 아래 치수 · 색 · 손잡이 묶음은 안드로이드 분기다. iOS 를 보는 묶음은 자기가 바꾼다.
   Platform.OS = 'android'
 })
 
@@ -148,7 +148,7 @@ describe('Switch(ios): 줄인 시스템 스위치', () => {
     Platform.OS = 'ios'
   })
 
-  // 높이를 안드로이드 갈래와 같게 줄여 줄 높이가 안 바뀐다. 시스템 스위치는 63×28 고정이라
+  // 높이를 안드로이드 분기와 같게 줄여 줄 높이가 안 바뀐다. 시스템 스위치는 63×28 고정이라
   // 배율로만 준다. 줄이기가 가운데 기준이라 이 자리여야 보이는 그림이 박스에 딱 맞는다.
   it.each([
     { size: 'sm' as const, box: { width: 36, height: 16 }, scale: 16 / 28, left: -13.5, top: -6 },

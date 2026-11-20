@@ -41,10 +41,10 @@ describe('PageHeader', () => {
 
   // 회귀 가드. 헤더는 자기 배경을 칠하지 않는다.
   //
-  // 헤더가 불투명하면 벽지 위에 검은 띠가 남는다. 배경 없는 테마에서는 보이는 그림이 바뀌지
+  // 헤더가 불투명하면 테마 배경 이미지 위에 검은 띠가 남는다. 배경 없는 테마에서는 보이는 그림이 바뀌지
   // 않는다. 내비게이션 테마가 화면을 같은 `bg` 로 칠하므로 뒤에 같은 색이 있다. 그래서 이
   // 검사는 색이 무엇인가 가 아니라 칠하지 않는가 다.
-  it('자기 배경을 칠하지 않는다. 배경은 벽지 한 장이 진다', async () => {
+  it('자기 배경을 칠하지 않는다. 배경은 테마 배경 이미지 한 장이 진다', async () => {
     const { getByTestId } = await renderOverlay(<PageHeader>{내용}</PageHeader>)
 
     expect(flattenStyle(getByTestId('page-header').props.style).backgroundColor).toBeUndefined()

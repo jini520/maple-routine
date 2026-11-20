@@ -1,6 +1,6 @@
 // 지출 기록 시트.
 //
-// **갈래는 시트 밖에서 갈렸다**. 펼침판이 `지출`을 골라 이 시트를 연다. 그래서 이 시트에는
+// **수입과 지출은 시트 밖에서 갈렸다**. 펼침판이 `지출`을 골라 이 시트를 연다. 그래서 이 시트에는
 // 수입/지출 세그먼트가 없고, 자기가 지출이라는 것을 **모른 채** 받은 것을 그린다.
 import type { ReactNode } from 'react'
 import { act, fireEvent, within } from '@testing-library/react-native'
@@ -49,14 +49,14 @@ const 캐릭터둘 = [
 ]
 
 /**
- * 시트를 열고 갈래까지 고른다. 시트는 1차에서 갈래를 먼저 묻는다.
+ * 시트를 열고 분류까지 고른다. 시트는 1차에서 분류를 먼저 묻는다.
  *
  * `null` 을 주면 1차에 선 채로 둔다. 카드와 닫기를 재는 케이스가 쓴다. 수정으로 열면 기록이
- * 갈래를 정했으므로 1차가 아예 안 선다. 그때도 안 고른다.
+ * 분류를 정했으므로 1차가 아예 안 선다. 그때도 안 고른다.
  */
 async function 그리기(
   overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {},
-  갈래: 갈래이름 | null = '컨텐츠',
+  분류: 분류이름 | null = '컨텐츠',
 ) {
   const view = await renderOverlay(
     <SpendSheet
@@ -79,7 +79,7 @@ async function 그리기(
       {...overrides}
     />,
   )
-  if (overrides.editing === undefined && 갈래 !== null) await 갈래고르기(view, 갈래)
+  if (overrides.editing === undefined && 분류 !== null) await 분류고르기(view, 분류)
   return view
 }
 
@@ -89,7 +89,7 @@ async function 누르기(view: Rendered, label: string): Promise<void> {
   })
 }
 
-/** 캐릭터 칸에서 고른다. 캐릭터 없이 저장되던 갈래도 이제 골라야 저장된다. */
+/** 캐릭터 칸에서 고른다. 캐릭터 없이 저장되던 분류도 이제 골라야 저장된다. */
 async function 캐릭터고르기(view: Rendered, ocid = 'ocid-1'): Promise<void> {
   await act(async () => {
     fireEvent.press(view.getByTestId('spend-sheet-chain-open'))
@@ -99,10 +99,10 @@ async function 캐릭터고르기(view: Rendered, ocid = 'ocid-1'): Promise<void
   })
 }
 
-type 갈래이름 = '컨텐츠' | '이벤트·BM' | '버프' | '주문서' | '심볼 강화' | '헥사 매트릭스' | '아이템 구매' | '기타'
+type 분류이름 = '컨텐츠' | '이벤트·BM' | '버프' | '주문서' | '심볼 강화' | '헥사 매트릭스' | '아이템 구매' | '기타'
 
-/** 카드의 `testID` 는 갈래 key 로 선다. 케이스는 읽히게 이름으로 적고 여기서 key 로 옮긴다. */
-const 갈래key: Record<갈래이름, SpendCategoryKey> = {
+/** 카드의 `testID` 는 분류 key 로 선다. 케이스는 읽히게 이름으로 적고 여기서 key 로 옮긴다. */
+const 분류key: Record<분류이름, SpendCategoryKey> = {
   컨텐츠: 'content',
   '이벤트·BM': 'event_bm',
   버프: 'buff',
@@ -114,25 +114,25 @@ const 갈래key: Record<갈래이름, SpendCategoryKey> = {
 }
 
 /**
- * 1차의 카드를 누른다. **이름이 아니라 `testID` 로 집는다**. 기타가 갈래 이름이자
+ * 1차의 카드를 누른다. **이름이 아니라 `testID` 로 집는다**. 기타가 분류 이름이자
  * 아이템 구매의 종류 이름이라 라벨만으로는 둘이 안 갈린다.
  */
-async function 갈래고르기(view: Rendered, label: 갈래이름): Promise<void> {
+async function 분류고르기(view: Rendered, label: 분류이름): Promise<void> {
   await act(async () => {
-    fireEvent.press(view.getByTestId(`spend-sheet-category-${갈래key[label]}`))
+    fireEvent.press(view.getByTestId(`spend-sheet-category-${분류key[label]}`))
   })
 }
 
 /**
- * 갈래를 바꾼다. 1차로 되돌아가 다른 카드를 고른다.
+ * 분류를 바꾼다. 1차로 되돌아가 다른 카드를 고른다.
  *
- * 되돌아가는 누르개가 겹칠 수 있다. 목록 갈래의 폼에서는 항목 격자를 한 번 거쳐 1차에 닿는다.
+ * 되돌아가는 누르개가 겹칠 수 있다. 목록 분류의 폼에서는 항목 격자를 한 번 거쳐 1차에 닿는다.
  */
-async function 갈래바꾸기(view: Rendered, label: 갈래이름): Promise<void> {
+async function 분류바꾸기(view: Rendered, label: 분류이름): Promise<void> {
   while (view.queryByLabelText('다시 고르기') !== null) {
     await 누르기(view, '다시 고르기')
   }
-  await 갈래고르기(view, label)
+  await 분류고르기(view, label)
 }
 
 /**
@@ -161,23 +161,23 @@ async function 형태단계(view: Rendered, 형태: 형태이름, 단계: string
   })
 }
 
-describe('갈래', () => {
+describe('분류', () => {
   /**
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
    * 더하고 `npm run assets:gen` 을 안 돌리면 하나가 조용히 빈 자리가 된다.
    */
-  it('카드 일곱이 저마다 게임 그림을 든다. 빈 자리가 없다', async () => {
+  it('카드 여덟이 저마다 게임 그림을 든다. 빈 자리가 없다', async () => {
     const view = await 그리기({}, null)
 
     // 그림은 `aria-hidden` 이라 기본 조회에서 빠진다. 낭독기는 카드 이름만 읽으면 된다.
     const 숨은것 = { includeHiddenElements: true }
-    for (const key of Object.values(갈래key)) {
+    for (const key of Object.values(분류key)) {
       expect(view.getByTestId(`spend-sheet-category-icon-${key}`, 숨은것)).toBeTruthy()
     }
   })
 
-  // 갈래는 서버 표가 들고 관리 화면에서 더한다. 앱에 폼이 없는 갈래를 누르면 빈 시트가 선다.
-  it('서버가 더한 갈래는 이름만 서고 눌러도 1차에 남는다', async () => {
+  // 분류는 서버 표가 들고 관리 화면에서 더한다. 앱에 폼이 없는 분류를 누를 수 있으면 빈 시트가 서므로 못 누르게 둔다.
+  it('서버가 더한 분류는 이름만 서고 눌러도 1차에 남는다', async () => {
     const original = cashbookCategoriesTable.get()
     const 지출 = original.categories.find((each) => each.entryType === 'spend')!
     cashbookCategoriesTable.set({
@@ -198,7 +198,7 @@ describe('갈래', () => {
     }
   })
 
-  it('고르면 그 갈래의 목록이 서고 제목이 갈래 이름을 든다', async () => {
+  it('고르면 그 분류의 목록이 서고 제목이 분류 이름을 든다', async () => {
     const view = await 그리기({}, '버프')
 
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('버프')
@@ -207,10 +207,10 @@ describe('갈래', () => {
   })
 
   /**
-   * **칩이 없다.** 갈래를 바꾸는 길은 머리의 `‹` 로 1차에 돌아가는 것 하나다. 목록 갈래에서도
+   * **칩이 없다.** 분류를 바꾸는 길은 머리의 `‹` 로 1차에 돌아가는 것 하나다. 목록 분류에서도
    * 직접 입력에서도 같다.
    */
-  it('2차에는 갈래를 옮기는 자리가 없다', async () => {
+  it('2차에는 다른 분류로 옮기는 자리가 없다', async () => {
     const 목록 = await 그리기()
     expect(목록.queryByTestId('spend-sheet-category-buff')).toBeNull()
     expect(목록.queryByTestId('spend-sheet-categories')).toBeNull()
@@ -237,11 +237,11 @@ describe('갈래', () => {
   })
 
   // 고르던 항목이 남아 있으면 **컨텐츠를 골랐는데 버프 항목이 저장되는** 일이 생긴다.
-  it('되돌아가 갈래를 바꾸면 고르던 항목이 풀린다', async () => {
+  it('되돌아가 분류를 바꾸면 고르던 항목이 풀린다', async () => {
     const view = await 그리기()
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    await 갈래바꾸기(view, '버프')
+    await 분류바꾸기(view, '버프')
 
     // 고를 것을 고르는 화면에는 **저장이 아예 없다**. 셀 것이 없다.
     expect(view.queryByLabelText('저장')).toBeNull()
@@ -263,7 +263,7 @@ describe('항목. 고르면 채워진다', () => {
 
   it('메소 항목은 단위가 `메소`이고 줄여 적는다. 좁은 칸이다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '버프')
+    await 분류바꾸기(view, '버프')
 
     // 세이람·알레리아가 둘 다 200만이라 같은 글자가 두 번 선다. 그것 자체가 맞는 표기다.
     expect(view.getAllByText('200만 메소')).toHaveLength(2)
@@ -274,7 +274,7 @@ describe('항목. 고르면 채워진다', () => {
    * 타일이 **자기 통화를 적는다**. 값이 어디서 오는지는 항목이 안다.
    *
    * 보약 버프 둘이 이벤트·BM 으로 옮겨가면서 버프 는 메소뿐이 됐다.
-   * 두 갈래를 나란히 본다.
+   * 두 분류를 나란히 본다.
    */
   it('타일이 자기 통화를 적는다', async () => {
     const 버프 = await 그리기({}, '버프')
@@ -416,7 +416,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
    */
   it('안 건드린 수량은 카드가 빈 칸으로 열린다. 줄에는 1 이 서 있다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '이벤트·BM')
+    await 분류바꾸기(view, '이벤트·BM')
     await 누르기(view, '보약 버프 추가 구매')
 
     expect(줄글자(view, 'spend-sheet-quantity')).toBe('1')
@@ -429,7 +429,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
 
   it('빈 채로 확인하면 수량이 1 그대로다. 안 친 것이라 바꿀 것이 없다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '이벤트·BM')
+    await 분류바꾸기(view, '이벤트·BM')
     await 누르기(view, '보약 버프 추가 구매')
 
     await act(async () => {
@@ -444,7 +444,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
 
   it('한 번 친 뒤에는 그 값을 들고 연다. 사용자가 적은 값이다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '이벤트·BM')
+    await 분류바꾸기(view, '이벤트·BM')
     await 누르기(view, '보약 버프 추가 구매')
 
     await 카드칸에치기(view, 'spend-sheet-quantity', '3')
@@ -458,7 +458,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
   // 버프 · 주문서는 세는 것이 개수로 정해져 있고 자릿수가 크다(주문서 수십~수백 장).
   it('버프의 수량 카드에는 +10 · +1 칩이 선다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '버프')
+    await 분류바꾸기(view, '버프')
     await 누르기(view, '세이람의 영약')
 
     await act(async () => {
@@ -470,10 +470,10 @@ describe('수량. 곱셈은 앱이 한다', () => {
     }
   })
 
-  // 같은 칸을 쓰지만 갈래로 가른다(사용자 지정). 컨텐츠 · 이벤트·BM 은 그대로 없다.
+  // 같은 칸을 쓰지만 분류로 가른다(사용자 지정). 컨텐츠 · 이벤트·BM 은 그대로 없다.
   it('이벤트·BM 의 수량 카드에는 칩이 없다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '이벤트·BM')
+    await 분류바꾸기(view, '이벤트·BM')
     await 누르기(view, '보약 버프 추가 구매')
 
     await act(async () => {
@@ -491,7 +491,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
    */
   it('상한이 없으면 수량은 치는 칸이다. 스테퍼 · 단위가 없고 처음은 1 이다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '이벤트·BM')
+    await 분류바꾸기(view, '이벤트·BM')
 
     await 누르기(view, '보약 버프 추가 구매')
 
@@ -558,7 +558,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
 
   // 머리줄이 지금 어디인지를 말한다. ②로 들어가면 제목이 고른 것의 이름이 되고 그 왼쪽이
   // 돌아가는 자리다. 목록에서는 돌아갈 데가 없으니 서 있으면 안 된다.
-  // 머리는 **한 걸음씩** 되돌아간다. 격자에서는 갈래 이름이고 항목을 고르면 그 이름이다.
+  // 머리는 **한 걸음씩** 되돌아간다. 격자에서는 분류 이름이고 항목을 고르면 그 이름이다.
   it('②에서는 머리줄이 고른 것의 이름이 된다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('컨텐츠')
@@ -587,7 +587,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
     const 되돌리기 = 묶음열기('maple_point_shop')
     try {
       const view = await 그리기({ lastPointRate: 1_180 })
-      await 갈래바꾸기(view, '이벤트·BM')
+      await 분류바꾸기(view, '이벤트·BM')
       await 누르기(view, '미호로이드')
 
       expect(view.getByTestId('spend-sheet-title')).toHaveTextContent(/^미호로이드$/)
@@ -666,7 +666,7 @@ describe('메소마켓 시세', () => {
 
   it('메소 항목에는 안 선다. 물어볼 이유가 없다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '버프')
+    await 분류바꾸기(view, '버프')
 
     await 누르기(view, '세이람의 영약')
 
@@ -717,7 +717,7 @@ describe('메소마켓 시세', () => {
 
   it('메소 항목은 시세가 없어도 저장된다', async () => {
     const view = await 그리기({ lastPointRate: null })
-    await 갈래바꾸기(view, '버프')
+    await 분류바꾸기(view, '버프')
 
     await 누르기(view, '세이람의 영약')
 
@@ -805,7 +805,7 @@ describe('저장', () => {
   it('메소 항목은 메소 칸만 채운다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '버프')
+    await 분류바꾸기(view, '버프')
 
     await 누르기(view, '콜렉터의 영약')
     await 캐릭터고르기(view)
@@ -1088,7 +1088,7 @@ describe('주문서', () => {
     }
   })
 
-  // 같은 값을 셋 적으면 좁은 타일에서 잘리고 갈래마다 값이 다르다고 읽힌다.
+  // 같은 값을 셋 적으면 좁은 타일에서 잘리고 항목마다 값이 다르다고 읽힌다.
   it('값이 모두 같은 타일은 가격을 하나만 적는다', async () => {
     const view = await 그리기({}, '주문서')
 
@@ -1237,11 +1237,10 @@ describe('주문서', () => {
   })
 })
 
-// ══ 직접 입력 갈래 둘 ═══════════════
+// ══ 직접 입력 분류 둘 ═══════════════
 //
-// 목록 갈래 셋과 폼이 통째로 다르다. 고를 것이 없고 **금액을 친다.**
+// 목록 분류와 폼이 통째로 다르다. 고를 것이 없고 **금액을 친다.**
 
-/** 기타는 큰 숫자가 합계라 **금액 칸**에 친다(라벨은). */
 /**
  * 칸에 값을 넣는다. **치는 칸이 전부 입력 카드로 옮겨갔다.** 줄을 눌러 카드를 열고 쳐서 확인한다.
  *
@@ -1275,6 +1274,7 @@ function 줄글자(view: Rendered, testID: string): string {
   return typeof 값 === 'number' ? String(값) : ''
 }
 
+/** 기타는 큰 숫자가 합계라 **금액 칸**에 친다. */
 async function 금액치기(view: Rendered, text: string): Promise<void> {
   await 카드칸에치기(view, 'spend-sheet-unit-price', text)
 }
@@ -1318,7 +1318,7 @@ const 주인찾기 = async () => (ocid: string) => (ocid === 'ocid-1' ? { accoun
 describe('아이템 구매 · 목록에서 고르기', () => {
   it('처음에는 종류 칸이 없고, 목록에 없는 이름을 치면 장비로 선다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     expect(view.queryByTestId('spend-sheet-item-kind')).toBeNull()
 
     await 카드칸에치기(view, 'spend-sheet-name', '소울 에테르 꾸러미')
@@ -1329,7 +1329,7 @@ describe('아이템 구매 · 목록에서 고르기', () => {
   it('목록에서 고르면 key 로 저장하고 종류 칸이 숨는다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
 
     expect(view.queryByTestId('spend-sheet-item-kind')).toBeNull()
@@ -1342,7 +1342,7 @@ describe('아이템 구매 · 목록에서 고르기', () => {
   it('고른 뒤 이름 글자를 고치면 직접 친 이름이 되고, 종류 칸이 고르던 아이템의 종류로 다시 선다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
 
     await 카드칸에치기(view, 'spend-sheet-name', '소울 에테르 꾸러미')
@@ -1357,7 +1357,7 @@ describe('아이템 구매 · 목록에서 고르기', () => {
   it('특수스킬 반지는 목록에서 레벨째 골라 그 레벨로 저장한다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 목록에서고르기(view, 'spend-sheet-name', '리스크테이커', 'risk_taker_ring@3')
 
     expect(view.getByTestId('spend-sheet-name')).toHaveTextContent('리스크테이커 링 Lv.3')
@@ -1371,7 +1371,7 @@ describe('아이템 구매 · 목록에서 고르기', () => {
   it('보관 체크는 늘 서되 목록에서 고른 아이템과 캐릭터를 갖춰야 눌리고, 켜면 구매 캐릭터의 메이플 ID · 월드로 보관한다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, loadStoreOwnerOf: 주인찾기 })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     expect(view.getByTestId('spend-sheet-store')).toBeDisabled()
 
     await 캐릭터고르기(view)
@@ -1392,7 +1392,7 @@ describe('아이템 구매 · 목록에서 고르기', () => {
 
   it('메이플 ID 를 모르는 캐릭터의 구매에서는 보관 체크가 눌리지 않는다', async () => {
     const view = await 그리기({ loadStoreOwnerOf: 주인찾기 })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 캐릭터고르기(view, 'ocid-2')
     await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
 
@@ -1463,10 +1463,10 @@ describe('아이템 구매 · 메모', () => {
 
   it('메모 칸은 아이템 구매에만 서고, 누르면 이름 · 자리표시자가 `메모` 이고 맥락 줄이 아이템 이름인 여러 줄 카드가 열린다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
     expect(view.queryByLabelText('메모 추가')).toBeNull()
 
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
     await 누르기(view, '메모 추가')
 
@@ -1479,7 +1479,7 @@ describe('아이템 구매 · 메모', () => {
   it('적은 메모는 칸에 줄바꿈 그대로 다 보이고, 그 메모로 저장한다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 목록에서고르기(view, 'spend-sheet-name', '몽환', 'dreamy_belt')
     await 치기(view, '3200000000')
     await 캐릭터고르기(view)
@@ -1522,28 +1522,28 @@ describe('아이템 구매 · 메모', () => {
 
 describe('아이템 구매', () => {
   /**
-   * **갈래를 옮기면 금액을 안 들고 간다**.
+   * **다른 분류로 옮기면 금액을 안 들고 간다**.
    *
    * 큰 숫자는 언제나 **곧바로** 새 값이다. 카운트업을 걷어, 값이 어떤
    * 이유로 바뀌든 중간값이 안 보인다.
    */
-  it('갈래를 옮기면 금액이 0 에서 시작한다', async () => {
+  it('다른 분류로 옮기면 금액이 0 에서 시작한다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 치기(view, '1200000000')
 
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
 
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('0')
   })
 
   it('갔다 돌아와도 0 이다. 기억에서 되살아나지 않는다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 치기(view, '1200000000')
 
-    await 갈래바꾸기(view, '기타')
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '기타')
+    await 분류바꾸기(view, '아이템 구매')
 
     expect(줄글자(view, 'spend-sheet-unit-price')).toBe('0')
   })
@@ -1551,7 +1551,7 @@ describe('아이템 구매', () => {
   it('금액이 0 이면 저장할 수 없다', async () => {
     const view = await 그리기()
 
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
 
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
@@ -1564,7 +1564,7 @@ describe('아이템 구매', () => {
    */
   it('관세를 켜도 친 구입가가 자기 칸에 남는다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 치기(view, '850000000')
 
     await 관세고르기(view, '10%')
@@ -1577,7 +1577,7 @@ describe('아이템 구매', () => {
   it('껐다 켜도 부풀지 않는다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 치기(view, '850000000')
 
     await 관세고르기(view, '10%')
@@ -1596,7 +1596,7 @@ describe('아이템 구매', () => {
   it('총액과 관세분을 함께 저장한다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 치기(view, '850000000')
     await 관세고르기(view, '10%')
 
@@ -1619,7 +1619,7 @@ describe('아이템 구매', () => {
   it('관세를 안 켜면 관세분이 없다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 치기(view, '100')
 
     await 캐릭터고르기(view)
@@ -1632,7 +1632,7 @@ describe('아이템 구매', () => {
   it('시세를 안 묻는다', async () => {
     const view = await 그리기({ lastPointRate: null })
 
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
 
     expect(view.queryByTestId('spend-sheet-rate')).toBeNull()
   })
@@ -1642,7 +1642,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
   it('메소로 시작한다', async () => {
     const view = await 그리기()
 
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
 
     expect(view.getByLabelText('메소').props.accessibilityState?.selected).toBe(true)
   })
@@ -1650,14 +1650,14 @@ describe('기타. 캐시는 여기서만 산다', () => {
   it('관세는 아이템 구매에만 있다', async () => {
     const view = await 그리기()
 
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
 
     expect(view.queryByTestId('spend-sheet-tariff')).toBeNull()
   })
 
   it('메포를 고르면 시세를 묻는다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
 
     await 누르기(view, '메포')
 
@@ -1668,7 +1668,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
   // 성립하는 경로가 운영정책 위반 거래라, 앱이 그 숫자를 적으면 그 경로에 값을 매기는 것처럼 읽힌다.
   it('캐시는 시세를 안 묻는다. 환산 자체를 안 한다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
 
     await 누르기(view, '캐시')
 
@@ -1678,7 +1678,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
   it('캐시는 원 단위로 적고 캐시 칸에 담긴다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
     await 누르기(view, '캐시')
     await 금액치기(view, '6900')
 
@@ -1697,7 +1697,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
   // 그래서 통화마다 카드를 열어 보고, 닫은 뒤 다음 통화로 바꾼다.
   it('통화마다 그 단위의 빠른 칩이 뜬다. 1만원짜리에 +100억은 없다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
     const 금액카드열기 = async (): Promise<void> => {
       await act(async () => {
         fireEvent.press(view.getByTestId('spend-sheet-unit-price'))
@@ -1728,7 +1728,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
   it('메포로 적으면 원금과 시세가 함께 박힌다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave, lastPointRate: 1_180 })
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
     await 누르기(view, '메포')
     await 금액치기(view, '30000')
 
@@ -1744,7 +1744,7 @@ describe('기타. 캐시는 여기서만 산다', () => {
 
   it('통화를 바꿔도 친 금액은 남는다. 단위만 갈린다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
     await 금액치기(view, '123')
 
     await 누르기(view, '캐시')
@@ -1794,7 +1794,7 @@ describe('시세가 비어 있을 때', () => {
 
   it('메소 항목에는 시세 칸도 별표도 없다. 물어본 적이 없다', async () => {
     const view = await 그리기({ lastPointRate: null })
-    await 갈래바꾸기(view, '버프')
+    await 분류바꾸기(view, '버프')
 
     await 누르기(view, '세이람의 영약')
 
@@ -1808,7 +1808,7 @@ describe('시세가 비어 있을 때', () => {
  * 좋을거 같아"*). 컬럼은 처음부터 있었고 **화면만 없었다**.
  *
  * 줄은 **수입 시트와 같은 배지 사슬**이다(사용자 지시). 안 고르면 자리표시자가 `캐릭터 선택` 이다.
- * 갈래마다 골라야 저장되고, 이벤트·BM 과 기타는 캐릭터 뒤에 메이플 ID 를 고를 수 있다.
+ * 분류마다 골라야 저장되고, 이벤트·BM 과 기타는 캐릭터 뒤에 메이플 ID 를 고를 수 있다.
  */
 describe('캐릭터 귀속', () => {
   const 메이플ID둘 = [
@@ -1840,7 +1840,7 @@ describe('캐릭터 귀속', () => {
     expect(view.queryByTestId('spend-sheet-chain-open')).toBeNull()
   })
 
-  it('목록 갈래에서도 고를 수 있다. 대표를 고른 뒤에 선다', async () => {
+  it('목록 분류에서도 고를 수 있다. 대표를 고른 뒤에 선다', async () => {
     const view = await 그리기()
 
     await 누르기(view, '하이마운틴')
@@ -1851,7 +1851,7 @@ describe('캐릭터 귀속', () => {
   it('고르면 그 캐릭터로 저장하고 이름이 칸에 선다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 치기(view, '1200000000')
 
     await 아이디로누르기(view, 'spend-sheet-chain-open')
@@ -1871,7 +1871,7 @@ describe('캐릭터 귀속', () => {
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
   })
 
-  // 갈래마다 사용자가 정했다(2026-11-04). 같은 폼을 쓰는 컨텐츠와 이벤트·BM 도 갈린다.
+  // 분류마다 사용자가 정했다(2026-11-04). 같은 폼을 쓰는 컨텐츠와 이벤트·BM 도 갈린다.
   // 지출 컨텐츠도 메이플 ID 를 고른다. 계정 공유 컨텐츠에 쓴 돈은 캐릭터 하나의 것이 아니다.
   it('컨텐츠 · 이벤트·BM · 기타는 캐릭터 뒤에 메이플 ID 가 서고, 심볼 강화 · 아이템 구매는 캐릭터만 선다', async () => {
     const 이벤트 = await 그리기({ accounts: 메이플ID둘 }, '이벤트·BM')
@@ -1885,8 +1885,8 @@ describe('캐릭터 귀속', () => {
     await 누르기(컨텐츠, '하이마운틴')
     expect(await 보기들(컨텐츠)).toEqual(['ocid-1', 'ocid-2', 'account:maple-a', 'account:maple-b'])
 
-    for (const 갈래 of ['심볼 강화', '아이템 구매'] as const) {
-      expect(await 보기들(await 그리기({ accounts: 메이플ID둘 }, 갈래))).toEqual(['ocid-1', 'ocid-2'])
+    for (const 분류 of ['심볼 강화', '아이템 구매'] as const) {
+      expect(await 보기들(await 그리기({ accounts: 메이플ID둘 }, 분류))).toEqual(['ocid-1', 'ocid-2'])
     }
   })
 
@@ -1917,25 +1917,17 @@ describe('캐릭터 귀속', () => {
 })
 
 /**
- * **수정 모드에서는 **무엇인지** 를 못 바꾼다**.
- *
- * *"이미 입력된 항목을 클릭해서 띄운 수정 시트는 다른걸로 수정할 수 없도록해. ex) 에픽던전
- * 악몽선경 → 악몽선경의 세부 사항만 수정 가능."*
- *
- * 갈래와 항목은 **글자로만** 서고, 세부(단계·형태·수량·시세·캐릭터)는 그대로 고칠 수 있다.
- */
-/**
  * `기타`는 **단가 × 수량**이다.
  *
  * *"통화 밑에 지출액을 추가해서 거기에 지출한 양을 입력하게 하고 지금 입력받는 위치에는 총합을
  * 기록해. 그리고 수량을 추가해."*
  *
- * 큰 숫자가 **치는 칸** 에서 **합계** 로 바뀐다. 목록 갈래와 같은 모양이 된다.
+ * 큰 숫자가 **치는 칸** 에서 **합계** 로 바뀐다. 목록 분류와 같은 모양이 된다.
  */
 describe('기타. 금액 × 수량', () => {
   async function 기타(overrides: Partial<React.ComponentProps<typeof SpendSheet>> = {}) {
     const view = await 그리기({ lastPointRate: 1_180, ...overrides })
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
     return view
   }
 
@@ -2002,7 +1994,7 @@ describe('기타. 금액 × 수량', () => {
   // 없으므로 라벨이 `단가` 가 아니라 `구매 비용` 이다. 기본 종류라 고르는 절차가 없다.
   it('아이템 구매(장비)는 `구매 비용` 칸에서 받는다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
 
     expect(view.getByText('구매 비용')).toBeTruthy()
     expect(view.queryByText('단가')).toBeNull()
@@ -2063,6 +2055,14 @@ describe('시작 기간 전인 항목', () => {
   })
 })
 
+/**
+ * **수정 모드에서는 **무엇인지** 를 못 바꾼다**.
+ *
+ * *"이미 입력된 항목을 클릭해서 띄운 수정 시트는 다른걸로 수정할 수 없도록해. ex) 에픽던전
+ * 악몽선경 → 악몽선경의 세부 사항만 수정 가능."*
+ *
+ * 분류와 항목은 **글자로만** 서고, 세부(단계·형태·수량·시세·캐릭터)는 그대로 고칠 수 있다.
+ */
 describe('수정 모드', () => {
   const 악몽선경 = {
     id: 'spd-9',
@@ -2092,7 +2092,7 @@ describe('수정 모드', () => {
 
   /**
    * **제목이 **고른 것** 을 말한다**. 지출 수정 이 아니다.
-   * 목록 갈래면 그 항목, 직접 입력이면 갈래다.
+   * 목록 분류면 그 항목, 직접 입력이면 분류다.
    */
   it('제목이 고른 항목이다', async () => {
     const view = await 고치기()
@@ -2101,8 +2101,8 @@ describe('수정 모드', () => {
     expect(view.queryByText('지출 수정')).toBeNull()
   })
 
-  /** 기록이 갈래를 정했다. 고르는 단계를 건너뛴다. */
-  it('갈래를 못 바꾼다. 1차를 건너뛴다', async () => {
+  /** 기록이 분류를 정했다. 고르는 단계를 건너뛴다. */
+  it('분류를 못 바꾼다. 1차를 건너뛴다', async () => {
     const view = await 고치기()
 
     expect(view.queryByTestId('spend-sheet-category-item_purchase')).toBeNull()
@@ -2110,13 +2110,15 @@ describe('수정 모드', () => {
     expect(view.queryByTestId('spend-sheet-close')).toBeNull()
   })
 
-  // 제목이 이미 말하므로 갈래 줄도 항목 줄도 안 세운다. 같은 사실을 두 번 적는 일이다.
-  it('갈래 줄도 항목 줄도 없다', async () => {
+  // 제목이 이미 말하므로 분류 줄도 항목 줄도 안 세운다. 같은 사실을 두 번 적는 일이다.
+  it('분류 줄도 항목 줄도 없다', async () => {
     const view = await 고치기()
 
     expect(view.queryByLabelText('다시 고르기')).toBeNull()
-    expect(view.queryByText('갈래')).toBeNull()
-    expect(view.queryByText('항목')).toBeNull()
+    // 분류 이름은 어디에도 안 서고, 항목 이름은 제목 한 곳에만 선다.
+    expect(view.queryByText('컨텐츠')).toBeNull()
+    expect(view.getAllByText('악몽선경')).toHaveLength(1)
+    expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('악몽선경')
   })
 
   // 에픽던전 기록이라 **수량은 없다**. 고칠 수 있는 것은 시세와 캐릭터다.
@@ -2154,8 +2156,8 @@ describe('수정 모드', () => {
     expect(형태줄(view, '솔 에르다').getByLabelText('2단계').props.accessibilityState?.selected).toBe(true)
   })
 
-  // 직접 입력도 같다. 갈래는 글자이고 내용·금액은 고칠 수 있다.
-  it('직접 입력도 갈래를 못 바꾼다', async () => {
+  // 직접 입력도 같다. 분류는 글자이고 내용·금액은 고칠 수 있다.
+  it('직접 입력도 분류를 못 바꾼다', async () => {
     const view = await 그리기({
       editing: {
         ...악몽선경,
@@ -2172,7 +2174,7 @@ describe('수정 모드', () => {
     })
 
     expect(view.queryByLabelText('컨텐츠')).toBeNull()
-    // 직접 입력은 고른 것이 갈래뿐이라 그것이 곧 제목이다.
+    // 직접 입력은 고른 것이 분류뿐이라 그것이 곧 제목이다.
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('기타')
     expect(view.getByTestId('spend-sheet-name')).toBeTruthy()
   })
@@ -2236,7 +2238,7 @@ describe('닫힌 묶음', () => {
   it('이름도 타일도 격자에 안 서고 열린 묶음만 선다', async () => {
     const view = await 그리기()
 
-    await 갈래바꾸기(view, '이벤트·BM')
+    await 분류바꾸기(view, '이벤트·BM')
 
     expect(view.queryByText('메이플 포인트 샵')).toBeNull()
     expect(view.queryByLabelText('솔 에르다')).toBeNull()
@@ -2249,7 +2251,7 @@ describe('닫힌 묶음', () => {
     try {
       const view = await 그리기()
 
-      await 갈래바꾸기(view, '이벤트·BM')
+      await 분류바꾸기(view, '이벤트·BM')
       await 누르기(view, '솔 에르다')
 
       expect(view.getByTestId('spend-sheet-title')).toHaveTextContent(/^솔 에르다$/)
@@ -2292,7 +2294,7 @@ describe('닫힌 묶음', () => {
 })
 
 /**
- * **이름 칸의 라벨은 갈래가 정한다**. 아이템 구매에서 그 칸이 묻는 것은
+ * **이름 칸의 라벨은 분류가 정한다**. 아이템 구매에서 그 칸이 묻는 것은
  * 무엇을 샀나 이지 어디에 썼나가 아니다.
  */
 
@@ -2312,7 +2314,7 @@ describe('타일 그림', () => {
   it('그림이 없는 것에는 안 붙는다. 지어내지 않는다', async () => {
     const view = await 그리기()
 
-    await 갈래바꾸기(view, '이벤트·BM')
+    await 분류바꾸기(view, '이벤트·BM')
 
     // 아직 그림을 안 받은 셋. `이벤트` 묶음이 통째로 그렇다.
     expect(view.queryByTestId('spend-tile-icon-attendance_event_pass')).toBeNull()
@@ -2325,7 +2327,7 @@ describe('타일 그림', () => {
     try {
       const view = await 그리기()
 
-      await 갈래바꾸기(view, '이벤트·BM')
+      await 분류바꾸기(view, '이벤트·BM')
 
       expect(view.getByTestId('spend-tile-icon-mechaberry_farm')).toBeTruthy()
       expect(view.getByTestId('spend-tile-icon-blueberry_farm')).toBeTruthy()
@@ -2352,7 +2354,7 @@ describe('타일 그림', () => {
   it('그림이 없는 타일은 이름이 줄 전체를 쓴다', async () => {
     const view = await 그리기()
 
-    await 갈래바꾸기(view, '이벤트·BM')
+    await 분류바꾸기(view, '이벤트·BM')
 
     expect(view.getByTestId('spend-tile-box-attendance_event_pass').children).toHaveLength(1)
   })
@@ -2367,8 +2369,7 @@ describe('타일 그림', () => {
  */
 describe('아이템 구매의 종류', () => {
   /**
-   * 세그먼트 안에서 종류를 고르는 도우미. 갈래 칩에도 기타가 있어(`SPEND_CATEGORIES`) 라벨만으로는
-   * 둘이 안 갈린다.
+   * 세그먼트 안에서 종류를 고르는 도우미.
    */
   async function 종류고르기(view: Rendered, 종류: '장비' | '소비' | '기타'): Promise<void> {
     await act(async () => {
@@ -2381,7 +2382,7 @@ describe('아이템 구매의 종류', () => {
   /** 종류 칸은 목록에 없는 이름을 쳤을 때만 서므로 이름부터 친다. */
   async function 구매(종류?: '소비' | '기타') {
     const view = await 그리기()
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     if (종류 !== undefined) await 종류고르기(view, 종류)
     return view
@@ -2432,7 +2433,7 @@ describe('아이템 구매의 종류', () => {
   it('소비를 저장하면 합계·수량·종류가 함께 실린다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 카드칸에치기(view, 'spend-sheet-name', '주문서')
     await 종류고르기(view, '소비')
     await 단가치기(view, '12000')
@@ -2456,7 +2457,7 @@ describe('아이템 구매의 종류', () => {
   it('장비를 저장하면 수량이 null 이고 관세가 실린다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 치기(view, '850000000')
     await 관세고르기(view, '10%')
     await 캐릭터고르기(view)
@@ -2479,7 +2480,7 @@ describe('아이템 구매의 종류', () => {
   it('종류를 바꾸면 관세가 꺼지고 수량이 1 로 돌아간다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     await 치기(view, '12000')
     await 관세고르기(view, '10%')
@@ -2680,7 +2681,7 @@ describe('되짚어 여는 식', () => {
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('10만')
   })
 
-  // `기타` 갈래도 같은 식으로 되짚는다. 그 전에는 금액 칸이 **총액**으로 채워지는데 수량도
+  // `기타` 분류도 같은 식으로 되짚는다. 그 전에는 금액 칸이 **총액**으로 채워지는데 수량도
   // 함께 살아나 합계가 **총액 × 수량** 이 됐다(30,000 이 90,000 으로 열렸다).
   it('`기타`의 수량 기록은 합계가 저장된 값 그대로다', async () => {
     const view = await 고치기({
@@ -2709,7 +2710,7 @@ describe('되짚어 여는 식', () => {
 describe('관세 줄의 모양', () => {
   async function 장비() {
     const view = await 그리기()
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     return view
   }
 
@@ -2744,13 +2745,13 @@ describe('관세 줄의 모양', () => {
 })
 
 /**
- * 갈래마다 **자기 폼**이다.
+ * 분류마다 **자기 폼**이다.
  *
- * 한 함수가 갈래 다섯의 상태를 전부 들고 조건문으로 그리던 것이 **갈래를 옮겨도 값을 들고 다닌다** 는
- * 문제의 원인이었다. 이제 갈래가 폼을 가르므로
+ * 한 함수가 분류 다섯의 상태를 전부 들고 조건문으로 그리던 것이 **분류를 옮겨도 값을 들고 다닌다** 는
+ * 문제의 원인이었다. 이제 분류가 폼을 가르므로
  * 옮기면 언마운트된다.
  */
-describe('갈래마다 자기 폼', () => {
+describe('분류마다 자기 폼', () => {
   async function 아이디로치기(view: Rendered, testID: string, text: string): Promise<void> {
     await act(async () => {
       fireEvent.changeText(view.getByTestId(testID), text)
@@ -2758,54 +2759,54 @@ describe('갈래마다 자기 폼', () => {
   }
 
 
-  it('`아이템 구매`의 종류가 갈래를 안 넘어간다', async () => {
+  it('`아이템 구매`의 종류가 분류를 안 넘어간다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     // 종류 칸은 목록에 없는 이름을 쳤을 때만 선다.
     await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     await 누르기(view, '소비')
     expect(view.getByLabelText('소비').props.accessibilityState?.selected).toBe(true)
 
-    await 갈래바꾸기(view, '기타')
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '기타')
+    await 분류바꾸기(view, '아이템 구매')
     await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
 
     // 기본값(장비)으로 돌아온다. 종류가 수량과 관세를 정하므로 남으면 화면이 딴 모양으로 열린다.
     expect(view.getByLabelText('장비').props.accessibilityState?.selected).toBe(true)
   })
 
-  it('`기타`의 통화가 갈래를 안 넘어간다', async () => {
+  it('`기타`의 통화가 분류를 안 넘어간다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
     await 누르기(view, '캐시')
     expect(view.getByLabelText('캐시').props.accessibilityState?.selected).toBe(true)
 
-    await 갈래바꾸기(view, '아이템 구매')
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '기타')
 
     expect(view.getByLabelText('메소').props.accessibilityState?.selected).toBe(true)
   })
 
-  it('친 금액도 갈래를 안 넘어간다', async () => {
+  it('친 금액도 분류를 안 넘어간다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
     await 아이디로치기(view, 'spend-sheet-unit-price', '30000')
 
-    await 갈래바꾸기(view, '아이템 구매')
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '기타')
 
     expect(줄글자(view, 'spend-sheet-unit-price')).toBe('0')
   })
 
-  it('고른 대표·형태·단계가 갈래를 안 넘어간다', async () => {
+  it('고른 대표·형태·단계가 분류를 안 넘어간다', async () => {
     const view = await 그리기()
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
     // 둘째 화면이다. 머리가 되돌아가는 누르개가 된다.
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('하이마운틴')
 
     await 누르기(view, '다시 고르기')
-    await 갈래바꾸기(view, '아이템 구매')
-    await 갈래바꾸기(view, '컨텐츠')
+    await 분류바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '컨텐츠')
 
     // 목록으로 돌아와 있다. 고른 것이 남아 있으면 둘째 화면이 그대로 섰을 것이다.
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('컨텐츠')
@@ -2862,16 +2863,16 @@ describe('수정으로 열 때의 큰 숫자', () => {
 describe('아이템 구매의 수량 단위', () => {
   it('소비·기타를 고르면 수량 옆에 개가 선다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '아이템 구매')
+    await 분류바꾸기(view, '아이템 구매')
     await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     await 누르기(view, '소비')
 
     expect(view.getByTestId('spend-sheet-quantity-unit')).toHaveTextContent('개')
   })
 
-  it('`기타` 갈래의 수량에는 여전히 단위가 없다. 무엇을 세는지 모른다', async () => {
+  it('`기타` 분류의 수량에는 여전히 단위가 없다. 무엇을 세는지 모른다', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
 
     expect(view.getByTestId('spend-sheet-quantity')).toBeTruthy()
     expect(view.queryByTestId('spend-sheet-quantity-unit')).toBeNull()
@@ -2916,7 +2917,7 @@ describe('날짜 바꾸기', () => {
   it('바꾼 날짜로 저장된다', async () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
     await 금액치기(view, '30000')
     await 날짜고르기(view, '2026-08-22')
     await 캐릭터고르기(view)
@@ -2925,10 +2926,10 @@ describe('날짜 바꾸기', () => {
     expect(onSave.mock.calls[0][0]).toMatchObject({ spentOn: '2026-08-22' })
   })
 
-  // 갈래 폼은 `key={category}` 로만 다시 심긴다. 날짜는 그 열쇠가 아니다.
+  // 분류별 폼은 `key={category}` 로만 다시 심긴다. 날짜는 그 열쇠가 아니다.
   it('날짜를 바꿔도 **친 것이 안 사라진다**', async () => {
     const view = await 그리기()
-    await 갈래바꾸기(view, '기타')
+    await 분류바꾸기(view, '기타')
     await 금액치기(view, '30000')
 
     await 날짜고르기(view, '2026-08-22')
@@ -2936,7 +2937,7 @@ describe('날짜 바꾸기', () => {
     expect(줄글자(view, 'spend-sheet-unit-price')).toBe('30,000')
   })
 
-  it('목록 갈래의 둘째 화면에서도 바꾼다', async () => {
+  it('목록 분류의 둘째 화면에서도 바꾼다', async () => {
     const view = await 그리기()
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
@@ -2949,7 +2950,7 @@ describe('날짜 바꾸기', () => {
 })
 
 /**
- * **심볼 강화는 두 단계 시트다**(사용자 지정 2026-09-19). 갈래를 고르면 바로 폼이 서고, 심볼은 그림 붙은
+ * **심볼 강화는 두 단계 시트다**(사용자 지정 2026-09-19). 분류를 고르면 바로 폼이 서고, 심볼은 그림 붙은
  * 드롭다운으로, 레벨은 레벨 칸 슬라이더로 고른다. 금액은 그 사이 단계 비용의 합이다.
  */
 describe('심볼 강화', () => {
@@ -3019,7 +3020,7 @@ describe('심볼 강화', () => {
     recordedAt: '2026-09-19T01:00:00.000Z',
   }
 
-  it('갈래를 고르면 곧바로 폼이다. 심볼이 비어 있고 레벨이 잠기며 저장이 꺼져 있다', async () => {
+  it('분류를 고르면 곧바로 폼이다. 심볼이 비어 있고 레벨이 잠기며 저장이 꺼져 있다', async () => {
     const view = await 열기()
 
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('심볼 강화')
@@ -3204,7 +3205,7 @@ describe('헥사 매트릭스', () => {
     return [read('from'), read('to')]
   }
 
-  it('갈래 제목은 헥사 매트릭스이고, 캐릭터를 고르기 전에는 코어를 못 고르며 저장이 꺼져 있다', async () => {
+  it('분류 제목은 헥사 매트릭스이고, 캐릭터를 고르기 전에는 코어를 못 고르며 저장이 꺼져 있다', async () => {
     const view = await 열기()
 
     expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('헥사 매트릭스')
@@ -3592,9 +3593,9 @@ describe('가격을 치는 버프', () => {
 
 // ══ 주간 보스 수입 이전 · 메소마켓 환전 수수료 ═══════════════
 //
-// 두 갈래는 시트만 있고 기록은 `기타` 로 저장한다. 서버 갈래 표에 줄이 있어야 카드가 서서, 케이스마다 표에 두 줄을 더한다.
+// 두 분류는 시트만 있고 기록은 `기타` 로 저장한다. 서버 분류 표에 줄이 있어야 카드가 서서, 케이스마다 표에 두 줄을 더한다.
 
-describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', () => {
+describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 분류', () => {
   let original: ReturnType<typeof cashbookCategoriesTable.get>
 
   beforeEach(() => {
@@ -3614,7 +3615,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
     cashbookCategoriesTable.set(original)
   })
 
-  async function 새갈래고르기(view: Rendered, key: 'boss_income_transfer' | 'meso_market_exchange'): Promise<void> {
+  async function 새분류고르기(view: Rendered, key: 'boss_income_transfer' | 'meso_market_exchange'): Promise<void> {
     await act(async () => {
       fireEvent.press(view.getByTestId(`spend-sheet-category-${key}`))
     })
@@ -3632,7 +3633,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
   describe('주간 보스 수입 이전', () => {
     it('받는 캐릭터 목록에서 보내는 캐릭터가 빠진다', async () => {
       const view = await 그리기({}, null)
-      await 새갈래고르기(view, 'boss_income_transfer')
+      await 새분류고르기(view, 'boss_income_transfer')
       await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
 
       await act(async () => {
@@ -3647,7 +3648,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
     it('체크 박스가 그 주 결정석 몫을 채우고, 금액을 고치면 꺼진다', async () => {
       const loadWeekCrystalMeso = jest.fn(async () => 3_600_000_000)
       const view = await 그리기({ loadWeekCrystalMeso }, null)
-      await 새갈래고르기(view, 'boss_income_transfer')
+      await 새분류고르기(view, 'boss_income_transfer')
       await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
 
       await act(async () => {
@@ -3667,7 +3668,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
     it('큰 숫자는 받는 캐릭터 요율의 수수료이고, 보내는 캐릭터의 기타 지출과 시트 입력으로 저장한다', async () => {
       const onSave = jest.fn()
       const view = await 그리기({ onSave }, null)
-      await 새갈래고르기(view, 'boss_income_transfer')
+      await 새분류고르기(view, 'boss_income_transfer')
       await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
       await 고르기(view, 'spend-sheet-transfer-receiver', 'ocid-2')
       await 카드칸에치기(view, 'spend-sheet-transfer-amount', '3600000000')
@@ -3744,7 +3745,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
         const onSave = jest.fn()
         const loadWeekCrystalMeso = jest.fn(async () => 3_600_000_000)
         const view = await 그리기({ onSave, loadWeekCrystalMeso, lastBossIncomeTransfers: 기억 }, null)
-        await 새갈래고르기(view, 'boss_income_transfer')
+        await 새분류고르기(view, 'boss_income_transfer')
 
         await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
 
@@ -3767,7 +3768,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
       // 체크로 채운 금액은 앞 캐릭터의 결정석 몫이다. 남기면 다른 캐릭터의 금액으로 저장된다.
       it('바꾼 캐릭터의 기억이 없으면 처음 상태로 돌아가고, 켜져 있던 체크가 꺼지면 옮길 메소도 빈다', async () => {
         const view = await 그리기({ loadWeekCrystalMeso: async () => 3_600_000_000, lastBossIncomeTransfers: 기억 }, null)
-        await 새갈래고르기(view, 'boss_income_transfer')
+        await 새분류고르기(view, 'boss_income_transfer')
         await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
 
         await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-2')
@@ -3782,7 +3783,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
       // 지우면 사용자가 방금 고른 값을 다시 골라야 한다.
       it('빈 칸에서 처음 고른 보내는 캐릭터의 기억이 없으면 먼저 고른 받는 캐릭터 · 수수료가 남는다', async () => {
         const view = await 그리기({ lastBossIncomeTransfers: 기억 }, null)
-        await 새갈래고르기(view, 'boss_income_transfer')
+        await 새분류고르기(view, 'boss_income_transfer')
         await 고르기(view, 'spend-sheet-transfer-receiver', 'ocid-1')
         const 수수료줄 = within(view.getByTestId('spend-sheet-fee'))
         await act(async () => {
@@ -3803,7 +3804,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
       it('체크가 꺼져 있던 금액은 캐릭터를 바꿔도 그대로다', async () => {
         const 체크없음 = { 'ocid-1': { ...기억['ocid-1'], fillsWeek: false } }
         const view = await 그리기({ lastBossIncomeTransfers: 체크없음 }, null)
-        await 새갈래고르기(view, 'boss_income_transfer')
+        await 새분류고르기(view, 'boss_income_transfer')
         await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-2')
         await 카드칸에치기(view, 'spend-sheet-transfer-amount', '1000000000')
 
@@ -3816,7 +3817,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
 
       it('기억한 받는 캐릭터가 목록에 없으면 빈 칸이다', async () => {
         const view = await 그리기({ lastBossIncomeTransfers: { 'ocid-1': { ...기억['ocid-1'], receiverOcid: 'ocid-gone' } } }, null)
-        await 새갈래고르기(view, 'boss_income_transfer')
+        await 새분류고르기(view, 'boss_income_transfer')
 
         await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
 
@@ -3866,7 +3867,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
     it('판매만 쳐도 저장되고, 큰 숫자 위에 지출이 서며 메이플 ID 의 기타 지출로 저장한다', async () => {
       const onSave = jest.fn()
       const view = await 그리기({ onSave, accounts: 메이플ID, lastPointRate: 2_116 }, null)
-      await 새갈래고르기(view, 'meso_market_exchange')
+      await 새분류고르기(view, 'meso_market_exchange')
       await 고르기(view, 'spend-sheet-exchange-account', 'maple-1')
       await 카드칸에치기(view, 'spend-sheet-exchange-sold', '5')
 
@@ -3889,7 +3890,7 @@ describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', 
 
     it('구매 메소를 치면 구매 월드 시세가 차야 저장되고, 수익이면 수입이 선다', async () => {
       const view = await 그리기({ accounts: 메이플ID, lastPointRate: 2_116 }, null)
-      await 새갈래고르기(view, 'meso_market_exchange')
+      await 새분류고르기(view, 'meso_market_exchange')
       await 고르기(view, 'spend-sheet-exchange-account', 'maple-1')
       await 카드칸에치기(view, 'spend-sheet-exchange-sold', '5')
       await 카드칸에치기(view, 'spend-sheet-exchange-bought', '5')

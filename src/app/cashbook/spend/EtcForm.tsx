@@ -1,5 +1,5 @@
 /**
- * 기타 폼. 갈래 넷에 안 드는 지출.
+ * 기타 폼. 다른 분류에 안 드는 지출.
  *
  * 캐시는 여기서만 산다. 통화도 여기서만 고른다. 그리고 금액 × 수량이다.
  *
@@ -133,7 +133,7 @@ export function EtcForm(props: SpendFormProps): React.JSX.Element {
           />
         </FieldRow>
 
-        {/* 통화는 갈래가 아니라 금액의 축이라 세그먼트다. 칩으로 두면 갈래 칩과 한 무리로 읽힌다. */}
+        {/* 통화는 분류가 아니라 금액의 축이라 세그먼트다. */}
         <FieldRow label="통화">
           <Segment size="sm"
             options={FREE_CURRENCY_LABELS}

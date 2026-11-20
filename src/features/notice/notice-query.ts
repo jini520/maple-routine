@@ -48,7 +48,7 @@ export function noticesOptions(kind: NoticeKind) {
 
 /**
  * 분류마다의 목록. `null` 은 **아직 모른다**(첫 조회 중)이고 빈 배열은 없다는 답이다. 실패했는데 든 값도 없으면 빈 배열이다.
- * 아직 도는 조회를 두고 `없습니다` 를 말하지 않으면서, 실패한 갈래가 영영 스켈레톤으로 남지도 않는다.
+ * 아직 도는 조회를 두고 `없습니다` 를 말하지 않으면서, 실패한 분류가 영영 스켈레톤으로 남지도 않는다.
  */
 export type NoticesByKind = Readonly<Record<NoticeKind, Notice[] | null>>
 
@@ -70,9 +70,9 @@ export function useNotices(kinds: readonly NoticeKind[]): NoticesByKind {
 }
 
 /**
- * 갈래 여럿을 신선해도 다시 받는다. 당김이 부른다.
+ * 분류 여럿을 신선해도 다시 받는다. 당김이 부른다.
  *
- * @returns `allFailed` 는 준 갈래가 **전부** 실패했을 때만 참. 키가 없으면 넥슨 네 갈래가 언제나 실패라 일부 실패는 정상이다
+ * @returns `allFailed` 는 준 분류가 **전부** 실패했을 때만 참. 키가 없으면 넥슨 네 분류가 언제나 실패라 일부 실패는 정상이다
  */
 export async function refreshNoticeKinds(kinds: readonly NoticeKind[]): Promise<{ allFailed: boolean }> {
   const outcomes = await Promise.all(

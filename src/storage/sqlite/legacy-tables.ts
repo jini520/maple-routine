@@ -15,10 +15,10 @@ export const INCOME_RECORDS_BODY = `(
     -- NULL = 계정 단위가 기본이다. 통화가 귀속을 강제하지 않는다.
     ocid TEXT,
     earned_on TEXT NOT NULL, -- 'YYYY-MM-DD' KST
-    category TEXT NOT NULL, -- 그때의 갈래 이름. 아이템 판매 · 사냥 · 기타
-    category_key TEXT, -- 갈래 key. 버전 이관이 옛 행까지 채운다
+    category TEXT NOT NULL, -- 그때의 분류 이름. 아이템 판매 · 사냥 · 기타
+    category_key TEXT, -- 분류 key. 버전 이관이 옛 행까지 채운다
     item TEXT, -- 그때의 이름. 판 것 / 사냥터 / 자유
-    item_key TEXT, -- 사냥 기록의 사냥터 key. 다른 갈래는 NULL
+    item_key TEXT, -- 사냥 기록의 사냥터 key. 다른 분류는 NULL
     -- **수수료를 뗀 값**이다. 캘린더도 합계도 이 칸 하나를 더한다.
     -- **NULL 이 될 수 있다**(이슈 #265): **기타**는 통화가 갈려서 **메소로 번 것이
     -- 아니다** 가 성립한다. 0 으로 채우면 **메소를 0 벌었다** 와 같아져 수정
@@ -47,11 +47,11 @@ export const INCOME_RECORDS_BODY = `(
     -- NULL = 이 칸이 없던 시절의 행이고, 그 행도 같은 이유로 수량 1 로 연다.
     quantity INTEGER,
     -- **아이템 판매**의 종류 key(장비 · 소비 · 기타). 소비 · 기타면 quantity 가 곱한 수량이다.
-    -- 다른 갈래는 NULL 이다. NULL 인 판매 행은 이 칸 이전의 행이고 장비로 연다.
+    -- 다른 분류는 NULL 이다. NULL 인 판매 행은 이 칸 이전의 행이고 장비로 연다.
     item_kind_key TEXT,
-    -- **사냥** 갈래의 **계산 입력**. 합계만 남기면 수정 시트가 빈 계산기로
+    -- **사냥** 분류의 **계산 입력**. 합계만 남기면 수정 시트가 빈 계산기로
     -- 열려 만지는 순간 금액이 덮인다. 사냥터는 item 칸에 이름으로 들어간다
-    -- (전역 유일이라 지역이 따라온다). **다른 갈래에서는 전부 NULL** 이다.
+    -- (전역 유일이라 지역이 따라온다). **다른 분류에서는 전부 NULL** 이다.
     -- 캐릭터 레벨을 박는 이유는 캐릭터가 레벨업하기 때문이다. 지금 레벨로 다시 재면 한 달 전
     -- 기록의 금액이 열 때마다 달라진다.
     hunt_character_level INTEGER,
@@ -128,9 +128,9 @@ export const LEGACY_TABLE_DEFINITIONS = [
     id TEXT NOT NULL,
     ocid TEXT,
     spent_on TEXT NOT NULL, -- 'YYYY-MM-DD' KST
-    -- 그때의 갈래 이름. 컨텐츠 · 이벤트·BM · 버프 · 주문서 · 심볼 강화 · 아이템 구매 · 기타
+    -- 그때의 분류 이름. 컨텐츠 · 이벤트·BM · 버프 · 주문서 · 심볼 강화 · 아이템 구매 · 기타
     category TEXT NOT NULL,
-    -- 갈래 key. 버전 이관이 옛 행까지 채운다.
+    -- 분류 key. 버전 이관이 옛 행까지 채운다.
     category_key TEXT,
     -- 그때의 이름. key 로 카탈로그를 못 찾을 때 서는 글자다.
     item TEXT,
@@ -143,12 +143,12 @@ export const LEGACY_TABLE_DEFINITIONS = [
     -- 에픽던전 리워드의 형태별 항목 key JSON. 새 기록은 form 대신 이 칸을 쓴다.
     form_item_keys TEXT,
     -- **아이템 구매**의 **종류**(장비·소비·기타). 이 값 하나가 수량과 관세를
-    -- 함께 가른다: 소비·기타는 **월드 간 거래가 안 되어** 관세가 없다. NULL 은 다른 갈래이거나
+    -- 함께 가른다: 소비·기타는 **월드 간 거래가 안 되어** 관세가 없다. NULL 은 다른 분류이거나
     -- **정정 1 이전 행**이고, 그 행은 장비로 연다(그때가 실제로 그 모양이었다).
     item_kind TEXT,
     -- 종류 key.
     item_kind_key TEXT,
-    -- 심볼 강화의 강화 전 · 강화 후 레벨. 다른 갈래는 NULL.
+    -- 심볼 강화의 강화 전 · 강화 후 레벨. 다른 분류는 NULL.
     level_from INTEGER,
     level_to INTEGER,
     -- 금액 = 카탈로그의 **unitPrice** × 이 값. 단위 이름은 안 적는다.

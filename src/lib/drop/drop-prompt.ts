@@ -1,7 +1,7 @@
 /**
  * 드롭 기록 시트 바닥의 확인 줄 문구.
  *
- * 고른 것이 몇이고 그중 몇을 정했나로 다섯 갈래다. 시트 안에 인라인으로 적으면 어느 갈래가
+ * 고른 것이 몇이고 그중 몇을 정했나로 다섯 경우다. 시트 안에 인라인으로 적으면 어느 경우가
  * 무엇을 말하는지가 JSX 사이에 흩어진다.
  *
  * 제목은 **무슨 일이 일어났나**를 말하고 딸린 줄은 **남은 일**을 말한다.
@@ -17,7 +17,7 @@ export interface DropPrompt {
   detail: string
 }
 
-/** 이름은 그 갈래에서 **가장 먼저 고른 것**이다. 이어 찍어도 안 갈아탄다. */
+/** 이름은 그 경우에서 **가장 먼저 고른 것**이다. 이어 찍어도 안 갈아탄다. */
 function nameOf(drop: RecordedDrop): string {
   return dropItemNameOf(drop.itemKey, drop.itemName)
 }

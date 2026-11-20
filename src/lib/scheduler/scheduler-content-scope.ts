@@ -1,7 +1,7 @@
 /**
- * 컨텐츠의 공유 범위 · 누적 점수 · API 오류 덮기 · 갈래 주간 한도. 전부 컨텐츠 표(`contents` 칸)의 칸이다.
+ * 컨텐츠의 공유 범위 · 누적 점수 · API 오류 덮기 · 분류 주간 한도. 전부 컨텐츠 표(`contents` 칸)의 칸이다.
  *
- * 옛 카탈로그 파일이 들던 것을 컨텐츠 줄과 갈래 줄이 든다. 조회 함수의 이름과 뜻은 그대로다.
+ * 옛 카탈로그 파일이 들던 것을 컨텐츠 줄과 분류 줄이 든다. 조회 함수의 이름과 뜻은 그대로다.
  */
 import type { ContentCategoryKey, ContentRow, ContentSection, ShareScope } from '../../types/game-data'
 import type { EffectivePeriod } from '../boss/boss-profit-period'
@@ -41,7 +41,7 @@ export function trustsRegistrationFlag(contentKey: string | null): boolean {
   return rowOf(contentKey)?.trustRegistrationFlag === true
 }
 
-/** 갈래의 주간 진행 한도(갈래 줄의 `weeklyLimit`). 한도가 없는 갈래면 `null`. */
+/** 분류의 주간 진행 한도(분류 줄의 `weeklyLimit`). 한도가 없는 분류면 `null`. */
 export function getGroupWeeklyLimit(category: ContentCategoryKey): number | null {
   return index().categoryByKey.get(category)?.weeklyLimit ?? null
 }
@@ -62,10 +62,10 @@ export function getMaxCountOverride(contentKey: string | null): number | null {
   return rowOf(contentKey)?.maxCountOverride ?? null
 }
 
-/** 공유 항목 하나. 컨텐츠 줄에서 위젯 글자 · 갈래 · 기간을 모았다. `from` · `until` 은 그 줄이 서는 기간이다. */
+/** 공유 항목 하나. 컨텐츠 줄에서 위젯 글자 · 분류 · 기간을 모았다. `from` · `until` 은 그 줄이 서는 기간이다. */
 export interface SharedContentEntry extends EffectivePeriod {
   contentKey: string
-  /** 화면에 그리는 짧은 이름. 갈래명이 위에 있어 그것을 뺀 나머지다. */
+  /** 화면에 그리는 짧은 이름. 분류명이 위에 있어 그것을 뺀 나머지다. */
   shortName: string
   category: ContentCategoryKey
   section: ContentSection
@@ -100,21 +100,21 @@ function toSharedEntry(row: ContentRow): SharedContentEntry {
 }
 
 /**
- * 공유 컨텐츠를 갈래별로 묶은 목록. today 의 계정 및 메이플 ID 공유 컨텐츠 위젯이 읽는다.
+ * 공유 컨텐츠를 분류별로 묶은 목록. today 의 계정 및 메이플 ID 공유 컨텐츠 위젯이 읽는다.
  *
  * ## 월드/계정이 축이 아니다
  *
- * 월드 공유와 계정 공유를 **합쳐서** 갈래로 가른다. 월드 공유는 응답이 마지막 접속 월드 것이라 월드로 가를
- * 수 없고, 갈래로 묶으면 그 축을 화면이 아예 주장하지 않게 된다. `scope` 는
+ * 월드 공유와 계정 공유를 **합쳐서** 분류로 가른다. 월드 공유는 응답이 마지막 접속 월드 것이라 월드로 가를
+ * 수 없고, 분류로 묶으면 그 축을 화면이 아예 주장하지 않게 된다. `scope` 는
  * 그래도 나른다. 그리는 데 안 쓰지만 다계정 처리(열린 질문)가 오면 필요한 값이다.
  *
  * ## 순서의 출처가 둘이다
  *
- * - **갈래 순서**는 갈래 줄의 `sharedOrder` 다. 컨텐츠 줄을 읽은 첫 등장 순서와 지금은 같지만 그것에 맡기지
+ * - **분류 순서**는 분류 줄의 `sharedOrder` 다. 컨텐츠 줄을 읽은 첫 등장 순서와 지금은 같지만 그것에 맡기지
  *   않는다. 계정 공유 컨텐츠가 하나 붙는 날 화면 순서가 조용히 바뀐다.
- * - **갈래 안의 항목 순서**는 컨텐츠 표의 차례(일간 뒤 주간, 섹션 안은 관리 화면 차례) 그대로다.
+ * - **분류 안의 항목 순서**는 컨텐츠 표의 차례(일간 뒤 주간, 섹션 안은 관리 화면 차례) 그대로다.
  *
- * `sharedOrder` 가 없는 갈래는 **버리지 않고 뒤에 붙인다**. 항목을 더하고 순서를 안 적었을 때 화면에서 조용히
+ * `sharedOrder` 가 없는 분류는 **버리지 않고 뒤에 붙인다**. 항목을 더하고 순서를 안 적었을 때 화면에서 조용히
  * 사라지는 것보다 순서가 어긋나는 편이 낫다.
  */
 export function getSharedContentGroups(): SharedContentGroup[] {
@@ -139,5 +139,5 @@ export function getContentCatalogEntries(section: ContentSection): ContentCatalo
     .map((row): ContentCatalogEntry => ({ contentKey: row.key, scope: row.shareScope === 'account' ? 'account' : 'world' }))
 }
 
-/** 컨텐츠의 갈래. 컨텐츠 표에서 찾는다. 표에 없는 컨텐츠는 `null` 이다. */
+/** 컨텐츠의 분류. 컨텐츠 표에서 찾는다. 표에 없는 컨텐츠는 `null` 이다. */
 export { contentCategoryOf }

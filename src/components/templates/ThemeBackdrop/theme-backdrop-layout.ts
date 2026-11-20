@@ -1,9 +1,6 @@
 /**
- * 테마 벽지의 기하. CSS `background-size: cover` 와 `background-position` 을 RN 배치 값으로 옮기는
+ * 테마 배경 이미지의 기하. CSS `background-size: cover` 와 `background-position` 을 RN 배치 값으로 옮기는
  * 순수 함수.
- *
- * **백드롭과 헤더 조각이 같은 값을 써야 이음매가 안 생긴다.** RN 에는 배경 속성이 없어 우리가
- * 좌표를 계산하므로 계산이 한 곳이어야 두 자리가 안 갈라진다.
  *
  * `cover` 는 상자를 덮는 최소 배율이다(`max(상자폭/그림폭, 상자높이/그림높이)`). 한 축은 딱 맞고
  * 다른 축은 넘치며, 넘치는 만큼을 위치가 어디로 밀지 정한다.
@@ -52,7 +49,7 @@ export function parseBackgroundPosition(position: string): { x: number; y: numbe
  * 뷰포트를 덮는 그림의 배치.
  *
  * 크기를 모르면 `null`. 그때는 그리지 않는다. 크기 없이 그리면 배율이 정해지지 않아 그림이
- * 상자에 늘어붙고, 그건 벽지가 아니라 왜곡이다(같은 판단이 `frame-layout.ts` 에도 있다).
+ * 상자에 늘어붙고, 그건 배경 이미지가 아니라 왜곡이다(같은 판단이 `frame-layout.ts` 에도 있다).
  */
 export function resolveThemeBackdropLayout(
   viewport: { width: number; height: number },

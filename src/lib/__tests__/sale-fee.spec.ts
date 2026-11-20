@@ -23,7 +23,7 @@ describe('수입 기록에 새 판매 수수료', () => {
     expect(withSaleFee(record, 3)).toEqual({ mesoAmount: 597_000_000, saleFeePercent: 3, saleFeeMeso: 3_000_000 })
   })
 
-  it('조각 가격을 안 적은 사냥과 그 밖의 갈래는 수수료를 안 붙인다', () => {
+  it('조각 가격을 안 적은 사냥과 그 밖의 분류는 수수료를 안 붙인다', () => {
     expect(withSaleFee({ category: 'hunting', mesoAmount: 500_000_000, saleFeeMeso: null, hunt: { fragments: 20, fragmentPrice: null } }, 3)).toBeNull()
     expect(withSaleFee({ category: 'etc', mesoAmount: 500_000_000, saleFeeMeso: null, hunt: null }, 3)).toBeNull()
   })

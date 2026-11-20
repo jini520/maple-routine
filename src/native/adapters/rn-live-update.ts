@@ -14,11 +14,11 @@ import appJson from '../../../app.json'
 /**
  * `LiveUpdatePort` 의 `expo-updates` 구현.
  *
- * 포트가 말하는 다섯 갈래(`unsupported`·`error`·`up-to-date`·`store-required`·
+ * 포트가 말하는 다섯 결과(`unsupported`·`error`·`up-to-date`·`store-required`·
  * `update-available`)는 프로토콜과 무관한 앱이 무엇을 할 수 있나 다. `expo-updates` 는 그중
  * 넷을 직접 답하고 `store-required` 하나만 삼킨다. 런타임이 안 맞으면 서버가 204 를 주고
  * 클라이언트는 그것을 업데이트 없음 으로 읽는다. 그대로 두면 사용자에게 최신 버전입니다 라는
- * 거짓이 보이므로, 최신으로 떨어졌을 때만 `/latest` 를 한 번 더 물어 그 갈래를 되살린다.
+ * 거짓이 보이므로, 최신으로 떨어졌을 때만 `/latest` 를 한 번 더 물어 그 결과를 되살린다.
  *
  * 여기에 주소·체크섬·번들 id 가 없다. `fetchUpdateAsync()` 는 직전 확인이 찾은 것을 받고
  * `reloadAsync()` 는 마지막으로 받은 것을 켠다. 런타임이 자기 안에서 든다.
@@ -30,7 +30,7 @@ const LATEST_URL = `${appJson.expo.updates.url.replace(/\/manifest$/, '')}/lates
 /**
  * 매니페스트 `extra` 에서 꺼낸 우리 축의 값.
  *
- * **전부 선택 필드로 읽는다.** 가 `highlights` 를 필수 검사에 안 넣은 것과 같은 이유이고,
+ * **전부 선택 필드로 읽는다.** `highlights` 를 필수 검사에 안 넣은 것과 같은 이유이고,
  * 이번에는 더 세다. 매니페스트를 만든 스크립트와 그것을 읽는 앱이 서로 다른 시점의 것일 수 있다.
  * 없으면 모달은 그 부분을 안 그린다(버튼째 없다).
  */

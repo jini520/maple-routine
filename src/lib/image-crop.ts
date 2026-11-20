@@ -81,10 +81,8 @@ export function resolveImageCropLayout(
 /**
  * 배치를 `<Image>` 스타일로. 위 함수를 순수하게 남겨 단위 테스트가 되도록 갈랐다.
  *
- * **두 갈래 다 두 축의 이름을 부른다.** 안 적은 축에는 그림의 고유 크기가 남아, `sized` 는 종횡비를
+ * **두 경우 다 두 축의 이름을 부른다.** 안 적은 축에는 그림의 고유 크기가 남아, `sized` 는 종횡비를
  * 잃고 `cover` 는 상자를 안 채운다. 둘 다 에러가 안 난다.
- *
- * @see
  */
 export function imageCropStyle(layout: ImageCropLayout): ImageStyle {
   if (layout.kind === 'cover') {

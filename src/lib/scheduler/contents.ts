@@ -1,7 +1,7 @@
 /**
  * 컨텐츠 마스터 표(`contents` 칸) 조회. 컨텐츠를 key 로 찾는 자리는 전부 이 모듈을 거친다.
  *
- * 캐시 · 추적 목록 · 공유 원장은 컨텐츠 key 를 들고, 이름 · 갈래 · 그림 · 요구 레벨은 이 표에서 찾는다.
+ * 캐시 · 추적 목록 · 공유 원장은 컨텐츠 key 를 들고, 이름 · 분류 · 그림 · 요구 레벨은 이 표에서 찾는다.
  * API 이름에서 key 를 얻는 규칙도 여기 하나다(`contentKeyOfApiName`). 응답의 줄에서 지금 코드가 읽는
  * `ContentEntry` 를 만드는 것도 여기다. 수동 모드 기본값 중 `registration_flag` · `now_count` · `quest_state` 는
  * 표에 없고 `type` 이 정한다.
@@ -220,7 +220,7 @@ export function contentSectionOf(key: string | null | undefined): ContentSection
   return key == null ? null : (index().sectionByKey.get(key) ?? null)
 }
 
-/** 컨텐츠의 갈래. 표에 없는 key 는 `null` 이다. */
+/** 컨텐츠의 분류. 표에 없는 key 는 `null` 이다. */
 export function contentCategoryOf(key: string | null | undefined): ContentCategoryKey | null {
   return findContent(key)?.category ?? null
 }

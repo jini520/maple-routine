@@ -98,7 +98,7 @@ export interface SpendCatalogRules {
 export interface SpendGroupRow {
   key: string
   name: string
-  /** 지출 갈래 key(`cashbookCategories` 칸). 묶음마다 갈래가 하나다. */
+  /** 지출 분류 key(`cashbookCategories` 칸). 묶음마다 분류가 하나다. */
   category: string
   /** 하루 목록 카드 첫 줄. */
   cardTitle: string
@@ -160,12 +160,12 @@ export interface CashbookCategoryRow {
   /** 기록이 든다. 앱이 입력 폼을 모르는 key 도 온다. */
   key: string
   name: string
-  /** 묶음이 없는 갈래의 하루 목록 카드 첫 줄. */
+  /** 묶음이 없는 분류의 하루 목록 카드 첫 줄. */
   cardTitle: string
   iconAssetId: string
-  /** 갈래 카드 한 줄. 빈 글자일 수 있다. */
+  /** 분류 카드 한 줄. 빈 글자일 수 있다. */
   description: string
-  /** 묶음이 없는 갈래의 수량 단위. */
+  /** 묶음이 없는 분류의 수량 단위. */
   unit?: string
 }
 export interface CashbookItemKindRow {
@@ -175,7 +175,7 @@ export interface CashbookItemKindRow {
   unit?: string
   hasTariff: boolean
 }
-/** 갈래는 수입 · 지출 순서이고 그 안은 차례대로다. */
+/** 분류는 수입 · 지출 순서이고 그 안은 차례대로다. */
 export interface CashbookCategoriesTable extends TableHead {
   categories: CashbookCategoryRow[]
   itemKinds: CashbookItemKindRow[]
@@ -252,7 +252,7 @@ export interface HexaMatrixTable extends TableHead {
   stats: HexaStatRow[]
 }
 
-/** 컨텐츠 갈래 key. 카드 모양 · 길드 판정 · 계열 한도가 이 값으로 갈려 코드가 집합을 든다. 글자는 표가 든다. */
+/** 컨텐츠 분류 key. 카드 모양 · 길드 판정 · 계열 한도가 이 값으로 갈려 코드가 집합을 든다. 글자는 표가 든다. */
 export const CONTENT_CATEGORY_KEYS = [
   'monster_park',
   'daily_quest',
@@ -272,11 +272,11 @@ export interface ContentCategoryRow {
   key: ContentCategoryKey
   /** 카드 라벨 · today 공유 위젯 머리글. */
   name: string
-  /** 갈래의 참고 태그. 에픽 던전 `ID당 1회`. */
+  /** 분류의 참고 태그. 에픽 던전 `ID당 1회`. */
   countTag?: string
-  /** 참이면 그 갈래의 태그를 숨긴다. 아케인리버 지역 퀘스트. */
+  /** 참이면 그 분류의 태그를 숨긴다. 아케인리버 지역 퀘스트. */
   hideCountTag: boolean
-  /** 갈래의 주간 진행 한도. 에픽 던전 3. */
+  /** 분류의 주간 진행 한도. 에픽 던전 3. */
   weeklyLimit?: number
   /** today 공유 위젯의 계열 차례. 없으면 뒤에 선다. */
   sharedOrder?: number

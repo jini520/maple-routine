@@ -28,13 +28,13 @@ beforeEach(() => {
 
 describe('useStepDissolve', () => {
   it('처음 그릴 때는 흐리지 않다', async () => {
-    await render(<Probe stepKey="갈래" />)
+    await render(<Probe stepKey="분류" />)
 
-    expect(committed).toEqual([{ step: '갈래', busy: false }])
+    expect(committed).toEqual([{ step: '분류', busy: false }])
   })
 
   it('단계가 바뀌면 **그 단계를 그린 첫 커밋부터** 흐림이 서 있다', async () => {
-    const view = await render(<Probe stepKey="갈래" />)
+    const view = await render(<Probe stepKey="분류" />)
     committed.length = 0
 
     await view.rerender(<Probe stepKey="사냥" />)

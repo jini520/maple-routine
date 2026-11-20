@@ -16,7 +16,7 @@ export const CASHBOOK_ENTRIES_BODY = `(
     -- 캐릭터 기록을 적을 때 그 캐릭터의 월드 key. 리프로 기록을 새 ocid 로 옮겨도 그때의 월드에 남는다. 메이플 ID 기록은 NULL 이다.
     world_key TEXT,
     entry_type TEXT NOT NULL CHECK (entry_type IN ('income', 'spend')),
-    -- 갈래 key. 기타가 수입 · 지출 양쪽에 있어 entry_type 과 함께 읽는다.
+    -- 분류 key. 기타가 수입 · 지출 양쪽에 있어 entry_type 과 함께 읽는다.
     category_key TEXT NOT NULL,
     -- 돈이 오간 날(KST YYYY-MM-DD). 사용자가 고르고 고칠 수 있다.
     entry_date TEXT NOT NULL,
@@ -38,7 +38,7 @@ export const CASHBOOK_ENTRY_ITEMS_BODY = `(
     -- 에픽던전 형태(exp · sol_erda). 형태 하나에 품목 하나다.
     form_key TEXT,
     item_kind_key TEXT,
-    -- 단위는 참조표가 안다(항목 · 갈래 · 아이템 종류).
+    -- 단위는 참조표가 안다(항목 · 분류 · 아이템 종류).
     quantity INTEGER,
     from_level INTEGER,
     to_level INTEGER,
@@ -57,13 +57,13 @@ export const CASHBOOK_ENTRY_ITEMS_BODY = `(
     meso_market_fee_percent INTEGER,
     -- 환산하지 않는다.
     amount_cash INTEGER,
-    -- 헥사 강화의 필요 조각 · 교환 불가 조각 · 조각 개당 가격. 다른 갈래는 NULL 이다.
+    -- 헥사 강화의 필요 조각 · 교환 불가 조각 · 조각 개당 가격. 다른 분류는 NULL 이다.
     fragment_count INTEGER,
     untradable_fragment_count INTEGER,
     fragment_price_meso INTEGER,
-    -- 헥사 스탯의 활성화 포함(1 · 0). 헥사 스킬과 다른 갈래는 NULL 이다.
+    -- 헥사 스탯의 활성화 포함(1 · 0). 헥사 스킬과 다른 분류는 NULL 이다.
     hexa_activation INTEGER,
-    -- 헥사 기록의 두 체크(1 · 0). 보관 중인 조각 사용과, 보관에서 가져온 몫을 지출로 셀지다. 다른 갈래는 NULL 이다.
+    -- 헥사 기록의 두 체크(1 · 0). 보관 중인 조각 사용과, 보관에서 가져온 몫을 지출로 셀지다. 다른 분류는 NULL 이다.
     hexa_use_storage INTEGER,
     hexa_storage_as_spend INTEGER,
     -- 이 품목이 가리키는 인벤토리 줄. 인벤토리에서 판 아이템 판매는 그 줄의 남은 개수에서 빼고, 인벤토리에 보관한 아이템 구매는 더한다.

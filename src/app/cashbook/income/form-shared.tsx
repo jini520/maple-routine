@@ -1,7 +1,7 @@
 /**
- * 수입 시트의 갈래별 폼이 함께 쓰는 것.
+ * 수입 시트의 분류별 폼이 함께 쓰는 것.
  *
- * 갈래마다 폼이 따로 서지만 캐릭터를 고르는 줄과 저장·삭제 줄은 전부 똑같다. 여러 벌로 갈리면
+ * 분류마다 폼이 따로 서지만 캐릭터를 고르는 줄과 저장·삭제 줄은 전부 똑같다. 여러 벌로 갈리면
  * 한쪽만 고쳐지는 자리가 생기므로 한 벌만 둔다. 조각 두 줄도 사냥 폼 둘이 나눠 쓴다.
  */
 import { SheetActionButton } from '../../../components/organisms/BottomSheet/SheetActionButton'
@@ -24,7 +24,6 @@ export interface SheetCharacter {
   worldKey: string | null
 }
 
-/** 갈래별 폼이 **전부 받는 것**. 갈래에만 필요한 것은 각 폼이 따로 받는다. */
 /** 저장 줄이 그리는 값과 누를 때 부를 것. 시트가 이것을 받아 바닥에 세운다. */
 export interface SaveSlot {
   editing: boolean
@@ -34,12 +33,13 @@ export interface SaveSlot {
   onDelete?: () => void
 }
 
+/** 분류별 폼이 **전부 받는 것**. 한 분류에만 필요한 것은 각 폼이 따로 받는다. */
 export interface IncomeFormProps {
   /** 저장 줄을 시트 바닥으로 올리는 손잡이. 폼이 값을 정하고 자리는 시트가 준다. */
   setSave: (slot: SaveSlot) => void
   dateKey: string
   characters: readonly SheetCharacter[]
-  /** 캐릭터 뒤에 서는 메이플 ID 보기. 메이플 ID 를 고를 수 없는 갈래는 시트가 빈 배열을 준다. */
+  /** 캐릭터 뒤에 서는 메이플 ID 보기. 메이플 ID 를 고를 수 없는 분류는 시트가 빈 배열을 준다. */
   accounts: readonly SheetAccount[]
   /** 있으면 **수정 모드**다. */
   editing?: IncomeRecord

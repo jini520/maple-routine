@@ -125,7 +125,7 @@ describe('기록이 기억을 옮긴다', () => {
     expect(storage.rememberLevels).toHaveBeenCalledWith('ocid-1', 'symbol', { cernium: 5 }, 'overwrite')
   })
 
-  it('헥사 스탯 · 캐릭터 없는 기록 · 다른 갈래는 기억을 안 건드린다', async () => {
+  it('헥사 스탯 · 캐릭터 없는 기록 · 다른 분류는 기억을 안 건드린다', async () => {
     await rememberAfterSave({ ...헥사, itemKey: 'hexa_stat_1', levelFrom: null, levelTo: null, hexa: { ...헥사.hexa!, activation: true } })
     await rememberAfterSave({ ...헥사, ocid: null })
     await rememberAfterSave({ ...헥사, category: 'etc', hexa: null })

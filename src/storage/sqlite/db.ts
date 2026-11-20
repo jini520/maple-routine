@@ -315,7 +315,7 @@ async function prepareLegacyTables(db: SqliteDbConnection): Promise<void> {
   await ensureColumn(db, 'income_records', 'cash_amount', 'INTEGER')
   // 수입 `기타`의 수량. 위와 같은 사정이라 같은 길로 붙인다.
   await ensureColumn(db, 'income_records', 'quantity', 'INTEGER')
-  // `사냥` 갈래의 계산 입력. 위 다섯과 **같은 사정**이라 같은 길로 붙인다:
+  // `사냥` 분류의 계산 입력. 위 다섯과 **같은 사정**이라 같은 길로 붙인다:
   // INSERT 는 모든 칸을 적으므로 칸이 없으면 수입이 하나도 안 적힌다.
   await ensureColumn(db, 'income_records', 'hunt_character_level', 'INTEGER')
   await ensureColumn(db, 'income_records', 'hunt_missed_mobs', 'INTEGER')

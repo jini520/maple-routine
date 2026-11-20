@@ -138,7 +138,7 @@ describe('ProgressRing · 쪼갠 것', () => {
 })
 
 describe('ProgressRing · 방향', () => {
-  // SVG 원의 경로는 3시에서 시작해 시계방향으로 돈다. 두 갈래 다 12시에서 시작해야 한다.
+  // SVG 원의 경로는 3시에서 시작해 시계방향으로 돈다. 두 방향 다 12시에서 시작해야 한다.
   it.each([
     ['cw', [{ rotate: '270deg' }]],
     ['ccw', [{ rotate: '90deg' }, { scaleX: -1 }]],

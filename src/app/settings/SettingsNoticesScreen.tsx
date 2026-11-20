@@ -1,5 +1,5 @@
 /**
- * 소식 목록. **받은 분류만 그린다.** 더보기 갈래의 `전체` 가 자기 분류를 넘겨 연다.
+ * 소식 목록. **받은 분류만 그린다.** 더보기의 분류 제목에 있는 `전체` 가 자기 분류를 넘겨 연다.
  *
  * 이벤트 · 캐시샵은 그림 · 제목 · 기간 카드를 쌓고, 나머지는 글 줄이다. 두 분류는 본문이 그림 한 장이라 제목만으로는 무엇인지
  * 알 수 없다.
@@ -46,7 +46,7 @@ function newestFirst(a: Notice, b: Notice): number {
 const SKELETON_CARDS = 3
 const SKELETON_LINES = 6
 
-/** 조회 중 자리. 배너 갈래면 카드 모양, 아니면 줄 모양이다. */
+/** 조회 중 자리. 배너로 보이는 분류면 카드 모양, 아니면 줄 모양이다. */
 function NoticesSkeleton(props: { bannerKind: NoticeKind | null }): React.JSX.Element {
   const { bannerKind } = props
   if (bannerKind === null) return <NoticeLinesSkeleton lines={SKELETON_LINES} />
@@ -69,7 +69,7 @@ export function SettingsNoticesScreen(props: {
   const title = props.route?.params?.title ?? '소식'
   // 배열은 매 렌더 새 참조라 deps 로 못 쓴다. 값이 실제로 바뀌었을 때만 다시 만든다.
   const kindsKey = kinds === undefined ? '' : kinds.join(',')
-  // 배너 갈래면 그 갈래, 아니면 `null`. 스켈레톤이 그림 비율을 내려면 갈래를 알아야 한다.
+  // 배너로 보이는 분류면 그 분류, 아니면 `null`. 스켈레톤이 그림 비율을 내려면 분류를 알아야 한다.
   const bannerKind = kinds?.length === 1 && (kinds[0] === 'event' || kinds[0] === 'cashshop') ? kinds[0] : null
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const shown = useMemo(() => kinds ?? NOTICE_KINDS, [kindsKey])

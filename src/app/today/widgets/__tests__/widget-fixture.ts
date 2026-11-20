@@ -183,7 +183,7 @@ export function 공유항목(
   return { contentKey: shortName, shortName, count: null, isComplete: false, isWeeklyLimitClosed: false, ...부분 }
 }
 
-/** 공유 컨텐츠 계열. 머리글은 갈래 표의 이름이다. */
+/** 공유 컨텐츠 계열. 머리글은 분류 표의 이름이다. */
 export function 공유계열(
   category: ContentCategoryKey,
   items: SharedContentItemView[],
@@ -212,7 +212,7 @@ export function 공유컨텐츠(): SharedContentGroupView[] {
 }
 
 /**
- * 이번 주 수익 캐릭터 한 명. 수익 갈래 둘 · 지출 갈래 하나이고, 합계는 갈래의 합에서 낸다.
+ * 이번 주 수익 캐릭터 한 명. 수익 분류 둘 · 지출 분류 하나이고, 합계는 분류의 합에서 낸다.
  *
  * 합계를 손으로 적게 하면 줄의 금액과 팝오버의 합이 같다 는 뷰모델의 계약이 픽스처에서 깨진다.
  */
@@ -235,7 +235,7 @@ export function 수익캐릭터(
   }
 }
 
-/** 기록이 있는 한 주. 캐릭터 셋의 갈래를 합친 것이 그대로 위젯의 갈래와 합계다. */
+/** 기록이 있는 한 주. 캐릭터 셋의 분류를 합친 것이 그대로 위젯의 분류와 합계다. */
 export function 이번주수익(캐릭터들: WeeklyIncomeCharacterView[]): WeeklyIncomeView {
   const merge = (side: 'income' | 'expense'): WeeklyIncomeView['income'] => {
     const sums = new Map<string, number>()

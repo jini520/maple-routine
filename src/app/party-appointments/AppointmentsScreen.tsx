@@ -58,7 +58,7 @@ export function AppointmentsScreen(): React.JSX.Element {
   const { appointments } = usePartyAppointments()
   const { characters } = useBossSchedule()
   /** 열린 시트. `add` 는 추가, 회차면 그 상세 */
-  // 추가는 ＋ 에서 고른 갈래(`once` · `weekly`), 상세는 누른 회차다.
+  // 추가는 ＋ 에서 고른 항목(`once` · `weekly`), 상세는 누른 회차다.
   const [sheet, setSheet] = useState<'once' | 'weekly' | AppointmentSheetTarget | null>(null)
 
   // 분마다 다시 그려 방금 끝난 약속도 흐려지게 한다.
@@ -89,7 +89,7 @@ export function AppointmentsScreen(): React.JSX.Element {
   const loadAndOpenNotified = useCallback(async () => {
     const loaded = await loadPartyAppointments()
     const { request, create } = usePartyAppointmentOpenStore.getState()
-    // today 위젯이 고른 갈래의 새 스케줄 시트. ＋ 메뉴에서 고른 것과 같다.
+    // today 위젯이 고른 종류의 새 스케줄 시트. ＋ 메뉴에서 고른 것과 같다.
     if (create !== null) {
       usePartyAppointmentOpenStore.getState().clear()
       setSheet(create)

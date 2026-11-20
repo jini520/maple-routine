@@ -17,7 +17,7 @@ import {
 import { getLatestSpendFor, type SpendRecord } from '../../storage/spend'
 import { credentialOfOcid } from '../auth/current-credential'
 
-/** 넥슨에서 그 갈래의 레벨을 받는다. 키가 없거나 실패하면 `null` 이고 던지지 않는다. */
+/** 넥슨에서 그 종류의 레벨을 받는다. 키가 없거나 실패하면 `null` 이고 던지지 않는다. */
 async function fetchLevels(ocid: string, kind: RememberedLevelKind): Promise<Record<string, number> | null> {
   // 그 캐릭터가 속한 넥슨 계정의 자격으로 부른다. 자격이 없으면 부르지도 않는다. 401 을 만들면 그 사슬이 저장된 키를 지운다.
   const credential = await credentialOfOcid(ocid)
@@ -54,7 +54,7 @@ export async function seedRememberedLevels(ocids: readonly string[]): Promise<vo
 }
 
 /**
- * 폼이 쓰는 기억. 폼에서는 넥슨을 부르지 않는다. 예외는 그 갈래의 기억이 비어 있을 때 하나이고, 그때 한 번 받아 채운다.
+ * 폼이 쓰는 기억. 폼에서는 넥슨을 부르지 않는다. 예외는 그 종류의 기억이 비어 있을 때 하나이고, 그때 한 번 받아 채운다.
  * 추적을 시작할 때 받기가 실패했거나 이 기능 전부터 추적하던 캐릭터가 그렇다.
  */
 export async function loadRememberedLevels(ocid: string, kind: RememberedLevelKind): Promise<Record<string, number>> {

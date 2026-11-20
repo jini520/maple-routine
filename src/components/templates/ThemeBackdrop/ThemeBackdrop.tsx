@@ -1,12 +1,12 @@
 /**
- * 테마 배경 벽지. 화면 전체에 깔리는 한 장.
+ * 테마 배경 이미지. 화면 전체에 깔리는 한 장.
  *
- * 벽지 한 장을 앱 루트 첫 자식으로 둔다.
+ * 이 한 장을 앱 루트 첫 자식으로 둔다.
  *
  * - `z-index: -1` 이 필요 없다. 형제 순서가 곧 그리는 순서라 셸의 첫 자식이면 뒤에 깔린다.
  *   부모가 스태킹 컨텍스트인지 따질 일이 없다.
  * - `background-size/position` 이 없다. `cover` + 위치를 좌표로 계산한다
- *   (`theme-backdrop-layout.ts`). 그 계산을 헤더 조각과 공유하는 것이 이음매를 없애는 조건이다.
+ *   (`theme-backdrop-layout.ts`).
  * - `dim` 은 그림 위에 덮는 검정 한 겹이다.
  */
 import { Image, View, useWindowDimensions } from 'react-native'
@@ -25,7 +25,7 @@ function withAlpha(hex: string, alpha: number): string {
 }
 
 /**
- * 배경을 선언한 테마에서만 서는 벽지. 나머지는 `null` 이라 백드롭이
+ * 배경을 선언한 테마에서만 서는 배경 이미지. 나머지는 `null` 이라 백드롭이
  * 아무것도 안 그리던 것과 같다(뷰가 늘지 않는다).
  */
 export function ThemeBackdrop(): React.JSX.Element | null {

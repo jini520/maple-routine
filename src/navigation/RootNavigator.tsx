@@ -107,8 +107,8 @@ export function RootNavigator(): React.JSX.Element {
 
   return (
     <Stack.Navigator
-      // 모든 화면이 자기 벽지를 들고 다닌다. 안드로이드에서 화면이 불투명해야 전환 중 두 화면이
-      // 서로 비치지 않고, 그러면 벽지를 화면이 들어야 한다. iOS 에서는 이 래퍼가 자식을 그대로
+      // 모든 화면이 자기 테마 배경 이미지를 들고 다닌다. 안드로이드에서 화면이 불투명해야 전환 중 두 화면이
+      // 서로 비치지 않고, 그러면 배경 이미지를 화면이 들어야 한다. iOS 에서는 이 래퍼가 자식을 그대로
       // 통과시킨다(`ScreenBackdrop`).
       screenLayout={({ children, navigation }) => (
         // 하위 페이지가 덮으면 그 아래 화면은 안 보인다. 기기 DB 쿼리의 구독을 끊어 다시 보일 때 읽게 한다.

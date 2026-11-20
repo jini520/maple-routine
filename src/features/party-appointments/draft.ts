@@ -83,7 +83,7 @@ export function dateInWeek(weekStart: string, weekday: number): string {
 /**
  * 시트를 처음 열 때. 시작은 지금에서 가장 가까운 다음 정각(지금이 정각이면 그 시각), 종료는 그 30분 뒤
  *
- * @param repeats ＋ 에서 고른 갈래. 매주 반복이면 true
+ * @param repeats ＋ 에서 고른 항목. 매주 반복이면 true
  */
 export function initialDraft(now: Date, repeats = false): AppointmentDraft {
   const todayKey = getCurrentKstDateKey(now)

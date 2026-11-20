@@ -1,8 +1,8 @@
 /**
- * 수입 기록 시트의 껍데기. 갈래가 안 바꾸는 것만 여기 있다.
+ * 수입 기록 시트의 껍데기. 분류가 안 바꾸는 것만 여기 있다.
  *
- * 제목 · 날짜 · 갈래 칩이 전부이고 그 아래는 갈래별 폼(`income/`)이 든다. 갈래를 옮기면 폼이
- * 언마운트되므로 고른 값이 함께 사라진다. **옮길 때 무엇을 지울까가 규칙이 아니라 기본값이다.**
+ * 제목 · 날짜 · 1차의 분류 카드 · 사냥의 `획득 메소 직접 입력` 체크박스가 전부이고 그 아래는 분류별 폼(`income/`)이
+ * 든다. 다른 분류로 옮기면 폼이 언마운트되므로 고른 값이 함께 사라진다. **옮길 때 무엇을 지울까가 규칙이 아니라 기본값이다.**
  *
  * 여기 서는 것은 손입력 수익뿐이다. 보스 드롭은 안 들어온다. 이미 보스 수익 탭이 기록하고, 두
  * 곳에서 적으면 같은 판매가 두 벌이 된다.
@@ -50,7 +50,7 @@ export interface IncomeSheetProps {
    * `null` 이고 그때는 페널티 없이 계산하며 그 사실을 화면이 말한다.
    */
   characters: readonly SheetCharacter[]
-  /** 추적 캐릭터가 속한 메이플 ID. 메이플 ID 를 고를 수 있는 갈래의 폼에만 넘긴다. 화면이 읽어서 넘긴다. */
+  /** 추적 캐릭터가 속한 메이플 ID. 메이플 ID 를 고를 수 있는 분류의 폼에만 넘긴다. 화면이 읽어서 넘긴다. */
   accounts: readonly SheetAccount[]
   /**
    * 마지막으로 쓴 메소마켓 시세. 기타를 메포로 적을 때의 기본값이다. 지출 시트와 같은
@@ -73,7 +73,7 @@ export interface IncomeSheetProps {
    * 고칠 기록. 있으면 **수정 모드**다. 머리와 버튼 글자가 갈리고 삭제가 선다.
    */
   editing?: IncomeRecord
-  /** 이 갈래로 바로 연다. 갈래 고르개와 되돌아가는 누르개가 없다. 인벤토리가 사냥 조각을 팔 때 쓴다 */
+  /** 이 분류로 바로 연다. 분류 고르개와 되돌아가는 누르개가 없다. 인벤토리가 사냥 조각을 팔 때 쓴다 */
   startCategory?: IncomeCategoryKey
   onDelete?: () => void | Promise<void>
   /** 던지면 **안 닫는다**. 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
@@ -86,16 +86,16 @@ export interface IncomeSheetProps {
 export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
   const editing = props.editing !== undefined
   /**
-   * 무엇을 적나. `null` 이면 **아직 안 골랐다**이고 그때 이 시트는 갈래 고르개다.
+   * 무엇을 적나. `null` 이면 **아직 안 골랐다**이고 그때 이 시트는 분류 고르개다.
    *
-   * 수정으로 열면 기록이 정하므로 고르는 단계를 건너뛴다. 갈래를 바꾸면 그 기록은 다른 것이
+   * 수정으로 열면 기록이 정하므로 고르는 단계를 건너뛴다. 분류를 바꾸면 그 기록은 다른 것이
    * 되고, 무엇이었는지는 제목이 이미 말한다.
    */
   const [category, setCategory] = useState<IncomeCategoryKey | null>(props.editing?.category ?? props.startCategory ?? null)
   /**
    * 어느 날에 적히나. 시트를 연 날로 시작하고 머리에서 바꾼다.
    *
-   * 갈래 폼은 `key={category}` 로만 다시 심기므로 날짜를 바꿔도 친 것이 안 사라진다.
+   * 분류별 폼은 `key={category}` 로만 다시 심기므로 날짜를 바꿔도 친 것이 안 사라진다.
    */
   const [dateKey, setDateKey] = useState(props.dateKey)
   /**
@@ -135,17 +135,17 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
       onClose={props.onClose}
       label="수입 기록"
       // 단계가 갈리면 시트 전체가 흐려졌다 돌아온다.
-      stepKey={category ?? '갈래'}
+      stepKey={category ?? '분류'}
       header={
         category === null ? (
           <Text className="text-base font-bold text-text">수입 추가</Text>
         ) : (
         <View className="flex-row items-center justify-between gap-2">
           {/*
-            제목이 곧 되돌아가는 누르개다. 갈래를 바꾸는 일이 1차 시트로 돌아가는 일이므로
+            제목이 곧 되돌아가는 누르개다. 분류를 바꾸는 일이 1차 시트로 돌아가는 일이므로
             그 길이 제목에 붙는다(지출 시트의 둘째 화면과 같은 모양).
 
-            수정 모드에는 안 붙는다. 그 기록의 갈래는 이미 정해졌고 바꾸면 다른 기록이 된다.
+            수정 모드에는 안 붙는다. 그 기록의 분류는 이미 정해졌고 바꾸면 다른 기록이 된다.
           */}
           {editing || props.startCategory !== undefined ? (
             <Text testID="income-sheet-title" numberOfLines={1} className="shrink text-base font-bold text-text">
@@ -154,7 +154,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
           ) : (
             <Pressable
               role="button"
-              aria-label="갈래 다시 고르기"
+              aria-label="분류 다시 고르기"
               testID="income-sheet-back"
               onPress={() => setCategory(null)}
               hitSlop={8}
@@ -235,7 +235,7 @@ function huntModeOf(editing: IncomeRecord | undefined): HuntInputMode {
   return editing.hunt?.mode ?? 'manual'
 }
 
-/** 갈래 하나에 폼 하나. 고르는 자리는 여기 하나뿐이다. 사냥만 그 아래로 한 번 더 갈린다. */
+/** 분류 하나에 폼 하나. 고르는 자리는 여기 하나뿐이다. 사냥만 그 아래로 한 번 더 갈린다. */
 function IncomeForm(
   props: IncomeSheetProps & {
     category: IncomeCategoryKey

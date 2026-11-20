@@ -785,14 +785,14 @@ export interface DefeatedBoss {
 }
 
 /**
- * 자동 줄이 함께 드는 것. 캐릭터 하나 × 하루 × 갈래 하나.
+ * 자동 줄이 함께 드는 것. 캐릭터 하나 × 하루 × 종류 하나.
  *
- * 두 갈래가 갈라져 있어도 머리는 같다. 누가·얼마·몇. 그 셋으로 줄의 겉모습(`recordTitleOf`·
- * `recordMesoOf`)이 나오므로 갈래를 안 물어보고 그린다.
+ * 두 종류가 갈라져 있어도 머리는 같다. 누가·얼마·몇. 그 셋으로 줄의 겉모습(`recordCardOf`·
+ * `recordMesoOf`)이 나오므로 종류를 안 물어보고 그린다.
  */
 interface AutoDayRecordBase {
   ocid: string
-  /** 캐시에 없으면 빈 문자열. 그때 줄은 갈래 이름만 적는다(`recordTitleOf`). */
+  /** 캐시에 없으면 빈 문자열. 그때 줄은 종류 이름만 적는다(`recordCardOf`). */
   characterName: string
   payoutMeso: number
   /** 결정석이면 마리, 판매면 건. */
@@ -802,7 +802,7 @@ interface AutoDayRecordBase {
 /**
  * 결정석 줄. 누르면 그 자리에서 펼쳐진다.
  *
- * `bosses` 가 이 갈래에만 있는 것이 곧 판매 줄은 못 펼친다 다. 화면이 조건을 잘못 쓰면
+ * `bosses` 는 이 종류에만 있어 판매 줄에서는 보스 타일을 펼 수 없다. 화면이 조건을 잘못 쓰면
  * 컴파일 단계에서 걸린다.
  */
 export interface BossCrystalDayRecord extends AutoDayRecordBase {
@@ -833,7 +833,7 @@ export interface SoldItem {
 }
 
 /**
- * 강화 사용 내역 줄. **캐릭터 하나 × 갈래 하나**다.
+ * 강화 사용 내역 줄. **캐릭터 하나 × 분류 하나**다.
  *
  * 넷을 안 묶는다(사용자 지정). 큐브·스타포스·잠재능력·에디셔널 잠재능력은 비용이 서는 방식이
  * 아예 달라, 묶으면 그날 무엇에 썼는지가 한 숫자에 가려진다.
@@ -846,7 +846,7 @@ export interface SoldItem {
  */
 export interface EnhancementDayRecord {
   kind: 'enhancement'
-  /** 갈래 key. 캐릭터와 함께 이 줄의 신원이다. 제목에 적는 글자는 갈래 표에서 찾는다 */
+  /** 분류 key. 캐릭터와 함께 이 줄의 신원이다. 제목에 적는 글자는 분류 표에서 찾는다 */
   category: EnhancementCategory
   ocid: string
   /** 그 캐릭터의 지금 이름. 모르면 그날의 이름이다 */
@@ -893,12 +893,12 @@ export function isManualRecord(entry: DayRecord): entry is ManualDayRecord {
 }
 
 /**
- * 목록의 `key`. 손입력은 행의 `id`(자연키가 없어 만든 신원), 자동 줄은 **갈래 + 캐릭터**다.
+ * 목록의 `key`. 손입력은 행의 `id`(자연키가 없어 만든 신원), 자동 줄은 **종류 + 캐릭터**다.
  * 하루에 그 조합이 하나뿐이라 그것이 곧 신원이다.
  */
 export function rowKeyOf(entry: DayRecord): string {
   if (isManualRecord(entry)) return entry.record.id
-  // 강화 줄은 하루에 캐릭터 하나가 갈래마다 한 줄이라 그 둘이 신원이다.
+  // 강화 줄은 하루에 캐릭터 하나가 분류마다 한 줄이라 그 둘이 신원이다.
   return entry.kind === 'enhancement' ? `${entry.kind}:${entry.category}:${entry.ocid}` : `${entry.kind}:${entry.ocid}`
 }
 
@@ -981,7 +981,7 @@ function toEnhancementRecords(
           left.targetItem.localeCompare(right.targetItem),
         ),
     }))
-    // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 갈래를 고정 순서로 두면 그날 제일 많이 쓴
+    // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 분류를 고정 순서로 두면 그날 제일 많이 쓴
     // 것이 목록 가운데에 숨는다.
     .sort(
       (left, right) =>
@@ -1055,14 +1055,14 @@ function toAutoRecords(
   return rows
 }
 
-/** 원천 표의 줄은 손입력 갈래가 아니라 제목을 앱이 든다. */
+/** 원천 표의 줄은 손입력 분류가 아니라 제목을 앱이 든다. */
 const AUTO_TITLES: Record<AutoDayRecord['kind'], string> = {
   bossCrystal: '보스 결정석',
   dropSale: '보스 드롭 판매',
   enhancement: '강화',
 }
 
-/** 자동 줄의 분류 이름(`보스 드롭 판매` 등). 거래 내역이 드롭 줄과 상세 시트 머리에 같은 이름을 쓴다. */
+/** 자동 줄의 종류 이름(`보스 드롭 판매` 등). 거래 내역이 드롭 줄과 상세 시트 머리에 같은 이름을 쓴다. */
 export function autoRecordTitleOf(kind: AutoDayRecord['kind']): string {
   return AUTO_TITLES[kind]
 }
@@ -1186,7 +1186,7 @@ function hexaParts(record: SpendRecord): [string | null, string | null] {
 
 /**
  * 합친 줄을 펼친 칸의 두 줄. 기록 줄의 둘째 줄을 이름과 레벨 · 수량으로 나눈 것이라 두 곳이 같은 조각을 쓴다.
- * 이름을 모르면 갈래 이름이다.
+ * 이름을 모르면 분류 이름이다.
  */
 export function spendTileOf(record: SpendRecord): RecordCard {
   const [name, detail] =
@@ -1288,8 +1288,8 @@ function autoDetail(entry: AutoDayRecord): string {
 }
 
 /**
- * 하루 목록 카드의 두 줄(ADR 이 갈래마다의 규칙을 든다). 이름 · 카드 제목 · 단위는 서버 표에서 찾으므로, 관리 화면에서
- * 고치면 옛 기록도 새 글자로 선다. key 로 못 찾으면 적어 둔 이름, 그것도 없으면 갈래 제목이다.
+ * 하루 목록 카드의 두 줄(ADR 이 분류마다의 규칙을 든다). 이름 · 카드 제목 · 단위는 서버 표에서 찾으므로, 관리 화면에서
+ * 고치면 옛 기록도 새 글자로 선다. key 로 못 찾으면 적어 둔 이름, 그것도 없으면 분류 제목이다.
  *
  * 첫 줄 앞에는 캐릭터 이름이, 메이플 ID 기록이면 그 ID 의 이름이 붙는다. 주인을 모르는 옛 기록이나 이름을 모르는 줄은 제목만 선다.
  */
@@ -1464,7 +1464,7 @@ export function isFragmentShortage(error: unknown): boolean {
   return error instanceof FragmentShortageError
 }
 
-/** 지우기. 갈래가 어느 테이블인지를 안다. 손입력만 받는다. */
+/** 지우기. 종류마다 어느 테이블인지를 안다. 손입력만 받는다. */
 export async function removeRecord(entry: ManualDayRecord): Promise<void> {
   if (entry.kind === 'spend') {
     const record = entry.record

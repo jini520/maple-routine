@@ -1,6 +1,6 @@
 // 문의 메일 주소.
 //
-// 플랫폼 분기를 화면에 인라인으로 적으면 두 갈래 중 한쪽만 테스트가 볼 수 있다. 순수 함수라 양쪽을 다 잰다.
+// 플랫폼 분기를 화면에 인라인으로 적으면 두 분기 중 한쪽만 테스트가 볼 수 있다. 순수 함수라 양쪽을 다 잰다.
 import { contactDeviceLine, contactDeviceOf, contactMailUrl } from '../contact-mail'
 
 describe('contactDeviceOf', () => {

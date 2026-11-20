@@ -39,7 +39,7 @@ const 헥사스탯 = (id: string, recordedAt: string): DayRecord =>
 
 const 결정석 = { kind: 'bossCrystal', ocid: 'ocid-1', characterName: '루디', payoutMeso: 1, count: 1, bosses: [] } as unknown as DayRecord
 
-/** 줄의 모양을 글자로. 합친 줄은 갈래와 묶인 기록의 차례다. */
+/** 줄의 모양을 글자로. 합친 줄은 분류와 묶인 기록의 차례다. */
 function shapeOf(rows: readonly DayRow[]): string[] {
   return rows.map((row) => {
     if (row.kind === 'merged') return `${row.category}[${row.records.map((entry) => entry.record.id).join(',')}]`
@@ -54,8 +54,8 @@ function mergedOf(records: readonly DayRecord[]): MergedDayRow {
 }
 
 describe('mergeDayRows', () => {
-  // 헥사 스킬과 헥사 스탯은 같은 `hexa_matrix` 갈래라 한 줄에 든다. 자동 줄과 다른 갈래는 제자리다.
-  it('같은 날 같은 캐릭터의 헥사 · 구매 기록이 둘 이상이면 갈래마다 한 줄로 합친다', () => {
+  // 헥사 스킬과 헥사 스탯은 같은 `hexa_matrix` 분류라 한 줄에 든다. 자동 줄과 다른 분류는 제자리다.
+  it('같은 날 같은 캐릭터의 헥사 · 구매 기록이 둘 이상이면 분류마다 한 줄로 합친다', () => {
     const rows = mergeDayRows([
       결정석,
       헥사스킬('hexa-1', '2026-11-13T09:00:00Z'),
@@ -69,7 +69,7 @@ describe('mergeDayRows', () => {
   })
 
   // 한 건이면 지금 줄 그대로다(누르면 바로 시트). 캐릭터 없는 옛 기록은 누구 것인지 몰라 묶지 않는다.
-  it('한 건 · 캐릭터 없는 기록 · 다른 캐릭터 · 다른 갈래는 합치지 않는다', () => {
+  it('한 건 · 캐릭터 없는 기록 · 다른 캐릭터 · 다른 분류는 합치지 않는다', () => {
     const records = [
       헥사스킬('hexa-1', '2026-11-13T09:00:00Z'),
       spend({ id: 'buy-none-1', recordedAt: '2026-11-13T09:10:00Z', ocid: null }),
@@ -96,7 +96,7 @@ describe('mergeDayRows', () => {
 })
 
 describe('mergedRowIconOf', () => {
-  // 직접 친 이름은 그림이 없어 건너뛴다. 갈래 카드의 구매 그림(`고통의 근원`)은 그 아이템을 산 것으로 읽혀 쓰지 않는다.
+  // 직접 친 이름은 그림이 없어 건너뛴다. 분류 카드의 구매 그림(`고통의 근원`)은 그 아이템을 산 것으로 읽혀 쓰지 않는다.
   it('아이템 구매는 금액이 큰 기록부터 보아 그림이 있는 첫 아이템의 그림이다', () => {
     const merged = mergedOf([
       spend({ id: 'typed', recordedAt: '2026-11-13T09:00:00Z', item: '직접 친 장비', mesoAmount: 5_000_000_000 }),
@@ -128,7 +128,7 @@ describe('mergedRowIconOf', () => {
   })
 
   // 가장 비싼 기록이 코어 그림을 가져도 그것을 쓰지 않는다. 금액으로 고르는 것은 아이템 구매만이다.
-  it('헥사 매트릭스는 갈래 카드의 헥사 매트릭스 그림이다', () => {
+  it('헥사 매트릭스는 분류 카드의 헥사 매트릭스 그림이다', () => {
     const merged = mergedOf([헥사스킬('hexa-1', '2026-11-13T09:00:00Z', 4_830_000_000), 헥사스탯('hexa-2', '2026-11-13T10:00:00Z')])
 
     expect(mergedRowIconOf(merged)).toBe(imageOfPath('items/hexa_matrix.webp'))
