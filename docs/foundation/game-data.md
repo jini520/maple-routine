@@ -33,7 +33,7 @@
 | 칸 | 담는 것 | 조회 모듈 | 관리 화면 |
 |---|---|---|---|
 | `bosses` | 보스 26개와 난이도 줄(요구 레벨 · 파티 인원 상한 · 유효 기간), 규칙(주간 보스 선택 한도 · 주간 결정석 판매 한도 · 기본 파티 인원 상한). 보스 key 마스터 표다 | `lib/boss/bosses` · `lib/boss/catalog` | `/admin/bosses` |
-| `dropItems` | 드롭 아이템 109개의 key · 이름 · 그림 · 고가 여부. 드롭 아이템 key 마스터 표다 | `lib/drop/drop-items` | `/admin/drop-items` |
+| `dropItems` | 드롭 아이템 109개의 key · 이름 · 그림 · 고가 여부. 드롭 아이템 key 마스터 표다. 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) | `lib/drop/drop-items` | `/admin/drop-items` |
 | `bossDrops` | 보스 · 난이도마다의 보상 줄 387개(고정 보상 · 장비 · 소비, 고정 보상 수량, 유효 기간) | `lib/boss/boss-drops` | `/admin/boss-drops` |
 | `dropBoxes` | 개봉 결과를 직접 고르는 상자 7개(반지 상자 5 · 장신구 상자 2)의 레벨 범위와 후보 | `lib/boss/boss-drops` | `/admin/drop-boxes` |
 | `crystalPrices` | 보스 · 난이도마다 결정석 가격 줄 106개. 한 조합에 기간 줄이 여럿일 수 있다 | `lib/boss/boss-crystal-prices` | `/admin/crystal-prices` |
@@ -43,7 +43,7 @@
 | `symbolCosts` | 심볼 묶음 3 · 심볼 14 · 레벨별 강화 비용 줄 194개. 비용 줄에는 기간이 있다 | `lib/cashbook/symbol-costs` | `/admin/symbol-costs` |
 | `hexaMatrix` | 헥사 코어 종류 6 · 종류별 레벨 비용 줄 180개(조각 · 솔 에르다) · 기본 종류가 아닌 코어 이름 50 · 직업 48 개의 코어 672 · 헥사 스탯 3 과 활성화 조각. 코어 그림은 `skills/` 에 있다 | `lib/cashbook/hexa-matrix` | `/admin/hexa-matrix` |
 | `contents` | 컨텐츠 분류 8 · 컨텐츠 41개의 넥슨 이름 · 표시 이름 · 배경 · 지역 아이콘 · 수동 모드 상한 · 요구 레벨 · 공유 범위 · 유효 기간. 컨텐츠 key 마스터 표다 | `lib/scheduler/contents` · `scheduler-content-scope` · `content-categories` | `/admin/contents` |
-| `equipmentItems` | 강화 비용을 매길 장비 467개의 key · 띄어 쓴 이름 · 착용 레벨. 장비 key 마스터 표다 | `lib/equipment/equipment-items` | `/admin/equipment-items` |
+| `equipmentItems` | 강화 비용을 매길 장비 467개의 key · 띄어 쓴 이름 · 착용 레벨. 장비 key 마스터 표다. 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) | `lib/equipment/equipment-items` | `/admin/equipment-items` |
 | `enhancementCosts` | 잠재 재설정 비용 32줄 · 소울 잠재 재설정 비용 4줄 · 스타포스 단계 30줄 · 슈페리얼 계열 3줄(스타포스 1회 비용) · 슈페리얼 장비 50개와 규칙 셋. 식은 `lib/enhancement/cost.ts` 에 있다 | `lib/enhancement/cost` | `/admin/enhancement-costs` |
 | `mvpGrades` | MVP 등급 7개의 경매장 수수료 · 스타포스 할인 · 명패 그림. 순서가 등급의 높낮이다 | `lib/mvp/grades` | `/admin/mvp-grades` |
 | `huntingGrounds` | 사냥 지역 21 · 사냥터 408(인기 여부 포함) · 몬스터 레벨 줄 460. 계산 상수는 `lib/cashbook/hunting-meso.ts` 에 있다 | `lib/cashbook/hunting-grounds` | `/admin/hunting-grounds` |
