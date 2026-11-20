@@ -1852,6 +1852,39 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
     남는다(`features/enhancement-history/anomalies.ts`). 운영에 그런 종류의 줄이 13줄 있다. 이 기준은 Claude 가 앱에 맞춰 적었다.
 - `assets` · `image_crops` · `game_rules` 의 `updated_at` 은 둔다(결정 27).
 
+### 결정 62. 키 표를 두지 않고, 계정 · 로그인 표의 이름에 해시와 넥슨 계정을 적는다 (사용자 선택 2026-11-20)
+
+계정 · 로그인 표를 칸까지 정했다. 1.0.15 에 남는 표는 일곱이다. `users` · `nexon_accounts` · `maple_ids` ·
+`sub_account_registrations` · `referrals` · `nexon_sessions` · `nexon_login_attempts` 다.
+
+- `nexon_account_keys` 표는 1.0.15 에 두지 않는다. 키 해시는 1.0.14 까지의 앱에서만 받고 그 버전을 잠글 때 이 표를
+  걷기로 했고([[ADR-017]] 결정 5), 1.0.15 를 배포할 때부터 1.0.14 까지의 앱을 받지 않는다(결정 43). 1.0.15 앱은 세션이나 메이플 ID
+  해시로 사람을 밝힌다.
+  - 2026-11-20 운영의 넥슨 계정 줄 1,252개 가운데 키로만 쓰는 줄이 367개이고, 그 줄에 달린 메이플 ID 줄은 없다. 메이플 ID 는
+    1.0.14 앱이 알린다(`features/server-sync/accounts.ts`). 1.0.14 를 거치지 않고 1.0.15 로 올라온 키 사용자는 서버에 새 사람으로
+    잡힌다. 기록은 기기에서 새로 올라오고(결정 13), 옛 판매가 줄은 옛 사람 줄에 남는다(결정 8).
+  - 결정 5 의 계정 표 그림과 결정 8 · 20 의 문장에 나오는 `nexon_account_keys` · `nexon_uid` · `sub_accounts` 는 지금 서버의
+    이름이다. 1.0.15 의 이름은 이 결정이 정한다.
+- 이름을 바꾼다(사용자 선택).
+
+  | 지금 이름 | 새 이름 | 고치는 이유 |
+  |---|---|---|
+  | `nexon_accounts.nexon_uid` | `uid_hash` | 값이 넥슨 uid 의 해시다([[ADR-017]] 결정 11). 표 이름이 넥슨 계정이라 `nexon` 을 다시 붙이지 않는다. 메이플 ID 해시 칸 `maple_ids.hash` 와 같은 방식이다(결정 48) |
+  | `nexon_sessions.session_hash` | `hash` | 표 이름이 세션이다(결정 36) |
+  | `nexon_sessions.access_sealed` · `refresh_sealed` | `sealed_access_token` · `sealed_refresh_token` | 봉한 값이 넥슨의 액세스 토큰과 갱신 토큰이다 |
+  | 표 `sub_accounts` | `sub_account_registrations` | 한 줄은 부계정이 아니라 로그인 하나가 다른 넥슨 계정을 부계정으로 등록한 것 한 건이다 |
+  | `sub_accounts.login_account_id` · `sub_account_id` | `login_nexon_account_id` · `sub_nexon_account_id` | 둘 다 `nexon_accounts` 의 줄이다. 그 표를 가리키는 이름은 줄이지 않는다(결정 36) |
+  | `referrals.referred_account_id` · `referrer_account_id` | `referred_nexon_account_id` · `referrer_nexon_account_id` | 위와 같다 |
+
+- `nexon_sessions.last_used_at` 은 두고, 세션으로 요청이 올 때마다 시각을 고친다(사용자 선택). 지금은 고치는 함수(`touch`)를
+  부르는 곳이 없어 값이 늘 만든 시각이다. 2026-11-20 운영 934줄이 모두 `created_at` 과 같다. 오래 쓰지 않은 세션을 운영에서
+  조사할 수 있게 된다. 요청마다 쓰기가 한 번 늘어난다.
+- 추천 표(`referrals`)와 추천인 코드(`nexon_accounts.referral_code`)는 그대로 둔다. 코드를 만들어 저장만 하고 표는 비워 두기로
+  했다([[ADR-017]] 결정 10). 운영에 추천 줄은 없고 코드는 로그인 계정 885개에 있다.
+- 부계정 등록은 메이플 ID 로 하고 다른 로그인에 등록된 계정은 거절한다([[ADR-101]] 결정 6). 표의 칸은 그대로다.
+- 그 밖의 칸은 그대로 둔다. `users` · `maple_ids`(결정 48) · `nexon_login_attempts` 는 고칠 것이 없다. `created_at` · `updated_at` 은
+  읽는 코드가 없어도 둔다(결정 27). 운영에서 사람 줄과 넥슨 계정 줄은 1대1 이다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1893,6 +1926,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 59: 이름을 바꾼 칸의 값이 옮긴 뒤에도 같은지, 응답의 배열 이름과 줄 id 로 앱이 심볼 · 사냥터 · 강화 비용을 지금과 같이 읽는지 |
 | (구현 때 더한다) | 결정 60: 옮긴 뒤 공유 컨텐츠 위젯과 남은 스케줄의 줄인 이름이 옮기기 전과 같은지, 지역 아이콘을 쓰던 타일 넷의 그림이 그대로 보이는지 |
 | (구현 때 더한다) | 결정 61: 옮긴 뒤 그림의 분류 · 파일 이름 · 확장자를 이으면 옛 경로가 되는지, 크롭 숫자 셋으로 그린 자리가 옮기기 전과 같은지, 규칙 아홉의 값이 옮기기 전과 같은지, FAQ 답의 문단 수가 같은지 |
+| (구현 때 더한다) | 결정 62: 메이플 ID 해시로 온 요청이 같은 넥슨 계정 줄을 찾는지, 세션으로 요청이 오면 `last_used_at` 이 밀리는지 |
 
 ## 번호 기록
 
