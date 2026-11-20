@@ -181,7 +181,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
 | [ADR-050+110+128](./adr/ADR-050+110+128_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
 | [ADR-051+075+090+236](./adr/ADR-051+075+090+236_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
-| [ADR-052+104+114+124+162+163+255](./adr/ADR-052+104+114+124+162+163+255_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 개발 노트 · 앱 안 리뷰 요청 · 카드 안 칸 · 문의 모달 |
+| [ADR-052+104+114+124+162+163+255+267](./adr/ADR-052+104+114+124+162+163+255+267_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 개발 노트 · 앱 안 리뷰 요청 · 카드 안 칸 · 문의 모달 |
 | [ADR-053+067+122+145](./adr/ADR-053+067+122+145_settings_cache-data.md) | 🟢 | settings | 데이터 삭제 |
 | [ADR-054+115+132](./adr/ADR-054+115+132_theme_tokens.md) | 🟢 | theme | 테마와 색 토큰 · 테마 페이지 |
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
@@ -193,7 +193,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-060+073+079+085+088+107+109+130+133](./adr/ADR-060+073+079+085+088+107+109+130+133_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
 | [ADR-061+149](./adr/ADR-061+149_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 · 토스트 표시 |
 | [ADR-062+082+091+106+119+123+129+131+134+141+148+240](./adr/ADR-062+082+091+106+119+123+129+131+134+141+148+240_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
-| [ADR-063+080+113+116+146+184+223](./adr/ADR-063+080+113+116+146+184+223_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 체계 · 화면 배율 · 글자 크기 페이지 |
+| [ADR-063+080+113+116+146+184+223+268](./adr/ADR-063+080+113+116+146+184+223+268_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 체계 · 화면 배율 · 글자 크기 페이지 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
 | [ADR-071+205+243+251](./adr/ADR-071+205+243+251_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
 | [ADR-074](./adr/ADR-074_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |

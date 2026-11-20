@@ -12,7 +12,7 @@
 | `features/schedule-sync/errors.ts` | `toScheduleSyncError` 가 에러를 아홉 종류(`ScheduleSyncError`)로 바꾼다 |
 | `features/schedule-sync/format.ts` | 종류마다 토스트 문구 · `ErrorState` 문구 · 스탈 배너 문구를 고른다 |
 | `features/schedule-sync/use-sync-error-toast.ts` | 동기화 실패 토스트. 일부 캐릭터만 실패하면 캐릭터 수를 알린다 |
-| `features/nexon-maintenance/` · `app/NexonMaintenanceBanner.tsx` | Open API 점검 상태와 화면 맨 위의 점검 배너 |
+| `features/nexon-maintenance/` · `app/NexonMaintenanceBanner.tsx` | Open API 점검 상태와 머리글 바로 아래의 점검 배너 |
 | `server/maintenance.ts` · `features/server-maintenance/` · `app/server-maintenance/ServerMaintenanceLock.tsx` | 우리 서버의 점검 상태 조회 · 묻는 주기 · 앱 전체를 막는 잠금 화면 |
 | `components/molecules/ErrorState/` | `ErrorState`(목록이 없을 때) · `StaleBanner`(목록이 남았을 때) |
 | `lib/boss/boss-profit-period.ts` | 기간 데이터 상태 판정(`resolvePeriodDataState` · `resolvePagePeriodState`) |
@@ -35,7 +35,7 @@
 | 400 `OPENAPI00003` · 200 인데 캐릭터가 없음 | `characterUnavailable` | 영구 실패. 버튼 없이 알리고, 추적 해제 방법을 남긴다 |
 | 400 `OPENAPI00004` | `periodOutOfRange` | 그 기간을 `조회 불가` 로 표시한다 |
 | 400 `OPENAPI00009` | `notCollected` | 그 기간을 `집계 전` 으로 표시하고 다음 방문에 다시 받는다 |
-| 400 `OPENAPI00010` · 503 `OPENAPI00011` | `gameMaintenance` · `apiMaintenance` | 마지막 캐시를 그대로 그린다. 넥슨 데이터를 읽는 화면 맨 위에 점검 배너 하나만 세우고 토스트는 없다. 로그인 · 키 입력 · 캐릭터 설정만 토스트와 문구로 알린다([[ADR-081]] 결정 8) |
+| 400 `OPENAPI00010` · 503 `OPENAPI00011` | `gameMaintenance` · `apiMaintenance` | 마지막 캐시를 그대로 그린다. 넥슨 데이터를 읽는 화면의 머리글 바로 아래에 점검 배너 하나만 세우고 토스트는 없다. 로그인 · 키 입력 · 캐릭터 설정만 토스트와 문구로 알린다([[ADR-081]] 결정 8) |
 | 우리 서버가 점검 중(`GET /v1/maintenance` 가 200) | | 앱 전체를 잠금 화면으로 막는다. 버튼은 없고 30초마다 다시 물어 스스로 풀린다([[ADR-261]]) |
 | 관리 화면에서 추적 목록 저장 실패 | | 토스트 `추적 목록을 저장하지 못했습니다` |
 | API 키를 기기에 저장하지 못함 | | 토스트 `기기에 저장하지 못했습니다` |
