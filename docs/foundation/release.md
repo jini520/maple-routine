@@ -50,8 +50,9 @@ Play 와 App Store 에 올릴 바이너리를 만드는 절차다. 서명 · 버
 수정은 이 브랜치에서만 한다. 그동안 develop 은 다음 버전의 작업을 계속 받으므로, 심사 중에 들어온 작업이 같은
 바이너리에 섞이지 않는다.
 
-스토어에 게시되면 이 브랜치를 main 으로 PR 해 merge commit 으로 머지하고, 곧바로 main 을 develop 으로 머지한다.
-그 뒤 `CLAUDE.md` 의 지금 버전과 새 이슈에 붙일 마일스톤을 다음 버전으로 옮긴다.
+release 를 따면 그 자리에서 `CLAUDE.md` 의 develop 버전과 새 이슈에 붙일 마일스톤을 다음 버전으로 옮긴다. 그 뒤 develop 에
+들어가는 것은 다음 버전으로 나간다. 스토어에 게시되면 이 브랜치를 main 으로 PR 해 merge commit 으로 머지하고, 곧바로 main 을
+develop 으로 머지한다.
 
 ## 빌드하기 전에
 
