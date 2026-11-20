@@ -207,11 +207,11 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |
 | [ADR-137+168](./adr/ADR-137+168_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
-| [ADR-142+144+229](./adr/ADR-142+144+229_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
+| [ADR-142+144+229+275](./adr/ADR-142+144+229+275_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
 | [ADR-147+252](./adr/ADR-147+252_design-system_round-entry-buttons.md) | 🟢 | design-system | 진입 버튼과 대표 캐릭터의 움직임 · 고른 동작 |
 | [ADR-150](./adr/ADR-150_design-system_page-faq.md) | 🟢 | design-system | 모든 페이지의 FAQ |
 | [ADR-152](./adr/ADR-152_navigation_bar-order.md) | 🟢 | navigation | 하단바 순서 바꾸기 |
-| [ADR-158+180+222](./adr/ADR-158+180+222_server-sync_usage-log.md) | 🟢 | server-sync | 앱 사용 로그와 관리자 대시보드(사용자 · 사용 로그) |
+| [ADR-158+180+222+276](./adr/ADR-158+180+222+276_server-sync_usage-log.md) | 🟢 | server-sync | 앱 사용 로그와 관리자 대시보드(사용자 · 사용 로그) |
 | [ADR-160+200](./adr/ADR-160+200_cashbook_exclusions.md) | ⚪ | cashbook | 가계부에서 빼는 강화 기록 |
 | [ADR-161+202](./adr/ADR-161+202_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
 | [ADR-187+213+216](./adr/ADR-187+213+216_game-data_item-catalog.md) | ⚪ | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 · 고르기 목록 칸 · 묶음 표 |
