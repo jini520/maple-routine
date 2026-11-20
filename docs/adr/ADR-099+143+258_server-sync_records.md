@@ -2163,6 +2163,9 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
 | 서버 `cli/move-old-db.spec.ts`(보스 기준 표) | 결정 28 · 33 · 65: 드롭 표 · 상자 · 결정석 가격 · 직접 완료를 줄 id 그대로 새 칸 이름으로 옮기는지, 개수 글자의 `개` 를 떼고 정수로 옮기며 다른 꼴이면 멈추는지, 연마석을 가리키던 상자 내용물만 상자 연마석 줄로 바꾸는지 |
 | 서버 `contents/contents.repository.spec.ts` | 결정 34 · 59 · 60 · 65: `contents` 칸이 표 이름의 배열 둘에 분류 줄 id 와 표의 칸 이름으로 내는지, 최대 횟수가 완료 조건이 `count_only` 인 줄에만 들어가는지(DB `CHECK`), 그림 표에 없는 그림을 거절하는지 |
 | 서버 `cli/move-old-db.spec.ts`(컨텐츠) | 결정 34 · 52 · 60 · 65: 완료 조건을 결정 34 의 표대로 정하는지, 최대 횟수를 횟수로 세는 줄에만 남기고 덮는 값을 쓰는지, 공유 줄의 짧은 이름을 위젯 글자로 옮기는지, 분류 칸을 새 이름으로 옮기는지 |
+| 서버 `spend-catalog/spend-catalog.repository.spec.ts` | 결정 59 · 60 · 65: `spendCatalog` 칸이 표 이름의 배열에 묶음 · 타일 · 리워드 종류를 줄 id 로 잇는지, 관리 줄은 key 로 내는지, 타일 그림이 한 칸이고 그림 표에 없는 그림을 거절하는지 |
+| 서버 `cashbook-categories/cashbook-categories.repository.spec.ts` · `hunt-loot/hunt-loot.repository.spec.ts` | 결정 59 · 60 · 65: `cashbookCategories` · `huntLoot` 칸이 표 이름의 배열에 줄 id 로 내는지, 사냥 전리품 줄이 아이템을 `itemId` 로 가리키는지 |
+| 서버 `cli/move-old-db.spec.ts`(가계부 기준 표) | 결정 32 · 36 · 51 · 60 · 65: 아홉 표를 줄 id 그대로 새 칸 이름으로 옮기는지, 지출 타일의 그림 두 칸을 한 칸으로 합치는지, 지출 항목의 줄인 이름을 버리는지 |
 | 서버 `database/schema.spec.ts` | 결정 65: 새 표로 바꾼 표의 표 · 칸 이름 · 형 · 가리키는 표 · enum 값이 설계 페이지에서 뽑은 목록과 같은지 |
 | 서버 `bosses/bosses.repository.spec.ts` | 결정 19 · 43: 게임 데이터의 보스와 난이도마다 표의 줄 id 를 내는지, 칸 이름을 따른 응답에 난이도마다 주기가 실리는지 |
 
