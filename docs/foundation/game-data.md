@@ -44,8 +44,8 @@
 | `hexaMatrix` | 헥사 코어 종류 6 · 종류별 레벨 비용 줄 180개(조각 · 솔 에르다) · 기본 종류가 아닌 코어 이름 50 · 직업 48 개의 코어 672 · 헥사 스탯 3 과 활성화 조각. 코어 그림은 `skills/` 에 있다. 1.0.15 에서 표 이름의 배열 다섯으로 바꾸고 이름 표를 없앤다([[ADR-099]] 결정 65) | `lib/cashbook/hexa-matrix` | `/admin/hexa-matrix` |
 | `contents` | 컨텐츠 분류 8 · 컨텐츠 41개의 넥슨 이름 · 표시 이름 · 배경 · 지역 아이콘 · 수동 모드 상한 · 요구 레벨 · 공유 범위 · 유효 기간. 컨텐츠 key 마스터 표다. 1.0.15 에서 배열 `contentCategories` · `contents` 로 내고 완료 조건(`checkType`)을 싣는다([[ADR-099]] 결정 65) | `lib/scheduler/contents` · `scheduler-content-scope` · `content-categories` | `/admin/contents` |
 | `equipmentItems` | 강화 비용을 매길 장비 467개의 key · 띄어 쓴 이름 · 착용 레벨. 장비 key 마스터 표다. 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) | `lib/equipment/equipment-items` | `/admin/equipment-items` |
-| `enhancementCosts` | 잠재 재설정 비용 32줄 · 소울 잠재 재설정 비용 4줄 · 스타포스 단계 30줄 · 슈페리얼 계열 3줄(스타포스 1회 비용) · 슈페리얼 장비 50개와 규칙 셋. 식은 `lib/enhancement/cost.ts` 에 있다 | `lib/enhancement/cost` | `/admin/enhancement-costs` |
-| `mvpGrades` | MVP 등급 7개의 경매장 수수료 · 스타포스 할인 · 명패 그림. 순서가 등급의 높낮이다 | `lib/mvp/grades` | `/admin/mvp-grades` |
+| `enhancementCosts` | 잠재 재설정 비용 32줄 · 소울 잠재 재설정 비용 4줄 · 스타포스 단계 30줄 · 슈페리얼 계열 3줄(스타포스 1회 비용) · 슈페리얼 장비 50개와 규칙 셋. 식은 `lib/enhancement/cost.ts` 에 있다. 1.0.15 에서 배열 `starforceSteps` 를 `starforceCostSteps` 로 바꾸고 슈페리얼 장비가 계열을 줄 id 로 가리킨다([[ADR-099]] 결정 65) | `lib/enhancement/cost` | `/admin/enhancement-costs` |
+| `mvpGrades` | MVP 등급 7개의 경매장 수수료 · 스타포스 할인 · 명패 그림. 순서가 등급의 높낮이다. 1.0.15 에서 배열 `mvpGrades` 로 내고 줄 id 를 싣는다([[ADR-099]] 결정 65) | `lib/mvp/grades` | `/admin/mvp-grades` |
 | `huntingGrounds` | 사냥 지역 21 · 사냥터 408(인기 여부 포함) · 몬스터 레벨 줄 460. 계산 상수는 `lib/cashbook/hunting-meso.ts` 에 있다. 1.0.15 에서 배열 `huntingRegions` · `huntingGrounds` · `huntingGroundLevels` 로 내고 지역 · 사냥터를 줄 id 로 가리킨다([[ADR-099]] 결정 65) | `lib/cashbook/hunting-grounds` | `/admin/hunting-grounds` |
 | `huntLoot` | 가계부 사냥 전리품 판매의 아이템 5개(조각 1 · 소비 2 · 이벤트 2)의 key · 분류 · 이름 · 그림 · NPC 개당 가격 · 유효 기간. 1.0.15 에서 배열 `huntLootItems` 로 내고 아이템을 줄 id 로 가리킨다([[ADR-099]] 결정 65) | `lib/cashbook/hunt-loot` | `/admin/hunt-loot` |
 | `assets` | 앱이 받는 그림 약 930장의 id · 경로 · 내용 해시 · 바이트 · 가로 · 세로 | `lib/assets/asset-files` | `/admin/assets` |
