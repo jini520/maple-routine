@@ -43,15 +43,11 @@ import { useThemeAppearance } from '../../../theme/context'
 // | 상단 인셋 | 헤더가 먹는다 |
 // | 탭바를 잰다 | 아니다. 탭 내비게이터가 이미 뺀 상자를 준다 |
 //
-// 상단. 헤더가 있으면 이 셸은 위를 건드리지 않는다. RN 에서 헤더는 스크롤 뷰의 첫 자식이라
-// 자기 안전영역 패딩으로 노치를 직접 먹는다. 다만 스크롤포트 자체는 화면 맨 위에서 시작한다
-// (`marginTop: 0`). 노치를 비우는 것이 상자가 아니라 헤더의 패딩이라 굴리면 그 패딩이 함께
+// 상단. 이 셸은 위를 건드리지 않는다. RN 에서 헤더는 스크롤 뷰의 첫 자식이라
+// 자기 안전영역 패딩으로 노치를 직접 먹는다. 다만 스크롤포트 자체는 화면 맨 위에서 시작한다.
+// 노치를 비우는 것이 상자가 아니라 헤더의 패딩이라 굴리면 그 패딩이 함께
 // 올라가 콘텐츠가 상태바 밑으로 지나간다. 그 처방이 아래 안전영역 페이드다. 지나가는 것을 막지
 // 않고 지나가는 자리에서 투명해지게 한다.
-//
-// 헤더가 없는 화면(설정 계열)에서는 이 셸이 상자를 그만큼 내린다. 콘텐츠 패딩이 아니라
-// 상자여야 한다. 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 겹쳐 그려지므로, 패딩으로 밀면
-// 글자는 내려가도 인디케이터는 노치까지 올라간다.
 //
 // 하단은 `hasTabBar` 와 플랫폼에 따라 갈리고 그 판정은 `bottom-inset.ts` 가 갖는다.
 //
@@ -88,13 +84,10 @@ import { useThemeAppearance } from '../../../theme/context'
 export interface ScreenScrollProps {
   children: React.ReactNode
   /**
-   * 스크롤 내용의 맨 앞에 놓이는 헤더. 보통 `PageHeader` 다.
-   *
-   * 자리를 정하는 프롭이 아니라 누가 안전영역을 먹는가 를 알리는 프롭이다. 헤더를 주면 헤더가
-   * 자기 `paddingTop` 으로 먹고(굴리면 함께 올라간다), 안 주면 이 셸이 상자를 그만큼 내려
-   * 먹는다(설정 계열). 자식으로 받으면 셸이 그 갈림을 알 수 없다.
+   * 스크롤 내용의 맨 앞에 놓이는 헤더. 보통 `PageHeader` 다. 상단 안전영역은 헤더가 자기 `paddingTop` 으로
+   * 먹고 셸은 비우지 않는다. 제목 줄을 자식에 두면 헤더 바로 아래에 서는 배너가 제목 위로 올라간다.
    */
-  header?: React.ReactNode
+  header: React.ReactNode
   /**
    * 스크롤 뷰 자체의 ref.
    * RN 에서는 **당김 판정에 쓰이지 않는다**(스크롤 컨테이너가 제스처를 소유한다).
@@ -195,7 +188,6 @@ export function ScreenScroll({
     edgeGapPx: layout.edgeGapPx,
   })
   const fade = resolveSafeAreaFade({
-    hasHeader: header !== undefined,
     hasTabBar,
     topSafeAreaPx,
     bottomSafeAreaPx,
@@ -209,11 +201,10 @@ export function ScreenScroll({
     platform: Platform.OS,
   })
 
-  // 스크롤포트를 "실제로 보이는 영역"에 맞추는 두 값. **콘텐츠 패딩이 아니라
+  // 스크롤포트를 "실제로 보이는 영역"에 맞추는 값. **콘텐츠 패딩이 아니라
   // 상자의 마진**이어야 한다. 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 겹쳐 그려진다.
   // 오른쪽 레일 화면에서는 콘텐츠가 레일을 비운다. 0 이면 안 줘서 다른 화면의 스타일을 바꾸지 않는다.
   const port = {
-    marginTop: header === undefined ? topSafeAreaPx : 0,
     marginBottom: bottom.portBottomPx,
     ...(layout.railWidthPx === 0 ? null : { marginRight: layout.railWidthPx }),
   }
