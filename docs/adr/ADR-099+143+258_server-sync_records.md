@@ -2097,6 +2097,15 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
     다시 채우므로 옛 DB 의 줄과 줄 id 가 남는다.
   - 관리 화면 셋(가계부 분류 · 지출 카탈로그 · 사냥 전리품)의 본문 칸 이름도 표를 따른다. 다른 표의 줄은 지금처럼 key 로 받고,
     그림은 그림 줄 id 로 받는다. 지출 타일의 그림 고르개는 아이템 그림과 지역 아이콘을 함께 보인다.
+- 일곱째 묶음은 심볼 표 셋(`symbol_groups` · `symbols` · `symbol_level_costs`)이다. 가계부 기록과 기억한 레벨(결정 38)이 심볼
+  줄을 가리키므로 기록 표보다 먼저 바꾼다. 칸은 결정 59 그대로다. 이 줄과 아래 둘은 Claude 가 적었다.
+  - 게임 데이터 `symbolCosts` 칸은 표 이름의 배열 `symbolGroups` · `symbols` · `symbolLevelCosts` 를 싣는다. 묶음과 심볼은 `id`
+    를 싣고, 심볼은 묶음을 `groupId` 로, 비용 줄은 심볼을 `symbolId` 로 가리킨다. 칸은 표의 칸 이름 그대로다
+    (`defaultFromLevel` · `defaultToLevel` · `requiredLevel` · `iconAssetId` · `fromLevel` · `costMeso` · `validFrom` ·
+    `validUntil`). 옛 그림 이름 `iconFile` 은 걷는다. 옮길 때는 세 표의 줄을 줄 id 그대로 옮기고 칸 이름만 바꾼다. 옛 마이그레이션이
+    이 표들에 줄을 넣지 않아 새 DB 에서는 비어 있다. 2026-11-20 운영 값이 결정 59 와 같다(묶음 3 · 심볼 14 · 비용 194줄).
+  - 관리 화면의 본문 칸 이름도 표를 따른다(`defaultFromLevel` · `defaultToLevel` · `fromLevel` · `validFrom`). 묶음과 심볼은
+    지금처럼 key 로 받고, 심볼 그림은 그림 고르개로 그림 줄 id 를 받는다.
 - 2026-11-20 의 서버는 스키마가 `src/database/schema.ts` 한 파일(68표)이고, 그 파일을 읽는 코드가 49개, 마이그레이션이 46개다.
 - 서버 PR #122 는 머지하지 않는다(사용자 선택 2026-11-20). 2026-11-17 에 지금 표 위에 쓴 #947 의 서버 첫 조각이다. 로그인
   없는 사용자를 메이플 ID 해시 헤더로 찾고, 부계정을 넥슨 ID 하나에만 등록하게 하고, 다계정 사용자를 한 명으로 센다. 같은
@@ -2166,6 +2175,8 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
 | 서버 `spend-catalog/spend-catalog.repository.spec.ts` | 결정 59 · 60 · 65: `spendCatalog` 칸이 표 이름의 배열에 묶음 · 타일 · 리워드 종류를 줄 id 로 잇는지, 관리 줄은 key 로 내는지, 타일 그림이 한 칸이고 그림 표에 없는 그림을 거절하는지 |
 | 서버 `cashbook-categories/cashbook-categories.repository.spec.ts` · `hunt-loot/hunt-loot.repository.spec.ts` | 결정 59 · 60 · 65: `cashbookCategories` · `huntLoot` 칸이 표 이름의 배열에 줄 id 로 내는지, 사냥 전리품 줄이 아이템을 `itemId` 로 가리키는지 |
 | 서버 `cli/move-old-db.spec.ts`(가계부 기준 표) | 결정 32 · 36 · 51 · 60 · 65: 아홉 표를 줄 id 그대로 새 칸 이름으로 옮기는지, 지출 타일의 그림 두 칸을 한 칸으로 합치는지, 지출 항목의 줄인 이름을 버리는지 |
+| 서버 `symbol-costs/symbol-costs.repository.spec.ts` | 결정 59 · 65: `symbolCosts` 칸이 표 이름의 배열에 묶음 · 심볼을 줄 id 로 잇는지, 비용 줄이 강화 전 레벨과 유효 기간 칸으로 닫히고 열리는지, 그림 표에 없는 그림을 거절하는지 |
+| 서버 `cli/move-old-db.spec.ts`(심볼) | 결정 59 · 65: 심볼 표 셋을 줄 id 그대로 새 칸 이름으로 옮기는지 |
 | 서버 `database/schema.spec.ts` | 결정 65: 새 표로 바꾼 표의 표 · 칸 이름 · 형 · 가리키는 표 · enum 값이 설계 페이지에서 뽑은 목록과 같은지 |
 | 서버 `bosses/bosses.repository.spec.ts` | 결정 19 · 43: 게임 데이터의 보스와 난이도마다 표의 줄 id 를 내는지, 칸 이름을 따른 응답에 난이도마다 주기가 실리는지 |
 
