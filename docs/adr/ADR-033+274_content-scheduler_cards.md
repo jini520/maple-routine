@@ -1,8 +1,8 @@
-# ADR-033 컨텐츠 카드와 완료 판정
+# ADR-033+274 컨텐츠 카드와 완료 판정
 
 > 🟢 유효
 > 옛 번호: ADR-020 · ADR-021 · ADR-057 · ADR-162 · ADR-271 결정 1 · 2 · 4 · 5
-> 관련 소스: `app/content-scheduler/DailyContentCards.tsx` · `app/content-scheduler/WeeklyContentCards.tsx` · `app/content-scheduler/content-badges.tsx` · `features/content-scheduler/content-completion.ts` · `lib/scheduler/required-level.ts` · `lib/scheduler/group-weekly-limit.ts` · `features/content-scheduler/store.ts`
+> 관련 소스: `app/content-scheduler/DailyContentCards.tsx` · `app/content-scheduler/WeeklyContentCards.tsx` · `app/content-scheduler/content-badges.tsx` · `features/content-scheduler/content-completion.ts` · `lib/scheduler/content-kinds.ts` · `lib/scheduler/required-level.ts` · `lib/scheduler/group-weekly-limit.ts` · `features/content-scheduler/store.ts`
 
 ## 배경
 
@@ -54,11 +54,11 @@
 |---|---|---|---|
 | `guild_underground_waterway` | `GuildUndergroundWaterwayCard`(80, 배경은 보스 초상) | `길드` 배지 + 이름 | `n점` |
 | `guild_weekly_mission_points` | `GuildMissionPointsCard`(112, 배경은 지도) | `길드` 배지 + 이름 | `now/max`, 아래에 진행률 바 |
-| `guild_flag_race` | `GuildFlagRaceCard`(80, 배경은 지도) | `길드` 배지 + 이름 | `now_count` 가 1 이상이면 완료, 아니면 시작 안함 |
-| 카테고리 `epic_dungeon` | `EpicDungeonCard`(80, 배경은 보스 초상) | `에픽 던전` 배지 + 던전 이름 | `now_count` 가 1 이상이면 완료, 아니면 시작 안함 |
-| 카테고리 `monster_park`, 또는 `arcane_river_quest` 이면서 `type: 'contents'` | `WeeklyRegionalContentCard`(80, 배경은 지역 지도) | 지역 아이콘 + 이름 | `now == max` 이고 `max > 0` 이면 완료, 아니면 시작 안함. 익스트림 몬스터파커만 `quest_state` 를 그대로 쓴다 |
+| `guild_flag_race` | `GuildFlagRaceCard`(80, 배경은 지도) | `길드` 배지 + 이름 | 결정 5 의 판정이 완료면 완료, 아니면 시작 안함 |
+| 카테고리 `epic_dungeon` | `EpicDungeonCard`(80, 배경은 보스 초상) | `에픽 던전` 배지 + 던전 이름 | 결정 5 의 판정이 완료면 완료, 아니면 시작 안함 |
+| 카테고리 `monster_park`, 또는 `arcane_river_quest` 이면서 `type: 'contents'` | `WeeklyRegionalContentCard`(80, 배경은 지역 지도) | 지역 아이콘 + 이름 | 결정 5 의 판정이 완료면 완료, 아니면 시작 안함. 익스트림 몬스터파커만 `quest_state` 를 그대로 쓴다 |
 | 카테고리 `maple_union` | `MapleUnionDragonCard`(80, 배경은 보스 초상. 등장하는 드래곤은 매주 바뀌지만 API 가 알려 주지 않아 표가 대표 그림 하나를 든다) | `유니온` 배지 + 이름 | `quest_state` 배지 |
-| 카테고리 `weekly_quest` · `mu_lung_dojo`, 또는 `arcane_river_quest` 이면서 `type: 'quest'` | `WeeklyQuestCard`(80, 배경은 지역 지도) | 지역 아이콘 + 이름 | `quest_state` 배지. 무릉도장은 `n층`(참여 전이면 시작 안함), 성실한 조사에 대한 보답은 `quest_state` 가 1 일 때 `n회 완료` 이고 `now == max` 가 되면 완료 |
+| 카테고리 `weekly_quest` · `mu_lung_dojo`, 또는 `arcane_river_quest` 이면서 `type: 'quest'` | `WeeklyQuestCard`(80, 배경은 지역 지도) | 지역 아이콘 + 이름 | `quest_state` 배지. 무릉도장은 `n층`(참여 전이면 시작 안함), 성실한 조사에 대한 보답은 `quest_state` 가 1 일 때 `진행 중` 대신 `n회 완료` |
 | 그 밖 | 기본 카드 | `이름 · now/max` | 진행률 바 |
 
 - 길드 셋은 같은 카테고리지만 진행값의 뜻이 달라서 카드를 따로 둔다. 지하 수로는 점수에 상한이 없고, 미션 포인트는
@@ -69,19 +69,28 @@
 - `에픽 던전` · `길드` · `유니온` 배지는 테마 색이 아니라 배지 자체의 고정색(`epicDungeon` · `guild` · `mapleUnion`)
   이다. 배경 그림에 맞춘 색이라 테마를 따르면 그림과 어울리지 않는다.
 
-### 결정 5. 완료 판정은 `content-completion.ts` 한 곳에 둔다
+### 결정 5. 완료 판정은 `content-completion.ts` 한 곳에 두고, 카드의 완료 배지도 이것으로 정한다
 
-초상화 링의 진행률은 `dailyContentCompletion` · `weeklyContentCompletion` 이 정한다. 카드 렌더러는 완료 · 미완료보다
-더 많은 상태(진행 중 · `n층` · `n점` · `n회 완료`)를 그리므로 이 함수를 쓰지 않는다. 대신 이 함수는 카드와 같은
-순서로 종류를 나눠서, 카드가 완료로 그리는 항목을 똑같이 완료로 센다.
+완료인지는 `dailyContentCompletion` · `weeklyContentCompletion` 이 정한다. 초상화 링, today 의 남은 스케줄, 미완료
+스케줄 알림, 카드의 완료 배지가 모두 이 함수를 따른다. 카드가 완료를 따로 계산하면 같은 값을 두 곳이 다르게 읽는다.
+성실한 조사에 대한 보답을 끝낸 캐릭터가 카드에는 `완료` 인데 남은 스케줄에는 남아 있던 적이 있다(#1092).
+
+카드는 완료 · 미완료보다 많은 상태(진행 중 · `n층` · `n점` · `n회 완료`)를 그린다. 그 상태는 카드가 그리고, 완료인지는
+이 함수에 묻는다. 에픽 던전 · 아케인리버 지역 컨텐츠 · 길드 플래그 레이스 카드가 그렇다. `quest_state` 를 그대로 배지로
+그리는 카드(일일 퀘스트 · 메이플 유니온 · 주간 퀘스트 · 익스트림 몬스터파커)는 함수를 부르지 않는다. 넥슨이 준 2 가 곧
+`완료` 배지이고, 함수도 같은 항목을 `quest_state` 2 로 판정하기 때문이다. 함수는 카드와 같은 순서로 종류를 나눈다.
 
 | 판정 | 대상 |
 |---|---|
-| `quest_state` 가 2 | 일일 퀘스트, 메이플 유니온, 익스트림 몬스터파커, 그 밖의 주간 퀘스트 |
-| `now ≥ max` (`max` 가 0 이면 미완료) | 몬스터파크(일간), 아케인리버 지역 컨텐츠, 길드 미션 포인트, 성실한 조사에 대한 보답, 기본 카드 |
+| `quest_state` 가 2 | 일일 퀘스트, 메이플 유니온, 익스트림 몬스터파커, 성실한 조사에 대한 보답, 그 밖의 주간 퀘스트 |
+| `now ≥ max` (`max` 가 0 이면 미완료) | 몬스터파크(일간), 아케인리버 지역 컨텐츠, 길드 미션 포인트, 기본 카드 |
 | `now > 0` | 에픽 던전, 길드 플래그 레이스, 길드 지하 수로 |
 | 세지 않음 | 무릉도장 |
 
+- 성실한 조사에 대한 보답은 `quest_state` 로만 판정한다(사용자 지정 2026-11-20). 넥슨은 이 퀘스트를 시작 전 `0/0` ·
+  상태 0, 조사 1회 `1/2` · 상태 1, 조사 2회 `2/2` · 상태 1, 퀘스트 완료 `0/0` · 상태 2 로 준다(기기 백업 285벌,
+  2026-11-20). 퀘스트를 끝내면 횟수가 `0/0` 으로 돌아가므로 횟수로 판정하면 끝낸 퀘스트가 미완료가 된다. 조사 2회는
+  퀘스트가 아직 진행 중(상태 1)이라 완료가 아니고, 카드는 `2회 완료` 를 그린다.
 - 무릉도장은 끝이 정해져 있지 않다. 링 분모에 넣으면 링이 영원히 다 차지 않으므로 분모에서 뺀다.
 - 지하 수로는 점수에 상한이 없어서 다 했는지는 알 수 없지만, 그 주에 참여했는지는 알 수 있다. 링은 참여 여부를 센다.
 - `max` 가 0 인 항목을 완료로 보지 않는다. 0/0 을 100% 로 읽으면 채울 것이 없는 항목이 다 한 것으로 보인다.
@@ -108,8 +117,8 @@
 
 - 한도 3 은 게임 규칙이라 코드에 적지 않고 컨텐츠 표의 카테고리 줄(`epic_dungeon` 의 `weeklyLimit`)에 둔다.
 - 판정은 `lib/scheduler/group-weekly-limit.ts` 하나가 한다. 카드, 링, today 의 공유 컨텐츠 위젯이 같은 함수를
-  쓴다([[ADR-058]]). 따로 두면 위젯은 `3/3` 인데 카드에는 할 일이 남는 날이 생긴다. 완료 판정은 화면 쪽에 있고
-  `lib` 은 `app` 을 가져다 쓰지 않으므로, 호출하는 쪽이 완료 여부를 함께 넘긴다.
+  쓴다([[ADR-058]]). 따로 두면 위젯은 `3/3` 인데 카드에는 할 일이 남는 날이 생긴다. 완료 판정은 `features/` 에 있고
+  `lib` 은 `features` 를 가져다 쓰지 않으므로, 호출하는 쪽이 완료 여부를 함께 넘긴다.
 - 세는 대상은 등록 여부와 관계없이 그 카테고리에서 완료한 항목 전부다. 한도는 등록 수가 아니라 진행 횟수를 제한하기
   때문이다. 그래서 화면에 보이는 목록이 아니라 그 캐릭터의 병합된 `weeklyContents` 전체를 넘긴다. 등록하지 않은
   던전이 병합 결과에서 빠지지 않는 것은 [[ADR-032]] 결정 6 덕분이다. 같은 컨텐츠가 두 번 들어와도 한 번만 센다.
@@ -143,9 +152,10 @@
 | 파일 | 확인하는 것 |
 |---|---|
 | `app/content-scheduler/__tests__/ContentCards.test.tsx` | 결정 1 · 3 · 4: 종류마다 정한 카드 · 이름 · 배지 · 배경이 나오는지, 표에 없는 컨텐츠가 기본 카드에 API 이름으로 나오는지, 무릉도장 `n층` 과 성실한 조사 `n회 완료` 가 바뀌는 때를 본다 |
+| | 결정 5: 넥슨이 준 응답 모양마다 카드가 `완료` 배지를 그리는 항목과 판정 함수가 완료로 세는 항목이 같은지 본다 |
 | | 결정 6: 요구 레벨 미달이면 상태 배지 대신 `진행 불가` 가 보이는지, 요구 레벨이 없는 항목은 낮은 레벨에서도 안 보이는지 본다 |
 | | 결정 7: 한도가 차고 미완료일 때만 `마감` 인지, 레벨 미달이 `마감` 보다 앞서는지, `마감` 과 `완료` 배지의 크기가 같은지 본다 |
-| `features/content-scheduler/__tests__/content-completion.test.ts` | 결정 5: 종류마다 정한 기준으로 완료를 판정하는지, 무릉도장과 레벨 미달을 분모에서 빼는지, 레벨을 모르면 아무것도 빼지 않는지 본다 |
+| `features/content-scheduler/__tests__/content-completion.test.ts` | 결정 5: 종류마다 정한 기준으로 완료를 판정하는지, 성실한 조사의 네 모양을 횟수가 아니라 `quest_state` 로 가르는지, 무릉도장과 레벨 미달을 분모에서 빼는지, 레벨을 모르면 아무것도 빼지 않는지 본다 |
 | | 결정 7: 세 곳 완료면 남은 한 곳이 막히는지, 등록 안 한 던전의 완료도 세는지, 네 곳 추적 · 세 곳 완료면 링이 `4/4` 인지 본다 |
 | `lib/__tests__/required-level.spec.ts` | 결정 6: 레벨을 모르거나 요구 레벨이 없으면 진행 가능인지, 보스는 난이도까지 보는지 본다 |
 | `lib/__tests__/group-weekly-limit.spec.ts` | 결정 7: 다른 카테고리와 key 가 없는 항목을 안 세는지, 같은 컨텐츠를 한 번만 세는지, 완료한 항목은 막힌 것이 아닌지 본다 |
@@ -157,3 +167,4 @@
 ## 번호 기록
 
 - ADR-033 (2026-10-19): 옛 ADR-020 · 021 · 057 · 162 와 옛 ADR-271 결정 1 · 2 · 4 · 5 를 합쳐 처음 작성
+- ADR-274 (2026-11-20): 결정 4 · 5 를 고쳤다. 성실한 조사에 대한 보답을 `quest_state` 로만 판정하고, 카드도 완료 배지를 결정 5 의 함수로 정한다(#1092)

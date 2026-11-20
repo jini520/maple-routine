@@ -13,7 +13,7 @@ import { assetUri } from '../../../assets/__tests__/asset-uri'
 import { findAllOfType, renderAtom, type AtomElement } from '../../../components/__tests__/render-atom'
 import { renderDailyContentCard } from '../DailyContentCards'
 import { renderWeeklyContentCard } from '../WeeklyContentCards'
-import { weeklyLimitClosedKeys } from '../../../features/content-scheduler/content-completion'
+import { weeklyContentCompletion, weeklyLimitClosedKeys } from '../../../features/content-scheduler/content-completion'
 
 const HIDDEN = { includeHiddenElements: true } as const
 
@@ -184,26 +184,27 @@ describe('주간 카드', () => {
     expect(fresh.getByText('시작 안함')).toBeTruthy()
   })
 
-  it('성실한 조사에 대한 보답은 "N회 완료" 를 거쳐 완료로 전환된다', async () => {
+  // 조사 2회(2/2)도 퀘스트는 아직 진행 중이다. 퀘스트를 끝내야 상태가 2 가 되고 횟수는 0/0 으로 돌아간다.
+  it('성실한 조사에 대한 보답은 조사 횟수를 "N회 완료" 로 보이다가 퀘스트를 끝내면 완료다', async () => {
     const faithful = {
       contentKey: 'weekly_quest_faithful_investigation_reward',
       apiName: '[주간 퀘스트] 성실한 조사에 대한 보답',
     }
-    const partial = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({ ...faithful, questState: 1, nowCount: 1, maxCount: 2 }),
-        300, false,
-      ),
+    const once = await renderAtom(
+      renderWeeklyContentCard(weekly({ ...faithful, questState: 1, nowCount: 1, maxCount: 2 }), 300, false),
     )
-    expect(partial.getByText('1회 완료')).toBeTruthy()
+    expect(once.getByText('1회 완료')).toBeTruthy()
 
-    const complete = await renderAtom(
-      renderWeeklyContentCard(
-        weekly({ ...faithful, questState: 1, nowCount: 2, maxCount: 2 }),
-        300, false,
-      ),
+    const twice = await renderAtom(
+      renderWeeklyContentCard(weekly({ ...faithful, questState: 1, nowCount: 2, maxCount: 2 }), 300, false),
     )
-    expect(complete.getByText('완료')).toBeTruthy()
+    expect(twice.getByText('2회 완료')).toBeTruthy()
+    expect(twice.queryByText('완료')).toBeNull()
+
+    const finished = await renderAtom(
+      renderWeeklyContentCard(weekly({ ...faithful, questState: 2, nowCount: 0, maxCount: 0 }), 300, false),
+    )
+    expect(finished.getByText('완료')).toBeTruthy()
   })
 
   it('메이플 유니온은 접두어를 떼고 드래곤 배경의 카테고리 카드가 된다', async () => {
@@ -359,5 +360,47 @@ describe('마감 배지', () => {
     }
 
     expect(boxOf((await 카드(2, 300)).getByText('마감'))).toEqual(boxOf((await 카드(0, 300)).getByText('완료')))
+  })
+})
+
+// 카드가 완료를 따로 계산하면 같은 응답을 카드와 링 · 남은 스케줄 · 미완료 알림이 다르게 읽는다. 응답 모양은 기기 백업에서
+// 본 것과 사용자가 확인한 것이다. 지하 수로 · 미션 포인트 · 무릉도장 · 몬스터파크 · 기본 카드는 완료 배지 대신 숫자를
+// 그려서 여기 없다.
+describe('카드의 완료 배지와 완료 판정', () => {
+  const EPIC = { contentKey: 'epic_dungeon_angler_company', apiName: '에픽 던전 : 앵글러 컴퍼니' }
+  const FLAG_RACE = { contentKey: 'guild_flag_race', apiName: '[길드] 플래그 레이스' }
+  const ERDA = { contentKey: 'erda_spectrum', apiName: '에르다 스펙트럼' }
+  const EXTREME = { contentKey: 'monster_park_extreme', apiName: '[몬스터파크] 익스트림 몬스터파커에 도전해보겠나?', kind: 'quest' as const }
+  const DRAGON = { contentKey: 'maple_union_weekly_dragon', apiName: '[메이플 유니온] 주간 드래곤 퇴치', kind: 'quest' as const }
+  const CRITIAS = { contentKey: 'weekly_quest_critias', apiName: '[주간 퀘스트] 크리티아스 주간 임무', kind: 'quest' as const }
+  const FAITHFUL = {
+    contentKey: 'weekly_quest_faithful_investigation_reward',
+    apiName: '[주간 퀘스트] 성실한 조사에 대한 보답',
+    kind: 'quest' as const,
+  }
+
+  it.each<[string, Partial<WeeklyContent>]>([
+    ['에픽 던전 5/0', { ...EPIC, nowCount: 5, maxCount: 0 }],
+    ['에픽 던전 0/0', { ...EPIC, nowCount: 0, maxCount: 0 }],
+    ['플래그 레이스 1000점', { ...FLAG_RACE, nowCount: 1000 }],
+    ['플래그 레이스 0점', { ...FLAG_RACE, nowCount: 0 }],
+    ['에르다 스펙트럼 1/1', { ...ERDA, nowCount: 1, maxCount: 1 }],
+    ['에르다 스펙트럼 0/1', { ...ERDA, nowCount: 0, maxCount: 1 }],
+    ['익스트림 몬스터파커 0/0 · 상태 2', { ...EXTREME, questState: 2 }],
+    ['익스트림 몬스터파커 1/5 · 상태 1', { ...EXTREME, questState: 1, nowCount: 1, maxCount: 5 }],
+    ['익스트림 몬스터파커 0/0 · 상태 0', { ...EXTREME, questState: 0 }],
+    ['유니온 드래곤 상태 2', { ...DRAGON, questState: 2 }],
+    ['유니온 드래곤 상태 0', { ...DRAGON, questState: 0 }],
+    ['크리티아스 상태 2', { ...CRITIAS, questState: 2 }],
+    ['크리티아스 상태 0', { ...CRITIAS, questState: 0 }],
+    ['성실한 조사 0/0 · 상태 0', { ...FAITHFUL, questState: 0 }],
+    ['성실한 조사 1/2 · 상태 1', { ...FAITHFUL, questState: 1, nowCount: 1, maxCount: 2 }],
+    ['성실한 조사 2/2 · 상태 1', { ...FAITHFUL, questState: 1, nowCount: 2, maxCount: 2 }],
+    ['성실한 조사 0/0 · 상태 2', { ...FAITHFUL, questState: 2 }],
+  ])('%s', async (_, overrides) => {
+    const content = weekly(overrides)
+    const view = await renderAtom(renderWeeklyContentCard(content, 300, false))
+
+    expect(view.queryByText('완료') !== null).toBe(weeklyContentCompletion(content) === 'complete')
   })
 })
