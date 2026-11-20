@@ -2139,6 +2139,24 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
     슈페리얼 계열 3(비용 5,956,000 ~ 55,382,200) · 슈페리얼 장비 50 · MVP 등급 7줄이다.
   - 관리 화면의 본문 칸 이름도 표를 따른다(`minRequiredLevel` · 슈페리얼 장비 그림의 `iconAssetId`). 슈페리얼 계열은 지금처럼
     key 로 받는다.
+- 열째 묶음은 그림 크롭 · 공지 · 게임 규칙 · 칸의 갱신 시각 · FAQ 표(`image_crops` · `notices` · `game_rules` ·
+  `game_data_section_updates` · `faq_sheets` · `faq_items`)다. 칸은 결정 61 그대로다. 이 줄과 아래 넷은 Claude 가 적었다.
+  - 게임 규칙은 한 줄이라 게임 데이터의 칸 하나 `gameRules` 로 낸다. 규칙 아홉이 표의 칸 이름 그대로 실린다. 지금 `bosses` ·
+    `spendCatalog` · `enhancementCosts` 칸에 나눠 싣던 `rules` 는 걷는다. 배열과 칸의 이름이 표를 따른다는 결정 59 에서 따라
+    나오는 꼴이다. 관리 화면은 규칙을 그 규칙을 쓰는 화면에서 고치고(보스 · 지출 카탈로그 · 강화 비용, [[ADR-016]] 결정 15),
+    쓰기는 바꾼 규칙만 받는 경로 하나다.
+  - 크롭은 `imageCrops` 칸에 표 이름의 배열 `imageCrops` 로 낸다(`type` · `assetId` · `widthPercent` · `positionXPercent` ·
+    `positionYPercent`). 남아 있던 옛 글자 `slug` 를 걷는다. 옮길 때 `250% auto` 의 앞 수를 폭으로, `48% 12%` 의 두 수를 가로 ·
+    세로 위치로 적는다. 2026-11-20 운영 114줄이 모두 이 꼴이다. 다른 꼴이 있으면 스크립트가 멈춘다. `boss_portrait_modal` 32줄은
+    옮기지 않는다(결정 61). 관리 API 는 크롭을 종류와 그림 줄 id 로 가린다.
+  - FAQ 는 `faqs` 칸에 배열 `faqSheets` · `faqItems` 로 낸다. 문항은 묶음을 줄 id(`sheetId`)로 가리키고 답은 글자다. 옮길 때
+    문단 블록의 글을 빈 줄로 잇는다. 2026-11-20 운영 68문항이 모두 문단 하나다.
+  - 공지는 표의 칸만 `key` · `type` 으로 바꾸고 `source_id` 를 없앤다. 앱이 받는 공지 API 와 푸시 data 의 이름(`id` · `kind`)은
+    그대로 둔다. 게임 데이터가 아니고, 푸시 data 와 같은 꼴이라는 계약([[ADR-057]] 결정 4)을 지금 앱이 읽는다. 같은 묶음에서
+    운영자 공지를 예약한 시각에 올린다([[ADR-057]] 결정 14).
+  - 칸의 갱신 시각 표는 이름만 바꾼다. 옮길 때 옛 줄 가운데 지금 응답에 있는 칸의 줄만 옮긴다. 2026-11-20 운영의 20줄 가운데
+    `dropItems` · `equipmentItems` 는 `items` 칸으로 합쳐져 옮기지 않는다. 옛 마이그레이션이 새 DB 에도 갱신 시각 줄을 넣으므로
+    옮길 표를 비우고 다시 채운다.
 - 2026-11-20 의 서버는 스키마가 `src/database/schema.ts` 한 파일(68표)이고, 그 파일을 읽는 코드가 49개, 마이그레이션이 46개다.
 - 서버 PR #122 는 머지하지 않는다(사용자 선택 2026-11-20). 2026-11-17 에 지금 표 위에 쓴 #947 의 서버 첫 조각이다. 로그인
   없는 사용자를 메이플 ID 해시 헤더로 찾고, 부계정을 넥슨 ID 하나에만 등록하게 하고, 다계정 사용자를 한 명으로 센다. 같은
@@ -2212,6 +2230,8 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
 | 서버 `cli/move-old-db.spec.ts`(심볼) | 결정 59 · 65: 심볼 표 셋을 줄 id 그대로 새 칸 이름으로 옮기는지 |
 | 서버 `hunting-grounds/hunting-grounds.repository.spec.ts` | 결정 59 · 65: `huntingGrounds` 칸이 표 이름의 배열에 지역 · 사냥터 · 몬스터 레벨을 줄 id 로 잇는지, 관리 줄은 key 로 잇는지, 그림 표에 없는 지역 아이콘을 거절하는지 |
 | 서버 `enhancement-costs/enhancement-costs.repository.spec.ts` · `mvp-grades/mvp-grades.repository.spec.ts` | 결정 39 · 59 · 65: `enhancementCosts` · `mvpGrades` 칸이 표 이름의 배열을 싣는지, 슈페리얼 장비가 계열을 줄 id 로 잇고 관리 줄은 key 로 잇는지, MVP 등급이 줄 id 를 싣는지 |
+| 서버 `game-rules/*.spec.ts` · `admin/admin.controller.spec.ts` 의 규칙 | 결정 61 · 65: 게임 규칙이 한 줄의 칸으로 `gameRules` 에 실리고 바꾼 규칙만 고쳐지는지, 다른 칸의 응답에 `rules` 가 없는지 |
+| 서버 `cli/move-old-db.spec.ts`(크롭 · 공지 · 규칙 · FAQ) | 결정 61 · 65: 크롭 글자를 숫자 셋으로 옮기고 모달 띠 줄을 버리는지, 다른 꼴의 크롭에서 멈추는지, 규칙 줄 아홉이 한 줄의 칸이 되는지, FAQ 답 블록이 빈 줄로 이은 글이 되는지, 공지 · 갱신 시각 줄이 새 칸으로 옮겨지는지 |
 | 서버 `cli/move-old-db.spec.ts`(강화 비용 · MVP) | 결정 59 · 65: 여섯 표를 줄 id 그대로 새 칸 이름으로 옮기는지, 마이그레이션이 새 DB 에 넣은 슈페리얼 줄이 옛 DB 의 줄로 바뀌는지 |
 | 서버 `cli/move-old-db.spec.ts`(사냥터) | 결정 40 · 51 · 59 · 65: 사냥터 표 셋을 줄 id 그대로 새 칸 이름으로 옮기는지, 아이콘 없는 지역이 빈 칸으로 남는지 |
 | 서버 `database/schema.spec.ts` | 결정 65: 새 표로 바꾼 표의 표 · 칸 이름 · 형 · 가리키는 표 · enum 값이 설계 페이지에서 뽑은 목록과 같은지 |
