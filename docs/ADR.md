@@ -142,7 +142,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-013+151+232](./adr/ADR-013+151+232_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
 | [ADR-014](./adr/ADR-014_ads_inline.md) | 🟢 | ads | 광고 배선 |
 | [ADR-015+156](./adr/ADR-015+156_site_guide.md) | 🟢 | site | 안내 사이트와 홍보 첫 화면 |
-| [ADR-016+167+181+197](./adr/ADR-016+167+181+197_server_platform.md) | ⚪ | server | 서버 구성 |
+| [ADR-016+167+181+197+266](./adr/ADR-016+167+181+197+266_server_platform.md) | ⚪ | server | 서버 구성 |
 | [ADR-017+159+172+185+194](./adr/ADR-017+159+172+185+194_server_users.md) | ⚪ | server | 서버의 사용자와 신원 · 로그아웃과 계정 삭제 · 키 사용자 합치기 · 추천인 코드 |
 | [ADR-018](./adr/ADR-018_server-sync_drop-price.md) | 🟢 | server-sync | 드롭 가격 서버 전송 |
 | [ADR-019](./adr/ADR-019_game-data_reference.md) | 🟢 | game-data | 게임 데이터의 규칙 |
