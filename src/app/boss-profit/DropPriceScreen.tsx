@@ -53,13 +53,13 @@ import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
+import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
-import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { PORTRAIT_COMPACT } from '../../components/organisms/CharacterPortrait/portrait-metrics'
@@ -186,7 +186,6 @@ function EntryRow(props: {
 export function DropPriceScreen(): React.JSX.Element {
   const faq = useFaqSheet('drop-price')
   const navigation = useScreenNavigation()
-  const topSafeAreaPx = useTopSafeAreaPx()
   const { params } = useRoute<RouteProp<RootStackParamList, 'DropPrice'>>()
   const { status, periodKey: readPeriodKey, groups, load, savePrice, excludePrice } = useDropPriceStore()
   const gradeContext = useMvpGradeContext()
@@ -314,10 +313,7 @@ export function DropPriceScreen(): React.JSX.Element {
       <ScreenScroll
         hasTabBar={false}
         header={
-          // 히스토리 화면과 같은 헤더 레시피. 공용 `PageHeader` 를 쓰지 않는 이유도 같다
-          // (배경 조각도 하단 페이드도 없는 서브 화면이다). 상단 여백을 안 더하는 것도, 그
-          // 안전영역을 `useTopSafeAreaPx()` 로 받는 것도 같다.
-          <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
+          <PageHeader>
             <PageHeaderTitleRow className="gap-1">
               <BackButton onPress={() => navigation.goBack()} />
               <View className="flex-row items-center">
@@ -325,7 +321,7 @@ export function DropPriceScreen(): React.JSX.Element {
                 <FaqButton sheet={faq} />
               </View>
             </PageHeaderTitleRow>
-          </View>
+          </PageHeader>
         }
       >
         {/* `screen-<라우트 이름>` 은 내비게이션 테스트가 그 라우트로 밀면 그 화면이 열리는가 를

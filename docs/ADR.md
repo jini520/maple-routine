@@ -170,7 +170,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-040+208](./adr/ADR-040+208_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
 | [ADR-041+203](./adr/ADR-041+203_boss-profit_period.md) | 🟢 | boss-profit | 보스 수익 기간 |
 | [ADR-042+135+178+212+221](./adr/ADR-042+135+178+212+221_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 · 결정석 판매 한도를 넘긴 처치의 0 메소 |
-| [ADR-043](./adr/ADR-043_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
+| [ADR-043+270](./adr/ADR-043+270_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
 | [ADR-092+112+153](./adr/ADR-092+112+153_boss-profit_redesign.md) | 🟢 | boss-profit | 보스 수익 리디자인과 고가 드롭 홀로그램 강조 |
 | [ADR-044+066+076+111+120+239](./adr/ADR-044+066+076+111+120+239_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
 | [ADR-045](./adr/ADR-045_item-drop_effect.md) | 🟢 | item-drop | 고가 드롭 연출과 강조 |
