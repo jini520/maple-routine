@@ -56,7 +56,7 @@ GET /v1/game-data
 
 - 공개 조회다. 칸 하나가 표 하나이고, 칸마다 `updatedAt` 이 있다. 응답 전체의 시각을 하나로 두면 표 하나만 바뀌어도
   모든 표를 다시 그려야 한다.
-- 칸의 `updatedAt` 은 서버의 `game_data_sections` 표에 있다. 줄의 `updated_at` 최댓값으로 내면 줄을 지운 것이 드러나지
+- 칸의 `updatedAt` 은 서버의 `game_data_sections` 표에 있다(1.0.15 에서 표 이름이 `game_data_section_updates` 로 바뀌고, `game_rules` 는 규칙마다 칸을 둔 한 줄이 된다. [[ADR-099]] 결정 61). 줄의 `updated_at` 최댓값으로 내면 줄을 지운 것이 드러나지
   않아서, 쓰기마다 이 표의 시각을 올린다. `bosses` 칸만 보스 줄의 `updated_at` 최댓값이다.
 - 아직 한 번도 채우지 않은 표는 그 칸의 `updatedAt` 이 `null` 이고 목록이 비어 있다. 앱은 그 칸을 버린다.
 - 응답은 서버 표의 줄을 그대로 펼친 목록이다. 예를 들어 드롭 표는 보상 줄의 목록이고, 보스 · 난이도 · 분류로 묶는 일은

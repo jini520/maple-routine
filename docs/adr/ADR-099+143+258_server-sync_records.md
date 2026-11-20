@@ -35,7 +35,8 @@
   서버는 캐릭터를 `character_id` 로 가리키고 기기는 `ocid` 로 가리킨다(결정 20). 기기 표에만 다른 이름이나 칸을 두려면 Claude 가
   정하지 않고 사용자에게 묻는다.
 - 그 칸을 쓰는 곳과 읽는 곳을 기기 코드와 서버 코드에서 모두 찾는다. 읽는 곳이 없는 칸은 없앨 수 있는 칸으로 근거와 함께
-  알린다(결정 27).
+  알리고, 빼는 것은 사용자가 정한다(결정 27). 묻지 않고 빼지 않는다. 서버 표의 `created_at` · `updated_at` 은 읽는 곳이 없어도
+  남긴다(결정 27). 2026-11-19 ~ 20 에 결정 27 을 끝까지 읽지 않고 칸 여섯을 묻지 않고 뺐다가 다시 물었다.
 - 운영 DB(읽기 전용)와 기기 백업에서 그 칸의 실제 값을 본다.
 - 예외를 어떻게 다룰지 묻기 전에 그 경우가 실제로 생기는지 확인한다. 그 일을 일으키는 경로가 코드에 있는지, 실제로 쓰인 적이
   있는지, 사용자만 쓰는 경로면 사용자가 그 일을 하는지를 본다. 생기지 않으면 묻지 않는다.
@@ -890,7 +891,6 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   |---|---|---|---|
   | `inventory_items.quantity` | `added_quantity` | 넣은 개수의 합. 판 것과 쓴 것도 포함한다 | 지금 남은 개수로 읽힌다 |
   | `worlds.price_group` | `trade_group` | 장비를 서로 거래할 수 있는 월드의 묶음(거래권) | 가격의 묶음으로 읽힌다 |
-  | `notices.source_id` | `nexon_id` | 넥슨 공지의 `notice_id`. 앱 공지는 비어 있다 | `source` 는 이 스키마의 다른 곳에 없는 말이다. 넥슨이 준 id 라는 것을 적고, 표 이름이 공지라 `notice` 는 붙이지 않는다(결정 36) |
   | `boss_difficulty_rewards.amount` | `quantity` | 고정 보상의 개수 | 지금은 `240개` 처럼 단위가 든 글자와 `200` 처럼 숫자만 든 글자가 섞여 있다. 숫자만 적고 형을 정수로 바꾼다 |
 
   고정 보상의 개수는 2026-11-19 운영의 408줄 가운데 154줄에 있다. 100줄은 숫자 뒤에 `개` 가 붙고 54줄은 숫자뿐이라, `개` 를 떼면
@@ -1036,7 +1036,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - `boss_drops` 가 수익 건을 가리키는 칸은 `profit_entry_id` 로 줄인다(사용자 선택 2026-11-19). 두 표가 모두 `boss` 로 시작한다.
   결정 23 · 26 에서 `boss_profit_entry_id` 로 정했던 이름이고, 이 규칙을 정할 때는 줄이는 칸에 넣지 않았었다.
 - 가리키는 칸이 아니어도 같다(사용자 지정 2026-11-19). 칸 이름에 표 이름에서 이미 읽은 말을 다시 붙이지 않는다.
-  `usage_events` 의 종류 칸은 `event_type` 이 아니라 `type` 이고, `notices` 의 넥슨 id 칸은 `nexon_notice_id` 가 아니라 `nexon_id` 다.
+  `usage_events` 의 종류 칸은 `event_type` 이 아니라 `type` 이다.
   enum 의 이름은 표 밖에서도 읽히는 이름이라 줄이지 않는다(`notice_type` · `usage_event_type`).
 
   | 표 | 앞말을 뺀 칸 | 뜻 |
@@ -1666,7 +1666,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   - `split_type` 은 `even` · `ratio` 만 받는다. 계산기 화면은 `제외` 를 받지 않는다(`app/utility/BossProfitCalculatorScreen.tsx`).
   - 수수료 칸의 규칙은 분배 설정(`boss_split_settings`)과 같다(결정 25). 2026-11-17 기기 백업의 계산기 보스 60줄은 모두 균등이고
     수수료가 비어 있다. 계산기 화면이 수수료 자동을 어떻게 저장하는지는 구현할 때 [[ADR-074]] 와 함께 고친다(결정 21).
-  - 차례 칸(`sort_order`)을 없앤다. 계산기의 보스는 늘 보스 표의 기준 순서로 놓인다(`sortByReferenceOrder`). 한 줄의 기준은
+  - 차례 칸(`sort_order`)을 없앤다(사용자 선택 2026-11-20). 계산기의 보스는 늘 보스 표의 기준 순서로 놓인다(`sortByReferenceOrder`). 한 줄의 기준은
     `record_character_id` · `boss_difficulty_id` 다.
 - 차례 칸을 두는 줄은 둘이다. 약속의 보스 줄은 같은 캐릭터 묶음 안에서 사용자가 순서를 바꾼다([[ADR-051]] 결정 3). 계산기
   기록의 캐릭터 줄은 기록 목록이 기록 순서로 첫 캐릭터의 이름을 보인다([[ADR-074]] 결정 12).
@@ -1676,7 +1676,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   기준이 있는 줄(설정 · 추적 캐릭터 · 하단바 하위 페이지 순서 · 굳은 날)이 양쪽에 있으면 늦게 고친 줄을 남긴다. 지금 코드가 강화
   이상 보고를 합칠 때 쓰는 규칙이다(서버 `mergeNexonAccounts`). 이 줄은 Claude 가 지금 코드에 맞춰 적었다.
 
-### 결정 58. 직접 완료를 여는 표와 월드가 열린 기간 표의 이름을 고치고, 읽지 않는 수정 시각 칸을 없앤다 (사용자 선택 2026-11-19)
+### 결정 58. 직접 완료를 여는 표와 월드가 열린 기간 표의 이름을 고친다 (사용자 선택 2026-11-19)
 
 보스가 쓰는 기준 표 다섯과 아이템 묶음 · 월드 표 셋을 칸까지 정했다. `boss_difficulty_rewards` · `drop_boxes` ·
 `drop_box_contents` · `boss_crystal_prices` · `boss_manual_completion_periods` · `item_groups` · `worlds` · `world_open_periods` 다.
@@ -1690,9 +1690,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
   직접 완료 표의 칸(`boss_id` · `from_date` · `opened_at` · `closed_at`)은 그대로 둔다. 2026-11-19 운영에 줄이 없다. 월드 기간은
   운영에 2줄이다. 앱이 받는 응답의 이름도 표와 칸을 따른다(결정 43).
-- 읽는 곳이 없는 수정 시각 칸을 없앤다(결정 27). `worlds.updated_at` · `world_open_periods.updated_at` · `items.updated_at` 이다.
-  서버는 줄을 고칠 때 이 칸에 시각을 적기만 하고 읽지 않는다. 앱에 알리는 바뀐 시각은 `game_data_sections` 가 칸마다
-  든다(서버 `modules/game-data/sections.ts`). `bosses.updated_at` 은 보스 목록의 바뀐 시각으로 읽으므로 둔다.
+- 수정 시각 칸(`worlds.updated_at` · `world_open_periods.updated_at` · `items.updated_at`)은 둔다. 서버 코드는 이 칸에 시각을 적기만
+  하고 읽지 않지만, 서버 표의 `created_at` · `updated_at` 은 운영 데이터를 조사할 때 쓰므로 남긴다(결정 27). 앱에 알리는 바뀐
+  시각은 `game_data_section_updates` 가 칸마다 든다(결정 61).
 - 드롭 표(`boss_difficulty_rewards`)의 갈래 칸 `category` 는 둔다. 아이템 묶음에서 구할 수 없다. 2026-11-19 운영 408줄에서 고정
   보상(`fixed`) 159줄과 소비(`consumable`) 214줄이 모두 소비 · 기타 묶음의 아이템을 가리키고, 개수가 없는 고정 보상도 5줄 있다.
 - 드롭 표의 한 줄의 기준에서 갈래를 뺀다. 기준은 `boss_difficulty_id` · `item_id` · `valid_from` 이다. 드롭 기록은 한 수익 건에서
@@ -1751,11 +1751,11 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   타일 이름과 같은 글자다. 남은 읽는 곳은 2026-09-15 판부터 앱에 든 옛 기록 이관(`storage/sqlite/migrations.ts` 의
   `fillCashbookKeys`)이다. 그 판 뒤로 앱을 켜지 않은 기기가 1.0.15 로 올라오면, 줄인 이름으로 적혀 있던 옛 지출 기록은 항목을 찾지
   못해 이름 글자만 남는다. 기록은 지워지지 않는다.
-- `contents.shared_short_name` 을 없애고 `short_name` 한 칸에 적는다(결정 27). 줄마다 둘 중 하나만 쓰인다. 공유 범위가 캐릭터인
+- `contents.shared_short_name` 을 없애고 `short_name` 한 칸에 적는다(사용자 선택 2026-11-20, 결정 27). 줄마다 둘 중 하나만 쓰인다. 공유 범위가 캐릭터인
   33줄은 `short_name` 을 남은 스케줄에 쓰고 `shared_short_name` 이 비어 있다. 공유 줄 8줄은 `shared_short_name` 을 공유 컨텐츠
   위젯에 쓰고, `short_name` 은 넥슨 이름과 같은 글자이며 그려지는 곳이 없다(`lib/scheduler/scheduler-content-scope.ts` ·
   `features/remaining-schedule/remaining-schedule.ts`). 옮길 때 공유 줄 8줄의 `short_name` 에 지금의 `shared_short_name` 을 적는다.
-- `spend_tiles.icon_map_asset_id` 를 없애고 `icon_asset_id` 한 칸에 적는다(결정 27). 두 칸은 한 줄에 하나만 차고, 앱은 둘을 가르지
+- `spend_tiles.icon_map_asset_id` 를 없애고 `icon_asset_id` 한 칸에 적는다(사용자 선택 2026-11-20, 결정 27). 두 칸은 한 줄에 하나만 차고, 앱은 둘을 가르지
   않고 하나로 받는다. 운영 64줄에서 `icon_asset_id` 가 57줄, `icon_map_asset_id` 가 4줄, 그림이 없는 줄이 3줄이다. 둘을 가르던
   이유는 옛 앱이 그림을 찾던 폴더였다(결정 43). 사냥 지역의 같은 칸과 같은 처리다(결정 59).
 - `spend_items.unit_price` 는 이름을 그대로 둔다. 단위를 이름에 붙일 수 없다. 같은 줄의 `currency` 가 메소인지 메이플포인트인지를
@@ -1768,6 +1768,89 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 앱이 받는 응답은 표의 줄마다 `id` 를 싣고, 다른 표의 줄을 key 글자가 아니라 줄 id 로 가리킨다(결정 39 · 43). 응답의 배열
   이름도 표 이름을 따른다. `itemKinds` 는 `cashbookItemTypes` 가 된다. Claude 가 결정 43 을 그대로 적용해 적었다.
 - 기준 표는 새 DB 로 옮길 때 모두 줄 id 를 그대로 옮긴다(결정 43). 이 열한 표도 같다.
+
+### 결정 61. 그림의 경로를 분류 · 파일 이름 · 확장자로 나누고, 크롭은 숫자로, 게임 규칙은 칸으로 적는다 (사용자 선택 2026-11-20)
+
+표 열을 칸까지 정했다. `assets` · `image_crops` · `app_images` · `notices` · `game_rules` · `game_data_section_updates` ·
+`faq_sheets` · `faq_items` · `usage_events` · `enhancement_anomalies` 다.
+
+- `assets.path` 를 없애면서(결정 43) 그 한 칸에 들어 있던 값 셋을 칸으로 나눈다(사용자 선택). `bosses/bellona.webp` 는 분류
+  `boss`, 파일 이름 `bellona`, 확장자 `webp` 가 된다.
+
+  | 칸 | 형 | 든 값 |
+  |---|---|---|
+  | `category` | enum `asset_category` | 그림 분류. 지금의 폴더다. 그림 분류는 서버 코드의 고정 목록에서 고르고 지금은 폴더를 그대로 쓴다([[ADR-187]] 결정 5) |
+  | `file_name` | text | 지금 파일 이름에서 확장자를 뗀 것 |
+  | `extension` | text | `png` · `webp` · `jpg`(결정 43) |
+
+  - enum `asset_category` 의 값은 지금 폴더 14개다. 2026-11-20 운영 1,533장은 `skill` 578 · `item` 764 · `item_ring` 25 · `boss` 32 ·
+    `map` 25 · `map_icon` 30 · `world` 15 · `mvp` 6 · `force` 2 · `character` 1 · `drop_effect_screen` 16 · `drop_effect_pre` 8 ·
+    `drop_effect_loop` 24 · `drop_effect_end` 7 이다. 값의 이름은 Claude 가 폴더 이름에서 지었다.
+  - `name` 은 지금처럼 운영자가 적는 이름이고 비워 둘 수 있다. 관리 화면은 `name`, 그 그림을 쓰는 곳의 이름, `file_name` 차례로
+    보인다([[ADR-187]] 결정 5). 파일 이름을 `name` 에 옮기면 운영 1,533장 모두 `name` 이 차서 아이템 이름 대신 영어 파일 이름이
+    보이게 된다. 그래서 칸을 따로 둔다.
+  - 한 줄의 기준은 `category` · `file_name` · `extension` 이다. 지금 `path` 의 유일 기준과 같다. 운영에 확장자만 다른 같은 이름이
+    한 쌍 있어(`items/arcane_symbol_selection_coupon` 의 png 와 webp) 확장자를 기준에 넣었다. 사용자가 고른 보기에는
+    `category` · `file_name` 이라고 적었는데, 그 뒤 운영 값을 조회해 Claude 가 고쳤다.
+  - `sha256` 은 유일하지 않다. 운영에 내용이 같은 그림이 7묶음 24장이다.
+  - `size` 는 `size_bytes` 로 바꾼다. 값은 파일의 바이트 수이고 운영 값은 110 ~ 155,034 다. 크롭 표의 `size` 와 이름이 같고
+    뜻이 달랐다.
+  - 표 이름 `assets` 와 `app_images` 는 그대로 둔다(사용자 선택). `assets` 를 바꾸면 이 표를 가리키는 그림 칸 17개
+    (`icon_asset_id` 등)의 이름도 따라 바꿔야 한다(결정 36).
+- 크롭 표(`image_crops`)의 `size` · `position` 을 숫자 칸 셋으로 나눈다(사용자 선택). 지금은 CSS 글자(`250% auto`, `48% 12%`)이고
+  앱이 정규식으로 숫자 셋을 꺼내 쓴다(`lib/image-crop.ts`). 2026-11-20 운영 114줄이 모두 이 꼴이다.
+
+  | 지금 칸 | 새 칸 | 형 | 든 값 |
+  |---|---|---|---|
+  | `size` | `width_percent` | numeric | 그림의 폭. 놓이는 자리의 폭에 대한 % |
+  | `position` | `position_x_percent` · `position_y_percent` | numeric | 가로와 세로 위치 % |
+
+- 크롭 종류 `boss_portrait_modal` 과 그 줄 32개를 없앤다(사용자 선택). 파티 모달 띠의 크롭은 2026-11-15 에 걷었고([[ADR-039]]
+  결정 3) 지금 앱은 이 줄을 읽지 않는다. 옛 앱이 받는 표가 깨지지 않게 남겨 둔 줄이다(결정 43). enum `image_crop_type` 의 값은
+  `boss_portrait` · `boss_portrait_icon` · `daily_quest_region` 셋이 된다.
+- 앱 그림 표(`app_images`)는 그대로 둔다. 드롭 연출 프레임의 단계와 차례는 key 글자에 담는다([[ADR-187]] 결정 8).
+- 공지 표(`notices`)는 한 표로 둔다. 운영자 공지만 쓰는 칸과 넥슨 공지만 쓰는 칸이 따로 있어 보이지만 실제로는 겹쳐 쓴다.
+  2026-11-20 운영의 넥슨 공지 97줄 가운데 9줄에 푸시 문구가, 2줄에 본문이 있다.
+  - `source_id` 를 없앤다(사용자 선택). 결정 33 에서 `nexon_id` 로 이름을 정했던 칸인데 서버 코드에 이 값을 쓰는 곳이 없다. 넥슨
+    공지의 `key` 가 `event-1374` 처럼 종류와 넥슨 id 를 이은 글자라 같은 값이 `key` 에 있다.
+  - `blocks` 는 JSON 칸 그대로 둔다(사용자 선택). 공지 본문은 소제목 · 문단 · 그림 · 목록 블록이 차례로 놓이는 문서다. 기록을
+    JSON 한 칸에 담지 않는다는 규칙(결정 8)은 사용자가 만든 기록의 규칙이다. 운영 111줄 가운데 6줄에 값이 있다.
+  - `starts_at` · `ends_at` 은 둔다. 썬데이 메이플의 기간을 저장하기로 했다([[ADR-057]] 결정 11).
+  - 앱이 받는 공지의 `id` 는 줄 id 가 아니라 `key` 다. 푸시 알림과 기기의 닫은 공지가 이 글자를 든다.
+- 게임 규칙 표(`game_rules`)는 규칙마다 칸을 둔 한 줄로 바꾼다(사용자 선택). 지금은 key 와 value 두 칸으로 규칙마다 한 줄이고
+  값이 모두 같은 형이다. `value` 에는 무엇의 값인지와 단위가 없었다.
+
+  | 칸 | 형 | 2026-11-20 운영 값 |
+  |---|---|---|
+  | `weekly_boss_selection_limit` | integer | 12 |
+  | `weekly_crystal_sale_limit` | integer | 90 |
+  | `default_max_party_size` | integer | 6 |
+  | `spend_tariff_percent` | integer | 10 |
+  | `reward_coin_price_meso` | bigint | 40,000,000 |
+  | `meso_market_fee_percent` | integer | 1 |
+  | `cube_appraisal_free_max_level` | integer | 120 |
+  | `cube_appraisal_coefficient` | integer | 20 |
+  | `starforce_destroy_defence_surcharge_percent` | integer | 200 |
+
+  줄은 하나뿐이고 `updated_at` 도 하나다. 지금은 보스 규칙 셋의 `updated_at` 이 보스 목록의 바뀐 시각에 들어가는데, 그 자리에 이
+  줄의 `updated_at` 을 쓴다. 규칙을 더할 때는 칸을 더한다.
+- 표 `game_data_sections` 는 `game_data_section_updates` 로 바꾼다(사용자 선택). 한 줄은 게임 데이터 응답의 칸 하나가 마지막으로
+  바뀐 시각이다. 지금 이름은 칸의 내용을 담은 표로 읽히고, 기기에 같은 이름으로 칸의 내용을 담는 표가 따로 있다. `key` 의
+  값은 응답의 칸 이름이다.
+- FAQ 답(`faq_items.answer`)은 JSON 에서 글자 한 칸으로 바꾼다(사용자 선택). 문단은 빈 줄로 나눈다. 블록 종류가 문단 하나뿐이고
+  2026-11-20 운영 68문항이 모두 블록 하나다. 관리 화면도 답을 글 한 칸으로 받는다. 앱이 받는 값도 글자가 되고 앱이 빈 줄에서
+  문단을 나눠 그린다. FAQ 묶음 표(`faq_sheets`)는 그대로 둔다.
+- 사용 기록 표(`usage_events`)는 `identified_by` 를 없애는 것(결정 8) 말고는 그대로 둔다. `received_at` 은 서버 코드가 읽지 않지만
+  서버가 받은 시각이라 운영 조사에 쓰는 칸으로 남긴다(결정 27).
+- 강화 이상 보고 표(`enhancement_anomalies`)를 고친다.
+  - `user_id` 를 없앤다(사용자 선택). 같은 줄에 `nexon_account_id` 가 있고 넥슨 계정 줄이 사람을 가리킨다. 2026-11-20 운영
+    2,544줄 모두에 넥슨 계정이 있고 두 칸이 가리키는 사람이 다른 줄은 없다.
+  - `anomaly_type` 을 `reason` 으로, enum `enhancement_anomaly_type` 을 `enhancement_anomaly_reason` 으로 바꾼다(사용자 선택). 값이
+    종류가 아니라 합계에서 빠진 이유다. `enhancement_type` 은 `api_type` 이 된다(결정 32).
+  - 한 줄의 기준에 `detail` 을 넣는다. 기준은 `nexon_account_id` · `history_date` · `api_type` · `reason` · `item_name` · `detail`
+    이다. 앱이 한 줄로 묶는 기준에는 `detail` 이 있는데 서버의 기준에는 없어서, 같은 날 모르는 월드 이름이 둘이면 하나만
+    남는다(`features/enhancement-history/anomalies.ts`). 운영에 그런 종류의 줄이 13줄 있다. 이 기준은 Claude 가 앱에 맞춰 적었다.
+- `assets` · `image_crops` · `game_rules` 의 `updated_at` 은 둔다(결정 27).
 
 ## 테스트
 
@@ -1806,9 +1889,10 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 54: 기기 변환 뒤에 기타 조각의 남은 개수가 변환 전과 같은지, 한 기록이 같은 보관에서 두 줄로 가져가지 못하는지, 켠 효과가 적힌 차례와 상관없이 같은 칸으로 옮겨지는지 |
 | (구현 때 더한다) | 결정 55: 다시 받은 날의 줄을 분류로 갈아 끼워도 다른 API 종류의 줄이 지워지지 않는지, 넥슨 계정 줄을 합칠 때 굳은 날이 한 줄로 남는지 |
 | (구현 때 더한다) | 결정 57: 기기 변환 뒤에 약속의 주차 값과 보스 줄 id 로 같은 주에 같은 회차가 펼쳐지는지, 계산기 기록이 변환 전과 같은 금액으로 열리는지, 넥슨 계정 줄을 합칠 때 설정이 한 줄로 남는지 |
-| (구현 때 더한다) | 결정 58: 한 난이도의 같은 아이템을 갈래만 달리해 두 줄로 넣지 못하는지, 월드와 아이템을 고쳤을 때 앱에 알리는 바뀐 시각이 그대로 밀리는지 |
+| (구현 때 더한다) | 결정 58: 한 난이도의 같은 아이템을 갈래만 달리해 두 줄로 넣지 못하는지 |
 | (구현 때 더한다) | 결정 59: 이름을 바꾼 칸의 값이 옮긴 뒤에도 같은지, 응답의 배열 이름과 줄 id 로 앱이 심볼 · 사냥터 · 강화 비용을 지금과 같이 읽는지 |
 | (구현 때 더한다) | 결정 60: 옮긴 뒤 공유 컨텐츠 위젯과 남은 스케줄의 줄인 이름이 옮기기 전과 같은지, 지역 아이콘을 쓰던 타일 넷의 그림이 그대로 보이는지 |
+| (구현 때 더한다) | 결정 61: 옮긴 뒤 그림의 분류 · 파일 이름 · 확장자를 이으면 옛 경로가 되는지, 크롭 숫자 셋으로 그린 자리가 옮기기 전과 같은지, 규칙 아홉의 값이 옮기기 전과 같은지, FAQ 답의 문단 수가 같은지 |
 
 ## 번호 기록
 
