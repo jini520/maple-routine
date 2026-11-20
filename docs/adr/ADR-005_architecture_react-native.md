@@ -91,7 +91,7 @@ gh release upload live-update-latest ota/latest.json --repo jini520/maple-routin
 | 파일 | 왜 남기나 |
 |---|---|
 | `ota/latest.json` | `url` · `checksum` · `size` 가 이미 올라간 `1.0.6.zip` 빌드에서만 나온 값이다. Capacitor 소스가 없어서 다시 만들 수 없다 |
-| `ota/manifest-parser.ts` | 1.0.6 번들에 실린 매니페스트 파서를 그대로 복사한 것이다. 기기에서 도는 앱이 이 파일을 읽을 수 있는지 확인하려면, 지금 저장소의 코드가 아니라 1.0.6 에 멈춰 있는 그 코드로 검사해야 한다. 그래서 고치지 않는다 |
+| `ota/manifest-parser.ts` | 1.0.6 번들에 실린 매니페스트 파서를 그대로 복사한 것이다. 기기에서 도는 앱이 이 파일을 읽을 수 있는지 확인하려면, 지금 저장소의 코드가 아니라 1.0.6 에 멈춰 있는 그 코드로 검사해야 한다. 그래서 코드는 고치지 않는다. 주석은 동작과 관계가 없어 이 저장소의 주석 규칙을 따른다 |
 | `ota/__tests__/latest.spec.ts` | 위 둘로 `latest.json` 을 검사한다 |
 
 ### 결정 7. 런타임 import 사이클을 만들지 않는다. 값은 정의한 파일에서 바로 가져온다

@@ -46,7 +46,7 @@ export interface SvgGrid {
 }
 
 /** lucide 규격의 격자. 24 그리드 정사각이다. */
-export const LUCIDE_GRID: SvgGrid = { viewBox: '0 0 24 24', ratio: 1 }
+const LUCIDE_GRID: SvgGrid = { viewBox: '0 0 24 24', ratio: 1 }
 
 /** 뿌리에 얹는 칠. `stroke` 계열은 SVG 상속 속성이라 자식이 전부 받는다. */
 type SvgPaint = Pick<

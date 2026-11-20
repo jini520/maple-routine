@@ -69,10 +69,10 @@ describe('spendGroupsOf: 갈래 → 묶음들', () => {
    * **`버프` 는 이제 메소뿐**이다. 메포짜리 보약 둘이
    * 이벤트·BM 으로 옮겨가고 영약 넷만 남았다.
    *
-   * 통화가 둘인 목록 갈래는 이제 이벤트·BM 이다. 그 갈래 안에서도 항목이 통화를 안다는
-   * 계약이 그대로 서 있는지를 여기서 본다.
+   * 통화는 갈래가 아니라 항목이 든다. fixture 의 버프는 메소 항목만, 이벤트·BM 은 메포 항목만
+   * 들어서 갈래마다 항목의 통화를 모으면 하나씩 나온다.
    */
-  it('갈래 안에서 통화가 갈리는 자리가 있다. 항목이 안다', () => {
+  it('통화는 항목이 든다. fixture 의 버프는 메소, 이벤트·BM 은 메포다', () => {
     const 버프 = new Set(
       spendGroupsOf('buff', 패치후).flatMap((group) =>
         group.choices.flatMap((choice) => choice.items.map((item) => item.currency)),

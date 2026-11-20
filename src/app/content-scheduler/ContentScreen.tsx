@@ -41,8 +41,8 @@ import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
-import { renderDailyContentCard } from './DailyContentCards'
-import { renderWeeklyContentCard } from './WeeklyContentCards'
+import { DailyContentCard } from './DailyContentCards'
+import { WeeklyContentCard } from './WeeklyContentCards'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 /** 주기 탭. 값은 스케줄러가 쓰는 주기이고 화면에는 라벨이 선다. */
@@ -326,7 +326,7 @@ export function ContentScreen(): React.JSX.Element {
                   <View className="gap-2 pt-7">
                     {displayDailyContents.map((content) => (
                       <View key={content.contentKey ?? content.apiName}>
-                        {renderDailyContentCard(content, selected.level ?? null)}
+                        <DailyContentCard content={content} characterLevel={selected.level ?? null} />
                       </View>
                     ))}
                   </View>
@@ -346,11 +346,11 @@ export function ContentScreen(): React.JSX.Element {
                   <View className="gap-2 pt-7">
                     {displayWeeklyContents.map((content) => (
                       <View key={content.contentKey ?? content.apiName}>
-                        {renderWeeklyContentCard(
-                          content,
-                          selected.level ?? null,
-                          content.contentKey !== null && selectedClosedKeys.has(content.contentKey),
-                        )}
+                        <WeeklyContentCard
+                          content={content}
+                          characterLevel={selected.level ?? null}
+                          isWeeklyLimitClosed={content.contentKey !== null && selectedClosedKeys.has(content.contentKey)}
+                        />
                       </View>
                     ))}
                   </View>

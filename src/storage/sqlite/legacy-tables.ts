@@ -152,7 +152,7 @@ export const LEGACY_TABLE_DEFINITIONS = [
     level_from INTEGER,
     level_to INTEGER,
     -- 금액 = 카탈로그의 **unitPrice** × 이 값. 단위 이름은 안 적는다.
-    -- **src/data/spend-catalog.json** 이 항목별로 알고 있어 베끼면 두 벌이 어긋난다.
+    -- 지출 카탈로그(서버 게임 데이터의 spendCatalog 칸)가 항목별로 알고 있어 베끼면 두 벌이 어긋난다.
     quantity INTEGER,
     -- 통화별 칸 셋. 안 쓴 칸은 NULL 이다.
     -- **관세를 포함한 총액**이라 집계는 이 한 칸만 보면 된다(정정 2 ②).

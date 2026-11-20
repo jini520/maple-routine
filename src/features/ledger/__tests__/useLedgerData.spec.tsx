@@ -20,7 +20,8 @@ jest.mock('../../enhancement-history/collect', () => ({
 }))
 
 import { useRefreshProgress } from '../../refresh/progress'
-import { LedgerDataProvider, useLedgerData } from '../useLedgerData'
+import { LedgerDataProvider } from '../LedgerDataProvider'
+import { useLedgerData } from '../useLedgerData'
 
 const { syncScheduleWindow: syncMock } = jest.requireMock('../../schedule-window/sync') as Record<string, jest.Mock>
 const { planScheduleWindow: planMock } = jest.requireMock('../../schedule-window/window') as Record<string, jest.Mock>

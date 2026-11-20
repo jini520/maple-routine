@@ -30,7 +30,7 @@ const PAGES = [
 /**
  * 마크다운 상단의 HTML 주석에서 메타데이터를 읽는다.
  *
- * 프런트매터(`---`) 대신 주석을 쓰는 이유는 PRIVACY.md 때문이다 — 그 파일은 GitHub에서도
+ * 프런트매터(`---`) 대신 주석을 쓰는 이유는 PRIVACY.md 때문이다. 그 파일은 GitHub에서도
  * 그대로 읽히는 문서라, 렌더링되지 않는 `---` 블록이 맨 위에 붙으면 안 된다. 주석은 양쪽에서
  * 조용하다.
  */
@@ -50,7 +50,7 @@ function extractMeta(markdown) {
   return { meta, body: markdown.slice(match[0].length) }
 }
 
-/** 첫 `# 제목` 을 폴백 title 로 쓴다 — PRIVACY.md 처럼 메타 주석이 없는 문서를 위해서다. */
+/** 첫 `# 제목` 을 폴백 title 로 쓴다. PRIVACY.md 처럼 메타 주석이 없는 문서를 위해서다. */
 function firstHeading(markdown) {
   return markdown.match(/^#\s+(.+)$/m)?.[1].trim() ?? '메이플 루틴'
 }
@@ -97,7 +97,7 @@ async function build() {
   }
 
   // 정적 자산 복사. 마크다운·템플릿은 소스라 내보내지 않는다.
-  // 재귀 복사인 이유는 images/ 때문이다 — readFile/writeFile 은 디렉터리에서 EISDIR 로 죽는다.
+  // 재귀 복사인 이유는 images/ 때문이다. readFile/writeFile 은 디렉터리에서 EISDIR 로 죽는다.
   for (const name of await readdir(SITE)) {
     if (name.endsWith('.md') || name === 'template.html') continue
     await cp(join(SITE, name), join(OUT, name), { recursive: true })

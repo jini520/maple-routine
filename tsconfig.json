@@ -1,12 +1,10 @@
 {
-  // 저장소 루트가 곧 Expo 프로젝트다([[ADR-155]] 결정 2). 종전 루트 파일은 워크스페이스 셋을
-  // 가리키는 **참조 스텁**이었고, 그 탓에 `tsc --noEmit` 이 검사 대상 0개로 조용히 통과했다 —
-  // 이 파일이 그것을 대신하면서 그 함정도 함께 없어진다([[ADR-155]] 결정 7).
+  // 저장소 루트가 곧 Expo 프로젝트라, 검사할 파일을 이 파일이 직접 `include` 한다.
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
     "resolveJsonModule": true,
-    // `core/types/image-asset.native.ts` 처럼 RN 에서만 갈리는 파일을 tsc 가 고르게 한다.
+    // `src/types/image-asset.native.ts` 처럼 RN 에서만 갈리는 파일을 tsc 가 고르게 한다.
     "moduleSuffixes": [".native", ""],
     "types": ["jest", "expo/types"]
   },

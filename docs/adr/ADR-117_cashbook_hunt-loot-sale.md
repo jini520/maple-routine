@@ -67,7 +67,7 @@
 | `features/stats/__tests__/aggregate.spec.ts` · `features/cashbook/__tests__/records.spec.ts` · `features/cashbook/__tests__/row-icon.spec.ts` | 결정 6: 판매 금액이 `사냥` 조각 안에서 아이템 이름으로 나뉘는지, 하루 상세 줄이 아이템 이름 · 개수와 그 아이템의 그림인지 본다 |
 | `src/modules/hunt-loot/hunt-loot.repository.spec.ts` | 결정 2: 더한 차례로 내고 고치기가 key · 분류를 안 바꾸는지, 차례를 옮기는지, NPC 가격이 분류와 안 맞으면 표의 CHECK 가 막아 `HuntLootPriceShape` 가 되는지 진짜 Postgres 로 본다 |
 | `src/modules/admin/admin.controller.spec.ts` (`사냥 전리품`) | 결정 2: 관리 API 가 NPC 가격이 분류와 안 맞거나 기간이 거꾸로이거나 그림이 그림 표에 없으면 400 으로 막고 리포지토리를 안 부르는지, 같은 key 는 409 · 모르는 key 는 404 인지 본다 |
-| `src/cli/seed-game-data.spec.ts` | 결정 2: 씨앗이 빈 표만 채우고, 소비인데 NPC 가격이 없는 씨앗은 던지는지 본다 |
+| `src/cli/seed-game-data.spec.ts` | 결정 2: 씨앗이 빈 표만 채우고, 소비인데 NPC 가격이 없는 씨앗은 던지는지 본다. 1.0.15 의 서버에서 지운다([[ADR-099]] 결정 65) |
 
 ## 번호 기록
 

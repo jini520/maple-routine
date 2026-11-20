@@ -37,13 +37,13 @@ import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { EmptyState } from '../../components/molecules/EmptyState/EmptyState'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../constants/style/drought-tier-styles'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
-import { useTopSafeAreaPx } from '../../lib/safe-area'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 
 /**
@@ -251,7 +251,6 @@ function DropHistoryPeriodSection(props: {
 export function DropHistoryScreen(): React.JSX.Element {
   const faq = useFaqSheet('drop-history')
   const navigation = useScreenNavigation()
-  const topSafeAreaPx = useTopSafeAreaPx()
   // 쿼리가 마운트에 스스로 읽는다. 기록 · 보스 기록의 판이 오르면 무효화되어 다시 읽힌다.
   const { status, groups, drought, charactersByOcid, reload } = useDropHistory()
 
@@ -261,10 +260,7 @@ export function DropHistoryScreen(): React.JSX.Element {
     <ScreenScroll
       hasTabBar={false}
       header={
-        // 공용 `PageHeader` 를 쓰지 않는다. 이 화면에는 배경 조각도 하단 페이드도 없다. 상단
-        // 안전영역을 헤더가 먹는다는 계약은 그대로다. 여백은 더하지 않는다. 공용 셸과 같은 값
-        // 이어야 가격 화면과 나란히 열릴 때 제목 높이가 안 갈린다. 그 값이 `useTopSafeAreaPx()` 다.
-        <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
+        <PageHeader>
           <PageHeaderTitleRow className="gap-1">
             <BackButton onPress={() => navigation.goBack()} />
             <View className="flex-row items-center">
@@ -272,7 +268,7 @@ export function DropHistoryScreen(): React.JSX.Element {
               <FaqButton sheet={faq} />
             </View>
           </PageHeaderTitleRow>
-        </View>
+        </PageHeader>
       }
     >
       {/* 가뭄 요약은 이 화면이 말하는 내용이라 콘텐츠다. 헤더에 담는 것은 제목 · 기준 시각 ·

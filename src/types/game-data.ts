@@ -1,7 +1,8 @@
 /**
- * 우리 서버 `GET /v1/game-data` 의 칸 열넷. 칸 하나가 표 하나이고 번들 `src/data/<칸>.json` 과 기기 사본도 같은 모양이다.
+ * 우리 서버 `GET /v1/game-data` 의 칸 스물하나. 칸 하나가 표 하나이고 기기 사본과 테스트 fixture(`src/__fixtures__/game-data/`)도
+ * 같은 모양이다.
  *
- * 응답은 전부 납작한 줄 표다. 보스 · 난이도 · 갈래로 묶거나 지역 안에 사냥터를 품는 것은 조회 모듈이 한다. 선택 칸은
+ * 응답은 전부 납작한 줄 표다. 보스 · 난이도 · 분류로 묶거나 지역 안에 사냥터를 품는 것은 조회 모듈이 한다. 선택 칸은
  * 응답에서 `null` 이고 계약 검사(`parse`)를 거친 뒤에는 빠진 칸이다.
  *
  * 계약의 원본은 서버 저장소와 이 앱이 나눠 갖는다. 칸을 더할 때 양쪽을 함께 본다.
@@ -101,6 +102,7 @@ export interface SpendGroupRow {
   category: string
   /** 하루 목록 카드 첫 줄. */
   cardTitle: string
+  /** 지금 고를 수 있는 묶음인가. 기간제 묶음은 날짜가 아니라 이 값으로 닫는다. 이벤트가 미뤄지면 날짜로 한 판정이 틀린다. */
   active: boolean
 }
 export interface SpendTileRow {

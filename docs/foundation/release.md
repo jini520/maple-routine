@@ -35,9 +35,9 @@ Play 와 App Store 에 올릴 바이너리를 만드는 절차다. 서명 · 버
 
 | 값 | 어디 | 지금 | 규칙 |
 |---|---|---|---|
-| 스토어 버전 | `app.json` `expo.version` · `build.gradle` `versionName` · `Info.plist` `CFBundleShortVersionString` | 1.0.13 | `x.y.z` 세 자리 |
-| Android `versionCode` | `build.gradle` · `app.json` | 25 · 25 | 올리기만 한다. 한 번 올린 번호는 다시 못 쓴다 |
-| iOS 빌드 번호 | `Info.plist` `CFBundleVersion` · `app.json` `ios.buildNumber` | 17 · 17 | 올리기만 한다 |
+| 스토어 버전 | `app.json` `expo.version` · `build.gradle` `versionName` · `Info.plist` `CFBundleShortVersionString` | 1.0.14 | `x.y.z` 세 자리 |
+| Android `versionCode` | `build.gradle` · `app.json` | 26 · 26 | 올리기만 한다. 한 번 올린 번호는 다시 못 쓴다 |
+| iOS 빌드 번호 | `Info.plist` `CFBundleVersion` · `app.json` `ios.buildNumber` | 18 · 18 | 올리기만 한다 |
 | OTA 버전 | `package.json` `version` | `features/live-update.md` 참고 | 스토어 버전과 따로 올린다 |
 
 빌드 번호는 두 파일에 있다. 빌드가 실제로 읽는 것은 `build.gradle` 과 `Info.plist` 이고, `app.json` 만 고치면
@@ -51,7 +51,8 @@ Play 와 App Store 에 올릴 바이너리를 만드는 절차다. 서명 · 버
 바이너리에 섞이지 않는다.
 
 release 를 따면 그 자리에서 새 버전의 마일스톤을 만든다. 그 뒤 develop 에 들어가는 것은 다음 버전으로 나간다. 바이너리를
-올리면 이 브랜치의 끝에서 `patch/x.y.z` 를 따고, 그 버전에 게시 직후 낼 고침을 거기에 모은다([[ADR-188]] 결정 12).
+올리면 **그 자리에서 지문을 등록한다**(아래 `업로드하면 곧바로: 지문 등록`). 그 다음 이 브랜치의 끝에서 `patch/x.y.z` 를
+따고, 그 버전에 게시 직후 낼 고침을 거기에 모은다([[ADR-188]] 결정 12).
 스토어에 게시되면 이 브랜치를 main 으로 PR 해 merge commit 으로 머지하고, 곧바로 main 을 develop 과 `patch/x.y.z` 로
 머지한다. 이어서 `patch/x.y.z` 를 main 으로 낸다.
 

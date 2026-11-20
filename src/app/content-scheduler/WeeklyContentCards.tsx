@@ -1,7 +1,7 @@
 /**
  * 주간 컨텐츠 카드. 에픽 던전·지역 주간 퀘스트·메이플 유니온·길드 3종.
  *
- * 카드마다 배경 일러스트와 배지 구성이 다르고, 어느 것을 그릴지는 `renderWeeklyContentCard` 가
+ * 카드마다 배경 일러스트와 배지 구성이 다르고, 어느 것을 그릴지는 `WeeklyContentCard` 가
  * 컨텐츠 key 와 표의 `category` 로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
  *
  * bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard` 가 든다. 일간 카드와 같은 규약이라
@@ -22,13 +22,8 @@ import { Image, View } from 'react-native'
 
 import { Badge, Card, ProgressBar, Text } from '../../components/atoms'
 import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
-import {
-  QUEST_STATE_LABELS,
-  QUEST_STATE_VARIANT,
-  isWeeklyQuestContent,
-  isWeeklyRegionalContent,
-  renderWeeklyQuestStatus,
-} from './content-badges'
+import { WeeklyQuestStatus } from './content-badges'
+import { QUEST_STATE_LABELS, QUEST_STATE_VARIANT } from './quest-state'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 
 import {
@@ -36,6 +31,8 @@ import {
   GUILD_MISSION_POINTS_KEY,
   GUILD_UNDERGROUND_WATERWAY_KEY,
   MONSTER_PARK_EXTREME_KEY,
+  isWeeklyQuestContent,
+  isWeeklyRegionalContent,
 } from '../../lib/scheduler/content-kinds'
 
 export { GUILD_FLAG_RACE_KEY, GUILD_MISSION_POINTS_KEY, GUILD_UNDERGROUND_WATERWAY_KEY, MONSTER_PARK_EXTREME_KEY }
@@ -166,7 +163,7 @@ export function WeeklyQuestCard(props: {
         {props.isBlocked === true ? (
           <Badge variant="muted" className="shrink-0">진행 불가</Badge>
         ) : (
-          renderWeeklyQuestStatus(content)
+          <WeeklyQuestStatus content={content} />
         )}
       </View>
     </IllustratedCard>
@@ -308,13 +305,14 @@ export function GuildFlagRaceCard(props: {
   )
 }
 
-export function renderWeeklyContentCard(
-  content: WeeklyContent,
+export function WeeklyContentCard(props: {
+  content: WeeklyContent
   /** 이 카드를 보는 캐릭터의 레벨. 판정은 `lib/scheduler/required-level` 한 곳이 한다. */
-  characterLevel: number | null,
+  characterLevel: number | null
   /** 계열 주간 한도가 찬 미완료 항목인가. 판정은 `weeklyLimitClosedKeys` 가 한다. */
-  isWeeklyLimitClosed: boolean,
-): React.JSX.Element {
+  isWeeklyLimitClosed: boolean
+}): React.JSX.Element {
+  const { content, characterLevel, isWeeklyLimitClosed } = props
   // 길드 셋과 유니온 둘은 참조표에 요구 레벨이 **없다**. 어떤 레벨에서도 진행 가능이라
   // 그 카드들에는 이 프롭을 넘기지 않는다(`대가`).
   const isBlocked = isContentBlocked(characterLevel, content.contentKey)

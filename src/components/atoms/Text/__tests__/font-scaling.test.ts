@@ -5,7 +5,6 @@
 import { TEXT_SIZES, TEXT_SIZE_SCALE } from '../../../../lib/text-size'
 import { scaleTextStyle } from '../font-scaling'
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { fontSize: 글자표 } = require('../../../../../typography.cjs') as {
   fontSize: Record<string, [string, { lineHeight: string }]>
 }

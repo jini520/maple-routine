@@ -1,7 +1,7 @@
 # ADR-142+144+229 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
 
 > 🟢 유효(세 단계와 #819 후속 모두 구현)
-> 관련 소스: `features/query/`(`client.ts` · `keys.ts` · `meta.ts` · `freshness.ts` · `app-focus.ts` · `reset-timer.ts` · `persist.ts` · `invalidation.ts`) · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/refresh/pull.ts` · `features/refresh/freshness.ts` · `features/boss-profit/period-query.ts` · `round-record.ts` · `round-view.ts` · `store.ts` · `drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/cashbook/meso-rate.ts` · `features/ledger/useLedgerData.tsx` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `manual-completed-query.ts` · `features/settlement/query.ts` · `features/manual-completion/query.ts` · `features/notice/notice-query.ts` · `features/party-appointments/query.ts` · `features/mvp-grade/character-list.ts` · `features/character-profile/resolve.ts` · `features/enhancement-history/event-world-names.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/legacy-cleanup.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `hooks/useReturnToForeground.ts` · `index.ts`
+> 관련 소스: `features/query/`(`client.ts` · `keys.ts` · `meta.ts` · `freshness.ts` · `app-focus.ts` · `reset-timer.ts` · `persist.ts` · `invalidation.ts`) · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/refresh/pull.ts` · `features/refresh/freshness.ts` · `features/boss-profit/period-query.ts` · `round-record.ts` · `round-view.ts` · `store.ts` · `drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/cashbook/meso-rate.ts` · `features/ledger/LedgerDataProvider.tsx` · `useLedgerData.ts` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `manual-completed-query.ts` · `features/settlement/query.ts` · `features/manual-completion/query.ts` · `features/notice/notice-query.ts` · `features/party-appointments/query.ts` · `features/mvp-grade/character-list.ts` · `features/character-profile/resolve.ts` · `features/enhancement-history/event-world-names.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/legacy-cleanup.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `hooks/useReturnToForeground.ts` · `index.ts`
 
 ## 배경
 
@@ -99,7 +99,7 @@ zustand 스토어에는 **화면 상태만** 남긴다. 고른 탭 · 보던 기
   (#812 C4), 기록이 아직 없는 지난 날이 비지 않는다. 오늘 강화는 하루치(4콜)라 어느 당김에나 든다. 전에는 today 와 보스
   수익의 당김이 강화를 안 받아 이번 주 지출이 그대로였다(#812 B2 · B4). 컨텐츠 · 보스 스케줄러의 당김은 회차만 받는다.
   그 두 화면은 창과 강화를 안 그린다.
-- 수익 · 지출 층(`features/ledger/useLedgerData.tsx`)의 `live` 조각은 회차(`refreshSchedules`)와 오늘 강화
+- 수익 · 지출 층(`features/ledger/LedgerDataProvider.tsx` · `useLedgerData.ts`)의 `live` 조각은 회차(`refreshSchedules`)와 오늘 강화
   (`collectTodayEnhancement`)다. 층의 마운트는 `prefetchSchedules` 로 만료된 회차를 먼저 받은 뒤 창을 채운다. 창 회차가 자동 기록보다 먼저 후보를 읽어 오늘 기록에
   날짜가 안 붙던 자리가 사라진다(#812 C2 · C5). 층은 진행률 · 모달 · 강화 범위만 들고 기록은 들지 않는다. 자식이 다시
   읽는 계기였던 `revision` 은 결정 6 이 대신한다.

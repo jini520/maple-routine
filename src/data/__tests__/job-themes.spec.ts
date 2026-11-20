@@ -1,5 +1,4 @@
 import jobThemesData from '../job-themes.json'
-// `lib/` 은 아직 앱에 있다. 다음 step 에서 core 로 넘어오면 `../../lib/…` 로 되돌린다(0단계).
 import { contrastHex, hexToOklch } from '../../lib/color'
 import { THEME_TOKEN_KEYS, measureThemeContrast } from '../../lib/theme/theme-derive'
 import type { JobThemes, ThemeName } from '../../types/theme'
@@ -21,7 +20,7 @@ describe('job-themes.json: 스키마', () => {
     expect(NAMES.length).toBeGreaterThan(0)
   })
 
-  it.each(NAMES)('%s: 34개 토큰을 빠짐없이 갖는다', (name) => {
+  it.each(NAMES)('%s: `THEME_TOKEN_KEYS` 의 토큰을 빠짐없이 갖는다', (name) => {
     const tokens = JOB_THEMES[name] as unknown as Record<string, string>
     for (const key of THEME_TOKEN_KEYS) {
       expect(tokens[key], `${name}.${key}`).toBeDefined()

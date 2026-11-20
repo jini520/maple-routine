@@ -52,8 +52,10 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { ownerFieldsOf, ownerValueOf } from '../character-options'
-import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, OwnerField, QuantityStepper, useCountField } from '../sheet-fields'
-import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
+import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, OwnerField, QuantityStepper } from '../sheet-fields'
+import { useCountField } from '../use-count-field'
+import { RateRow, type SpendFormProps } from './form-shared'
+import { useHeaderSlot, useSaveSlot } from './form-slots'
 import type { SpendRecord } from '../../../storage/spend'
 import { rowsOfGroups } from './tile-rows'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
@@ -115,8 +117,6 @@ function ItemTile(props: {
   /** 값이 하나로 정해지는 칸만 가격을 적는다. 단계가 여럿이면 단계마다 값이 달라 못 적는다. */
   price: string | null
   selected: boolean
-  /** 안 열린 묶음의 타일. 흐리고 **안 눌린다**. */
-  disabled?: boolean
   onPress: () => void
 }): React.JSX.Element {
   const icon = getAssetImage(props.iconAssetId)
@@ -125,8 +125,7 @@ function ItemTile(props: {
       role="button"
       aria-label={props.label}
       aria-selected={props.selected}
-      disabled={props.disabled}
-      className={`w-1/2 p-0.5 ${props.disabled === true ? 'opacity-40' : ''}`}
+      className="w-1/2 p-0.5"
       onPress={props.onPress}
     >
       {/*
@@ -172,23 +171,6 @@ function ItemTile(props: {
         </View>
       </View>
     </Pressable>
-  )
-}
-
-/**
- * 묶음 이름. 안 열린 묶음은 지우지 않고 흐리게 둔다. 기간제 이벤트는 열릴 때만 있는 것이라
- * 숨기면 그런 것이 있었지 를 기억할 자리가 사라진다. 자리는 남기고 못 고르게 한다.
- */
-function GroupLabel(props: { groupKey: string; group: string; active: boolean }): React.JSX.Element {
-  return (
-    <View className="flex-row items-center gap-1.5">
-      <Text className="text-11 font-bold text-text-disabled">{props.group}</Text>
-      {!props.active && (
-        <Text testID={`spend-sheet-closed-${props.groupKey}`} className="text-11 text-text-disabled">
-          · 이벤트 기간이 아닙니다
-        </Text>
-      )}
-    </View>
   )
 }
 
@@ -459,7 +441,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
               <View className="flex-row px-1">
                 {row.map((group) => (
                   <View key={group.key} className={row.length === 2 ? 'w-1/2 px-0.5' : 'px-0.5'}>
-                    <GroupLabel groupKey={group.key} group={group.group} active={group.active} />
+                    <Text className="text-11 font-bold text-text-disabled">{group.group}</Text>
                   </View>
                 ))}
               </View>
@@ -476,7 +458,6 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
                       // 단계가 여럿이면 **나란히** 적는다. `7,500 | 30,000 메포`.
                       price={tilePriceLabel(each.items)}
                       selected={false}
-                      disabled={!group.active}
                       onPress={() => selectChoice(each)}
                     />
                   )),

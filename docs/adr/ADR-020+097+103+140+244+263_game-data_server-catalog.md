@@ -1,8 +1,8 @@
-# ADR-020+097+103+140+244 게임 데이터 서버 표와 기기 사본
+# ADR-020+097+103+140+244+263 게임 데이터 서버 표와 기기 사본
 
-> 🟢 유효
+> ⚪ 미구현
 > 옛 번호: ADR-341 · ADR-349 결정 1 · 2 · 5 · 6 · 정정 1 · 2 · 3 · 4 · ADR-350
-> 관련 소스: `lib/game-data/` · `lib/assets/asset-files.ts` · `lib/assets/image-crops.ts` · `lib/assets/asset-lookup.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `app/AppShell.tsx` · `server/game-data.ts` · `storage/game-data-copy.ts` · `storage/sqlite/game-data-tables.ts` · `storage/adapters/rn-asset-files.ts` · `types/game-data.ts` · `src/__fixtures__/game-data/` · 서버 `modules/game-data/` · `modules/assets/` · `modules/admin/` · 이슈 #741 · #1033
+> 관련 소스: `lib/game-data/` · `lib/assets/asset-files.ts` · `lib/assets/image-crops.ts` · `lib/assets/asset-lookup.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `app/AppShell.tsx` · `server/game-data.ts` · `storage/game-data-copy.ts` · `storage/sqlite/game-data-tables.ts` · `storage/adapters/rn-asset-files.ts` · `types/game-data.ts` · `src/__fixtures__/game-data/` · 서버 `modules/game-data/` · `modules/assets/` · `modules/admin/` · 이슈 #741 · #1033 · #1100
 
 ## 배경
 
@@ -17,7 +17,7 @@
 | 칸 | 서버 표 |
 |---|---|
 | `bosses` | `bosses` · `boss_difficulties` · `game_rules` |
-| `dropItems` | `items` 의 드롭 아이템 줄(`is_drop`) |
+| `dropItems` | `items` 의 드롭 아이템 줄(`is_drop`). 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) |
 | `bossDrops` | `boss_drop_rewards` |
 | `dropBoxes` | `drop_boxes` · `drop_box_contents` |
 | `crystalPrices` | `boss_crystal_prices` |
@@ -26,7 +26,7 @@
 | `cashbookCategories` | `cashbook_categories` · `cashbook_item_kinds` |
 | `symbolCosts` | `symbol_groups` · `symbols` · `symbol_level_costs` |
 | `contents` | `contents` · `content_categories` |
-| `equipmentItems` | `items` 의 강화 장비 줄(`is_equipment`) |
+| `equipmentItems` | `items` 의 강화 장비 줄(`is_equipment`). 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) |
 | `enhancementCosts` | `potential_reset_costs` · `soul_potential_reset_costs` · `starforce_steps` · `game_rules` |
 | `mvpGrades` | `mvp_grades` |
 | `huntingGrounds` | `hunting_regions` · `hunting_grounds` · `hunting_ground_levels` |
@@ -61,9 +61,22 @@ GET /v1/game-data
 - 아직 한 번도 채우지 않은 표는 그 칸의 `updatedAt` 이 `null` 이고 목록이 비어 있다. 앱은 그 칸을 버린다.
 - 응답은 서버 표의 줄을 그대로 펼친 목록이다. 예를 들어 드롭 표는 보상 줄의 목록이고, 보스 · 난이도 · 분류로 묶는 일은
   앱의 조회 모듈이 한다. 배열은 서버 `sort_order` 순서이고 `sort_order` 자체는 응답에 없다.
-- 서버의 `GET /v1/bosses` 는 아직 남아 있다. 스토어 1.0.12 의 옛 OTA 가 이 경로를 부르기 때문이다.
+- 서버의 `GET /v1/bosses` 는 아직 남아 있다. 스토어 1.0.12 의 옛 OTA 가 이 경로를 부르기 때문이다(1.0.15 의 서버에서 지운다.
+  [[ADR-099]] 결정 65).
 - 응답 몸의 해시를 ETag 로 단다. `If-None-Match` 가 같으면 몸 없이 304 를 낸다. nginx 가 gzip 으로 줄이며 붙이는 `W/` 도
   같은 것으로 본다. 앱은 백그라운드에서 돌아올 때마다 묻기 때문에, 바뀐 것이 없는 날은 전송이 거의 없다.
+- 서버는 만든 응답 몸과 ETag 를 메모리에 담아 두고 그대로 낸다. 요청마다 몸을 새로 만들면 304 로 끝나는 요청도 칸 스물하나를
+  다 읽고 1MB 를 직렬화해서, 요청 하나가 서버 CPU 를 0.7초 쓴다. 푸시나 21:00 알림 직후에는 1분에 50건 가까이 몰려서 서버 앱
+  박스가 이것만으로 막혔다(2026-11-20 실측, 이슈 #1100).
+- 요청마다 칸의 시각만 쿼리 하나로 읽고, 담아 둔 응답을 만들 때의 시각과 다르면 다시 만든다. 시각은 `game_data_sections` 의
+  칸 시각과, `bosses` 칸의 `updatedAt` 을 내는 보스 줄 · 규칙 줄(`game_rules`)의 `updated_at` 이다. 쓰기마다 칸 시각을 올리므로
+  관리 화면에서 고친 값이 다음 요청에 바로 닿는다(사용자 지정 2026-11-20).
+- 담은 지 5분이 지나면 시각이 같아도 다시 만든다. 앱은 칸 시각을 보지 않고, ETag 가 바뀌면 칸 전부를 바꾼다. 그래서 담아 두기
+  전에는 칸 시각을 안 올리는 쓰기(빠진 경로나 SQL 직접 수정)도 앱에 닿았는데, 담아 두면 닿지 않는다. 5분이 그 늦음의 끝이다
+  (사용자 지정 2026-11-20).
+- 여러 요청이 동시에 와도 다시 만드는 일은 한 번만 한다. 몰리는 순간에 시각이 바뀌면 요청마다 따로 만들어서 같은 부하가 다시
+  난다.
+- ETag 는 담아 둔 뒤에도 몸의 해시다. 시각으로 만들면 기기들이 든 ETag 가 배포 직후 모두 어긋나서 1MB 를 한꺼번에 다시 받는다.
 - 그림 목록(`assets`)과 크롭(`imageCrops`)도 이 응답의 칸이다. 경로를 따로 두면 두 요청 사이에 관리 화면에서 값이 바뀔 수
   있다. 그러면 데이터는 새 그림을 가리키는데 목록에는 그 그림이 없어서, 결정 13 의 한 번에 바꾸기를 지키려면 이 어긋남을
   따로 막아야 한다(사용자 지정 2026-10-26).
@@ -117,17 +130,20 @@ GET /v1/game-data
 ### 결정 6. 서버 값은 관리 화면에서 고치고, 첫 채움은 시드 CLI 가 했다
 
 서버 저장소의 `seed-game-data` CLI 가 `src/database/seed/<표>.json` 을 읽어 비어 있는 표만 채운다. 줄이 하나라도 있는
-표는 건드리지 않는다. 운영자가 폼으로 고친 값을 배포 때 되돌리지 않기 위해서다.
+표는 건드리지 않는다. 운영자가 폼으로 고친 값을 배포 때 되돌리지 않기 위해서다(1.0.15 의 서버에서 이 명령과 씨앗 JSON 을
+지운다. 새 DB 는 옛 DB 에서 옮겨 채운다. [[ADR-099]] 결정 65).
 
 그 뒤로는 관리 화면(`/admin/*`, nginx basic auth) 폼으로 고친다. JSON 을 통째로 붙여 넣는 화면은 없다. 새 보스나 새
 아이템은 하나씩 더하는 일이기 때문이다. key 는 바꿀 수 없고, 기록이 가리키는 줄(보스 · 아이템 · 장비 · 사냥터 · 컨텐츠
 · 지출 항목)은 지우지 않는다. 더 쓰지 않는 줄은 `until` 로 닫는다.
 
 이미 있는 보스에서 고칠 수 있는 칸은 별칭(`alias`)뿐이다(`PUT /admin/bosses/:key/alias`). 별칭은 좁은 자리에 보이는
-글자일 뿐이어서 바꿔도 기록이 끊기지 않는다. 이름은 넥슨 API 의 `content_name` 과 맞춰 보는 값이라 열지 않았다.
+글자일 뿐이어서 바꿔도 기록이 끊기지 않는다. 이름은 넥슨 API 의 `content_name` 과 맞춰 보는 값이라 열지 않았다(1.0.15 의
+서버에서는 칸 이름이 `short_name` 이고 경로는 `PUT /admin/bosses/:key/short-name` 이다. [[ADR-099]] 결정 43).
 
 그림과 크롭의 첫 채움은 서버 저장소의 `seed-assets` CLI 가 했다. 맥에서 앱 저장소의 그림 파일과 크롭 JSON 을 관리 화면
-경로로 올렸고, 이미 있는 경로와 크롭은 건너뛴다. 관리 화면 경로를 거쳐야 형식 검사와 파일을 쓰는 차례가 운영과 같다.
+경로로 올렸고, 이미 있는 경로와 크롭은 건너뛴다. 관리 화면 경로를 거쳐야 형식 검사와 파일을 쓰는 차례가 운영과 같다(1.0.15
+의 서버에서는 분류 · 파일 이름 · 확장자로 올리고 크롭은 올리지 않는다. [[ADR-099]] 결정 65).
 
 ### 결정 7. 값의 규칙은 서버가 지키고, 앱은 형식만 본다
 
@@ -310,6 +326,7 @@ key 를 번호 차례로 모은다(`appImageFrames`). 글자 차례면 `10 < 2` 
 | `__tests__/boot-order.test.tsx` | 결정 12: 준비 전에는 잠금 화면만 서고 테마 복원과 OTA 확인만 도는지, 돌아오면 다시 묻는지 본다 |
 | `storage/__tests__/cache-data.spec.ts` | 결정 17: 다섯 그룹을 다 골라도 사본 표와 그림 디렉터리가 남는지 본다 |
 | 서버 `modules/assets/*.spec.ts` · `modules/admin/admin-assets.controller.spec.ts` · `modules/game-data/game-data.controller.spec.ts` | 결정 2 · 7 · 8 · 15: 경로 규칙 · 머리로 형식과 크기 읽기 · 해시 이름 쓰기 · 파일 먼저 표 나중 · ETag 304 · 그림 칸 검사를 본다 |
+| 서버 `modules/game-data/game-data.service.spec.ts` | 결정 2: 칸 시각이 같으면 칸을 다시 읽지 않고 담아 둔 응답을 내는지, 칸 시각이나 보스 줄 · 규칙 줄의 시각이 바뀌면 다음 요청이 새 응답인지, 5분이 지나면 시각이 같아도 다시 만드는지, 동시에 온 요청이 한 번만 만드는지, 담아 둔 응답의 ETag 가 몸의 해시인지 본다 |
 
 ## 번호 기록
 
@@ -318,3 +335,4 @@ key 를 번호 차례로 모은다(`appImageFrames`). 글자 차례면 `10 < 2` 
 - ADR-103 (2026-10-27): 번들 사본을 걷고 게임 데이터 · 그림을 받아 기기에 둔다(결정 1 · 2 · 3 · 4 · 5 · 6 · 7 · 8 다시 씀, 결정 12 ~ 17 더함, 이슈 #741)
 - ADR-140 (2026-10-30): 받기 전 확인을 처음 실행과 5MB 넘는 잠금에만 띄우고, 잠근 채 켜지면 OTA 확인 뒤에 받는다(결정 12 고침, 이슈 #803)
 - ADR-244 (2026-11-15): 결정 12 에 그림 한 장이 실패하면 새 그림을 더 받지 않고, 받던 그림이 끝난 뒤 실패로 남기는 규칙을 더했다. 실패 뒤에도 받던 그림의 진행 알림이 실패를 덮어 99% 에서 멈췄다(이슈 #1033)
+- ADR-263 (2026-11-20): 결정 2 에 서버가 응답을 메모리에 담아 두고, 칸 시각이 바뀌거나 5분이 지나면 다시 만드는 규칙을 더했다. 요청마다 응답을 만들어서 푸시 직후 서버가 막혔다(이슈 #1100)

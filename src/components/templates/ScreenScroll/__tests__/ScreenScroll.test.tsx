@@ -5,7 +5,7 @@
 // | 전 | 지금 |
 // |---|---|
 // | `fixed inset-x-0` + `overflow-y-auto` | `ScrollView` 자체가 스크롤포트다 |
-// | `top-[var(--sa-top)]` + 안쪽 `-mt` | **헤더가 안전영역을 먹는다**. 헤더가 없을 때만 이 셸이 |
+// | `top-[var(--sa-top)]` + 안쪽 `-mt` | **헤더가 안전영역을 먹는다**. 셸은 헤더를 반드시 받는다 |
 // | `bottom-[var(--tab-bar-h)]` | 탭 내비게이터가 이미 뺀 상자를 준다(`bottom-inset.ts`) |
 // | `overscroll-y-none` | **안 옮긴다**. 러버밴드는 원하는 동작이다 |
 // | 배경색 없음 | 그대로 검사한다 |
@@ -53,6 +53,7 @@ afterEach(() => {
 })
 
 const 목록 = <Text>목록</Text>
+const 헤더 = <View testID="header" />
 
 describe('ScreenScroll', () => {
   // 헤더와 콘텐츠 사이, 그리고 콘텐츠 블록끼리의 간격을 **이 한 값**이 낸다(사용자 지정 8).
@@ -62,7 +63,7 @@ describe('ScreenScroll', () => {
   // 화면에 들어오는 순간을 알고 싶은 화면(통계의 그래프)이 받는다. iOS 는 흘림 간격을 안 주면 멈출 때 한 번만 보낸다.
   it('onScroll 을 주면 스크롤 뷰에 걸고 프레임마다 흘린다', async () => {
     const onScroll = jest.fn()
-    const { getByTestId } = await renderOverlay(<ScreenScroll onScroll={onScroll}>{목록}</ScreenScroll>)
+    const { getByTestId } = await renderOverlay(<ScreenScroll header={헤더} onScroll={onScroll}>{목록}</ScreenScroll>)
 
     const scroller = getByTestId('screen-scroll')
     expect(scroller.props.scrollEventThrottle).toBe(16)
@@ -72,7 +73,7 @@ describe('ScreenScroll', () => {
 
   // 아이템 분배 계산기의 숫자 칸이 iOS 에서 키보드에 덮이고, 키보드가 뜬 동안 첫 탭이 키보드를 내리는 데 먹혔다.
   it('keyboardAware 면 입력 화면 셸과 같은 키보드 프롭 둘을 넘긴다', async () => {
-    const { getByTestId } = await renderOverlay(<ScreenScroll keyboardAware>{목록}</ScreenScroll>)
+    const { getByTestId } = await renderOverlay(<ScreenScroll header={헤더} keyboardAware>{목록}</ScreenScroll>)
 
     const scroller = getByTestId('screen-scroll')
     expect(scroller.props.keyboardShouldPersistTaps).toBe('handled')
@@ -80,7 +81,7 @@ describe('ScreenScroll', () => {
   })
 
   it('안 켠 화면의 스크롤 뷰에는 키보드 프롭이 없다', async () => {
-    const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
+    const { getByTestId } = await renderOverlay(<ScreenScroll header={헤더}>{목록}</ScreenScroll>)
 
     const scroller = getByTestId('screen-scroll')
     expect(scroller.props.keyboardShouldPersistTaps).toBeUndefined()
@@ -91,7 +92,7 @@ describe('ScreenScroll', () => {
   // 빼야 했던 것과 같은 자리다.
   it('배경색을 칠하지 않는다', async () => {
     rnThemeAppearancePort.apply('혼테일', getThemeDefinition('혼테일'))
-    const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
+    const { getByTestId } = await renderOverlay(<ScreenScroll header={헤더}>{목록}</ScreenScroll>)
 
     expect(flattenStyle(getByTestId('screen-scroll').props.style).backgroundColor).toBeUndefined()
   })
@@ -100,7 +101,7 @@ describe('ScreenScroll', () => {
 // `bounces={false}` 로 두면 플랫폼이 주는 되튐을 우리가 없애는 셈이 된다
   // (그 선언이 막던 스크롤 체이닝은 RN 에 문서가 없어 일어날 수 없다).
   it('네이티브 러버밴드를 끄지 않는다', async () => {
-    const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
+    const { getByTestId } = await renderOverlay(<ScreenScroll header={헤더}>{목록}</ScreenScroll>)
 
     expect(getByTestId('screen-scroll').props.bounces).toBeUndefined()
     expect(getByTestId('screen-scroll').props.overScrollMode).toBeUndefined()
@@ -116,33 +117,23 @@ describe('스크롤 인디케이터 색', () => {
   ] as const)('%s 테마는 %s 인디케이터', async (theme, expected) => {
     rnThemeAppearancePort.apply(theme, getThemeDefinition(theme))
 
-    const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
+    const { getByTestId } = await renderOverlay(<ScreenScroll header={헤더}>{목록}</ScreenScroll>)
 
     expect(getByTestId('screen-scroll').props.indicatorStyle).toBe(expected)
   })
 })
 
-describe('상단 안전영역. 헤더가 있으면 헤더가 먹는다', () => {
+describe('상단 안전영역은 헤더가 먹는다', () => {
 // 스크롤포트를 내리고 안쪽 래퍼의 `-mt` 로 되돌리면 그 음수 마진이 `fixed` 헤더의 spacer 와
   // 그만큼을 흡수해 주기 때문에 성립하는 트릭이었다. RN 에서 헤더는 스크롤 뷰의 **첫 자식**이라
   // 자기 패딩으로 노치를 직접 먹고, 굴리면 그 패딩째 올라간다. 되돌릴 것이 없다.
-  it('헤더를 주면 상자를 내리지 않는다 (두 번 비우지 않는다)', async () => {
+  it('셸은 상자를 내리지 않는다 (두 번 비우지 않는다)', async () => {
     const { getByTestId } = await renderOverlay(
       <ScreenScroll header={<View testID="header" />}>{목록}</ScreenScroll>,
     )
 
     expect(getByTestId('header')).toBeTruthy()
-    expect(flattenStyle(getByTestId('screen-scroll').props.style).marginTop).toBe(0)
-  })
-
-  // 헤더 없는 화면(설정 계열). **콘텐츠 패딩이 아니라 상자**여야 한다. 패딩으로 밀면 글자는
-  // 내려가도 인디케이터는 노치까지 올라간다.
-  it('헤더가 없으면 이 셸이 상자를 안전영역만큼 내린다', async () => {
-    const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
-
-    const scroller = getByTestId('screen-scroll')
-    expect(flattenStyle(scroller.props.style).marginTop).toBe(테스트_안전영역.insets.top)
-    expect(flattenStyle(scroller.props.contentContainerStyle).paddingTop).toBeUndefined()
+    expect(flattenStyle(getByTestId('screen-scroll').props.style).marginTop).toBeUndefined()
   })
 })
 
@@ -151,7 +142,7 @@ describe('하단 인셋이 들어가는 자리', () => {
   // 기본 플랫폼(jest-expo = iOS)에서 하위 페이지는 "지나가도 되는" 쪽이라 콘텐츠 여백으로 간다.
   it('하위 페이지(hasTabBar=false)의 통과 인셋은 콘텐츠 여백이다. 스크롤 높이가 그만큼 는다', async () => {
     const { getByTestId } = await renderOverlay(
-      <ScreenScroll hasTabBar={false}>{목록}</ScreenScroll>,
+      <ScreenScroll header={헤더} hasTabBar={false}>{목록}</ScreenScroll>,
     )
 
     const scroller = getByTestId('screen-scroll')
@@ -165,7 +156,7 @@ describe('하단 인셋이 들어가는 자리', () => {
   // 그대로 두고(`marginBottom` 0) 콘텐츠 끝에 **바의 몫 + 안전영역** 을 남긴다. 스크롤포트를 줄이면
   // 떠 있는 의미가 사라진다(그냥 화면이 작아진다).
   it('탭 화면(기본값)은 떠 있는 바의 몫을 콘텐츠 끝에 남긴다', async () => {
-    const { getByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
+    const { getByTestId } = await renderOverlay(<ScreenScroll header={헤더}>{목록}</ScreenScroll>)
 
     const scroller = getByTestId('screen-scroll')
     expect(flattenStyle(scroller.props.style).marginBottom).toBe(0)
@@ -227,21 +218,11 @@ describe(' 당김 인디케이터는 페이드 구간 아래에서 돈다', () =
       테스트_안전영역.insets.top,
     )
   })
-
-  // 헤더가 없는 화면은 셸이 상자를 내려서 안전영역을 먹으므로 위를 안 깎는다. 깎지 않으면
-  // 인디케이터가 가려질 일도 없고, 그래도 내리면 그만큼 엉뚱하게 낮은 자리에서 돈다.
-  it('상단을 안 깎는 화면에서는 안 내린다', async () => {
-    const { getByTestId } = await renderOverlay(
-      <ScreenScroll onRefresh={재조회}>{목록}</ScreenScroll>,
-    )
-
-    expect(getByTestId('screen-scroll').props.refreshControl.props.progressViewOffset).toBeUndefined()
-  })
 })
 
 // ★ 당김 배선은 **셸이 갖는다**. 화면은 자기 재조회 함수만 준다.
 //
-// 화면마다 조립하면 같은 여덟 줄이 다섯 벌이 되고, 그중 하나가 테마 색을 빠뜨려도 아무도 모른다.
+// 화면마다 조립하면 같은 배선이 당김을 쓰는 화면 수만큼 생기고, 그중 하나가 테마 색을 빠뜨려도 아무도 모른다.
 // 내비게이터로 올릴 수는 없다. `RefreshControl` 은 컴포넌트가 아니라 `ScrollView` 의 프롭이라
 // 스크롤 컨테이너가 있는 자리에만 산다.
 describe('당김 배선', () => {
@@ -249,7 +230,7 @@ describe('당김 배선', () => {
     const 테마 = getThemeDefinition('혼테일')
     rnThemeAppearancePort.apply('혼테일', 테마)
     const { getByTestId } = await renderOverlay(
-      <ScreenScroll onRefresh={() => Promise.resolve()}>{목록}</ScreenScroll>,
+      <ScreenScroll header={헤더} onRefresh={() => Promise.resolve()}>{목록}</ScreenScroll>,
     )
 
     const control = getByTestId('screen-scroll').props.refreshControl
@@ -263,7 +244,7 @@ describe('당김 배선', () => {
   // 직접 부르면 다섯 곳이 같은 실수를 할 수 있는 자리가 다섯 개 남는다.
   it('처음에는 안 돈다. 당겨야 돈다', async () => {
     const { getByTestId } = await renderOverlay(
-      <ScreenScroll onRefresh={() => Promise.resolve()}>{목록}</ScreenScroll>,
+      <ScreenScroll header={헤더} onRefresh={() => Promise.resolve()}>{목록}</ScreenScroll>,
     )
 
     expect(getByTestId('screen-scroll').props.refreshControl.props.refreshing).toBe(false)
@@ -272,7 +253,7 @@ describe('당김 배선', () => {
   it('당기면 준 함수를 부른다', async () => {
     const 재조회 = jest.fn().mockResolvedValue(undefined)
     const { getByTestId } = await renderOverlay(
-      <ScreenScroll onRefresh={재조회}>{목록}</ScreenScroll>,
+      <ScreenScroll header={헤더} onRefresh={재조회}>{목록}</ScreenScroll>,
     )
 
     await act(async () => {
@@ -324,20 +305,11 @@ describe(' 안전영역 페이드', () => {
     )
   })
 
-  // 설정 계열. 셸이 스크롤포트를 내렸으므로 그 자리에 올 콘텐츠가 없다. 그래도 깎으면 **콘텐츠의
-  // 첫 줄**이 흐려진다.
-  it('헤더가 없으면 상단은 깎지 않는다', async () => {
-    const { queryByTestId } = await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
-
-    expect(queryByTestId('screen-fade-top')).toBeNull()
-    expect(queryByTestId('screen-fade-bottom')).not.toBeNull()
-  })
-
   // 마스킹은 오프스크린 합성이라 공짜가 아니다. 겹치는 것이 없으면 안 건다. 그 없음 은
   // 안전영역도 바도 없을 때다(인셋 0 + 하위 페이지).
   it('겹치는 것이 없으면 마스크를 아예 걸지 않는다', async () => {
     const { queryByTestId, getByText } = await renderOverlay(
-      <ScreenScroll hasTabBar={false}>{목록}</ScreenScroll>,
+      <ScreenScroll header={헤더} hasTabBar={false}>{목록}</ScreenScroll>,
       인셋없는_기기,
     )
 
@@ -389,8 +361,8 @@ describe(' 안전영역 페이드', () => {
   })
 })
 
-// 최상단 이동의 과녁을 등록하는 자리가 이 셸 하나다. 탭 화면 여덟이 전부 이것을 쓰므로
-// 화면마다 배선하면 같은 다섯 줄이 여덟 벌이 되고, 그중 하나가 빠져도 그 탭에서만 조용히
+// 최상단 이동의 과녁을 등록하는 자리가 이 셸 하나다. 탭 화면이 전부 이것을 쓰므로
+// 화면마다 배선하면 같은 다섯 줄이 탭 수만큼 생기고, 그중 하나가 빠져도 그 탭에서만 조용히
 // 안 먹는다.
 //
 // 화면이 준 `ref` 도 함께 산다. 셸이 자기 참조를 하나 더 들면서 화면 것을 덮으면, 보스 수익의
@@ -402,7 +374,7 @@ describe('최상단 이동 과녁', () => {
     const ref = createRef<ScrollViewType>()
     await renderOverlay(
       <NavigationRouteContext.Provider value={{ key: 'Today-1', name: 'Today' }}>
-        <ScreenScroll ref={ref}>{목록}</ScreenScroll>
+        <ScreenScroll header={헤더} ref={ref}>{목록}</ScreenScroll>
       </NavigationRouteContext.Provider>,
     )
     const scroller = ref.current
@@ -417,7 +389,7 @@ describe('최상단 이동 과녁', () => {
   // 내비게이터 없이 렌더하는 테스트가 이 파일에만 열이 넘는다. 라우트를 못 읽는다고 던지면
   // 그 전부가 빨개진다.
   it('내비게이터 밖에서는 아무것도 등록하지 않는다', async () => {
-    await renderOverlay(<ScreenScroll>{목록}</ScreenScroll>)
+    await renderOverlay(<ScreenScroll header={헤더}>{목록}</ScreenScroll>)
 
     expect(() => {
       scrollPageToTop('Today')
