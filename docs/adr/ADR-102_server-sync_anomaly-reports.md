@@ -41,17 +41,29 @@
 
 ### 결정 3. 서버는 표에 남기고, 같은 날 · 종류 · 이유 · 장비는 한 줄을 덮는다
 
-서버 표 `enhancement_anomalies` 에 적는다(사용자 선택). (1.0.15 에서 바뀐다. `user_id` 를 없애고 `anomaly_type` 을 `reason` 으로 바꾼다. [[ADR-099]] 결정 61) 컨테이너 로그는 다시 만들면 사라지고 모아 보기 어렵다.
-`UNIQUE (user_id, history_date, enhancement_type, anomaly_type, item_name)` 이고 받은 값으로 덮는다. 수집기는 오늘처럼 굳지 않은
-날을 받을 때마다 그 날 전체를 다시 세므로, 덮어야 같은 줄이 여러 번 쌓이지 않는다.
+서버 표 `enhancement_anomalies` 에 적는다(사용자 선택). 컨테이너 로그는 다시 만들면 사라지고 모아 보기 어렵다.
+강화 내역은 넥슨 계정마다 받으므로 `UNIQUE (nexon_account_id, history_date, enhancement_type, anomaly_type, item_name)` 이고 받은
+값으로 덮는다. 수집기는 오늘처럼 굳지 않은 날을 받을 때마다 그 날 전체를 다시 세므로, 덮어야 같은 줄이 여러 번 쌓이지 않는다.
+
+1.0.15 서버는 칸과 기준을 바꾼다([[ADR-099]] 결정 61).
+
+- `user_id` · `identified_by` · `item_key` 를 없앤다. 사람은 넥슨 계정 줄이 가리킨다.
+- `enhancement_type` 은 `api_type`, `anomaly_type` 은 `reason` 이다. 요청 몸의 이름도 `apiType` · `reason` 이고 `itemKey` 는 받지 않는다.
+- 한 줄의 기준에 `detail` 을 넣는다. 수집기가 상세까지 같아야 한 줄로 묶기 때문이다. 상세는 비울 수 있어 `coalesce(detail, '')` 로
+  견준다. 계정을 지워 넥슨 계정 칸이 빈 줄은 견주지 않는다. 빈 줄끼리 부딪치면 밤의 계정 삭제가 실패한다.
 
 ```
 서버 enhancement_anomalies   id · user_id · identified_by · history_date · enhancement_type · anomaly_type · item_key · item_name
                              · row_count · detail · created_at · updated_at
 ```
 
-`identified_by` 칸은 1.0.15 서버 작업에서 뺀다([[ADR-099]] 결정 8). `item_key` 칸도 1.0.15 서버 작업에서 뺀다. 운영의 모든 줄에서
-비어 있고 읽는 곳이 없다([[ADR-099]] 결정 39).
+```
+1.0.15 enhancement_anomalies   id · nexon_account_id · history_date · api_type · reason · item_name · row_count · detail
+                               · created_at · updated_at
+```
+
+`identified_by` 는 기록의 값이 아니라 사람의 값이라 뺀다([[ADR-099]] 결정 8). `item_key` 는 운영의 모든 줄에서 비어 있고 읽는
+곳이 없다([[ADR-099]] 결정 61).
 
 ## 테스트
 
