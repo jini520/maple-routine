@@ -88,8 +88,8 @@
 - 그림을 가리키는 칸(`portraitAssetId` · `iconAssetId` · `emblemAssetId` · `backgroundMapAssetId` 등)은 그림 목록(`assets` 칸)의
   id 다. 앱은 이 id 로 기기의 파일을 찾고, 경로는 보지 않는다. 서버는 쓰기 때 그림 표에 없는 그림을 거절한다. 그래서 새 보스나
   새 아이템도 관리 화면에서 그림을 먼저 올리면 앱 빌드 없이 그림까지 나온다([[ADR-187]] 결정 4).
-- 서버는 옛 앱을 위해 옛 글자 칸(`portraitSlug` · `iconFile` · `emblem` · `backgroundMap` 등)도 함께 낸다. 지금 앱은 그 칸을
-  읽지 않는다. 옛 버전을 잠근 뒤 서버에서 지운다.
+- 서버는 옛 글자 칸(`portraitSlug` · `iconFile` · `emblem` · `backgroundMap` 등)도 함께 낸다. 스토어 1.0.13 이 읽던 칸이고, 지금
+  앱은 읽지 않는다. 관리 화면의 편집 칸이 같은 값을 읽어 운영 서버에서는 그대로 두고, 1.0.15 로 옮길 때 없앤다([[ADR-187]] 결정 4).
 - 앱 코드가 그림을 이름으로 직접 찾지 않는다. 붙일 표가 없는 그림은 `appImages` 칸의 key 로 찾는다. key 는 앱 코드
   (`APP_IMAGE_KEYS`)가 정하고, 표에 없는 key 면 그림 없이 선다.
 

@@ -1228,7 +1228,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   표기다. `short_name` 은 `shortName` 으로 낸다. 앱은 `GAME_DATA_CONTRACT` 를 올려 새 사본을 받는다(결정 19).
 - 옛 앱이 읽던 그림 이름을 없앤다(사용자 지정 2026-11-19). 게임 데이터에 그림 줄 id 와 함께 싣던 `iconFile` · `iconMap` ·
   `emblem` · `portraitSlug` · `backgroundMap` · `backgroundPortrait` 와 크롭의 `slug` 를 싣지 않는다. 그림은 그림 줄 id 로만
-  가리킨다. 옛 글자 칸은 옛 앱이 남는 동안만 함께 내기로 한 것이다([[ADR-187]] 결정 4).
+  가리킨다. 옛 글자 칸은 1.0.15 로 옮길 때까지만 함께 내기로 한 것이다([[ADR-187]] 결정 4).
 - `assets.path` 를 없앤다(사용자 지정 2026-11-19). 옛 앱이 그림을 찾던 경로다. 관리 화면도 그림을 줄 id 로 가린다. 지금 서버는
   디스크의 파일 이름(`<sha256>.<확장자>`)을 만들 때 확장자를 이 경로에서 읽는다. 그래서 확장자를 적는 칸 `extension` 을 더한다(사용자 선택
   2026-11-19). 값은 `png` · `webp` 같은 글자다.
