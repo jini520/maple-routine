@@ -1,4 +1,4 @@
-# ADR-142+144+229 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
+# ADR-142+144+229+275 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
 
 > 🟢 유효(세 단계와 #819 후속 모두 구현)
 > 관련 소스: `features/query/`(`client.ts` · `keys.ts` · `meta.ts` · `freshness.ts` · `app-focus.ts` · `reset-timer.ts` · `persist.ts` · `invalidation.ts`) · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/refresh/pull.ts` · `features/refresh/freshness.ts` · `features/boss-profit/period-query.ts` · `round-record.ts` · `round-view.ts` · `store.ts` · `drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/cashbook/meso-rate.ts` · `features/ledger/LedgerDataProvider.tsx` · `useLedgerData.ts` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `manual-completed-query.ts` · `features/settlement/query.ts` · `features/manual-completion/query.ts` · `features/notice/notice-query.ts` · `features/party-appointments/query.ts` · `features/mvp-grade/character-list.ts` · `features/character-profile/resolve.ts` · `features/enhancement-history/event-world-names.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/legacy-cleanup.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `hooks/useReturnToForeground.ts` · `index.ts`
@@ -140,6 +140,13 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
   `hooks/useReturnToForeground` 를 쓰고, 이 훅은 `focusManager` 를 구독해 포커스가 켜질 때 콜백을 부른다. 전에는 훅이 `AppState`
   리스너를 따로 달아 같은 규칙이 두 벌이었다. 콜백은 백그라운드에 나가 있던 시간을 받는다. OTA 가 받아 둔 번들을 적용할지
   그 시간으로 정한다([[ADR-012]] 결정 15).
+- 배경에 간 시각(`backgroundedAt()`)도 `app-focus.ts` 가 정한다. 나가 있던 시간과 사용 로그의 체류 시간([[ADR-158]] 결정 1)이
+  이 시각 하나를 쓴다. 보통은 `background` 신호를 받은 시각이다. 그런데 iOS 는 JS 가 그 신호를 처리하기 전에 앱을 멈추기도
+  하고, 그러면 신호는 돌아온 뒤에 처리된다. 그때 받은 시각을 쓰면 나가 있던 시간이 0 이 되고, 백그라운드에 있던 시간이 체류에
+  들어간다. 2026-11-06 ~ 20 운영 표에서 iOS 의 30분 넘는 체류는 444건, 안드로이드는 12건이었다. 같은 기간 iOS 만 사용 로그
+  전송 41건이 거절됐는데(400), 하루를 넘는 체류가 든 묶음으로 본다(#1134). 그래서 JS 가 10초(`ALIVE_TICK_MS`)마다 살아 있던 시각을 적어 두고, 신호를 받았을 때
+  마지막 기록이 30초(`STALL_MS`) 넘게 지났으면 JS 가 멈춰 있었던 것으로 보고 그 기록 시각을 배경에 간 시각으로 쓴다. 오차는
+  10초 안팎이다. 30초는 바쁜 JS 가 타이머를 조금 늦게 부르는 것까지 멈춤으로 보지 않으려는 여유다.
 - 우리 서버 쿼리(결산 · 직접 완료 · 공지)도 `refetchOnWindowFocus: 'always'` 다. 새벽 결산 중 배경에 두었다가 돌아오면 결산
   줄이 걷히고(#812 A5), 더보기 · 공지 목록을 연 채 돌아오면 새 글이 서고(A7), 배경에서 온 운영자 공지는 today 배너가
   서버를 다시 물어 세운다(A8). `meta.source` 는 `server` 다. 자정 무효화는 `nexon` 만 본다.
@@ -297,7 +304,7 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
 | 파일 | 확인하는 것 |
 |---|---|
 | `features/query/__tests__/freshness.spec.ts` | 결정 4: 10분 경계, 받은 뒤 KST 자정이 끼면 자정까지만, 받은 적 없음과 회차가 덮지 않은 추적 캐릭터는 바로 만료 |
-| `features/query/__tests__/app-focus.spec.ts` | 결정 5: 배경에서 활성으로 돌아올 때만 포커스를 알리고 `inactive → active` 는 안 세는지 |
+| `features/query/__tests__/app-focus.spec.ts` | 결정 5: 배경에서 활성으로 돌아올 때만 포커스를 알리고 `inactive → active` 는 안 세는지, 배경에 간 시각이 신호를 받은 시각인지, JS 가 30초 넘게 멈춰 있다가 신호를 받으면 마지막으로 살아 있던 시각인지 |
 | `features/query/__tests__/reset-timer.spec.ts` | 결정 4: KST 자정에 `source: nexon` 쿼리만 무효화하고 틱을 올린 뒤 다음 자정을 다시 거는지 |
 | `features/query/__tests__/persist.spec.ts` | 결정 7: `meta.persist` 가 참이고 성공한 쿼리만 저장하는지, 어댑터가 `storage/query-cache` 를 부르는지, 판과 `maxAge` |
 | `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 3 · 5: 회차 하나가 캐릭터 열쇠를 다 채우고 캐시로 채운 캐릭터는 안 덮는지, 신선하면 자동 진입은 안 받고 당김은 받는지, 회차가 덮지 않은 캐릭터가 생기면 받는지, 던져도 캐릭터 열쇠가 그대로인지, 새 캐릭터만 받아 넣는지, 옛 캐시를 옮기고 앱 시작에 한 번 받는지 |
@@ -338,3 +345,4 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
 - ADR-142 (2026-10-30): 처음 작성. 데이터를 드는 자리와 다시 받는 규칙을 쿼리 캐시 하나로 모은다(이슈 #812). 같은 날 1 · 2단계를, 이튿날 3단계를 구현했다
 - ADR-144 (2026-10-31): 프로필 조회의 옛 키 폴백을 되살리고(결정 10), 넥슨 응답 캐시 둘을 쿼리로 옮기고(결정 11), 옛 키 정리를 한 자리로 모으고(결정 12), 복귀 신호를 하나로 줄였다(결정 5)(#819)
 - ADR-229 (2026-11-15): 결정 6 에 표마다 같은 알림 함수 · 같은 작업 안의 표를 한 번에 무효화 · 안 보이는 화면의 구독 끊기를 더했다. 아이폰 계측에서 같은 달 읽기가 897번 돈 것이 계기다(#1026)
+- ADR-275 (2026-11-20): 결정 5 에 배경에 간 시각을 `app-focus.ts` 가 정하고, iOS 에서 신호가 돌아온 뒤에 처리되면 JS 가 마지막으로 살아 있던 시각을 쓴다는 것을 더했다(#1134)

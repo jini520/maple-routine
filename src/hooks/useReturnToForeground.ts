@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { focusManager } from '@tanstack/react-query'
+import { backgroundedAt } from '../features/query/app-focus'
 
 /**
  * 앱이 백그라운드에서 포그라운드로 돌아올 때 부르는 훅. 마운트 순간에는 안 부른다.
@@ -14,7 +15,7 @@ export function useReturnToForeground(onReturn: (awayMs: number) => void): void 
     let leftAt: number | null = null
     return focusManager.subscribe((focused) => {
       if (!focused) {
-        leftAt = Date.now()
+        leftAt = backgroundedAt()
         return
       }
       onReturn(leftAt === null ? 0 : Date.now() - leftAt)
