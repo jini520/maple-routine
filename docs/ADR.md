@@ -159,7 +159,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-030](./adr/ADR-030_character_selection.md) | 🟢 | character | 캐릭터 선택 |
 | [ADR-031+155+177+219](./adr/ADR-031+155+177+219_character_portrait.md) | 🟢 | character | 캐릭터 초상화 |
 | [ADR-032+204](./adr/ADR-032+204_content-scheduler_cache.md) | 🟢 | content-scheduler | 스케줄러 응답 병합과 캐시 |
-| [ADR-033](./adr/ADR-033_content-scheduler_cards.md) | 🟢 | content-scheduler | 컨텐츠 카드와 완료 판정 |
+| [ADR-033+274](./adr/ADR-033+274_content-scheduler_cards.md) | 🟢 | content-scheduler | 컨텐츠 카드와 완료 판정 |
 | [ADR-034+175](./adr/ADR-034+175_content-scheduler_tracking-mode.md) | 🟢 | content-scheduler | 자동 · 수동 추적 모드와 컨텐츠 관리 |
 | [ADR-035](./adr/ADR-035_content-scheduler_layout.md) | 🟢 | content-scheduler | 스케줄러 화면의 레일 아래 간격 |
 | [ADR-036](./adr/ADR-036_boss-scheduler_boss-list.md) | 🟢 | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 |
@@ -176,12 +176,12 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-045](./adr/ADR-045_item-drop_effect.md) | 🟢 | item-drop | 고가 드롭 연출과 강조 |
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
 | [ADR-047+190+217+225+231+245](./adr/ADR-047+190+217+225+231+245_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 억 단위 판매 · 헥사와 구매 줄 합치기 · 주간 보스 수입 이전과 그 마지막 입력 기억 · 메소마켓 환전 수수료 · 펼친 강화 줄의 장비 그림 |
-| [ADR-048+070+118+126+214+226+246](./adr/ADR-048+070+118+126+214+226+246_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 · 아이템 구매 · 판매 메모 · 에픽던전 리워드의 마지막 입력 기억 |
+| [ADR-048+070+118+126+214+226+246+256](./adr/ADR-048+070+118+126+214+226+246+256_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 · 아이템 구매 · 판매 메모 · 에픽던전 리워드의 마지막 입력 기억 · 닫힌 묶음 숨기기 |
 | [ADR-049+127+157+199+206+211+215+253](./adr/ADR-049+127+157+199+206+211+215+253_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
 | [ADR-050+110+128](./adr/ADR-050+110+128_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
 | [ADR-051+075+090+236](./adr/ADR-051+075+090+236_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
-| [ADR-052+104+114+124+162+163+255](./adr/ADR-052+104+114+124+162+163+255_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 개발 노트 · 앱 안 리뷰 요청 · 카드 안 칸 · 문의 모달 |
+| [ADR-052+104+114+124+162+163+255+267](./adr/ADR-052+104+114+124+162+163+255+267_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 개발 노트 · 앱 안 리뷰 요청 · 카드 안 칸 · 문의 모달 |
 | [ADR-053+067+122+145](./adr/ADR-053+067+122+145_settings_cache-data.md) | 🟢 | settings | 데이터 삭제 |
 | [ADR-054+115+132](./adr/ADR-054+115+132_theme_tokens.md) | 🟢 | theme | 테마와 색 토큰 · 테마 페이지 |
 | [ADR-055](./adr/ADR-055_theme_backdrops.md) | 🟢 | theme | 테마 배경 그림 |
@@ -193,7 +193,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-060+073+079+085+088+107+109+130+133](./adr/ADR-060+073+079+085+088+107+109+130+133_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
 | [ADR-061+149](./adr/ADR-061+149_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 · 토스트 표시 |
 | [ADR-062+082+091+106+119+123+129+131+134+141+148+240](./adr/ADR-062+082+091+106+119+123+129+131+134+141+148+240_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
-| [ADR-063+080+113+116+146+184+223](./adr/ADR-063+080+113+116+146+184+223_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 체계 · 화면 배율 · 글자 크기 페이지 |
+| [ADR-063+080+113+116+146+184+223+268](./adr/ADR-063+080+113+116+146+184+223+268_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 체계 · 화면 배율 · 글자 크기 페이지 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
 | [ADR-071+205+243+251](./adr/ADR-071+205+243+251_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
 | [ADR-074](./adr/ADR-074_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |
@@ -207,11 +207,11 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |
 | [ADR-137+168](./adr/ADR-137+168_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
-| [ADR-142+144+229](./adr/ADR-142+144+229_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
+| [ADR-142+144+229+275](./adr/ADR-142+144+229+275_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
 | [ADR-147+252](./adr/ADR-147+252_design-system_round-entry-buttons.md) | 🟢 | design-system | 진입 버튼과 대표 캐릭터의 움직임 · 고른 동작 |
 | [ADR-150](./adr/ADR-150_design-system_page-faq.md) | 🟢 | design-system | 모든 페이지의 FAQ |
 | [ADR-152](./adr/ADR-152_navigation_bar-order.md) | 🟢 | navigation | 하단바 순서 바꾸기 |
-| [ADR-158+180+222](./adr/ADR-158+180+222_server-sync_usage-log.md) | 🟢 | server-sync | 앱 사용 로그와 관리자 대시보드(사용자 · 사용 로그) |
+| [ADR-158+180+222+276](./adr/ADR-158+180+222+276_server-sync_usage-log.md) | 🟢 | server-sync | 앱 사용 로그와 관리자 대시보드(사용자 · 사용 로그) |
 | [ADR-160+200](./adr/ADR-160+200_cashbook_exclusions.md) | ⚪ | cashbook | 가계부에서 빼는 강화 기록 |
 | [ADR-161+202](./adr/ADR-161+202_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
 | [ADR-187+213+216](./adr/ADR-187+213+216_game-data_item-catalog.md) | ⚪ | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 · 고르기 목록 칸 · 묶음 표 |
@@ -220,3 +220,4 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-209](./adr/ADR-209_inventory_items.md) | 🟢 | inventory | 인벤토리 |
 | [ADR-228](./adr/ADR-228_trade-history_page.md) | 🟢 | trade-history | 거래 내역 |
 | [ADR-250](./adr/ADR-250_design-system_press-feedback.md) | 🟢 | design-system | 누를 때 흐려지지 않는다 |
+| [ADR-261](./adr/ADR-261_error-resilience_server-maintenance.md) | ⚪ | error-resilience | 서버 점검 잠금 |

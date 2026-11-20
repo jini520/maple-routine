@@ -190,6 +190,18 @@ jest.mock('../features/game-data/sync', () => ({
   retryGameData: jest.fn(async () => {}),
 }))
 
+// 점검 잠금은 자기 테스트가 따로 있다. 여기서는 잠겼는지만 바꿔 끼운다.
+const mockMaintenance = { locked: false, until: null, checkedAt: 0 }
+jest.mock('../features/server-maintenance/store', () => ({
+  __esModule: true,
+  useServerMaintenanceStore: (selector: (state: typeof mockMaintenance) => unknown) => selector(mockMaintenance),
+  shownMaintenanceUntil: () => null,
+  watchServerMaintenance: () => () => {},
+  checkServerMaintenance: async () => {
+    mockCalls.push('check:maintenance')
+  },
+}))
+
 import { AppShell } from '../app/AppShell'
 import { renderOverlay } from '../components/__tests__/render-atom'
 import { installAppStateFocus } from '../features/query/app-focus'
@@ -201,6 +213,7 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     mockCalls.length = 0
     mockEntry.stage = 'ready'
     mockGameData.phase = 'ready'
+    mockMaintenance.locked = false
     jest.useFakeTimers()
   })
 
@@ -285,6 +298,34 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     mockLiveUpdate.status = 'idle'
   })
 
+  // 점검 중에는 화면의 조회와 쓰기가 멈춰야 한다. 화면을 덮기만 하면 아래에서 요청이 계속 나간다.
+  // 게임 데이터 잠금과 겹치면 점검 잠금이 이긴다. 점검 중에는 게임 데이터를 받을 수 없다.
+  it('서버가 점검 중이면 점검 잠금만 서고, 앱의 나머지는 마운트하지 않는다', async () => {
+    mockMaintenance.locked = true
+    const view = await renderOverlay(<AppShell />)
+    await act(async () => {})
+
+    expect(view.getByTestId('server-maintenance-lock')).toBeTruthy()
+    expect(view.queryByText('navigation')).toBeNull()
+    expect(mockCalls.sort()).toEqual(['restore:theme'])
+
+    mockGameData.phase = 'downloading'
+    const locked = await renderOverlay(<AppShell />)
+    expect(locked.getByTestId('server-maintenance-lock')).toBeTruthy()
+    expect(locked.queryByTestId('game-data-lock')).toBeNull()
+  })
+
+  // 점검 잠금이 안 풀리는 결함도 OTA 로 고칠 수 있어야 한다. 스토어 업데이트가 필요하다는 모달도 이 위에 선다.
+  it('점검 잠금 위에도 업데이트 모달이 선다', async () => {
+    mockMaintenance.locked = true
+    mockLiveUpdate.status = 'ready-to-apply'
+    const view = await renderOverlay(<AppShell />)
+
+    expect(view.getByTestId('server-maintenance-lock')).toBeTruthy()
+    expect(view.getByText('업데이트 준비 완료')).toBeTruthy()
+    mockLiveUpdate.status = 'idle'
+  })
+
   // 2겹이 트리에 없으면 내릴 주체가 사라져 실패 안전 타이머(8초)까지 스플래시가 남는다.
   it('2겹이 셸의 트리에 있다', async () => {
     const view = await renderOverlay(<AppShell />)
@@ -301,8 +342,8 @@ describe('① 셸이 무엇을 언제 하는가', () => {
   })
 
   // OS 설정에서 알림 권한을 켜고 돌아오면 그때 구독이 맞춰져야 한다. 아이폰은 앱을 새로 켜지 않고 이어서 돌리므로
-  // 게임 데이터와 OTA 도 돌아올 때 다시 확인해야 늦지 않는다.
-  it('백그라운드에서 돌아오면 다시 구독하고, 게임 데이터와 업데이트를 다시 확인한다', async () => {
+  // 게임 데이터와 OTA 도 돌아올 때 다시 확인해야 늦지 않는다. 점검도 돌아올 때 묻는다. 주기만 믿으면 최대 5분이 늦는다.
+  it('백그라운드에서 돌아오면 다시 구독하고, 게임 데이터 · 업데이트 · 점검을 다시 확인한다', async () => {
     const currentState = Object.getOwnPropertyDescriptor(AppState, 'currentState')
     Object.defineProperty(AppState, 'currentState', { value: 'active', configurable: true, writable: true })
     const listeners: ((next: AppStateStatus) => void)[] = []
@@ -326,7 +367,7 @@ describe('① 셸이 무엇을 언제 하는가', () => {
         }
       })
 
-      expect(mockCalls.sort()).toEqual(['check:liveUpdate', 'refresh:gameData', 'resubscribe:notice'])
+      expect(mockCalls.sort()).toEqual(['check:liveUpdate', 'check:maintenance', 'refresh:gameData', 'resubscribe:notice'])
     } finally {
       stopFocus()
       focusManager.setFocused(undefined)

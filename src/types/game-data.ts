@@ -101,6 +101,7 @@ export interface SpendGroupRow {
   category: string
   /** 하루 목록 카드 첫 줄. */
   cardTitle: string
+  /** 지금 고를 수 있는 묶음인가. 기간제 묶음은 날짜가 아니라 이 값으로 닫는다. 이벤트가 미뤄지면 날짜로 한 판정이 틀린다. */
   active: boolean
 }
 export interface SpendTileRow {

@@ -1,13 +1,15 @@
 /**
  * 앱을 열 때 방문을 적고, 백그라운드로 갈 때와 돌아올 때를 사용 로그에 잇는 훅. 여는 순간에 지난 실행에서 못 보낸 것도 보낸다.
  *
- * 신호는 쿼리의 복귀 재조회와 같은 `focusManager` 하나다. iOS 의 `inactive` 는 거기서 걸러진다.
+ * 신호는 쿼리의 복귀 재조회와 같은 `focusManager` 하나다. iOS 의 `inactive` 는 거기서 걸러진다. 백그라운드로 간 시각은
+ * 지금이 아니라 `backgroundedAt()` 이다. iOS 는 그 신호를 돌아온 뒤에 처리하기도 해서, 지금을 쓰면 백그라운드 시간이 체류에 든다.
  *
  * @example useUsageLog()
  */
 import { useEffect } from 'react'
 import { AppState } from 'react-native'
 import { focusManager } from '@tanstack/react-query'
+import { backgroundedAt } from '../query/app-focus'
 import { flushUsageEvents } from './flush'
 import { usageTracker } from './record'
 
@@ -16,7 +18,7 @@ export function useUsageLog(): void {
     void usageTracker.start(new Date(), AppState.currentState).then(() => flushUsageEvents())
     return focusManager.subscribe((focused) => {
       if (focused) void usageTracker.foreground(new Date())
-      else void usageTracker.background(new Date()).then(() => flushUsageEvents())
+      else void usageTracker.background(new Date(backgroundedAt() ?? Date.now())).then(() => flushUsageEvents())
     })
   }, [])
 }

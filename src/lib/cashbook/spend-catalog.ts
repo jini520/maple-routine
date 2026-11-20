@@ -119,17 +119,6 @@ export interface SpendCatalogGroup {
   /** 묶음 이름. 목록의 제목이다. */
   readonly group: string
   readonly choices: readonly SpendCatalogChoice[]
-  /**
-   * 지금 고를 수 있는 묶음인가.
-   *
-   * 기간제 이벤트(메이플 포인트 샵)는 열려 있을 때만 있는 것이고 그 사실을 카탈로그의 `groups`
-   * 가 든다. 날짜로 판정하지 않는다. 이벤트가 미뤄지는 날 앱이 거짓말을 한다. 표에 없는 묶음은
-   * 언제나 열린 것이다.
-   *
-   * 화면은 닫힌 묶음을 지우지 않고 흐리게 둔다. 자리는 남고 못 고른다. 과거 기록에는 영향이
-   * 없다. 이 값은 지금 새로 고를 수 있나 일 뿐이다.
-   */
-  readonly active: boolean
 }
 
 const CURRENCIES = ['point', 'meso'] as const
@@ -340,17 +329,26 @@ const MESO_PER_RATE_UNIT = 100_000_000
  * 기간 밖의 항목은 뺀다. 기준은 오늘이 아니라 **적는 날짜**가 든 주간 기간이다. 항목이 하나도 안
  * 남은 묶음은 안 선다.
  *
+ * 닫힌 묶음(`active: false`)도 안 선다. 지금 고를 수 있는 묶음만 남는다. 표에 없는 묶음은 열린 것이다.
+ *
  * @param dateKey 적는 날짜(KST `YYYY-MM-DD`)
  */
 export function spendGroupsOf(category: SpendCategoryKey, dateKey: string): SpendCatalogGroup[] {
   const periodKey = resetWeekStartOf(dateKey)
-  return groupItems(catalog().items.filter((item) => item.category === category && isEffectiveIn(item, periodKey)))
+  return groupItems(
+    catalog().items.filter(
+      (item) =>
+        item.category === category &&
+        isEffectiveIn(item, periodKey) &&
+        (catalog().groups.get(item.group)?.active ?? true),
+    ),
+  )
 }
 
 /**
- * 기간과 무관한 갈래의 묶음들. 기록을 되짚는 자리만 쓴다.
+ * 기간과 열림에 무관한 갈래의 묶음들. 기록을 되짚는 자리만 쓴다.
  *
- * 기간으로 거르면 출시 전 날짜로 적힌 기록을 수정 시트가 못 찾아 세부를 못 편다.
+ * 기간이나 열림으로 거르면 출시 전 날짜로 적힌 기록이나 닫힌 묶음으로 적힌 기록을 수정 시트가 못 찾아 세부를 못 편다.
  */
 function allSpendGroupsOf(category: string): SpendCatalogGroup[] {
   return groupItems(catalog().items.filter((item) => item.category === category))
@@ -360,15 +358,12 @@ function groupItems(items: readonly SpendCatalogItem[]): SpendCatalogGroup[] {
   const groups: {
     key: string
     group: string
-    active: boolean
     choices: { key: string; label: string; iconAssetId?: string; items: SpendCatalogItem[] }[]
   }[] = []
   for (const item of items) {
     let group = groups[groups.length - 1]
     if (group === undefined || group.key !== item.group) {
-      const entry = catalog().groups.get(item.group)
-      // 표에 없는 묶음은 **열린 것**이다.
-      group = { key: item.group, group: entry?.name ?? item.group, active: entry?.active ?? true, choices: [] }
+      group = { key: item.group, group: catalog().groups.get(item.group)?.name ?? item.group, choices: [] }
       groups.push(group)
     }
 

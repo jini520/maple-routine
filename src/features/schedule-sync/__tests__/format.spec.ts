@@ -173,7 +173,7 @@ describe('로그인 만료 문구', () => {
 describe('Open API 점검 문구', () => {
   const 점검 = ['gameMaintenance', 'apiMaintenance'] as const
 
-  // 피커는 화면 맨 위의 점검 배너가 무엇이 점검 중인지 말한다. 버튼은 어디에도 없다.
+  // 피커는 머리글 아래의 점검 배너가 무엇이 점검 중인지 말한다. 버튼은 어디에도 없다.
   it('피커의 빈 자리는 목록을 못 불러온 것만 말한다', () => {
     for (const kind of 점검) {
       expect(formatRosterError({ kind }, 'picker')).toEqual({
@@ -191,7 +191,7 @@ describe('Open API 점검 문구', () => {
     expect(formatRosterError({ kind: 'apiMaintenance' }, 'characterSetup').title).toBe('넥슨 Open API 점검 중입니다')
   })
 
-  it('피커의 스탈 배너는 서지 않는다. 같은 화면 맨 위에 점검 배너가 있다', () => {
+  it('피커의 스탈 배너는 서지 않는다. 같은 화면의 머리글 아래에 점검 배너가 있다', () => {
     for (const kind of 점검) {
       expect(formatStaleRosterError({ kind }, 'picker')).toBeNull()
     }

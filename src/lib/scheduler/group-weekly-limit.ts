@@ -2,7 +2,7 @@
  * 갈래의 주간 진행 한도 판정. today 공유 컨텐츠 위젯 · 컨텐츠 카드 · 진행 링이 이 한 곳을 부른다.
  *
  * 세는 것은 등록 여부와 무관하게 그 갈래에서 완료한 항목 수다. 한도는 등록이 아니라 진행 횟수를 막는다.
- * 완료 판정은 호출부가 넘긴다. 그 판정(`weeklyContentCompletion`)은 화면 쪽에 있다.
+ * 완료 판정은 호출부가 넘긴다. 그 판정(`weeklyContentCompletion`)은 `features/` 에 있고 `lib` 은 `features` 를 가져다 쓰지 않는다.
  */
 import type { ContentCategoryKey } from './content-categories'
 import { contentCategoryOf } from './contents'
