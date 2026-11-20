@@ -4,9 +4,9 @@
 import type { ContentEntry } from './contents'
 
 // 무릉도장은 quest_state 가 아니라 참여 시 도달한 층수(1~100+)가 now_count 에 그대로 기록된다.
-// 성실한 조사에 대한 보답은 quest_state=1 일 때 now_count/max_count(0~2)로 완료 횟수를 따로
-// 세므로, quest_state 배지 대신 `N회 완료` 를 보여주다가 now_count === max_count 에서 완료로
-// 전환한다. 두 항목 모두 컨텐츠 key 로 구분한다.
+// 성실한 조사에 대한 보답은 진행 중(quest_state 1)에 조사 횟수를 now_count/max_count(0~2)로 따로
+// 주므로 `진행 중` 대신 `N회 완료` 를 보인다. 완료는 quest_state 2 이고 그때 횟수는 0/0 으로 돌아간다.
+// 두 항목 모두 컨텐츠 key 로 구분한다.
 export const MU_LUNG_DOJO_KEY = 'mu_lung_dojo'
 export const FAITHFUL_INVESTIGATION_KEY = 'weekly_quest_faithful_investigation_reward'
 

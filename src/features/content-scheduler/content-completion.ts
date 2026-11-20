@@ -1,12 +1,8 @@
 /**
- * 컨텐츠 항목의 완료 판정. 초상화 레일의 진행 링이 세는 규칙의 출처.
+ * 컨텐츠 항목의 완료 판정. 카드의 완료 배지 · 진행 링 · today 의 남은 스케줄 · 미완료 스케줄 알림이 같이 보는 출처.
  *
- * 이 규칙이 카드 렌더러 열몇 곳에 흩어져 있었고, 링이 그것을 다시 구현하면 두 벌이 되어 반드시
- * 갈라진다. 그래서 출처를 여기 하나로 옮긴다.
- *
- * **카드는 아직 이 함수를 안 쓴다.** 렌더러의 분기가 완료·미완료보다 넓어서(진행 중 · 시작 안함 ·
- * N층 · N점 · N회 완료) 판정만 떼어 쓰면 분기가 두 겹이 된다. 렌더러를 이 함수 위로 다시 세우는
- * 것은 별건이고, 그때까지 여기가 읽어야 할 한 곳이다.
+ * 카드는 진행 중 · N층 · N점 · N회 완료 같은 상태를 스스로 그리고, 완료인지만 여기에 묻는다. 카드가 완료를
+ * 따로 계산하면 같은 응답을 카드와 링이 다르게 읽는다.
  *
  * 무릉도장처럼 `다 했다` 가 정의되지 않는 항목은 `unmeasurable` 이고 링의 분모에서 빠진다.
  * 영원히 안 차는 칸을 넣으면 링이 항상 미완료를 말한다.
@@ -17,7 +13,6 @@ import { findContent } from '../../lib/scheduler/contents'
 import type { DailyContent, WeeklyContent } from '../../types'
 
 import {
-  FAITHFUL_INVESTIGATION_KEY,
   GUILD_FLAG_RACE_KEY,
   GUILD_MISSION_POINTS_KEY,
   GUILD_UNDERGROUND_WATERWAY_KEY,
@@ -81,9 +76,8 @@ export function weeklyContentCompletion(content: WeeklyContent): ContentCompleti
   if (entry?.category === 'maple_union') return byQuestState(content)
 
   if (isWeeklyQuestContent(entry)) {
-    // `WeeklyQuestStatus` 의 두 예외.
     if (content.contentKey === MU_LUNG_DOJO_KEY) return 'unmeasurable'
-    if (content.contentKey === FAITHFUL_INVESTIGATION_KEY) return byCount(content)
+    // 성실한 조사에 대한 보답도 상태로 판정한다. 퀘스트를 끝내면 횟수가 0/0 으로 돌아가 횟수로는 못 가린다.
     return byQuestState(content)
   }
 
