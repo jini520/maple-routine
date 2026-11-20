@@ -142,7 +142,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-013+151+232](./adr/ADR-013+151+232_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
 | [ADR-014](./adr/ADR-014_ads_inline.md) | 🟢 | ads | 광고 배선 |
 | [ADR-015+156+265](./adr/ADR-015+156+265_site_guide.md) | ⚪ | site | 안내 사이트와 홍보 첫 화면 |
-| [ADR-016+167+181+197+264+266](./adr/ADR-016+167+181+197+264+266_server_platform.md) | ⚪ | server | 서버 구성 |
+| [ADR-016+167+181+197+264+266+280](./adr/ADR-016+167+181+197+264+266+280_server_platform.md) | ⚪ | server | 서버 구성 · 관리 화면 짜임 |
 | [ADR-017+159+172+185+194](./adr/ADR-017+159+172+185+194_server_users.md) | ⚪ | server | 서버의 사용자와 신원 · 로그아웃과 계정 삭제 · 키 사용자 합치기 · 추천인 코드 |
 | [ADR-018](./adr/ADR-018_server-sync_drop-price.md) | 🟢 | server-sync | 드롭 가격 서버 전송 |
 | [ADR-019](./adr/ADR-019_game-data_reference.md) | 🟢 | game-data | 게임 데이터의 규칙 |
@@ -214,7 +214,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-158+180+222+276](./adr/ADR-158+180+222+276_server-sync_usage-log.md) | 🟢 | server-sync | 앱 사용 로그와 관리자 대시보드(사용자 · 사용 로그) |
 | [ADR-160+200](./adr/ADR-160+200_cashbook_exclusions.md) | ⚪ | cashbook | 가계부에서 빼는 강화 기록 |
 | [ADR-161+202](./adr/ADR-161+202_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
-| [ADR-187+213+216+278](./adr/ADR-187+213+216+278_game-data_item-catalog.md) | 🟢 | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 · 고르기 목록 칸 · 묶음 표 |
+| [ADR-187+213+216+278+281](./adr/ADR-187+213+216+278+281_game-data_item-catalog.md) | 🟢 | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 · 고르기 목록 칸 · 묶음 표 |
 | [ADR-188+260+269](./adr/ADR-188+260+269_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기, 사용자에게 묻기 전에 확인할 것, 버전의 역할과 릴리즈 대기 단계, 찾은 잘못을 그 자리에서 고치기 |
 | [ADR-191+230](./adr/ADR-191+230_design-system_screen-size.md) | 🟢 | design-system | 태블릿과 접는 폰 외부 화면의 배치 |
 | [ADR-209](./adr/ADR-209_inventory_items.md) | 🟢 | inventory | 인벤토리 |
