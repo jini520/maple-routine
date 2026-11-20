@@ -13,16 +13,18 @@
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { Badge, Text, TextInput } from '../../components/atoms'
+import { Badge, CopyIcon, Text, TextInput } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
-import { ShareField } from '../../components/molecules/ShareField/ShareField'
 import { Stepper } from '../../components/molecules/Stepper/Stepper'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
+import { useToastStore } from '../../features/toast/store'
+import { copyText, systemAnnouncesCopy } from '../../native/clipboard'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { formatMesoUnits } from '../../lib/drop/drop-price'
+import { acceptSharePercentText, sharesFromPercentText } from '../../lib/boss/party-shares'
 import {
   MAX_PARTY_SIZE,
   MAX_SALE_PRICE_MESO,
@@ -98,10 +100,31 @@ function FeeRow(props: {
   )
 }
 
+/** 16px 복사 아이콘의 누르는 영역을 권장 크기 44px 로 넓히는 값. */
+const COPY_HIT_SLOP = 14
+
+/**
+ * 정산 금액을 쉼표 없는 숫자로 클립보드에 넣는 함수. 다른 앱의 숫자 칸에 붙일 값이라 쉼표 · 단위를 넣지 않는다.
+ *
+ * 성공 토스트는 OS 가 스스로 복사를 알리는 기기에서 건너뛴다. 실패하면 OS 알림이 없으므로 어느 기기에서나 알린다.
+ */
+async function copyTransfer(transfer: number): Promise<void> {
+  try {
+    await copyText(String(transfer))
+  } catch {
+    useToastStore.getState().showError('정산 금액을 복사하지 못했습니다')
+    return
+  }
+  if (!systemAnnouncesCopy()) useToastStore.getState().showSuccess('정산 금액을 복사했어요')
+}
+
 /** 테두리 없는 카드. 이 화면의 카드는 바탕색만으로 갈린다. */
 const CARD_CLASS = 'rounded-[14px] bg-surface'
 
 const SPLIT_OPTIONS = ['기본', '비율'] as const
+
+/** `비율` 을 고르면 놓이는 내 몫. 50% 는 2명이 똑같이 나눌 때와 같다. */
+const START_PERCENT_TEXT = '50'
 
 export function ItemSplitScreen(): React.JSX.Element {
   const faq = useFaqSheet('utility-item-split')
@@ -113,6 +136,8 @@ export function ItemSplitScreen(): React.JSX.Element {
   const [partySize, setPartySize] = useState(DEFAULT_PARTY_SIZE)
   // `비율` 을 골라야 선다. `기본` 이면 파티원 수로 균등이다.
   const [shares, setShares] = useState<{ myShare: number; sharesTotal: number } | null>(null)
+  /** `분배 비율` 칸의 글자. `33.` 처럼 치는 중인 글자도 칸에는 남아야 해서 비율과 따로 든다. */
+  const [percentText, setPercentText] = useState(START_PERCENT_TEXT)
   const [saleFeePercent, setSaleFeePercent] = useState<FeePercent>(DEFAULT_FEE_PERCENT)
   const [splitFeePercent, setSplitFeePercent] = useState<FeePercent>(DEFAULT_FEE_PERCENT)
 
@@ -219,37 +244,53 @@ export function ItemSplitScreen(): React.JSX.Element {
               options={SPLIT_OPTIONS}
               selected={shares === null ? '기본' : '비율'}
               size="md"
-              // 반반으로 시작한다. 아무것도 약속하지 않은 상태다. 파티원 수는 그대로 들고 있다.
-              onSelect={(option) => setShares(option === '기본' ? null : { myShare: 1, sharesTotal: 2 })}
+              // 50% 로 시작한다. 아무것도 약속하지 않은 상태다. 파티원 수는 그대로 들고 있다.
+              onSelect={(option) => {
+                setPercentText(START_PERCENT_TEXT)
+                setShares(option === '기본' ? null : sharesFromPercentText(START_PERCENT_TEXT))
+              }}
             />
           </View>
 
-          {/* 두 칸의 높이를 96 으로 못박는다. 다르면 세그먼트를 누를 때마다 아래 카드가 뛴다. */}
-          <View testID="item-split-split-body" className="h-24 rounded-[12px] bg-card-inset px-3 pb-3 pt-[11px]">
+          {/*
+            값 줄은 바탕 칸 없이 카드 위에 바로 놓는다. 드롭 가격 카드의 줄과 같은 짜임이다. 높이 36 을 못박는다.
+            두 줄의 높이가 다르면 세그먼트를 누를 때마다 아래 카드가 뛴다.
+          */}
+          <View testID="item-split-split-body" className="h-9 flex-row items-center gap-2">
             {shares === null ? (
               <>
-                <View className="flex-row items-center justify-between gap-1.5">
-                  <Text className="text-xs leading-[14px] tracking-[.04em] text-text-muted">
-                    파티 인원
-                  </Text>
-                  <Badge variant="primary" size="xs" style={TABULAR_NUMS}>
-                    최대 {MAX_PARTY_SIZE}명
-                  </Badge>
-                </View>
-                <View className="flex-1 items-center justify-center">
-                  <Stepper
-                    size="md"
-                    label="분배 파티원 수"
-                    value={partySize}
-                    max={MAX_PARTY_SIZE}
-                    onChange={setPartySize}
-                  />
-                </View>
+                <Text className="text-xs leading-[14px] tracking-[.04em] text-text-muted">파티 인원</Text>
+                <Badge variant="primary" size="xs" style={TABULAR_NUMS}>
+                  최대 {MAX_PARTY_SIZE}명
+                </Badge>
+                <View className="flex-1" />
+                <Stepper
+                  size="md"
+                  label="분배 파티원 수"
+                  value={partySize}
+                  max={MAX_PARTY_SIZE}
+                  onChange={setPartySize}
+                />
               </>
             ) : (
-              // 받는 사람들의 비율은 나머지를 고르게 나눈 것으로 본다. 파는 사람이 아는 것은 자기
-              // 몫과 합뿐이다.
-              <ShareField label="내 몫" value={shares} onChange={setShares} />
+              // 받는 사람들의 비율은 나머지를 고르게 나눈 것으로 본다. 파는 사람이 아는 것은 자기 몫뿐이다.
+              <>
+                <Text className="flex-1 text-xs tracking-[.04em] text-text-muted">분배 비율</Text>
+                <TextInput
+                  aria-label="분배 비율 내 몫"
+                  value={percentText}
+                  onChangeText={(next) => {
+                    const text = acceptSharePercentText(percentText, next)
+                    setPercentText(text)
+                    const parsed = sharesFromPercentText(text)
+                    if (parsed !== null) setShares(parsed)
+                  }}
+                  keyboardType="decimal-pad"
+                  className="h-[25px] min-w-[44px] text-right text-lg font-semibold text-text"
+                  style={TABULAR_NUMS}
+                />
+                <Text className="text-xs text-text-muted">%</Text>
+              </>
             )}
           </View>
         </View>
@@ -279,6 +320,15 @@ export function ItemSplitScreen(): React.JSX.Element {
                   {transfer.toLocaleString()}
                 </Text>
                 <Text className="text-xs text-text-muted">메소</Text>
+                <Pressable
+                  role="button"
+                  aria-label="정산 금액 복사"
+                  hitSlop={COPY_HIT_SLOP}
+                  className="ml-1 self-center"
+                  onPress={() => void copyTransfer(transfer)}
+                >
+                  <CopyIcon className="h-4 w-4 text-text-muted" aria-hidden />
+                </Pressable>
               </View>
               <Text className="text-xs text-text-muted">{formatMesoUnits(transfer)}</Text>
             </>

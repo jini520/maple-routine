@@ -365,26 +365,69 @@ export const useDropPriceStore = create<DropPriceState>((set, get) => ({
   },
 
   async savePrice(entry, priceMeso, share, fees) {
-    await writePrice(get, set, entry, {
-      priceState: 'entered',
-      priceMeso,
-      ...dropShareFieldsOf(share),
-      ...dropFeeFields(fees),
-    })
+    await writePrice(get, set, entry, enteredPatch(priceMeso, share, fees))
   },
 
   async excludePrice(entry) {
-    await writePrice(get, set, entry, {
-      priceState: 'excluded',
-      priceMeso: undefined,
-      priceSplitMode: undefined,
-      pricePartySize: undefined,
-      priceShare: undefined,
-      priceMyShare: undefined,
-      ...dropFeeFields(undefined),
-    })
+    await writePrice(get, set, entry, EXCLUDED_PATCH)
   },
 }))
+
+/** 한 드롭이 든 저장 그룹의 드롭 전부. 화면이 읽지 않은 기간이라 저장소에서 다시 읽는다. */
+async function storedSiblingsOf(record: BossDropRecord): Promise<{ entries: DropPriceEntry[]; target: DropPriceEntry }> {
+  const [records, profitRecords, overrides, settings] = await Promise.all([
+    getBossDropRecords([record.ocid], [record.periodKey]),
+    getBossProfitRecords([record.ocid], [record.periodKey]),
+    withSqliteFallback(getBossPartyPeriodOverrides([record.ocid], [record.periodKey]), []),
+    withSqliteFallback(getBossPartySettings([record.ocid]), []),
+  ])
+  const shareSeedOf = shareSeedResolver(profitRecords, overrides, settings)
+  const groupKey = saveGroupKey(record)
+  const entries = records
+    .filter((each) => saveGroupKey(each) === groupKey)
+    .sort((a, b) => a.dropIndex - b.dropIndex)
+    .map(
+      (each): DropPriceEntry => ({
+        id: entryId(each),
+        ocid: each.ocid,
+        bossKey: each.bossKey,
+        bossName: bossNameOf(each.bossKey, each.boss),
+        difficulty: each.difficulty as BossDifficulty,
+        periodKey: each.periodKey,
+        dropIndex: each.dropIndex,
+        drop: toRecordedDrop(each),
+        defaultShare: shareSeedOf(each),
+      }),
+    )
+  const target = entries.find((each) => each.id === entryId(record))
+  if (target === undefined) throw new Error(`드롭 기록이 없습니다: ${entryId(record)}`)
+  return { entries, target }
+}
+
+/**
+ * 기간을 가리지 않고 드롭 하나를 가격 카드에 올릴 모양으로 읽는다. 인벤토리가 쓴다. 분배 처음 값은 가격 입력 화면과 같은
+ * 규칙이다.
+ */
+export async function loadDropPriceEntry(record: BossDropRecord): Promise<DropPriceEntry> {
+  return (await storedSiblingsOf(record)).target
+}
+
+/** 기간을 가리지 않고 드롭 하나에 값을 매긴다. 같은 저장 그룹의 드롭을 저장소에서 다시 읽어 함께 쓴다. */
+export async function saveDropPriceOf(
+  record: BossDropRecord,
+  priceMeso: number,
+  share: DropShare,
+  fees: FeesValue | undefined,
+): Promise<void> {
+  const { entries, target } = await storedSiblingsOf(record)
+  await writeGroup(target, entries, enteredPatch(priceMeso, share, fees))
+}
+
+/** 기간을 가리지 않고 드롭 하나를 `기록 안함` 으로 둔다. 같은 저장 그룹의 드롭을 저장소에서 다시 읽어 함께 쓴다. */
+export async function excludeDropPriceOf(record: BossDropRecord): Promise<void> {
+  const { entries, target } = await storedSiblingsOf(record)
+  await writeGroup(target, entries, EXCLUDED_PATCH)
+}
 
 /** `YYYY-MM` 인가. 주간 키는 `YYYY-MM-DD` 라 길이로 갈린다(스토어가 쓰는 것과 같은 판정). */
 function isMonthlyPeriodKey(periodKey: string): boolean {
@@ -423,30 +466,40 @@ function standsInWeek(
  * 낙관적 갱신을 하지 않는다. 쓰기가 성공한 뒤에 상태를 바꾼다. 실패하면 **던져서** 화면이
  * 토스트로 알리게 한다(조용히 삼키면 값이 저장된 줄 알고 화면을 떠난다).
  */
-async function writePrice(
-  get: () => DropPriceState,
-  set: (partial: Partial<DropPriceState>) => void,
-  entry: DropPriceEntry,
-  patch: Pick<
-    RecordedDrop,
-    | 'priceState'
-    | 'priceMeso'
-    | 'priceSplitMode'
-    | 'pricePartySize'
-    | 'priceShare'
-    | 'priceMyShare'
-    | 'saleFeePercent'
-    | 'splitFeePercent'
-    | 'saleFeeAuto'
-    | 'splitFeeAuto'
-  >,
-): Promise<void> {
-  const groupKey = saveGroupKey(entry)
-  const siblings = get()
-    .groups.flatMap((group) => group.entries)
-    .filter((candidate) => saveGroupKey(candidate) === groupKey)
-    .sort((a, b) => a.dropIndex - b.dropIndex)
+type PricePatch = Pick<
+  RecordedDrop,
+  | 'priceState'
+  | 'priceMeso'
+  | 'priceSplitMode'
+  | 'pricePartySize'
+  | 'priceShare'
+  | 'priceMyShare'
+  | 'saleFeePercent'
+  | 'splitFeePercent'
+  | 'saleFeeAuto'
+  | 'splitFeeAuto'
+>
 
+/** 값을 매긴 패치. 가격 입력 화면과 인벤토리가 같은 값을 쓴다. */
+function enteredPatch(priceMeso: number, share: DropShare, fees: FeesValue | undefined): PricePatch {
+  return { priceState: 'entered', priceMeso, ...dropShareFieldsOf(share), ...dropFeeFields(fees) }
+}
+
+/** `기록 안함` 패치. 값 · 분배 · 수수료를 비운다. */
+const EXCLUDED_PATCH: PricePatch = {
+  priceState: 'excluded',
+  priceMeso: undefined,
+  priceSplitMode: undefined,
+  pricePartySize: undefined,
+  priceShare: undefined,
+  priceMyShare: undefined,
+  ...dropFeeFields(undefined),
+}
+
+/**
+ * 저장 그룹 하나를 다시 쓴다. `siblings` 는 그 그룹의 드롭 전부(드롭 차례)다. 하나라도 빠지면 그 드롭이 지워진다.
+ */
+async function writeGroup(entry: DropPriceEntry, siblings: readonly DropPriceEntry[], patch: PricePatch): Promise<void> {
   const nextDrops = siblings.map((candidate) =>
     candidate.id === entry.id ? { ...candidate.drop, ...patch } : candidate.drop,
   )
@@ -471,6 +524,21 @@ async function writePrice(
   const dropRecordId = entry.drop.dropRecordId ?? ids[index] ?? null
   if (dropRecordId !== null) void reportDropPrice(dropRecordId, new Date())
   recordUsageAction('drop-save')
+}
+
+async function writePrice(
+  get: () => DropPriceState,
+  set: (partial: Partial<DropPriceState>) => void,
+  entry: DropPriceEntry,
+  patch: PricePatch,
+): Promise<void> {
+  const groupKey = saveGroupKey(entry)
+  const siblings = get()
+    .groups.flatMap((group) => group.entries)
+    .filter((candidate) => saveGroupKey(candidate) === groupKey)
+    .sort((a, b) => a.dropIndex - b.dropIndex)
+
+  await writeGroup(entry, siblings, patch)
 
   set({
     groups: get().groups.map((group) => ({

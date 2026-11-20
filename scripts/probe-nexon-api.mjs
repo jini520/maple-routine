@@ -41,7 +41,11 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 async function call(path) {
   let response
   try {
-    response = await fetch(`${BASE}${path}`, { headers: { 'x-nxopen-api-key': KEY } })
+    // 앱과 같은 10초. 응답 없이 멈춘 요청 하나가 계측 전체를 붙잡지 않게 한다.
+    response = await fetch(`${BASE}${path}`, {
+      headers: { 'x-nxopen-api-key': KEY },
+      signal: AbortSignal.timeout(10_000),
+    })
   } catch (error) {
     return { status: 'FETCH_FAIL', json: null, error: String(error) }
   }
@@ -90,12 +94,12 @@ async function probeDates(name) {
   console.log(`KST 지금: ${new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().replace('T', ' ').slice(0, 19)}\n`)
   console.log('date         오프셋      status  코드')
 
-  const noDate = await call(`/maplestory/v1/scheduler/character-state?ocid=${character.ocid}`)
+  const noDate = await call(`/maplestory/v1/scheduler/character-state?ocid=${encodeURIComponent(character.ocid)}`)
   console.log(`(없음)       당일        ${String(noDate.status).padEnd(6)}  ${errorCode(noDate) ?? 'OK'}`)
 
   for (let offset = 0; offset >= -16; offset -= 1) {
     const date = kstDateKey(offset)
-    const result = await call(`/maplestory/v1/scheduler/character-state?ocid=${character.ocid}&date=${date}`)
+    const result = await call(`/maplestory/v1/scheduler/character-state?ocid=${encodeURIComponent(character.ocid)}&date=${date}`)
     console.log(
       `${date}   오늘${offset === 0 ? '  ' : offset}${offset === 0 ? '   ' : '일 '}   ${String(result.status).padEnd(6)}  ${errorCode(result) ?? 'OK'}`,
     )
@@ -111,13 +115,16 @@ async function probeAccounts() {
     byAccount.get(character.account).push(character)
   }
 
-  for (const [accountId, list] of byAccount) {
-    console.log(`\n=== account ${accountId} (${list.length}명) ===`)
+  // account_id 는 계정을 가리키는 값이라 화면에 찍지 않는다. 순번으로 가른다.
+  let accountIndex = 0
+  for (const list of byAccount.values()) {
+    accountIndex += 1
+    console.log(`\n=== 계정 ${accountIndex} (${list.length}캐릭터) ===`)
     let ok = 0
     const failures = []
     const inactive = []
     for (const character of list) {
-      const result = await call(`/maplestory/v1/character/basic?ocid=${character.ocid}`)
+      const result = await call(`/maplestory/v1/character/basic?ocid=${encodeURIComponent(character.ocid)}`)
       if (result.status === 200) {
         ok += 1
         // access_flag는 boolean이 아니라 문자열이다(nexon-api.md "확인 완료된 사실")
@@ -142,7 +149,7 @@ async function probeShape(name) {
   console.log(`${character.character_name} — 섹션 항목 수 (daily / weekly / boss)\n`)
   for (const date of [null, kstDateKey(-2), kstDateKey(-8)]) {
     const query = date === null ? '' : `&date=${date}`
-    const result = await call(`/maplestory/v1/scheduler/character-state?ocid=${character.ocid}${query}`)
+    const result = await call(`/maplestory/v1/scheduler/character-state?ocid=${encodeURIComponent(character.ocid)}${query}`)
     if (result.status !== 200) {
       console.log(`  ${date ?? '당일'}: ${result.status} ${errorCode(result)}`)
       continue
@@ -197,7 +204,7 @@ function bossTriggers(wire) {
 
 async function dayTriggers(ocid, date) {
   const query = date === null ? '' : `&date=${date}`
-  const result = await call(`/maplestory/v1/scheduler/character-state?ocid=${ocid}${query}`)
+  const result = await call(`/maplestory/v1/scheduler/character-state?ocid=${encodeURIComponent(ocid)}${query}`)
   if (result.status !== 200) {
     return { error: errorCode(result) ?? String(result.status), triggers: [], counts: null }
   }
@@ -225,7 +232,7 @@ async function probeItems(name) {
   const seen = new Map()
   for (const date of [null, kstDateKey(-2), kstDateKey(-8)]) {
     const query = date === null ? '' : `&date=${date}`
-    const result = await call(`/maplestory/v1/scheduler/character-state?ocid=${character.ocid}${query}`)
+    const result = await call(`/maplestory/v1/scheduler/character-state?ocid=${encodeURIComponent(character.ocid)}${query}`)
     if (result.status !== 200) continue
     for (const [section, wire] of [
       ['daily', result.json.daily_contents],
@@ -266,7 +273,7 @@ async function probeEligibility(name) {
 
   for (const character of targets) {
     const label = `${character.character_name}(${character.world_name} Lv.${character.character_level})`
-    const basic = await call(`/maplestory/v1/character/basic?ocid=${character.ocid}`)
+    const basic = await call(`/maplestory/v1/character/basic?ocid=${encodeURIComponent(character.ocid)}`)
     if (basic.status !== 200) {
       console.log(`${label}  → 조회 실패 ${errorCode(basic)}`)
       verdicts.failed.push(label)

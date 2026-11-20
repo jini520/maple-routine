@@ -11,7 +11,7 @@
  * 차례·개수는 여기 말고 `db.spec.ts` 다(그쪽이 훨씬 싸다).
  */
 import { closeBossProfitDb, getBossProfitDb } from '../db'
-import { DB_VERSION } from '../migrations'
+import { __setMigrationCeilingForTest, LEGACY_TABLES_DROPPED_AT } from '../migrations'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { getFragmentStorage, getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../income'
 import { getSpendRecordsBetween, insertSpendRecord, type SpendRecord } from '../../spend'
@@ -75,12 +75,20 @@ function notNullOfMesoAmount(real: RealSqlite): number {
 
 let real: RealSqlite
 
+/**
+ * 이 파일은 옛 표를 지우기 전 단계가 옛 표에 하는 일을 본다. 옛 표가 남도록 그 앞 버전에서 이관을 멈춘다. 옛 표를 지우는
+ * 버전은 `legacy-tables-real-sqlite.test.ts` 가 본다.
+ */
+const BEFORE_LEGACY_DROP = LEGACY_TABLES_DROPPED_AT - 1
+
 beforeEach(() => {
+  __setMigrationCeilingForTest(BEFORE_LEGACY_DROP)
   real = createRealSqlite()
   setSqlitePort(real.port)
 })
 
 afterEach(async () => {
+  __setMigrationCeilingForTest(null)
   await closeBossProfitDb()
   __resetStoragePortsForTest()
   real.dispose()
@@ -388,6 +396,7 @@ describe('심볼 강화의 레벨 두 칸', () => {
     tariffMeso: null,
     pointAmount: null,
     pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
     cashAmount: null,
     hexa: null,
     recordedAt: '2026-09-19T10:00:00.000Z',
@@ -454,7 +463,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
   it('새 DB 는 이관할 것 없이 마지막 버전으로 선다', async () => {
     await getBossProfitDb()
 
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 
   it('옛 지출 기록의 이름으로 갈래 · 항목 · 형태별 항목 · 종류 key 를 채운다', async () => {
@@ -473,7 +482,7 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
     })
     expect(byId.get('reward-split')).toMatchObject({ item_key: null, form_item_keys: JSON.stringify({ exp: 'nightmare_paradise_2' }) })
     expect(byId.get('purchase')).toMatchObject({ category_key: 'item_purchase', item_key: null, item_kind_key: 'consumable' })
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 
   // 못 찾은 이름은 지우지 않는다. key 만 비고 그때 이름으로 선다.
@@ -577,7 +586,7 @@ describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
       ['source_of_suffering', 'chaos_pitch_black_accessory_box'],
       [null, null],
     ])
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 
   // 버전 3 은 못 찾은 이름을 지우지 않는다. key 만 비고 그때 이름이 남는다. 그 행은 버전 14 가 새 표로 옮기지 않는다.
@@ -683,7 +692,7 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
         ['lucid', '루시드', 'hard', '챌린저스2', '2026-09-12'],
       ].sort(),
     )
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 
   it('파티 설정과 드롭 기록도 보스 key 로 옮기고, 드롭의 아이템 key 와 가격을 지킨다', async () => {
@@ -742,7 +751,7 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
         .map((column) => column.name),
     )
     expect(columns).toEqual(['ocid', 'boss_key', 'difficulty', 'period_key'])
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 })
 
@@ -789,7 +798,7 @@ describe('버전 이관: 강화 기록에 장비 key 를 채운다', () => {
       ['b', 'loose_control_machine_mark', '루즈 컨트롤 머신 마크'],
       ['c', null, '골드 히어로즈 엠블렘'],
     ])
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 })
 
@@ -867,7 +876,7 @@ describe('버전 이관: 수익 기록 · 프로필에 월드 key 를 채운다'
       ['ocid-2', '챌린저스2', 'challengers_2'],
       ['ocid-3', null, null],
     ])
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 })
 
@@ -944,7 +953,7 @@ describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 �
       ['kaling', 593_000_000, 296_500_000],
       ['radiant_malefic_star', 576_000_000, 192_000_000],
     ])
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 
   // 10시 전에 굳었거나 버전 7 이 되돌린 행이다. 사용자가 옛 가격 행은 두라고 했다.
@@ -1046,7 +1055,7 @@ describe('버전 이관: 사냥 기록의 조각 가격 0 을 안 적은 가격�
       ['none', 1_000_000_000],
       ['none', 1_000_000_000],
     ])
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 
   it('옮긴 두 기록의 조각이 보관에 들고, 이관 뒤에 0 으로 적은 조각은 안 든다', async () => {
@@ -1095,7 +1104,7 @@ describe('버전 이관: 드롭 비율 칸 넷을 지운다', () => {
       splitFeePercent: 5,
       splitFeeAuto: true,
     })
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 
   it('새 기기의 표에는 그 칸이 아예 없다', async () => {
@@ -1172,7 +1181,7 @@ describe('버전 이관: 다시 못 캐는 날짜 없는 보스 기록에 기간
 
     expect(dates['lucid|2026-08-27']).toBe('2026-08-27')
     expect(dates['lucid|2026-09-10']).toBe('2026-09-10')
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 
   // 동기화마다 날짜 캐기가 다시 보는 기록이다. 대신 날짜를 적으면 진짜 날을 찾을 길이 막힌다.
@@ -1246,7 +1255,7 @@ describe('버전 이관: 읽는 코드가 없는 재조회 표식 표를 지운�
     await getBossProfitDb()
 
     expect(tableExists('boss_profit_period_checks')).toBe(false)
-    expect(userVersion(real)).toBe(DB_VERSION)
+    expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
   })
 
   it('새 기기에는 그 표가 아예 없다', async () => {

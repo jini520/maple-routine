@@ -57,13 +57,14 @@ describe('WidgetGrid: 줄과 칸', () => {
 
     expect(줄의_타일(view, 0)).toEqual(['representative-character'])
     expect(줄의_타일(view, 1)).toEqual(['quick-links'])
-    expect(줄의_타일(view, 2)).toEqual(['reset-countdown', 'crystal-limit'])
-    expect(줄의_타일(view, 3)).toEqual(['shared-contents'])
-    expect(줄의_타일(view, 4)).toEqual(['remaining-schedule'])
-    expect(줄의_타일(view, 5)).toEqual(['weekly-income'])
-    expect(줄의_타일(view, 6)).toEqual(['top-valuable-item', 'unpriced-drops'])
+    expect(줄의_타일(view, 2)).toEqual(['maspi'])
+    expect(줄의_타일(view, 3)).toEqual(['reset-countdown', 'crystal-limit'])
+    expect(줄의_타일(view, 4)).toEqual(['shared-contents'])
+    expect(줄의_타일(view, 5)).toEqual(['remaining-schedule'])
+    expect(줄의_타일(view, 6)).toEqual(['weekly-income'])
+    expect(줄의_타일(view, 7)).toEqual(['top-valuable-item', 'unpriced-drops'])
     // 픽스처에는 파티 회차가 없어 다음 파티 스케줄이 맨 아래 줄에 선다.
-    expect(줄의_타일(view, 7)).toEqual(['next-party-schedule'])
+    expect(줄의_타일(view, 8)).toEqual(['next-party-schedule'])
   })
 
   // 가로를 다 쓰는 타일의 폭은 **창폭 − 좌우 여백** 이다. 2칸 둘은 사이에 간격 하나를 두고 줄을 나눠 쓴다.
@@ -83,10 +84,31 @@ describe('WidgetGrid: 줄과 칸', () => {
   it('같은 줄의 타일은 줄 높이로 늘어나고 카드가 그 높이를 채운다', async () => {
     const view = await 격자()
 
-    expect(스타일(view.getByTestId('widget-row-2'))).toMatchObject({ flexDirection: 'row', alignItems: 'stretch' })
+    expect(스타일(view.getByTestId('widget-row-3'))).toMatchObject({ flexDirection: 'row', alignItems: 'stretch' })
     for (const id of ['reset-countdown', 'crystal-limit']) {
       expect(스타일(view.getByTestId(`widget-card-${id}`))).toMatchObject({ flexGrow: 1 })
     }
+  })
+})
+
+// 메이플 ID 가 둘 이상이면 결정석 위젯을 넓힌다. 결정석만 넓히면 카운트다운이 그 줄에 혼자 남아 둘 다 4칸이다(사용자 지정).
+describe('메이플 ID 가 둘 이상일 때', () => {
+  const 메이플ID_둘 = {
+    ...빈_뷰모델,
+    crystalLimits: [
+      { accountId: 'maple-a', name: '메이플ID-maple-a', lines: [] },
+      { accountId: 'maple-b', name: '메이플ID-maple-b', lines: [] },
+    ],
+  }
+
+  it('카운트다운과 결정석 위젯이 4칸으로 한 줄씩 서고 그 아래가 한 줄 내려간다', async () => {
+    const view = await 격자(메이플ID_둘)
+
+    expect(줄의_타일(view, 3)).toEqual(['reset-countdown'])
+    expect(줄의_타일(view, 4)).toEqual(['crystal-limit'])
+    expect(줄의_타일(view, 5)).toEqual(['shared-contents'])
+    expect(스타일(view.getByTestId('widget-tile-reset-countdown'))).toMatchObject({ width: 칸폭(4) })
+    expect(스타일(view.getByTestId('widget-tile-crystal-limit'))).toMatchObject({ width: 칸폭(4), marginLeft: 0 })
   })
 })
 
@@ -107,15 +129,15 @@ describe('다음 파티 스케줄 타일', () => {
   it('회차가 없으면 맨 아래 줄로 가고 공유 컨텐츠가 그 줄에 선다', async () => {
     const view = await 격자()
 
-    expect(줄의_타일(view, 3)).toEqual(['shared-contents'])
-    expect(줄의_타일(view, 7)).toEqual(['next-party-schedule'])
+    expect(줄의_타일(view, 4)).toEqual(['shared-contents'])
+    expect(줄의_타일(view, 8)).toEqual(['next-party-schedule'])
   })
 
   it('회차가 있으면 초기화까지 아래 줄에 서고 그 아래가 한 줄 내려간다', async () => {
     const view = await 격자({ ...빈_뷰모델, nextParty: [회차] })
 
-    expect(줄의_타일(view, 3)).toEqual(['next-party-schedule'])
-    expect(줄의_타일(view, 4)).toEqual(['shared-contents'])
+    expect(줄의_타일(view, 4)).toEqual(['next-party-schedule'])
+    expect(줄의_타일(view, 5)).toEqual(['shared-contents'])
   })
 })
 
@@ -131,7 +153,7 @@ describe('타일 탭', () => {
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'LedgerSubs',
       params: { screen: 'Profit' },
-    })
+    }, { pop: true })
   })
 
   // 두 타일이 가리키는 것이 값을 매길 드롭이다. 이번 주로 열리는 것은 기간을 넘기지 않아서다.

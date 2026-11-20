@@ -6,8 +6,10 @@
 import { dayTotalsOf, recordMesoOf, type DayRecord } from '../cashbook/records'
 import { incomeCategoryNameOf, spendCategoryNameOf } from '../../lib/cashbook/categories'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
+import { recordedItemNameOf } from '../../lib/item-catalog'
 import { findSpendChoice, findSpendRewardChoice, spendGroupOf } from '../../lib/cashbook/spend-catalog'
 import { hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
+import { balanceOn, type FragmentMove } from '../../lib/cashbook/fragment-ledger'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import type { IncomeRecord } from '../../storage/income'
 import type { SpendRecord } from '../../storage/spend'
@@ -87,17 +89,12 @@ interface CharacterEntry {
 /**
  * 범위의 기록에 캐릭터 key 를 붙인 목록. 캐릭터별 합계와 캐릭터별 갈래가 같은 기준으로 나뉘도록 둘이 함께 쓴다.
  *
- * 메이플 ID 기록은 ID 마다 한 줄이다. 주인을 모르는 옛 손입력은 안 든다. 강화 기록은 이름만 들어, 지금 이름과 같은
- * 캐릭터가 있으면 거기 붙고 없으면(개명 전 이름) 그 이름으로 따로 선다. 가계부가 강화 줄을 이름으로 묶는 것과 같다.
+ * 메이플 ID 기록은 ID 마다 한 줄이다. 주인을 모르는 옛 손입력은 안 든다. 강화 기록도 그날 그 이름이었던 캐릭터(ocid)에
+ * 붙어 있어, 이름을 바꾼 캐릭터의 줄도 그 캐릭터로 묶인다.
  */
 function characterEntriesBetween(byDate: DaysByDate, range: StatsRange): CharacterEntry[] {
-  const entries = entriesBetween(byDate, range)
-  const keyByName = new Map<string, string>()
   const keyed: CharacterEntry[] = []
-
-  // 강화 줄이 이름으로 붙을 자리를 먼저 세운다. 줄 차례와 상관없이 같은 결과가 나와야 한다.
-  for (const entry of entries) {
-    if (entry.kind === 'enhancement') continue
+  for (const entry of entriesBetween(byDate, range)) {
     const accountId = entry.kind === 'income' || entry.kind === 'spend' ? entry.record.accountId : undefined
     if (accountId !== undefined) {
       keyed.push({ key: `account:${accountId}`, ocid: null, accountId, name: entry.characterName, entry })
@@ -105,18 +102,7 @@ function characterEntriesBetween(byDate: DaysByDate, range: StatsRange): Charact
     }
     const ocid = entry.kind === 'income' || entry.kind === 'spend' ? entry.record.ocid : entry.ocid
     if (ocid === null) continue
-    const key = `ocid:${ocid}`
-    keyed.push({ key, ocid, name: entry.characterName, entry })
-    if (entry.characterName !== '') keyByName.set(entry.characterName, key)
-  }
-  for (const entry of entries) {
-    if (entry.kind !== 'enhancement') continue
-    const key = keyByName.get(entry.characterName)
-    keyed.push(
-      key === undefined
-        ? { key: `name:${entry.characterName}`, ocid: null, name: entry.characterName, entry }
-        : { key, ocid: key.slice('ocid:'.length), name: entry.characterName, entry },
-    )
+    keyed.push({ key: `ocid:${ocid}`, ocid, name: entry.characterName, entry })
   }
   return keyed
 }
@@ -223,11 +209,18 @@ function hexaPart(record: SpendRecord, meso: number): Part {
   return target === null ? typedNamePart(record.item, meso) : { ...target, meso }
 }
 
-/** 사냥 기록에 적힌 조각 값. 조각 가격을 안 적었으면 합계에 없어 0 이다 */
-function fragmentMesoOf(record: IncomeRecord): number {
+/**
+ * 사냥 기록 하나의 사냥 메소와 조각 판매 대금. 수입 내역의 사냥 조각과 사냥 수입 카드가 함께 쓰는 나눔.
+ *
+ * 기록 금액에는 수수료를 뗀 조각 값이 들어 있어서 수수료도 함께 빼야 한다. 떼기 전 값을 빼면 사냥 메소가 수수료만큼 작다.
+ *
+ * @param meso 그 기록의 금액(`recordMesoOf`)
+ */
+function huntSplitOf(record: IncomeRecord, meso: number): { huntMeso: number; fragmentSaleMeso: number } {
   const hunt = record.hunt
-  if (hunt === null || hunt.fragmentPrice === null) return 0
-  return hunt.fragments * hunt.fragmentPrice
+  const fragmentSaleMeso =
+    hunt === null || hunt.fragmentPrice === null ? 0 : hunt.fragments * hunt.fragmentPrice - (record.saleFeeMeso ?? 0)
+  return { huntMeso: meso - fragmentSaleMeso, fragmentSaleMeso }
 }
 
 /**
@@ -269,18 +262,18 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
         return { slice: hunting(), parts: [{ key: `hunt_loot:${itemKey ?? ''}`, name, meso }] }
       }
       if (category === 'hunting') {
-        const fragmentMeso = fragmentMesoOf(entry.record)
+        const { huntMeso, fragmentSaleMeso } = huntSplitOf(entry.record, meso)
         return {
           slice: hunting(),
           parts: [
-            { ...HUNTING_MESO, meso: meso - fragmentMeso },
-            { ...solErdaFragment(), meso: fragmentMeso },
+            { ...HUNTING_MESO, meso: huntMeso },
+            { ...solErdaFragment(), meso: fragmentSaleMeso },
           ],
         }
       }
       return {
         slice: { key: category, name: incomeCategoryNameOf(category) },
-        parts: [typedNamePart(entry.record.item, meso)],
+        parts: [typedNamePart(recordedItemNameOf(entry.record.item, entry.record.itemKey), meso)],
       }
     }
     case 'spend': {
@@ -298,7 +291,11 @@ function sliceOf(entry: DayRecord): { slice: { key: string; name: string }; part
         case 'hexa_matrix':
           return { slice, parts: [hexaPart(entry.record, meso)] }
         case 'item_purchase':
+          return { slice, parts: [typedNamePart(recordedItemNameOf(entry.record.item, entry.record.itemKey), meso)] }
+        // 두 시트의 기록은 `etc` 로 저장해서 이 갈래 key 로는 안 온다. 기타처럼 적힌 이름으로 센다.
         case 'etc':
+        case 'boss_income_transfer':
+        case 'meso_market_exchange':
           return { slice, parts: [typedNamePart(entry.record.item, meso)] }
       }
     }
@@ -344,6 +341,79 @@ export function categoryTotalsBetween(
   }
   for (const [key, parts] of partsBySlice) totals.get(key)!.parts = capParts(sortedNonZero(parts.values()))
   return sortedNonZero(totals.values())
+}
+
+/** 사냥 수입 카드의 값. 보유 조각은 조각 장부에서, 나머지는 그 기간의 사냥 · 정산 · 사냥 전리품 판매 기록에서 센다. */
+export interface HuntTotals {
+  /** 사냥 · 정산 · 사냥 전리품 판매 기록이 하나라도 있나. 없으면 카드가 빈 문구를 적는다 */
+  recorded: boolean
+  /** 계산기 기록의 소재 수 합 */
+  sojae: number
+  /** 소재 수가 없는 사냥 기록의 수. 직접 입력 기록과 계산기 전 기록 */
+  manualCount: number
+  /** 사냥 기록의 조각 수 합. 그 자리에서 판 조각과 보관한 조각 모두 */
+  fragments: number
+  /** 기간의 마지막 날 캐릭터마다 들고 있는 조각의 합. 0 아래인 캐릭터는 0 이다 */
+  heldFragments: number
+  huntMeso: number
+  /** 그 기간에 판 조각의 돈. 사냥 기록에서 그 자리에서 판 대금(수수료를 뗀 값)과 정산 */
+  fragmentSaleMeso: number
+  lootSaleMeso: number
+  totalMeso: number
+}
+
+/**
+ * 범위의 사냥 수입. 조각은 기간 흐름으로 센다. 장부는 어느 사냥의 조각이 언제 팔렸는지 몰라서, 그 기간에 판 돈과 기간 끝에
+ * 들고 있는 개수를 적는다.
+ *
+ * @param moves 모든 캐릭터의 조각 장부
+ */
+export function huntTotalsBetween(
+  byDate: DaysByDate,
+  range: StatsRange,
+  moves: readonly (FragmentMove & { ocid: string })[],
+): HuntTotals {
+  const totals: HuntTotals = {
+    recorded: false,
+    sojae: 0,
+    manualCount: 0,
+    fragments: 0,
+    heldFragments: 0,
+    huntMeso: 0,
+    fragmentSaleMeso: 0,
+    lootSaleMeso: 0,
+    totalMeso: 0,
+  }
+  for (const entry of entriesBetween(byDate, range)) {
+    if (entry.kind !== 'income') continue
+    const { record } = entry
+    if (record.category === 'hunt_loot_sale') {
+      totals.recorded = true
+      totals.lootSaleMeso += recordMesoOf(entry)
+      continue
+    }
+    if (record.category === 'sol_erda_fragment') {
+      totals.recorded = true
+      totals.fragmentSaleMeso += recordMesoOf(entry)
+      continue
+    }
+    if (record.category !== 'hunting') continue
+    totals.recorded = true
+    const { hunt } = record
+    if (hunt?.mode === 'calculator') totals.sojae += hunt.sojae
+    else totals.manualCount += 1
+    totals.fragments += hunt?.fragments ?? 0
+    const { huntMeso, fragmentSaleMeso } = huntSplitOf(record, recordMesoOf(entry))
+    totals.huntMeso += huntMeso
+    totals.fragmentSaleMeso += fragmentSaleMeso
+  }
+  totals.totalMeso = totals.huntMeso + totals.fragmentSaleMeso + totals.lootSaleMeso
+  // 0 아래인 캐릭터를 더하면 옛 기록 때문에 다른 캐릭터의 개수가 깎인다
+  for (const ocid of new Set(moves.map((move) => move.ocid))) {
+    const held = balanceOn(moves.filter((move) => move.ocid === ocid), range.to)
+    totals.heldFragments += Math.max(held, 0)
+  }
+  return totals
 }
 
 export interface BossTotal {

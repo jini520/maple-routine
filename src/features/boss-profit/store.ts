@@ -20,6 +20,7 @@ import {
 } from '../../storage/boss-party-period-overrides'
 import { replaceBossDropRecords } from '../../storage/boss-drops'
 import { upsertBossProfitRecord } from '../../storage/boss-profit'
+import { batchRecordWrites } from '../../storage/record-revision-batch'
 import type { RecordedDrop } from '../../types/drops'
 import type { BossCycle, BossDifficulty } from '../../types'
 import { countCoreSave } from '../app-review/request'
@@ -30,6 +31,7 @@ import {
 } from '../manual-completion/record'
 import { reportDropPrice, reportDropRemoved } from '../server-sync/drop-price-sync'
 import { readTrackedOcidsSync } from '../schedule-sync/read-schedule'
+import { judgeCrystalLimit } from './crystal-limit-judge'
 import { buildPartyPlans, partyPlanKey, type BossPartyPlan } from './party-plans'
 import { readPeriodSnapshot, refetchPeriod } from './period-query'
 import { resolveDisplayOcids } from './period-snapshot'
@@ -46,6 +48,8 @@ export interface BossProfitState {
   tab: BossCycle
   /** 보고 있는 기간. 지금 탭 기준이다. */
   periodKey: string
+  /** 보고 있는 기간이 옮긴 그 순간의 지금 기간이었나. 참이면 초기화 시각에 새 기간으로 따라간다(`followCurrentPeriod`). */
+  followsCurrentPeriod: boolean
   /**
    * `partyPlanKey(ocid, bossKey, difficulty, periodKey)` → **미완료 행이 그릴** 파티 인원과 비율.
    *
@@ -59,6 +63,11 @@ export interface BossProfitStore extends BossProfitState {
   setTab(tab: BossCycle): void
   /** 지금 탭의 현재 기간으로 돌아온다. 이미 거기면 아무 일도 없다 */
   goToCurrentPeriod(): void
+  /**
+   * 지금 기간을 보던 중이면 `now` 의 지금 기간으로 옮긴다. 지난 기간을 일부러 보던 중이면 그대로 둔다. 화면이 마운트할 때와
+   * 초기화 시각을 넘겨 다시 그릴 때 부른다. 스토어의 기간은 앱을 켤 때 정해져서, 부르지 않으면 지난 기간에 머문다.
+   */
+  followCurrentPeriod(now: Date): void
   /**
    * 주간 탭의 현재 기간으로 돌린다. 보스 수익 화면이 언마운트될 때, 곧 수익·지출을 떠날 때 부른다. 옆 탭인 가계부가
    * 떠나면 주간 · 이번 주로 돌아오는 것과 맞춘다.
@@ -99,6 +108,11 @@ function currentPartyPlanPeriodKeys(now: Date): string[] {
   ]
 }
 
+/** 옮긴 기간이 그 순간의 지금 기간인가. */
+function isCurrentPeriodKey(tab: BossCycle, periodKey: string, now: Date): boolean {
+  return periodKey === getCurrentBossProfitPeriod(tab, now).periodKey
+}
+
 /** 보고 있는 기간의 행 하나. 쿼리 캐시에서 찾는다. 없으면 그 행이 화면에 없다는 뜻이라 던진다. */
 function findRow(tab: BossCycle, periodKey: string, key: BossProfitRowKey, action: string): BossProfitRow {
   const row = readPeriodSnapshot(tab, periodKey)?.rows.find((candidate) => matchesRowKey(candidate, key))
@@ -111,15 +125,24 @@ function findRow(tab: BossCycle, periodKey: string, key: BossProfitRowKey, actio
 export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
   tab: 'weekly',
   periodKey: getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
+  followsCurrentPeriod: true,
   partyPlans: {},
 
   setTab(tab) {
-    set({ tab, periodKey: getCurrentBossProfitPeriod(tab, new Date()).periodKey })
+    set({ tab, periodKey: getCurrentBossProfitPeriod(tab, new Date()).periodKey, followsCurrentPeriod: true })
   },
 
   goToCurrentPeriod() {
     const { tab, periodKey } = get()
     const currentPeriodKey = getCurrentBossProfitPeriod(tab, new Date()).periodKey
+    if (periodKey === currentPeriodKey) return
+    set({ periodKey: currentPeriodKey, followsCurrentPeriod: true })
+  },
+
+  followCurrentPeriod(now) {
+    const { tab, periodKey, followsCurrentPeriod } = get()
+    if (!followsCurrentPeriod) return
+    const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
     if (periodKey === currentPeriodKey) return
     set({ periodKey: currentPeriodKey })
   },
@@ -145,7 +168,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     if (newPeriodKey === null) return
     // 찾는 사이에 다른 이동이 들어왔으면 이 답은 다른 기간의 것이다.
     if (get().tab !== tab || get().periodKey !== periodKey) return
-    set({ periodKey: newPeriodKey })
+    set({ periodKey: newPeriodKey, followsCurrentPeriod: false })
   },
 
   async goToNextPeriod() {
@@ -156,7 +179,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     const newPeriodKey = await resolveNextPeriodKey(tab, periodKey, navigationOcids, now)
     if (newPeriodKey === null) return
     if (get().tab !== tab || get().periodKey !== periodKey) return
-    set({ periodKey: newPeriodKey })
+    set({ periodKey: newPeriodKey, followsCurrentPeriod: isCurrentPeriodKey(tab, newPeriodKey, now) })
   },
 
   async retryPeriod() {
@@ -193,6 +216,7 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
         crystalSharesTotal: shares.sharesTotal,
         splitFeePercent: shares.splitFeePercent,
         splitFeeAuto: shares.splitFeeAuto === true,
+        crystalExcluded: shares.excluded === true,
       }
       await setBossPartyPeriodOverride({
         ocid: row.ocid,
@@ -212,65 +236,74 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
     }
 
     if (row.priceMeso === null) return
-    // 기록이 바뀌면 판이 올라 기간 쿼리가 다시 읽는다. 화면은 여기서 안 건드린다.
-    await upsertBossProfitRecord({
-      ocid: row.ocid,
-      bossKey: row.bossKey,
-      boss: row.bossName,
-      difficulty: row.difficulty,
-      cycle: row.cycle,
-      periodKey: row.periodKey,
-      partySize,
-      priceMeso: row.priceMeso,
-      payoutMeso: crystalPayoutMeso(row.priceMeso, partySize, shares),
-      crystalMyShare: shares.myShare,
-      crystalSharesTotal: shares.sharesTotal,
-      splitFeePercent: shares.splitFeePercent,
-      splitFeeAuto: shares.splitFeeAuto === true,
-      recordedAt: new Date().toISOString(),
-      world: row.world,
-      worldKey: row.worldKey,
-      // 파티원 수만 고치는 upsert 가 **출처를 지우면 안 된다.** 안 넘기면 기본값이 `auto` 라 직접 적은 완료의 표식이
-      // 편집 한 번에 사라진다.
-      source: row.source,
+    const priceMeso = row.priceMeso
+    // 기록이 바뀌면 판이 올라 기간 쿼리가 다시 읽는다. 화면은 여기서 안 건드린다. 판정까지 한 묶음이라 화면이 판정 전 금액을 안 그린다.
+    await batchRecordWrites(async () => {
+      await upsertBossProfitRecord({
+        ocid: row.ocid,
+        bossKey: row.bossKey,
+        boss: row.bossName,
+        difficulty: row.difficulty,
+        cycle: row.cycle,
+        periodKey: row.periodKey,
+        partySize,
+        priceMeso,
+        payoutMeso: crystalPayoutMeso(priceMeso, partySize, shares),
+        crystalMyShare: shares.myShare,
+        crystalSharesTotal: shares.sharesTotal,
+        splitFeePercent: shares.splitFeePercent,
+        splitFeeAuto: shares.splitFeeAuto === true,
+        crystalExcluded: shares.excluded === true,
+        recordedAt: new Date().toISOString(),
+        world: row.world,
+        worldKey: row.worldKey,
+        // 파티원 수만 고치는 upsert 가 **출처를 지우면 안 된다.** 안 넘기면 기본값이 `auto` 라 직접 적은 완료의 표식이
+        // 편집 한 번에 사라진다.
+        source: row.source,
+      })
+      await judgeCrystalLimit([row.periodKey])
     })
   },
 
   async saveManualCompletion(rowKey, input) {
     const row = findRow(get().tab, get().periodKey, rowKey, 'saveManualCompletion')
 
-    await saveManualCompletion(
-      {
-        ocid: row.ocid,
-        bossKey: row.bossKey,
-        bossName: row.bossName,
-        cycle: row.cycle,
-        periodKey: row.periodKey,
-        difficulty: input.difficulty,
-        partySize: input.partySize,
-        shares: input.shares,
-        defeatedOn: input.dateKey,
-        world: row.world,
-        worldKey: row.worldKey,
-        // 난이도를 바꿨으면 옛 줄을 지워야 한다. 안 지우면 같은 처치가 두 줄이 된다.
-        previousDifficulty: row.source === 'manual' ? row.difficulty : undefined,
-      },
-      new Date(),
+    await batchRecordWrites(() =>
+      saveManualCompletion(
+        {
+          ocid: row.ocid,
+          bossKey: row.bossKey,
+          bossName: row.bossName,
+          cycle: row.cycle,
+          periodKey: row.periodKey,
+          difficulty: input.difficulty,
+          partySize: input.partySize,
+          shares: input.shares,
+          defeatedOn: input.dateKey,
+          world: row.world,
+          worldKey: row.worldKey,
+          // 난이도를 바꿨으면 옛 줄을 지워야 한다. 안 지우면 같은 처치가 두 줄이 된다.
+          previousDifficulty: row.source === 'manual' ? row.difficulty : undefined,
+        },
+        new Date(),
+      ),
     )
 
     // **적은 날짜의 주로 데려간다**(사용자 지정). 월간 보스는 잡은 주에 서므로 날짜를 옮기면 그 행이 다른 주로 가고,
     // 보던 주에 그대로 두면 방금 적은 것이 화면에서 사라진다. 주간 보스는 고를 수 있는 날이 그 주 안이라 언제나 같은 주다.
     const targetWeek = resetWeekStartOf(input.dateKey)
     if (get().tab === 'weekly' && targetWeek !== get().periodKey) {
-      set({ periodKey: targetWeek })
+      set({ periodKey: targetWeek, followsCurrentPeriod: isCurrentPeriodKey('weekly', targetWeek, new Date()) })
     }
   },
 
   async cancelManualCompletion(rowKey) {
     const row = findRow(get().tab, get().periodKey, rowKey, 'cancelManualCompletion')
-    await cancelManualCompletion(
-      { ocid: row.ocid, bossKey: row.bossKey, difficulty: row.difficulty, periodKey: row.periodKey },
-      new Date(),
+    await batchRecordWrites(() =>
+      cancelManualCompletion(
+        { ocid: row.ocid, bossKey: row.bossKey, difficulty: row.difficulty, periodKey: row.periodKey },
+        new Date(),
+      ),
     )
   },
 

@@ -9,7 +9,7 @@
  * **여기서 보는 것은 저장을 되풀이해도 그 값이 유지되는가** 다. 새로 만들면 서버에 같은 기록이
  * 계속 쌓인다. 목이 흉내 낼 수 있는 종류가 아니라 진짜 엔진으로 잰다.
  */
-import { closeBossProfitDb, getBossProfitDb } from '../db'
+import { closeBossProfitDb } from '../db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { getAllBossDropRecords, replaceBossDropRecords, NO_WORLD } from '../../boss-drops'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
@@ -122,26 +122,5 @@ describe('드롭 기록의 월드', () => {
 
     const rows = await getAllBossDropRecords(['ocid-1'])
     expect(rows[0]).toMatchObject({ world: null, worldKey: null })
-  })
-})
-
-describe('새 DB 의 표 모양', () => {
-  it('기본키가 drop_record_id 하나이고 옛 다섯 칸에는 인덱스가 선다', async () => {
-    await getBossProfitDb()
-
-    const pk = real.inspect((db) =>
-      (db.prepare('PRAGMA table_info(boss_drop_records)').all() as { name: string; pk: number }[])
-        .filter((column) => column.pk > 0)
-        .map((column) => column.name),
-    )
-    expect(pk).toEqual(['drop_record_id'])
-
-    // 기본키가 곧 인덱스였던 조회가 전체 스캔이 되지 않게 한다.
-    const indexed = real.inspect((db) =>
-      (db.prepare("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='boss_drop_records'").all() as {
-        name: string
-      }[]).map((row) => row.name),
-    )
-    expect(indexed).toContain('boss_drop_records_group')
   })
 })

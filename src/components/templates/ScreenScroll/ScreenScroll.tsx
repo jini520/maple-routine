@@ -1,10 +1,11 @@
+import { useScreenLayout } from '../../../lib/screen-layout'
 import {
   FADE_MASK_LOCATIONS,
   FADE_MASK_OPAQUE,
   fadeMaskColors,
   resolveSafeAreaFade,
 } from './safe-area-fade'
-import { Platform, RefreshControl, ScrollView, View, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
+import { Platform, RefreshControl, ScrollView, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native'
 import { useBottomSafeAreaPx, useTopSafeAreaPx } from '../../../lib/safe-area'
 
 import { LinearGradient } from '../../../lib/nativewind-interop'
@@ -18,10 +19,11 @@ import { LinearGradient } from '../../../lib/nativewind-interop'
  */
 import MaskedView from '@react-native-masked-view/masked-view'
 import type { ScrollView as ScrollViewType } from 'react-native'
-import { resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
+import { resolveBottomBarSpace } from '../../../lib/bottom-bar-metrics'
 import { resolvePullIndicatorOffset } from './pull-indicator-offset'
 import { resolveScreenBottomInset } from './bottom-inset'
 import { useCallback, useRef } from 'react'
+import { useButtonNavigation } from '../../../hooks/useButtonNavigation'
 import { usePullRefresh } from '../../../hooks/usePullRefresh'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useScrollToTopTarget } from '../../../hooks/useScrollToTop'
@@ -179,24 +181,28 @@ export function ScreenScroll({
   const bottomSafeAreaPx = useBottomSafeAreaPx()
   const indicatorStyle = useScrollIndicatorStyle()
   // 바가 먹는 세로는 **기기 폭의 함수**다. 바와 여기가 같은 함수를 봐야
-  // 콘텐츠가 바 뒤로 들어가거나 바닥에 빈 띠를 남기지 않는다. `100dvh` 짝을 안전영역 프레임에서
-  // 받는 자리들과 달리 여기는 **창 폭**이 맞다: 바 자신이 그 폭으로 자리를 잡는다.
-  const { width: windowWidthPx } = useWindowDimensions()
-  const barSpacePx = resolveBottomBarMetrics(windowWidthPx).spacePx
+  // 콘텐츠가 바 뒤로 들어가거나 바닥에 빈 띠를 남기지 않는다. 오른쪽 레일 화면은 바가 옆에 서서 몫이 0 이고,
+  // 대신 위아래 여백(`edgeGapPx`)을 콘텐츠 끝과 페이드에 더한다.
+  const layout = useScreenLayout()
+  const buttonNavigation = useButtonNavigation()
+  const bar = resolveBottomBarSpace(layout, buttonNavigation)
   const bottom = resolveScreenBottomInset({
     hasTabBar,
     insetBottomPx: insets.bottom,
     bottomSafeAreaPx,
-    barSpacePx,
+    barSpacePx: bar.spacePx,
     platform: Platform.OS,
+    edgeGapPx: layout.edgeGapPx,
   })
   const fade = resolveSafeAreaFade({
     hasHeader: header !== undefined,
     hasTabBar,
     topSafeAreaPx,
     bottomSafeAreaPx,
-    barSpacePx,
+    barHeightPx: bar.heightPx,
+    barLiftPx: bar.liftPx,
     portBottomPx: bottom.portBottomPx,
+    edgeGapPx: layout.edgeGapPx,
   })
   const indicatorOffsetPx = resolvePullIndicatorOffset({
     fadeTopPx: fade.topPx,
@@ -205,9 +211,11 @@ export function ScreenScroll({
 
   // 스크롤포트를 "실제로 보이는 영역"에 맞추는 두 값. **콘텐츠 패딩이 아니라
   // 상자의 마진**이어야 한다. 인디케이터는 콘텐츠가 아니라 스크롤포트 위에 겹쳐 그려진다.
+  // 오른쪽 레일 화면에서는 콘텐츠가 레일을 비운다. 0 이면 안 줘서 다른 화면의 스타일을 바꾸지 않는다.
   const port = {
     marginTop: header === undefined ? topSafeAreaPx : 0,
     marginBottom: bottom.portBottomPx,
+    ...(layout.railWidthPx === 0 ? null : { marginRight: layout.railWidthPx }),
   }
 
   const scroller = (

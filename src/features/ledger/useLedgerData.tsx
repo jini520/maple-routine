@@ -20,7 +20,11 @@ import {
 } from 'react'
 
 import { defaultCashbookRange, type CashbookRange } from '../cashbook/range'
-import { collectEnhancementHistory, measureEnhancementHistory } from '../enhancement-history/collect'
+import {
+  collectEnhancementHistory,
+  collectEnhancementRefetches,
+  measureEnhancementHistory,
+} from '../enhancement-history/collect'
 import { datesBetween } from '../../lib/calendar'
 import { useRefreshProgress } from '../refresh/progress'
 import { collectTodayEnhancement } from '../refresh/pull'
@@ -190,6 +194,8 @@ export function LedgerDataProvider(props: {
               ? collectTodayEnhancement(new Date())
               : Promise.resolve(),
         ])
+        // 이관이 지운 날은 화면 회차가 끝난 뒤 뒤에서 받는다. 화면이 기다리면 60일에 8분 넘게 불러오는 중으로 남았다.
+        void collectEnhancementRefetches(new Date())
       } finally {
         running.current -= 1
         endRound()

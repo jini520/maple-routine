@@ -166,6 +166,18 @@ describe('고치기 · 지우기', () => {
   })
 })
 
+// 수입 쪽 변환(`incomeEntryOf` · `incomeRecordOf`)도 메모를 나르는지 본다. 빠뜨리면 타입 오류 없이 메모만 사라진다.
+describe('메모', () => {
+  it('아이템 판매의 메모를 다듬어 저장해 되읽고, 지우고 고치면 칸이 빈다', async () => {
+    await insertIncomeRecord({ ...sale, memo: ' 에테르넬 모자 22성 ' })
+    expect((await getIncomeRecordsBetween('2026-08-20', '2026-08-20'))[0]!.memo).toBe('에테르넬 모자 22성')
+
+    await updateIncomeRecord({ ...sale, memo: '   ' })
+    expect(await getIncomeRecordsBetween('2026-08-20', '2026-08-20')).toEqual([sale])
+    expect(all('SELECT memo FROM cashbook_entries')).toEqual([{ memo: null }])
+  })
+})
+
 describe('assignLegacyIncomeAccounts: 주인을 모르는 옛 수입을 메이플 ID 로 옮긴다', () => {
   // 사냥은 이미 캐릭터가 필수라 옛 기록도 옮기지 않는다. 수정으로 열면 캐릭터를 골라야 저장된다.
   it('넥슨 계정의 메이플 ID 가 하나면 고를 수 있는 분류의 옛 기록만 옮기고, 판은 옮긴 것이 있을 때만 오른다', async () => {
@@ -194,8 +206,8 @@ describe('assignLegacyIncomeAccounts: 주인을 모르는 옛 수입을 메이�
 })
 
 describe('getFragmentStorage: 캐릭터별 솔 에르다 조각 보관', () => {
-  // 가격을 안 적은 사냥의 조각이 쌓이고, 정산 기록이 판 개수만큼 빠진다.
-  it('고른 날까지 그 캐릭터의 보관 조각에서 판 개수를 빼고, 수정 중인 정산은 뺀다', async () => {
+  // 가격을 안 적은 사냥의 조각이 쌓이고, 정산 기록이 판 개수만큼 빠진다. 뒤 날짜에 판 조각은 앞 날짜에서도 없다.
+  it('그 날과 뒤 모든 날의 남은 개수 가운데 가장 작은 값이고, 수정 중인 정산은 뺀다', async () => {
     await insertIncomeRecord(calculatorHunt)
     await insertIncomeRecord({
       ...calculatorHunt,
@@ -210,12 +222,13 @@ describe('getFragmentStorage: 캐릭터별 솔 에르다 조각 보관', () => {
       category: 'sol_erda_fragment',
       item: null,
       itemKind: null,
+      earnedOn: '2026-08-25',
       quantity: 50,
     }
     await insertIncomeRecord(settle)
 
-    // 30 을 보관하고 50 을 팔아 마이너스다. 그대로 낸다.
-    await expect(getFragmentStorage('ocid-1', '2026-08-20')).resolves.toBe(-20)
+    // 08-20 에 30, 08-25 에 30 을 더 보관하고 08-25 에 50 을 팔았다. 08-20 에 쓸 수 있는 것은 남은 10 이다.
+    await expect(getFragmentStorage('ocid-1', '2026-08-20')).resolves.toBe(10)
     await expect(getFragmentStorage('ocid-1', '2026-08-25')).resolves.toBe(10)
     await expect(getFragmentStorage('ocid-1', '2026-08-20', settle.id)).resolves.toBe(30)
     await expect(getFragmentStorage('ocid-3', '2026-08-20')).resolves.toBe(0)

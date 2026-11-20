@@ -1,3 +1,4 @@
+import { credentialOf } from '../../lib/nexon-credential'
 import { getAuthConfig } from '../../storage/api-key'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getMvpOnboardingPending } from '../../storage/mvp-grade-prefs'
@@ -20,8 +21,8 @@ export type EntryStage = 'signIn' | 'characterSetup' | 'mvpGrade' | 'ready'
  * 둘이 되고 한쪽만 써진 채 앱이 죽는 순간 어긋난다.
  */
 export async function deriveEntryStage(): Promise<EntryStage> {
-  const authConfig = await getAuthConfig()
-  if (authConfig === null) {
+  // 부계정 키만 남은 것도 수단이 없는 것이다. 로그인이 만료되면 부계정은 다시 로그인할 때까지 부르지 않는다.
+  if (credentialOf(await getAuthConfig()) === null) {
     return 'signIn'
   }
 

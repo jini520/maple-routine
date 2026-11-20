@@ -20,6 +20,11 @@ describe('isInvalidApiKeyError', () => {
     expect(isInvalidApiKeyError(new NexonBadRequestError('x', 'OPENAPI00005'))).toBe(true)
   })
 
+  // 다른 게임으로 받은 키처럼 메이플스토리가 등록되지 않은 키다. 다시 불러도 풀리지 않는데, 무효 키가 아니면 네트워크 오류로 보인다.
+  it('400 OPENAPI00006 도 무효 키다', () => {
+    expect(isInvalidApiKeyError(new NexonBadRequestError('x', 'OPENAPI00006'))).toBe(true)
+  })
+
   // 다른 400 코드까지 무효 키로 삼으면 캐릭터·날짜 문제가 키 문제로 둔갑해
   // 사용자를 엉뚱하게 키 입력 화면으로 보낸다(가른 세 종류).
   it.each(['OPENAPI00003', 'OPENAPI00004', 'OPENAPI00009', null])(

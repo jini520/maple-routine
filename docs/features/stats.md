@@ -7,15 +7,16 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `app/stats/StatsScreen.tsx` | 머리(주간 · 월간) · 기간 줄 · 카드 일곱. 전 기간의 줄을 `ledgerDays` 쿼리로 든다 |
+| `app/stats/StatsScreen.tsx` | 머리(주간 · 월간) · 기간 줄 · 카드 여덟. 전 기간의 줄을 `ledgerDays` 쿼리로 든다 |
 | `app/stats/StatsSection.tsx` | 카드 틀 |
-| `app/stats/TrendSection.tsx` · `CharacterSection.tsx` · `CategorySection.tsx` · `BossSection.tsx` · `CumulativeSection.tsx` | 카드 |
+| `app/stats/TrendSection.tsx` · `CharacterSection.tsx` · `CategorySection.tsx` · `HuntSection.tsx` · `BossSection.tsx` · `CumulativeSection.tsx` | 카드 |
 | `lib/stats/slice-steps.ts` | 도넛 조각의 명도 단계 · `그 외` 색 · 조각 안 글자색과 조각 수 상한. today 이번 주 수익 도넛도 쓴다 |
 | `app/stats/StatsSkeleton.tsx` | 값을 읽는 동안의 스켈레톤 |
 | `app/stats/reveal.ts` | 화면에 들어온 카드의 그래프를 자라게 하는 진행값 |
-| `features/stats/aggregate.ts` | 합계 · 추이 · 누적 · 캐릭터별 · 항목별 · 보스별 집계 |
+| `features/stats/aggregate.ts` | 합계 · 추이 · 누적 · 캐릭터별 · 항목별 · 사냥 · 보스별 집계. 사냥 기록을 사냥 메소와 조각 판매 대금으로 나누는 `huntSplitOf` |
 | `features/stats/periods.ts` | 고른 기간에서 추이 범위(8주 · 6개월)와 누적 범위를 만든다 |
-| `features/stats/load.ts` | 캐릭터 그림 주소 · 누적 시작 날짜 |
+| `features/stats/load.ts` | 캐릭터 그림 주소 · 누적 시작 날짜 · 조각 장부 |
+| `features/stats/fragment-query.ts` | 사냥 수입 카드의 보유 조각을 세는 조각 장부 쿼리 `useFragmentMoves`. 수입 · 지출 표의 판이 오르면 다시 읽는다 |
 | `features/cashbook/ledger-query.ts` | 날짜별 줄 쿼리 `ledgerDays(from, to)`. 기록 표의 판이 오르면 다시 읽는다([[ADR-142]] 결정 6) |
 | `storage/stats-cumulative-start.ts` | 누적 시작 날짜(Preferences `statsCumulativeStart`) |
 | `theme/theme-vars.ts` 의 `resolveStatsSection` | 카드 바탕색 |
@@ -32,6 +33,7 @@
 | 캐릭터별 | 캐릭터 · 메이플 ID 마다 가로 막대, 캐릭터 상위 세 명 단상. 메이플 ID 줄은 막대에만 선다([[ADR-002]] 결정 7) | |
 | 수입 내역 | 반원 도넛(보스 결정석 · 보스 드롭 · 아이템 판매 · 사냥 · 기타) | 조각: 세부 줄 팝오버 |
 | 지출 내역 | 반원 도넛(강화 다섯 · 손으로 적은 지출 분류) | 조각: 세부 줄 팝오버 |
+| 사냥 수입 | 소재 타일(`직접 입력 n건`) · 조각 타일(`보유 조각 n개`), `사냥 메소 · 조각 판매 · 전리품 판매` 설명 줄과 메소 합계. 기간을 옮겨도 높이가 같다([[ADR-002]] 결정 17) | |
 | 보스별 수입 | 초상화 타일 가로 스크롤, 난이도별 · 보스별 | |
 | 누적 순 수익 | 큰 숫자, 누적 선, 시작 날짜 알약 | 선: 그 기간까지의 누적 · 알약: 시작 날짜 고르기 |
 
@@ -41,6 +43,10 @@
 
 ## 금액을 세는 기준
 
-가계부와 같다. 메포는 시세로 환산해 넣고 캐시는 뺀다. 강화 금액은 읽을 때 계산하고, 계산하지 못한 기록은 뺀다.
-보스 금액은 내 몫의 결정석이고 완료하지 않은 보스 행은 뺀다. 가계부에서 뺀 결정석 처치와 강화 장비 줄은 세지 않는다([[ADR-160]] 결정 2).
+가계부와 같다. 메포는 시세로 환산해 넣고, 지출의 메포에는 메소마켓 수수료가 붙는다. 캐시는 뺀다. 강화 금액은 읽을 때 계산하고, 계산하지 못한 기록은 뺀다.
+보스 금액은 내 몫의 결정석이고 완료하지 않은 보스 행은 뺀다. 가계부에서 뺀 강화 장비 줄은 세지 않는다([[ADR-160]] 결정 2).
 자세한 기준은 [[ADR-002]] 결정 13 에 있다.
+
+사냥 수입 카드의 메소 합계는 수입 내역의 `사냥` 조각과 같다. 사냥 기록 · `솔 에르다 조각` 정산 · 사냥 전리품 판매를 모두
+센다. 조각은 기간 흐름으로 센다. `조각 판매` 는 그 기간에 판 돈이고, `보유 조각` 은 기간의 마지막 날 들고 있는 개수다
+([[ADR-002]] 결정 17).

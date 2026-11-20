@@ -18,6 +18,7 @@ jest.mock('../../../storage/schedule-probe-ledger', () => ({
   recordScheduleProbe: jest.fn(),
 }))
 jest.mock('../../../nexon/schedule', () => ({ fetchSchedulerCharacterState: jest.fn() }))
+jest.mock('../../../storage/character-accounts', () => ({ getNexonAccountIdsOfOcids: jest.fn() }))
 // 판 알림을 모으는 반복. 쓰기가 그 안에서 도는지 깊이로 본다.
 jest.mock('../../../storage/record-revision-batch', () => ({
   batchRecordWrites: async (write: () => Promise<unknown>) => {
@@ -45,19 +46,24 @@ const {
   recordScheduleProbe: recordProbeMock,
 } = jest.requireMock('../../../storage/schedule-probe-ledger') as Record<string, jest.Mock>
 const { fetchSchedulerCharacterState: fetchStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
+const { getNexonAccountIdsOfOcids } = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
 
-jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn() }))
-const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn(), settlingYesterdayOf: jest.fn() }))
+const { refreshSettlement: refreshSettlementMock, settlingYesterdayOf: settlingYesterdayMock } = jest.requireMock(
+  '../../settlement/store',
+) as Record<string, jest.Mock>
 
 
 beforeEach(() => {
-  getAuthConfigMock.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key' }] })
+  getAuthConfigMock.mockReset().mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key', loginId: null }] })
   getUndatedMock.mockReset().mockResolvedValue([])
   setDefeatedOnMock.mockReset().mockResolvedValue(undefined)
   getLedgerMock.mockReset().mockResolvedValue({ unavailable: false, dates: {} })
   recordProbeMock.mockReset().mockResolvedValue(undefined)
   fetchStateMock.mockReset()
+  getNexonAccountIdsOfOcids.mockReset().mockResolvedValue(new Map())
   refreshSettlementMock.mockReset().mockResolvedValue(undefined)
+  settlingYesterdayMock.mockReset().mockResolvedValue(null)
   recordsRevisionMock.mockReset().mockReturnValue(0)
 })
 
@@ -544,6 +550,35 @@ describe('resolveDefeatDates: 캐낸 값을 박는다', () => {
     expect(recordProbeMock).toHaveBeenCalledTimes(4)
   })
 
+  // 스케줄러는 그 캐릭터가 속한 넥슨 계정의 자격으로만 받을 수 있다.
+  it('캐릭터마다 그 캐릭터가 속한 넥슨 계정의 자격으로 묻고, 자격이 없는 계정의 캐릭터는 묻지 않는다', async () => {
+    getAuthConfigMock.mockResolvedValue({
+      login: { type: 'login', id: 'account-login', session: '세션' },
+      mainKeyId: null,
+      apiKeys: [{ type: 'key', id: 'account-부', label: '', value: '부-키', loginId: 'account-login' }],
+    })
+    getNexonAccountIdsOfOcids.mockResolvedValue(new Map([['ocid-부', 'account-부'], ['ocid-지운', 'account-지운-키']]))
+    getUndatedMock.mockResolvedValue([
+      미확정_스우,
+      { ...미확정_스우, ocid: 'ocid-부' },
+      { ...미확정_스우, ocid: 'ocid-지운' },
+    ])
+    fetchStateMock.mockResolvedValue(schedulerState([]))
+
+    await resolveDefeatDates(['ocid-1', 'ocid-부', 'ocid-지운'], NOW)
+
+    const accountsByOcid = new Map<string, Set<string>>()
+    for (const [credential, ocid] of fetchStateMock.mock.calls as [{ accountId: string }, string][]) {
+      accountsByOcid.set(ocid, (accountsByOcid.get(ocid) ?? new Set()).add(credential.accountId))
+    }
+    expect(accountsByOcid).toEqual(
+      new Map([
+        ['ocid-1', new Set(['account-login'])],
+        ['ocid-부', new Set(['account-부'])],
+      ]),
+    )
+  })
+
   // 창에 걸친 경계 주. 창 하한 앞(8/6~8/10)은 안 묻고 8/11~8/12 만 물어 답을 낸다.
   it('시작일이 창 밖인 주도 걸친 날들만 물어 날짜를 낸다 (정정 6)', async () => {
     const 경계주_스우 = { ...미확정_스우, periodKey: '2026-08-06' }
@@ -865,6 +900,20 @@ describe('resolveDefeatDates: 리프 경계는 원장에서 읽는다', () => {
 })
 
 // 스케줄러 데이터를 갱신하는 자리는 결산 여부도 함께 갱신한다.
+// 넥슨 AI 에이전트 가이드는 00009 를 되풀이해 부르지 말라고 한다. 건너뛴 어제는 원장에 안 남아 다음 회차가 캔다.
+describe('결산 중이면 어제를 묻지 않는다', () => {
+  it('서버가 결산 중이라고 하면 어제만 빼고 묻는다', async () => {
+    getUndatedMock.mockResolvedValue([미확정_스우])
+    fetchStateMock.mockResolvedValue(schedulerState([]))
+    settlingYesterdayMock.mockResolvedValue('2026-08-23')
+
+    await resolveDefeatDates(['ocid-1'], NOW)
+
+    const asked = fetchStateMock.mock.calls.map(([, , , dateKey]) => dateKey).sort()
+    expect(asked).toEqual(['2026-08-20', '2026-08-21', '2026-08-22'])
+  })
+})
+
 describe('결산 여부도 갱신한다', () => {
   it('날짜를 캐러 조회에 들어가면 결산도 다시 묻는다', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])

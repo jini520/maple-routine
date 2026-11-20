@@ -155,6 +155,44 @@ describe('처음 켤 때 (사본 없음)', () => {
     expect(getGameDataStatus().phase).toBe('ready')
   })
 
+  it('한 장이 실패하면 새 그림을 더 받지 않고, 받고 있던 그림이 끝난 뒤 실패로 남는다. 받던 그림의 진행이 실패를 덮지 않는다', async () => {
+    const shas = ['1', '2', '3', '4', '5', '6'].map((c) => c.repeat(64))
+    fetchRemote.mockResolvedValue(응답(shas.map((sha, i) => file(`bosses/${i}.webp`, sha))))
+    const inFlight: Array<() => void> = []
+    jest.mocked(files.download).mockImplementation(async (url: string, fileName: string) => {
+      files.downloads.push(url)
+      if (fileName === `${shas[0]}.webp`) throw new Error('released')
+      await new Promise<void>((resolve) => inFlight.push(resolve))
+      files.names.add(fileName)
+      return 100
+    })
+
+    const started = startGameData()
+    while (getGameDataStatus().progress.dataBytes === null) await new Promise((resolve) => setImmediate(resolve))
+    confirmGameData()
+    while (inFlight.length < 3) await new Promise((resolve) => setImmediate(resolve))
+
+    // 받고 있던 그림이 끝나기 전에는 실패를 보이지 않는다. 보이면 다시 시도가 이 받기와 겹친다.
+    expect(getGameDataStatus().phase).toBe('downloading')
+
+    for (const resolve of inFlight) resolve()
+    await started
+
+    expect(getGameDataStatus().phase).toBe('failed')
+    expect(files.downloads).toHaveLength(4)
+
+    jest.mocked(files.download).mockImplementation(async (url: string, fileName: string) => {
+      files.downloads.push(url)
+      files.names.add(fileName)
+      return 100
+    })
+    await retryGameData()
+    expect(files.downloads.slice(4).sort()).toEqual(
+      [shas[0], shas[4], shas[5]].map((sha) => `https://test/assets/${sha}.webp`),
+    )
+    expect(getGameDataStatus().phase).toBe('ready')
+  })
+
   it('응답을 못 받거나 칸 하나라도 계약을 어기면 실패다', async () => {
     fetchRemote.mockResolvedValue(null)
     await startGameData()

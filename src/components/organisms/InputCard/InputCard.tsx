@@ -32,8 +32,8 @@ import {
   Image,
   Keyboard,
   Pressable,
+  ScrollView,
   View,
-  useWindowDimensions,
   type LayoutChangeEvent,
   type StyleProp,
   type ViewStyle,
@@ -42,6 +42,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Animated, { type AnimatedStyle } from 'react-native-reanimated'
 
 import { appImage, solErdaFragmentIcon } from '../../../lib/assets/asset-lookup'
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ImageAssetRef } from '../../../types/image-asset'
@@ -61,7 +62,9 @@ import {
 import { mesoUnitOf, rememberMesoUnit } from '../../../features/input-card/meso-unit'
 import type { MesoUnit, MesoUnitKey } from '../../../types/meso-unit'
 import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
-import { ShareField } from '../../molecules/ShareField/ShareField'
+import { AnchoredPopover } from '../../molecules/Popover/Popover'
+import { useAnchoredPopover } from '../../../hooks/useAnchoredPopover'
+import { acceptSharePercentText, sharePercentText, sharesFromPercentText } from '../../../lib/boss/party-shares'
 import { Stepper } from '../../molecules/Stepper/Stepper'
 import { Segment } from '../../molecules/Segment/Segment'
 import { Badge } from '../../atoms/Badge/Badge'
@@ -80,6 +83,26 @@ import type { MvpGradeKey } from '../../../lib/mvp/grades'
  * 않는 것은, 부품이 아는 그림이 늘수록 어느 화면이 무엇을 쓰는지가 이 파일로 새기 때문이다.
  */
 export type InputCardIcon = 'meso' | 'fragment' | ImageAssetRef
+
+/** 입력 카드 안 목록의 한 줄. */
+export interface InputCardSuggestion {
+  key: string
+  name: string
+  icon: ImageAssetRef | null
+}
+
+export interface InputCardSuggestions {
+  /** 친 글자에 맞는 아이템. 차례 그대로 선다 */
+  itemsOf: (draft: string) => readonly InputCardSuggestion[]
+  /** 고른 아이템의 key. 이어서 `onConfirm` 이 그 이름으로 불린다 */
+  onPick: (key: string) => void
+  /** 참이면 목록에 있는 아이템만 받는다. 확인은 친 글자가 목록의 이름과 같을 때만 눌린다 */
+  pickOnly?: boolean
+}
+
+/** 목록 한 줄의 높이. 목록 자리는 세 줄과 넷째 줄의 반이라, 넷째 줄이 반만 보여 목록이 스크롤된다는 것을 알린다. */
+const SUGGESTION_ROW_HEIGHT = 42
+const SUGGESTION_LIST_HEIGHT = SUGGESTION_ROW_HEIGHT * 3.5
 
 /**
  * 값 칸 아래 수 고르개. 라벨도 접미사도 호출부가 준다.
@@ -170,6 +193,22 @@ function ratioSeedOf(share: ShareSpec | undefined): { myShare: number; sharesTot
   return { myShare: share.myShare, sharesTotal: share.sharesTotal }
 }
 
+/** % 칸에 적을 글자. 비율을 셋째 자리까지 적는다(`2 / 3` → `66.667`). */
+function percentTextOf(ratio: { myShare: number; sharesTotal: number }): string {
+  return sharePercentText(ratio.myShare, ratio.sharesTotal)
+}
+
+/** 수수료 줄 하나가 지금 쓰는 요율. 자동이면 그 등급 요율이고, 등급을 모르면 없음이다. */
+function feePercentNow(fee: FeeSeed, autoFee: { percent: number } | null): number | null {
+  return fee.auto ? (autoFee?.percent ?? null) : fee.percent
+}
+
+/** 수수료 요약 줄의 요율 글자. 없으면 `없음` 이다. 세그먼트의 `없음` 과 같은 말이다. */
+function feeSummaryOf(fee: FeeSeed, autoFee: { percent: number } | null): string {
+  const percent = feePercentNow(fee, autoFee)
+  return percent === null ? '없음' : `${percent}%`
+}
+
 function feeOptionOf(percent: number | null): (typeof FEE_OPTIONS)[number] {
   return percent === 3 ? '3%' : percent === 5 ? '5%' : '없음'
 }
@@ -223,6 +262,8 @@ export interface InputCardProps {
   multiline?: boolean
   /** 값에 더하는 눈금. 글자 칸에서는 무시된다. */
   chips?: readonly InputCardChip[]
+  /** 확인이 눌리는 가장 작은 값. 숫자 칸만 보고 빈 칸은 0 으로 본다. */
+  min?: number
   /**
    * 값 칸 아래에 서는 **분배 비율 고르개**. 넘기면 카드가 칸 둘을 받는 모양이 된다.
    *
@@ -231,6 +272,12 @@ export interface InputCardProps {
   share?: ShareSpec
   /** 비율 아래 판매 · 분배 수수료 줄. 넘기면 확인이 셋째 인자로 수수료를 준다 */
   fees?: FeesSpec
+  /**
+   * 분배 아래에 서는 결과 줄. 지금 친 금액 · 분배 · 수수료로 센 금액을 보인다. 드롭 판매가가 쓴다.
+   *
+   * 셈은 호출부가 준다. 부품은 그 금액을 어떤 식으로 세는지 모른다. 금액 칸이 비면 부르지 않는다.
+   */
+  payout?: { label: string; of: (meso: number, share: ShareValue, fees?: FeesValue) => number }
   /**
    * 확인 버튼의 글자. 기본은 `입력`.
    *
@@ -252,6 +299,11 @@ export interface InputCardProps {
    * `기록 안함` 이 쓴다.
    */
   exclude?: { label: string; onPress: () => void }
+  /**
+   * 값 칸과 버튼 줄 사이의 아이템 목록. 친 글자로 찾은 아이템이 서고, 한 줄을 누르면 그 아이템으로 정하고 닫는다. 목록 자리
+   * 높이가 정해져 있어 치는 동안 맞는 수가 바뀌어도 카드 높이가 안 바뀐다. 아직 안 쳤어도 자리는 빈 채로 선다.
+   */
+  suggestions?: InputCardSuggestions
   /**
    * 확인 바로 왼쪽에 서는 **뒤로**. 확인과 같은 것을 넘기고, 쓸지 말지는 받는 쪽이 정한다.
    *
@@ -321,6 +373,15 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   const [partySize, setPartySize] = useState(props.share?.partySize ?? 1)
   const [ratio, setRatio] = useState(() => ratioSeedOf(props.share))
   /**
+   * `비율` % 칸의 글자. 비율과 따로 든다. `33.` 처럼 치는 중인 글자는 비율로 못 옮기지만 칸에는 남아야 한다.
+   * 안 건드리면 비율은 씨앗(`2 / 3` 등) 그대로 나간다.
+   */
+  const [percentText, setPercentText] = useState(() => percentTextOf(ratioSeedOf(props.share)))
+  /** 키보드 · 판이 지금 치는 칸. 금액 칸과 `비율` % 칸 둘이다. */
+  const [target, setTarget] = useState<'value' | 'share'>('value')
+  // 펼쳐 받는다. 객체째 들면 `.toggle` 같은 접근도 렌더 중 ref 접근으로 읽힌다(`react-hooks/refs`).
+  const { ref: feeAnchorRef, isOpen: feesOpen, anchor: feeAnchor, toggle: toggleFees, close: closeFees } = useAnchoredPopover()
+  /**
    * 씨앗을 다시 심는다. **그리는 중에** 바꾼다.
    *
    * 효과로 미루면 한 프레임 동안 앞 아이템의 값이 보인다. React 는 그리는 중의 자기 상태 갱신을
@@ -336,6 +397,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     setDraft(unitTextOf(props.value, unit))
     setPartySize(props.share?.partySize ?? 1)
     setRatio(ratioSeedOf(props.share))
+    setPercentText(percentTextOf(ratioSeedOf(props.share)))
+    setTarget('value')
     setUsesRatio(props.share?.mode === 'ratio')
     setSaleFee(props.fees?.sale ?? { auto: false, percent: null })
     setSplitFee(props.fees?.split ?? { auto: false, percent: null })
@@ -360,7 +423,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
   /** 여러 줄 칸이 지금 보이는 줄 수. 내용 높이를 받아 3 ~ 4 로 자른다. */
   const [lines, setLines] = useState(MULTILINE_MIN_LINES)
 
-  const { height: windowHeightPx } = useWindowDimensions()
+  const { windowHeightPx, railWidthPx } = useScreenLayout()
   const insets = useSafeAreaInsets()
   const { definition } = useThemeAppearance()
 
@@ -575,6 +638,14 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     settleCaret(next, next.length, caret?.start ?? shown.length)
   }
 
+  /** `비율` % 칸의 다음 글자. 받을 수 있는 비율이 되면 비율도 따라간다. */
+  function changePercent(next: string): void {
+    const text = acceptSharePercentText(percentText, next)
+    setPercentText(text)
+    const parsed = sharesFromPercentText(text)
+    if (parsed !== null) setRatio(parsed)
+  }
+
   /** 판의 키 하나를 커서 자리에 끼운다. 받을 수 없는 글자면 칸이 그대로다. */
   function insertAtCaret(key: string): void {
     const accepted = acceptUnitText(draft, `${draft.slice(0, digitCaret)}${key}${draft.slice(digitCaret)}`, unit)
@@ -593,23 +664,39 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     settleCaret(next, next.length, caret?.start ?? shown.length)
   }
 
+  const suggestionItems = props.suggestions?.itemsOf(draft) ?? []
+  /** 친 글자와 이름이 같은 목록의 아이템. 목록에서만 받는 카드는 이것이 있어야 확인이 눌린다. */
+  const exactPick = suggestionItems.find((item) => item.name === draft.trim())
+  // 목록에 없는 이름도 받는 카드에서 맞는 아이템이 없으면, 목록 자리에 친 이름을 확인하는 한 줄을 세운다.
+  const offersTyped = props.suggestions !== undefined && props.suggestions.pickOnly !== true && draft.trim() !== '' && suggestionItems.length === 0
+  const belowMin = props.min !== undefined && !isText && mesoValueOf(draftMeso) < props.min
+  const confirmable = (props.suggestions?.pickOnly !== true || exactPick !== undefined) && !belowMin
+
   /**
    * 지금 든 것을 넘긴다. 확인과 이전이 **같은 것을 준다**.
    *
    * 비율을 안 넘긴 카드는 인자 하나로 부른다. 없는 비율을 채워 보내면 받는 쪽이 그것을 값으로
    * 읽을 수 있다.
    */
+  /** 지금 고른 수수료. 자동이면 그 등급 요율이다. 확인과 받는 금액이 같은 값을 본다. */
+  const feesValue: FeesValue | undefined =
+    props.fees === undefined
+      ? undefined
+      : {
+          saleFeePercent: feePercentNow(saleFee, autoFee),
+          saleFeeAuto: saleFee.auto,
+          splitFeePercent: feePercentNow(splitFee, autoFee),
+          splitFeeAuto: splitFee.auto,
+        }
+
+  /** 받는 금액. 금액 칸이 비면 셀 것이 없다. */
+  const payoutMeso =
+    props.payout === undefined || draftMeso === '' ? null : props.payout.of(mesoValueOf(draftMeso), share, feesValue)
+
   function give(to: ((next: string, share?: ShareValue, fees?: FeesValue) => void) | undefined): void {
     if (to === undefined) return
-    if (props.fees !== undefined) {
-      const percentOf = (fee: FeeSeed) => (fee.auto ? (autoFee?.percent ?? null) : fee.percent)
-      to(draftMeso, share, {
-        saleFeePercent: percentOf(saleFee),
-        saleFeeAuto: saleFee.auto,
-        splitFeePercent: percentOf(splitFee),
-        splitFeeAuto: splitFee.auto,
-      })
-    } else if (props.share === undefined) to(draftMeso)
+    if (feesValue !== undefined) to(draftMeso, share, feesValue)
+    else if (props.share === undefined) to(draftMeso)
     else to(draftMeso, share)
   }
 
@@ -624,7 +711,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
     return (
       <FeeRow
         testID={testID}
-        variant="stacked"
+        variant="compact"
         disabled={disabled}
         label={label}
         auto={fee.auto}
@@ -667,7 +754,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
         NativeWind 가 클래스를 `style` 로 푸는 바람에 한쪽이 덮여, 판의 바탕·모서리·여백이
         통째로 사라진다(시뮬레이터에서 두 번 그렇게 났다).
       */}
-      <Animated.View style={props.panelStyle}>
+      {/* 카드는 콘텐츠 폭 안에 선다. 스크림만 오른쪽 레일까지 덮는다. */}
+      <Animated.View style={[props.panelStyle, { marginRight: railWidthPx }]}>
         {/*
           판의 **빈 자리를 누르면 키보드만 내린다**(사용자 지정). 카드는 제자리에 남는다. 자리는
           마지막으로 잰 키보드 높이를 붙들고 있어 안 흔들린다.
@@ -742,7 +830,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               isMultiline ? 'items-start py-3' : 'items-center'
             } ${props.reading === true ? 'pb-1 pt-[18px]' : isMultiline ? '' : 'py-2.5'}`}
             // 커서와 같은 값을 따른다. 칸은 키보드가 내려가도 초점을 쥐고 있어 초점을 따르면 칠 수 없는 칸에 표시가 남는다.
-            style={showsCaret ? { boxShadow: boxShadowOf(definition.primary, FOCUS_SHADOW) } : undefined}
+            style={showsCaret && target === 'value' ? { boxShadow: boxShadowOf(definition.primary, FOCUS_SHADOW) } : undefined}
           >
             {props.reading === true && (
               <Text
@@ -801,7 +889,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
 
                 대가는 가운데를 눌러 고칠 수 없다는 것이다. 지우고 다시 친다.
               */
-              caretHidden={!showsCaret}
+              caretHidden={!showsCaret || target !== 'value'}
               selection={isText ? undefined : (caret ?? undefined)}
               onSelectionChange={(event) => {
                 if (isText) return
@@ -839,6 +927,7 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
               autoFocus={padDecided !== null}
               showSoftInputOnFocus={showsSystemKeyboard}
               onPressIn={() => {
+                setTarget('value')
                 setPadOpen(true)
                 setPadEverOpened(true)
               }}
@@ -879,6 +968,54 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             )}
           </View>
 
+          {props.suggestions !== undefined && (
+            <ScrollView
+              testID="input-card-suggestions"
+              style={{ height: SUGGESTION_LIST_HEIGHT }}
+              className="mt-2"
+              keyboardShouldPersistTaps="handled"
+            >
+              {suggestionItems.map((item) => (
+                <Pressable
+                  key={item.key}
+                  testID={`input-card-suggestion-${item.key}`}
+                  role="button"
+                  aria-label={item.name}
+                  onPress={() => {
+                    props.suggestions?.onPick(item.key)
+                    props.onConfirm(item.name)
+                  }}
+                  style={{ height: SUGGESTION_ROW_HEIGHT }}
+                  className="flex-row items-center gap-2.5 rounded-[10px] px-3 active:bg-card-inset"
+                >
+                  {item.icon === null ? (
+                    <View style={{ width: 24, height: 24 }} />
+                  ) : (
+                    <Image source={item.icon} style={{ width: 24, height: 24 }} resizeMode="contain" aria-hidden />
+                  )}
+                  <Text numberOfLines={1} className="shrink text-sm text-text">
+                    {item.name}
+                  </Text>
+                </Pressable>
+              ))}
+              {offersTyped && (
+                <Pressable
+                  testID="input-card-suggestion-typed"
+                  role="button"
+                  aria-label={`‘${draft.trim()}’ 직접 입력`}
+                  onPress={() => give(props.onConfirm)}
+                  style={{ height: SUGGESTION_ROW_HEIGHT }}
+                  // 그림이 없는 줄이라 그림 자리를 비워 두지 않고 글자를 왼쪽에 붙인다.
+                  className="flex-row items-center rounded-[10px] px-3 active:bg-card-inset"
+                >
+                  <Text numberOfLines={1} className="shrink text-sm text-text">
+                    {`‘${draft.trim()}’ 직접 입력`}
+                  </Text>
+                </Pressable>
+              )}
+            </ScrollView>
+          )}
+
           {/*
             값 칸 아래 전부. **판이 이 위에 덮인다.**
 
@@ -908,7 +1045,8 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
           )}
 
           {props.share !== undefined && (
-            <View className="mt-3 gap-2.5">
+            // 칩 아래 줄은 바탕 카드 없이 판 위에 바로 놓고 간격으로 가른다. 입력을 한 칸에 모았더니 복잡해 보였다.
+            <View className="mt-4 gap-3.5">
               <View className="flex-row items-center justify-between gap-2.5">
                 <Text className="text-xs font-bold text-text">분배 방식</Text>
                 <Segment size="sm"
@@ -916,69 +1054,134 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
                   selected={usesRatio ? '비율' : '기본'}
                   // 금액 단위 세그먼트가 선 카드라 한 단계 작게 둔다. 파티 인원 모달의 같은 줄은 `md` 다.
                   // 어느 쪽 수도 안 옮긴다. 둘이 각자 제 값을 들고 있어 돌아오면 그대로다.
-                  onSelect={(option) => setUsesRatio(option === '비율')}
+                  onSelect={(option) => {
+                    setUsesRatio(option === '비율')
+                    if (option === '기본') setTarget('value')
+                  }}
                 />
               </View>
 
-              {/*
-                왼쪽이 그 드롭의 분배, 오른쪽이 수수료 둘이다. 위아래로 쌓으면 줄이 넷이라
-                카드가 키보드를 밀어낸다.
-              */}
-              <View testID="input-card-split-fees" className="flex-row items-stretch gap-3">
+              {/* 값 줄. 높이 36 을 못박는다. 방식마다 높이가 다르면 세그먼트를 누를 때마다 아래 줄과 버튼이 뛴다. */}
+              <View testID="input-card-split-value" className="h-9 flex-row items-center gap-2">
                 {usesRatio ? (
-                  // 파티 모달의 비율 카드와 같은 바탕이다. 드롭 하나의 값이라 카드가 한 장이다.
-                  <View className="flex-1 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]">
-                    <ShareField
-                      label={props.share.label}
-                      value={ratio}
-                      // `ShareField` 는 방식을 모르는 부품이다. 여기는 늘 비율 쪽이다.
-                      onChange={setRatio}
-                      layout="stacked"
+                  <>
+                    <Text className="flex-1 text-xs tracking-[.04em] text-text-muted">{props.share.label}</Text>
+                    {/*
+                      바탕 없는 숫자다(알약 바탕을 두지 않는다). 누르면 금액 칸 대신 이 칸이 키보드 · 판의 입력을
+                      받는다. 판이 받는 카드에서는 OS 키보드를 안 띄운다.
+                    */}
+                    <TextInput
+                      testID="input-card-share-percent"
+                      aria-label={`${props.share.label} 내 몫`}
+                      value={percentText}
+                      onChangeText={changePercent}
+                      keyboardType="decimal-pad"
+                      showSoftInputOnFocus={showsSystemKeyboard}
+                      onPressIn={() => {
+                        setTarget('share')
+                        setPadOpen(true)
+                        setPadEverOpened(true)
+                      }}
+                      onBlur={() => {
+                        // `33.` 처럼 비율로 못 옮기는 글자로 끝나면 마지막으로 받은 비율로 되돌려 적는다.
+                        if (sharesFromPercentText(percentText) === null) setPercentText(percentTextOf(ratio))
+                      }}
+                      className="h-[25px] min-w-[44px] text-right text-lg font-semibold text-text"
+                      style={TABULAR_NUMS}
                     />
-                  </View>
+                    <Text className="text-xs text-text-muted">%</Text>
+                  </>
                 ) : (
-                  // 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다.
-                  //
-                  // **높이 112 를 못박는다.** 112 는 `비율` 칸이 제 내용으로 서는 높이다(여백 11 +
-                  // 머리 23 + 간격 8 + 트랙 24 + 간격 8 + 합 26 + 여백 12). 안 못박으면 이 칸이
-                  // 84 라, 세그먼트를 누를 때마다 아래 버튼 줄이 그 차이만큼 뛴다. `비율` 칸은 안
-                  // 못박는다. 제 내용대로 서게 두어야 글꼴 크기가 커져도 안이 안 잘린다.
-                  //
-                  // 오른쪽 수수료 칸이 110 이라 줄 높이는 두 칸이 거의 같이 정한다(실측).
-                  <View
-                    testID="input-card-party"
-                    className="h-[112px] flex-1 gap-2.5 rounded-[12px] bg-bg px-3 pb-3 pt-[11px]"
-                  >
-                    <View className="flex-row items-center justify-between gap-1.5">
-                      <Text className="text-xs leading-[14px] tracking-[.04em] text-text-muted">
-                        파티 인원
-                      </Text>
-                      <Badge variant="primary" size="xs" style={TABULAR_NUMS}>
-                        최대 {props.share.maxPartySize ?? defaultMaxPartySize()}명
-                      </Badge>
-                    </View>
-                    {/* 스테퍼는 머리 줄 아래 남는 자리 가운데다(사용자 지정). */}
-                    <View testID="input-card-party-body" className="flex-1 items-center justify-center">
-                      <Stepper
-                        size="sm"
-                        label={`${props.share.label} 파티원 수`}
-                        value={partySize}
-                        max={props.share.maxPartySize ?? defaultMaxPartySize()}
-                        onChange={setPartySize}
-                      />
-                    </View>
+                  <>
+                    <Text className="text-xs leading-[14px] tracking-[.04em] text-text-muted">파티 인원</Text>
+                    {/* 상한은 (보스 · 난이도)마다 다르다. 스테퍼는 그 수를 못 말하므로 배지가 옆에서 말한다. */}
+                    <Badge variant="primary" size="xs" style={TABULAR_NUMS}>
+                      최대 {props.share.maxPartySize ?? defaultMaxPartySize()}명
+                    </Badge>
+                    <View className="flex-1" />
+                    <Stepper
+                      size="sm"
+                      label={`${props.share.label} 파티원 수`}
+                      value={partySize}
+                      max={props.share.maxPartySize ?? defaultMaxPartySize()}
+                      onChange={setPartySize}
+                    />
+                  </>
+                )}
+              </View>
+
+              {/*
+                % 를 치는 동안 판은 값 줄 바로 아래에 덮인다. 금액 칸의 판처럼 칸 아래에 서야 친 숫자가 안 가린다.
+                그래서 판이 앉을 기준 상자를 아래 줄들에 둔다.
+              */}
+              <View className="relative gap-3.5">
+                {props.fees !== undefined && (
+                  <View className="flex-row items-center gap-2.5">
+                    <Text className="text-xs text-text-muted">수수료</Text>
+                    <Text
+                      testID="input-card-fee-summary"
+                      numberOfLines={1}
+                      className="flex-1 text-right text-xs font-semibold text-text"
+                      style={TABULAR_NUMS}
+                    >
+                      {`판매 ${feeSummaryOf(saleFee, autoFee)} · 분배 ${feeSummaryOf(splitFee, autoFee)}`}
+                    </Text>
+                    {/*
+                      두 줄을 늘 펼쳐 두면 카드가 키보드 위로 너무 커지고, 수수료는 한 번 정하면 잘 바꾸지 않는다.
+                      그래서 한 줄로 접고 `변경` 이 팝오버로 편다.
+                    */}
+                    <Pressable
+                      ref={feeAnchorRef}
+                      role="button"
+                      aria-label="수수료 변경"
+                      onPress={toggleFees}
+                      hitSlop={10}
+                    >
+                      <Text className="text-xs font-semibold text-primary-ink">변경</Text>
+                    </Pressable>
                   </View>
                 )}
 
-                {props.fees !== undefined && (
-                  // 줄 둘이 **항상 선다**(사용자 지정). 쓸 수 없는 줄은 없애지 않고 잠근다.
-                  // 없애면 이 칸의 높이가 바뀌고, 그 줄이 원래 있다는 것도 안 보인다.
-                  <View className="flex-1 justify-center gap-3.5">
-                    {feeRow('판매 수수료', 'input-card-sale-fee', saleFee, setSaleFee, !earns)}
-                    {feeRow('분배 수수료', 'input-card-split-fee', splitFee, setSplitFee, !earns || !splits)}
+                {props.payout !== undefined && (
+                  // 받는 금액 줄 앞은 다른 줄 사이(14)보다 2 넓다. 고르는 줄들과 결과를 가른다.
+                  // 금액 칸이 비면 금액만 비우고 줄은 남긴다. 줄이 사라졌다 생기면 카드 높이가 뛴다.
+                  <View className="mt-0.5 min-h-[25px] flex-row items-baseline justify-between px-0.5">
+                    <Text className="text-xs text-text-muted">{props.payout.label}</Text>
+                    <Text testID="input-card-payout" className="text-lg font-bold text-text" style={TABULAR_NUMS}>
+                      {payoutMeso === null ? '' : payoutMeso.toLocaleString()}
+                      {payoutMeso !== null && <Text className="text-xs font-normal text-text-muted"> 메소</Text>}
+                    </Text>
+                  </View>
+                )}
+
+                {padVisible && target === 'share' && (
+                  <View testID="input-card-share-pad" className="absolute inset-x-0 -top-1.5 z-10">
+                    <NumberPad
+                      // % 는 끝에서만 자란다. 커서를 옮겨 가운데에 끼울 만큼 긴 글자가 아니다.
+                      onDigit={(digit) => changePercent(`${percentText}${digit}`)}
+                      onDecimal={() => changePercent(`${percentText}.`)}
+                      onBackspace={() => changePercent(percentText.slice(0, -1))}
+                      onConfirm={() => setPadOpen(false)}
+                    />
                   </View>
                 )}
               </View>
+
+              {feesOpen && props.fees !== undefined && (
+                <AnchoredPopover
+                  testID="input-card-fee-popover"
+                  ariaLabel="수수료"
+                  closeLabel="수수료 닫기"
+                  anchor={feeAnchor}
+                  width={284}
+                  onClose={closeFees}
+                  className="gap-3 p-3"
+                >
+                  {/* 쓸 수 없는 줄은 없애지 않고 잠근다. 줄이 원래 있다는 것이 보여야 한다. */}
+                  {feeRow('판매 수수료', 'input-card-sale-fee', saleFee, setSaleFee, !earns)}
+                  {feeRow('분배 수수료', 'input-card-split-fee', splitFee, setSplitFee, !earns || !splits)}
+                </AnchoredPopover>
+              )}
             </View>
           )}
 
@@ -1013,16 +1216,25 @@ export function InputCard(props: InputCardProps): React.JSX.Element {
             <Pressable
               testID="input-card-confirm"
               role="button"
-              onPress={() => give(props.onConfirm)}
-              className="h-11 flex-[2] items-center justify-center rounded-xl bg-primary"
+              aria-disabled={!confirmable}
+              onPress={() => {
+                if (!confirmable) return
+                if (exactPick !== undefined) props.suggestions?.onPick(exactPick.key)
+                give(props.onConfirm)
+              }}
+              className={`h-11 flex-[2] items-center justify-center rounded-xl ${confirmable ? 'bg-primary' : 'bg-card-inset'}`}
             >
-              <Text numberOfLines={1} className="text-sm font-bold text-on-primary" style={TABULAR_NUMS}>
+              <Text
+                numberOfLines={1}
+                className={`text-sm font-bold ${confirmable ? 'text-on-primary' : 'text-text-disabled'}`}
+                style={TABULAR_NUMS}
+              >
                 {draft === '' ? (props.confirmEmptyLabel ?? props.confirmLabel ?? '입력') : (props.confirmLabel ?? '입력')}
               </Text>
             </Pressable>
           </View>
 
-            {padVisible && (
+            {padVisible && target === 'value' && (
               // 값 칸과의 사이는 칩 줄의 `mt-2` 와 같은 8 이다. 판이 그 자리에서 시작한다.
               <View testID="input-card-pad" className="absolute inset-x-0 top-2">
                 <NumberPad

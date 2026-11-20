@@ -40,6 +40,7 @@ export function spendItemsOf(record: SpendRecord): EntryItem[] {
     tariffMeso: record.tariffMeso,
     amountPoint: record.pointAmount,
     pointPer100mMeso: record.pointPer100mMeso,
+    mesoMarketFeePercent: record.mesoMarketFeePercent,
     amountCash: record.cashAmount,
     fragmentCount: record.hexa?.fragmentCount ?? null,
     untradableFragmentCount: record.hexa?.untradableFragmentCount ?? null,
@@ -47,6 +48,8 @@ export function spendItemsOf(record: SpendRecord): EntryItem[] {
     hexaActivation: record.hexa?.activation ?? null,
     hexaUseStorage: record.hexa?.useStorage ?? null,
     hexaStorageAsSpend: record.hexa?.storageAsSpend ?? null,
+    inventoryItemId: record.inventoryItemId ?? null,
+    ringLevel: record.ringLevel ?? null,
   }
   const forms = SPEND_FORM_KEYS.filter((form) => record.formItemKeys?.[form] !== undefined)
   if (forms.length === 0) {
@@ -74,6 +77,17 @@ function accountIdField(accountId: string | null): { accountId?: string } {
   return accountId === null ? {} : { accountId }
 }
 
+/** 저장할 메모. 앞뒤 공백을 걷고, 남는 글자가 없으면 메모가 없는 것이다. */
+function storedMemoOf(memo: string | undefined): string | null {
+  const trimmed = memo?.trim() ?? ''
+  return trimmed === '' ? null : trimmed
+}
+
+/** 읽은 기록의 메모 칸. 메모가 없는 기록은 칸이 없다. */
+function memoField(memo: string | null): { memo?: string } {
+  return memo === null ? {} : { memo }
+}
+
 export function spendEntryOf(record: SpendRecord): StoredEntry {
   return {
     head: {
@@ -83,11 +97,15 @@ export function spendEntryOf(record: SpendRecord): StoredEntry {
       entryType: 'spend',
       categoryKey: record.category,
       entryDate: record.spentOn,
+      memo: storedMemoOf(record.memo),
       createdAt: record.recordedAt,
     },
     items: spendItemsOf(record),
     hunt: null,
+    transfer: record.transfer ?? null,
+    exchange: record.exchange ?? null,
     fragmentUses: record.hexa?.storageUses ?? [],
+    otherFragmentUses: record.hexa?.otherUse === undefined ? [] : [record.hexa.otherUse],
   }
 }
 
@@ -98,8 +116,9 @@ function sumOf(items: readonly EntryItem[], pick: (item: EntryItem) => number | 
 }
 
 /** 필요 조각 · 교환 불가 칸이 있어야 헥사 기록이다. 개당 가격은 곱할 개수가 없으면 비어 있다. */
-function hexaOf(item: EntryItem, uses: StoredEntry['fragmentUses']): SpendHexa | null {
+function hexaOf(item: EntryItem, uses: StoredEntry['fragmentUses'], otherUses: StoredEntry['otherFragmentUses']): SpendHexa | null {
   if (item.fragmentCount === null || item.untradableFragmentCount === null) return null
+  const otherUse = otherUses[0]
   return {
     fragmentCount: item.fragmentCount,
     untradableFragmentCount: item.untradableFragmentCount,
@@ -108,6 +127,7 @@ function hexaOf(item: EntryItem, uses: StoredEntry['fragmentUses']): SpendHexa |
     useStorage: item.hexaUseStorage === true,
     storageAsSpend: item.hexaStorageAsSpend === true,
     storageUses: uses,
+    ...(otherUse === undefined ? {} : { otherUse }),
   }
 }
 
@@ -131,9 +151,15 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
     tariffMeso: sumOf(entry.items, (item) => item.tariffMeso),
     pointAmount: sumOf(entry.items, (item) => item.amountPoint),
     pointPer100mMeso: first.pointPer100mMeso,
+    mesoMarketFeePercent: first.mesoMarketFeePercent,
     cashAmount: sumOf(entry.items, (item) => item.amountCash),
-    hexa: hexaOf(first, entry.fragmentUses),
+    hexa: hexaOf(first, entry.fragmentUses, entry.otherFragmentUses),
     recordedAt: entry.head.createdAt,
+    ...(first.inventoryItemId === null ? {} : { inventoryItemId: first.inventoryItemId }),
+    ...(first.ringLevel === null ? {} : { ringLevel: first.ringLevel }),
+    ...memoField(entry.head.memo),
+    ...(entry.transfer == null ? {} : { transfer: entry.transfer }),
+    ...(entry.exchange == null ? {} : { exchange: entry.exchange }),
   }
 }
 
@@ -213,6 +239,7 @@ export function incomeEntryOf(record: IncomeRecord): StoredEntry {
       entryType: 'income',
       categoryKey: record.category,
       entryDate: record.earnedOn,
+      memo: storedMemoOf(record.memo),
       createdAt: record.recordedAt,
     },
     items: [
@@ -230,10 +257,14 @@ export function incomeEntryOf(record: IncomeRecord): StoredEntry {
         amountPoint: record.pointAmount,
         pointPer100mMeso: record.pointPer100mMeso,
         amountCash: record.cashAmount,
+        inventoryItemId: record.inventoryItemId ?? null,
+        ringLevel: record.ringLevel ?? null,
       },
     ],
     hunt: huntRowOf(record.hunt),
+    exchange: record.exchange ?? null,
     fragmentUses: [],
+    otherFragmentUses: record.otherFragmentUse === undefined ? [] : [record.otherFragmentUse],
   }
 }
 
@@ -259,6 +290,11 @@ export function incomeRecordOf(entry: StoredEntry): IncomeRecord {
     saleFeeAuto: item.saleFeeAuto,
     hunt: huntOf(entry.hunt, hunting ? item.quantity : null),
     recordedAt: entry.head.createdAt,
+    ...(item.inventoryItemId === null ? {} : { inventoryItemId: item.inventoryItemId }),
+    ...(item.ringLevel === null ? {} : { ringLevel: item.ringLevel }),
+    ...(entry.otherFragmentUses[0] === undefined ? {} : { otherFragmentUse: entry.otherFragmentUses[0] }),
+    ...memoField(entry.head.memo),
+    ...(entry.exchange == null ? {} : { exchange: entry.exchange }),
   }
 }
 

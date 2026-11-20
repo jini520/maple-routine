@@ -28,12 +28,14 @@
 | `features/bar-order/config.ts` · `features/bar-order/store.ts` | 사용자가 정한 바 순서를 표에 맞춰 읽고 저장한다([[ADR-152]]) |
 | `components/organisms/BottomBar/double-tap.ts` | 두 번 누름 판정(`isSecondTap`, 300ms) |
 | `components/organisms/BottomBar/BottomBarOverlay.tsx` | 화면이 띄우는 것을 바 위에 그리는 포털([[ADR-062]]) |
-| `lib/bottom-bar-metrics.ts` | 창 폭에서 바 치수를 계산한다 |
+| `lib/bottom-bar-metrics.ts` | 창 폭과 3버튼 내비게이션 바 여부에서 바 치수를 계산한다. 오른쪽 레일 화면의 세로 막대 치수도 여기서 계산한다 |
+| `hooks/useButtonNavigation.ts` | 아래에 3버튼 내비게이션 바가 있는지 낸다. 로컬 모듈 `app-system-bars` 가 안드로이드에 묻는다 |
 | `hooks/useOpenTab.ts` | 화면이 페이지 이름으로 탭을 연다 |
 | `hooks/useScreenNavigation.ts` · `hooks/useSettingsNavigation.ts` | 화면이 하위 페이지를 열고 닫는다(둘은 같은 훅) |
 | `hooks/useScrollToTop.ts` | 맨 위 스크롤 함수를 등록하거나 부른다 |
 | `hooks/useRootBackToBackground.ts` | 안드로이드에서 되돌아갈 화면이 없을 때 뒤로 가기를 받아 백그라운드로 보낸다 |
 | `hooks/useScreenFocused.ts` | 이 화면이 지금 보이는지. 내비게이터 밖이면 늘 `true` |
+| `hooks/useRunAfterTransition.ts` | 담은 스택의 다음 전환이 끝난 뒤 일을 한 번 부른다. 전환 이벤트가 없으면 시간 제한 뒤에 부르고, 내비게이터 밖이면 바로 부른다 |
 | `native/haptics.ts` | `tapFeedback()` · `selectionFeedback()` |
 
 ## 화면 구조
@@ -45,7 +47,7 @@ RootStack
    ├─ Main (LayerStack)
    │   ├─ Groups        Today · Utility · Settings
    │   ├─ ScheduleSubs  Appointments · Content · Boss
-   │   ├─ LedgerSubs    Profit · Cashbook · Stats
+   │   ├─ LedgerSubs    Profit · Cashbook · Stats · Inventory
    │   └─ BottomBar
    └─ 하위 페이지 스물둘
 ```
@@ -57,6 +59,7 @@ RootStack
 |---|---|
 | 컨텐츠 관리 · 보스 관리 | `ContentManage` · `BossManage` |
 | 드롭 히스토리 · 아이템 가격 입력 | `DropHistory` · `DropPrice` |
+| 거래 내역(가계부 머리의 `거래 내역`) | `TradeHistory` |
 | 개발 노트 | `SettingsReleaseNotes` |
 | 앱 정보 및 계정 | `SettingsAbout` |
 | 캐릭터 관리 | `SettingsCharacters` |
@@ -73,7 +76,7 @@ RootStack
 |---|---|---|
 | `today` | today | 없음 |
 | `schedule` | 스케줄러 | 파티 스케줄 · 컨텐츠 · 보스 |
-| `ledger` | 수입·지출 | 보스 수입 · 가계부 · 통계 |
+| `ledger` | 수입·지출 | 보스 수입 · 가계부 · 통계 · 인벤토리 |
 | `utility` | 유틸리티 | 없음 |
 | `settings` | 더보기 | 없음 |
 
@@ -98,7 +101,7 @@ RootStack
 | 하려는 것 | 쓰는 것 |
 |---|---|
 | 하위 페이지 열기 · 닫기 | `useScreenNavigation()` 의 `navigate(라우트)` · `goBack()` |
-| 다른 탭 열기 | `useOpenTab()(페이지, 파라미터)`. 그룹 페이지로 가면 `Groups` 까지 되돌아간 뒤 연다 |
+| 다른 탭 열기 | `useOpenTab()(페이지, 파라미터)`. 그룹 페이지로 가면 `Groups` 까지 되돌아간 뒤 연다. 하위 페이지에서 부르면 그 하위 페이지를 빼고 아래의 `Main` 으로 되돌아간다(`pop`) |
 | 화면 안 버튼으로 맨 위 스크롤 | `useScrollToTop()` |
 | 컨테이너 밖에서 이동(알림 탭) | `AppNavigation` 의 `navigationRef`. 목적지가 화면 목록에 생긴 뒤에 push 한다 |
 
@@ -111,9 +114,19 @@ RootStack
 |---|---|
 | 폭 | `min(창 폭 − 28, 420)`, 남는 폭은 좌우로 나눈다 |
 | 높이 | `round(폭 × 72 / 374)`, 최소 64 |
-| 위치 | 하단 안전영역 바로 위. 안드로이드는 안전영역 최소 34 |
+| 위치 | 하단 안전영역 바로 위. 안드로이드는 안전영역 최소 34. 3버튼 내비게이션 바 위에서는 좌우 최소 여백과 같은 14 를 더 띄운다 |
 | 안쪽 여백 · 알약 | 여백 3, 알약 높이는 바 높이 − 6, 알약 폭은 칸 폭 + 23 |
 | 아이콘 · 라벨 | 아이콘 25, 선 굵기 1.5, 간격 4, 라벨 10px |
+
+오른쪽 레일 화면(`design-system.md` 의 `화면 크기`)에서는 바를 세로 막대로 세워 오른쪽 안전영역에 둔다. 가로 바의 왼쪽에서
+오른쪽 순서가 막대의 위에서 아래 순서이고, 하위 행은 맨 위 칸이 ← 다([[ADR-191]] 결정 4).
+
+| 값 | 계산 |
+|---|---|
+| 폭 · 칸 | 폭 64, 칸 높이 56 다섯 칸. 막대 높이 286 |
+| 위치 | 가로는 오른쪽 안전영역의 가운데, 세로는 아래 끝이 아래쪽 안전영역 바로 위 |
+| 안쪽 여백 · 알약 | 여백 3, 알약 58 × 56, ← 원 42 |
+| 아이콘 · 라벨 | 가로 바와 같다 |
 
 재질은 iOS 26 이상에서 `GlassView`(바 `regular` · 알약 `clear`), 그 밖에서는 불투명 캡슐이다. 색은
 `resolveBarColors` 가 테마에서 계산한다. 자세한 규칙은 [[ADR-059]] 결정 11 · 12 에 있다.

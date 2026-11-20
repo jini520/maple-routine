@@ -110,7 +110,7 @@ describe('BossProfitBossRow: 미완료 행의 파티', () => {
       }),
     )
 
-    expect(getByText('66.7%')).toBeTruthy()
+    expect(getByText('66.667%')).toBeTruthy()
   })
 
   it('변경이 열려 있다', async () => {
@@ -176,6 +176,27 @@ describe('BossProfitBossRow: 금액과 아이템 칩', () => {
     })
 
     expect(getByTestId('item-revenue-popover')).toBeTruthy()
+  })
+})
+
+describe('BossProfitBossRow: 결정석 `제외`', () => {
+  it('한도를 넘긴 처치는 인원 배지 옆에 `제외` 배지가 서고 금액이 `0 메소` 다', async () => {
+    const { getByTestId, getByText } = await renderProfit(
+      <BossProfitBossRow row={보스행({ partySize: 3, payoutMeso: 0, overCrystalLimit: true })} drops={[]} />,
+    )
+
+    expect(getByTestId('party-share-badge')).toHaveTextContent('파티 3인')
+    expect(getByTestId('party-share-over-limit-badge')).toHaveTextContent('제외')
+    expect(getByText('0 메소')).toBeTruthy()
+  })
+
+  it('분배 방식 `제외` 인 처치는 배지가 `제외` 하나다', async () => {
+    const { getByTestId, queryByTestId } = await renderProfit(
+      <BossProfitBossRow row={보스행({ partySize: 3, payoutMeso: 0, crystalExcluded: true })} drops={[]} />,
+    )
+
+    expect(getByTestId('party-share-badge')).toHaveTextContent('제외')
+    expect(queryByTestId('party-share-over-limit-badge')).toBeNull()
   })
 })
 
@@ -274,6 +295,18 @@ describe('BossProfitBossRow: 아이템 차례', () => {
 })
 
 describe('BossProfitBossRow: 파티원 수', () => {
+  // 완료 행의 모달은 그 기록 한 건을 다시 센다. 받는 금액이 그 기록에 적힐 값과 같아야 하므로 그 기록의 가격을 쓴다.
+  it('모달의 받는 금액은 그 기록의 가격으로 센다', async () => {
+    const row = 보스행({ priceMeso: 1_200_000_000 })
+    const { getByLabelText, getByTestId } = await renderProfit(<BossProfitBossRow row={row} drops={[]} />)
+
+    await act(async () => {
+      fireEvent.press(getByLabelText(`지내우시 ${주간보스이름} 하드 파티 인원과 비율 변경`))
+    })
+
+    expect(getByTestId('party-payout')).toHaveTextContent(`${(1_200_000_000 / (row.partySize ?? 1)).toLocaleString()} 메소`)
+  })
+
   // 행에는 스테퍼가 없다. 수 하나만 올리고 내릴 수 있어 비율이 들어갈 자리가 없다.
   it('변경을 누르면 모달이 열리고 그 안의 + 가 이 기록만 다시 센다', async () => {
     const setRowParty = jest.fn().mockResolvedValue(undefined)
@@ -298,7 +331,7 @@ describe('BossProfitBossRow: 파티원 수', () => {
 
     expect(setRowParty).toHaveBeenCalledWith(row, {
       partySize: 4,
-      shares: { myShare: null, sharesTotal: null, splitFeePercent: null, splitFeeAuto: undefined },
+      shares: { myShare: null, sharesTotal: null, splitFeePercent: null, splitFeeAuto: undefined, excluded: false },
     })
   })
 
@@ -311,8 +344,8 @@ describe('BossProfitBossRow: 파티원 수', () => {
       />,
     )
 
-    // 소수 첫째 자리까지다(사용자 지정). 보스 관리 화면과 같은 수를 말한다.
-    expect(getByText('66.7%')).toBeTruthy()
+    // 소수 셋째 자리까지다(사용자 지정). 보스 관리 화면과 같은 수를 말한다.
+    expect(getByText('66.667%')).toBeTruthy()
     expect(queryByText('결정석')).toBeNull()
     expect(queryByText('아이템')).toBeNull()
   })

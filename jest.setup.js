@@ -150,3 +150,30 @@ jest.mock('expo-blur', () => {
   const { View } = require('react-native')
   return { BlurView: View }
 })
+
+// victory-native 는 Skia 네이티브 캔버스에 그린다. jest 에는 캔버스가 없고 패키지가 ESM 이라 import 단계에서 죽는다.
+// 캔버스와 그리는 조각을 비운다. 테스트는 그래프 둘레의 글자와 칸만 본다. 선과 띠가 실제로 그려지는지는 기기가 답한다.
+// `createElement` 로 `View` 를 그리면 NativeWind 의 babel 변환이 목 밖의 변수를 끌어와 jest 가 거절한다.
+jest.mock('victory-native', () => {
+  const nothing = () => null
+  return {
+    CartesianChart: nothing,
+    Line: nothing,
+    Area: nothing,
+    AreaRange: nothing,
+    useChartPressState: (init) => ({
+      state: {
+        isActive: { value: false },
+        matchedIndex: { value: -1 },
+        x: { value: { value: init.x }, position: { value: 0 } },
+        y: Object.fromEntries(Object.keys(init.y).map((key) => [key, { value: { value: init.y[key] }, position: { value: 0 } }])),
+        yIndex: { value: 0 },
+      },
+      isActive: false,
+    }),
+  }
+})
+jest.mock('@shopify/react-native-skia', () => {
+  const nothing = () => null
+  return { Circle: nothing, DashPathEffect: nothing, Line: nothing, Path: nothing, vec: (x, y) => ({ x, y }) }
+})

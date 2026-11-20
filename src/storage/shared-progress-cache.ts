@@ -2,7 +2,7 @@ import { contentKeyOfApiName, findContent } from '../lib/scheduler/contents'
 import { findWorld } from '../lib/world/worlds'
 import { preferences } from './ports'
 import type { SharedProgressEntry } from '../types'
-import { accountSharedProgressKey, worldSharedProgressKey } from './keys'
+import { STORAGE_KEYS, accountSharedProgressKey, legacyWorldSharedProgressKey, worldSharedProgressKey } from './keys'
 
 /** 컨텐츠 key → 그 컨텐츠의 공유 진행. */
 type SharedProgressMap = Record<string, SharedProgressEntry>
@@ -46,36 +46,54 @@ async function setSharedProgressEntry(
   await preferences.set(key, JSON.stringify(current))
 }
 
-/**
- * 월드 이름을 키에 든 옛 원장(`worldSharedProgress:엘리시움`)을 월드 key 키로 옮긴다. 새 키에 값이 있으면 옮기지 않는다.
- *
- * 이 원장은 한 번이라도 활성으로 본 적이 있는지를 쌓은 값이라 API 에서 다시 받을 수 없어 옮긴다. 옛 이름은 월드 표의
- * 이름이다. 표 이름이 곧 API 표기다.
- */
-async function moveLegacyWorldLedger(worldKey: string): Promise<void> {
-  const name = findWorld(worldKey)?.name
-  if (name === undefined) return
-  const legacyKey = worldSharedProgressKey(name)
-  const legacy = await preferences.get(legacyKey)
-  if (legacy === null) return
-  if ((await preferences.get(worldSharedProgressKey(worldKey))) === null) {
-    await preferences.set(worldSharedProgressKey(worldKey), legacy)
+/** 옛 원장을 읽는다. 월드 key 키가 없으면 월드 이름 키를 본다. 옛 이름은 월드 표의 이름이다. 표 이름이 곧 API 표기다. */
+async function legacyWorldLedgerOf(worldKey: string): Promise<SharedProgressMap | null> {
+  for (const world of [worldKey, findWorld(worldKey)?.name]) {
+    if (world === undefined) continue
+    if ((await preferences.get(legacyWorldSharedProgressKey(world))) !== null) {
+      return getSharedProgress(legacyWorldSharedProgressKey(world))
+    }
   }
-  await preferences.remove(legacyKey)
+  return null
 }
 
-export async function getWorldSharedProgress(worldKey: string): Promise<SharedProgressMap> {
-  await moveLegacyWorldLedger(worldKey)
-  return getSharedProgress(worldSharedProgressKey(worldKey))
+/**
+ * 월드로만 묶던 옛 원장을 그 월드에 추적 캐릭터가 있는 메이플 ID 마다 베끼고 옛 원장을 지운다. 한 번만 돈다.
+ *
+ * 같은 월드라도 메이플 ID 가 다르면 따로 센다. 이 원장은 한 번이라도 활성으로 본 적이 있는지를 쌓은 값이라 넥슨에서 다시 받을 수
+ * 없어 베낀다. 이미 새 원장에 적힌 항목이 있으면 그 항목이 이긴다.
+ *
+ * @param tracked 추적 캐릭터의 메이플 ID 와 월드 key. 빠진 메이플 ID 는 옛 원장을 받지 못하므로 모든 계정의 목록을 받은 회차가 부른다
+ */
+export async function splitWorldSharedProgress(tracked: readonly { accountId: string; worldKey: string }[]): Promise<void> {
+  if ((await preferences.get(STORAGE_KEYS.worldSharedProgressSplit)) !== null) return
+  for (const { accountId, worldKey } of tracked) {
+    const legacy = await legacyWorldLedgerOf(worldKey)
+    if (legacy === null) continue
+    const key = worldSharedProgressKey(accountId, worldKey)
+    await preferences.set(key, JSON.stringify({ ...legacy, ...(await getSharedProgress(key)) }))
+  }
+  for (const key of await preferences.keys()) {
+    // 옛 키는 접두사 뒤에 쌍점이 없다. 새 키는 메이플 ID 와 월드 key 를 쌍점으로 잇는다.
+    if (key.startsWith(legacyWorldSharedProgressKey('')) && !key.slice(legacyWorldSharedProgressKey('').length).includes(':')) {
+      await preferences.remove(key)
+    }
+  }
+  await preferences.set(STORAGE_KEYS.worldSharedProgressSplit, new Date().toISOString())
+}
+
+/** 메이플 ID 와 월드의 원장. 같은 월드라도 메이플 ID 가 다르면 따로다. */
+export async function getWorldSharedProgress(accountId: string, worldKey: string): Promise<SharedProgressMap> {
+  return getSharedProgress(worldSharedProgressKey(accountId, worldKey))
 }
 
 export async function setWorldSharedProgressEntry(
+  accountId: string,
   worldKey: string,
   contentKey: string,
   entry: SharedProgressEntry,
 ): Promise<void> {
-  await moveLegacyWorldLedger(worldKey)
-  await setSharedProgressEntry(worldSharedProgressKey(worldKey), contentKey, entry)
+  await setSharedProgressEntry(worldSharedProgressKey(accountId, worldKey), contentKey, entry)
 }
 
 export async function getAccountSharedProgress(accountId: string): Promise<SharedProgressMap> {

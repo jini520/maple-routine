@@ -26,7 +26,7 @@
 | `lib/boss/boss-matching.ts` | 보스 순서(`compareBossOrder`), 처치 수와 한도 판정, 카드용 · 수익용 보스 고르기 |
 | `lib/boss/manual-boss-merge.ts` | 수동 모드 목록에 완료 여부를 붙인다 |
 | `lib/boss/manual-completion.ts` | 직접 완료가 그 기간에 열려 있는지, 직접 완료를 표시 목록에 더하기 |
-| `lib/boss/party-shares.ts` | 결정석 내 몫 계산, 비율 해석, 백분율 글자 |
+| `lib/boss/party-shares.ts` | 결정석 내 몫 계산, 비율 해석, 친 % 를 저장 칸으로 옮기기, 백분율 글자 |
 | `lib/boss/bosses.ts` | 보스 표 조회(이름 · 주기 · 난이도 · 인원 상한 · 유효 기간) |
 | `storage/boss-party-settings.ts` | 파티 설정(SQLite `boss_parties` 의 분배 칸) |
 | `storage/boss-party-period-overrides.ts` | 미완료 행에서 그 기간만 고친 파티 값(SQLite `boss_party_periods` 의 `open` 행 분배 칸) |
@@ -34,7 +34,7 @@
 | `components/organisms/PartySizeModal/` | 파티 인원 · 난이도 · 분배 모달 |
 | `components/molecules/PartyShareSummary/` | 파티 요약 배지와 `변경` |
 | `components/molecules/DifficultyExpander/` | 난이도 고르개. 파티 모달 · 보스 관리 · 직접 완료 시트가 쓴다 |
-| `lib/assets/image-crops.ts` | 일러스트 크롭 표. 서버 게임 데이터의 `imageCrops` 칸에서 `boss_portrait` · `boss_portrait_icon` · `boss_portrait_modal`(카드 · 원형 초상화 · 모달 띠) |
+| `lib/assets/image-crops.ts` | 일러스트 크롭 표. 서버 게임 데이터의 `imageCrops` 칸에서 `boss_portrait` · `boss_portrait_icon`(카드 · 원형 초상화) |
 | `navigation/routes.ts` | `BossManage` 화면과 옛 경로 `/boss/manage` |
 
 ## 보스 스케줄러 화면
@@ -42,7 +42,9 @@
 헤더 제목 옆에 FAQ 물음표([[ADR-150]])가 있고, 제목 줄 오른쪽에 `관리` 버튼과 솔로 · 파티 필터가 있고, 그 아래에 갱신 시각이 있다. 내용은 초상화 레일 아래에 고른
 캐릭터의 보스 카드 목록이다. 목록을 아래로 당기면 넥슨에서 다시 받아 온다. 들어올 때 · 포커스 · 복귀의 자동 조회는
 컨텐츠 스케줄러와 같다([[ADR-142]] 결정 5). 직접 적은 완료는 `manualCompleted` 쿼리라 보스 기록 판이 오르면 무효화되고,
-목요일 · 1일을 넘기면 새 기간 키를 읽는다([[ADR-142]] 결정 6).
+목요일 · 1일을 넘기면 새 기간 키를 읽는다([[ADR-142]] 결정 6). 넥슨에서 받은 완료는 받은 뒤 목요일 0시를 넘겼으면 주간 보스,
+1일 0시를 넘겼으면 월간 보스를 미완료로 그린다. 새로 받기 전이나 받기에 실패했을 때 지난 기간의 완료가 남지 않게 하려는
+것이다([[ADR-032]] 결정 10).
 
 | 부분 | 보여 주는 것 |
 |---|---|
@@ -110,22 +112,26 @@
 
 | 부분 | 내용 |
 |---|---|
-| 위쪽 | 주기, 보스 이름, 난이도(보스 카드에서 열면 고르개, 다른 곳에서 열면 배지), 오른쪽 일러스트 띠, 닫기 |
-| `분배 방식` | `기본` · `비율` |
+| 위쪽 | 원형 초상화, 보스 이름, 난이도(보스 카드에서 열면 고르개, 다른 곳에서 열면 배지), 닫기 |
+| `분배 방식` | `기본` · `비율` · `제외` |
 | `기본` 일 때 | `파티 인원` 스테퍼와 `최대 n명` 배지 |
-| `비율` 일 때 | `결정석` 비율 카드(내 비율 · 합)와 송금 수수료(`자동` 또는 `0%` · `3%` · `5%`) |
+| `비율` 일 때 | `결정석` 내 몫 %(소수 셋째 자리까지, 바탕 없는 숫자)와 송금 수수료(`자동` 또는 `0%` · `3%` · `5%`) |
+| `제외` 일 때 | 아무 줄도 없다. 결정석을 팔지 않은 처치라 결정석 내 몫이 0 메소이고, 고르기 전 분배는 숨겨 둔다([[ADR-038]] 결정 12) |
+| `받는 금액` | 고른 분배로 센 결정석 금액. 고칠 때마다 다시 센다. 결정석 가격을 모르거나 `제외` 면 없다([[ADR-038]] 결정 13) |
 | 아래 | `적용` |
 
-어디서 열었는지에 따라 저장하는 곳이 다르다.
+본문의 줄은 바탕 카드 없이 판 위에 바로 놓인다. 드롭 가격 카드와 같은 짜임이다([[ADR-038]] 결정 5).
 
-| 연 곳 | 저장하는 곳 |
-|---|---|
-| 보스 카드 · 보스 관리 | 파티 설정(`boss_parties` 의 분배 칸). 다음 기록부터 쓰인다 |
-| 보스 수익 완료 행 | 그 기록 한 건(`boss_party_periods` 의 `cleared` 행) |
-| 보스 수익 미완료 행 | 그 기간만 쓰는 값(`boss_party_periods` 의 `open` 행). 처치하면 그 기록의 값이 된다 |
+어디서 열었는지에 따라 저장하는 곳과 `받는 금액` 을 세는 결정석 가격이 다르다.
 
-세 곳 모두 같은 분배 칸(`split_mode` · `party_size` · `my_share` · `shares_total` · `split_fee_percent` · `split_fee_auto`)을
-쓴다([[ADR-078]]).
+| 연 곳 | 저장하는 곳 | 결정석 가격 |
+|---|---|---|
+| 보스 카드 · 보스 관리 | 파티 설정(`boss_parties` 의 분배 칸). 다음 기록부터 쓰인다 | 이번 기간의 결정석 가격 표 값 |
+| 보스 수익 완료 행 | 그 기록 한 건(`boss_party_periods` 의 `cleared` 행) | 그 기록의 가격 |
+| 보스 수익 미완료 행 | 그 기간만 쓰는 값(`boss_party_periods` 의 `open` 행). 처치하면 그 기록의 값이 된다 | 그 기간의 결정석 가격 표 값 |
+
+세 곳 모두 같은 분배 칸(`split_mode` · `party_size` · `my_share` · `shares_total` · `split_fee_percent` · `split_fee_auto` ·
+`crystal_excluded`)을 쓴다([[ADR-078]]). `crystal_excluded` 가 `1` 이면 `제외` 다.
 
 결정석 내 몫을 세는 식은 [[ADR-038]] 결정 7 에 있다.
 

@@ -54,6 +54,10 @@
       "title": "아이템 가격 입력"
     },
     {
+      "key": "utility-maspi",
+      "title": "MASPI"
+    },
+    {
       "key": "utility-item-split",
       "title": "판매 분배금 계산기"
     },
@@ -132,6 +136,14 @@
     {
       "key": "mvp-grade-confirm",
       "title": "MVP 등급 확인"
+    },
+    {
+      "key": "inventory",
+      "title": "인벤토리"
+    },
+    {
+      "key": "trade-history",
+      "title": "거래 내역"
     }
   ],
   "items": [

@@ -59,7 +59,14 @@ beforeEach(() => {
 describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다', () => {
   it('네트워크로 받으면 스냅샷을 쓴다', async () => {
     fetchCharacterBasicMock.mockResolvedValue(
-      profile({ name: '낟낟', level: 293, imageUrl: 'https://example.com/1.png', world: '스카니아', worldKey: 'scania' }),
+      profile({
+        name: '낟낟',
+        level: 293,
+        imageUrl: 'https://example.com/1.png',
+        world: '스카니아',
+        worldKey: 'scania',
+        createdDate: '2025-06-19',
+      }),
     )
 
     await fetchCharacterBasicCached(자격('key'), OCID, NOW)
@@ -75,6 +82,8 @@ describe('받은 프로필은 지워지지 않는 스냅샷에도 함께 쓴다'
       // `character/basic` 은 직업을 안 준다. 호출부가 `character/list` 의 값을 함께 넘겨야
       // 실리고, 안 넘기면 UPSERT 의 COALESCE 가 이미 박아 둔 값을 지킨다.
       jobClass: null,
+      // 리프 자동 판정이 읽는다. 리프한 옛 캐릭터는 다시 부를 수 없어 받을 때 남겨야 한다.
+      createdDate: '2025-06-19',
       updatedAt: NOW.toISOString(),
     })
   })

@@ -82,8 +82,20 @@ it('되돌리든 아니든 이동은 언제나 한다', async () => {
 
   await 열기('Today')
 
-  expect(mockNavigate).toHaveBeenCalledWith('Main', {
-    screen: 'Groups',
-    params: { screen: 'Today' },
-  })
+  expect(mockNavigate).toHaveBeenCalledWith(
+    'Main',
+    {
+      screen: 'Groups',
+      params: { screen: 'Today' },
+    },
+    { pop: true },
+  )
+})
+
+// react-navigation 7 의 `navigate` 는 이동할 화면이 맨 위가 아니면 새로 쌓는다. 하위 페이지(거래 내역 · 컨텐츠 관리 · 보스 관리)에서
+// 부르면 `Main` 이 통째로 하나 더 쌓여, 아래에 남은 하위 페이지와 앱 전체가 계속 그려지고 부를수록 느려졌다(아이폰 계측).
+it('하위 페이지에서 불러도 새로 쌓지 않고 아래의 `Main` 으로 되돌아간다', async () => {
+  await 열기('Cashbook')
+
+  expect(mockNavigate).toHaveBeenCalledWith('Main', expect.anything(), { pop: true })
 })

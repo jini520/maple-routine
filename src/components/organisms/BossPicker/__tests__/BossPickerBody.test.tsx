@@ -77,4 +77,22 @@ describe('BossPickerBody', () => {
     await fireEvent.press(잠긴타일)
     expect(onPressTile).not.toHaveBeenCalled()
   })
+
+  // 파티 스케줄은 같은 기간에 이미 넣은 보스를 알리기만 한다. 중복 저장은 막지 않는다.
+  it('등록된 타일에만 등록됨 알약이 선다', async () => {
+    const view = await renderAtom(<BossPickerBody {...props({ isRegistered: (tile) => tile.bossKey === 'kaling' })} />)
+
+    expect(within(view.getByLabelText('카링 고르기')).getByText('등록됨')).toBeTruthy()
+    expect(view.getAllByText('등록됨')).toHaveLength(1)
+  })
+
+  // 흐리면 잠긴 타일과 같은 모양이라 고를 수 없다고 읽힌다.
+  // 누른 결과는 초상을 잰 뒤에 오는데, jest 는 `measureInWindow` 를 부르지 않아 막혀 있지 않은지로 본다.
+  it('등록된 타일도 흐리지 않고 누를 수 있다', async () => {
+    const view = await renderAtom(<BossPickerBody {...props({ isRegistered: (tile) => tile.bossKey === 'kaling' })} />)
+
+    const 등록된타일 = view.getByLabelText('카링 고르기')
+    expect(flattenStyle(등록된타일.props.style).opacity).toBeUndefined()
+    expect(등록된타일.props.accessibilityState.disabled).toBe(false)
+  })
 })

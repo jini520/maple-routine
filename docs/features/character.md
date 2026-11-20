@@ -18,10 +18,10 @@
 | `storage/character-selection.ts` | 추적 목록(`trackedCharacters`) · 마지막 선택(`lastSelectedCharacter`) · 대표 저장, 옛 키 이관 |
 | `storage/schedule-probe-ledger.ts` | (ocid, 날짜) 조회 원장(`scheduleProbe:{ocid}`)과 조회 불가 표식 |
 | `storage/character-profiles.ts` | 지워지지 않는 이름 · 얼굴 표(`character_profiles`) |
-| `features/schedule-sync/character-roster.ts` | 후보 목록을 단계마다 나눠 내보낸다(`getCharacterPickerRoster`). 계정의 캐릭터(`resolveRegisteredCharacters`)와 추적 캐릭터의 계정(`resolveTrackedCharacterContext`)은 같은 `character/list` 응답에서 찾는다 |
+| `features/schedule-sync/character-roster.ts` | 후보 목록을 단계마다 나눠 내보낸다(`getCharacterPickerRoster`). 메이플 ID 의 캐릭터(`resolveRegisteredCharacters`)와 추적 캐릭터의 메이플 ID(`resolveTrackedCharacterContext`)는 넥슨 계정마다 받은 `character/list` 응답에서 찾는다. 캐릭터는 그 캐릭터가 속한 넥슨 계정의 자격으로 부른다([[ADR-101]] 결정 4) |
 | `features/schedule-sync/read-schedule.ts` | 쿼리 캐시를 렌더 밖에서 읽는다(`readCharacterBasic` · `readScheduleEntry` · `readCachedBasicOcids`). 후보 목록의 첫 그리기, 캐릭터 관리의 위 목록, 가계부 시트의 캐릭터 이름이 쓴다 |
 | `features/schedule-sync/character-basic-fetch.ts` | `character/basic` 통과 지점(`fetchCharacterBasicCached`). 5분 안은 쿼리 캐시 `characterBasic(ocid)` 의 값을 돌려주고, 받은 값은 그 열쇠에만 넣는다 |
-| `features/mvp-grade/character-list.ts` | `character/list` 를 5분 안에 한 번만 받는다(`fetchCharacterListCached`, 쿼리 `characterList(credentialKey)`). 캐릭터 관리의 계정 목록과 후보 목록이 나눠 쓴다 |
+| `features/mvp-grade/character-list.ts` | `character/list` 를 5분 안에 한 번만 받는다(`fetchCharacterListCached`, 쿼리 `characterList(credentialKey)`). 넥슨 계정마다 받고, 한 계정이 실패해도 다른 계정의 목록은 낸다(`fetchCharacterListsCached`). 캐릭터 관리의 계정 목록과 후보 목록이 나눠 쓴다 |
 | `features/schedule-sync/character-eligibility.ts` | 후보 자격 판정(`resolveCharacterEligibility`) |
 | `features/schedule-sync/stranded-characters.ts` | `character/list` 에 없는 추적 ocid 를 따로 조회한다 |
 | `features/character-profile/resolve.ts` | 표시할 이름 · 얼굴을 찾는다(`resolveDisplayProfiles`). 표 → 쿼리 캐시 → 옛 Preferences 키 순이고, 찾은 것은 표에 심는다([[ADR-142]] 결정 10) |
@@ -31,17 +31,21 @@
 | `components/organisms/CharacterRow/` | 캐릭터 관리의 카드 한 장 |
 | `components/organisms/AccountSelect/` | 메이플 ID 드롭다운 |
 | `hooks/useCharacterManage.ts` · `useAccountRosters.ts` · `useKnownProfiles.ts` · `useSelectionDraft.ts` | 캐릭터 관리 화면 로직 |
-| `features/character-manage/derivations.ts` · `grid-split.ts` | 계정 요약 · 위 목록 뷰 · 격자 순서에서 고른 목록 자르기 |
+| `features/character-manage/derivations.ts` · `grid-split.ts` | 계정 요약 · 넥슨 계정 묶음(`groupAccountSummaries`) · 위 목록 뷰 · 격자 순서에서 고른 목록 자르기 |
+| `lib/maple-id-name.ts` | 메이플 ID 의 이름. 사용자가 바꾼 이름이 있으면 그것, 없으면 `메이플ID-` 와 ID 앞 8자다. 앱 전체가 이 이름을 쓴다([[ADR-101]] 결정 8) |
+| `features/maple-id/names.ts` | 사용자가 바꾼 메이플 ID 이름을 든 스토어와 화면이 쓰는 이름 훅(`useMapleIdNameOf`) |
 | `app/today/CharacterManageButton.tsx` | today 헤더의 초상화 버튼 |
 | `app/settings/reload-tab-stores.ts` | 저장 뒤 보스 · 보스 수익 탭 스토어를 다시 읽힌다 |
 | `features/character-selection/store.ts` | 고른 캐릭터와 대표 표식을 갖는 스토어 |
+| `features/character-selection/untrack.ts` | 추적 캐릭터 일부를 뺀다. 하나도 남지 않으면 진입 단계를 다시 판정한다. 부계정 삭제와 무효가 된 부계정 키가 부른다 |
 | `features/character-selection/selected-character.ts` | 고른 캐릭터가 목록에 없을 때 대신 보여 줄 캐릭터 |
 | `lib/scheduler/tracked-order.ts` | 추적 목록 저장 순서로 정렬(`orderByTracked`) |
 | `features/content-scheduler/content-completion.ts` | 진행 링이 세는 완료 판정 |
 | `components/organisms/CharacterRail/` | 초상화 레일 |
 | `components/organisms/CharacterPortrait/` | 초상화 · 링 · 곡선 글자 · 치수 표(`portrait-metrics.ts`) |
-| `components/molecules/CharacterAvatar/` | 얼굴 원과 그림이 없을 때의 실루엣 |
-| `lib/face-crop.ts` | 얼굴을 자르는 좌표 |
+| `components/molecules/CharacterAvatar/` | 얼굴 원과 그림이 없을 때의 실루엣, 오버 프레임 마스크 |
+| `lib/face-crop.ts` | 얼굴을 자르는 좌표와 오버 프레임 마스크 치수(`OVER_FRAME`) |
+| `features/over-frame/store.ts` · `storage/over-frame.ts` | 오버 프레임 켜기 · 끄기(Preferences `overFrame`) |
 
 ## 추적 캐릭터
 
@@ -53,7 +57,7 @@
 | 후보 표시 | 쿼리 캐시에 든 `characterBasic`(그 계정 소속으로 기록된 것만) → `character/list` → 캐릭터마다 자격 확인 순서로, 확인된 캐릭터만 차례로 보여 준다 |
 | 기록 | 추적에서 빼도 보스 수익 · 가계부 기록은 남는다. 이름과 얼굴은 `character_profiles` 에서 읽는다 |
 | 조회 불가 | 지우지 않는다. `조회 불가` 배지를 달고 얼굴 원을 흐린 뒤 경고 아이콘으로 덮으며, 스케줄러에서 고르면 `캐릭터 관리로 이동하기` 안내를 보여 준다 |
-| 월드 이전 | 챌린저스 월드 캐릭터가 조회 불가가 되면 옮겨 간 캐릭터를 찾아 모달로 묻는다. `변경` · `목록에서 빼기` · `캐릭터 관리로 이동` · `나중에` |
+| 월드 이전 | 챌린저스 월드 캐릭터가 조회 불가가 되면 옮겨 간 캐릭터를 찾아 모달로 묻는다. `변경` · `목록에서 빼기` · `캐릭터 관리로 이동` · `나중에`. 두 캐릭터가 이어지면 다음 회차가 옛 캐릭터의 기록을 새 캐릭터로 옮긴다([[ADR-101]] 결정 22) |
 
 ## 캐릭터 관리
 
@@ -63,7 +67,7 @@
 | 영역 | 보이는 것 | 누르면 |
 |---|---|---|
 | `선택된 캐릭터 N개` | 모든 메이플 ID 의 추적 캐릭터. 저장 순서. 왼쪽 끌기 핸들 · 오른쪽 대표 별과 `✕` | 핸들: 순서 변경 · 별: 대표 지정 · `✕`: 후보로 되돌림 |
-| 메이플 ID 드롭다운 | 계정의 대표 캐릭터와 월드별 캐릭터 수 | 다른 계정의 후보를 연다 |
+| 메이플 ID 드롭다운 | 넥슨 계정마다 묶은 메이플 ID. 행은 대표 캐릭터 얼굴 · 메이플 ID 이름 · 그 아래 대표 캐릭터 줄(월드 엠블럼 · 월드 · 레벨 · 이름). 넥슨 계정이 둘 이상일 때만 묶음 위에 `넥슨 ID 계정` · `API 키 1 계정` 라벨([[ADR-101]] 결정 8 · 11) | 다른 메이플 ID 의 후보를 연다 |
 | `캐릭터 추가` | 고른 메이플 ID 의 후보. 레벨 내림차순 | 카드: 위 목록 끝으로 옮긴다 |
 | 하단 `저장` | 목록 · 순서 · 대표가 바뀌었고 1개 이상일 때만 켜진다 | 저장하고 화면을 나간다 |
 
@@ -75,6 +79,7 @@
 나눠 쓴다([[ADR-142]] 결정 8). 위 목록의 이름 · 레벨 · 직업은 쿼리 캐시의 `characterBasic(ocid)` 에서 읽는다.
 
 today 헤더의 버튼은 지름 48 원 안에 대표 캐릭터 얼굴 한 장을 그린다. 추적 캐릭터가 없으면 사람 아이콘을 그린다([[ADR-147]] 결정 2).
+얼굴의 머리는 원 밖으로 나온다([[ADR-219]] 결정 12).
 
 ## 캐릭터 선택
 
@@ -93,10 +98,13 @@ today 헤더의 버튼은 지름 48 원 안에 대표 캐릭터 얼굴 한 장�
 | 규격 | 쓰는 곳 | 특징 |
 |---|---|---|
 | `rail` (68×70) | 스케줄러 레일 | 진행 링(12시에서 시작) · 얼굴 아래 호에 레벨과 이름. 누르면 캐릭터를 고른다. 얼굴 뒤 바탕색 없음 |
-| `compact` (40×40) | 보스 수익 캐릭터 아코디언 | 글자가 없고, 처치 한도만큼 나뉜 칸 링을 `ProgressRing` 으로 그린다 |
+| `compact` (40×40) | 보스 수익 캐릭터 아코디언 | 글자가 없고, 처치 한도만큼 나뉜 칸 링을 `ProgressRing` 으로 그린다. 얼굴 뒤 바탕색 없음 |
 
 치수는 `portrait-metrics.ts` 표 한 곳에 있다. 링이 없는 칸에는 두께 2 의 빈 링을 둔다. 그림이 없을 때 무엇을
 그릴지는 초상화를 쓰는 쪽이 정해 넘긴다.
 
 줄의 왼쪽 끝에 서는 얼굴은 좌우를 뒤집어 오른쪽의 이름과 금액을 보게 한다. 넥슨 그림의 캐릭터가 왼쪽을 보기
 때문이다. 레일과 today 머리의 캐릭터 관리 버튼은 뒤집지 않는다([[ADR-155]] 결정 11).
+
+링을 두른 초상화(캐릭터 레일 · 보스 수입 카드 머리) 말고는 모든 얼굴이 머리를 원 밖으로 그린다(오버 프레임). 원 위로 지름만큼, 양옆으로 지름만큼 넓혀 자르고, 양옆은 원 위
+끝에서 지름의 75% 높이까지 내려온다. 두 초상화는 얼굴 바로 바깥에 링이 있어서 원 안에만 그린다([[ADR-219]] 결정 12). 오버 프레임은 테마 페이지에서 끌 수 있다([[ADR-219]] 결정 13).

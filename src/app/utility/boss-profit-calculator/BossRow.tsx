@@ -54,7 +54,7 @@ export function BossRow(props: {
               aria-label={`${name} 파티 인원과 비율 변경`}
               onPress={props.onOpenParty}
               hitSlop={{ top: 6, bottom: 6 }}
-              className="h-8 justify-center px-1.5 active:opacity-60"
+              className="h-8 justify-center px-1.5"
             >
               <Text className="text-xs font-semibold text-text-muted">변경</Text>
             </Pressable>

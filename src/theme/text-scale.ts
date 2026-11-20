@@ -5,8 +5,7 @@
  * 읽기 전의 기본 단계다.
  */
 import { createContext, createElement, useContext, useSyncExternalStore, type ReactNode } from 'react'
-import { useWindowDimensions } from 'react-native'
-
+import { useScreenLayout } from '../lib/screen-layout'
 import { capTextScale } from '../lib/text-size'
 
 let current = 1
@@ -43,15 +42,17 @@ export function TextScaleScope(props: { scale: number; children: ReactNode }): R
 }
 
 /**
- * 글자 크기에 곱할 배수. 고른 단계에 화면 폭으로 상한을 걸고, 단계나 폭이 바뀌면 다시 그리게 하는 훅.
+ * 글자 크기에 곱할 배수. 고른 단계에 콘텐츠 폭으로 상한을 걸고, 단계나 폭이 바뀌면 다시 그리게 하는 훅.
+ *
+ * 오른쪽 레일 화면은 창 폭이 아니라 콘텐츠 폭으로 건다. 글자가 놓이는 폭이 콘텐츠 폭이다.
  *
  * @param maxScale 칸이 px 로 고정된 글자의 상한. 화면이 넓어도 칸은 그대로라 넘친다
  */
 export function useTextScale(maxScale = Infinity): number {
-  const { width } = useWindowDimensions()
+  const { contentWidthPx } = useScreenLayout()
   const scoped = useContext(ScopedTextScale)
   const current = useSyncExternalStore(subscribe, getTextScale)
-  return Math.min(capTextScale(scoped ?? current, width), maxScale)
+  return Math.min(capTextScale(scoped ?? current, contentWidthPx), maxScale)
 }
 
 /** 테스트 격리용. */

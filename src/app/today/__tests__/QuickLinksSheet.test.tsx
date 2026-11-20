@@ -1,10 +1,11 @@
-// 빠른 이동 편집 시트. 이 파일이 지키는 것 넷.
+// 빠른 이동 편집 시트. 이 파일이 지키는 것 다섯.
 // ① 본문 타일을 누르면 트레이 끝에 붙고, 다시 누르거나 트레이 칸을 누르면 빠진다
 // ② 칸이 다 차면 고르지 않은 타일이 흐려지고 눌러도 붙지 않는다
 // ③ `한 줄` 로 바꾸면 트레이 차례로 여섯 번째부터 빠진다
 // ④ `적용` 해야 저장된다. 하나도 고르지 않으면 `적용` 을 누를 수 없다
+// ⑤ 서버 갈래 표에 없는 가계부 분류는 본문 타일도 트레이 칸도 서지 않는다
 import type { ReactNode } from 'react'
-import { fireEvent, waitFor } from '@testing-library/react-native'
+import { fireEvent, waitFor, within } from '@testing-library/react-native'
 
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { DEFAULT_QUICK_LINKS } from '../../../features/quick-links/config'
@@ -51,6 +52,20 @@ async function 시트(config: QuickLinksConfig, onClose = jest.fn()) {
 function 트레이(view: Awaited<ReturnType<typeof renderOverlay>>): string[] {
   return view.queryAllByTestId(/^quick-links-tray-/).map((node) => String(node.props.testID).replace('quick-links-tray-', ''))
 }
+
+describe('베타 표시', () => {
+  it('MASPI 칸에만 `beta` 배지가 선다. 고르면 트레이 칸에도 선다', async () => {
+    const { view } = await 시트({ rows: 1, ids: ['profit'] })
+
+    expect(within(view.getByTestId('quick-links-tile-maspi')).getByText('beta')).toBeTruthy()
+    expect(view.getAllByText('beta')).toHaveLength(1)
+
+    await fireEvent.press(view.getByTestId('quick-links-tile-maspi'))
+
+    expect(within(view.getByTestId('quick-links-tray-maspi')).getByText('beta')).toBeTruthy()
+    expect(view.getAllByText('beta')).toHaveLength(2)
+  })
+})
 
 describe('고르기', () => {
   it('타일을 누르면 트레이 끝에 붙고, 다시 누르면 빠진다', async () => {
@@ -115,5 +130,20 @@ describe('적용', () => {
     await fireEvent.press(view.getByRole('button', { name: '화면을 골라 주세요' }))
 
     expect(save).not.toHaveBeenCalled()
+  })
+})
+
+describe('가계부 분류 타일', () => {
+  // 앱에 든 테스트 데이터는 옛 표라 `사냥 전리품 판매` 줄이 없다.
+  it('서버 갈래 표에 없는 분류는 본문과 트레이에 서지 않고, 그대로 `적용` 하면 구성에서 빠진다', async () => {
+    const { view } = await 시트({ rows: 1, ids: ['profit', 'income-hunt-loot-sale'] })
+
+    expect(view.queryByTestId('quick-links-tile-income-hunt-loot-sale')).toBeNull()
+    expect(view.getByTestId('quick-links-tile-income-hunting')).toBeTruthy()
+    expect(트레이(view)).toEqual(['profit'])
+
+    await fireEvent.press(view.getByRole('button', { name: '적용' }))
+
+    expect(save).toHaveBeenCalledWith({ rows: 1, ids: ['profit'] })
   })
 })

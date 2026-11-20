@@ -27,25 +27,27 @@ const SRC = join(__dirname, '..')
  * 높이에서 출발해야 하고, 여기만 인셋으로 남으면 안드로이드에서 토스트가 캡슐 위에 겹친다
  * (실제로 그렇게 된다. 바가 34 에 뜨는데 토스트는 15 + 바 높이에 서면 7px 이 캡슐 안이다).
  *
- * `EntryScroll` 이 여기 있는 것은 진입 화면들의 하단(콘텐츠 몫· 고정 액션 바)을
- * 그 셸이 갖기 때문이다. `*Screen.tsx` 가 아니라서, 안 적으면 이 가드의 **사각**이 된다.
- * `SettingsActionBar` 도 같은 이유다. 설정 하위 페이지(캐릭터 관리 · 테마 · 글자 크기)의 고정 버튼 바가 하단을 갖는다.
+ * `SettingsActionBar` 는 설정 하위 페이지(캐릭터 관리 · 테마 · 글자 크기)의 고정 버튼 바라 하단을 갖는다.
+ * `*Screen.tsx` 가 아니라서, 안 적으면 이 가드의 **사각**이 된다.
  */
 const SHELLS = [
   join(SRC, 'components', 'organisms', 'BottomBar', 'BottomBar.tsx'),
   join(SRC, 'components', 'organisms', 'Toast', 'ToastStack.tsx'),
-  join(SRC, 'components', 'templates', 'EntryScroll', 'EntryScroll.tsx'),
   join(SRC, 'app', 'settings', 'SettingsActionBar.tsx'),
 ]
 
 /**
- * `ScreenScroll` 은 **둘 다 보는 것은 여기뿐**이라 위 목록에 없다.
+ * 인셋과 하한을 **둘 다** 보는 스크롤 셸 둘. 위 목록에 없다.
  *
- * 하위 페이지에서 스크롤포트가 비우는 몫은 내비바가 실제로 차지하는 자리 라 하한이 아니라
- * **인셋**이어야 한다. 그래서 이 파일에는
- * 금지 대신 **하한 값을 함께 봐야 한다**는 요구만 건다.
+ * 안드로이드에서 버튼 줄이 없는 화면의 스크롤 상자가 비우는 몫은 내비바가 실제로 차지하는 자리 라
+ * 하한이 아니라 **인셋**이어야 한다. 그래서 이 파일들에는 금지 대신 **하한 값을 함께 봐야 한다**는
+ * 요구만 건다. `EntryScroll` 은 진입 화면의 셸이다. 이 둘째 줄이 빠져 있던 동안 로그인 화면의 글자가
+ * 3버튼 내비게이션 바의 버튼 사이로 비쳤다.
  */
-const SCREEN_SCROLL = join(SRC, 'components', 'templates', 'ScreenScroll', 'ScreenScroll.tsx')
+const SCROLL_SHELLS = [
+  join(SRC, 'components', 'templates', 'ScreenScroll', 'ScreenScroll.tsx'),
+  join(SRC, 'components', 'templates', 'EntryScroll', 'EntryScroll.tsx'),
+]
 
 function screenFiles(dir: string): string[] {
   const out: string[] = []
@@ -86,7 +88,7 @@ describe('하단 안전영역은 한 자리에서 나온다', () => {
   it('검사 대상을 실제로 찾는다', () => {
     // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(files.length).toBeGreaterThan(15)
-    // 셸 넷(온보딩 단계 셸이 여기 든다) + 자기 `paddingBottom` 을 직접 주는 화면 하나(주간 보스 수익 계산기).
+    // 셸 셋 + 자기 `paddingBottom` 을 직접 주는 화면 하나(주간 보스 수익 계산기).
     expect(
       files.filter((file) => file.source.includes('useBottomSafeAreaPx')).length,
     ).toBeGreaterThanOrEqual(SHELLS.length + 1)
@@ -100,10 +102,10 @@ describe('하단 안전영역은 한 자리에서 나온다', () => {
     expect(offenders).toEqual([])
   })
 
-  // 인셋을 계속 봐야 하는 그 한 자리도 **하한을 함께 본다.** 여기가 인셋만 보면 탭 화면의 콘텐츠
+  // 인셋을 계속 봐야 하는 그 두 자리도 **하한을 함께 본다.** 여기가 인셋만 보면 탭 화면의 콘텐츠
   // 몫과 페이드가 바보다 19px 낮은 자리를 기준으로 서고, 그 어긋남은 안드로이드에서만 보인다.
-  it('`ScreenScroll` 은 인셋과 하한을 **둘 다** 본다', () => {
-    const { source } = read(SCREEN_SCROLL)
+  it.each(SCROLL_SHELLS.map((path) => [read(path).name, path]))('`%s` 는 인셋과 하한을 **둘 다** 본다', (_name, path) => {
+    const { source } = read(path)
 
     expect(source).toMatch(/\binsets\.bottom\b/)
     expect(source).toContain('useBottomSafeAreaPx')

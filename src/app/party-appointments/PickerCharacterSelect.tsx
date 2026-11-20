@@ -36,8 +36,9 @@ function CharacterFace(props: { ocid: string; name: string; imageUrl: string | n
   }, [props.ocid, scale])
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
   return (
-    <Animated.View style={style}>
-      <CharacterAvatar imageUrl={props.imageUrl} name={props.name} size={22} className="bg-surface-2" mirrored />
+    // 원 밖으로 나온 머리가 옆 이름 위에 서야 한다. 얼굴의 `zIndex` 는 이 상자 안에서만 먹는다.
+    <Animated.View style={[style, { zIndex: 1 }]}>
+      <CharacterAvatar overFrame imageUrl={props.imageUrl} name={props.name} size={22} className="bg-surface-2" mirrored />
     </Animated.View>
   )
 }
@@ -64,7 +65,7 @@ export function PickerCharacterSelect(props: {
           role="button"
           aria-label="캐릭터 고르기"
           onPress={open}
-          className="flex-1 flex-row items-center gap-2.5 active:opacity-60"
+          className="flex-1 flex-row items-center gap-2.5"
         >
           <CharacterFace ocid={props.ocid} name={current?.name ?? ''} imageUrl={current?.imageUrl ?? null} />
           <Text className="text-sm font-semibold text-text">{current?.name ?? ''}</Text>
@@ -79,6 +80,7 @@ export function PickerCharacterSelect(props: {
         return (
           <View className="flex-row items-center gap-2.5">
             <CharacterAvatar
+              overFrame
               imageUrl={character?.imageUrl ?? null}
               name={option.label}
               size={20}

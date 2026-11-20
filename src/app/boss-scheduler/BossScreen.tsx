@@ -36,6 +36,7 @@ import { isChallengersWorld } from '../../lib/world/worlds'
 import type { ImageCrop } from '../../lib/image-crop'
 import type { MatchedBoss } from '../../lib/boss/boss-matching'
 import { activeDifficultiesNow, bossNameOf, getMaxPartySize, isBossActiveIn } from '../../lib/boss/bosses'
+import { currentCrystalPriceMeso } from '../../lib/boss/boss-crystal-prices'
 import { partySizeForShares } from '../../lib/boss/party-shares'
 
 import {
@@ -601,7 +602,6 @@ export function BossScreen(): React.JSX.Element {
       {partyModal !== null && selected !== null && modalBossKey !== null && (
         <PartySizeModal
           bossName={bossNameOf(modalBossKey, partyModal.boss.apiName)}
-          cycleLabel={partyModal.boss.cycle === 'monthly' ? '월간 보스' : '주간 보스'}
           portraitAssetId={partyModal.boss.portraitAssetId}
           // 표에서 빠진 key 는 후보를 알 수 없다. 지금 난이도 하나만 그려 세그먼트가 사라지지 않게 한다.
           difficulties={
@@ -613,6 +613,7 @@ export function BossScreen(): React.JSX.Element {
           partySize={partySizes[partySizeKey(selected.ocid, modalBossKey, partyModal.difficulty)] ?? 1}
           maxPartySize={getMaxPartySize(modalBossKey, partyModal.difficulty)}
           shares={modalShares}
+          crystalPriceMeso={currentCrystalPriceMeso(modalBossKey, partyModal.difficulty, partyModal.boss.cycle, new Date())}
           // 설정은 앞으로 적힐 기록의 약속이라 이번 주 등급을 보인다.
           autoFee={gradeContext === null ? null : autoFeeFrom(gradeContext, selected.ocid, getCurrentKstDateKey(new Date()))}
           onSelectDifficulty={handleModalDifficulty}

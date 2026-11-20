@@ -17,11 +17,19 @@ beforeEach(() => {
 
 describe('내역 읽기', () => {
   it('날짜 여러 개를 한 번에 읽는다', async () => {
+    queryMock.mockImplementation(async (sql: string) => ({ values: sql.includes('sqlite_master') ? [{ present: 1 }] : [] }))
+
     await loadEnhancementHistory(['2026-09-04', '2026-09-05'])
 
-    const [sql, values] = queryMock.mock.calls[0]
+    const [sql, values] = queryMock.mock.calls.find(([statement]) => String(statement).includes('date_key IN')) ?? []
     expect(sql).toContain('date_key IN (?, ?)')
     expect(values).toEqual(['2026-09-04', '2026-09-05'])
+  })
+
+  // 새 기기에는 원본 표가 없고, 옛 기기는 옮긴 뒤 지운다. 없는 표를 읽으면 옮기는 단계가 영영 끝나지 않는다.
+  it('원본 표가 없으면 읽지 않고 빈 목록이다', async () => {
+    await expect(loadEnhancementHistory(['2026-09-04'])).resolves.toEqual([])
+    expect(queryMock.mock.calls.some(([statement]) => String(statement).includes('date_key IN'))).toBe(false)
   })
 
   it('날짜가 없으면 조회하지 않는다', async () => {

@@ -16,7 +16,8 @@
 | `app/splash/leaf.ts` | 모서리를 둥글린 단풍잎 경로. 스플래시와 로그인 화면 머리가 쓴다 |
 | `app/splash/wordmark.ts` | `메이플 루틴` 글자의 SVG 패스. `scripts/make-splash-wordmark.py` 가 메이플스토리 서체 Light 에서 만든다. 스플래시와 로그인 화면 머리가 쓴다 |
 | `features/theme/system-theme.ts` | OS 밝기로 고르는 기본 테마. 2겹은 이것으로 라이트 · 다크를 가르고 잎 색(`primary`)을 가져온다 |
-| `assets/splash/body.png` · `snow-0.png` ~ `snow-6.png` | 겨울 축제 일러스트 본체와 떼어낸 눈 조각 일곱 |
+| `assets/splash/body-wide.png` · `snow-0.png` ~ `snow-6.png` | 본체 양옆을 이어 그린 겨울 축제 일러스트와 떼어낸 눈 조각 일곱 |
+| `assets/splash/body.png` | 확장 그림의 가운데가 된 본체 원본. 확장 그림을 다시 만들 때 쓰고, 앱은 읽지 않는다 |
 | `app/AppShell.tsx` | 2겹을 형제 중 마지막에 두어 맨 위에 그린다 |
 | `index.ts` · `boot-splash.ts` | 스플래시 붙들기, 퇴장 페이드 끄기, 8초 실패 안전 타이머 |
 | `native/splash-screen.ts` · `native/adapters/rn-splash-screen.ts` | 스플래시를 내리는 포트 함수 `hideSplashScreen()` |
@@ -65,8 +66,9 @@ plugin 으로 넣는다.
 
 그림과 자리의 규칙은 [[ADR-013]] 결정 12 ~ 18 에 있다.
 
-- 일러스트와 눈 조각은 `assets/splash/` 의 PNG 다. 본체 크기를 바꾸면 `app/splash/layout.ts` 의 `BODY_PX` 와
-  `SNOW_FLAKES` 의 조각 크기를 함께 맞춘다.
+- 일러스트와 눈 조각은 `assets/splash/` 의 PNG 다. 본체를 바꾸면 양옆을 이어 그린 `body-wide.png` 도 다시 만든다. 만드는
+  순서는 [[ADR-013]] 결정 3 에 있다. 본체를 확장 그림 가운데에 둬야 한다. 크기가 바뀌면 `app/splash/layout.ts` 의
+  `BODY_PX` · `ART_PX` 와 `SNOW_FLAKES` 의 조각 크기를 함께 맞춘다.
 - 이름 글자를 바꾸려면 메이플스토리 서체 TTF 를 받아 `uv run --with fonttools python scripts/make-splash-wordmark.py "<TTF 경로>"`
   를 돌린다. TTF 는 저장소에 없다. https://maplestory.nexon.com/Media/Font 에서 받는다.
 - 등장 길이를 바꾸면 `BOOT_SPLASH_HOLD_MS` 가 `entranceEndMs()` 를 따라 같이 바뀐다.

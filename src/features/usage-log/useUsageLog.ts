@@ -6,13 +6,14 @@
  * @example useUsageLog()
  */
 import { useEffect } from 'react'
+import { AppState } from 'react-native'
 import { focusManager } from '@tanstack/react-query'
 import { flushUsageEvents } from './flush'
 import { usageTracker } from './record'
 
 export function useUsageLog(): void {
   useEffect(() => {
-    void usageTracker.start(new Date()).then(() => flushUsageEvents())
+    void usageTracker.start(new Date(), AppState.currentState).then(() => flushUsageEvents())
     return focusManager.subscribe((focused) => {
       if (focused) void usageTracker.foreground(new Date())
       else void usageTracker.background(new Date()).then(() => flushUsageEvents())

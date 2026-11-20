@@ -154,12 +154,14 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           sharesTotal: row.crystalSharesTotal,
           splitFeePercent: row.splitFeePercent,
           splitFeeAuto: row.splitFeeAuto,
+          excluded: row.crystalExcluded === true,
         }
       : {
           myShare: plan.crystalMyShare,
           sharesTotal: plan.crystalSharesTotal,
           splitFeePercent: plan.splitFeePercent,
           splitFeeAuto: plan.splitFeeAuto,
+          excluded: plan.crystalExcluded === true,
         }
 
   // 금액 마크업은 한 벌이다. 칩이 붙든 안 붙든 같은 `Text` 라 두 갈래가 서로 어긋날 수 없다.
@@ -195,6 +197,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
     crystalSharesTotal: rowShares.sharesTotal,
     splitFeePercent: rowShares.splitFeePercent,
     splitFeeAuto: rowShares.splitFeeAuto,
+    crystalExcluded: rowShares.excluded,
   }
 
   async function saveParty(input: { partySize: number; shares: PartyModalShares }): Promise<void> {
@@ -207,6 +210,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           sharesTotal: input.shares.crystalSharesTotal,
           splitFeePercent: input.shares.splitFeePercent,
           splitFeeAuto: input.shares.splitFeeAuto,
+          excluded: input.shares.crystalExcluded === true,
         },
       })
     } catch {
@@ -271,6 +275,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
             // 완료 행의 결정석은 **이 기록이 굳힌 값**이다. 금액을 그 비율로 셌으므로 지금
             // 설정을 그리면 옆의 금액과 다른 말을 한다. 미완료 행은 굳힌 금액이 없어 반대다.
             crystal={rowShares}
+            overCrystalLimit={row.overCrystalLimit === true}
             disabled={!isEditable}
             onPress={() => setIsPartyModalOpen(true)}
           />
@@ -296,7 +301,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
                   aria-label={`${row.bossName} 기록 수정`}
                   onPress={() => setManualSheet('edit')}
                   hitSlop={8}
-                  className="shrink-0 active:opacity-60"
+                  className="shrink-0"
                 >
                   <Text className="text-xs font-semibold text-primary-ink">수정</Text>
                 </Pressable>
@@ -330,7 +335,8 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
       {isPartyModalOpen && (
         <PartySizeModal
           bossName={row.bossName}
-          cycleLabel={row.cycle === 'monthly' ? '월간 보스' : '주간 보스'}
+          // 완료 행은 그 기록의 가격, 미완료 행은 그 기간의 가격 표 값이다. 받는 금액이 그 행에 적힐 값과 같다.
+          crystalPriceMeso={row.priceMeso}
           portraitAssetId={bossPortraitAssetIdOf(row.bossKey)}
           difficulties={withOwnDifficulty(activeDifficultiesOf(row.bossKey, row.periodKey, new Date()), row.difficulty)}
           difficulty={row.difficulty}

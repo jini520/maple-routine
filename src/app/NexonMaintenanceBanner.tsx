@@ -44,7 +44,7 @@ export function NexonMaintenanceBanner(props: { testID: string }): React.JSX.Ele
           onPress={() => setFaqOpen(true)}
           // 묶음에 문항이 없으면 줄은 서되 열 시트가 없다.
           disabled={faq === null}
-          className="shrink grow active:opacity-60"
+          className="shrink grow"
         >
           <Text className="text-xs font-semibold text-settlement-ink">{TITLE[scope]}</Text>
           <Text className="text-11 text-settlement-ink-muted">
@@ -57,7 +57,7 @@ export function NexonMaintenanceBanner(props: { testID: string }): React.JSX.Ele
           aria-label="점검 안내 닫기"
           hitSlop={CLOSE_HIT_SLOP}
           onPress={dismiss}
-          className="shrink-0 active:opacity-60"
+          className="shrink-0"
         >
           <XIcon className="h-4 w-4 text-settlement-ink-muted" strokeWidth={2} aria-hidden />
         </Pressable>

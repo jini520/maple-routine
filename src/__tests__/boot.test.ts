@@ -72,6 +72,7 @@ import { rnLiveUpdatePort } from '../native/adapters/rn-live-update'
 import { rnAdsPort } from '../native/adapters/rn-ads'
 import { rnBackgroundTaskPort } from '../native/adapters/rn-background-task'
 import { rnBackGesturePort } from '../native/adapters/rn-back-gesture'
+import { rnClipboardPort } from '../native/adapters/rn-clipboard'
 import { rnColorSchemePort } from '../native/adapters/rn-color-scheme'
 import { rnHapticsPort } from '../native/adapters/rn-haptics'
 import { rnScreenCornersPort } from '../native/adapters/rn-screen-corners'
@@ -108,6 +109,7 @@ const WIRED: [string, () => unknown, unknown][] = [
   ['getBrowserPort', nativePorts.getBrowserPort, rnBrowserPort],
   ['getUuidPort', nativePorts.getUuidPort, rnUuidPort],
   ['getStoreReviewPort', nativePorts.getStoreReviewPort, rnStoreReviewPort],
+  ['getClipboardPort', nativePorts.getClipboardPort, rnClipboardPort],
   ['getBackgroundTaskPort', nativePorts.getBackgroundTaskPort, rnBackgroundTaskPort],
 ]
 
@@ -127,7 +129,7 @@ describe('installPorts()', () => {
       /^get[A-Za-z]+Port$/.test(key),
     )
 
-    expect(declared.length).toBe(20)
+    expect(declared.length).toBe(21)
     expect([...declared].sort()).toEqual(WIRED.map(([name]) => name).sort())
   })
 

@@ -1,8 +1,13 @@
+import { mainApiKeyOf } from '../../lib/nexon-credential'
 import { getAuthConfig } from '../../storage/api-key'
 
-/** 저장된 API 키. 온보딩에서 로그인 화면으로 돌아왔을 때 입력칸을 채운다. 없거나 못 읽으면 `null`. */
+/**
+ * 저장된 메인 키. 온보딩에서 로그인 화면으로 돌아왔을 때 입력칸을 채운다. 없거나 못 읽으면 `null`.
+ *
+ * 부계정 키는 채우지 않는다. 로그아웃 뒤 로그인 화면에 앞 로그인의 부계정 키가 채워지면 사용자가 넣지 않은 계정으로 들어간다.
+ */
 export async function loadSavedApiKey(): Promise<string | null> {
-  return (await getAuthConfig().catch(() => null))?.apiKeys[0]?.value ?? null
+  return mainApiKeyOf(await getAuthConfig().catch(() => null))?.value ?? null
 }
 
 /**

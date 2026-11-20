@@ -15,12 +15,19 @@ import { mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
 import { openInputCard } from '../../../features/input-card/store'
 import { POINT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import type { SheetAccount } from '../../../features/cashbook/account-names'
+import type { SpendSheetState } from '../../../features/cashbook/records'
 import type { SpendCategoryKey } from '../../../lib/cashbook/categories'
+import type { HexaStorages } from '../../../lib/cashbook/hexa-matrix'
 import type { HexaStorageChecks } from '../../../storage/hexa-storage-checks'
+import type { LastBossIncomeTransfers } from '../../../storage/last-boss-income-transfers'
+import type { LastEpicDungeonRewards } from '../../../storage/last-epic-dungeon-rewards'
 import { type SpendRecord } from '../../../storage/spend'
 
-/** 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)을 뺀 나머지. */
-export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
+/**
+ * 저장할 값에서 **어댑터가 아니라 화면이 정하는 것 둘**(`id`·`recordedAt`)과, 저장할 때 붙는 메소마켓 수수료율을 뺀
+ * 나머지.
+ */
+export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt' | 'mesoMarketFeePercent'>
 
 /** 저장 줄이 그리는 값과 누를 때 부를 것. 시트가 이것을 받아 바닥에 세운다. */
 export interface SpendSaveSlot {
@@ -66,7 +73,12 @@ export interface SpendFormProps {
   editing?: SpendRecord
   onDelete?: () => void | Promise<void>
   lastPointRate: number | null
-  onSave: (draft: SpendDraft) => void | Promise<void>
+  /** 보내는 캐릭터마다 마지막 수입 이전. 새 `주간 보스 수입 이전` 폼이 보내는 캐릭터를 고르면 그 몫을 세운다. */
+  lastBossIncomeTransfers: LastBossIncomeTransfers
+  /** 던전마다 마지막 에픽던전 리워드. 새 컨텐츠 폼이 던전 타일을 누르면 그 몫을 세운다. */
+  lastEpicDungeonRewards: LastEpicDungeonRewards
+  /** `sheet` 는 기록에 저장하지 않고 기억에만 적는 시트의 상태 */
+  onSave: (draft: SpendDraft, sheet?: SpendSheetState) => void | Promise<void>
   onClose: () => void
   /** 시트 껍데기의 스크롤을 되돌릴 열쇠. 목록 갈래가 단계를 오갈 때 부른다. */
   onScrollKeyChange: (key: string) => void
@@ -79,16 +91,16 @@ export interface SpendFormProps {
   /** 캐릭터의 기억한 강화 레벨(심볼 key · 코어 이름 별)을 읽는 콜백. 심볼 강화 · 헥사 매트릭스 폼이 쓴다. */
   loadRememberedLevels: (ocid: string, kind: 'symbol' | 'hexa') => Promise<Readonly<Record<string, number>>>
   /**
-   * 헥사 강화가 보관 조각을 가져올 캐릭터와 그 보관을 차례대로 읽는 콜백. 한 캐릭터라도 못 읽으면 `null` 이다.
+   * 헥사 강화가 가져올 보관(메이플 ID · 월드의 기타 조각과 캐릭터별 사냥 조각)을 읽는 콜백. 한 자리라도 못 읽으면 `null` 이다.
    * 헥사 매트릭스 폼이 쓴다.
    */
-  loadHexaStorages: (
-    ocid: string,
-    onOrBeforeDateKey: string,
-    excludeRecordId: string | undefined,
-  ) => Promise<readonly { ocid: string; stored: number }[] | null>
+  loadHexaStorages: (ocid: string, dateKey: string, excludeRecordId: string | undefined) => Promise<HexaStorages | null>
   /** 새 헥사 폼의 두 체크. 직전에 새 헥사 기록을 저장한 때의 상태다. */
   hexaStorageChecks: HexaStorageChecks
+  /** 캐릭터의 메이플 ID · 월드를 찾는 함수를 읽는 콜백. 아이템 구매 폼이 인벤토리에 보관할 주인을 정할 때 쓴다. */
+  loadStoreOwnerOf?: () => Promise<(ocid: string) => { accountId: string; worldKey: string } | null>
+  /** 한 캐릭터의 그 주 결정석 몫을 읽는 콜백. 주간 보스 수입 이전 폼의 체크 박스가 쓴다 */
+  loadWeekCrystalMeso?: (ocid: string, dateKey: string) => Promise<number>
 }
 
 /**
@@ -162,24 +174,33 @@ export function RateRow(props: {
   value: string
   onChange: (next: string) => void
   valid: boolean
+  /** 줄 이름. 메소마켓 환전처럼 시세가 둘인 폼이 월드를 붙인다 */
+  label?: string
+  /** 반드시 쳐야 하는 칸인가. 구매를 나중에 적는 칸은 아니다 */
+  required?: boolean
+  testID?: string
 }): React.JSX.Element {
+  const label = props.label ?? '시세 · 1억당'
+  const required = props.required ?? true
   return (
     <View className={FIELD_CELL_CLASS}>
       <Text className="shrink-0 text-xs text-text-muted">
-        시세 · 1억당
-        <Text testID="spend-sheet-required" className="text-error-ink">
-          {' *'}
-        </Text>
+        {label}
+        {required && (
+          <Text testID="spend-sheet-required" className="text-error-ink">
+            {' *'}
+          </Text>
+        )}
       </Text>
       <Pressable
-        testID="spend-sheet-rate"
+        testID={props.testID ?? 'spend-sheet-rate'}
         role="button"
-        aria-label="시세 · 1억당"
+        aria-label={label}
         onPress={() =>
           openInputCard({
-            label: '시세 · 1억당',
+            label,
             context: '메소마켓에서 1억 메소를 사는 메포',
-            required: true,
+            required,
             unit: '메포',
             chips: POINT_QUICK_ADDS,
             placeholder: '메소마켓 시세',

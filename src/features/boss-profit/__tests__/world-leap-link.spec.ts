@@ -50,7 +50,7 @@ it('이미 이어진 옛 ocid 면 복사하지 않는다', async () => {
 describe('linkWorldLeapsByNameAndJob', () => {
   const 새캐릭터: MapleCharacter = { ocid: 'new', name: '지내우시', world: '엘리시움', worldKey: 'elysium', jobClass: '레테', level: 286 }
 
-  function profile(ocid: string, overrides: { name?: string; jobClass?: string | null } = {}) {
+  function profile(ocid: string, overrides: { name?: string; jobClass?: string | null; createdDate?: string | null } = {}) {
     return {
       ocid,
       name: '지내우시',
@@ -98,6 +98,40 @@ describe('linkWorldLeapsByNameAndJob', () => {
     await linkWorldLeapsByNameAndJob([새캐릭터, { ...새캐릭터, ocid: 'old' }], NOW)
 
     expect(linkMock).not.toHaveBeenCalled()
+  })
+
+  // 이름은 옛 캐릭터가 내준 뒤 다른 캐릭터가 쓸 수 있다. 만든 날은 리프 뒤에도 그대로라 두 캐릭터를 가른다.
+  it('두 캐릭터의 만든 날이 다르면 잇지 않는다', async () => {
+    profilesByNamesMock.mockResolvedValue([
+      profile('old', { createdDate: '2025-06-19' }),
+      profile('new', { createdDate: '2026-09-01' }),
+    ])
+
+    await linkWorldLeapsByNameAndJob([새캐릭터], NOW)
+
+    expect(linkMock).not.toHaveBeenCalled()
+  })
+
+  it('만든 날이 같으면 잇는다', async () => {
+    profilesByNamesMock.mockResolvedValue([
+      profile('old', { createdDate: '2025-06-19' }),
+      profile('new', { createdDate: '2025-06-19' }),
+    ])
+
+    await linkWorldLeapsByNameAndJob([새캐릭터], NOW)
+
+    expect(linkMock).toHaveBeenCalledWith('old', 'new', NOW.toISOString())
+  })
+
+  // 이 기능 전에 리프한 옛 캐릭터는 다시 부를 수 없어 만든 날을 영영 모른다. 모름을 다름으로 읽으면 그 리프를 못 잇는다.
+  it('한쪽이라도 만든 날을 모르면 이름 · 직업으로 잇는다', async () => {
+    profilesByNamesMock.mockResolvedValue([profile('old', { createdDate: null }), profile('new', { createdDate: '2025-06-19' })])
+    await linkWorldLeapsByNameAndJob([새캐릭터], NOW)
+
+    profilesByNamesMock.mockResolvedValue([profile('old', { createdDate: '2025-06-19' })])
+    await linkWorldLeapsByNameAndJob([새캐릭터], NOW)
+
+    expect(linkMock).toHaveBeenCalledTimes(2)
   })
 
   it('목록이 비었으면 스냅샷을 안 읽는다', async () => {

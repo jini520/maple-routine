@@ -7,14 +7,18 @@ import { focusManager } from '@tanstack/react-query'
  * 신호는 `features/query/app-focus.ts` 가 `AppState` 에서 만드는 포커스 하나다. 쿼리의 복귀 재조회와 같은 신호라 규칙이
  * 갈리지 않는다. iOS 에서 알림 센터를 내렸다 올린 `inactive` → `active` 는 그쪽에서 걸러진다.
  *
- * @param onReturn 돌아올 때마다 부를 함수. 참조가 바뀌면 구독을 다시 단다
+ * @param onReturn 돌아올 때마다 부를 함수. 백그라운드에 나가 있던 시간(ms)을 받고, 백그라운드 상태로 마운트돼 나간 시각을 모르면 0 을 받는다. 참조가 바뀌면 구독을 다시 단다
  */
-export function useReturnToForeground(onReturn: () => void): void {
-  useEffect(
-    () =>
-      focusManager.subscribe((focused) => {
-        if (focused) onReturn()
-      }),
-    [onReturn],
-  )
+export function useReturnToForeground(onReturn: (awayMs: number) => void): void {
+  useEffect(() => {
+    let leftAt: number | null = null
+    return focusManager.subscribe((focused) => {
+      if (!focused) {
+        leftAt = Date.now()
+        return
+      }
+      onReturn(leftAt === null ? 0 : Date.now() - leftAt)
+      leftAt = null
+    })
+  }, [onReturn])
 }

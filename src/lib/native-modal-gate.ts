@@ -79,13 +79,12 @@ export function closeNativeModals(): Promise<void> {
   emit()
   if (Platform.OS !== 'ios' || presented.size === 0) return Promise.resolve()
   return new Promise<void>((resolve) => {
-    let timer: ReturnType<typeof setTimeout> | undefined
     const done = (): void => {
       clearTimeout(timer)
       waiters.delete(done)
       resolve()
     }
-    timer = setTimeout(done, NATIVE_MODAL_CLOSE_CAP_MS)
+    const timer = setTimeout(done, NATIVE_MODAL_CLOSE_CAP_MS)
     waiters.add(done)
   })
 }

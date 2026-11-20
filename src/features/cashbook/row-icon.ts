@@ -13,8 +13,10 @@ import { findHexaCore } from '../../lib/cashbook/hexa-matrix'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
 import { findSpendChoice, findSpendRewardChoice } from '../../lib/cashbook/spend-catalog'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
+import { findSuperiorItem } from '../../lib/enhancement/cost'
+import { findItem, findItemByApiName } from '../../lib/item-catalog'
 import type { ImageAssetRef } from '../../types/image-asset'
-import { isManualRecord, type DayRecord } from './records'
+import { isManualRecord, type DayRecord, type EnhancedItem } from './records'
 
 export function recordIconKeyOf(entry: DayRecord): string {
   // 수익과 지출의 갈래 key 가 겹칠 수 있어(`etc`) 기록 종류를 앞에 붙인다. 강화 줄도 같은 모양이다.
@@ -35,6 +37,11 @@ export function recordIconKeyOf(entry: DayRecord): string {
  * 못한 옛 기록도 `null` 이다.
  */
 export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
+  // 아이템 구매 · 판매에서 목록으로 고른 아이템은 그 아이템의 그림이다. 직접 친 이름은 key 가 없어 그림이 없다.
+  if (isManualRecord(entry) && (entry.record.category === 'item_purchase' || entry.record.category === 'item_sale')) {
+    const item = findItem(entry.record.itemKey)
+    if (item !== null) return getAssetImage(item.iconAssetId)
+  }
   if (entry.kind === 'spend') {
     const { category, itemKey, formItemKeys } = entry.record
     // 심볼 강화는 선택 목록이 아니라 비용 표에서 심볼을 되짚는다.
@@ -59,4 +66,16 @@ export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
     if (loot !== null) return getAssetImage(loot.iconAssetId)
   }
   return cashbookRowIconOf(recordIconKeyOf(entry))
+}
+
+/**
+ * 펼친 강화 줄의 장비 그림. 못 찾으면 `null` 이고 화면은 그림 자리 없이 이름부터 세운다.
+ *
+ * key 로 못 찾으면 넥슨이 준 이름으로 찾는다. 강화 장비 표에 없는 장비는 합계 줄에 key 가 없지만 아이템 표에는 있을 수 있다.
+ * 아이템 표에도 없으면 슈페리얼 장비 표에서 찾는다. 타일런트 신발 · 노바 · 헬리시움 정예는 그 표에만 그림이 있다.
+ */
+export function enhancedItemIconOf(item: EnhancedItem): ImageAssetRef | null {
+  const row = findItem(item.itemKey) ?? findItemByApiName(item.targetItem)
+  if (row !== null) return getAssetImage(row.iconAssetId)
+  return getAssetImage(findSuperiorItem(item.targetItem)?.iconAssetId)
 }

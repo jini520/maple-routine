@@ -11,13 +11,8 @@ import { inTransaction } from './sqlite/transaction'
 /** 계정 칸이 `UNIQUE` 에 든 표. `at` 은 줄이 적힌 때이고, 겹치면 이 칸이 늦은 줄이 남는다. */
 const ACCOUNT_KEYED_TABLES = [
   { table: 'enhancement_history_checks', at: 'checked_at', keys: ['enhancement_type', 'history_date'] },
-  {
-    table: 'enhancement_totals',
-    at: 'updated_at',
-    keys: ['history_date', 'character_name', 'enhancement_category', 'item_group'],
-  },
   { table: 'enhancement_recomputes', at: 'updated_at', keys: ['request_key'] },
-  { table: 'event_world_characters', at: 'updated_at', keys: ['character_name', 'world_key'] },
+  { table: 'enhancement_refetches', at: 'created_at', keys: ['enhancement_type', 'history_date'] },
 ] as const
 
 /**
@@ -67,6 +62,8 @@ export async function moveNexonAccountRows(fromIds: readonly string[], toId: str
         )
         await db.run(`UPDATE ${table} SET nexon_account_id = ? WHERE nexon_account_id = ?`, [toId, fromId])
       }
+      // 합계는 ocid 로 가려 계정 칸이 판정 열쇠에 없다. 그 계정의 날을 갈아 끼우는 단위라 칸만 옮긴다.
+      await db.run(`UPDATE enhancement_totals SET nexon_account_id = ? WHERE nexon_account_id = ?`, [toId, fromId])
       await db.run(`UPDATE character_accounts SET nexon_account_id = ? WHERE nexon_account_id = ?`, [toId, fromId])
       await db.run(`UPDATE cashbook_entries SET nexon_account_id = ? WHERE nexon_account_id = ?`, [toId, fromId])
     }

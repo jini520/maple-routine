@@ -25,7 +25,6 @@ const A: MvpAskAccount = {
   summary: {
     accountId: 'A',
     representative: { ocid: 'a1', name: '에이', world: '스카니아', worldKey: 'scania', jobClass: '비숍', level: 280 },
-    worldCounts: [{ worldKey: 'scania', world: '스카니아', count: 3 }],
     characterCount: 3,
   },
   portraitUrl: null,

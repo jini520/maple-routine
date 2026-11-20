@@ -63,4 +63,7 @@ export interface CharacterBasicProfile {
   // (구버전 캐시나 응답에 필드가 없는 경우). "모름"을 "미가입"으로 취급하면 길드 콘텐츠를
   // 잘못 잠그므로 반드시 분리해야 한다.
   guildName?: string | null
+  // character/basic 응답의 character_date_create 를 KST 날짜로 자른 값. 리프 뒤에도 그대로라 리프 자동 판정이 읽는다.
+  // 이 칸이 생기기 전 캐시엔 없다.
+  createdDate?: string
 }

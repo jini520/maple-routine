@@ -29,11 +29,13 @@
 ### 결정 1. 수입과 지출을 테이블 하나로 합치고, 수입과 지출은 `entry_type` 칸으로 가른다
 
 ```
-cashbook_entries               id · ocid · account_id · nexon_account_id · entry_type · category_key · entry_date · created_at · updated_at
+cashbook_entries               id · ocid · account_id · nexon_account_id · entry_type · category_key · entry_date · memo · created_at · updated_at
   ├ cashbook_entry_items       id · entry_id · sort_order · item_key · item_name · form_key · item_kind_key
   │                            · quantity · from_level · to_level · 금액 칸
   ├ cashbook_entry_hunt_inputs id · entry_id · 사냥 계산기 입력
-  └ cashbook_entry_fragment_uses id · entry_id · ocid · fragments
+  ├ cashbook_entry_fragment_uses id · entry_id · ocid · fragments
+  ├ cashbook_entry_transfer_inputs id · entry_id · 주간 보스 수입 이전 시트 입력
+  └ cashbook_entry_exchange_inputs id · entry_id · 메소마켓 환전 수수료 시트 입력
 ```
 
 - `entry_type` 은 `income` · `spend` 둘이다. 하루 목록과 기간 합계를 테이블 하나에서 읽으려고 합쳤다(사용자 선택).
@@ -49,6 +51,9 @@ cashbook_entries               id · ocid · account_id · nexon_account_id · e
 - 헥사 기록이 보관에서 가져온 조각은 캐릭터마다 한 줄이라 `cashbook_entry_fragment_uses` 로 뺀다([[ADR-137]] 결정 16).
 - 사냥 계산기 입력은 수입 사냥에만 있어서 `cashbook_entry_hunt_inputs` 로 뺀다. 기록 하나에 0개나 1개다. 합친 테이블에 두면
   지출 행마다 빈 칸이 열 개 넘게 붙는다.
+- `주간 보스 수입 이전` 과 `메소마켓 환전 수수료` 시트의 입력도 같은 이유로 `cashbook_entry_transfer_inputs` ·
+  `cashbook_entry_exchange_inputs` 로 뺀다. 두 시트의 기록은 `기타` 로 저장하므로, 이 줄이 있는지로 어느 시트에서 적었는지
+  안다([[ADR-047]] 결정 19 · 20).
 - 보스 결정석 · 보스 드롭 판매 · 강화 지출은 원천 테이블(보스 기록 테이블 · `enhancement_totals`)에 그대로 둔다. 카드는
   같은 두 줄 규칙으로 그린다.
 
@@ -114,10 +119,10 @@ cashbook_entries               id · ocid · account_id · nexon_account_id · e
 새 기록은 `expo-crypto` 의 `randomUUID()` 로 만든다. 옛 `시각 + 난수` id 는 이관할 때 uuid 로 바꾼다(사용자 선택). 지금
 옛 id 를 가리키는 곳은 없다. 서버 동기화 대기 표(`server_sync_queue`)는 드롭 가격만 가리킨다.
 
-### 결정 6. v1.0.13 스토어 바이너리로 내고, 옛 테이블 둘은 v1.0.14 에서 지운다
+### 결정 6. v1.0.13 스토어 바이너리로 내고, 옛 테이블 둘은 DB 버전 23 이 지운다
 
 [[ADR-078]] 결정 9 와 같은 이유다. OTA 가 실패해 옛 코드로 돌아가도 DB 가 열려야 하므로 v1.0.13 에서는 옛 테이블을
-지우지 않는다.
+지우지 않았다. v1.0.14 의 DB 버전 23 이 옛 보스 표 넷과 함께 지운다.
 
 ### 결정 7. 아이템 종류(장비 · 소비 · 기타 · 캐시)도 서버 표가 기준이다
 
@@ -138,8 +143,8 @@ cashbook_entries               id · ocid · account_id · nexon_account_id · e
   않는다. 한 번 실패하고 다시 여는 기기에서 사본이 처음 그대로여야 해서다. 다른 이유로 못 뜨면 옮기지 않는다.
 - 옮긴 뒤 지출 · 수입 건수와 메소 · 메포 · 캐시 · 관세 · 수수료 · 사냥 조각 합계를 옛 표와 견준다. 하나라도 다르면 던져 버전
   15 를 통째로 되돌린다. 조용히 덜 옮긴 채 버전을 올리는 것보다 DB 를 못 여는 편이 낫다. 옛 표와 사본은 그대로 남는다.
-- 사본은 DB 만큼 크다(실기기 45MB). v1.0.14 에서 옛 표를 지울 때 사본 파일도 함께 지운다. SQL 로는 파일을 못 지워
-  파일 API 가 필요하다.
+- 사본은 DB 만큼 크다(실기기 45MB). 옛 표를 다 지운 뒤 한 번 사본 파일을 지운다([[ADR-078]] 결정 11). 지우는 일은 DB 가
+  버전 23 까지 열린 뒤에만 불리므로, 버전 15 가 실패해 되돌린 기기에서는 사본이 남는다.
 
 ## 테스트
 
@@ -161,4 +166,5 @@ cashbook_entries               id · ocid · account_id · nexon_account_id · e
 - ADR-096 (2026-10-25): 가계부 기록 테이블 재설계를 처음 작성했다(#670)
 - ADR-096 (2026-10-25): 기록 표 셋 · 버전 15 이관 · 서버 갈래 표 · 하루 목록 두 줄 카드를 구현했다
 - ADR-096 (2026-10-25): 이관 전 사본과 이관 뒤 대조(결정 9)를 더했다. 실기기 데이터로 옛 · 새 코드의 하루 목록 235일 · 684줄 금액과 합계가 같은 것을 확인했다
-- ADR-096 (2026-10-26): 쓰지 않던 `memo` 칸을 지운 것([[ADR-099]] 결정 7)과 계정 칸([[ADR-098]] 결정 6)을 표 그림에 반영했다
+- ADR-096 (2026-10-26): 쓰지 않던 `memo` 칸을 지운 것과 계정 칸([[ADR-098]] 결정 6)을 표 그림에 반영했다
+- (2026-11-14) 아이템 구매 · 판매의 메모를 담는 `memo` 칸을 표 그림에 다시 넣었다([[ADR-048]] 결정 19)

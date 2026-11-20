@@ -1,5 +1,10 @@
 import { queryClient } from '../../query/client'
-import { collectEnhancementHistory, measureEnhancementHistory, planEnhancementHistory } from '../collect'
+import {
+  collectEnhancementHistory,
+  collectEnhancementRefetches,
+  measureEnhancementHistory,
+  planEnhancementHistory,
+} from '../collect'
 
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../auth/legacy-account-ids', () => ({ fillLegacyAccountIds: jest.fn() }))
@@ -11,11 +16,17 @@ jest.mock('../../../storage/enhancement-history', () => ({
   loadEnhancementChecks: jest.fn(),
   markEnhancementChecked: jest.fn(),
 }))
-jest.mock('../../../storage/enhancement-totals', () => ({ replaceEnhancementTotals: jest.fn(), markEventWorldTotals: jest.fn() }))
-jest.mock('../../../storage/event-world-characters', () => ({
-  loadEventWorldCharacters: jest.fn(),
-  rememberEventWorldCharacters: jest.fn(),
+jest.mock('../../../storage/enhancement-totals', () => ({ replaceEnhancementTotals: jest.fn(), findPreLeapWorldKey: jest.fn() }))
+jest.mock('../../../storage/character-accounts', () => ({
+  getOwnerSightings: jest.fn(),
+  recordCharacterAccounts: jest.fn(async () => undefined),
 }))
+jest.mock('../../../storage/enhancement-refetches', () => ({
+  loadEnhancementRefetches: jest.fn(),
+  removeEnhancementRefetch: jest.fn(),
+}))
+// 줄을 캐릭터에 붙이는 판정은 `owners.spec.ts` 가 본다. 여기서는 이름을 그대로 ocid 로 붙이고, 이름마다 결과를 바꿔 본다.
+jest.mock('../owners', () => ({ createOwnerResolver: jest.fn() }))
 jest.mock('../legacy-totals', () => ({ ensureEnhancementTotals: jest.fn() }))
 jest.mock('../../../storage/enhancement-recomputes', () => ({
   loadRecomputeProgress: jest.fn(),
@@ -23,6 +34,7 @@ jest.mock('../../../storage/enhancement-recomputes', () => ({
 }))
 jest.mock('../anomalies', () => ({ ...jest.requireActual('../anomalies'), reportEnhancementAnomalies: jest.fn() }))
 jest.mock('../recompute', () => ({ ...jest.requireActual('../recompute'), RECOMPUTE_REQUESTS: [] }))
+jest.mock('../../settlement/store', () => ({ settlingYesterdayOf: jest.fn() }))
 
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 const { fetchEnhancementHistory } = jest.requireMock('../../../nexon/history/client') as Record<string, jest.Mock>
@@ -30,12 +42,18 @@ const { fetchCharacterList } = jest.requireMock('../../../nexon/character') as R
 const store = jest.requireMock('../../../storage/enhancement-history') as Record<string, jest.Mock>
 const { saveEventWorldNames } = jest.requireMock('../event-world-names') as Record<string, jest.Mock>
 const { fillLegacyAccountIds } = jest.requireMock('../../auth/legacy-account-ids') as Record<string, jest.Mock>
-const { replaceEnhancementTotals, markEventWorldTotals } = jest.requireMock('../../../storage/enhancement-totals') as Record<string, jest.Mock>
-const remembered = jest.requireMock('../../../storage/event-world-characters') as Record<string, jest.Mock>
+const { replaceEnhancementTotals, findPreLeapWorldKey } = jest.requireMock('../../../storage/enhancement-totals') as Record<string, jest.Mock>
+const { getOwnerSightings } = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
+const refetches = jest.requireMock('../../../storage/enhancement-refetches') as Record<string, jest.Mock>
+const { createOwnerResolver } = jest.requireMock('../owners') as Record<string, jest.Mock>
+
+/** 이름마다 판정 결과를 바꾼다. 없는 이름은 일반 월드 캐릭터 `ocid-이름` 이고, 목록을 못 받았으면 다시 받을 실패다. */
+let ownerTable: Record<string, unknown> = {}
 const { ensureEnhancementTotals } = jest.requireMock('../legacy-totals') as Record<string, jest.Mock>
 const recomputes = jest.requireMock('../../../storage/enhancement-recomputes') as Record<string, jest.Mock>
 const { RECOMPUTE_REQUESTS } = jest.requireMock('../recompute') as { RECOMPUTE_REQUESTS: unknown[] }
 const { reportEnhancementAnomalies } = jest.requireMock('../anomalies') as Record<string, jest.Mock>
+const { settlingYesterdayOf } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
 const setRequests = (requests: unknown[]) => RECOMPUTE_REQUESTS.splice(0, RECOMPUTE_REQUESTS.length, ...requests)
 
 const NOW = new Date('2026-09-06T12:00:00+09:00')
@@ -57,7 +75,8 @@ const page = (ids: string[], nextCursor: string | null = null) => ({
 
 beforeEach(() => {
   queryClient.clear()
-  getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'k' }] })
+  settlingYesterdayOf.mockReset().mockResolvedValue(null)
+  getAuthConfig.mockReset().mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'k', loginId: null }] })
   fetchCharacterList.mockReset().mockResolvedValue([
     { accountId: 'a', characters: [{ ocid: '1', name: '머리맨들맨둘', world: '스페셜', worldKey: 'special', jobClass: '', level: 1 }] },
   ])
@@ -65,9 +84,23 @@ beforeEach(() => {
   store.loadEnhancementChecks.mockReset().mockResolvedValue(new Map())
   store.markEnhancementChecked.mockReset().mockResolvedValue(undefined)
   replaceEnhancementTotals.mockReset().mockResolvedValue(undefined)
-  markEventWorldTotals.mockReset().mockResolvedValue(undefined)
-  remembered.loadEventWorldCharacters.mockReset().mockResolvedValue(new Map())
-  remembered.rememberEventWorldCharacters.mockReset().mockResolvedValue(undefined)
+  findPreLeapWorldKey.mockReset().mockResolvedValue(null)
+  getOwnerSightings.mockReset().mockResolvedValue([])
+  refetches.loadEnhancementRefetches.mockReset().mockResolvedValue([])
+  refetches.removeEnhancementRefetch.mockReset().mockResolvedValue(undefined)
+  ownerTable = {}
+  createOwnerResolver.mockReset().mockImplementation((context: { accounts: unknown }) => async (name: string) => {
+    if (name in ownerTable) return ownerTable[name]
+    if (context.accounts === null) return 'retry'
+    return {
+      ocid: `ocid-${name}`,
+      accountId: 'maple-1',
+      worldName: name === '머리맨들맨둘' ? '스페셜' : '엘리시움',
+      worldKey: name === '머리맨들맨둘' ? 'special' : 'elysium',
+      preLeap: false,
+      leapDate: null,
+    }
+  })
   ensureEnhancementTotals.mockReset().mockResolvedValue(undefined)
   recomputes.loadRecomputeProgress.mockReset().mockResolvedValue(new Map())
   recomputes.saveRecomputeProgress.mockReset().mockResolvedValue(undefined)
@@ -215,6 +248,19 @@ describe('수집', () => {
     )
   })
 
+  // 넥슨 AI 에이전트 가이드는 00009 를 되풀이해 부르지 말라고 한다. 건너뛴 날은 굳지 않아 결산이 끝난 뒤의 회차가 받는다.
+  it('서버가 결산 중이라고 하면 어제의 내역은 받지 않고 굳히지도 않는다', async () => {
+    settlingYesterdayOf.mockResolvedValue('2026-09-05')
+
+    await collectEnhancementHistory(['2026-09-04', '2026-09-05'], NOW)
+
+    expect(settlingYesterdayOf).toHaveBeenCalledWith(NOW)
+    const asked = fetchEnhancementHistory.mock.calls.map(([, , , query]) => (query as { dateKey?: string }).dateKey)
+    expect(asked).not.toContain('2026-09-05')
+    expect(asked).toContain('2026-09-04')
+    expect(store.markEnhancementChecked.mock.calls.map(([, , dateKey]) => dateKey)).not.toContain('2026-09-05')
+  })
+
   it('받은 줄을 합계로 묶어 그 날 그 종류를 바꿔 적는다', async () => {
     fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
       Promise.resolve(kind === 'cube' ? page(['a', 'b']) : page([])),
@@ -225,8 +271,9 @@ describe('수집', () => {
       'account-key',
       'cube',
       '2026-09-05',
-      [expect.objectContaining({ itemKey: 'arcane_umbra_knuckle', attempts: 2, eventWorld: false })],
+      [expect.objectContaining({ itemKey: 'arcane_umbra_knuckle', attempts: 2, eventWorld: false, ocid: 'ocid-낟낟' })],
       NOW,
+      expect.any(Array),
     )
   })
 
@@ -285,24 +332,16 @@ describe('수집', () => {
     expect(saveEventWorldNames).toHaveBeenCalledTimes(2)
   })
 
-  // 정정 4. 목록을 못 받으면 큐브·잠재의 스페셜을 가릴 수가 없다.
-  it('계정 목록을 못 받으면 안 굳힌다', async () => {
-    fetchCharacterList.mockRejectedValue(new Error('boom'))
-    await collectEnhancementHistory(['2026-09-05'], NOW)
-
-    expect(store.markEnhancementChecked).toHaveBeenCalledWith(
-      'account-key', 'cube', '2026-09-05', null, false, expect.any(String),
-    )
-  })
-
-  // 합계는 적되 이벤트 월드 판정을 비운다. 비운 줄은 지출로 세지도 서버로 보내지도 않는다.
-  it('그래도 합계는 적는다. 이벤트 월드 판정은 비운다', async () => {
+  // 목록이 없으면 넥슨에서 그날 이름을 찾을 캐릭터를 모른다. 그 이름의 줄을 지운 채 굳히면 다시 오지 않는다.
+  it('계정 목록을 못 받아 붙이지 못한 이름이 있으면 그 날을 갈아 끼우지도 굳히지도 않는다', async () => {
     fetchCharacterList.mockRejectedValue(new Error('boom'))
     fetchEnhancementHistory.mockResolvedValue(page(['a']))
     await collectEnhancementHistory(['2026-09-05'], NOW)
 
-    const cubeTotals = replaceEnhancementTotals.mock.calls.find((call) => call[1] === 'cube')
-    expect(cubeTotals?.[3]).toEqual([expect.objectContaining({ eventWorld: null })])
+    expect(replaceEnhancementTotals).not.toHaveBeenCalled()
+    expect(store.markEnhancementChecked).toHaveBeenCalledWith(
+      'account-key', 'cube', '2026-09-05', null, false, expect.any(String),
+    )
   })
 
   // 던지면 원장에 안 적혀 다음 회차가 다시 온다.
@@ -345,19 +384,6 @@ const starforceDay = (...rows: ReturnType<typeof starforceRow>[]) =>
   )
 
 describe('이벤트 월드 판정', () => {
-  // 이벤트가 끝나기 전에 캐릭터를 지우면 목록에서 사라진다. 그때 큐브 · 잠재 · 소울 줄을 가를 단서가 이것뿐이다.
-  it('이벤트 월드 스타포스 줄의 이름과 월드를 남기고, 일반 월드 줄은 안 남긴다', async () => {
-    starforceDay(starforceRow('지운캐릭', '스페셜2'), starforceRow('낟낟', '엘리시움'))
-
-    await collectEnhancementHistory(['2026-09-05'], NOW)
-
-    expect(remembered.rememberEventWorldCharacters).toHaveBeenCalledWith(
-      'account-key',
-      [{ characterName: '지운캐릭', worldKey: 'special_2' }],
-      NOW,
-    )
-  })
-
   // 표에 넣으면 다음 회차가 다시 받아 판정해야 한다. 굳히면 그 기회가 사라진다.
   it('표에 없는 월드의 줄이 있는 날은 굳히지 않고 그 월드 이름을 알린다', async () => {
     starforceDay(starforceRow('새캐릭', '스페셜3'))
@@ -374,31 +400,123 @@ describe('이벤트 월드 판정', () => {
       expect.objectContaining({ enhancementType: 'starforce', anomalyType: 'event_world_unknown', detail: '스페셜3' }),
     ])
   })
+})
 
-  // 한 회차의 일은 동시에 돈다. 큐브 날을 스타포스보다 먼저 매기면 이름을 남기기 전에 판정되고, 굳으면 다시 안 받는다.
-  it('회차가 끝나면 목록에 없는 남겨 둔 이름의 줄을 그 월드의 기간으로 고친다', async () => {
-    remembered.loadEventWorldCharacters.mockResolvedValue(
-      new Map([
-        ['지운캐릭', ['special_2']],
-        ['머리맨들맨둘', ['special']],
-      ]),
-    )
+// 강화 응답은 그때의 이름만 준다. 줄은 그날 그 이름이었던 캐릭터(ocid)에 붙인다.
+describe('캐릭터에 붙이기', () => {
+  // 어느 캐릭터의 기록인지 모르는 줄은 남기지 않는다. 넥슨이 답한 결과라 다시 받아도 같다.
+  it('붙일 곳이 없는 이름의 줄은 버리고, 그 날은 굳힌다', async () => {
+    ownerTable = { 지운캐릭: 'none' }
+    starforceDay(starforceRow('지운캐릭', '엘리시움'), starforceRow('낟낟', '엘리시움'))
 
     await collectEnhancementHistory(['2026-09-05'], NOW)
 
-    expect(markEventWorldTotals.mock.calls).toEqual([['account-key', '지운캐릭', '2025-11-20', '2025-12-19']])
-    const lastReplace = Math.max(...replaceEnhancementTotals.mock.invocationCallOrder)
-    expect(markEventWorldTotals.mock.invocationCallOrder[0]).toBeGreaterThan(lastReplace)
+    const starforceTotals = replaceEnhancementTotals.mock.calls.find((call) => call[1] === 'starforce')
+    expect(starforceTotals?.[3].map((total: { ocid: string }) => total.ocid)).toEqual(['ocid-낟낟'])
+    expect(store.markEnhancementChecked).toHaveBeenCalledWith(
+      'account-key', 'starforce', '2026-09-05', null, true, expect.any(String),
+    )
   })
 
-  // 목록이 1순위다. 목록 없이는 그 이름이 목록에 없는지 알 수 없다.
-  it('목록을 못 받은 회차는 고치지 않는다', async () => {
-    fetchCharacterList.mockRejectedValue(new Error('boom'))
-    remembered.loadEventWorldCharacters.mockResolvedValue(new Map([['지운캐릭', ['special_2']]]))
+  // 한 번 받으면 그 넥슨 계정의 그날 줄이 모두 온다. 옛 계정 번호로 적힌 같은 캐릭터의 줄도 갈아 끼워야 두 번 세지 않는다.
+  it('그 넥슨 계정의 캐릭터를 갈아 끼우는 범위로 넘긴다', async () => {
+    getOwnerSightings.mockResolvedValue([
+      { ocid: 'o-본', name: '본캐', accountId: 'a', nexonAccountId: 'account-key', firstSeenOn: '2026-09-01', lastSeenOn: '2026-09-05', worldKey: null },
+      { ocid: 'o-남', name: '남캐', accountId: 'b', nexonAccountId: 'account-다른', firstSeenOn: '2026-09-01', lastSeenOn: '2026-09-05', worldKey: null },
+    ])
 
     await collectEnhancementHistory(['2026-09-05'], NOW)
 
-    expect(markEventWorldTotals).not.toHaveBeenCalled()
+    const accountOcids = replaceEnhancementTotals.mock.calls[0]?.[5] as string[]
+    expect(accountOcids).toEqual(expect.arrayContaining(['1', 'o-본']))
+    expect(accountOcids).not.toContain('o-남')
+  })
+
+  // 리프 전 줄은 리프 뒤 ocid 에 붙지만, 그 줄의 월드는 리프 전 월드다.
+  it('리프 전 줄에는 같은 기간 스타포스 줄의 월드를 적고 이벤트 월드로 세지 않는다', async () => {
+    ownerTable = {
+      낟낟: { ocid: 'o-새', accountId: 'maple-1', worldName: null, worldKey: null, preLeap: true, leapDate: '2026-09-11' },
+    }
+    findPreLeapWorldKey.mockResolvedValue('challengers_2')
+    fetchEnhancementHistory.mockImplementation(async (_credential: unknown, kind: string) => (kind === 'cube' ? page(['a']) : page([])))
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(findPreLeapWorldKey).toHaveBeenCalledWith('o-새', '2026-09-11', '2026-09-05')
+    const cubeTotals = replaceEnhancementTotals.mock.calls.find((call) => call[1] === 'cube')
+    expect(cubeTotals?.[3]).toEqual([expect.objectContaining({ ocid: 'o-새', worldKey: 'challengers_2', eventWorld: false })])
+  })
+})
+
+// 1.0.14 이관이 캐릭터에 붙이지 못해 지운 줄의 날. 화면이 연 기간만 받으면 열지 않은 달의 지출이 빈 채로 남는다.
+describe('이관이 지운 날 다시 받기', () => {
+  /** 받아 굳히면 지워지는 다시 받을 날. 지운 만큼 다음 읽기에서 빠진다. */
+  function storedRefetches(days: { kind: string; dateKey: string }[]): void {
+    const left = [...days]
+    refetches.loadEnhancementRefetches.mockImplementation(async () => [...left])
+    refetches.removeEnhancementRefetch.mockImplementation(async (_account: string, kind: string, dateKey: string) => {
+      const at = left.findIndex((one) => one.kind === kind && one.dateKey === dateKey)
+      if (at >= 0) left.splice(at, 1)
+    })
+  }
+
+  const loginDays = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      kind: 'cube',
+      dateKey: new Date(Date.UTC(2026, 5, 1 + index)).toISOString().slice(0, 10),
+    }))
+
+  const fetchedDays = () =>
+    new Set(fetchEnhancementHistory.mock.calls.map((call) => (call[3] as { dateKey?: string }).dateKey).filter(Boolean))
+
+  // 화면이 이 받기를 기다리면 사용자 기기에서 60일에 8분 넘게 불러오는 중으로 남았다(2026-11-10).
+  it('화면 회차는 다시 받을 날을 받지 않고 분모에도 넣지 않는다', async () => {
+    storedRefetches([{ kind: 'cube', dateKey: '2026-09-01' }])
+
+    await expect(measureEnhancementHistory([], NOW)).resolves.toEqual({ total: 0, hasPast: false })
+    await collectEnhancementHistory([], NOW)
+
+    expect(fetchEnhancementHistory).not.toHaveBeenCalled()
+  })
+
+  it('뒤에서 따로 받고, 받아 굳히면 지운다', async () => {
+    storedRefetches([{ kind: 'cube', dateKey: '2026-09-01' }])
+
+    await collectEnhancementRefetches(NOW)
+
+    expect(fetchEnhancementHistory).toHaveBeenCalledWith(expect.anything(), 'cube', expect.anything(), { dateKey: '2026-09-01' })
+    expect(refetches.removeEnhancementRefetch).toHaveBeenCalledWith('account-key', 'cube', '2026-09-01')
+  })
+
+  // 스트림 요청 하나의 한도(16MB) 안에서 받게 다시 매기기와 같은 한도로 나누되, 남은 날은 다음 화면 회차를 기다리지 않고 이어서 받는다.
+  it('넥슨 로그인 계정은 한 번에 60일씩 받고, 남은 날이 줄어드는 동안 이어서 받는다', async () => {
+    getAuthConfig.mockResolvedValue({ login: { type: 'login', id: 'account-login', session: 's' }, mainKeyId: null, apiKeys: [] })
+    storedRefetches(loginDays(70))
+
+    await collectEnhancementRefetches(NOW)
+
+    expect(fetchedDays().size).toBe(70)
+    expect(fetchEnhancementHistory).toHaveBeenCalledTimes(70)
+  })
+
+  // 넥슨이 실패하는 동안 같은 날을 끝없이 부르지 않는다. 다음 화면 회차가 다시 시작한다.
+  it('한 번 받고도 남은 날이 줄지 않으면 멈춘다', async () => {
+    getAuthConfig.mockResolvedValue({ login: { type: 'login', id: 'account-login', session: 's' }, mainKeyId: null, apiKeys: [] })
+    storedRefetches(loginDays(70))
+    fetchEnhancementHistory.mockRejectedValue(new Error('down'))
+
+    await collectEnhancementRefetches(NOW)
+
+    expect(fetchEnhancementHistory).toHaveBeenCalledTimes(60)
+  })
+
+  // 화면 회차가 끝날 때마다 부른다. 겹쳐 돌면 같은 날을 두 번 받는다.
+  it('한 번에 한 받기만 돈다', async () => {
+    storedRefetches([{ kind: 'cube', dateKey: '2026-09-01' }])
+
+    await Promise.all([collectEnhancementRefetches(NOW), collectEnhancementRefetches(NOW)])
+
+    expect(fetchEnhancementHistory).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -467,7 +585,7 @@ describe('다시 매기기 요청', () => {
 
   // 로그인 계정의 강화 내역은 서버 스트림을 거친다. 스트림 요청 하나가 16MB 를 넘으면 남은 날이 실패해 같은 날들을 끝없이 다시 받는다.
   it('넥슨 로그인 계정은 한 회차에 60일만 받고 끝을 적지 않는다', async () => {
-    getAuthConfig.mockResolvedValue({ login: { id: 'account-login', session: 's' }, apiKeys: [] })
+    getAuthConfig.mockResolvedValue({ login: { id: 'account-login', session: 's' }, mainKeyId: null, apiKeys: [] })
     setRequests([cubeRequest('2026-06-01', '2026-08-20')])
 
     await collectEnhancementHistory([], NOW)
@@ -498,19 +616,6 @@ describe('합계에서 빠진 줄 알리기', () => {
 
     expect(reportEnhancementAnomalies).toHaveBeenCalledWith([
       expect.objectContaining({ historyDate: '2026-09-05', enhancementType: 'starforce', anomalyType: 'no_star', rowCount: 1 }),
-    ])
-  })
-
-  it('목록을 못 받은 회차는 판정하지 못한 줄과 실패 이유를 알린다', async () => {
-    fetchCharacterList.mockRejectedValue(new Error('boom'))
-    fetchEnhancementHistory.mockImplementation((_key: string, kind: string) =>
-      Promise.resolve(kind === 'cube' ? page(['a']) : page([])),
-    )
-
-    await collectEnhancementHistory(['2026-09-05'], NOW)
-
-    expect(reportEnhancementAnomalies).toHaveBeenCalledWith([
-      expect.objectContaining({ anomalyType: 'event_world_unknown', detail: 'Error: boom' }),
     ])
   })
 
@@ -554,11 +659,126 @@ describe('자격마다 동시에 부르는 수', () => {
   })
 
   it('로그인은 회차의 일을 한꺼번에 부른다', async () => {
-    getAuthConfig.mockResolvedValue({ login: { id: 'account-login', session: 's' }, apiKeys: [] })
+    getAuthConfig.mockResolvedValue({ login: { id: 'account-login', session: 's' }, mainKeyId: null, apiKeys: [] })
     const max = 동시최대()
 
     await collectEnhancementHistory(닷새, NOW)
 
     expect(max()).toBe(닷새.length * KINDS.length)
+  })
+})
+
+// 강화 내역은 계정 단위 API 다. 넥슨 계정마다 그 계정의 자격으로 받고, 조회 기록과 합계도 계정 id 로 나뉜다.
+describe('넥슨 계정이 여럿', () => {
+  beforeEach(() => {
+    getAuthConfig.mockResolvedValue({
+      login: { type: 'login', id: 'account-login', session: 's' },
+      mainKeyId: null,
+      apiKeys: [{ type: 'key', id: 'account-부', label: '', value: '부-키', loginId: 'account-login' }],
+    })
+    fetchCharacterList.mockImplementation(async (credential: { accountId: string }) => [
+      {
+        accountId: `maple-${credential.accountId}`,
+        characters: [{ ocid: credential.accountId, name: `스페셜-${credential.accountId}`, world: '스페셜', worldKey: 'special', jobClass: '', level: 1 }],
+      },
+    ])
+  })
+
+  it('계정마다 그 계정의 자격으로 받아 그 계정 id 로 적고, 분모는 모든 계정의 합이다', async () => {
+    const seen: [number, number][] = []
+
+    await collectEnhancementHistory(['2026-09-05'], NOW, (done, total) => seen.push([done, total]))
+
+    const pairs = fetchEnhancementHistory.mock.calls.map(([credential, kind]: [{ accountId: string }, string]) => `${credential.accountId}:${kind}`)
+    expect(pairs.sort()).toEqual(
+      ['account-login', 'account-부'].flatMap((account) => KINDS.map((kind) => `${account}:${kind}`)).sort(),
+    )
+    expect(new Set(replaceEnhancementTotals.mock.calls.map(([accountId]) => accountId))).toEqual(new Set(['account-login', 'account-부']))
+    expect(seen[0]).toEqual([0, 6])
+    expect(seen[seen.length - 1]).toEqual([6, 6])
+    await expect(measureEnhancementHistory(['2026-09-05'], NOW)).resolves.toEqual({ total: 6, hasPast: true })
+  })
+
+  // 한 계정의 실패로 다른 계정의 강화 내역까지 멈추면 안 된다.
+  it('한 계정의 날을 못 받아도 다른 계정의 날은 굳힌다', async () => {
+    fetchEnhancementHistory.mockImplementation(async (credential: { accountId: string }) => {
+      if (credential.accountId === 'account-부') throw new Error('401')
+      return page([])
+    })
+
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    const marked = store.markEnhancementChecked.mock.calls.map(([accountId]) => accountId)
+    expect(new Set(marked)).toEqual(new Set(['account-login']))
+    expect(marked).toHaveLength(3)
+  })
+
+  // 옛 원본은 계정 칸이 생기기 전의 메인 계정 기록이라, 부계정의 스페셜 이름이 섞이면 메인 계정의 줄을 잘못 가른다.
+  it('옛 원본을 옮기는 단계에 남기는 스페셜 이름은 메인 계정의 목록에서만 온다', async () => {
+    await collectEnhancementHistory(['2026-09-05'], NOW)
+
+    expect(saveEventWorldNames).toHaveBeenCalledTimes(1)
+    expect(saveEventWorldNames).toHaveBeenCalledWith(new Set(['스페셜-account-login']))
+  })
+})
+
+// 기기는 값을 못 매긴 줄을 버려, 그날 슈페리얼 장비가 있었는지는 다시 받아야 안다. 다른 날의 합계는 받은 때 그대로 둔다(사용자 지정 2026-11-15).
+describe('슈페리얼 장비가 있는 날만 갈아 끼우는 요청', () => {
+  const superiorRequest = { id: 's1', from: '2026-09-03', to: '2026-09-04', kinds: ['starforce'], superiorOnly: true }
+  const starforcePage = (dateKey: string, targetItem: string) => ({
+    rows: [
+      {
+        id: `${dateKey}-${targetItem}`,
+        characterName: '낟낟',
+        createdAt: `${dateKey}T07:00:00.000+09:00`,
+        dateKey,
+        targetItem,
+        itemKey: null,
+        itemLevel: null,
+        payload: { before_starforce_count: 12, after_starforce_count: 15, upgrade_item: '' },
+      },
+    ],
+    nextCursor: null,
+  })
+  const starforceDays = (calls: unknown[][]) =>
+    calls.filter((call) => call[1] === 'starforce').map((call) => call[2])
+
+  it('슈페리얼 장비의 줄이 있는 날만 갈아 끼우고, 없는 날은 합계 · 굳음 원장 · 이상 보고를 그대로 두되 진행은 적는다', async () => {
+    setRequests([superiorRequest])
+    fetchEnhancementHistory.mockImplementation((_key, kind, _itemKeyOf, query) => {
+      if (kind !== 'starforce') return Promise.resolve(page([]))
+      return Promise.resolve(
+        query.dateKey === '2026-09-03'
+          ? starforcePage('2026-09-03', '타일런트 리카온 벨트')
+          : starforcePage('2026-09-04', '왕푸'),
+      )
+    })
+
+    await collectEnhancementHistory([], NOW)
+
+    expect(starforceDays(replaceEnhancementTotals.mock.calls)).toEqual(['2026-09-03'])
+    expect(replaceEnhancementTotals).toHaveBeenCalledWith(
+      'account-key',
+      'starforce',
+      '2026-09-03',
+      [expect.objectContaining({ attempts: 1, attemptCostMeso: 0, superiorCostMeso: 55_382_200 })],
+      NOW,
+      expect.any(Array),
+    )
+    expect(starforceDays(store.markEnhancementChecked.mock.calls)).toEqual(['2026-09-03'])
+    // 9-04 의 왕푸는 장비 표에 없는 15성 줄이라 그 날을 갈아 끼웠다면 알렸을 것이다.
+    expect(reportEnhancementAnomalies).toHaveBeenCalledWith([])
+    expect(recomputes.saveRecomputeProgress).toHaveBeenCalledWith('account-key', 's1', '2026-09-04', true, NOW)
+  })
+
+  it('같은 날을 화면 회차나 superiorOnly 가 없는 요청이 함께 받으면 통째로 갈아 끼운다', async () => {
+    setRequests([superiorRequest, { id: 'r2', from: '2026-09-03', to: '2026-09-03', kinds: ['starforce'] }])
+    fetchEnhancementHistory.mockImplementation((_key, kind, _itemKeyOf, query) =>
+      Promise.resolve(kind === 'starforce' ? starforcePage(query.dateKey, '왕푸') : page([])),
+    )
+
+    await collectEnhancementHistory(['2026-09-04'], NOW)
+
+    expect(starforceDays(replaceEnhancementTotals.mock.calls).sort()).toEqual(['2026-09-03', '2026-09-04'])
   })
 })

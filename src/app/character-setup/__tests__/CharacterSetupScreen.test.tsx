@@ -192,7 +192,7 @@ beforeEach(() => {
   rosterFailure = undefined
   accountsFailure = undefined
 
-  mockedGetAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ type: 'key' as const, id: 'account-key', label: '', value: 'key' }] })
+  mockedGetAuthConfig.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key' as const, id: 'account-key', label: '', value: 'key', loginId: null }] })
   mockedFetchCharacterList.mockImplementation(async () => {
     if (accountsFailure !== undefined) throw accountsFailure
     return [계정A]
@@ -267,7 +267,7 @@ describe('CharacterSetupScreen: 머리와 CTA', () => {
 
   // 진입 단계만 되돌리면 같은 온보딩 스택이라 이 화면이 로그인 화면 위에 남는다.
   it('메이플 ID 가 없는 넥슨 로그인을 떼고 남은 수단이 없으면 로그인 화면으로 돌아간다', async () => {
-    mockedGetAuthConfig.mockResolvedValue({ login: { type: 'login' as const, id: 'login-id', session: '빈세션' }, apiKeys: [] })
+    mockedGetAuthConfig.mockResolvedValue({ login: { type: 'login' as const, id: 'login-id', session: '빈세션' }, mainKeyId: null, apiKeys: [] })
     mockedFetchCharacterList.mockResolvedValue([])
     mockLeaveEmptyNexonLogin.mockResolvedValue(false)
     const { view } = await renderStep()

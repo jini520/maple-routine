@@ -34,6 +34,7 @@ import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import type { PopoverAnchorRect } from '../../hooks/useAnchoredPopover'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { bossPayoutMeso, totalPayoutMeso, type CalculatorBoss } from '../../lib/boss/boss-profit-calculator'
+import { currentCrystalPriceMeso } from '../../lib/boss/boss-crystal-prices'
 import {
   activeDifficultiesNow,
   bossAliasOf,
@@ -149,7 +150,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                   role="button"
                   aria-label="계산 기록"
                   onPress={() => navigation.navigate('UtilityBossProfitCalculatorRecords')}
-                  className="h-10 w-10 items-center justify-center active:opacity-60"
+                  className="h-10 w-10 items-center justify-center"
                 >
                   <HistoryIcon className="h-[19px] w-[19px] text-text" strokeWidth={2} aria-hidden />
                 </Pressable>
@@ -211,7 +212,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                     role="button"
                     aria-label="보스 선택"
                     onPress={() => setPickerOpen(true)}
-                    className="h-7 justify-center rounded-full bg-primary-tint px-[11px] active:opacity-60"
+                    className="h-7 justify-center rounded-full bg-primary-tint px-[11px]"
                   >
                     <Text className="text-xs font-semibold text-primary-ink">보스 선택</Text>
                   </Pressable>
@@ -223,7 +224,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                       setMenuOpen(true)
                       menuRef.current?.measureInWindow((left, top, width, height) => setMenuAnchor({ left, top, width, height }))
                     }}
-                    className="h-7 w-7 items-center justify-center rounded-full bg-bg active:opacity-60"
+                    className="h-7 w-7 items-center justify-center rounded-full bg-bg"
                   >
                     <EllipsisIcon className="h-3.5 w-3.5 text-text-muted" strokeWidth={2.5} aria-hidden />
                   </Pressable>
@@ -260,7 +261,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
         >
           {/* 어느 캐릭터의 카드를 보고 있든 그 캐릭터의 합이 늘 같은 자리에 보인다. */}
           <View className="flex-row items-center gap-2 px-1 py-2">
-            <CharacterAvatar imageUrl={selected.imageUrl ?? null} name={selectedName} size={28} className="bg-surface-2" mirrored />
+            <CharacterAvatar overFrame imageUrl={selected.imageUrl ?? null} name={selectedName} size={28} className="bg-surface-2" mirrored />
             <Text className="text-sm font-semibold text-text">{selectedName} 주간 수입</Text>
             <Text
               testID="calculator-character-total"
@@ -278,7 +279,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
               if (calculator.openedId === null) void save('new')
               else setAskingSave(true)
             }}
-            className="h-[52px] items-center justify-center rounded-full bg-primary active:opacity-80"
+            className="h-[52px] items-center justify-center rounded-full bg-primary"
           >
             <Text className="text-base font-bold text-on-primary">결과 저장</Text>
           </Pressable>
@@ -306,7 +307,6 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
       {partyBoss !== null && selected !== null && (
         <PartySizeModal
           bossName={bossAliasOf(partyBoss.bossKey, bossNameOf(partyBoss.bossKey, partyBoss.bossKey))}
-          cycleLabel="주간 보스"
           portraitAssetId={bossPortraitAssetIdOf(partyBoss.bossKey)}
           difficulties={activeDifficultiesNow(partyBoss.bossKey)}
           difficulty={partyBoss.difficulty}
@@ -317,6 +317,8 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
             crystalSharesTotal: partyBoss.shares.sharesTotal,
             splitFeePercent: partyBoss.shares.splitFeePercent,
           }}
+          // 계산기와 같은 가격(이번 주)이다. 계산기 줄의 금액과 모달의 받는 금액이 같아야 한다.
+          crystalPriceMeso={currentCrystalPriceMeso(partyBoss.bossKey, partyBoss.difficulty, 'weekly', now)}
           // 값만 받아 계산기에 넣는다. 보스 관리의 파티 설정에는 쓰지 않는다.
           // 난이도는 보스 줄의 고르개가 정한다. 그래서 모달은 난이도를 배지로만 보인다.
           onApply={(next) => {

@@ -13,6 +13,7 @@ import {
   optionItemOf,
   pickSpendOption,
   pointToMeso,
+  spentPointToMeso,
   spendGroupsOf,
   spendRewardCoins,
   spendRewardItemKeys,
@@ -147,6 +148,36 @@ describe('pointToMeso: 나눗셈이다', () => {
   it('시세가 0 이하면 0 이다. Infinity 를 만들지 않는다', () => {
     expect(pointToMeso(30_000, 0)).toBe(0)
     expect(pointToMeso(30_000, -1)).toBe(0)
+  })
+})
+
+/**
+ * 메포 지출의 메포는 메소를 팔아 얻은 것이다. 메소마켓은 메소를 1억 단위로만 팔고, 받는 메포에서 수수료를 떼며 소수점은
+ * 올린다. 쓰고 남은 메포는 수수료 없이 메소로 되돌린다(사용자 확인 2026-11-11, #955).
+ */
+describe('spentPointToMeso: 메소를 1억 단위로 판 것으로 센다', () => {
+  // 이슈의 예시 셋이다.
+  it('필요한 메포를 받을 수 있는 가장 적은 억 수를 팔고 남은 메포를 되돌린다', () => {
+    expect(spentPointToMeso(10_000, 2_116, 1)).toBe(477_551_985)
+    expect(spentPointToMeso(20_000, 2_000, 1)).toBe(1_011_000_000)
+    expect(spentPointToMeso(2_095, 2_116, 1)).toBe(100_000_000)
+  })
+
+  // 요율이 비어 있던 메포 지출도 억 단위로 판 것은 같다.
+  it('요율이 없으면 수수료만 0 이다', () => {
+    expect(spentPointToMeso(2_100, 2_100, null)).toBe(100_000_000)
+    expect(spentPointToMeso(2_101, 2_100, null)).toBe(200_000_000 - Math.floor((2_099 * 100_000_000) / 2_100))
+  })
+
+  it('메포가 0 이면 0 이고, 시세가 0 이하이면 0 이다', () => {
+    expect(spentPointToMeso(0, 2_116, 1)).toBe(0)
+    expect(spentPointToMeso(2_000, 0, 1)).toBe(0)
+    expect(spentPointToMeso(2_000, -1, 1)).toBe(0)
+  })
+
+  // 한 번에 곱해 나누면 끝자리가 튈 수 있다. 정수로만 센다.
+  it('큰 메포에서도 정수다', () => {
+    expect(Number.isInteger(spentPointToMeso(1_588_256, 2_079, 1))).toBe(true)
   })
 })
 

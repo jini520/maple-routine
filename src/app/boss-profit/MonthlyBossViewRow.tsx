@@ -125,12 +125,12 @@ export function MonthlyBossViewRow(props: {
 }
 
 /**
- * `2인 · 9월 2일 완료`. 처치일을 모르면 날짜를 뺀다.
+ * `2인 · 9월 2일 완료`. 처치일을 모르면 날짜를 뺀다. 분배 방식 `제외` 면 인원 대신 `제외` 다.
  *
  * 그 값은 그 달 앞 2주 안에 앱을 열었을 때만 채워진다. 없는 값을 지어내지 않는다.
  */
 function completionLabel(row: BossProfitRow): string {
-  const party = `${row.partySize ?? 1}인`
+  const party = row.crystalExcluded === true ? '제외' : `${row.partySize ?? 1}인`
   if (row.defeatedOn === null) {
     return `${party} · 완료`
   }

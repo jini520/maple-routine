@@ -12,6 +12,7 @@ import {
   getAutoFeeProfitRecords,
   getBossProfitRecords,
   getBossProfitRecordsRevision,
+  getCrystalLimitRecords,
   getDatedBossProfitRecords,
   getEarliestBossProfitPeriodKeys,
   getManualBossProfitRecordKeys,
@@ -23,6 +24,7 @@ import {
   markBossProfitRecordAuto,
   resetBossProfitRecordsRevisionForTests,
   setBossProfitDefeatedOn,
+  setOverCrystalLimit,
   subscribeBossProfitRecordsRevision,
   updateProfitSplitFees,
   upsertBossProfitRecord,
@@ -174,7 +176,7 @@ describe('처치 날짜', () => {
     await setBossProfitDefeatedOn(key, '2026-10-04')
 
     expect(await getDatedBossProfitRecords(['ocid-1'], '2026-10-01', '2026-10-31')).toEqual([
-      { ocid: 'ocid-1', bossKey: 'black_mage', boss: '검은 마법사', difficulty: 'extreme', periodKey: '2026-10-02', payoutMeso: 500_000, defeatedOn: '2026-10-04' },
+      { ocid: 'ocid-1', bossKey: 'black_mage', boss: '검은 마법사', difficulty: 'extreme', periodKey: '2026-10-02', payoutMeso: 500_000, defeatedOn: '2026-10-04', crystalExcluded: false, overCrystalLimit: false },
     ])
     expect(await getUndatedBossProfitRecords(['ocid-1'], ['2026-10-02'])).toEqual([
       { ocid: 'ocid-1', bossKey: 'lotus', boss: '스우', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-10-02' },
@@ -275,5 +277,75 @@ describe('개정 수', () => {
   it('쓰기가 던지면 안 오른다', async () => {
     await expect(upsertBossProfitRecord(record({ priceMeso: null as unknown as number }))).rejects.toThrow()
     expect(getBossProfitRecordsRevision()).toBe(0)
+  })
+})
+
+describe('분배 방식 `제외`', () => {
+  it('`제외` 기록을 쓰면 다시 읽을 때 `제외` 로 읽는다', async () => {
+    await upsertBossProfitRecord(record({ payoutMeso: 0, crystalExcluded: true }))
+
+    expect((await getBossProfitRecords(['ocid-1'], ['2026-10-02']))[0]).toMatchObject({ payoutMeso: 0, crystalExcluded: true })
+  })
+
+  it('처치를 걷어 드롭만 남은 기간 행은 `제외` 와 한도 초과 표시도 비운다', async () => {
+    await upsertBossProfitRecord(record({ payoutMeso: 0, crystalExcluded: true }))
+    await replaceBossDropRecords('ocid-1', 'black_mage', 'extreme', '2026-10-02', [
+      { dropRecordId: null, category: 'fixed', itemKey: 'black_boss_ring_box', itemName: '', quantity: 1 },
+    ], AT, NO_WORLD)
+    const [limited] = await getCrystalLimitRecords('all')
+    await setOverCrystalLimit([{ id: limited.id, over: true }])
+
+    await deleteBossProfitRecord(key)
+
+    expect(real.inspect((db) => db.prepare('SELECT crystal_excluded, over_crystal_limit FROM boss_party_periods').get()))
+      .toEqual({ crystal_excluded: null, over_crystal_limit: null })
+  })
+})
+
+describe('주간 결정석 판매 한도를 넘긴 처치', () => {
+  it('한도 초과로 적은 기록은 두 읽기 함수가 0 메소로 읽고, 판정용 읽기는 원래 내 몫을 준다', async () => {
+    await upsertBossProfitRecord(record())
+    await setBossProfitDefeatedOn(key, '2026-10-04')
+    const [limited] = await getCrystalLimitRecords('all')
+
+    await setOverCrystalLimit([{ id: limited.id, over: true }])
+
+    expect((await getBossProfitRecords(['ocid-1'], ['2026-10-02']))[0]).toMatchObject({ payoutMeso: 0, overCrystalLimit: true })
+    expect((await getDatedBossProfitRecords(['ocid-1'], '2026-10-01', '2026-10-31'))[0]).toMatchObject({ payoutMeso: 0, overCrystalLimit: true })
+    expect((await getCrystalLimitRecords('all'))[0]).toMatchObject({ payoutMeso: 500_000, overCrystalLimit: true })
+  })
+
+  it('판정용 읽기는 고른 주의 주간 처치만 준다', async () => {
+    await upsertBossProfitRecord(record())
+    await upsertBossProfitRecord(record({ bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-10-09' }))
+    await upsertBossProfitRecord(record({ cycle: 'monthly', periodKey: '2026-10' }))
+
+    expect((await getCrystalLimitRecords(['2026-10-02'])).map((row) => [row.bossKey, row.periodKey, row.cycle, row.worldKey])).toEqual([
+      ['black_mage', '2026-10-02', 'weekly', 'elysium'],
+    ])
+    expect(await getCrystalLimitRecords([])).toEqual([])
+    expect(await getCrystalLimitRecords('all')).toHaveLength(2)
+  })
+
+  it('바뀐 것이 없으면 판을 올리지 않는다', async () => {
+    await upsertBossProfitRecord(record())
+    const [limited] = await getCrystalLimitRecords('all')
+    const before = getBossProfitRecordsRevision()
+
+    await setOverCrystalLimit([])
+    expect(getBossProfitRecordsRevision()).toBe(before)
+
+    await setOverCrystalLimit([{ id: limited.id, over: true }])
+    expect(getBossProfitRecordsRevision()).toBe(before + 1)
+  })
+
+  it('한도 안으로 돌아오면 원래 내 몫을 다시 읽는다', async () => {
+    await upsertBossProfitRecord(record())
+    const [limited] = await getCrystalLimitRecords('all')
+    await setOverCrystalLimit([{ id: limited.id, over: true }])
+
+    await setOverCrystalLimit([{ id: limited.id, over: false }])
+
+    expect((await getBossProfitRecords(['ocid-1'], ['2026-10-02']))[0]).toMatchObject({ payoutMeso: 500_000, overCrystalLimit: false })
   })
 })

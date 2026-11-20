@@ -3,6 +3,7 @@ jest.mock('../window', () => ({ fillScheduleWindow: jest.fn() }))
 jest.mock('../records', () => ({ recordBossProfitFromWindow: jest.fn() }))
 jest.mock('../../boss-profit/defeat-dates', () => ({ resolveDefeatDates: jest.fn() }))
 jest.mock('../../boss-profit/world-leap-records', () => ({ cleanUpWorldLeapDuplicates: jest.fn() }))
+jest.mock('../../boss-profit/world-leap-moves', () => ({ moveWorldLeapRecords: jest.fn() }))
 
 import { syncScheduleWindow } from '../sync'
 
@@ -10,6 +11,7 @@ const { fillScheduleWindow: fillMock } = jest.requireMock('../window') as Record
 const { recordBossProfitFromWindow: recordMock } = jest.requireMock('../records') as Record<string, jest.Mock>
 const { resolveDefeatDates: datesMock } = jest.requireMock('../../boss-profit/defeat-dates') as Record<string, jest.Mock>
 const { cleanUpWorldLeapDuplicates: cleanUpMock } = jest.requireMock('../../boss-profit/world-leap-records') as Record<string, jest.Mock>
+const { moveWorldLeapRecords: moveMock } = jest.requireMock('../../boss-profit/world-leap-moves') as Record<string, jest.Mock>
 
 const NOW = new Date('2026-09-05T03:00:00.000Z')
 
@@ -18,19 +20,22 @@ beforeEach(() => {
   recordMock.mockReset().mockResolvedValue(undefined)
   datesMock.mockReset().mockResolvedValue(0)
   cleanUpMock.mockReset().mockResolvedValue(0)
+  moveMock.mockReset().mockResolvedValue(0)
 })
 
 // 리프 중복 정리는 굳힌 뒤 · 캐기 전이다. 앞이면 방금 쓴 새 기록의 짝을 못 보고, 뒤면 지울 기록의 날짜를 캔다.
-it('채우고 · 굳히고 · 리프 중복을 정리하고 · 캔다. 이 순서다', async () => {
+// 옮기기는 정리 바로 뒤다. 짝을 짓기 전에 옮기면 옛 기록이 새 기록과 같은 기간에 부딪친다.
+it('채우고 · 굳히고 · 리프 중복을 정리하고 · 옛 기록을 옮기고 · 캔다. 이 순서다', async () => {
   const order: string[] = []
   fillMock.mockImplementation(async () => void order.push('fill'))
   recordMock.mockImplementation(async () => void order.push('record'))
   cleanUpMock.mockImplementation(async () => order.push('cleanup'))
+  moveMock.mockImplementation(async () => order.push('move'))
   datesMock.mockImplementation(async () => order.push('dates'))
 
   await syncScheduleWindow(['o1'], NOW)
 
-  expect(order).toEqual(['fill', 'record', 'cleanup', 'dates'])
+  expect(order).toEqual(['fill', 'record', 'cleanup', 'move', 'dates'])
   expect(cleanUpMock).toHaveBeenCalledWith(NOW)
 })
 

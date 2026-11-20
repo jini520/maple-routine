@@ -53,7 +53,24 @@ export function isMaintenanceSyncError(error: ScheduleSyncError | null | undefin
 
 // 호출부가 reject 를 원인으로 변환할 수 있게 export 한다. 피커·온보딩 스텝이
 // `getCharacterPickerRoster` 의 catch 에서 이것을 통과시켜 loadError 로 내려준다.
+/**
+ * 어느 API 키로 부르다 난 실패인지 함께 드는 실패. `toScheduleSyncError` 가 풀어 그 키를 싣는다.
+ *
+ * 넥슨 계정마다 자격이 달라, 실패를 던지는 자리(로스터)와 알림으로 바꾸는 자리(화면)가 멀다. 키를 안 실으면 알림이 키를 전부
+ * 지워 다른 넥슨 계정의 키까지 잃는다.
+ */
+export class CredentialFailure extends Error {
+  constructor(
+    readonly failure: unknown,
+    readonly apiKey: string | undefined,
+  ) {
+    super(failure instanceof Error ? failure.message : String(failure))
+    this.name = 'CredentialFailure'
+  }
+}
+
 export function toScheduleSyncError(error: unknown, apiKey?: string): ScheduleSyncError {
+  if (error instanceof CredentialFailure) return toScheduleSyncError(error.failure, error.apiKey ?? apiKey)
   const 실은키 = apiKey === undefined ? {} : { apiKey }
   // 개발자 키 분기보다 앞이다. 점검은 키 탓이 아니라 개발자 키로 부른 회차도 같은 점검이다.
   if (error instanceof NexonMaintenanceError) {

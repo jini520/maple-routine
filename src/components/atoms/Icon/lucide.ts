@@ -24,6 +24,7 @@ import CalendarClock from 'lucide-react-native/icons/calendar-clock'
 import CalendarPlus from 'lucide-react-native/icons/calendar-plus'
 import Repeat from 'lucide-react-native/icons/repeat'
 import Castle from 'lucide-react-native/icons/castle'
+import ChartLine from 'lucide-react-native/icons/chart-line'
 import TrendingUp from 'lucide-react-native/icons/trending-up'
 import Check from 'lucide-react-native/icons/check'
 import ChevronDown from 'lucide-react-native/icons/chevron-down'
@@ -37,6 +38,7 @@ import CircleCheckBig from 'lucide-react-native/icons/circle-check-big'
 import CircleQuestionMark from 'lucide-react-native/icons/circle-question-mark'
 import CircleUserRound from 'lucide-react-native/icons/circle-user-round'
 import Clock from 'lucide-react-native/icons/clock'
+import Copy from 'lucide-react-native/icons/copy'
 import CloudDownload from 'lucide-react-native/icons/cloud-download'
 import Crosshair from 'lucide-react-native/icons/crosshair'
 import Crown from 'lucide-react-native/icons/crown'
@@ -77,6 +79,7 @@ import Trash2 from 'lucide-react-native/icons/trash-2'
 import RefreshCw from 'lucide-react-native/icons/refresh-cw'
 import RotateCcw from 'lucide-react-native/icons/rotate-ccw'
 import ScrollText from 'lucide-react-native/icons/scroll-text'
+import Search from 'lucide-react-native/icons/search'
 import Settings from 'lucide-react-native/icons/settings'
 import ShoppingCart from 'lucide-react-native/icons/shopping-cart'
 import Signal from 'lucide-react-native/icons/signal'
@@ -96,6 +99,11 @@ import Calculator from 'lucide-react-native/icons/calculator'
 import Divide from 'lucide-react-native/icons/divide'
 import Hammer from 'lucide-react-native/icons/hammer'
 import UserRound from 'lucide-react-native/icons/user-round'
+import Gem from 'lucide-react-native/icons/gem'
+import IdCard from 'lucide-react-native/icons/id-card'
+import Palette from 'lucide-react-native/icons/palette'
+import ChartNoAxesCombined from 'lucide-react-native/icons/chart-no-axes-combined'
+import ReceiptText from 'lucide-react-native/icons/receipt-text'
 import Wrench from 'lucide-react-native/icons/wrench'
 import X from 'lucide-react-native/icons/x'
 
@@ -157,9 +165,11 @@ export const CircleQuestionMarkIcon = withIconInterop(CircleQuestionMark)
 export const CircleUserRoundIcon = withIconInterop(CircleUserRound)
 /** 아직 집계 전(pending 톤). 지금 쓰는 화면 없음. */
 export const ClockIcon = withIconInterop(Clock)
+/** 값을 클립보드에 넣는 버튼. 판매 분배금 계산기의 정산 금액 옆. */
+export const CopyIcon = withIconInterop(Copy)
 /** 새 업데이트 있음. `UpdatePromptModal`(update-available). */
 export const CloudDownloadIcon = withIconInterop(CloudDownload)
-
+/** today 빠른 이동의 사냥 칸. */
 export const CrosshairIcon = withIconInterop(Crosshair)
 /** 앱 밖으로 나가는 이동. `ApiKeyForm` 의 두 링크. */
 export const ExternalLinkIcon = withIconInterop(ExternalLink)
@@ -216,6 +226,9 @@ export const MoonIcon = withIconInterop(Moon)
  */
 export const CalendarIcon = withIconInterop(Calendar)
 
+/** 시세 그래프. MASPI 의 빈 상태 */
+export const ChartLineIcon = withIconInterop(ChartLine)
+
 /** 드롭 데이터가 아직 없는 보스. `BossDropSheet` 빈 상태. */
 export const PackageOpenIcon = withIconInterop(PackageOpen)
 /** 값을 적으러 가는 줄. today 가격 미입력 위젯의 `기록하기`. */
@@ -232,6 +245,8 @@ export const RefreshCwIcon = withIconInterop(RefreshCw)
 export const RotateCcwIcon = withIconInterop(RotateCcw)
 /** 기록된 드롭이 하나도 없을 때. `DropHistoryScreen` 빈 상태. */
 export const ScrollTextIcon = withIconInterop(ScrollText)
+/** 목록을 좁히는 입력 칸. `SearchField`. */
+export const SearchIcon = withIconInterop(Search)
 /** 토스트 액션이 기본 아이콘을 덮을 수 있음을 지키는 자리. `Toast` 테스트. */
 export const SettingsIcon = withIconInterop(Settings)
 
@@ -268,6 +283,16 @@ export const CalculatorIcon = withIconInterop(Calculator)
 export const BellRingIcon = withIconInterop(BellRing)
 /** today 빠른 이동의 캐릭터 관리 칸. 원 안의 얼굴(`CircleUserRound`)은 머리의 관리 버튼 몫이다. */
 export const UserRoundIcon = withIconInterop(UserRound)
+/** today 빠른 이동의 사냥 전리품 판매 칸. */
+export const GemIcon = withIconInterop(Gem)
+/** today 빠른 이동의 계정 관리 칸. */
+export const IdCardIcon = withIconInterop(IdCard)
+/** today 빠른 이동의 테마 칸. */
+export const PaletteIcon = withIconInterop(Palette)
+/** today 빠른 이동의 MASPI 칸. 막대 위 꺾은선이 유틸리티의 MASPI 카드 일러스트와 구성이 같다. */
+export const ChartNoAxesCombinedIcon = withIconInterop(ChartNoAxesCombined)
+/** today 빠른 이동의 거래 내역 칸. */
+export const ReceiptTextIcon = withIconInterop(ReceiptText)
 
 export const WrenchIcon = withIconInterop(Wrench)
 /** 통계 탭. */

@@ -146,3 +146,39 @@ describe('비율 약속. 1/n 이 아니라 2:1 로 나눌 때', () => {
     expect(netProceedsMeso(MAX_SALE_PRICE_MESO, 3) * 100 * 8).toBeLessThanOrEqual(Number.MAX_SAFE_INTEGER)
   })
 })
+
+describe('비율 합 100000', () => {
+  // 친 % 는 비율 합 100000 으로 들어온다. 그 합과 큰 판매가를 곱하면 중간값이 안전 정수를 넘어, 부동소수로
+  // 세면 내림이 한 메소 어긋난다(이 값은 부동소수 셈이 2,244,371,586,571 을 낸다).
+  it('큰 판매가에서도 보낼 금액이 한 메소도 어긋나지 않는다', () => {
+    expect(
+      transferPerMember({
+        salePriceMeso: 2_377_701_637_829,
+        partySize: 2,
+        saleFeePercent: 3,
+        splitFeePercent: 3,
+        myShare: 2_769,
+        sharesTotal: 100_000,
+      }),
+    ).toBe(2_244_371_586_570)
+  })
+})
+
+describe('비율 50%', () => {
+  // 비율은 늘 비율이다(사용자 지정). 파티원 수를 3 으로 바꿔 둔 뒤 비율로 와도 2명 나누기다.
+  it('파티원 수와 상관없이 2명이 똑같이 나눌 때와 같다', () => {
+    const 두명 = transferPerMember({ salePriceMeso: 1_000_000_000, partySize: 2, saleFeePercent: 3, splitFeePercent: 3 })
+    for (const partySize of [2, 3, 6]) {
+      expect(
+        transferPerMember({
+          salePriceMeso: 1_000_000_000,
+          partySize,
+          saleFeePercent: 3,
+          splitFeePercent: 3,
+          myShare: 50_000,
+          sharesTotal: 100_000,
+        }),
+      ).toBe(두명)
+    }
+  })
+})

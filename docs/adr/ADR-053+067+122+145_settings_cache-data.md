@@ -24,10 +24,10 @@
 
 | 그룹(`CacheDataGroupId`) | 화면 이름 | Preferences | SQLite | 지운 뒤 |
 |---|---|---|---|---|
-| `manual` | 수동 선택 항목 | `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` · `hexaStorageChecks` | 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값) | 사용자가 다시 고른다 |
+| `manual` | 수동 선택 항목 | `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` · `hexaStorageChecks` · `lastBossIncomeTransfers` · `lastEpicDungeonRewards` | 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값) | 사용자가 다시 고른다 |
 | `boss` | 보스 처치 · 드롭 | 없음 | 보스 기록 표 셋의 처치 · 드롭 행 | 넥슨 API 가 최근 2주치 처치만 다시 준다. 드롭은 되살릴 수 없다 |
 | `cashbook` | 가계부 | 없음 | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` | 손으로 적은 기록이라 되살릴 수 없다 |
-| `enhancement` | 강화 | 없음 | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` · `event_world_characters` | 가계부 · 통계에서 그 달을 볼 때 넥슨 API 에서 다시 받는다. 조회 한도(약 18개월, `HISTORY_MONTHS_BACK`)보다 이른 날은 다시 받을 수 없다 |
+| `enhancement` | 강화 | 없음 | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` · `enhancement_refetches` · `character_dated_names` · `character_first_days` | 가계부 · 통계에서 그 달을 볼 때 넥슨 API 에서 다시 받는다. 조회 한도(약 18개월, `HISTORY_MONTHS_BACK`)보다 이른 날은 다시 받을 수 없다 |
 | `cache` | 캐시 | `schedulerCache:*` · `characterBasicCache:*` · `mesoRateCache:*` · `eventWorldNames` | `query_cache` | 다시 띄운 앱이 평소 켤 때처럼 회차와 공지를 받는다. 메소 획득량의 마지막 성공값은 다음 조회가 채울 때까지 빈다 |
 
 - 지울 것을 그룹마다 목록으로 적고, 목록에 없는 키와 표는 지우지 않는다. 이 기능은 사용자가 이름을 보고 고르는 기능이라,
@@ -57,7 +57,7 @@
 | 게임 데이터 사본 표 둘 · 받은 그림 | 지우면 다시 받기 전까지 앱을 열 수 없다([[ADR-020]]) |
 | 조회 원장(`scheduleProbe:*`) | 13일 창이 이 원장을 보고 부를 날을 정한다. 지우면 다시 띄우자마자 넥슨 API 를 한꺼번에 다시 불러 호출 한도에 걸릴 수 있다([[ADR-028]]) |
 | 캐릭터 이력(`character_profiles` · `character_accounts` · `character_world_leaps` · `mvp_grade_history`) | 기록을 화면에 그리는 데 쓰인다. 지우면 남은 기록이 이름 없이 화면에서 사라지거나, 월드 이전 기간이 두 번 세어진다. 등급 이력은 사용자가 적은 값이다([[ADR-050]]) |
-| 이전 버전 사본(옛 `enhancement_history` · `boss_profit_records` · `boss_drop_records` · `boss_party_settings` · `boss_party_period_overrides` · `income_records` · `spend_records`) | 지금 코드는 읽지도 쓰지도 않는다. v1.0.14 에서 코드가 표를 지운다 |
+| 옛 강화 원본(`enhancement_history`) | 합계로 옮기기 전의 기기에만 있고, 옮긴 뒤 코드가 지운다([[ADR-101]] 결정 27). 옛 보스 · 가계부 표 여섯은 DB 버전 23 이 지운다([[ADR-078]] 결정 9) |
 | 추적 캐릭터 · 대표 캐릭터(`trackedCharacters` · `representativeCharacter`) | 추적 캐릭터가 없으면 앱을 쓸 수 없어 캐릭터 고르기부터 다시 한다. 대표 캐릭터는 사용자가 고른 값이다 |
 | 인증 · 사용자 설정 · 표시 키(`authMethods` · `theme` · `trackingMode` · 알림 구독 · `partyAppointments` · `pendingTasks` · `enhancementTotalsMoved` · `legacyCleanupDone` 등) | 지우면 로그인 화면으로 돌아가거나, 끈 알림이 다시 오거나, 반쯤 고친 작업이 굳는다. `enhancementTotalsMoved` 가 지워지면 옛 원본을 합계로 다시 옮겨 새로 받은 날의 합계를 옛 값으로 덮는다 |
 

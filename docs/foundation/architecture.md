@@ -77,7 +77,7 @@ src/
 | 무엇 | 어디 |
 |---|---|
 | 화면과 기능의 클라이언트 상태(선택 캐릭터 · 테마 · 인증 · 탭 · 필터) | `features/*/store.ts` 의 zustand 스토어 |
-| 넥슨 · 우리 서버에서 받은 값(스케줄 · 캐릭터 기본 정보 · 캐릭터 목록 · 공지 · 결산 · 직접 완료)과 기기에서 읽은 값(보스 수익 기간 · 가계부 줄 · 드롭 히스토리 · 직접 적은 완료 · 파티 약속) | `features/query/` 의 TanStack Query 캐시 하나. 스케줄 · 기본 정보 · 회차 · 공지는 SQLite `query_cache` 에 저장하고, DB 읽기 쿼리는 표의 판이 오르면 무효화된다(`features/query/invalidation.ts`, [[ADR-142]]). 스토어에는 화면 상태와 결산 · 직접 완료 · 공지 배너를 닫은 기록만 남는다 |
+| 넥슨 · 우리 서버에서 받은 값(스케줄 · 캐릭터 기본 정보 · 캐릭터 목록 · 공지 · 결산 · 직접 완료)과 기기에서 읽은 값(보스 수익 기간 · 가계부 줄 · 드롭 히스토리 · 직접 적은 완료 · 파티 약속) | `features/query/` 의 TanStack Query 캐시 하나. 스케줄 · 기본 정보 · 회차 · 공지는 SQLite `query_cache` 에 저장하고, DB 읽기 쿼리는 표의 판이 오르면 무효화된다(`features/query/invalidation.ts`, [[ADR-142]]). 같은 작업 안에서 오른 표는 한 번에 무효화하고, 안 보이는 화면의 쿼리는 구독을 끊어 다시 보일 때 읽는다. 스토어에는 화면 상태와 결산 · 직접 완료 · 공지 배너를 닫은 기록만 남는다 |
 | 서버에 원본이 있는 게임 데이터 표 | `lib/game-data/` 의 표. `features/game-data/sync.ts` 가 받아 `storage/game-data-copy.ts`(SQLite)와 문서 디렉터리에 둔다([[ADR-020]]) |
 | 기기에 남는 값 | `storage/`. 키와 스키마는 `persistence/` 문서에 있다 |
 
@@ -92,6 +92,7 @@ src/
 | 광고 | `react-native-google-mobile-ads` | `native/adapters/rn-ads.ts`([[ADR-014]]) |
 | 인앱 브라우저 | `expo-web-browser` | `native/adapters/rn-browser.ts` |
 | 햅틱 | `expo-haptics` | `native/adapters/rn-haptics.ts` |
+| 클립보드 | `expo-clipboard` | `native/adapters/rn-clipboard.ts`([[ADR-001]] 결정 12) |
 | 앱 안 리뷰 요청 | `expo-store-review` | `native/adapters/rn-store-review.ts`([[ADR-052]] 결정 10) |
 | uuid | `expo-crypto` | `native/adapters/rn-uuid.ts`([[ADR-074]] 결정 13) |
 | 스플래시 · 상태바 · 시스템 바 · 키보드 · 뒤로 가기 · 색 모드 · 테마 표면 | Expo 모듈 · 로컬 모듈 `app-system-bars` · `app-background` | `native/adapters/rn-*.ts` |

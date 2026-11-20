@@ -3,11 +3,14 @@ import { useAppEntryStore } from '../features/app-entry/store'
 
 import { DropHistoryScreen } from '../app/boss-profit/DropHistoryScreen'
 import { DropPriceScreen } from '../app/boss-profit/DropPriceScreen'
+import { TradeHistoryScreen } from '../app/trade-history/TradeHistoryScreen'
 import { ContentManageScreen } from '../app/content-scheduler/ContentManageScreen'
 import { SignInScreen } from '../app/auth/SignInScreen'
 import { CharacterSetupScreen } from '../app/character-setup/CharacterSetupScreen'
 import { MvpGradeConfirmScreen, MvpGradePickScreen } from '../app/mvp-grade/MvpGradeOnboarding'
 import { SettingsAboutScreen } from '../app/settings/SettingsAboutScreen'
+import { SettingsAccountDetailScreen } from '../app/settings/SettingsAccountDetailScreen'
+import { SettingsAccountsScreen } from '../app/settings/SettingsAccountsScreen'
 import { SettingsCharactersScreen } from '../app/settings/SettingsCharactersScreen'
 import { BossManageScreen } from '../app/boss-scheduler/BossManageScreen'
 import { SettingsNoticeDetailScreen } from '../app/settings/SettingsNoticeDetailScreen'
@@ -21,12 +24,15 @@ import { SettingsMvpGradeHistoryScreen } from '../app/settings/SettingsMvpGradeH
 import { AppSettingsScreen } from '../app/settings/AppSettingsScreen'
 import { SettingsReleaseNotesScreen } from '../app/settings/SettingsReleaseNotesScreen'
 import { ItemSplitScreen } from '../app/utility/ItemSplitScreen'
+import { MaspiItemScreen } from '../app/utility/MaspiItemScreen'
+import { MaspiScreen } from '../app/utility/MaspiScreen'
 import { BossProfitCalculatorScreen } from '../app/utility/BossProfitCalculatorScreen'
 import { BossProfitCalculatorRecordsScreen } from '../app/utility/BossProfitCalculatorRecordsScreen'
 import { ScreenBackdrop } from '../components/templates/ThemeBackdrop/ScreenBackdrop'
 import { LayerStack } from './LayerStack'
 import { PUSH_SCREEN_OPTIONS } from './push-screen-options'
 import { STACK_ROUTE_NAMES, type RootStackParamList, type StackRouteName } from './routes'
+import { ScreenQuerySubscription } from './ScreenQuerySubscription'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
@@ -40,9 +46,12 @@ const STACK_SCREENS = {
   ContentManage: ContentManageScreen,
   DropHistory: DropHistoryScreen,
   DropPrice: DropPriceScreen,
+  TradeHistory: TradeHistoryScreen,
   SettingsReleaseNotes: SettingsReleaseNotesScreen,
   SettingsAbout: SettingsAboutScreen,
   SettingsCharacters: SettingsCharactersScreen,
+  SettingsAccounts: SettingsAccountsScreen,
+  SettingsAccountDetail: SettingsAccountDetailScreen,
   BossManage: BossManageScreen,
   SettingsTheme: SettingsThemeScreen,
   SettingsTextSize: SettingsTextSizeScreen,
@@ -54,6 +63,8 @@ const STACK_SCREENS = {
   AppSettings: AppSettingsScreen,
   SettingsNoticeDetail: SettingsNoticeDetailScreen,
   UtilityItemSplit: ItemSplitScreen,
+  UtilityMaspi: MaspiScreen,
+  UtilityMaspiItem: MaspiItemScreen,
   UtilityBossProfitCalculator: BossProfitCalculatorScreen,
   UtilityBossProfitCalculatorRecords: BossProfitCalculatorRecordsScreen,
 } as const satisfies Record<StackRouteName, React.ComponentType>
@@ -99,7 +110,12 @@ export function RootNavigator(): React.JSX.Element {
       // 모든 화면이 자기 벽지를 들고 다닌다. 안드로이드에서 화면이 불투명해야 전환 중 두 화면이
       // 서로 비치지 않고, 그러면 벽지를 화면이 들어야 한다. iOS 에서는 이 래퍼가 자식을 그대로
       // 통과시킨다(`ScreenBackdrop`).
-      screenLayout={({ children }) => <ScreenBackdrop>{children}</ScreenBackdrop>}
+      screenLayout={({ children, navigation }) => (
+        // 하위 페이지가 덮으면 그 아래 화면은 안 보인다. 기기 DB 쿼리의 구독을 끊어 다시 보일 때 읽게 한다.
+        <ScreenBackdrop>
+          <ScreenQuerySubscription navigation={navigation}>{children}</ScreenQuerySubscription>
+        </ScreenBackdrop>
+      )}
       screenOptions={PUSH_SCREEN_OPTIONS}
     >
       {stage === 'ready' ? (

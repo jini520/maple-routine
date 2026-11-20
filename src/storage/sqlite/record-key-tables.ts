@@ -21,6 +21,8 @@ export const CHARACTER_PROFILES_BODY = `(
     level INTEGER,
     -- 월드 이전 판정이 읽는다. 이름만으로는 옮겨간 캐릭터를 짚을 수 없어 직업이 유일성을 세운다.
     job_class TEXT,
+    -- character_date_create 의 KST 날짜. 리프 뒤에도 그대로라 리프 자동 판정이 이름 · 직업이 같은 다른 캐릭터를 가른다.
+    created_date TEXT,
     updated_at TEXT NOT NULL
   )`
 
@@ -39,7 +41,8 @@ export const CHARACTER_WORLD_LEAPS_BODY = `(
  */
 export const ENHANCEMENT_HISTORY_CHECKS_BODY = `(
     ${ID_COLUMN},
-    nexon_account_id TEXT,
+    -- 다른 두 강화 표와 맞춘다. SQLite 의 UNIQUE 는 NULL 끼리의 중복을 막지 않는다.
+    nexon_account_id TEXT NOT NULL,
     -- 'cube' | 'starforce' | 'potential' | 'soul_potential'
     enhancement_type TEXT NOT NULL,
     -- KST YYYY-MM-DD.
@@ -79,5 +82,7 @@ export const CHARACTER_ACCOUNTS_BODY = `(
     -- KST YYYY-MM-DD. 볼 때마다 줄을 쌓지 않고 두 날짜를 넓힌다.
     first_seen_date TEXT NOT NULL,
     last_seen_date TEXT NOT NULL,
+    -- 그 캐릭터의 월드 key. 목록에서 사라진 캐릭터의 강화 줄도 월드로 가르려고 적는다. 칸이 생기기 전의 행은 NULL.
+    world_key TEXT,
     UNIQUE (ocid, name, account_id)
   )`

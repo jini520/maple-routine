@@ -84,6 +84,7 @@ it('표에 없으면 캐시에서 가져오고, 그 값을 표에 심는다', as
     level: 285,
     // 캐시가 직업을 모르면 `null` 이다. 표의 UPSERT 가 COALESCE 라 이미 박아 둔 값을 안 지운다.
     jobClass: null,
+    createdDate: null,
     updatedAt: NOW,
   })
 })

@@ -47,6 +47,8 @@ export function Segment<T extends string>(props: {
   /** 잠긴 줄. 상자째 흐리고 조각이 안 눌린다. 고를 값이 남은 항목에 없을 때 쓴다. */
   disabled?: boolean
   size?: keyof typeof SIZES
+  /** 참이면 조각이 트랙 폭을 똑같이 나눠 채운다. MASPI 상세의 기간처럼 카드 폭 전체를 쓰는 고르개가 쓴다 */
+  fill?: boolean
   /** 트랙의 배치. 화면 머리 탭은 부모 폭으로 늘지 않게 `self-start` 를 준다 */
   className?: string
 }): React.JSX.Element {
@@ -68,7 +70,7 @@ export function Segment<T extends string>(props: {
         안쪽 줄에 여백이 없어야 한다. 조각이 알리는 `x` 와 아래 상자의 `left: 0` 이
         같은 지점에서 시작해야 상자가 조각 위에 정확히 겹친다.
       */}
-      <View className="flex-row items-center">
+      <View className={`flex-row items-center${props.fill === true ? ' flex-1' : ''}`}>
         {/* 고른 조각을 덮는 상자. 조각마다 배경을 켰다 껐다 하는 대신 이것 하나가 옮겨 간다. */}
         <AnimatedBox
           testID="segment-thumb"
@@ -99,7 +101,7 @@ export function Segment<T extends string>(props: {
                 selectionFeedback()
                 props.onSelect(option)
               }}
-              className={`rounded-full ${size.piece}`}
+              className={`rounded-full ${size.piece}${props.fill === true ? ' flex-1 items-center' : ''}`}
             >
               {/* 글자색은 상자를 안 기다린다. 도착을 기다리면 누른 조각이 그동안 안 눌린
                   것처럼 보인다. */}

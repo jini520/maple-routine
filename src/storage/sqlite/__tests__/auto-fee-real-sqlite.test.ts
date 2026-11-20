@@ -174,7 +174,8 @@ describe('조각 하나가 트랜잭션 하나', () => {
 
     await expect(
       inTransaction(db, async () => {
-        await db.run(`UPDATE income_records SET sale_fee_percent = 3 WHERE id = ?`, ['sale-auto'])
+        await db.run(`UPDATE cashbook_entry_items SET sale_fee_percent = 3 WHERE entry_id = ?`, ['sale-auto'])
+        expect((await getIncomeRecordsBetween('2026-08-23', '2026-08-23'))[0].saleFeePercent).toBe(3)
         throw new Error('앱이 닫혔다')
       }),
     ).rejects.toThrow('앱이 닫혔다')

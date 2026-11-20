@@ -8,11 +8,12 @@
 import { existsSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 
-import { getIncomeRecordsBetween } from '../../income'
+import { saveCharacterProfile } from '../../character-profiles'
+import { getIncomeRecordsBetween, insertIncomeRecord, updateIncomeRecord, type IncomeRecord } from '../../income'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
-import { getSpendRecordsBetween } from '../../spend'
+import { assignOwnerlessSpends, deleteSpendRecord, getSpendRecordsBetween, insertSpendRecord, updateSpendRecord, type SpendRecord } from '../../spend'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
-import { DB_VERSION } from '../migrations'
+import { __setMigrationCeilingForTest, DB_VERSION } from '../migrations'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 let real: RealSqlite
@@ -23,6 +24,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
+  __setMigrationCeilingForTest(null)
   await closeBossProfitDb()
   __resetStoragePortsForTest()
   real.dispose()
@@ -36,14 +38,13 @@ function all(sql: string): Row[] {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
-/** 버전 14 기기를 만든다. 옛 표에 행을 넣고 버전을 되돌린다. */
+/** 버전 14 기기를 만든다. 그 버전까지만 이관한 DB 의 옛 표에 행을 넣는다. */
 async function seedVersion14(seed: (db: DatabaseSync) => void): Promise<void> {
+  __setMigrationCeilingForTest(14)
   await getBossProfitDb()
   await closeBossProfitDb()
-  real.inspect((db) => {
-    seed(db)
-    db.exec('PRAGMA user_version = 14')
-  })
+  real.inspect(seed)
+  __setMigrationCeilingForTest(null)
 }
 
 const SPEND_COLUMNS =
@@ -146,14 +147,12 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
     ])
   })
 
-  it('옛 표는 그대로 남고, 이관은 한 번만 돈다', async () => {
+  it('이관은 한 번만 돈다', async () => {
     await seedVersion14(seedDevice)
     await getBossProfitDb()
     await closeBossProfitDb()
     await getBossProfitDb()
 
-    expect(all('SELECT count(*) AS n FROM spend_records')).toEqual([{ n: 5 }])
-    expect(all('SELECT count(*) AS n FROM income_records')).toEqual([{ n: 4 }])
     expect(all('SELECT count(*) AS n FROM cashbook_entries')).toEqual([{ n: 9 }])
   })
 
@@ -165,13 +164,12 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
 
   // 손입력은 되살릴 API 가 없다. 옮기다 무엇이 틀려도 옮기기 전 DB 를 통째로 되돌릴 수 있어야 한다.
   it('옮기기 전 DB 를 파일째 사본으로 남긴다. 새 DB 는 사본이 없다', async () => {
+    __setMigrationCeilingForTest(14)
     await getBossProfitDb()
     expect(existsSync(backupPath())).toBe(false)
     await closeBossProfitDb()
-    real.inspect((db) => {
-      seedDevice(db)
-      db.exec('PRAGMA user_version = 14')
-    })
+    real.inspect(seedDevice)
+    __setMigrationCeilingForTest(null)
 
     await getBossProfitDb()
 
@@ -206,5 +204,289 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
     } finally {
       backup.close()
     }
+  })
+})
+
+// 리프로 기록을 새 ocid 로 옮겨도 기록은 그때의 월드에 남아야 한다. 그래서 적을 때의 월드를 기록이 든다.
+describe('가계부 기록의 월드', () => {
+  const 버프: SpendRecord = {
+    id: '2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a',
+    ocid: 'ocid-1',
+    spentOn: '2026-10-05',
+    category: 'buff',
+    item: null,
+    itemKey: 'seiram_elixir',
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: null,
+    levelTo: null,
+    quantity: 1,
+    mesoAmount: 4_000_000,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
+    cashAmount: null,
+    hexa: null,
+    recordedAt: '2026-10-05T01:00:00.000Z',
+  }
+  const 메이플ID기록: SpendRecord = {
+    ...버프,
+    id: '3e4f5a6b-7c8d-4e9f-8a1b-2c3d4e5f6a7b',
+    ocid: null,
+    accountId: 'acc-1',
+    category: 'etc',
+    item: '패스',
+    itemKey: null,
+  }
+
+  async function saveWorld(ocid: string, world: string, worldKey: string): Promise<void> {
+    await saveCharacterProfile({ ocid, name: ocid, imageUrl: '', world, worldKey, level: 285, jobClass: '레테', updatedAt: '2026-10-01T00:00:00.000Z' })
+  }
+
+  function worldOf(id: string): unknown {
+    return all(`SELECT world_key FROM cashbook_entries WHERE id = '${id}'`)[0]?.world_key
+  }
+
+  it('캐릭터 기록은 적을 때 그 캐릭터의 프로필 월드를 채우고, 메이플 ID 기록은 비운다', async () => {
+    await saveWorld('ocid-1', '엘리시움', 'elysium')
+
+    await insertSpendRecord(버프)
+    await insertSpendRecord(메이플ID기록)
+
+    expect(worldOf(버프.id)).toBe('elysium')
+    expect(worldOf(메이플ID기록.id)).toBeNull()
+  })
+
+  // 옮긴 기록을 고칠 때 새 ocid 의 월드로 덮으면 리프 전 기록이 새 월드로 옮겨 간다.
+  it('고칠 때는 캐릭터를 바꿨을 때만 그 캐릭터의 월드로 다시 채운다', async () => {
+    await saveWorld('ocid-1', '챌린저스2', 'challengers_2')
+    await saveWorld('ocid-2', '엘리시움', 'elysium')
+    await saveWorld('ocid-3', '스카니아', 'scania')
+    await insertSpendRecord(버프)
+    real.inspect((db) => db.exec(`UPDATE cashbook_entries SET ocid = 'ocid-2' WHERE id = '${버프.id}'`))
+
+    await updateSpendRecord({ ...버프, ocid: 'ocid-2', mesoAmount: 5_000_000 })
+    expect(worldOf(버프.id)).toBe('challengers_2')
+
+    await updateSpendRecord({ ...버프, ocid: 'ocid-3' })
+    expect(worldOf(버프.id)).toBe('scania')
+  })
+
+  it('주인 모르는 옛 기록을 대표 캐릭터에 붙이면 그 캐릭터의 월드를 채운다', async () => {
+    await saveWorld('ocid-1', '엘리시움', 'elysium')
+    await insertSpendRecord({ ...버프, ocid: null })
+
+    await assignOwnerlessSpends({ ocid: 'ocid-1', accountId: 'acc-1' }, ['etc'])
+
+    expect(worldOf(버프.id)).toBe('elysium')
+  })
+
+  it('버전 19 는 이미 있는 캐릭터 기록의 월드를 그 캐릭터의 프로필 월드로 채운다', async () => {
+    await saveWorld('ocid-1', '엘리시움', 'elysium')
+    await insertSpendRecord(버프)
+    await insertSpendRecord(메이플ID기록)
+    await closeBossProfitDb()
+    real.inspect((db) => {
+      db.exec('UPDATE cashbook_entries SET world_key = NULL')
+      db.exec('PRAGMA user_version = 18')
+    })
+
+    await getBossProfitDb()
+
+    expect(worldOf(버프.id)).toBe('elysium')
+    expect(worldOf(메이플ID기록.id)).toBeNull()
+  })
+})
+
+describe('메포 지출의 메소마켓 수수료율', () => {
+  const 메포지출: SpendRecord = {
+    id: '4f5a6b7c-8d9e-4f0a-9b1c-2d3e4f5a6b7c',
+    ocid: 'ocid-1',
+    spentOn: '2026-10-05',
+    category: 'content',
+    item: null,
+    itemKey: null,
+    formItemKeys: { exp: 'high_mountain_1', sol_erda: 'high_mountain_2' },
+    itemKind: null,
+    levelFrom: null,
+    levelTo: null,
+    quantity: 1,
+    mesoAmount: null,
+    tariffMeso: null,
+    pointAmount: 37_500,
+    pointPer100mMeso: 1_180,
+    mesoMarketFeePercent: 2,
+    cashAmount: null,
+    hexa: null,
+    recordedAt: '2026-10-05T01:00:00.000Z',
+  }
+  const 메소지출: SpendRecord = {
+    ...메포지출,
+    id: '5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a6b7c8d',
+    formItemKeys: null,
+    itemKey: 'seiram_elixir',
+    category: 'buff',
+    mesoAmount: 4_000_000,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
+  }
+  const 메포수입: IncomeRecord = {
+    id: '6b7c8d9e-0f1a-4b2c-9d3e-4f5a6b7c8d9e',
+    ocid: 'ocid-1',
+    earnedOn: '2026-10-05',
+    category: 'etc',
+    item: '이벤트 보상',
+    itemKey: null,
+    mesoAmount: null,
+    saleFeePercent: null,
+    saleFeeMeso: null,
+    saleFeeAuto: false,
+    pointAmount: 30_000,
+    pointPer100mMeso: 1_180,
+    cashAmount: null,
+    quantity: null,
+    itemKind: null,
+    hunt: null,
+    recordedAt: '2026-10-05T02:00:00.000Z',
+  }
+
+  function feesOf(entryId: string): unknown[] {
+    return all(`SELECT meso_market_fee_percent FROM cashbook_entry_items WHERE entry_id = '${entryId}' ORDER BY sort_order`).map(
+      (row) => row.meso_market_fee_percent,
+    )
+  }
+
+  // 에픽던전 형태 둘은 품목 둘로 나뉜다. 두 품목 모두 같은 요율이어야 되읽은 기록이 그 요율이다.
+  it('적은 요율을 형태마다 품목에 저장하고 그대로 되읽는다', async () => {
+    await insertSpendRecord(메포지출)
+
+    expect(feesOf(메포지출.id)).toEqual([2, 2])
+    const [read] = await getSpendRecordsBetween('2026-10-05', '2026-10-05')
+    expect(read?.mesoMarketFeePercent).toBe(2)
+  })
+
+  it('버전 20 은 메포 지출 품목에만 요율 1 을 채우고, 메소 지출과 메포 수입은 비워 둔다', async () => {
+    await insertSpendRecord({ ...메포지출, mesoMarketFeePercent: null })
+    await insertSpendRecord(메소지출)
+    await insertIncomeRecord(메포수입)
+    await closeBossProfitDb()
+    real.inspect((db) => db.exec('PRAGMA user_version = 19'))
+
+    await getBossProfitDb()
+
+    expect(feesOf(메포지출.id)).toEqual([1, 1])
+    expect(feesOf(메소지출.id)).toEqual([null])
+    expect(feesOf(메포수입.id)).toEqual([null])
+  })
+})
+
+describe('시트 입력 표: 주간 보스 수입 이전 · 메소마켓 환전 수수료', () => {
+  const 기타지출: SpendRecord = {
+    id: '7c8d9e0f-1a2b-4c3d-8e4f-5a6b7c8d9e0f',
+    ocid: 'ocid-1',
+    spentOn: '2026-11-20',
+    category: 'etc',
+    item: '주간 보스 수입 이전',
+    itemKey: null,
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: null,
+    levelTo: null,
+    quantity: 1,
+    mesoAmount: 108_000_000,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
+    cashAmount: null,
+    hexa: null,
+    recordedAt: '2026-11-20T01:00:00.000Z',
+  }
+  const 이전: SpendRecord = {
+    ...기타지출,
+    transfer: { receiverOcid: 'ocid-2', transferMeso: 3_600_000_000, feePercent: 3, feeAuto: true },
+  }
+  const 판매만: SpendRecord = {
+    ...기타지출,
+    id: '8d9e0f1a-2b3c-4d4e-9f5a-6b7c8d9e0f1a',
+    ocid: null,
+    accountId: 'maple-1',
+    item: '메소마켓 환전 수수료',
+    mesoAmount: 4_962_193,
+    exchange: { soldMeso: 500_000_000, sellPointPer100mMeso: 2_116, boughtMeso: null, buyPointPer100mMeso: null, mesoMarketFeePercent: 1 },
+  }
+
+  function countOf(table: string, entryId: string): number {
+    return Number(all(`SELECT COUNT(*) AS n FROM ${table} WHERE entry_id = '${entryId}'`)[0]?.n)
+  }
+
+  it('주간 보스 수입 이전의 시트 입력을 쓰고 그대로 되읽는다', async () => {
+    await insertSpendRecord(이전)
+
+    const [read] = await getSpendRecordsBetween('2026-11-20', '2026-11-20')
+    expect(read).toMatchObject({ category: 'etc', mesoAmount: 108_000_000, transfer: 이전.transfer })
+    expect(read?.exchange).toBeUndefined()
+  })
+
+  it('판매만 적은 환전은 구매 칸을 비워 두고, 구매를 더해 고치면 시트 입력을 갈아 끼운다', async () => {
+    await insertSpendRecord(판매만)
+    const [first] = await getSpendRecordsBetween('2026-11-20', '2026-11-20')
+    expect(first?.exchange).toEqual(판매만.exchange)
+
+    const 구매더함 = {
+      ...판매만,
+      mesoAmount: 20_841_210,
+      exchange: { ...판매만.exchange!, boughtMeso: 400_000_000, buyPointPer100mMeso: 2_200 },
+    }
+    await updateSpendRecord(구매더함)
+
+    const [read] = await getSpendRecordsBetween('2026-11-20', '2026-11-20')
+    expect(read).toMatchObject({ id: 판매만.id, recordedAt: 판매만.recordedAt, exchange: 구매더함.exchange })
+    expect(countOf('cashbook_entry_exchange_inputs', 판매만.id)).toBe(1)
+  })
+
+  it('기록을 지우면 시트 입력도 함께 지워진다', async () => {
+    await insertSpendRecord(이전)
+    await insertSpendRecord(판매만)
+
+    await deleteSpendRecord(이전.id)
+    await deleteSpendRecord(판매만.id)
+
+    expect(countOf('cashbook_entry_transfer_inputs', 이전.id)).toBe(0)
+    expect(countOf('cashbook_entry_exchange_inputs', 판매만.id)).toBe(0)
+  })
+
+  // 고쳐서 금액의 부호가 바뀌면 같은 기록이 지출과 수입 사이를 옮긴다. id 와 적은 시각은 그대로다.
+  it('지출로 적은 환전을 수입으로 고치면 같은 id 로 수입이 된다', async () => {
+    await insertSpendRecord(판매만)
+    const 수입: IncomeRecord = {
+      id: 판매만.id,
+      ocid: null,
+      accountId: 'maple-1',
+      earnedOn: 판매만.spentOn,
+      category: 'etc',
+      item: '메소마켓 환전 수수료',
+      itemKey: null,
+      mesoAmount: 22_448_015,
+      saleFeePercent: null,
+      saleFeeMeso: null,
+      saleFeeAuto: false,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      quantity: 1,
+      itemKind: null,
+      hunt: null,
+      recordedAt: 판매만.recordedAt,
+      exchange: { ...판매만.exchange!, boughtMeso: 500_000_000, buyPointPer100mMeso: 2_000 },
+    }
+
+    await updateIncomeRecord(수입)
+
+    expect(await getSpendRecordsBetween('2026-11-20', '2026-11-20')).toEqual([])
+    const [read] = await getIncomeRecordsBetween('2026-11-20', '2026-11-20')
+    expect(read).toMatchObject({ id: 판매만.id, recordedAt: 판매만.recordedAt, mesoAmount: 22_448_015, exchange: 수입.exchange })
   })
 })

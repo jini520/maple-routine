@@ -1,4 +1,5 @@
 import { imageOfPath } from '../../assets/__tests__/asset-uri'
+import type { HuntingGround, HuntingRegion } from '../../types/hunting-grounds'
 import { getHuntingRegionIconUrl } from '../assets/asset-lookup'
 import {
   huntingRegions,
@@ -27,11 +28,15 @@ describe('monsterLevelRangeOf', () => {
 })
 
 describe('huntingRegionsForLevel', () => {
-  const 이름들 = (level: number | null): string[] =>
-    huntingRegionsForLevel(level).map((each) => each.name)
+  /** 메소 페널티가 바뀐 게임 패치의 전날과 당일. 아래 끝이 이 날짜로 갈린다. */
+  const BEFORE_PATCH = '2026-11-18'
+  const PATCH_DAY = '2026-11-19'
+
+  const 이름들 = (level: number | null, earnedOn: string = BEFORE_PATCH): string[] =>
+    huntingRegionsForLevel(level, earnedOn).map((each) => each.name)
 
   it('캐릭터 레벨을 모르면 **전부** 선다. 고르개가 `선택 안함` 인 상태다', () => {
-    expect(huntingRegionsForLevel(null)).toHaveLength(huntingRegions().length)
+    expect(huntingRegionsForLevel(null, PATCH_DAY)).toHaveLength(huntingRegions().length)
   })
 
   /**
@@ -56,9 +61,10 @@ describe('huntingRegionsForLevel', () => {
   })
 
   /**
-   * 아래로는 20 이다. 그보다 낮은 지역은 페널티가 커져 갈 이유가 없다.
+   * 패치 전 날짜의 기록은 아래로 20 이다. 옛 표에서는 차이 20 이 -20% 라 거기까지 사냥할 만했고,
+   * 그때 적은 기록의 지역이 목록에서 빠지면 수정으로 열 때 지역 칸이 비어 보인다.
    */
-  describe('아래쪽. 20 까지', () => {
+  describe('아래쪽. 패치 전 날짜는 20 까지', () => {
     it('lv.277 에게 고통의 미궁(255-259)은 서고 문브릿지(250-254)는 안 선다', () => {
       const names = 이름들(277)
       expect(names).toContain('고통의 미궁') // 최고 259 ≥ 257
@@ -70,6 +76,23 @@ describe('huntingRegionsForLevel', () => {
       // 걸려 지역이 선다. 추천 레벨(205-209)로 재면 통째로 빠지던 자리다.
       expect(이름들(230)).toContain('리버스 시티')
       expect(이름들(234)).not.toContain('리버스 시티') // 바닥 214 > 213
+    })
+  })
+
+  /**
+   * 새 표에서는 11 레벨 이상 낮은 몬스터의 메소가 0 이다. 그런 사냥터만 있는 지역은 고를 이유가 없다.
+   */
+  describe('아래쪽. 2026-11-19 부터는 10 까지', () => {
+    it('lv.294 에게 아르테리아(280-284)는 서고 도원경(275-279)은 안 선다', () => {
+      const names = 이름들(294, PATCH_DAY)
+      expect(names).toContain('아르테리아') // 최고 284 ≥ 284. 경계는 포함이다
+      expect(names).not.toContain('도원경') // 최고 279 < 284
+    })
+
+    it('같은 레벨이라도 전날의 기록에는 도원경과 오디움이 선다', () => {
+      const names = 이름들(294, BEFORE_PATCH)
+      expect(names).toContain('도원경')
+      expect(names).toContain('오디움') // 최고 274 ≥ 274
     })
   })
 
@@ -90,7 +113,7 @@ describe('huntingRegionsForLevel', () => {
   })
 
   it('레벨이 아주 낮으면 갈 수 있는 데가 없어 빈 목록이다', () => {
-    expect(huntingRegionsForLevel(10)).toEqual([])
+    expect(huntingRegionsForLevel(10, PATCH_DAY)).toEqual([])
   })
 })
 
@@ -150,11 +173,48 @@ describe('huntingGroundsFor', () => {
       expect(huntingGroundsFor(region, 260)).toHaveLength(region.grounds.length)
     }
   })
+
+  /**
+   * **인기 사냥터는 레벨 차이가 같은 사냥터 사이에서만 앞선다**(사용자 지정 2026-11-12). 레벨 차이보다
+   * 앞에 두면 레벨이 먼 인기 사냥터가 가까운 사냥터 위로 올라간다.
+   *
+   * 참조표 순서는 일부러 거꾸로 적었다. 안정 정렬만으로는 기대한 차례가 나오지 않게 하려는 것이다.
+   */
+  describe('인기 사냥터', () => {
+    const 사냥터 = (key: string, level: number, mobs: number, popular: boolean): HuntingGround => ({
+      key,
+      name: key,
+      force: 0,
+      mobs,
+      levels: [level],
+      popular,
+    })
+    const 지역: HuntingRegion = {
+      key: 'region',
+      name: '지역',
+      forceType: 'arcane',
+      iconAssetId: null,
+      grounds: [
+        사냥터('먼 곳', 270, 40, false),
+        사냥터('먼 인기', 270, 40, true),
+        사냥터('가까운 곳', 274, 39, false),
+        사냥터('가까운 인기', 274, 34, true),
+      ],
+    }
+
+    it('레벨 차이가 같으면 마릿수가 적어도 인기 사냥터가 먼저고, 레벨이 먼 인기 사냥터는 가까운 곳을 넘지 않는다', () => {
+      expect(huntingGroundsFor(지역, 274).map((each) => each.key)).toEqual(['가까운 인기', '가까운 곳', '먼 인기', '먼 곳'])
+    })
+
+    it('캐릭터를 안 고르면 차이가 모두 같아 인기 사냥터가 먼저고, 그 안은 마릿수 순이다', () => {
+      expect(huntingGroundsFor(지역, null).map((each) => each.key)).toEqual(['먼 인기', '가까운 인기', '먼 곳', '가까운 곳'])
+    })
+  })
 })
 
 describe('levelGapOf', () => {
   it('레벨이 하나면 그냥 차이다', () => {
-    expect(levelGapOf({ key: '', name: '', force: 0, mobs: 0, levels: [270] }, 274)).toBe(4)
+    expect(levelGapOf({ key: '', name: '', force: 0, mobs: 0, levels: [270], popular: false }, 274)).toBe(4)
   })
 
   /**
@@ -162,8 +222,8 @@ describe('levelGapOf', () => {
    * 평균 레벨로 접는 것과는 캐릭터가 두 레벨 **사이**에 있을 때 갈린다(217·219 와 218).
    */
   it('레벨이 둘이면 레벨마다 재서 평균낸다', () => {
-    expect(levelGapOf({ key: '', name: '', force: 0, mobs: 0, levels: [273, 274] }, 274)).toBe(0.5)
-    expect(levelGapOf({ key: '', name: '', force: 0, mobs: 0, levels: [217, 219] }, 218)).toBe(1)
+    expect(levelGapOf({ key: '', name: '', force: 0, mobs: 0, levels: [273, 274], popular: false }, 274)).toBe(0.5)
+    expect(levelGapOf({ key: '', name: '', force: 0, mobs: 0, levels: [217, 219], popular: false }, 218)).toBe(1)
   })
 })
 
@@ -177,7 +237,7 @@ describe('findHuntingGround', () => {
   it('사냥터 key 하나로 **사냥터와 지역이 함께** 나온다. 기록이 지역을 안 적는 이유다', () => {
     const found = findHuntingGround('tallahart_road_of_night_3')
     expect(found?.region.name).toBe('탈라하트')
-    expect(found?.ground).toEqual({ key: 'tallahart_road_of_night_3', name: '밤의 길 3', force: 700, mobs: 40, levels: [294] })
+    expect(found?.ground).toEqual({ key: 'tallahart_road_of_night_3', name: '밤의 길 3', force: 700, mobs: 40, levels: [294], popular: false })
   })
 
   it('모르는 key 는 `null` 이다. 그때는 계산기가 안 선다', () => {
@@ -208,5 +268,24 @@ describe('지역 아이콘', () => {
       groundLevels: [{ ground: 'arcs_lobby', level: 265 }],
     })
     expect(table?.regions).toEqual([{ key: 'arcs', name: '호텔 아르크스', forceType: 'authentic', iconAssetId: null }])
+  })
+})
+
+describe('인기 여부', () => {
+  /** 서버 배포 전 응답과 옛 기기 사본에는 이 칸이 없다. 그 응답도 읽혀야 사냥 계산기가 선다. */
+  it('`popular` 가 없는 사냥터는 인기 아님으로 읽고, 있으면 그 값을 읽는다', () => {
+    const table = parseHuntingGrounds({
+      updatedAt: null,
+      regions: [{ key: 'arcs', name: '호텔 아르크스', forceType: 'authentic' }],
+      grounds: [
+        { key: 'arcs_lobby', region: 'arcs', name: '로비', force: 30, mobs: 30 },
+        { key: 'arcs_hall', region: 'arcs', name: '홀', force: 30, mobs: 30, popular: true },
+      ],
+      groundLevels: [
+        { ground: 'arcs_lobby', level: 265 },
+        { ground: 'arcs_hall', level: 265 },
+      ],
+    })
+    expect(table?.grounds.map((each) => each.popular)).toEqual([false, true])
   })
 })

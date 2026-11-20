@@ -109,19 +109,6 @@ export const BOSS_DROP_RECORDS_BODY = `(
     PRIMARY KEY (drop_record_id)
   )`
 
-/**
- * 그룹을 찾는 인덱스. **기본키가 곧 인덱스였던 자리를 메꾼다.**
- *
- * 종전에는 `(ocid, boss_key, difficulty, period_key, drop_index)` 가 기본키라 그 앞부분으로 찾는
- * 조회가 공짜였다. 기본키를 uuid 로 옮기면 그 조회가 전체 스캔이 되므로 인덱스가 선택이 아니다.
- *
- * **`UNIQUE` 가 아니다.** 필요한 것은 조회 속도이고, 유일성을 걸면 한 행씩 고치는 사이에
- * `drop_index` 가 일시적으로 겹쳐 그 자리에서 실패한다.
- */
-export const BOSS_DROP_RECORDS_GROUP_INDEX =
-  'CREATE INDEX IF NOT EXISTS boss_drop_records_group' +
-  ' ON boss_drop_records (ocid, boss_key, difficulty, period_key, drop_index)'
-
 /** 기본키를 보스 key 로 다시 만드는 표 셋. 버전 4 가 이 차례로 돈다. */
 export const BOSS_KEYED_TABLES = [
   { name: 'boss_profit_records', body: BOSS_PROFIT_RECORDS_BODY },
@@ -152,6 +139,14 @@ const SPLIT_CHECKS = `
     CHECK ((split_mode IS NULL) = (party_size IS NULL)),
     CHECK ((split_mode = 'ratio') = (my_share IS NOT NULL AND shares_total IS NOT NULL))`
 
+/**
+ * 분배 방식 `제외`. 조합 행과 기간 행에만 있고 드롭에는 없다. `split_mode` 에 세 번째 값을 넣지 않는 것은 그 `CHECK` 를
+ * 고치려면 표를 다시 만들어야 하고, `boss_parties` 를 지우면 외래키를 타고 기간 행과 드롭까지 지워지기 때문이다.
+ */
+const CRYSTAL_EXCLUDED_COLUMN = `
+    -- 1 이면 결정석을 팔지 않은 처치(제외)다. 분배 칸에는 숨겨 둔 분배가 그대로 남는다.
+    crystal_excluded INTEGER`
+
 const TIME_COLUMNS = `
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL`
@@ -161,7 +156,7 @@ export const BOSS_PARTIES_BODY = `(
     id TEXT NOT NULL PRIMARY KEY,
     ocid TEXT NOT NULL,
     boss_key TEXT NOT NULL,
-    difficulty TEXT NOT NULL,${SPLIT_COLUMNS},${TIME_COLUMNS},${SPLIT_CHECKS},
+    difficulty TEXT NOT NULL,${SPLIT_COLUMNS},${CRYSTAL_EXCLUDED_COLUMN},${TIME_COLUMNS},${SPLIT_CHECKS},
     UNIQUE (ocid, boss_key, difficulty)
   )`
 
@@ -185,7 +180,9 @@ export const BOSS_PARTY_PERIODS_BODY = `(
     -- 처치 날짜(KST YYYY-MM-DD). 모르면 NULL 이다.
     defeated_date TEXT,
     -- 'auto'(동기화) · 'manual'(사용자가 직접 적은 완료).
-    source TEXT CHECK (source IN ('auto', 'manual')),${SPLIT_COLUMNS},${TIME_COLUMNS},${SPLIT_CHECKS},
+    source TEXT CHECK (source IN ('auto', 'manual')),${SPLIT_COLUMNS},${CRYSTAL_EXCLUDED_COLUMN},
+    -- 1 이면 주간 결정석 판매 한도를 넘긴 처치다. payout_meso 는 그대로 두고 읽을 때 0 으로 읽는다.
+    over_crystal_limit INTEGER,${TIME_COLUMNS},${SPLIT_CHECKS},
     CHECK ((clear_status = 'cleared') = (price_meso IS NOT NULL AND payout_meso IS NOT NULL AND source IS NOT NULL AND split_mode IS NOT NULL)),
     CHECK (clear_status = 'cleared' OR defeated_date IS NULL),
     UNIQUE (party_id, period_key)

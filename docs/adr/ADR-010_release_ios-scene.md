@@ -44,6 +44,12 @@ plist 의 방향 넷을 지우면 안 된다.
 
 짧은 변은 창이 아니라 화면에서 잰다. 아이패드 분할 화면에서 창이 좁아져도 기기는 돌 수 있어야 한다.
 
+접는 아이폰은 접고 펼 때 화면이 바뀌는데, UIKit 은 앞서 받은 방향 허용을 그대로 쓴다. 그래서 펼친 화면을 가로로 둔 채
+접으면 커버 화면이 가로로 남았고, 접은 채로 돌려도 돌았다(아이폰 듀오, iOS 27.1 시뮬레이터, 2026-11-15, #945). 그래서
+`SceneDelegate` 가 씬의 화면이 바뀔 때(`windowScene(_:didUpdate:interfaceOrientation:traitCollection:)`) 방향 허용을 다시
+묻게 하고(`setNeedsUpdateOfSupportedInterfaceOrientations`), 짧은 변 600pt 미만 화면이 가로로 누워 있으면 세로로
+되돌린다(`requestGeometryUpdate`). 접는 순간 커버 화면이 0.2초쯤 가로였다가 세로로 돌아온다.
+
 `app.json` 의 `"orientation": "default"` 는 고치지 않는다. 그 값은 `expo prebuild` 가 네이티브 파일로 옮기는
 재료인데, 이 저장소는 prebuild 를 돌리지 않는다. 돌리면 손으로 쓴 네이티브 파일과 릴리스 서명 설정이
 지워진다.
@@ -86,7 +92,7 @@ plist 의 방향 넷을 지우면 안 된다.
 | 파일 | 확인하는 것 |
 |---|---|
 | `src/__tests__/orientation-policy.test.ts` | 결정 2: `MainActivity` 가 `portrait` 인지 본다 |
-| | 결정 3: `Info.plist` 의 아이폰 방향 목록에 가로 둘이 남아 있는지, `AppDelegate` 가 `supportedInterfaceOrientationsFor` 를 덮어써 600 미만에서 `.portrait` 를 돌려주는지 본다 |
+| | 결정 3: `Info.plist` 의 아이폰 방향 목록에 가로 둘이 남아 있는지, `AppDelegate` 가 `supportedInterfaceOrientationsFor` 를 덮어써 600 미만에서 `.portrait` 를 돌려주는지 본다. `SceneDelegate` 가 화면이 바뀔 때 방향 허용을 다시 묻고 600 미만 화면을 세로로 되돌리는지 본다 |
 | `src/__tests__/ios-scene-policy.test.ts` | 결정 4: `Info.plist` 의 씬 매니페스트가 `SceneDelegate` 를 가리키는지, `SceneDelegate.swift` 가 Xcode 타깃의 Sources 에 들어 있는지, 씬이 창을 만들어 `startReactNative` 를 부르고 `AppDelegate` 는 창을 만들지 않는지 본다 |
 | | 결정 5 · 6 · 7: 씬의 창을 `appDelegate.window` 에 넣는지, `UIApplicationSupportsMultipleScenes` 가 `false` 인지, URL 콜백 둘이 `RCTLinkingManager` 로 넘기는지 본다 |
 

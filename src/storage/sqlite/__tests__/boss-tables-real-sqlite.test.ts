@@ -9,7 +9,7 @@
 import type { DatabaseSync } from 'node:sqlite'
 
 import { closeBossProfitDb, getBossProfitDb } from '../db'
-import { DB_VERSION } from '../migrations'
+import { __setMigrationCeilingForTest, DB_VERSION } from '../migrations'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
@@ -21,6 +21,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
+  __setMigrationCeilingForTest(null)
   await closeBossProfitDb()
   __resetStoragePortsForTest()
   real.dispose()
@@ -32,16 +33,13 @@ function all(sql: string): Row[] {
   return real.inspect((db) => db.prepare(sql).all() as Row[])
 }
 
-/** 버전 13 기기를 만든다. 옛 테이블에 행을 넣고 버전을 되돌린다. */
+/** 버전 13 기기를 만든다. 그 버전까지만 이관한 DB 의 옛 테이블에 행을 넣는다. */
 async function seedVersion13(seed: (db: DatabaseSync) => void): Promise<void> {
+  __setMigrationCeilingForTest(13)
   await getBossProfitDb()
   await closeBossProfitDb()
-  real.inspect((db) => {
-    // 새 테이블은 지금 코드가 이미 만들었다. 이관 전 기기처럼 비운다.
-    db.exec('DELETE FROM boss_drops; DELETE FROM boss_party_periods; DELETE FROM boss_parties;')
-    seed(db)
-    db.exec('PRAGMA user_version = 13')
-  })
+  real.inspect(seed)
+  __setMigrationCeilingForTest(null)
 }
 
 const PROFIT_COLUMNS =
@@ -163,14 +161,6 @@ describe('버전 14: 보스 기록 테이블 넷을 셋으로 옮긴다', () => 
 
     expect(all(`SELECT pe.world_key FROM boss_drops d JOIN boss_party_periods pe ON pe.id = d.period_id WHERE d.id = 'd1'`))
       .toEqual([{ world_key: 'elysium' }])
-  })
-
-  it('옛 테이블은 지우지 않는다', async () => {
-    await seedVersion13(seedEdgeCases)
-    await getBossProfitDb()
-
-    expect(all(`SELECT count(*) AS n FROM boss_drop_records`)).toEqual([{ n: 6 }])
-    expect(all(`SELECT count(*) AS n FROM boss_profit_records`)).toEqual([{ n: 3 }])
   })
 
   it('한 번 돈 이관은 다시 안 돈다', async () => {

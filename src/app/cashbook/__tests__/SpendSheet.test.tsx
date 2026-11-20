@@ -68,8 +68,10 @@ async function 그리기(
       // 메이플 ID 보기는 그것을 보는 케이스만 준다.
       accounts={[]}
       loadRememberedLevels={async () => ({})}
-      loadHexaStorages={async () => []}
+      loadHexaStorages={async () => ({ other: null, hunts: [] })}
       hexaStorageChecks={{ useStorage: false, storageAsSpend: false }}
+      lastBossIncomeTransfers={{}}
+      lastEpicDungeonRewards={{}}
       lastPointRate={null}
       onSave={jest.fn()}
       onClose={jest.fn()}
@@ -329,8 +331,9 @@ describe('항목. 고르면 채워진다', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
 
-    // 30,000 메포 ÷ 1,180 × 1억 = 2,542,372,881 메소. 여기서 주화 8개(3억 2천만)가 빠진다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 2237만 2881')
+    // 30,000 메포는 26억을 팔아 받은 30,374 메포에서 쓰고 남은 374 메포를 되돌린 2,568,305,085 메소다. 메소마켓 수수료 1% 를 받는 메포에서 뗀다.
+    // 여기서 주화 8개(3억 2천만)가 빠진다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 4830만 5085')
     // 주화 줄도 메소를 적으므로 큰 숫자의 통화는 그 줄의 이름으로 짚는다.
     expect(view.getByTestId('spend-sheet-amount-unit')).toHaveTextContent(/메소/)
     expect(view.queryByTestId('spend-sheet-amount-hint')).toBeNull()
@@ -378,8 +381,8 @@ describe('세라자르 주화', () => {
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
     await 형태단계(view, '솔 에르다', '2단계')
 
-    // 37,500 메포 ÷ 1,180 × 1억 = 3,177,966,101 메소. 주화 12개는 4억 8천만이다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('26억 9796만 6101')
+    // 37,500 메포는 33억을 팔아 받은 38,551 메포에서 1,051 메포를 되돌린 3,210,932,204 메소다. 주화 12개는 4억 8천만이다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('27억 3093만 2204')
   })
 
   // 메포를 메소로 환산하지 않는 상태라 뺄 값을 얹을 축이 없다. 여기서 주화만 빼면 아직 아무것도
@@ -400,8 +403,8 @@ describe('세라자르 주화', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
 
-    // 7,500 메포 ÷ 10,000 × 1억 = 75,000,000 메소. 주화 4개는 1억 6천만이다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('-8500만')
+    // 7,500 메포는 1억을 팔아 받은 9,900 메포에서 2,400 메포를 되돌린 76,000,000 메소다. 주화 4개는 1억 6천만이다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('-8400만')
   })
 })
 
@@ -754,6 +757,7 @@ const 악몽선경2 = {
   tariffMeso: null,
   pointAmount: 50_000,
   pointPer100mMeso: 1_180,
+  mesoMarketFeePercent: null,
   cashAmount: null,
   hexa: null,
   recordedAt: '2026-08-23T01:00:00.000Z',
@@ -860,7 +864,7 @@ describe('형태별 단계', () => {
     })
   })
 
-  // 큰 숫자는 그 합을 메소로 옮긴 값이다. 37,500 ÷ 1,180 × 1억 = 3,177,966,101 메소.
+  // 큰 숫자는 그 합을 메소로 옮긴 값이다. 37,500 메포는 33억을 팔아 1,051 메포를 되돌린 3,210,932,204 메소다.
   // 거기서 주화 12개(4억 8천만)가 빠진다.
   it('큰 숫자가 그 합을 메소로 든다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
@@ -868,7 +872,7 @@ describe('형태별 단계', () => {
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
     await 형태단계(view, '솔 에르다', '2단계')
 
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('26억 9796만 6101')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('27억 3093만 2204')
   })
 
   // 0단계인 형태를 이름이나 key 에 적으면 **안 산 것이 산 것처럼** 읽힌다.
@@ -884,6 +888,174 @@ describe('형태별 단계', () => {
       item: '악몽선경 솔 에르다 2단계',
       formItemKeys: { sol_erda: 'nightmare_paradise_2' },
     })
+  })
+})
+
+/**
+ * 새 에픽던전 리워드는 던전 타일을 누르면 그 던전을 마지막에 적은 캐릭터와 그 캐릭터의 단계로 채운다. 같은 캐릭터가 매주 같은
+ * 던전에서 같은 단계를 사기 때문이다. 캐릭터를 바꾸면 그 캐릭터의 단계로 바뀐다.
+ */
+describe('에픽던전 마지막 입력', () => {
+  const 기억 = {
+    high_mountain: {
+      last: { ocid: 'ocid-2' },
+      characters: {
+        'ocid-1': { exp: 'high_mountain_1' },
+        'ocid-2': { exp: 'high_mountain_2', sol_erda: 'high_mountain_1' },
+      },
+      accounts: {},
+    },
+  }
+
+  function 고른단계(view: Rendered, 형태: 형태이름): string | undefined {
+    return ['0단계', '1단계', '2단계'].find(
+      (단계) => 형태줄(view, 형태).getByLabelText(단계).props.accessibilityState?.selected === true,
+    )
+  }
+
+  it('던전 타일을 누르면 그 던전을 마지막에 적은 캐릭터와 그 캐릭터의 단계가 선다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, lastPointRate: 1_180, lastEpicDungeonRewards: 기억 })
+
+    await 누르기(view, '하이마운틴')
+
+    expect(view.getByTestId('spend-sheet-chain-value')).toHaveTextContent('아델')
+    expect(고른단계(view, '경험치')).toBe('2단계')
+    expect(고른단계(view, '솔 에르다')).toBe('1단계')
+
+    await 누르기(view, '저장')
+
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      ocid: 'ocid-2',
+      formItemKeys: { exp: 'high_mountain_2', sol_erda: 'high_mountain_1' },
+    })
+  })
+
+  it('캐릭터를 바꾸면 그 캐릭터가 그 던전에서 고른 단계로 바뀌고, 그 캐릭터의 기억이 없으면 0단계다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 기억 })
+    await 누르기(view, '하이마운틴')
+
+    await 캐릭터고르기(view, 'ocid-1')
+
+    expect(고른단계(view, '경험치')).toBe('1단계')
+    expect(고른단계(view, '솔 에르다')).toBe('0단계')
+
+    const 한캐릭터만 = { high_mountain: { ...기억.high_mountain, characters: { 'ocid-2': 기억.high_mountain.characters['ocid-2'] } } }
+    const other = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 한캐릭터만 })
+    await 누르기(other, '하이마운틴')
+
+    await 캐릭터고르기(other, 'ocid-1')
+
+    expect(고른단계(other, '경험치')).toBe('0단계')
+    expect(고른단계(other, '솔 에르다')).toBe('0단계')
+  })
+
+  // 단계를 먼저 고르고 캐릭터를 나중에 고르는 사람이 고른 단계를 잃지 않는다. 기억이 있으면 그 기억이 선다.
+  it('빈 캐릭터 칸에서 처음 고른 캐릭터의 기억이 없으면 먼저 고른 단계가 남고, 기억이 있으면 기억으로 바뀐다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 기억 })
+    await 누르기(view, '앵글러 컴퍼니')
+    await 형태단계(view, '경험치', '2단계')
+
+    await 캐릭터고르기(view, 'ocid-1')
+
+    expect(고른단계(view, '경험치')).toBe('2단계')
+
+    const 주인없음 = { high_mountain: { ...기억.high_mountain, last: { ocid: 'ocid-gone' } } }
+    const other = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 주인없음 })
+    await 누르기(other, '하이마운틴')
+    await 형태단계(other, '솔 에르다', '2단계')
+
+    await 캐릭터고르기(other, 'ocid-1')
+
+    expect(고른단계(other, '경험치')).toBe('1단계')
+    expect(고른단계(other, '솔 에르다')).toBe('0단계')
+  })
+
+  // 다른 타일에서 고른 캐릭터를 남기면 이 던전을 가지 않는 캐릭터로 저장되기 쉽다.
+  it('그 던전의 기억이 없으면 앞에서 고른 캐릭터가 남지 않고 빈 칸 · 0단계로 연다', async () => {
+    const view = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 기억 })
+    await 누르기(view, '하이마운틴')
+    await 누르기(view, '다시 고르기')
+
+    await 누르기(view, '앵글러 컴퍼니')
+
+    expect(view.getByTestId('spend-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
+    expect(고른단계(view, '경험치')).toBe('0단계')
+    expect(고른단계(view, '솔 에르다')).toBe('0단계')
+  })
+
+  // 목록에 없는 값이 줄에 남으면 안 된다.
+  it('목록에 없는 캐릭터는 빈 칸이고, 참조표에서 이 던전의 단계가 아닌 key 는 0단계다', async () => {
+    const 없는캐릭터 = {
+      high_mountain: { last: { ocid: 'ocid-gone' }, characters: { 'ocid-gone': { exp: 'high_mountain_2' } }, accounts: {} },
+    }
+    const view = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 없는캐릭터 })
+
+    await 누르기(view, '하이마운틴')
+
+    expect(view.getByTestId('spend-sheet-chain-value')).toHaveTextContent('캐릭터 선택')
+    expect(고른단계(view, '경험치')).toBe('0단계')
+
+    const 다른던전key = {
+      high_mountain: {
+        last: { ocid: 'ocid-1' },
+        characters: { 'ocid-1': { exp: 'angler_company_1', sol_erda: 'high_mountain_2' } },
+        accounts: {},
+      },
+    }
+    const other = await 그리기({ lastPointRate: 1_180, lastEpicDungeonRewards: 다른던전key })
+
+    await 누르기(other, '하이마운틴')
+
+    expect(고른단계(other, '경험치')).toBe('0단계')
+    expect(고른단계(other, '솔 에르다')).toBe('2단계')
+  })
+
+  it('메이플 ID 로 적은 던전은 그 메이플 ID 와 그 단계가 선다', async () => {
+    const 메이플ID = {
+      high_mountain: { last: { accountId: 'maple-a' }, characters: {}, accounts: { 'maple-a': { exp: 'high_mountain_1' } } },
+    }
+    const view = await 그리기({
+      lastPointRate: 1_180,
+      lastEpicDungeonRewards: 메이플ID,
+      accounts: [{ accountId: 'maple-a', label: '메이플ID-maple-a' }],
+    })
+
+    await 누르기(view, '하이마운틴')
+
+    expect(view.getByTestId('spend-sheet-chain-value')).toHaveTextContent('메이플ID-maple-a')
+    expect(고른단계(view, '경험치')).toBe('1단계')
+  })
+
+  // 수정은 그 기록을 고치는 일이다. 다른 기록의 단계로 덮으면 고치지 않은 칸이 바뀐다.
+  it('수정 시트는 캐릭터를 바꿔도 기억으로 채우지 않는다', async () => {
+    const editing: SpendRecord = {
+      id: 'x',
+      ocid: 'ocid-1',
+      spentOn: '2026-08-23',
+      category: 'content',
+      item: '하이마운틴 경험치 1단계',
+      itemKey: null,
+      formItemKeys: { exp: 'high_mountain_1' },
+      itemKind: null,
+      levelFrom: null,
+      levelTo: null,
+      quantity: 1,
+      mesoAmount: null,
+      tariffMeso: null,
+      pointAmount: 7_500,
+      pointPer100mMeso: 1_180,
+      mesoMarketFeePercent: 1,
+      cashAmount: null,
+      hexa: null,
+      recordedAt: '2026-08-23T00:00:00.000Z',
+    }
+    const view = await 그리기({ editing, onDelete: jest.fn(), lastEpicDungeonRewards: 기억 })
+
+    await 캐릭터고르기(view, 'ocid-2')
+
+    expect(고른단계(view, '경험치')).toBe('1단계')
+    expect(고른단계(view, '솔 에르다')).toBe('0단계')
   })
 })
 
@@ -1044,6 +1216,7 @@ describe('주문서', () => {
         tariffMeso: null,
         pointAmount: null,
         pointPer100mMeso: null,
+        mesoMarketFeePercent: null,
         cashAmount: null,
         hexa: null,
         recordedAt: '2026-08-23T01:00:00.000Z',
@@ -1118,6 +1291,227 @@ async function 관세고르기(view: Rendered, 조각: '없음' | '10%'): Promis
 async function 치기(view: Rendered, text: string): Promise<void> {
   await 카드칸에치기(view, 'spend-sheet-unit-price', text)
 }
+
+/** 이름 칸의 입력 카드에서 치고, 목록의 한 줄을 누른다. */
+async function 목록에서고르기(view: Rendered, testID: string, 친글자: string, 줄: string): Promise<void> {
+  await act(async () => {
+    fireEvent.press(view.getByTestId(testID))
+  })
+  await act(async () => {
+    fireEvent.changeText(view.getByTestId('input-card-value'), 친글자)
+  })
+  await act(async () => {
+    fireEvent.press(view.getByTestId(`input-card-suggestion-${줄}`))
+  })
+}
+
+/** 구매를 보관할 주인. 루디만 메이플 ID 를 안다. */
+const 주인찾기 = async () => (ocid: string) => (ocid === 'ocid-1' ? { accountId: 'maple-a', worldKey: 'scania' } : null)
+
+describe('아이템 구매 · 목록에서 고르기', () => {
+  it('처음에는 종류 칸이 없고, 목록에 없는 이름을 치면 장비로 선다', async () => {
+    const view = await 그리기()
+    await 갈래바꾸기(view, '아이템 구매')
+    expect(view.queryByTestId('spend-sheet-item-kind')).toBeNull()
+
+    await 카드칸에치기(view, 'spend-sheet-name', '소울 에테르 꾸러미')
+
+    expect(within(view.getByTestId('spend-sheet-item-kind')).getByRole('button', { name: '장비', selected: true })).toBeTruthy()
+  })
+
+  it('목록에서 고르면 key 로 저장하고 종류 칸이 숨는다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 갈래바꾸기(view, '아이템 구매')
+    await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
+
+    expect(view.queryByTestId('spend-sheet-item-kind')).toBeNull()
+    await 치기(view, '1000')
+    await 캐릭터고르기(view)
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ category: 'item_purchase', itemKey: 'soul_ether_1', item: null, itemKind: 'consumable' })
+  })
+
+  it('고른 뒤 이름 글자를 고치면 직접 친 이름이 되고, 종류 칸이 고르던 아이템의 종류로 다시 선다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 갈래바꾸기(view, '아이템 구매')
+    await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
+
+    await 카드칸에치기(view, 'spend-sheet-name', '소울 에테르 꾸러미')
+
+    expect(within(view.getByTestId('spend-sheet-item-kind')).getByRole('button', { name: '소비', selected: true })).toBeTruthy()
+    await 치기(view, '1000')
+    await 캐릭터고르기(view)
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: null, item: '소울 에테르 꾸러미', itemKind: 'consumable' })
+  })
+
+  it('특수스킬 반지는 목록에서 레벨째 골라 그 레벨로 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 갈래바꾸기(view, '아이템 구매')
+    await 목록에서고르기(view, 'spend-sheet-name', '리스크테이커', 'risk_taker_ring@3')
+
+    expect(view.getByTestId('spend-sheet-name')).toHaveTextContent('리스크테이커 링 Lv.3')
+    await 치기(view, '500000000')
+    await 캐릭터고르기(view)
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'risk_taker_ring', ringLevel: 3, itemKind: 'equipment', quantity: null })
+  })
+
+  // 인벤토리는 목록에 있는 아이템만 받고, 주인은 구매 캐릭터의 메이플 ID · 월드다. 체크가 나타났다 사라지면 찾게 되어 늘 둔다.
+  it('보관 체크는 늘 서되 목록에서 고른 아이템과 캐릭터를 갖춰야 눌리고, 켜면 구매 캐릭터의 메이플 ID · 월드로 보관한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave, loadStoreOwnerOf: 주인찾기 })
+    await 갈래바꾸기(view, '아이템 구매')
+    expect(view.getByTestId('spend-sheet-store')).toBeDisabled()
+
+    await 캐릭터고르기(view)
+    await 카드칸에치기(view, 'spend-sheet-name', '소울 에테르 꾸러미')
+    expect(view.getByTestId('spend-sheet-store')).toBeDisabled()
+
+    await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
+    expect(view.getByTestId('spend-sheet-store')).toBeEnabled()
+    expect(view.getByTestId('spend-sheet-store')).not.toBeChecked()
+
+    await act(async () => {
+      fireEvent.press(view.getByTestId('spend-sheet-store'))
+    })
+    await 치기(view, '1000')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'soul_ether_1', inventoryStore: { accountId: 'maple-a', worldKey: 'scania' } })
+  })
+
+  it('메이플 ID 를 모르는 캐릭터의 구매에서는 보관 체크가 눌리지 않는다', async () => {
+    const view = await 그리기({ loadStoreOwnerOf: 주인찾기 })
+    await 갈래바꾸기(view, '아이템 구매')
+    await 캐릭터고르기(view, 'ocid-2')
+    await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
+
+    expect(view.getByTestId('spend-sheet-store')).toBeDisabled()
+  })
+
+  it('보관한 구매를 고치면 고른 아이템이 서고 보관 체크가 켜진 채 열린다', async () => {
+    const view = await 그리기(
+      {
+        loadStoreOwnerOf: 주인찾기,
+        editing: {
+          id: 'p1',
+          ocid: 'ocid-1',
+          spentOn: '2026-08-23',
+          category: 'item_purchase',
+          item: null,
+          itemKey: 'soul_ether_1',
+          formItemKeys: null,
+          itemKind: 'consumable',
+          levelFrom: null,
+          levelTo: null,
+          quantity: 2,
+          mesoAmount: 2000,
+          tariffMeso: null,
+          pointAmount: null,
+          pointPer100mMeso: null,
+          mesoMarketFeePercent: null,
+          cashAmount: null,
+          hexa: null,
+          recordedAt: '2026-08-23T01:00:00.000Z',
+          inventoryItemId: 'inv-1',
+        },
+        onDelete: jest.fn(),
+      },
+      null,
+    )
+
+    expect(view.getByTestId('spend-sheet-name')).toHaveTextContent('1단계 소울 에테르')
+    expect(view.queryByTestId('spend-sheet-item-kind')).toBeNull()
+    expect(view.getByTestId('spend-sheet-store')).toBeChecked()
+  })
+})
+
+// 어떤 아이템을 샀는지 적는 칸. 칸 카드 안 한 줄이면 긴 메모가 말줄임되어 카드 아래에 따로 선다.
+describe('아이템 구매 · 메모', () => {
+  const 보관한구매: SpendRecord = {
+    id: 'p-memo',
+    ocid: 'ocid-1',
+    spentOn: '2026-08-23',
+    category: 'item_purchase',
+    item: null,
+    itemKey: 'dreamy_belt',
+    formItemKeys: null,
+    itemKind: 'equipment',
+    levelFrom: null,
+    levelTo: null,
+    quantity: null,
+    mesoAmount: 3_200_000_000,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
+    cashAmount: null,
+    hexa: null,
+    recordedAt: '2026-08-23T01:00:00.000Z',
+    memo: '17성 3추옵',
+  }
+
+  it('메모 칸은 아이템 구매에만 서고, 누르면 이름 · 자리표시자가 `메모` 이고 맥락 줄이 아이템 이름인 여러 줄 카드가 열린다', async () => {
+    const view = await 그리기()
+    await 갈래바꾸기(view, '기타')
+    expect(view.queryByLabelText('메모 추가')).toBeNull()
+
+    await 갈래바꾸기(view, '아이템 구매')
+    await 목록에서고르기(view, 'spend-sheet-name', '1에르', 'soul_ether_1')
+    await 누르기(view, '메모 추가')
+
+    expect(view.getByTestId('input-card-label')).toHaveTextContent('메모')
+    expect(view.getByTestId('input-card-context')).toHaveTextContent('1단계 소울 에테르')
+    expect(view.getByTestId('input-card-value').props.placeholder).toBe('메모')
+    expect(view.getByTestId('input-card-value').props.multiline).toBe(true)
+  })
+
+  it('적은 메모는 칸에 줄바꿈 그대로 다 보이고, 그 메모로 저장한다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ onSave })
+    await 갈래바꾸기(view, '아이템 구매')
+    await 목록에서고르기(view, 'spend-sheet-name', '몽환', 'dreamy_belt')
+    await 치기(view, '3200000000')
+    await 캐릭터고르기(view)
+
+    await 누르기(view, '메모 추가')
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('input-card-value'), '17성 3추옵\n경매장 최저가')
+    })
+    await act(async () => {
+      fireEvent.press(view.getByTestId('input-card-confirm'))
+    })
+
+    const body = view.getByTestId('spend-sheet-memo-body')
+    expect(body.props.children).toBe('17성 3추옵\n경매장 최저가')
+    expect(body.props.numberOfLines).toBeUndefined()
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'dreamy_belt', memo: '17성 3추옵\n경매장 최저가' })
+  })
+
+  it('수정 시트는 저장된 메모로 열리고, 메모를 지우고 고치면 빈 메모로 넘긴다', async () => {
+    const onSave = jest.fn()
+    const view = await 그리기({ editing: 보관한구매, onDelete: jest.fn(), onSave }, null)
+    expect(view.getByTestId('spend-sheet-memo-body').props.children).toBe('17성 3추옵')
+
+    await 누르기(view, '메모 고치기')
+    // 글자 칸은 한글 조합 때문에 값을 `defaultValue` 로 심는다.
+    expect(view.getByTestId('input-card-value').props.defaultValue).toBe('17성 3추옵')
+    await act(async () => {
+      fireEvent.changeText(view.getByTestId('input-card-value'), '')
+    })
+    await act(async () => {
+      fireEvent.press(view.getByTestId('input-card-confirm'))
+    })
+
+    expect(view.getByLabelText('메모 추가')).toBeTruthy()
+    await 누르기(view, '수정')
+    expect(onSave.mock.calls[0][0].memo ?? '').toBe('')
+  })
+})
 
 describe('아이템 구매', () => {
   /**
@@ -1385,8 +1779,8 @@ describe('시세가 비어 있을 때', () => {
 
     await 카드칸에치기(view, 'spend-sheet-rate', '1180')
 
-    // 2,542,372,881 메소에서 주화 8개(3억 2천만)가 빠진 값이다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 2237만 2881')
+    // 메소마켓 수수료 1% 를 뗀 시세로 바꾼 2,568,053,415 메소에서 주화 8개(3억 2천만)가 빠진 값이다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('22억 4830만 5085')
     // 별표는 **물어본 칸이라는 표시**라 값을 채워도 남는다. `왜 막혔나` 와는 다른 말이다.
     expect(view.getByTestId('spend-sheet-required')).toBeTruthy()
   })
@@ -1471,7 +1865,8 @@ describe('캐릭터 귀속', () => {
   })
 
   // 갈래마다 사용자가 정했다(2026-11-04). 같은 폼을 쓰는 컨텐츠와 이벤트·BM 도 갈린다.
-  it('이벤트·BM 과 기타는 캐릭터 뒤에 메이플 ID 가 서고, 컨텐츠 · 심볼 강화 · 아이템 구매는 캐릭터만 선다', async () => {
+  // 지출 컨텐츠도 메이플 ID 를 고른다. 계정 공유 컨텐츠에 쓴 돈은 캐릭터 하나의 것이 아니다.
+  it('컨텐츠 · 이벤트·BM · 기타는 캐릭터 뒤에 메이플 ID 가 서고, 심볼 강화 · 아이템 구매는 캐릭터만 선다', async () => {
     const 이벤트 = await 그리기({ accounts: 메이플ID둘 }, '이벤트·BM')
     await 누르기(이벤트, '보약 버프 추가 구매')
     expect(await 보기들(이벤트)).toEqual(['ocid-1', 'ocid-2', 'account:maple-a', 'account:maple-b'])
@@ -1481,7 +1876,7 @@ describe('캐릭터 귀속', () => {
 
     const 컨텐츠 = await 그리기({ accounts: 메이플ID둘 })
     await 누르기(컨텐츠, '하이마운틴')
-    expect(await 보기들(컨텐츠)).toEqual(['ocid-1', 'ocid-2'])
+    expect(await 보기들(컨텐츠)).toEqual(['ocid-1', 'ocid-2', 'account:maple-a', 'account:maple-b'])
 
     for (const 갈래 of ['심볼 강화', '아이템 구매'] as const) {
       expect(await 보기들(await 그리기({ accounts: 메이플ID둘 }, 갈래))).toEqual(['ocid-1', 'ocid-2'])
@@ -1579,8 +1974,8 @@ describe('기타. 금액 × 수량', () => {
     await 금액치기(view, '30000')
     await 카드칸에치기(view, 'spend-sheet-quantity', '2')
 
-    // 60,000 메포 ÷ 1,180 × 1억 = 5,084,745,762 메소.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('50억 8474만 5762')
+    // 60,000 메포는 52억을 팔아 받은 60,747 메포에서 747 메포를 되돌린 5,136,694,916 메소다. 메소마켓 수수료 1% 를 받는 메포에서 뗀다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('51억 3669만 4916')
     expect(줄글자(view, 'spend-sheet-unit-price')).toBe('30,000')
   })
 
@@ -1648,6 +2043,7 @@ describe('시작 기간 전인 항목', () => {
         tariffMeso: null,
         pointAmount: 135_000,
         pointPer100mMeso: 1_180,
+        mesoMarketFeePercent: null,
         cashAmount: null,
         hexa: null,
         recordedAt: '2026-09-16T01:00:00.000Z',
@@ -1677,6 +2073,7 @@ describe('수정 모드', () => {
     tariffMeso: null,
     pointAmount: 50_000,
     pointPer100mMeso: 1_180,
+    mesoMarketFeePercent: null,
     cashAmount: null,
     hexa: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
@@ -1794,9 +2191,9 @@ describe('수량 줄', () => {
 
     await 에픽던전(view, '하이마운틴', '경험치', '1단계')
 
-    // 7,500 메포 × 1 ÷ 1,180 × 1억 = 635,593,220 메소에서 주화 4개(1억 6천만)가 빠진다.
+    // 7,500 메포는 7억을 팔아 678 메포를 되돌린 642,542,373 메소이고, 주화 4개(1억 6천만)가 빠진다.
     // 낸 메포를 적던 힌트는 사라졌다.
-    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('4억 7559만 3220')
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('4억 8254만 2373')
   })
 
   it('상한이 여럿인 항목은 수량이 그대로 선다. 규칙이지 특별 취급이 아니다', async () => {
@@ -1918,9 +2315,11 @@ describe('아이템 구매의 종류', () => {
     })
   }
 
+  /** 종류 칸은 목록에 없는 이름을 쳤을 때만 서므로 이름부터 친다. */
   async function 구매(종류?: '소비' | '기타') {
     const view = await 그리기()
     await 갈래바꾸기(view, '아이템 구매')
+    await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     if (종류 !== undefined) await 종류고르기(view, 종류)
     return view
   }
@@ -1971,10 +2370,10 @@ describe('아이템 구매의 종류', () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 갈래바꾸기(view, '아이템 구매')
+    await 카드칸에치기(view, 'spend-sheet-name', '주문서')
     await 종류고르기(view, '소비')
     await 단가치기(view, '12000')
     await 수량치기(view, '300')
-    await 카드칸에치기(view, 'spend-sheet-name', '주문서')
     await 캐릭터고르기(view)
     await 누르기(view, '저장')
 
@@ -2018,6 +2417,7 @@ describe('아이템 구매의 종류', () => {
     const onSave = jest.fn()
     const view = await 그리기({ onSave })
     await 갈래바꾸기(view, '아이템 구매')
+    await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     await 치기(view, '12000')
     await 관세고르기(view, '10%')
 
@@ -2095,6 +2495,7 @@ describe('되짚어 여는 식', () => {
     formItemKeys: null,
     pointAmount: null,
     pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
     cashAmount: null,
     hexa: null,
     recordedAt: '2026-08-23T01:00:00.000Z',
@@ -2122,6 +2523,27 @@ describe('되짚어 여는 식', () => {
 
     // 손을 안 댄 상태의 큰 숫자는 **저장된 총액 그대로**여야 한다(935,000,000 × 1.1 이 아니라).
     expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('9억 3500만')
+  })
+
+  // 요율은 기록마다 저장한다. 지금 규칙(1%)과 달라도 그 기록에 적힌 요율로 그린다.
+  it('메포 기록은 그 기록에 적힌 메소마켓 수수료율로 큰 숫자를 그린다', async () => {
+    const view = await 고치기({
+      ...기록,
+      category: 'etc',
+      item: '메포 지출',
+      itemKind: null,
+      levelFrom: null,
+      levelTo: null,
+      quantity: 1,
+      mesoAmount: null,
+      tariffMeso: null,
+      pointAmount: 9_800,
+      pointPer100mMeso: 1_000,
+      mesoMarketFeePercent: 2,
+    })
+
+    // 9,800 메포 × 1억 ÷ (1,000 × 0.98) = 10억. 지금 규칙 1% 로 그리면 9억 8989만 8989 다.
+    expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent(/^10억$/)
   })
 
   it('그 기록을 그대로 저장하면 값이 안 부푼다', async () => {
@@ -2276,11 +2698,14 @@ describe('갈래마다 자기 폼', () => {
   it('`아이템 구매`의 종류가 갈래를 안 넘어간다', async () => {
     const view = await 그리기()
     await 갈래바꾸기(view, '아이템 구매')
+    // 종류 칸은 목록에 없는 이름을 쳤을 때만 선다.
+    await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     await 누르기(view, '소비')
     expect(view.getByLabelText('소비').props.accessibilityState?.selected).toBe(true)
 
     await 갈래바꾸기(view, '기타')
     await 갈래바꾸기(view, '아이템 구매')
+    await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
 
     // 기본값(장비)으로 돌아온다. 종류가 수량과 관세를 정하므로 남으면 화면이 딴 모양으로 열린다.
     expect(view.getByLabelText('장비').props.accessibilityState?.selected).toBe(true)
@@ -2349,6 +2774,7 @@ describe('수정으로 열 때의 큰 숫자', () => {
       tariffMeso: null,
       pointAmount: null,
       pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
       cashAmount: null,
       hexa: null,
       recordedAt: '2026-08-23T01:00:00.000Z',
@@ -2374,6 +2800,7 @@ describe('아이템 구매의 수량 단위', () => {
   it('소비·기타를 고르면 수량 옆에 개가 선다', async () => {
     const view = await 그리기()
     await 갈래바꾸기(view, '아이템 구매')
+    await 카드칸에치기(view, 'spend-sheet-name', '앱솔 무기')
     await 누르기(view, '소비')
 
     expect(view.getByTestId('spend-sheet-quantity-unit')).toHaveTextContent('개')
@@ -2523,6 +2950,7 @@ describe('심볼 강화', () => {
     tariffMeso: null,
     pointAmount: null,
     pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
     cashAmount: null,
     hexa: null,
     recordedAt: '2026-09-19T01:00:00.000Z',
@@ -2824,10 +3252,13 @@ describe('헥사 매트릭스', () => {
 
   it('보관 중인 조각 사용을 켜면 교환 불가 다음으로 보관에서 가져온 만큼 필요 조각을 줄이고, 원래 수는 취소선으로 남긴다', async () => {
     const onSave = jest.fn()
-    const loadHexaStorages = jest.fn(async () => [
-      { ocid: 'ocid-ren', stored: 120 },
-      { ocid: 'ocid-alt', stored: 100 },
-    ])
+    const loadHexaStorages = jest.fn(async () => ({
+      other: null,
+      hunts: [
+        { ocid: 'ocid-ren', stored: 120 },
+        { ocid: 'ocid-alt', stored: 100 },
+      ],
+    }))
     const view = await 열기({ onSave, loadHexaStorages, loadRememberedLevels: async () => ({ [선참]: 25 }) })
     await 선참25에서28(view)
 
@@ -2860,12 +3291,32 @@ describe('헥사 매트릭스', () => {
     })
   })
 
+  it('메이플 ID · 월드의 기타 조각이 있으면 먼저 가져오고, 모자란 만큼만 캐릭터의 사냥 조각에서 가져와 저장한다', async () => {
+    const onSave = jest.fn()
+    const loadHexaStorages = jest.fn(async () => ({
+      other: { accountId: 'maple-a', worldKey: 'scania', stored: 200 },
+      hunts: [{ ocid: 'ocid-ren', stored: 120 }],
+    }))
+    const view = await 열기({ onSave, loadHexaStorages, loadRememberedLevels: async () => ({ [선참]: 25 }) })
+    await 선참25에서28(view)
+    await 아이디로누르기(view, 'spend-sheet-hexa-use-storage')
+
+    expect(view.getByTestId('spend-sheet-hexa-storage-taken')).toHaveTextContent('300개')
+    await 누르기(view, '저장')
+    expect(onSave.mock.calls[0][0]).toMatchObject({
+      hexa: {
+        storageUses: [{ ocid: 'ocid-ren', fragments: 100 }],
+        otherUse: { accountId: 'maple-a', worldKey: 'scania', fragments: 200 },
+      },
+    })
+  })
+
   // 곱할 개수가 없는데 가격을 치게 하면 저장하려고 아무 값이나 넣게 된다.
   it('교환 불가와 보관이 필요 조각을 다 채우면 가격 입력이 꺼지고 0 메소로 저장하며, 지출 체크를 켜면 가격을 받는다', async () => {
     const onSave = jest.fn()
     const view = await 열기({
       onSave,
-      loadHexaStorages: async () => [{ ocid: 'ocid-ren', stored: 400 }],
+      loadHexaStorages: async () => ({ other: null, hunts: [{ ocid: 'ocid-ren', stored: 400 }] }),
       loadRememberedLevels: async () => ({ [선참]: 25 }),
     })
     await 선참25에서28(view)
@@ -2928,6 +3379,7 @@ describe('헥사 매트릭스', () => {
       tariffMeso: null,
       pointAmount: null,
       pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
       cashAmount: null,
       hexa: {
         fragmentCount: 345,
@@ -2940,7 +3392,7 @@ describe('헥사 매트릭스', () => {
       },
       recordedAt: '2026-08-23T01:00:00.000Z',
     }
-    const loadHexaStorages = jest.fn(async () => [{ ocid: 'ocid-ren', stored: 300 }])
+    const loadHexaStorages = jest.fn(async () => ({ other: null, hunts: [{ ocid: 'ocid-ren', stored: 300 }] }))
     const view = await 그리기({
       characters: 렌,
       editing: 기록,
@@ -2971,6 +3423,7 @@ describe('헥사 매트릭스', () => {
       tariffMeso: null,
       pointAmount: null,
       pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
       cashAmount: null,
       hexa: { fragmentCount: 340, untradableFragmentCount: 0, fragmentPrice: 7_200_000, activation: true, useStorage: false, storageAsSpend: false, storageUses: [] },
       recordedAt: '2026-08-23T01:00:00.000Z',
@@ -3005,6 +3458,7 @@ describe('가격을 치는 버프', () => {
       tariffMeso: null,
       pointAmount: null,
       pointPer100mMeso: null,
+      mesoMarketFeePercent: null,
       cashAmount: null,
       hexa: null,
       recordedAt: '2026-08-23T01:00:00.000Z',
@@ -3070,5 +3524,362 @@ describe('가격을 치는 버프', () => {
     await 누르기(view, '저장')
 
     expect(onSave.mock.calls[0][0]).toMatchObject({ itemKey: 'enhanced_10_luk_potion', mesoAmount: 1_000_000 })
+  })
+})
+
+// ══ 주간 보스 수입 이전 · 메소마켓 환전 수수료 ═══════════════
+//
+// 두 갈래는 시트만 있고 기록은 `기타` 로 저장한다. 서버 갈래 표에 줄이 있어야 카드가 서서, 케이스마다 표에 두 줄을 더한다.
+
+describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 갈래', () => {
+  let original: ReturnType<typeof cashbookCategoriesTable.get>
+
+  beforeEach(() => {
+    original = cashbookCategoriesTable.get()
+    const 기타 = original.categories.find((each) => each.entryType === 'spend' && each.key === 'etc')!
+    cashbookCategoriesTable.set({
+      ...original,
+      categories: [
+        ...original.categories,
+        { ...기타, key: 'boss_income_transfer', name: '주간 보스 수입 이전', description: '부계정 메소 송금 수수료' },
+        { ...기타, key: 'meso_market_exchange', name: '메소마켓 환전 수수료', description: '월드 간 메소 이동 비용' },
+      ],
+    })
+  })
+
+  afterEach(() => {
+    cashbookCategoriesTable.set(original)
+  })
+
+  async function 새갈래고르기(view: Rendered, key: 'boss_income_transfer' | 'meso_market_exchange'): Promise<void> {
+    await act(async () => {
+      fireEvent.press(view.getByTestId(`spend-sheet-category-${key}`))
+    })
+  }
+
+  async function 고르기(view: Rendered, testID: string, value: string): Promise<void> {
+    await act(async () => {
+      fireEvent.press(view.getByTestId(`${testID}-open`))
+    })
+    await act(async () => {
+      fireEvent.press(view.getByTestId(`${testID}-option-${value}`))
+    })
+  }
+
+  describe('주간 보스 수입 이전', () => {
+    it('받는 캐릭터 목록에서 보내는 캐릭터가 빠진다', async () => {
+      const view = await 그리기({}, null)
+      await 새갈래고르기(view, 'boss_income_transfer')
+      await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+      await act(async () => {
+        fireEvent.press(view.getByTestId('spend-sheet-transfer-receiver-open'))
+      })
+
+      expect(view.queryByTestId('spend-sheet-transfer-receiver-option-ocid-1')).toBeNull()
+      expect(view.getByTestId('spend-sheet-transfer-receiver-option-ocid-2')).toBeTruthy()
+    })
+
+    // 체크는 지금 금액이 그 주 결정석 몫이라는 표시다. 손으로 고치면 그 표시가 틀리게 된다.
+    it('체크 박스가 그 주 결정석 몫을 채우고, 금액을 고치면 꺼진다', async () => {
+      const loadWeekCrystalMeso = jest.fn(async () => 3_600_000_000)
+      const view = await 그리기({ loadWeekCrystalMeso }, null)
+      await 새갈래고르기(view, 'boss_income_transfer')
+      await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+      await act(async () => {
+        fireEvent.press(view.getByTestId('spend-sheet-transfer-week'))
+      })
+
+      expect(loadWeekCrystalMeso).toHaveBeenCalledWith('ocid-1', '2026-08-23')
+      expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('3,600,000,000')
+      expect(view.getByTestId('spend-sheet-transfer-week').props.accessibilityState?.checked).toBe(true)
+
+      await 카드칸에치기(view, 'spend-sheet-transfer-amount', '1000000000')
+
+      expect(view.getByTestId('spend-sheet-transfer-week').props.accessibilityState?.checked).toBe(false)
+      expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('1,000,000,000')
+    })
+
+    it('큰 숫자는 받는 캐릭터 요율의 수수료이고, 보내는 캐릭터의 기타 지출과 시트 입력으로 저장한다', async () => {
+      const onSave = jest.fn()
+      const view = await 그리기({ onSave }, null)
+      await 새갈래고르기(view, 'boss_income_transfer')
+      await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+      await 고르기(view, 'spend-sheet-transfer-receiver', 'ocid-2')
+      await 카드칸에치기(view, 'spend-sheet-transfer-amount', '3600000000')
+      const 수수료줄 = within(view.getByTestId('spend-sheet-fee'))
+      await act(async () => {
+        fireEvent.press(수수료줄.getByLabelText('자동'))
+      })
+      await act(async () => {
+        fireEvent.press(수수료줄.getByLabelText('3%'))
+      })
+
+      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('1억 800만')
+
+      await 누르기(view, '저장')
+
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ocid: 'ocid-1',
+          category: 'etc',
+          item: '주간 보스 수입 이전',
+          mesoAmount: 108_000_000,
+          transfer: { receiverOcid: 'ocid-2', transferMeso: 3_600_000_000, feePercent: 3, feeAuto: false },
+        }),
+        { transferFillsWeek: false },
+      )
+    })
+
+    it('기록을 고치면 이 시트로 열리고 체크는 꺼져 있다', async () => {
+      const editing: SpendRecord = {
+        id: 'x',
+        ocid: 'ocid-1',
+        spentOn: '2026-08-23',
+        category: 'etc',
+        item: '주간 보스 수입 이전',
+        itemKey: null,
+        formItemKeys: null,
+        itemKind: null,
+        levelFrom: null,
+        levelTo: null,
+        quantity: 1,
+        mesoAmount: 108_000_000,
+        tariffMeso: null,
+        pointAmount: null,
+        pointPer100mMeso: null,
+        mesoMarketFeePercent: null,
+        cashAmount: null,
+        hexa: null,
+        recordedAt: '2026-08-23T00:00:00.000Z',
+        transfer: { receiverOcid: 'ocid-2', transferMeso: 3_600_000_000, feePercent: 3, feeAuto: false },
+      }
+      const view = await 그리기({ editing, onDelete: jest.fn() })
+
+      expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('주간 보스 수입 이전')
+      expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('3,600,000,000')
+      expect(view.getByTestId('spend-sheet-transfer-week').props.accessibilityState?.checked).toBe(false)
+    })
+
+    /**
+     * 새 기록은 보내는 캐릭터를 고르면 그 캐릭터로 마지막에 적은 받는 캐릭터 · 수수료 · 체크가 선다. 매주 같은 두 캐릭터
+     * 사이에서 같은 방식으로 옮기기 때문이다.
+     */
+    describe('마지막 입력', () => {
+      const 기억 = { 'ocid-1': { receiverOcid: 'ocid-2', feeAuto: false, feePercent: 5, fillsWeek: true } } as const
+
+      function 체크(view: Rendered): boolean | undefined {
+        return view.getByTestId('spend-sheet-transfer-week').props.accessibilityState?.checked
+      }
+
+      function 자동(view: Rendered): boolean | undefined {
+        return within(view.getByTestId('spend-sheet-fee')).getByLabelText('자동').props.accessibilityState?.checked
+      }
+
+      it('보내는 캐릭터를 고르면 기억한 받는 캐릭터 · 수수료 · 체크가 서고, 옮길 메소가 차며, 저장이 체크를 함께 넘긴다', async () => {
+        const onSave = jest.fn()
+        const loadWeekCrystalMeso = jest.fn(async () => 3_600_000_000)
+        const view = await 그리기({ onSave, loadWeekCrystalMeso, lastBossIncomeTransfers: 기억 }, null)
+        await 새갈래고르기(view, 'boss_income_transfer')
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+        expect(view.getByTestId('spend-sheet-transfer-receiver-value')).toHaveTextContent('아델')
+        expect(자동(view)).toBe(false)
+        expect(within(view.getByTestId('spend-sheet-fee')).getByLabelText('5%').props.accessibilityState?.selected).toBe(true)
+        expect(체크(view)).toBe(true)
+        expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('3,600,000,000')
+
+        await 누르기(view, '저장')
+
+        expect(onSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            transfer: { receiverOcid: 'ocid-2', transferMeso: 3_600_000_000, feePercent: 5, feeAuto: false },
+          }),
+          { transferFillsWeek: true },
+        )
+      })
+
+      // 체크로 채운 금액은 앞 캐릭터의 결정석 몫이다. 남기면 다른 캐릭터의 금액으로 저장된다.
+      it('바꾼 캐릭터의 기억이 없으면 처음 상태로 돌아가고, 켜져 있던 체크가 꺼지면 옮길 메소도 빈다', async () => {
+        const view = await 그리기({ loadWeekCrystalMeso: async () => 3_600_000_000, lastBossIncomeTransfers: 기억 }, null)
+        await 새갈래고르기(view, 'boss_income_transfer')
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-2')
+
+        expect(view.getByTestId('spend-sheet-transfer-receiver-value')).toHaveTextContent('캐릭터 선택')
+        expect(자동(view)).toBe(true)
+        expect(체크(view)).toBe(false)
+        // 빈 금액 칸에는 자리표시자 `0` 이 선다.
+        expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('0')
+      })
+
+      // 지우면 사용자가 방금 고른 값을 다시 골라야 한다.
+      it('빈 칸에서 처음 고른 보내는 캐릭터의 기억이 없으면 먼저 고른 받는 캐릭터 · 수수료가 남는다', async () => {
+        const view = await 그리기({ lastBossIncomeTransfers: 기억 }, null)
+        await 새갈래고르기(view, 'boss_income_transfer')
+        await 고르기(view, 'spend-sheet-transfer-receiver', 'ocid-1')
+        const 수수료줄 = within(view.getByTestId('spend-sheet-fee'))
+        await act(async () => {
+          fireEvent.press(수수료줄.getByLabelText('자동'))
+        })
+        await act(async () => {
+          fireEvent.press(수수료줄.getByLabelText('3%'))
+        })
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-2')
+
+        expect(view.getByTestId('spend-sheet-transfer-receiver-value')).toHaveTextContent('루디')
+        expect(자동(view)).toBe(false)
+        expect(within(view.getByTestId('spend-sheet-fee')).getByLabelText('3%').props.accessibilityState?.selected).toBe(true)
+      })
+
+      // 체크가 꺼져 있던 금액은 사용자가 친 값이다.
+      it('체크가 꺼져 있던 금액은 캐릭터를 바꿔도 그대로다', async () => {
+        const 체크없음 = { 'ocid-1': { ...기억['ocid-1'], fillsWeek: false } }
+        const view = await 그리기({ lastBossIncomeTransfers: 체크없음 }, null)
+        await 새갈래고르기(view, 'boss_income_transfer')
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-2')
+        await 카드칸에치기(view, 'spend-sheet-transfer-amount', '1000000000')
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+        expect(view.getByTestId('spend-sheet-transfer-receiver-value')).toHaveTextContent('아델')
+        expect(체크(view)).toBe(false)
+        expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('1,000,000,000')
+      })
+
+      it('기억한 받는 캐릭터가 목록에 없으면 빈 칸이다', async () => {
+        const view = await 그리기({ lastBossIncomeTransfers: { 'ocid-1': { ...기억['ocid-1'], receiverOcid: 'ocid-gone' } } }, null)
+        await 새갈래고르기(view, 'boss_income_transfer')
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+        expect(view.getByTestId('spend-sheet-transfer-receiver-value')).toHaveTextContent('캐릭터 선택')
+      })
+
+      // 수정은 그 기록을 고치는 일이다. 다른 기록의 수수료 · 체크로 덮으면 고치지 않은 칸이 바뀐다.
+      it('수정 시트는 보내는 캐릭터를 바꿔도 기억으로 채우지 않는다', async () => {
+        const loadWeekCrystalMeso = jest.fn(async () => 3_600_000_000)
+        const editing: SpendRecord = {
+          id: 'x',
+          ocid: 'ocid-2',
+          spentOn: '2026-08-23',
+          category: 'etc',
+          item: '주간 보스 수입 이전',
+          itemKey: null,
+          formItemKeys: null,
+          itemKind: null,
+          levelFrom: null,
+          levelTo: null,
+          quantity: 1,
+          mesoAmount: 30_000_000,
+          tariffMeso: null,
+          pointAmount: null,
+          pointPer100mMeso: null,
+          mesoMarketFeePercent: null,
+          cashAmount: null,
+          hexa: null,
+          recordedAt: '2026-08-23T00:00:00.000Z',
+          transfer: { receiverOcid: 'ocid-1', transferMeso: 1_000_000_000, feePercent: 3, feeAuto: false },
+        }
+        const view = await 그리기({ editing, onDelete: jest.fn(), loadWeekCrystalMeso, lastBossIncomeTransfers: 기억 })
+
+        await 고르기(view, 'spend-sheet-transfer-sender', 'ocid-1')
+
+        expect(within(view.getByTestId('spend-sheet-fee')).getByLabelText('3%').props.accessibilityState?.selected).toBe(true)
+        expect(체크(view)).toBe(false)
+        expect(loadWeekCrystalMeso).not.toHaveBeenCalled()
+        expect(줄글자(view, 'spend-sheet-transfer-amount')).toBe('1,000,000,000')
+      })
+    })
+  })
+
+  describe('메소마켓 환전 수수료', () => {
+    const 메이플ID = [{ accountId: 'maple-1', label: '메이플ID-da9b2f21' }]
+
+    it('판매만 쳐도 저장되고, 큰 숫자 위에 지출이 서며 메이플 ID 의 기타 지출로 저장한다', async () => {
+      const onSave = jest.fn()
+      const view = await 그리기({ onSave, accounts: 메이플ID, lastPointRate: 2_116 }, null)
+      await 새갈래고르기(view, 'meso_market_exchange')
+      await 고르기(view, 'spend-sheet-exchange-account', 'maple-1')
+      await 카드칸에치기(view, 'spend-sheet-exchange-sold', '5')
+
+      expect(줄글자(view, 'spend-sheet-exchange-sold')).toBe('500,000,000')
+      expect(view.getByTestId('spend-sheet-exchange-record')).toHaveTextContent('지출')
+      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('496만 2193')
+
+      await 누르기(view, '저장')
+
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ocid: null,
+          accountId: 'maple-1',
+          category: 'etc',
+          mesoAmount: 4_962_193,
+          exchange: { soldMeso: 500_000_000, sellPointPer100mMeso: 2_116, boughtMeso: null, buyPointPer100mMeso: null, mesoMarketFeePercent: 1 },
+        }),
+      )
+    })
+
+    it('구매 메소를 치면 구매 월드 시세가 차야 저장되고, 수익이면 수입이 선다', async () => {
+      const view = await 그리기({ accounts: 메이플ID, lastPointRate: 2_116 }, null)
+      await 새갈래고르기(view, 'meso_market_exchange')
+      await 고르기(view, 'spend-sheet-exchange-account', 'maple-1')
+      await 카드칸에치기(view, 'spend-sheet-exchange-sold', '5')
+      await 카드칸에치기(view, 'spend-sheet-exchange-bought', '5')
+
+      expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(true)
+
+      await 카드칸에치기(view, 'spend-sheet-exchange-buy-rate', '2000')
+
+      expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
+      expect(view.getByTestId('spend-sheet-exchange-record')).toHaveTextContent('수입')
+      expect(view.getByTestId('spend-sheet-amount')).toHaveTextContent('2244만 8015')
+    })
+
+    it('판매만 적은 기록을 고치면 이 시트로 열려 구매를 더할 수 있다', async () => {
+      const editing: SpendRecord = {
+        id: 'x',
+        ocid: null,
+        accountId: 'maple-1',
+        spentOn: '2026-08-23',
+        category: 'etc',
+        item: '메소마켓 환전 수수료',
+        itemKey: null,
+        formItemKeys: null,
+        itemKind: null,
+        levelFrom: null,
+        levelTo: null,
+        quantity: 1,
+        mesoAmount: 4_962_193,
+        tariffMeso: null,
+        pointAmount: null,
+        pointPer100mMeso: null,
+        mesoMarketFeePercent: null,
+        cashAmount: null,
+        hexa: null,
+        recordedAt: '2026-08-23T00:00:00.000Z',
+        exchange: { soldMeso: 500_000_000, sellPointPer100mMeso: 2_116, boughtMeso: null, buyPointPer100mMeso: null, mesoMarketFeePercent: 1 },
+      }
+      const onSave = jest.fn()
+      const view = await 그리기({ editing, onSave, onDelete: jest.fn(), accounts: 메이플ID })
+
+      expect(view.getByTestId('spend-sheet-title')).toHaveTextContent('메소마켓 환전 수수료')
+      expect(줄글자(view, 'spend-sheet-exchange-sold')).toBe('500,000,000')
+
+      await 카드칸에치기(view, 'spend-sheet-exchange-bought', '4')
+      await 카드칸에치기(view, 'spend-sheet-exchange-buy-rate', '2200')
+      await 누르기(view, '수정')
+
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mesoAmount: 20_841_210,
+          exchange: expect.objectContaining({ boughtMeso: 400_000_000, buyPointPer100mMeso: 2_200 }),
+        }),
+      )
+    })
   })
 })

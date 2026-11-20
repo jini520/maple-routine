@@ -25,6 +25,7 @@ import {
 import { findHuntingGroundByName } from '../../lib/cashbook/hunting-grounds'
 import { legacySpendKeysOf } from '../../lib/cashbook/spend-catalog'
 import { dropItemKeyOfName } from '../../lib/drop/drop-items'
+import { sightedOwnerOf, type OwnerSighting } from '../../lib/enhancement/sighted-owner'
 import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
@@ -34,6 +35,9 @@ import type { HuntingIncomeDetail, IncomeRecord } from '../income'
 import type { SqliteDbConnection } from '../ports'
 import type { SpendRecord } from '../spend'
 import { BOSS_DROP_RECORDS_BODY, BOSS_KEYED_TABLES } from './boss-tables'
+import { CASHBOOK_ENTRY_FRAGMENT_USES_BODY } from './cashbook-tables'
+import { ENHANCEMENT_TOTALS_BODY } from './enhancement-tables'
+import { LEGACY_TABLE_NAMES } from './legacy-tables'
 import {
   CHARACTER_ACCOUNTS_BODY,
   CHARACTER_PROFILES_BODY,
@@ -44,7 +48,7 @@ import {
 import { NEW_UUID_SQL } from './uuid'
 
 /** 이 앱의 마지막 DB 버전. 새 기기는 곧바로 이 값이 된다. */
-export const DB_VERSION = 17
+export const DB_VERSION = 23
 
 /**
  * 갈래와 항목 이름을 바꾸며 옛 기록을 옮기던 문장들. 버전 1 이 한 번 돌린다.
@@ -200,6 +204,8 @@ async function rekeyBossTables(db: SqliteDbConnection): Promise<void> {
  * **못 찾는 행은 key 만 비우고 남긴다.** 표에 없는 장비에 쓴 큐브 · 잠재도 실제 지출이라서다.
  */
 async function fillEnhancementItemKeys(db: SqliteDbConnection): Promise<void> {
+  // 새 기기에는 옛 원본 표가 없다.
+  if ((await columnsOf(db, 'enhancement_history')).size === 0) return
   const { values } = await db.query('SELECT DISTINCT target_item FROM enhancement_history')
   for (const row of (values ?? []) as Row[]) {
     const targetItem = String(row.target_item)
@@ -508,6 +514,8 @@ function legacySpendRecordOf(row: Row, id: string): SpendRecord {
     tariffMeso: numberOrNull(row.tariff_meso),
     pointAmount: numberOrNull(row.point_amount),
     pointPer100mMeso: numberOrNull(row.point_per_100m_meso),
+    // 요율은 버전 20 이 채운다.
+    mesoMarketFeePercent: null,
     cashAmount: numberOrNull(row.cash_amount),
     hexa: null,
     recordedAt: row.recorded_at as string,
@@ -621,6 +629,15 @@ async function assertCashbookTotalsMoved(db: SqliteDbConnection): Promise<void> 
 }
 
 /**
+ * 버전 15 앞에 떠 둔 사본 파일의 경로. 같은 폴더에 DB 파일 이름 뒤 `-before-v15` 를 붙인다.
+ *
+ * @param dbFile `PRAGMA database_list` 의 DB 파일 경로
+ */
+export function cashbookBackupPathOf(dbFile: string): string {
+  return `${dbFile.replace(/\.db$/, '')}-before-v15.db`
+}
+
+/**
  * 손입력을 옮기는 버전 15 앞에 DB 파일을 통째로 떠 둔다. 같은 폴더의 `…-before-v15.db` 다.
  *
  * 이미 있으면 덮지 않는다. 한 번 실패하고 다시 여는 기기에서 사본이 첫 사본 그대로여야 하기 때문이다. 다른 이유로 못 뜨면
@@ -631,7 +648,7 @@ async function backupBeforeCashbookMove(db: SqliteDbConnection, current: number)
   const { values } = await db.query('PRAGMA database_list')
   const file = textOrNull((values ?? []).find((row) => row.name === 'main')?.file)
   if (file === null || file === '') return
-  const target = `${file.replace(/\.db$/, '')}-before-v15.db`
+  const target = cashbookBackupPathOf(file)
   try {
     await db.execute(`VACUUM INTO '${target.replace(/'/g, "''")}'`)
   } catch (error: unknown) {
@@ -735,6 +752,186 @@ async function dropCashbookMemo(db: SqliteDbConnection): Promise<void> {
   }
 }
 
+/**
+ * 가계부 기록 표에 메모 칸이 없으면 더한다. 새 DB 도 버전 17 이 표 정의의 칸을 지우므로 `ensureColumn` 이 아니라 여기서 더한다.
+ */
+async function addCashbookMemo(db: SqliteDbConnection): Promise<void> {
+  if (!(await columnsOf(db, 'cashbook_entries')).has('memo')) {
+    await db.execute('ALTER TABLE cashbook_entries ADD COLUMN memo TEXT')
+  }
+}
+
+/**
+ * 캐릭터에 붙은 가계부 기록의 월드 칸을 그 ocid 의 프로필 월드로 채운다. 리프한 캐릭터의 기록을 새 ocid 로 옮기기 전에 채워야
+ * 리프 전 월드가 남는다.
+ */
+async function fillCashbookEntryWorlds(db: SqliteDbConnection): Promise<void> {
+  await db.run(
+    `UPDATE cashbook_entries
+        SET world_key = (SELECT p.world_key FROM character_profiles p WHERE p.ocid = cashbook_entries.ocid)
+      WHERE ocid IS NOT NULL AND world_key IS NULL`,
+  )
+}
+
+/**
+ * 수수료율 칸이 생기기 전에 적은 메포 지출 품목에 메소마켓 수수료율 1 을 채운다.
+ *
+ * 1 은 그때까지의 거래에 붙은 요율이다(사용자 확인). 지금 규칙을 읽어 채우면 규칙이 바뀐 뒤 처음 켠 기기에서 지난 거래에
+ * 새 요율이 붙는다.
+ */
+async function fillMesoMarketFees(db: SqliteDbConnection): Promise<void> {
+  await db.run(
+    `UPDATE cashbook_entry_items
+        SET meso_market_fee_percent = 1
+      WHERE amount_point IS NOT NULL
+        AND meso_market_fee_percent IS NULL
+        AND entry_id IN (SELECT id FROM cashbook_entries WHERE entry_type = 'spend')`,
+  )
+}
+
+/**
+ * 조각 사용 표에 가져온 보관의 경로 칸을 더한다. 인벤토리의 기타 조각은 캐릭터가 아니라 메이플 ID · 월드의 것이라 `ocid` 의
+ * `NOT NULL` 을 떼야 하고, SQLite 는 그것을 ALTER 로 못 해서 표를 다시 쓴다. 옛 줄은 모두 사냥 조각이다. 그때는 사냥 보관밖에 없었다.
+ */
+async function addFragmentUseSources(db: SqliteDbConnection): Promise<void> {
+  const table = 'cashbook_entry_fragment_uses'
+  if ((await columnsOf(db, table)).has('fragment_source')) return
+
+  const rebuilt = `${table}_v21`
+  await db.execute(`CREATE TABLE ${rebuilt} ${CASHBOOK_ENTRY_FRAGMENT_USES_BODY}`)
+  // rowid 차례가 헥사 기록의 보관 차례라(readEntries) 그 차례대로 옮긴다.
+  await db.execute(
+    `INSERT INTO ${rebuilt} (id, entry_id, fragment_source, ocid, fragments)
+     SELECT id, entry_id, 'hunt', ocid, fragments FROM ${table} ORDER BY rowid`,
+  )
+  const before = await countOf(db, table)
+  const after = await countOf(db, rebuilt)
+  if (before !== after) throw new Error(`버전 21 이관이 ${table} 의 행을 잃었다: ${before} → ${after}`)
+  await db.execute(`DROP TABLE ${table}`)
+  await db.execute(`ALTER TABLE ${rebuilt} RENAME TO ${table}`)
+}
+
+/** 합계 표의 값 칸. 다시 쓴 표로 옮길 때 그대로 나른다. */
+const ENHANCEMENT_TOTAL_VALUE_COLUMNS = [
+  'enhancement_type',
+  'item_key',
+  'item_name',
+  'attempts',
+  'attempt_cost_meso',
+  'destroy_defence_cost_meso',
+  'from_star',
+  'to_star',
+  'event_world',
+  'updated_at',
+] as const
+
+/**
+ * 강화 합계 줄에 ocid · 메이플 ID · 월드를 붙이고, 판정 열쇠를 넥슨 계정 id 에서 ocid 로 바꾼다.
+ *
+ * 이관은 넥슨을 부를 수 없어서 앱이 그 이름으로 본 기간(`character_accounts`)으로만 붙인다. 붙이지 못한 줄은 그 날짜 · 종류의
+ * 조회 기록과 함께 지우고 다시 받을 날로 적는다. 수집기가 그 날을 다시 받아 넥슨에서 그날 이름을 찾는다. 같은 캐릭터의 같은 줄이
+ * 계정 id 둘로 들어가 있으면 늦게 적힌 줄을 남긴다. 계정 id 를 새로 받아 같은 날을 두 번 받은 줄이다.
+ *
+ * 조회 기록의 계정 칸을 `NOT NULL` 로 다시 쓰고, 이름으로 이벤트 월드를 가르던 표(`event_world_characters`)를 지운다.
+ */
+async function attachEnhancementOcids(db: SqliteDbConnection): Promise<void> {
+  if (!(await columnsOf(db, 'enhancement_totals')).has('ocid')) await rebuildEnhancementTotals(db)
+  await requireCheckAccounts(db)
+  await db.execute('DROP TABLE IF EXISTS event_world_characters')
+}
+
+async function rebuildEnhancementTotals(db: SqliteDbConnection): Promise<void> {
+  const { values: sightingRows } = await db.query(
+    'SELECT ocid, name, account_id, nexon_account_id, first_seen_date, last_seen_date FROM character_accounts',
+  )
+  const sightings: OwnerSighting[] = (sightingRows ?? []).map((row) => ({
+    ocid: String(row.ocid),
+    name: String(row.name),
+    accountId: String(row.account_id),
+    nexonAccountId: textOrNull(row.nexon_account_id),
+    firstSeenOn: String(row.first_seen_date),
+    lastSeenOn: String(row.last_seen_date),
+  }))
+  const { values: profileRows } = await db.query('SELECT ocid, world_key FROM character_profiles')
+  const worldOf = new Map((profileRows ?? []).map((row) => [String(row.ocid), textOrNull(row.world_key)]))
+
+  const rebuilt = 'enhancement_totals_v18'
+  await db.execute(`CREATE TABLE ${rebuilt} ${ENHANCEMENT_TOTALS_BODY}`)
+  const { values: rows } = await db.query('SELECT * FROM enhancement_totals ORDER BY updated_at, id')
+  const refetch = new Map<string, readonly [string, string, string]>()
+  for (const row of rows ?? []) {
+    const nexonAccountId = String(row.nexon_account_id)
+    const historyDate = String(row.history_date)
+    const owner = sightedOwnerOf(sightings, String(row.character_name), historyDate, nexonAccountId)
+    if (owner === null) {
+      const day = [nexonAccountId, String(row.enhancement_type), historyDate] as const
+      refetch.set(day.join('|'), day)
+      continue
+    }
+    // 늦게 적힌 줄이 이긴다. 줄을 적힌 차례로 읽어, 같은 열쇠의 앞 줄을 뒤 줄 값으로 덮는다.
+    await db.run(
+      `INSERT INTO ${rebuilt}
+         (id, nexon_account_id, history_date, character_name, ocid, account_id, world_key, enhancement_category, item_group,
+          ${ENHANCEMENT_TOTAL_VALUE_COLUMNS.join(', ')})
+       VALUES (${Array.from({ length: 9 + ENHANCEMENT_TOTAL_VALUE_COLUMNS.length }, () => '?').join(', ')})
+       ON CONFLICT (ocid, history_date, enhancement_category, item_group) DO UPDATE SET
+         nexon_account_id = excluded.nexon_account_id,
+         character_name = excluded.character_name,
+         ${ENHANCEMENT_TOTAL_VALUE_COLUMNS.map((column) => `${column} = excluded.${column}`).join(',\n         ')}`,
+      [
+        row.id,
+        nexonAccountId,
+        historyDate,
+        row.character_name,
+        owner.ocid,
+        owner.accountId,
+        worldOf.get(owner.ocid) ?? null,
+        row.enhancement_category,
+        row.item_group,
+        ...ENHANCEMENT_TOTAL_VALUE_COLUMNS.map((column) => row[column] ?? null),
+      ],
+    )
+  }
+  await db.execute('DROP TABLE enhancement_totals')
+  await db.execute(`ALTER TABLE ${rebuilt} RENAME TO enhancement_totals`)
+
+  const now = new Date().toISOString()
+  for (const [nexonAccountId, enhancementType, historyDate] of refetch.values()) {
+    await db.run(
+      'DELETE FROM enhancement_history_checks WHERE nexon_account_id = ? AND enhancement_type = ? AND history_date = ?',
+      [nexonAccountId, enhancementType, historyDate],
+    )
+    await db.run(
+      `INSERT OR IGNORE INTO enhancement_refetches (nexon_account_id, enhancement_type, history_date, created_at)
+       VALUES (?, ?, ?, ?)`,
+      [nexonAccountId, enhancementType, historyDate, now],
+    )
+  }
+}
+
+/** 조회 기록의 계정 칸을 `NOT NULL` 로 다시 쓴다. 비어 있던 행은 빈 글자로 옮겨 부팅 단계가 메인 계정으로 채운다. */
+async function requireCheckAccounts(db: SqliteDbConnection): Promise<void> {
+  const { values } = await db.query('PRAGMA table_info(enhancement_history_checks)')
+  const column = (values ?? []).find((row) => row.name === 'nexon_account_id')
+  if (column === undefined || Number(column.notnull) === 1) return
+
+  const rebuilt = 'enhancement_history_checks_v18'
+  await db.execute(`CREATE TABLE ${rebuilt} ${ENHANCEMENT_HISTORY_CHECKS_BODY}`)
+  // 빈 칸을 빈 글자로 옮기면 같은 날의 줄이 겹칠 수 있다. 늦게 조회한 줄부터 넣어 그 줄이 남는다.
+  await db.execute(
+    `INSERT OR IGNORE INTO ${rebuilt} (id, nexon_account_id, enhancement_type, history_date, next_cursor, settled, checked_at)
+     SELECT id, COALESCE(nexon_account_id, ''), enhancement_type, history_date, next_cursor, settled, checked_at
+       FROM enhancement_history_checks ORDER BY checked_at DESC`,
+  )
+  await db.execute('DROP TABLE enhancement_history_checks')
+  await db.execute(`ALTER TABLE ${rebuilt} RENAME TO enhancement_history_checks`)
+}
+
+/** 버전 14 · 15 가 옮긴 뒤로 읽는 코드가 없는 옛 표 여섯을 지운다. 옛 표의 인덱스도 표와 함께 지워진다. */
+async function dropLegacyTables(db: SqliteDbConnection): Promise<void> {
+  for (const table of LEGACY_TABLE_NAMES) await db.execute(`DROP TABLE IF EXISTS ${table}`)
+}
+
 const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   async (db) => {
     for (const statement of LEGACY_NAME_MIGRATIONS) await db.execute(statement)
@@ -755,9 +952,27 @@ const STEPS: ReadonlyArray<(db: SqliteDbConnection) => Promise<void>> = [
   moveCashbookRecordsToEntries,
   moveRecordKeysToUuid,
   dropCashbookMemo,
+  attachEnhancementOcids,
+  fillCashbookEntryWorlds,
+  fillMesoMarketFees,
+  addFragmentUseSources,
+  addCashbookMemo,
+  dropLegacyTables,
 ]
 
-async function userVersionOf(db: SqliteDbConnection): Promise<number> {
+/** 옛 표 여섯을 지우는 버전. 이 버전 전 DB 만 옛 표를 만든다. */
+export const LEGACY_TABLES_DROPPED_AT = STEPS.indexOf(dropLegacyTables) + 1
+
+/** 테스트가 앞 버전 기기를 만들 때만 거는 이관 상한. `null` 이면 마지막 버전까지 돈다. */
+let migrationCeiling: number | null = null
+
+/** @param version 이 버전까지만 이관한다. `null` 이면 상한을 걷는다 */
+export function __setMigrationCeilingForTest(version: number | null): void {
+  migrationCeiling = version
+}
+
+/** DB 에 적힌 마지막 이관 버전. 새 DB 는 0 이다. */
+export async function userVersionOf(db: SqliteDbConnection): Promise<number> {
   const { values } = await db.query('PRAGMA user_version')
   const version = Number((values?.[0] as Row | undefined)?.user_version)
   return Number.isInteger(version) ? version : 0
@@ -770,7 +985,7 @@ async function userVersionOf(db: SqliteDbConnection): Promise<number> {
 export async function runVersionedMigrations(db: SqliteDbConnection): Promise<void> {
   const current = await userVersionOf(db)
   await backupBeforeCashbookMove(db, current)
-  for (let version = current + 1; version <= DB_VERSION; version += 1) {
+  for (let version = current + 1; version <= (migrationCeiling ?? DB_VERSION); version += 1) {
     await db.execute('BEGIN')
     try {
       await STEPS[version - 1]!(db)

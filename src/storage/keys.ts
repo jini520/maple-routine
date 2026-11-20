@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   // 남은 값을 치우기 위해 이름만 남긴다(로그아웃이 지운다).
   legacySelectedAccountId: 'selectedAccountId',
   theme: 'theme',
+  // 오버 프레임(머리를 원 밖으로 그리는 얼굴) 켜짐. 'on' · 'off', 없으면 켜짐.
+  overFrame: 'overFrame',
   textSize: 'textSize',
   trackingMode: 'trackingMode',
   dropEffect: 'dropEffect',
@@ -41,6 +43,12 @@ export const STORAGE_KEYS = {
   // 헥사 매트릭스 폼의 두 체크(보관 중인 조각 사용 · 지출 체크)의 마지막 상태. 새 기록을 저장할 때만 적는다.
   // 데이터 삭제의 `manual` 그룹이 지운다. 지워지면 다음 폼이 둘 다 꺼진 채로 열릴 뿐이다.
   hexaStorageChecks: 'hexaStorageChecks',
+  // 보내는 캐릭터마다 마지막 `주간 보스 수입 이전` 의 받는 캐릭터 · 수수료 · 체크. `{ [ocid]: { ... } }` JSON 한 칸이고 새
+  // 기록을 저장할 때만 적는다. 데이터 삭제의 `manual` 그룹이 지운다. 지워지면 보내는 캐릭터를 골라도 빈 칸이 설 뿐이다.
+  lastBossIncomeTransfers: 'lastBossIncomeTransfers',
+  // 에픽던전마다 마지막에 적은 캐릭터나 메이플 ID 와, 그 주인마다 고른 형태별 항목 key. 새 기록을 저장할 때만 적는다.
+  // 데이터 삭제의 `manual` 그룹이 지운다. 지워지면 던전 타일을 눌러도 처음 상태로 열릴 뿐이다.
+  lastEpicDungeonRewards: 'lastEpicDungeonRewards',
   // 옛 한 벌 둘. `lastHunts` 가 없을 때 한 번 읽어 그 캐릭터 몫으로 옮기고 지운다.
   lastHuntSelection: 'lastHuntSelection',
   lastHuntToggles: 'lastHuntToggles',
@@ -115,6 +123,12 @@ export const STORAGE_KEYS = {
   statsCumulativeStart: 'statsCumulativeStart',
   // today 빠른 이동 구성(JSON `{ rows, ids }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   quickLinks: 'quickLinks',
+  // 대표 캐릭터가 할 행동 · 표정(JSON `{ [ocid]: { actions, emotions, durationMs, rest } }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
+  figureMotions: 'figureMotions',
+  // today 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID. 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
+  todaySharedMapleId: 'todaySharedMapleId',
+  // 사용자가 바꾼 메이플 ID 이름(JSON `{ [메이플 ID]: 이름 }`). 사용자가 지은 것이라 데이터 삭제 그룹에 넣지 말 것.
+  mapleIdNames: 'mapleIdNames',
   // 하단바 순서(JSON `{ groups, subs }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   barOrder: 'barOrder',
   // MVP 등급 주간 확인을 끈 체크박스(`앞으로 등급은 직접 바꿀게요`). 데이터 삭제 그룹에 넣지 말 것.
@@ -132,8 +146,12 @@ export const STORAGE_KEYS = {
   partyAppointments: 'partyAppointments',
   // 과거 기록을 서버로 어디까지 올렸나(종류마다 마지막으로 보낸 id 와 끝났는지).
   serverBackfill: 'serverBackfill',
-  // 옛 강화 원본 표를 합계로 옮겼나. 원본 표는 v1.0.14 에서 지운다.
+  // 서버가 계정마다 마지막으로 돌려준 메이플 ID 해시와 등록한 부계정 키(로그인마다 키 해시).
+  serverAccounts: 'serverAccounts',
+  // 옛 강화 원본 표를 합계로 옮겼나. 옮긴 뒤 원본 표를 지운다.
   enhancementTotalsMoved: 'enhancementTotalsMoved',
+  // 월드로만 묶던 옛 월드 공유 원장을 메이플 ID 마다 베꼈나. 베낀 뒤 옛 원장을 지운다.
+  worldSharedProgressSplit: 'worldSharedProgressSplit',
   // 주간 보스 수익 계산기의 기록(JSON). 사용자가 남긴 것이라 아무도 되살려 주지 않는다. 데이터 삭제 그룹에 넣지 말 것.
   bossProfitCalculatorRecords: 'bossProfitCalculatorRecords',
   // 1.0.13 전의 게임 데이터 사본(TanStack Query 캐시). 사본은 이제 SQLite 에 있어 안 읽고 켤 때 지우기만 한다.
@@ -144,6 +162,8 @@ export const STORAGE_KEYS = {
   legacyNotices: 'notices',
   // 옛 키 정리가 끝났다는 표식. 있으면 부팅이 정리를 건너뛴다.
   legacyCleanupDone: 'legacyCleanupDone',
+  // 옛 표를 다 지운 뒤 사본 파일을 지우고 VACUUM 했다는 표식. 있으면 다시 돌지 않는다.
+  legacySpaceReclaimed: 'legacySpaceReclaimed',
 } as const
 
 export function schedulerCacheKey(ocid: string): string {
@@ -194,10 +214,17 @@ export function manualTrackedContentKey(ocid: string): string {
   return `manualTrackedContent:${ocid}`
 }
 
-// 월드/계정 단위로 완료가 공유되는 콘텐츠의 진행 상태 원장 키. 월드 부분은 월드 key 다.
-export function worldSharedProgressKey(worldKey: string): string {
-  return `worldSharedProgress:${worldKey}`
+// 월드 단위로 완료가 공유되는 콘텐츠의 진행 상태 원장 키. 같은 월드라도 메이플 ID 가 다르면 따로 센다.
+export function worldSharedProgressKey(accountId: string, worldKey: string): string {
+  return `worldSharedProgress:${accountId}:${worldKey}`
 }
+
+// 월드로만 묶던 옛 원장의 키. 월드 부분은 월드 key 이거나, 그보다 옛 원장은 월드 이름이다. 메이플 ID 마다 베낀 뒤 지운다.
+export function legacyWorldSharedProgressKey(world: string): string {
+  return `worldSharedProgress:${world}`
+}
+
+// 계정 단위로 완료가 공유되는 콘텐츠의 진행 상태 원장 키. 계정은 메이플 ID 다.
 
 export function accountSharedProgressKey(accountId: string): string {
   return `accountSharedProgress:${accountId}`

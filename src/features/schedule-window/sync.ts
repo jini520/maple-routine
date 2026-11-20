@@ -9,6 +9,7 @@
  * (원장·게이트·중복 방지)은 `fillScheduleWindow` 가 이미 들고 있다.
  */
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
+import { moveWorldLeapRecords } from '../boss-profit/world-leap-moves'
 import { cleanUpWorldLeapDuplicates } from '../boss-profit/world-leap-records'
 import { recordBossProfitFromWindow } from './records'
 import { fillScheduleWindow, type ScheduleWindowPlan, type WindowProgress } from './window'
@@ -62,5 +63,6 @@ async function runSyncScheduleWindow(
   await fillScheduleWindow(ocids, now, onProgress, plan).catch(() => undefined)
   await recordBossProfitFromWindow(ocids, now).catch(() => undefined)
   await cleanUpWorldLeapDuplicates(now).catch(() => undefined)
+  await moveWorldLeapRecords().catch(() => undefined)
   await resolveDefeatDates(ocids, now).catch(() => undefined)
 }

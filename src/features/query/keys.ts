@@ -17,14 +17,22 @@ export const queryKeys = {
   scheduleRound: () => ['schedule-round'] as const,
   /** 가계부의 날짜별 줄(두 끝 포함). today 의 이번 주 · 가계부의 달 · 통계의 전 기간이 범위만 달리 든다. */
   ledgerDays: (from: string, to: string) => ['ledger-days', from, to] as const,
+  fragmentMoves: () => ['fragment-moves'] as const,
+  allLedgerDays: () => ['ledger-days'] as const,
   /** 보스 수익 한 기간의 스냅샷. 첫 두 칸만으로 모든 기간을 한꺼번에 무효화한다. */
   bossProfitPeriod: (tab: BossCycle, periodKey: string) => ['boss-profit-period', tab, periodKey] as const,
   /** 드롭 기록 전 기간 묶음과 가뭄 요약. */
   dropHistory: () => ['drop-history'] as const,
+  /** 거래 내역의 줄과 캐릭터 드롭다운. 고를 수 있는 기간 전체를 한 번에 읽어 둘째 칸은 오늘이다. */
+  tradeHistory: (todayDateKey: string) => ['trade-history', todayDateKey] as const,
+  /** 인벤토리 격자의 칸과 칸 얼굴. 사냥 조각을 세는 날이 둘째 칸이다. */
+  inventory: (todayDateKey: string) => ['inventory', todayDateKey] as const,
   /** 오늘 강화 내역을 마지막으로 받은 시각. 수집기가 `setQueryData` 로 넣는다. */
   enhancementToday: () => ['enhancement-today'] as const,
-  /** 자격 하나로 조회되는 전 계정의 캐릭터 목록. 자격이 바뀌면 열쇠가 바뀐다. */
+  /** 넥슨 계정 하나의 캐릭터 목록. 둘째 칸은 그 계정 id 로 만든다. */
   characterList: (credentialKey: string) => ['character-list', credentialKey] as const,
+  /** 캐릭터 목록 전부를 가리키는 앞 칸. */
+  allCharacterLists: () => ['character-list'] as const,
   /** 분류 하나의 공지 목록. */
   notices: (kind: string) => ['notices', kind] as const,
   /** 다섯 분류를 한꺼번에 가리키는 앞 칸. 포커스에 만료된 분류를 다 받는다. */
@@ -43,4 +51,11 @@ export const queryKeys = {
   allMesoRates: () => ['meso-rate'] as const,
   /** 이벤트 월드 캐릭터 이름 배열. 강화 수집기가 `setQueryData` 로 넣는다. */
   eventWorldNames: () => ['event-world-names'] as const,
+  /** 드롭 시세 지수 MASPI. today 위젯과 MASPI 카드가 같이 본다. */
+  marketMaspi: () => ['market-maspi'] as const,
+  /** 장비 신뢰 시세와 그 월드의 소비 신뢰 시세. */
+  marketItems: (world: string) => ['market-items', world] as const,
+  /** 시세 하나의 날마다 값. 반지가 아니면 둘째 칸이 빈 글자다. */
+  marketItem: (itemKey: string, ringLevel: number | null, world: string) =>
+    ['market-item', itemKey, ringLevel === null ? '' : String(ringLevel), world] as const,
 }

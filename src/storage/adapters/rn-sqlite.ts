@@ -5,6 +5,7 @@ import {
   type DB,
   type Scalar,
 } from '@op-engineering/op-sqlite'
+import { File } from 'expo-file-system'
 import { Platform } from 'react-native'
 
 import type { SqliteDbConnection, SqlitePort } from '../ports'
@@ -96,5 +97,10 @@ export const rnSqlitePort: SqlitePort = {
   // `db.ts` 의 `CREATE TABLE IF NOT EXISTS` + `ensureColumn` 이 전부 맡는다.
   async createConnection(database, encryption): Promise<SqliteDbConnection> {
     return createDbConnection(database, encryption)
+  },
+  // `PRAGMA database_list` 의 경로는 `file://` 없는 절대 경로라 붙여서 연다.
+  async removeFile(path) {
+    const file = new File(path.startsWith('/') ? `file://${path}` : path)
+    if (file.exists) file.delete()
   },
 }

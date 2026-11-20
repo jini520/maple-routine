@@ -34,7 +34,7 @@ function notice(id: string, kind: NoticeKind): Notice {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  auth.mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key' }] })
+  auth.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key', loginId: null }] })
 })
 
 describe('receiveNoticeKind', () => {

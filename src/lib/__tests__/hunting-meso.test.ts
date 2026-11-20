@@ -15,12 +15,16 @@ import {
 import { mesoBoostIconOf } from '../assets/asset-lookup'
 
 /** 사용자가 준 예시의 맵. 밤의 길 3(탈라하트, 40마리, lv.294). */
-const NIGHT_ROAD_3 = { key: 'tallahart_road_of_night_3', name: '밤의 길 3', force: 700, mobs: 40, levels: [294] } as const
+const NIGHT_ROAD_3 = { key: 'tallahart_road_of_night_3', name: '밤의 길 3', force: 700, mobs: 40, levels: [294], popular: false } as const
 /** 레벨이 둘인 맵. 풍화된 기쁨과 분노의 땅(소멸의 여로). */
-const TWO_LEVEL_MAP = { key: 'road_of_vanishing_weathered_land_of_joy_and_anger', name: '풍화된 기쁨과 분노의 땅', force: 30, mobs: 29, levels: [200, 201] } as const
+const TWO_LEVEL_MAP = { key: 'road_of_vanishing_weathered_land_of_joy_and_anger', name: '풍화된 기쁨과 분노의 땅', force: 30, mobs: 29, levels: [200, 201], popular: false } as const
 
 /** 34마리 맵. 반올림이 실제로 일어나는 자리다(33/34 = 97.06%). */
-const ODIUM_1 = { key: 'odium_road_to_castle_gate_1', name: '성문으로 가는 길 1', force: 130, mobs: 34, levels: [270] } as const
+const ODIUM_1 = { key: 'odium_road_to_castle_gate_1', name: '성문으로 가는 길 1', force: 130, mobs: 34, levels: [270], popular: false } as const
+
+/** 몬스터가 낮은 쪽 표가 바뀐 게임 패치의 전날과 당일. */
+const BEFORE_PATCH = '2026-11-18'
+const PATCH_DAY = '2026-11-19'
 
 const BASE = {
   characterLevel: null,
@@ -28,13 +32,14 @@ const BASE = {
   boostPercent: 0,
   boostMultiplier: 1,
   sojae: 2,
+  earnedOn: BEFORE_PATCH,
 } as const
 
 describe('levelPenaltyPercent', () => {
-  it('레벨 차이가 10 이하면 페널티가 없다. 방향 무관', () => {
-    expect(levelPenaltyPercent(200, 200)).toBe(0)
-    expect(levelPenaltyPercent(200, 210)).toBe(0)
-    expect(levelPenaltyPercent(210, 200)).toBe(0)
+  it('패치 전에는 레벨 차이가 10 이하면 페널티가 없다. 방향 무관', () => {
+    expect(levelPenaltyPercent(200, 200, BEFORE_PATCH)).toBe(0)
+    expect(levelPenaltyPercent(200, 210, BEFORE_PATCH)).toBe(0)
+    expect(levelPenaltyPercent(210, 200, BEFORE_PATCH)).toBe(0)
   })
 
   describe('몬스터가 높을 때. 11부터 -3%씩, 21부터 -5%씩', () => {
@@ -45,16 +50,22 @@ describe('levelPenaltyPercent', () => {
       [21, 35],
       [34, 100],
     ])('차이 %i → -%i%%', (diff, percent) => {
-      expect(levelPenaltyPercent(200, 200 + diff)).toBe(percent)
+      expect(levelPenaltyPercent(200, 200 + diff, BEFORE_PATCH)).toBe(percent)
     })
 
     it('34 를 넘으면 -100% 에 머문다. 표 밖으로 안 넘어간다', () => {
-      expect(levelPenaltyPercent(200, 235)).toBe(100)
-      expect(levelPenaltyPercent(200, 300)).toBe(100)
+      expect(levelPenaltyPercent(200, 235, BEFORE_PATCH)).toBe(100)
+      expect(levelPenaltyPercent(200, 300, BEFORE_PATCH)).toBe(100)
+    })
+
+    it('패치는 이 표를 바꾸지 않았다. 어느 날짜든 값이 같다', () => {
+      for (let diff = 0; diff <= 40; diff += 1) {
+        expect(levelPenaltyPercent(200, 200 + diff, PATCH_DAY)).toBe(levelPenaltyPercent(200, 200 + diff, BEFORE_PATCH))
+      }
     })
   })
 
-  describe('몬스터가 낮을 때. 11부터 -2%씩, 21부터 고르지 않은 표', () => {
+  describe('몬스터가 낮을 때, 패치 전 날짜. 11부터 -2%씩, 21부터 고르지 않은 표', () => {
     it.each([
       [11, 2],
       [20, 20],
@@ -70,19 +81,50 @@ describe('levelPenaltyPercent', () => {
       [29, 97],
       [30, 100],
     ])('차이 %i → -%i%%', (diff, percent) => {
-      expect(levelPenaltyPercent(200 + diff, 200)).toBe(percent)
+      expect(levelPenaltyPercent(200 + diff, 200, BEFORE_PATCH)).toBe(percent)
     })
 
     it('30 을 넘으면 -100% 에 머문다', () => {
-      expect(levelPenaltyPercent(240, 200)).toBe(100)
+      expect(levelPenaltyPercent(240, 200, BEFORE_PATCH)).toBe(100)
     })
   })
 
-  it('두 표 다 **정확히 -100% 에서 끝난다**. 옮겨 적다 틀리면 여기서 잡힌다', () => {
-    expect(levelPenaltyPercent(200, 234)).toBe(100)
-    expect(levelPenaltyPercent(200, 233)).toBe(95)
-    expect(levelPenaltyPercent(230, 200)).toBe(100)
-    expect(levelPenaltyPercent(229, 200)).toBe(97)
+  describe('몬스터가 낮을 때, 2026-11-19 부터. 6에서 -50%, 그 뒤 1마다 -10%씩', () => {
+    it.each([
+      [5, 0],
+      [6, 50],
+      [7, 60],
+      [8, 70],
+      [9, 80],
+      [10, 90],
+      [11, 100],
+    ])('차이 %i → -%i%%', (diff, percent) => {
+      expect(levelPenaltyPercent(200 + diff, 200, PATCH_DAY)).toBe(percent)
+    })
+
+    it('11 을 넘으면 -100% 에 머문다', () => {
+      expect(levelPenaltyPercent(230, 200, PATCH_DAY)).toBe(100)
+      expect(levelPenaltyPercent(300, 200, PATCH_DAY)).toBe(100)
+    })
+  })
+
+  /**
+   * 기록 날짜로 표를 고른다. 패치 전의 사냥은 옛 표대로 메소를 받았으므로 옛 기록을 다시 열어도
+   * 그때의 표로 세야 한다.
+   */
+  it('패치 당일부터 새 표다. 전날의 기록은 옛 표로 센다', () => {
+    expect(levelPenaltyPercent(208, 200, BEFORE_PATCH)).toBe(0)
+    expect(levelPenaltyPercent(208, 200, PATCH_DAY)).toBe(70)
+    expect(levelPenaltyPercent(208, 200, '2027-01-01')).toBe(70)
+  })
+
+  it('세 표 모두 **정확히 -100% 에서 끝난다**. 옮겨 적다 틀리면 여기서 잡힌다', () => {
+    expect(levelPenaltyPercent(200, 234, BEFORE_PATCH)).toBe(100)
+    expect(levelPenaltyPercent(200, 233, BEFORE_PATCH)).toBe(95)
+    expect(levelPenaltyPercent(230, 200, BEFORE_PATCH)).toBe(100)
+    expect(levelPenaltyPercent(229, 200, BEFORE_PATCH)).toBe(97)
+    expect(levelPenaltyPercent(211, 200, PATCH_DAY)).toBe(100)
+    expect(levelPenaltyPercent(210, 200, PATCH_DAY)).toBe(90)
   })
 })
 
@@ -90,7 +132,7 @@ describe('huntingMesoOf', () => {
   it('사용자가 준 예시를 그대로 낸다. 290레벨 40마리 1시간 = 41,760,000', () => {
     const meso = huntingMesoOf({
       ...BASE,
-      ground: { key: 'fake', name: '가상', force: 0, mobs: 40, levels: [290] },
+      ground: { key: 'fake', name: '가상', force: 0, mobs: 40, levels: [290], popular: false },
     })
     expect(meso).toBe(41_760_000)
   })
@@ -197,6 +239,26 @@ describe('huntingMesoOf', () => {
     ).toBe(Math.floor((at200 + at201) / 2))
   })
 
+  it('기록 날짜의 표로 센다. 패치 뒤 날짜에 캐릭터가 6 높으면 절반이다', () => {
+    const even = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, characterLevel: 294 })
+    // 캐릭터 300· 몬스터 294 → 몬스터가 6 낮다. 옛 표는 0%, 새 표는 -50%.
+    const before = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, characterLevel: 300 })
+    const after = huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3, characterLevel: 300, earnedOn: PATCH_DAY })
+    expect(before).toBe(even)
+    expect(after).toBe(Math.floor(even * 0.5))
+  })
+
+  it('레벨이 둘인 맵도 레벨마다 기록 날짜의 표로 잰다', () => {
+    // 캐릭터 206· 몬스터 200/201 → 차이 6(-50%) 과 5(0%).
+    const perMinute = TWO_LEVEL_MAP.mobs * 8
+    const minutes = 2 * 30
+    const at200 = 200 * 7.5 * perMinute * minutes * 0.5
+    const at201 = 201 * 7.5 * perMinute * minutes
+    expect(
+      huntingMesoOf({ ...BASE, ground: TWO_LEVEL_MAP, characterLevel: 206, earnedOn: PATCH_DAY }),
+    ).toBe(Math.floor((at200 + at201) / 2))
+  })
+
   it('레벨이 하나인 맵은 평균 갈래를 안 탄다. 곱셈 그대로다', () => {
     const perMinute = NIGHT_ROAD_3.mobs * 8
     expect(huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3 })).toBe(
@@ -212,18 +274,22 @@ describe('huntingMesoOf', () => {
       for (const boostPercent of [0, 20, 50, 70, 149, 199]) {
         // 통 밖의 배율 축. 1.2 가 소수를 새로 만든다.
         for (const boostMultiplier of [1, 1.2]) {
-          for (const characterLevel of [null, 200, 221, 294]) {
+          for (const characterLevel of [null, 200, 207, 221, 294]) {
             for (const ground of [NIGHT_ROAD_3, TWO_LEVEL_MAP, ODIUM_1]) {
-              const meso = huntingMesoOf({
-                ground,
-                characterLevel,
-                missedMobs,
-                boostPercent,
-                boostMultiplier,
-                sojae: 3,
-              })
-              expect(Number.isInteger(meso)).toBe(true)
-              expect(meso).toBeGreaterThanOrEqual(0)
+              // 두 표가 깎는 몫이 달라 소수가 생기는 자리가 다르다.
+              for (const earnedOn of [BEFORE_PATCH, PATCH_DAY]) {
+                const meso = huntingMesoOf({
+                  ground,
+                  characterLevel,
+                  missedMobs,
+                  boostPercent,
+                  boostMultiplier,
+                  sojae: 3,
+                  earnedOn,
+                })
+                expect(Number.isInteger(meso)).toBe(true)
+                expect(meso).toBeGreaterThanOrEqual(0)
+              }
             }
           }
         }

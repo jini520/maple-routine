@@ -9,6 +9,7 @@ import { queryOptions, useQuery } from '@tanstack/react-query'
 import { queryKeys } from '../query/keys'
 import type { RecordTable } from '../query/meta'
 import { loadMonthDays, type DayRecord } from './records'
+import { useQuerySubscribed } from '../query/subscription'
 
 /** 이 쿼리가 읽는 표. 보스 결정석 · 드롭 판매 · 수입 · 지출 · 강화 지출이 한 줄 묶음에 든다. */
 export const LEDGER_TABLES: readonly RecordTable[] = [
@@ -42,6 +43,6 @@ export function ledgerDaysOptions(from: string, to: string) {
  * @param enabled 거짓이면 안 읽는다. 층이 기록을 채우는 동안 그 값이 자라는 중이라 읽어도 버린다
  */
 export function useLedgerDays(range: LedgerRange, enabled = true): { days: LedgerDays | null; isFetching: boolean } {
-  const { data, isFetching } = useQuery({ ...ledgerDaysOptions(range.from, range.to), enabled })
+  const { data, isFetching } = useQuery({ ...ledgerDaysOptions(range.from, range.to), enabled, subscribed: useQuerySubscribed() })
   return { days: data ?? null, isFetching }
 }

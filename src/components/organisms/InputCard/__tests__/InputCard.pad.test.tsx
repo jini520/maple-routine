@@ -29,7 +29,8 @@ function 키보드(up: boolean): void {
   ;(emitter as { emit(name: string, event: KeyboardEvent): void }).emit(이름, {
     duration: 0,
     easing: 'keyboard',
-    endCoordinates: { screenX: 0, screenY: 0, width: 0, height: 0 },
+    // 뜰 때는 실제 키보드처럼 높이를 준다. 높이 0 인 show 는 키보드가 뜬 것으로 보지 않는다(`useKeyboardShown`).
+    endCoordinates: { screenX: 0, screenY: 0, width: 0, height: up ? 300 : 0 },
   } as unknown as KeyboardEvent)
 }
 
@@ -592,5 +593,48 @@ describe('커서는 칠 수 있을 때만 보인다', () => {
       키보드(false)
     })
     expect(view.getByTestId('input-card-value').props.caretHidden).toBe(true)
+  })
+})
+
+// 낮은 화면에서는 % 도 판으로 친다. 판은 % 줄 아래에 덮여야 친 숫자가 안 가린다.
+describe('비율 % 를 판으로 치기', () => {
+  const 비율 = { label: '분배 비율', mode: 'ratio' as const, partySize: 2, myShare: 2, sharesTotal: 3, maxPartySize: 6 }
+
+  async function 퍼센트누르기(view: 화면): Promise<void> {
+    await act(async () => {
+      fireEvent(view.getByTestId('input-card-share-percent'), 'pressIn')
+    })
+  }
+
+  async function 키(view: 화면, label: string): Promise<void> {
+    await act(async () => {
+      fireEvent.press(view.getByLabelText(label))
+    })
+  }
+
+  it('% 칸을 누르면 % 줄 아래의 판이 뜨고 금액 칸의 판은 안 뜬다', async () => {
+    const { view } = await 그리기({ unitKey: 'dropPrice', share: 비율 })
+    await 재기(view, 안_들어가는_카드)
+
+    await 퍼센트누르기(view)
+
+    expect(view.getByTestId('input-card-share-pad')).toBeTruthy()
+    expect(view.queryByTestId('input-card-pad')).toBeNull()
+    expect(view.getByTestId('input-card-share-percent').props.showSoftInputOnFocus).toBe(false)
+  })
+
+  it('판의 키는 % 칸에 들어가고 금액은 그대로다', async () => {
+    const { view, onConfirm } = await 그리기({ unitKey: 'dropPrice', share: 비율, value: '100' })
+    await 재기(view, 안_들어가는_카드)
+    await 퍼센트누르기(view)
+
+    // 씨앗 66.667 을 다 지우고 33.5 를 친다.
+    for (let 번 = 0; 번 < 6; 번 += 1) await 키(view, '한 자리 지우기')
+    for (const label of ['3', '3', '소수점', '5']) await 키(view, label)
+    await act(async () => {
+      fireEvent.press(view.getByTestId('input-card-confirm'))
+    })
+
+    expect(onConfirm).toHaveBeenCalledWith('100', { mode: 'ratio', partySize: 2, myShare: 33_500, sharesTotal: 100_000 })
   })
 })

@@ -10,6 +10,8 @@ import { useQueries, useQuery } from '@tanstack/react-query'
 import type { CachedCharacterBasicEntry } from '../../storage/character-basic-cache'
 import type { CharacterBasicProfile } from '../../types'
 import type { CachedSchedulerEntry } from '../../storage/scheduler-cache'
+import { useResetBoundaryTick } from '../query/reset-timer'
+import { toCurrentPeriodEntry } from './read-schedule'
 import {
   characterBasicOptions,
   scheduleOptions,
@@ -24,6 +26,7 @@ export type ScheduleStatus = 'idle' | 'loading' | 'loaded' | 'error'
 export interface ScheduleSnapshot {
   /** 추적 목록 순서 그대로. 아직 안 읽었으면 빈 배열이고 `trackedOcids` 가 `null` 이다. */
   ocids: readonly string[]
+  /** 받은 뒤 초기화 시각을 넘긴 주기는 진행을 비운 값이다(`toCurrentPeriodEntry`). */
   schedules: ReadonlyMap<string, CachedSchedulerEntry>
   basics: ReadonlyMap<string, CachedCharacterBasicEntry>
   round: ScheduleRoundResult | undefined
@@ -70,11 +73,17 @@ export function useScheduleQueries(): ScheduleQueries {
   )
   const schedules = useQueries({ queries: ocids.map((ocid) => scheduleOptions(ocid)), combine: combineSchedules })
   const basics = useQueries({ queries: ocids.map((ocid) => characterBasicOptions(ocid)), combine: combineBasics })
+  // 초기화 시각을 넘기면 캐시가 그대로여도 지난 기간의 진행을 비워 다시 만든다.
+  const { tick } = useResetBoundaryTick()
 
-  const snapshot = useMemo<ScheduleSnapshot>(
-    () => ({ ocids, schedules, basics, round: round.data }),
-    [ocids, schedules, basics, round.data],
-  )
+  const snapshot = useMemo<ScheduleSnapshot>(() => {
+    const now = new Date()
+    const current = new Map<string, CachedSchedulerEntry>()
+    for (const [ocid, entry] of schedules) current.set(ocid, toCurrentPeriodEntry(entry, now))
+    return { ocids, schedules: current, basics, round: round.data }
+    // `tick` 은 값을 쓰지 않고 다시 만들 때를 알린다. 빼면 자정을 넘겨도 지난 기간의 완료가 남는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ocids, schedules, basics, round.data, tick])
 
   const status: ScheduleStatus =
     round.fetchStatus === 'fetching'

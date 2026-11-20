@@ -14,16 +14,24 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  useWindowDimensions,
   View,
 } from 'react-native'
 import Animated, { Easing, Keyframe, useAnimatedStyle, useDerivedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { ChevronDownIcon, Text } from '../../atoms'
-import { boxShadowOf, DROPDOWN_SHADOW } from '../../../lib/shadow'
+import { boxShadowOf } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
-import { placeDropdown } from '../../../lib/place-dropdown'
+import {
+  itemDelay,
+  itemStartOffset,
+  LIST_START_SCALE,
+  listShadowOf,
+  listStartOffset,
+  type DropdownSide,
+} from '../../../lib/dropdown-motion'
+import { placeDropdown, placeDropdownX } from '../../../lib/place-dropdown'
 
 /** 목록이 화면 가장자리에 붙지 않게 남기는 여백. `AccountSelect` 와 같은 값이다. */
 const EDGE_GAP_PX = 12
@@ -58,22 +66,22 @@ export function SelectChevron(props: { open: boolean; className?: string }): Rea
   )
 }
 
-/** 목록 상자. 0.85 배 · 6 위에서 위쪽 가운데를 기준으로 펼쳐진다(가운데 기준 배율을 위로 당겨 맞춘다) */
-function listEntering(height: number) {
+/** 목록 상자. 0.85 배에서 칸에 닿는 변을 기준으로 펼쳐진다. 위로 열리면 아래쪽 끝이 기준이다 */
+function listEntering(height: number, side: DropdownSide) {
   return new Keyframe({
-    0: { opacity: 0, transform: [{ translateY: -LIST_GAP_PX - height * 0.075 }, { scaleY: 0.85 }] },
+    0: { opacity: 0, transform: [{ translateY: listStartOffset(height, LIST_GAP_PX, side) }, { scaleY: LIST_START_SCALE }] },
     100: { opacity: 1, transform: [{ translateY: 0 }, { scaleY: 1 }], easing: EASE_OUT },
   }).duration(220)
 }
 
-/** 목록의 칸 하나. 위에서 4 내려오며 나타나고, 칸마다 40ms 씩 늦게 시작한다 */
-function itemEntering(index: number) {
+/** 목록의 칸 하나. 칸 쪽에서 4 움직이며 나타나고, 칸에 가까운 칸부터 40ms 씩 늦게 시작한다 */
+function itemEntering(index: number, count: number, side: DropdownSide) {
   return new Keyframe({
-    0: { opacity: 0, transform: [{ translateY: -4 }] },
+    0: { opacity: 0, transform: [{ translateY: itemStartOffset(side) }] },
     100: { opacity: 1, transform: [{ translateY: 0 }], easing: EASE_OUT },
   })
     .duration(200)
-    .delay(index * 40)
+    .delay(itemDelay(index, count, side))
 }
 
 export interface SelectOption {
@@ -115,6 +123,10 @@ export interface SelectFieldProps {
   tall?: boolean
   /** 목록의 최대 높이. 넘으면 그 안에서 스크롤된다. 없으면 화면에 남은 높이까지 선다. 보기가 많은 헥사 코어 목록이 쓴다 */
   listMaxHeight?: number
+  /** 목록을 트리거의 어느 끝에 맞출지. 기본은 왼쪽 끝. 제목 줄 오른쪽 끝에 서는 위젯 드롭다운 버튼이 `end` 다 */
+  listAlign?: 'start' | 'end'
+  /** 목록 폭을 가장 긴 보기에 맞출지. 기본은 트리거 폭. 트리거가 고른 보기만큼만 넓은 위젯 드롭다운 버튼이 쓴다 */
+  listFitsContent?: boolean
 }
 
 /** `null` 도 받는 키. 목록의 첫 칸이 대개 그것이다. */
@@ -133,8 +145,10 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
     height: number
   } | null>(null)
   const [contentHeight, setContentHeight] = useState<number | null>(null)
+  const [contentWidth, setContentWidth] = useState(0)
   const insets = useSafeAreaInsets()
-  const { height: windowHeight } = useWindowDimensions()
+  // 목록은 콘텐츠 폭 안에 선다. 오른쪽 레일 화면에서 창 폭으로 자리를 잡으면 레일 위로 펼쳐진다.
+  const { contentWidthPx, windowHeightPx: windowHeight } = useScreenLayout()
 
   const close = useCallback((): void => {
     setIsOpen(false)
@@ -184,8 +198,21 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           gap: LIST_GAP_PX,
         })
   const isPlaced = placement !== null && contentHeight !== null
+  const horizontal =
+    anchor === null
+      ? null
+      : placeDropdownX({
+          anchorLeft: anchor.left,
+          anchorWidth: anchor.width,
+          contentWidth,
+          windowWidth: contentWidthPx,
+          edgeGap: EDGE_GAP_PX,
+          align: props.listAlign,
+          fitContent: props.listFitsContent,
+        })
 
-  function renderOptions(animate: boolean): React.ReactNode {
+  /** @param side 펼치는 목록이면 연 쪽. 자리를 재는 안 보이는 목록은 `null` 이라 움직이지 않는다 */
+  function renderOptions(side: DropdownSide | null): React.ReactNode {
     return props.options.map((option, index) => {
       const isSelected = option.value === props.selected
       const opensGroup = option.group !== undefined && option.group !== props.options[index - 1]?.group
@@ -224,8 +251,8 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           </Pressable>
         </>
       )
-      return animate ? (
-        <Animated.View key={keyOf(option.value)} entering={itemEntering(index)}>
+      return side !== null ? (
+        <Animated.View key={keyOf(option.value)} entering={itemEntering(index, props.options.length, side)}>
           {body}
         </Animated.View>
       ) : (
@@ -244,7 +271,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           aria-label={props.label}
           aria-expanded={isOpen}
           onPress={open}
-          className={`${triggerBoxClass(props.tall === true)} active:opacity-60`}
+          className={triggerBoxClass(props.tall === true)}
         >
           <Text className="shrink-0 text-xs text-text-muted">{props.label}</Text>
           <Text numberOfLines={1} className="flex-1 text-sm font-semibold text-text">
@@ -284,11 +311,13 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
           {isPlaced ? (
             // 자리는 바깥 View, 펼쳐지는 움직임만 Animated.View. 한데 주면 자리가 버려진다.
             <View
-              style={{ position: 'absolute', left: anchor?.left ?? 0, top: placement.top, width: anchor?.width }}
+              style={{ position: 'absolute', left: horizontal?.left ?? 0, top: placement.top, width: horizontal?.width }}
             >
-              <Animated.View entering={listEntering(Math.min(contentHeight, placement.maxHeight, props.listMaxHeight ?? Infinity))}>
+              <Animated.View
+                entering={listEntering(Math.min(contentHeight, placement.maxHeight, props.listMaxHeight ?? Infinity), placement.side)}
+              >
                 {/* 그림자는 바깥 상자가 든다. 모서리를 자르는 안쪽 상자에 주면 iOS 가 그림자까지 자른다. */}
-                <View style={{ borderRadius: 14, boxShadow: boxShadowOf(definition.shadowColor, DROPDOWN_SHADOW) }}>
+                <View style={{ borderRadius: 14, boxShadow: boxShadowOf(definition.shadowColor, listShadowOf(placement.side)) }}>
                   <View
                     testID={`${props.testID}-list`}
                     role="menu"
@@ -296,7 +325,7 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
                     style={{ maxHeight: Math.min(placement.maxHeight, props.listMaxHeight ?? Infinity) }}
                     className="overflow-hidden rounded-[14px] bg-surface"
                   >
-                    <ScrollView contentContainerStyle={{ padding: 6 }}>{renderOptions(true)}</ScrollView>
+                    <ScrollView contentContainerStyle={{ padding: 6 }}>{renderOptions(placement.side)}</ScrollView>
                   </View>
                 </View>
               </Animated.View>
@@ -307,13 +336,17 @@ export function SelectField(props: SelectFieldProps): React.JSX.Element {
               testID={`${props.testID}-list`}
               role="menu"
               aria-label={props.label}
-              style={{ position: 'absolute', left: 0, top: 0, width: anchor?.width, opacity: 0 }}
+              // 폭을 내용에 맞추면 폭을 주지 않고 재서 가장 긴 보기의 폭을 얻는다.
+              style={{ position: 'absolute', left: 0, top: 0, width: props.listFitsContent === true ? undefined : anchor?.width, opacity: 0 }}
             >
               <View
                 style={{ padding: 6 }}
-                onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}
+                onLayout={(event) => {
+                  setContentWidth(event.nativeEvent.layout.width)
+                  setContentHeight(event.nativeEvent.layout.height)
+                }}
               >
-                {renderOptions(false)}
+                {renderOptions(null)}
               </View>
             </View>
           )}

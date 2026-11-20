@@ -18,6 +18,7 @@ import type {
 } from '../../types/game-data'
 import type { HuntingGround, HuntingRegion } from '../../types/hunting-grounds'
 import {
+  isBoolean,
   isNonEmptyString,
   isNonNegativeInteger,
   isOneOf,
@@ -30,6 +31,7 @@ import {
   type Row,
 } from '../game-data/contract'
 import { gameTable, derive } from '../game-data/table'
+import { LEVEL_PENALTY_PATCHED_ON } from './hunting-meso'
 
 const FORCE_TYPES = ['arcane', 'authentic'] as const
 
@@ -43,7 +45,10 @@ function toRegion(row: Row): HuntingRegionRow | null {
 function toGround(row: Row): HuntingGroundRow | null {
   if (!isNonEmptyString(row.key) || !isNonEmptyString(row.region) || !isNonEmptyString(row.name)) return null
   if (!isNonNegativeInteger(row.force) || !isPositiveInteger(row.mobs)) return null
-  return { key: row.key, region: row.region, name: row.name, force: row.force, mobs: row.mobs }
+  // 서버 배포 전 응답과 옛 기기 사본에는 이 칸이 없다. 그 응답도 읽어야 계산기가 선다.
+  const popular = row.popular ?? false
+  if (!isBoolean(popular)) return null
+  return { key: row.key, region: row.region, name: row.name, force: row.force, mobs: row.mobs, popular }
 }
 
 function toLevel(row: Row): HuntingGroundLevelRow | null {
@@ -88,6 +93,7 @@ const regions = derive(huntingGroundsTable, (table): readonly HuntingRegion[] =>
       force: row.force,
       mobs: row.mobs,
       levels: [...(levelsByGround.get(row.key) ?? [])].sort((a, b) => a - b),
+      popular: row.popular,
     }
     const grounds = groundsByRegion.get(row.region)
     if (grounds === undefined) groundsByRegion.set(row.region, [ground])
@@ -110,9 +116,15 @@ export function huntingRegions(): readonly HuntingRegion[] {
 /**
  * 목록의 바닥. 캐릭터 레벨에서 아래로 몇 레벨까지 세우나.
  *
- * 위쪽에는 짝이 되는 상수가 없다. 천장은 갈 수 있는 데까지 이고 그것은 지역이 정한다.
+ * 메소가 나오는 몬스터까지라 10 이다. 패치 뒤의 표는 11 레벨 낮으면 -100% 다. 패치 전 날짜의 기록은
+ * 20 이다. 그때 적은 기록에는 차이 11~20 인 지역이 있고, 목록에서 빠지면 수정으로 열 때 지역 칸이
+ * `지역 선택` 으로 선다.
+ *
+ * 위쪽에는 짝이 되는 값이 없다. 천장은 갈 수 있는 데까지 이고 그것은 지역이 정한다.
  */
-export const HUNTING_LEVEL_BELOW = 20
+function levelBelowOn(earnedOn: string): number {
+  return earnedOn < LEVEL_PENALTY_PATCHED_ON ? 20 : 10
+}
 
 /**
  * 지역이 실제로 내놓는 **몬스터 레벨의 범위**.
@@ -126,7 +138,7 @@ export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: 
 }
 
 /**
- * 캐릭터 레벨로 지역을 거른다. 아래로 20 ~ 갈 수 있는 데까지.
+ * 캐릭터 레벨로 지역을 거른다. 아래로 10(패치 전 날짜는 20) ~ 갈 수 있는 데까지.
  *
  * 창이 위아래로 대칭이 아니다. 캐릭터 레벨보다 높은 지역에는 못 가기 때문이다. lv.277 은
  * 도원경(275-279)까지이고 아르테리아(280-284)는 갈 수 없다. 갈 수 없는 자리를 세우면 고를 수
@@ -135,7 +147,7 @@ export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: 
  * 두 끝을 몬스터 레벨로 잰다(`monsterLevelRangeOf`).
  *
  * - 천장. 그 지역의 가장 낮은 몬스터가 캐릭터 레벨 이하여야 간다.
- * - 바닥. 그 지역의 가장 높은 몬스터가 캐릭터 − 20 이상이어야 한다. 한 맵이라도 걸리면 선다.
+ * - 바닥. 그 지역의 가장 높은 몬스터가 캐릭터 − 바닥(`levelBelowOn`) 이상이어야 한다. 한 맵이라도 걸리면 선다.
  *
  * 지역 안의 맵까지 거르지는 않는다. 한 맵이라도 들면 지역이 서고 그 안에는 창 밖의 맵도 있다.
  * 사냥터 줄이 레벨을 적어 두므로 고르는 사람이 본다.
@@ -145,14 +157,17 @@ export function monsterLevelRangeOf(region: HuntingRegion): { min: number; max: 
  *
  * 차례는 참조표의 **역순**이다. 창의 천장이 갈 수 있는 데까지 라 목록 끝이 곧 지금 캐릭터가
  * 갈 만한 곳인데, 참조표 차례로 세우면 그것이 맨 아래에 묻힌다.
+ *
+ * @param earnedOn 기록 날짜(KST `YYYY-MM-DD`). 바닥을 고른다
  */
-export function huntingRegionsForLevel(characterLevel: number | null): HuntingRegion[] {
+export function huntingRegionsForLevel(characterLevel: number | null, earnedOn: string): HuntingRegion[] {
   const 높은데부터 = [...huntingRegions()].reverse()
   if (characterLevel === null) return 높은데부터
 
+  const floor = characterLevel - levelBelowOn(earnedOn)
   return 높은데부터.filter((region) => {
     const { min, max } = monsterLevelRangeOf(region)
-    return min <= characterLevel && max >= characterLevel - HUNTING_LEVEL_BELOW
+    return min <= characterLevel && max >= floor
   })
 }
 
@@ -169,16 +184,18 @@ export function levelGapOf(ground: HuntingGround, characterLevel: number): numbe
 }
 
 /**
- * 지역 안의 사냥터를 줄 세운 차례. 레벨 차이가 적은 순, 같으면 마릿수가 많은 순.
+ * 지역 안의 사냥터를 줄 세운 차례. 레벨 차이가 적은 순, 같으면 인기 사냥터 먼저, 그다음 마릿수가 많은 순.
  *
  * 참조표에 적힌 순서를 그대로 쓰면 지금 내가 갈 만한 곳 이 목록 한가운데 묻힌다. 고르는 사람이
- * 실제로 재는 두 값이 이 둘이라 그대로 차례로 삼는다.
+ * 실제로 재는 두 값이 레벨 차이와 마릿수라 그대로 차례로 삼는다.
+ *
+ * 인기는 레벨 차이 다음 열쇠다. 첫 열쇠로 두면 레벨이 먼 인기 사냥터가 가까운 사냥터 위로 올라간다.
  *
  * 거르지 않는다. 지역이 목록에 섰으면 그 안의 맵은 전부 선다. 여기서 또 걸러 내면 지역은
  * 떴는데 안이 비어 있다 가 생긴다.
  *
- * 레벨을 모르면 마릿수 많은 순이다. 차이가 다 모름 이라 첫 열쇠에서 전부 동률이고 둘째 열쇠가
- * 그대로 차례가 된다.
+ * 레벨을 모르면 인기 사냥터가 먼저고 그 안은 마릿수 많은 순이다. 차이가 다 모름 이라 첫 열쇠에서
+ * 전부 동률이기 때문이다.
  *
  * 완전 동률이면 참조표 순서다(`sort` 가 안정 정렬이다). 원본 배열은 안 건드린다.
  * 표에서 묶은 값이라 제자리 정렬하면 다음 호출이 달라진다.
@@ -192,6 +209,7 @@ export function huntingGroundsFor(
       const gap = levelGapOf(a, characterLevel) - levelGapOf(b, characterLevel)
       if (gap !== 0) return gap
     }
+    if (a.popular !== b.popular) return a.popular ? -1 : 1
     return b.mobs - a.mobs
   })
 }

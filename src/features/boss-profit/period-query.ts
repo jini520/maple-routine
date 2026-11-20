@@ -17,6 +17,7 @@ import { readTrackedOcids } from '../schedule-sync/schedule-query'
 import { loadObservedPeriodKeys, loadUnqueryablePeriodKeys } from '../schedule-window/records'
 import { buildPeriodSnapshot, periodNeedsWindowSync, resolveDisplayOcids, type PeriodSnapshot } from './period-snapshot'
 import { resolvePeriodWindow } from './period-window'
+import { useQuerySubscribed } from '../query/subscription'
 
 /** 이 쿼리가 읽는 표. 지난 기간의 상태는 기록 없이 조회 원장만으로도 바뀐다. */
 export const PERIOD_TABLES: readonly RecordTable[] = ['boss_profit_records', 'boss_drop_records', 'schedule_probe_ledger']
@@ -69,7 +70,7 @@ export interface BossProfitPeriod {
 }
 
 export function useBossProfitPeriod(tab: BossCycle, periodKey: string): BossProfitPeriod {
-  const query = useQuery({ ...bossProfitPeriodOptions(tab, periodKey), placeholderData: keepPreviousData })
+  const query = useQuery({ ...bossProfitPeriodOptions(tab, periodKey), placeholderData: keepPreviousData, subscribed: useQuerySubscribed() })
   const [loaded, setLoaded] = useState({ tab, periodKey })
   const settled = query.data !== undefined && !query.isPlaceholderData
   // 이 기간의 값이 섰으면 그 자리에서 신원을 맞춘다. 렌더 중의 상태 조정이라 그 커밋에 값과 신원이 함께 도착한다.

@@ -20,8 +20,11 @@ jest.mock('../../../storage/schedule-probe-ledger', () => {
   }
 })
 jest.mock('../../../nexon/schedule', () => ({ fetchSchedulerCharacterState: jest.fn() }))
-jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn() }))
-const { refreshSettlement: refreshSettlementMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+jest.mock('../../../storage/character-accounts', () => ({ getNexonAccountIdsOfOcids: jest.fn() }))
+jest.mock('../../settlement/store', () => ({ refreshSettlement: jest.fn(), settlingYesterdayOf: jest.fn() }))
+const { refreshSettlement: refreshSettlementMock, settlingYesterdayOf: settlingYesterdayMock } = jest.requireMock(
+  '../../settlement/store',
+) as Record<string, jest.Mock>
 
 
 import { NexonBadRequestError } from '../../../nexon/errors'
@@ -34,6 +37,7 @@ const {
   recordScheduleProbe: recordProbeMock,
 } = jest.requireMock('../../../storage/schedule-probe-ledger') as Record<string, jest.Mock>
 const { fetchSchedulerCharacterState: fetchStateMock } = jest.requireMock('../../../nexon/schedule') as Record<string, jest.Mock>
+const { getNexonAccountIdsOfOcids } = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
 
 // KST 2026-09-05(토) 낮. 창은 8/23(오늘−13) ~ 9/4(오늘−1)이고 오늘은 9/5 다.
 const NOW = new Date('2026-09-05T03:00:00.000Z')
@@ -61,12 +65,14 @@ function schedulerState(): unknown {
 const asked = (): string[] => fetchStateMock.mock.calls.map(([, , , dateKey]) => dateKey).sort()
 
 beforeEach(() => {
-  getAuthConfigMock.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key' }] })
+  getAuthConfigMock.mockReset().mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key', loginId: null }] })
   getLedgerMock.mockReset().mockResolvedValue({ unavailable: false, dates: {} })
   markUnavailableMock.mockReset().mockResolvedValue(undefined)
   recordProbeMock.mockReset().mockResolvedValue(undefined)
   fetchStateMock.mockReset().mockResolvedValue(schedulerState())
   refreshSettlementMock.mockReset().mockResolvedValue(undefined)
+  settlingYesterdayMock.mockReset().mockResolvedValue(null)
+  getNexonAccountIdsOfOcids.mockReset().mockResolvedValue(new Map())
 })
 
 describe('창을 채운다', () => {
@@ -189,6 +195,20 @@ describe('진행을 알린다', () => {
 })
 
 // 스케줄러 데이터를 갱신하는 자리는 결산 여부도 함께 갱신한다. 값이 바뀌면 today 에 바로 선다.
+// 넥슨 AI 에이전트 가이드는 00009 를 되풀이해 부르지 말라고 한다. 건너뛴 날은 원장에 안 남아 결산이 끝난 뒤의 회차가 채운다.
+describe('결산 중이면 어제를 묻지 않는다', () => {
+  it('서버가 결산 중이라고 하면 어제만 빼고 부른다', async () => {
+    settlingYesterdayMock.mockResolvedValue('2026-09-04')
+
+    await fillScheduleWindow(['ocid-1'], NOW)
+
+    expect(settlingYesterdayMock).toHaveBeenCalledWith(NOW)
+    expect(asked()).not.toContain('2026-09-04')
+    expect(asked()).toHaveLength(12)
+    expect(recordProbeMock).not.toHaveBeenCalledWith('ocid-1', '2026-09-04', expect.anything())
+  })
+})
+
 describe('결산 여부도 갱신한다', () => {
   it('창을 채우면 결산도 다시 묻는다', async () => {
     await fillScheduleWindow(['o1'], NOW)
@@ -229,8 +249,41 @@ describe('자격마다 동시에 부르는 수', () => {
     expect(max()).toBe(6)
   })
 
+  // 스케줄러는 캐릭터가 속한 넥슨 계정의 자격으로만 받는다. 상한도 그 계정의 자격마다 따로다.
+  it('캐릭터마다 그 계정의 자격으로 부르고, 키의 6건 상한은 키마다 따로 센다', async () => {
+    getAuthConfigMock.mockResolvedValue({
+      login: { type: 'login', id: 'account-login', session: '세션' },
+      mainKeyId: null,
+      apiKeys: [
+        { type: 'key', id: 'account-부1', label: '', value: '부-키1', loginId: 'account-login' },
+        { type: 'key', id: 'account-부2', label: '', value: '부-키2', loginId: 'account-login' },
+      ],
+    })
+    getNexonAccountIdsOfOcids.mockResolvedValue(
+      new Map([['o-부1', 'account-부1'], ['o-부2', 'account-부2'], ['o-지운', 'account-지운-키']]),
+    )
+    const inFlight = new Map<string, number>()
+    const max = new Map<string, number>()
+    const accountsByOcid = new Map<string, string>()
+    fetchStateMock.mockImplementation(async (credential: { accountId: string }, ocid: string) => {
+      accountsByOcid.set(ocid, credential.accountId)
+      inFlight.set(credential.accountId, (inFlight.get(credential.accountId) ?? 0) + 1)
+      max.set(credential.accountId, Math.max(max.get(credential.accountId) ?? 0, inFlight.get(credential.accountId) ?? 0))
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      inFlight.set(credential.accountId, (inFlight.get(credential.accountId) ?? 0) - 1)
+      return schedulerState()
+    })
+
+    await fillScheduleWindow(['o-메인', 'o-부1', 'o-부2', 'o-지운'], NOW)
+
+    expect(accountsByOcid).toEqual(
+      new Map([['o-메인', 'account-login'], ['o-부1', 'account-부1'], ['o-부2', 'account-부2']]),
+    )
+    expect(max).toEqual(new Map([['account-login', 13], ['account-부1', 6], ['account-부2', 6]]))
+  })
+
   it('로그인은 창 전부를 한꺼번에 부른다', async () => {
-    getAuthConfigMock.mockResolvedValue({ login: { type: 'login', id: 'account-login', session: '세션' }, apiKeys: [] })
+    getAuthConfigMock.mockResolvedValue({ login: { type: 'login', id: 'account-login', session: '세션' }, mainKeyId: null, apiKeys: [] })
     const max = 동시최대()
 
     await fillScheduleWindow(['o1', 'o2'], NOW)

@@ -1,5 +1,5 @@
 import type { NexonCharacterBasicResponse, NexonCharacterListResponse } from '../../../types'
-import { fetchCharacterBasic, fetchCharacterList } from '../client'
+import { fetchCharacterBasic, fetchCharacterBasicOn, fetchCharacterList } from '../client'
 import type { NexonCredential } from '../../../types/auth'
 
 /** 넥슨에 넘기는 자격. 지금은 API 키 한 종류뿐이다. */
@@ -7,7 +7,7 @@ const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accoun
 
 /** 월드 표 대신 넘기는 매칭 함수. `nexon/` 은 `src/data` 를 모른다. */
 const worldKeyOf = (apiName: string): string | null => ({ 베라: 'bera', 엘리시움: 'elysium' } as Record<string, string>)[apiName] ?? null
-import { NexonNoCharacterError } from '../../errors'
+import { NexonBadRequestError, NexonNoCharacterError } from '../../errors'
 
 // 전역을 잠시 갈아 끼우는 도우미. 원래 값을 기억해 두고
 // `unstubAllGlobals` 가 되돌린다.
@@ -148,5 +148,51 @@ describe('fetchCharacterBasic', () => {
     )
 
     await expect(fetchCharacterBasic(자격('test-api-key'), 'ocid-1', worldKeyOf)).rejects.not.toBeInstanceOf(TypeError)
+  })
+})
+
+// 강화 줄의 이름을 그날 그 이름이었던 캐릭터에 붙인다. 값이 없는 날을 실패로 던지면 같은 날을 끝없이 다시 부른다.
+describe('fetchCharacterBasicOn', () => {
+  it('날짜를 붙여 부르고 그날 이름 · 월드 · 만든 날의 KST 날짜를 돌려준다', async () => {
+    const fetchMock = jest.fn(async () =>
+      jsonResponse(200, { character_name: '살름', world_name: '스카니아', character_date_create: '2025-06-19T00:00+09:00' }),
+    )
+    stubGlobal('fetch', fetchMock)
+
+    await expect(fetchCharacterBasicOn(자격('k'), 'ocid-1', '2026-01-07')).resolves.toEqual({
+      name: '살름',
+      worldName: '스카니아',
+      createdDate: '2025-06-19',
+    })
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://open.api.nexon.com/maplestory/v1/character/basic?ocid=ocid-1&date=2026-01-07',
+      expect.anything(),
+    )
+  })
+
+  it('그날 값이 없어 모든 칸이 null 이면 셋 다 null 이다', async () => {
+    stubGlobal('fetch', jest.fn(async () => jsonResponse(200, { character_name: null, world_name: null, character_date_create: null })))
+
+    await expect(fetchCharacterBasicOn(자격('k'), 'ocid-1', '2025-07-01')).resolves.toEqual({
+      name: null,
+      worldName: null,
+      createdDate: null,
+    })
+  })
+
+  it.each(['OPENAPI00003', 'OPENAPI00004'])('400 %s 는 그날 값이 없는 것이다', async (code) => {
+    stubGlobal('fetch', jest.fn(async () => jsonResponse(400, { error: { name: code, message: 'x' } })))
+
+    await expect(fetchCharacterBasicOn(자격('k'), 'ocid-old', '2026-01-07')).resolves.toEqual({
+      name: null,
+      worldName: null,
+      createdDate: null,
+    })
+  })
+
+  it('다른 실패는 그대로 던진다. 다시 받을 실패다', async () => {
+    stubGlobal('fetch', jest.fn(async () => jsonResponse(400, { error: { name: 'OPENAPI00009', message: 'x' } })))
+
+    await expect(fetchCharacterBasicOn(자격('k'), 'ocid-1', '2026-01-07')).rejects.toBeInstanceOf(NexonBadRequestError)
   })
 })

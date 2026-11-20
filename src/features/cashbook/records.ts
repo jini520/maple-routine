@@ -25,20 +25,23 @@ import {
   findSpendChoice,
   findSpendRewardChoice,
   pointToMeso,
+  spentPointToMeso,
   rewardCoinMeso,
+  mesoMarketFeeOf,
   spendGroupCardTitleOf,
   spendRewardCoins,
 } from '../../lib/cashbook/spend-catalog'
-import { hexaStorageCandidates, hexaTargetOf } from '../../lib/cashbook/hexa-matrix'
+import { hexaStorageCandidates, hexaTargetOf, type HexaStorages } from '../../lib/cashbook/hexa-matrix'
 import { accountOfOcid } from '../../lib/mvp/membership'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
-import { getBossDropRecords } from '../../storage/boss-drops'
+import { getBossDropRecords, type BossDropRecord } from '../../storage/boss-drops'
 import { getDatedBossProfitRecords } from '../../storage/boss-profit'
 import { readCharacterBasic } from '../schedule-sync/read-schedule'
 import { getRecordedCharacterOcids } from '../../storage/boss-profit'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import {
+  bumpIncomeRecordsRevision,
   deleteIncomeRecord,
   getFragmentStorage,
   getIncomeRecordsBetween,
@@ -50,15 +53,35 @@ import {
 import { ensureEnhancementTotals } from '../enhancement-history/legacy-totals'
 import { getMvpGradeHistories } from '../../storage/mvp-grades'
 import { getCharacterAccountSightings } from '../../storage/character-accounts'
+import { getOtherFragmentStorage } from '../../storage/inventory'
+import { FragmentShortageError } from '../../storage/fragment-ledger'
+import { getHuntFragmentFloor, type HexaSources } from '../../storage/fragment-moves'
 import type { MvpGradeEntry } from '../../lib/mvp/history'
-import { starforceMvpDiscountResolver } from '../../lib/mvp/starforce'
+import { starforceMvpDiscountOf } from '../../lib/mvp/starforce'
 import { withMvpDiscount } from '../../lib/enhancement/cost'
 import { loadEnhancementTotals } from '../../storage/enhancement-totals'
 import { enhancementCategoryNameOf, type EnhancementCategory } from '../../lib/enhancement/categories'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
+import { mesoMarketExchangeMeso } from '../../lib/cashbook/meso-market-exchange'
+import type { EntryExchange } from '../../storage/cashbook-entries'
+import { recordedItemNameOf, withRingLevel } from '../../lib/item-catalog'
 import { randomUuid } from '../../native/uuid'
 import { getLastPointRate, setLastPointRate } from '../../storage/last-point-rate'
 import { getLastHunts, setLastHunt, type LastHunt, type LastHunts } from '../../storage/last-hunts'
+import {
+  getLastBossIncomeTransfers,
+  setLastBossIncomeTransfer,
+  type LastBossIncomeTransfer,
+  type LastBossIncomeTransfers,
+} from '../../storage/last-boss-income-transfers'
+import {
+  getLastEpicDungeonRewards,
+  setLastEpicDungeonReward,
+  withLastEpicDungeonReward,
+  type FormItemKeys,
+  type LastEpicDungeonRewards,
+  type RewardOwner,
+} from '../../storage/last-epic-dungeon-rewards'
 import {
   DEFAULT_HEXA_STORAGE_CHECKS,
   getHexaStorageChecks,
@@ -66,6 +89,7 @@ import {
   type HexaStorageChecks,
 } from '../../storage/hexa-storage-checks'
 import {
+  bumpSpendRecordsRevision,
   deleteSpendRecord,
   getSpendRecordsBetween,
   insertSpendRecord,
@@ -76,7 +100,62 @@ import { loadAccountLabels } from './account-names'
 import { latestLevelRecordId, rememberAfterEdit, rememberAfterRemove, rememberAfterSave } from './remembered-levels'
 
 export type IncomeDraft = Omit<IncomeRecord, 'id' | 'recordedAt'>
-export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt'>
+/** 시트가 만드는 지출. 메소마켓 수수료율은 시트가 정하지 않고 저장할 때 붙인다(`withMesoMarketFee`). */
+export type SpendDraft = Omit<SpendRecord, 'id' | 'recordedAt' | 'mesoMarketFeePercent'>
+
+/** 기록에 저장하지 않는 시트의 상태. 새 기록을 저장할 때 기억에만 적는다. */
+export interface SpendSheetState {
+  /** `주간 보스 수입 이전` 의 `이번주 보스 수입 옮기기` 체크 */
+  transferFillsWeek?: boolean
+}
+
+/** 새 수입 이전 기록이 남길 보내는 캐릭터 몫. 자동 수수료의 요율은 그때의 등급 값이라 남기지 않는다. */
+function lastTransferOf(draft: SpendDraft, sheet: SpendSheetState): { sender: string; transfer: LastBossIncomeTransfer } | null {
+  if (draft.transfer === undefined || draft.ocid === null) return null
+  const { receiverOcid, feeAuto, feePercent } = draft.transfer
+  return {
+    sender: draft.ocid,
+    transfer: {
+      receiverOcid,
+      feeAuto,
+      feePercent: !feeAuto && (feePercent === 3 || feePercent === 5) ? feePercent : null,
+      fillsWeek: sheet.transferFillsWeek === true,
+    },
+  }
+}
+
+/** 새 에픽던전 리워드 기록이 남길 던전 몫. 형태별 단계가 없는 컨텐츠 항목은 `null` 이다. */
+function lastEpicRewardOf(draft: SpendDraft): { choiceKey: string; owner: RewardOwner; formItemKeys: FormItemKeys } | null {
+  if (draft.formItemKeys === null) return null
+  const reward = findSpendRewardChoice(draft.category, draft.formItemKeys)
+  const owner: RewardOwner | null =
+    draft.accountId !== undefined ? { accountId: draft.accountId } : draft.ocid !== null ? { ocid: draft.ocid } : null
+  if (reward === null || owner === null) return null
+  return { choiceKey: reward.choice.key, owner, formItemKeys: draft.formItemKeys }
+}
+
+/** 저장 뒤 화면이 드는 수입 이전 기억. 저장이 쓴 것과 같은 규칙이고 남길 것이 없으면 그대로 돌려준다. */
+export function nextLastBossIncomeTransfers(
+  draft: SpendDraft,
+  sheet: SpendSheetState,
+  current: LastBossIncomeTransfers,
+): LastBossIncomeTransfers {
+  const remembered = lastTransferOf(draft, sheet)
+  return remembered === null ? current : { ...current, [remembered.sender]: remembered.transfer }
+}
+
+/** 저장 뒤 화면이 드는 에픽던전 기억. 저장이 쓴 것과 같은 규칙이고 남길 것이 없으면 그대로 돌려준다. */
+export function nextLastEpicDungeonRewards(draft: SpendDraft, current: LastEpicDungeonRewards): LastEpicDungeonRewards {
+  const remembered = lastEpicRewardOf(draft)
+  return remembered === null
+    ? current
+    : withLastEpicDungeonReward(current, remembered.choiceKey, remembered.owner, remembered.formItemKeys)
+}
+
+/** 저장할 지출에 메소마켓 수수료율을 붙인다. 메포 지출만 요율이 있다. */
+function withMesoMarketFee(record: SpendRecord): SpendRecord {
+  return { ...record, mesoMarketFeePercent: record.pointAmount === null ? null : mesoMarketFeeOf(record.mesoMarketFeePercent) }
+}
 
 
 export async function recordIncome(draft: IncomeDraft, now: Date): Promise<void> {
@@ -127,9 +206,95 @@ async function quietly(task: () => Promise<void>): Promise<void> {
   }
 }
 
-export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
+/** 환전 기록의 금액은 시트 입력으로 다시 센다. 0 보다 작으면 수익이라 `기타` 수입이다 */
+type ExchangeSave = { kind: 'spend'; record: SpendRecord } | { kind: 'income'; record: IncomeRecord }
+
+function exchangeSaveOf(draft: SpendDraft, exchange: EntryExchange, id: string, recordedAt: string): ExchangeSave {
+  const meso = mesoMarketExchangeMeso({
+    soldMeso: exchange.soldMeso,
+    sellRate: exchange.sellPointPer100mMeso,
+    boughtMeso: exchange.boughtMeso,
+    buyRate: exchange.buyPointPer100mMeso,
+    feePercent: exchange.mesoMarketFeePercent,
+  })
+  if (meso >= 0) return { kind: 'spend', record: { ...draft, id, recordedAt, mesoAmount: meso, mesoMarketFeePercent: null } }
+  return {
+    kind: 'income',
+    record: {
+      id,
+      ocid: draft.ocid,
+      ...(draft.accountId === undefined ? {} : { accountId: draft.accountId }),
+      earnedOn: draft.spentOn,
+      category: 'etc',
+      item: draft.item,
+      itemKey: null,
+      mesoAmount: -meso,
+      saleFeePercent: null,
+      saleFeeMeso: null,
+      saleFeeAuto: false,
+      pointAmount: null,
+      pointPer100mMeso: null,
+      cashAmount: null,
+      quantity: draft.quantity,
+      itemKind: null,
+      hunt: null,
+      recordedAt,
+      exchange,
+    },
+  }
+}
+
+/**
+ * 메소마켓 환전 기록을 고친다. 금액의 부호가 바뀌면 같은 `id` 로 지출과 수입 사이를 옮기고, 떠난 쪽 목록도 다시 읽게 판을 올린다.
+ */
+export async function editMesoMarketExchange(entry: ManualDayRecord, draft: SpendDraft): Promise<void> {
+  if (draft.exchange === undefined) throw new Error('editMesoMarketExchange: 시트 입력이 없는 초안입니다')
+  const saved = exchangeSaveOf(draft, draft.exchange, entry.record.id, entry.record.recordedAt)
+  if (saved.kind === 'spend') await updateSpendRecord(saved.record)
+  else await updateIncomeRecord(saved.record)
+  if (saved.kind === entry.kind) return
+  if (saved.kind === 'spend') bumpIncomeRecordsRevision()
+  else bumpSpendRecordsRevision()
+}
+
+/** 수입으로 저장된 환전 기록을 지출 시트가 열 수 있는 모양으로 바꾼다. 그 시트에서 적은 기록이라 같은 시트로 연다 */
+export function exchangeSpendViewOf(record: IncomeRecord): SpendRecord {
+  return {
+    id: record.id,
+    ocid: record.ocid,
+    ...(record.accountId === undefined ? {} : { accountId: record.accountId }),
+    spentOn: record.earnedOn,
+    category: 'etc',
+    item: record.item,
+    itemKey: null,
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: null,
+    levelTo: null,
+    quantity: record.quantity,
+    mesoAmount: record.mesoAmount,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
+    cashAmount: null,
+    hexa: null,
+    recordedAt: record.recordedAt,
+    ...(record.exchange === undefined ? {} : { exchange: record.exchange }),
+  }
+}
+
+export async function recordSpend(draft: SpendDraft, now: Date, sheet: SpendSheetState = {}): Promise<void> {
   const id = randomUuid()
-  const record: SpendRecord = { ...draft, id, recordedAt: now.toISOString() }
+  if (draft.exchange !== undefined) {
+    const saved = exchangeSaveOf(draft, draft.exchange, id, now.toISOString())
+    if (saved.kind === 'spend') await insertSpendRecord(saved.record)
+    else await insertIncomeRecord(saved.record)
+    countCoreSave()
+    recordUsageAction('cashbook-add')
+    return
+  }
+  const record = withMesoMarketFee({ ...draft, id, recordedAt: now.toISOString(), mesoMarketFeePercent: null })
   await insertSpendRecord(record)
   await quietly(() => rememberAfterSave(record))
   // 다음 새 헥사 폼이 이 상태로 열린다. 수정 저장은 그 기록만 고치는 일이라 적지 않는다.
@@ -137,6 +302,11 @@ export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
   if (hexa !== null) {
     await quietly(() => setHexaStorageChecks({ useStorage: hexa.useStorage, storageAsSpend: hexa.storageAsSpend }))
   }
+  // 다음 새 수입 이전 · 에픽던전 폼이 이 입력으로 열린다. 수정 저장은 지난 기록만 고치는 일이라 적지 않는다.
+  const transfer = lastTransferOf(draft, sheet)
+  if (transfer !== null) await quietly(() => setLastBossIncomeTransfer(transfer.sender, transfer.transfer))
+  const reward = lastEpicRewardOf(draft)
+  if (reward !== null) await quietly(() => setLastEpicDungeonReward(reward.choiceKey, reward.owner, reward.formItemKeys))
   countCoreSave()
   recordUsageAction('cashbook-add')
   // 저장이 성공한 뒤에만 기억한다. 던진 입력의 시세를 다음 기본값으로 남기면 안 된다.
@@ -151,7 +321,8 @@ export async function recordSpend(draft: SpendDraft, now: Date): Promise<void> {
  * 메소로 낸(번) 것 + 메소마켓 시세로 환산한 메포다. 캐시는 안 든다. 환산 자체를 안 하므로
  * 캐시가 낀 날은 이 값이 그날의 전부가 아니다. 그 사실은 고른 날의 상세가 따로 말한다.
  *
- * 수입과 지출이 같은 식이다. 그래야 수입 − 지출 이 한 자로 재인다.
+ * 수입과 지출이 같은 시세로 바꾼다. 그래야 수입 − 지출 이 한 자로 재인다. 받은 메포를 메소로 바꾸는 것은 메소를 사는
+ * 쪽이라 메소마켓 수수료가 없다.
  */
 export function incomeMesoOf(record: IncomeRecord): number {
   const meso = record.mesoAmount ?? 0
@@ -160,7 +331,10 @@ export function incomeMesoOf(record: IncomeRecord): number {
 }
 
 /**
- * 지출 한 건의 메소 축 금액. 수입과 **같은 식**이되 주화 한 항이 더 있다.
+ * 지출 한 건의 메소 축 금액. 수입과 **같은 시세**로 바꾸되 메소마켓 수수료와 주화가 더 있다.
+ *
+ * 메포를 쓰려면 메소를 팔아야 하고 메소마켓은 1억 단위로 팔아 받는 메포에서 수수료를 떼므로, 그 기록의 메포를 받을 수 있는
+ * 가장 적은 억 수를 판 것으로 세고 남은 메포를 되돌린다.
  *
  * 에픽던전 추가 리워드는 세라자르 주화를 주고 그 주화는 상점에 팔면 메소가 되므로, 실제로 나간
  * 돈은 메포 값에서 주화 판매가를 뺀 값이다. 그 뺄셈을 **읽을 때** 한다. 저장 칸을 안 더하므로
@@ -172,7 +346,7 @@ export function spendMesoOf(record: SpendRecord): number {
   const meso = record.mesoAmount ?? 0
   // 메포를 환산하지 않는 행이라 주화를 얹을 축도 없다.
   if (record.pointAmount === null || record.pointPer100mMeso === null) return meso
-  return meso + pointToMeso(record.pointAmount, record.pointPer100mMeso) - rewardCoinMesoOf(record)
+  return meso + spentPointToMeso(record.pointAmount, record.pointPer100mMeso, record.mesoMarketFeePercent) - rewardCoinMesoOf(record)
 }
 
 /**
@@ -257,19 +431,47 @@ async function resolveDisplayOcids(): Promise<string[]> {
   return [...new Set([...(tracked ?? []), ...recorded])]
 }
 
+/** 처치한 날이 밝혀진 판 드롭 하나. 드롭에는 날짜가 없어 짝인 보스 수익 행의 처치 날짜를 물려받는다. */
+export interface DatedSoldDrop {
+  dateKey: string
+  drop: BossDropRecord
+}
+
+/** 이 범위(두 끝 포함)에 처치한 날이 밝혀진 보스 수익 행과, 그 처치에서 값을 넣은 드롭. 가계부 줄과 거래 내역이 같이 읽는다. */
+async function loadDatedBossRows(
+  fromDateKey: string,
+  toDateKey: string,
+): Promise<{ records: Awaited<ReturnType<typeof getDatedBossProfitRecords>>; soldDrops: DatedSoldDrop[] }> {
+  const ocids = await resolveDisplayOcids()
+  if (ocids.length === 0) return { records: [], soldDrops: [] }
+
+  const records = await withSqliteFallback(getDatedBossProfitRecords(ocids, fromDateKey, toDateKey), [])
+  if (records.length === 0) return { records, soldDrops: [] }
+
+  const dateByBossRow = new Map(records.map((record) => [bossRowKey(record), record.defeatedOn]))
+  const periodKeys = [...new Set(records.map((record) => record.periodKey))]
+  const drops = await withSqliteFallback(getBossDropRecords(ocids, periodKeys), [])
+  const soldDrops: DatedSoldDrop[] = []
+  for (const drop of drops) {
+    // 짝인 수익 행이 없으면 물려받을 날짜가 없다. 결정석 가격을 모르는 보스가 그렇다.
+    const dateKey = dateByBossRow.get(bossRowKey(drop))
+    // 가계부는 판 것만 보여 준다. 값을 안 넣은 드롭과 `'excluded'`(기록 안 함)는 줄에도 판에도 안 든다.
+    if (dateKey === undefined || drop.priceState !== 'entered') continue
+    soldDrops.push({ dateKey, drop })
+  }
+  return { records, soldDrops }
+}
+
+/** 이 범위(두 끝 포함)에 처치한 보스의 판 드롭. 거래 내역이 드롭 한 건을 한 줄로 세운다. */
+export async function loadSoldDropsBetween(fromDateKey: string, toDateKey: string): Promise<DatedSoldDrop[]> {
+  return (await loadDatedBossRows(fromDateKey, toDateKey)).soldDrops
+}
+
 async function loadBossDaySummaries(
   fromDateKey: string,
   toDateKey: string,
 ): Promise<BossDaySummary[]> {
-  const ocids = await resolveDisplayOcids()
-  if (ocids.length === 0) {
-    return []
-  }
-
-  const records = await withSqliteFallback(
-    getDatedBossProfitRecords(ocids, fromDateKey, toDateKey),
-    [],
-  )
+  const { records, soldDrops } = await loadDatedBossRows(fromDateKey, toDateKey)
   if (records.length === 0) {
     return []
   }
@@ -293,9 +495,9 @@ async function loadBossDaySummaries(
     return created
   }
 
-  const dateByBossRow = new Map<string, string>()
   for (const record of records) {
-    dateByBossRow.set(bossRowKey(record), record.defeatedOn)
+    // 0 이 된 결정석(`제외` · 한도 초과)은 판 것이 아니라 줄에 안 세운다. 그 보스의 드롭은 처치 날짜를 그대로 물려받는다.
+    if (record.crystalExcluded || record.overCrystalLimit) continue
     const bucket = bucketOf(record.defeatedOn, record.ocid)
     bucket.crystalMeso += record.payoutMeso
     bucket.bossCount += 1
@@ -308,15 +510,7 @@ async function loadBossDaySummaries(
     })
   }
 
-  const periodKeys = [...new Set(records.map((record) => record.periodKey))]
-  const drops = await withSqliteFallback(getBossDropRecords(ocids, periodKeys), [])
-  for (const drop of drops) {
-    // 짝인 수익 행이 없으면 물려받을 날짜가 없다. 결정석 가격을 모르는 보스가 그렇다.
-    const dateKey = dateByBossRow.get(bossRowKey(drop))
-    if (dateKey === undefined) continue
-
-    // 가계부는 판 것만 보여 준다. 값을 안 넣은 드롭과 `'excluded'`(기록 안 함)는 줄에도 판에도 안 든다.
-    if (drop.priceState !== 'entered') continue
+  for (const { dateKey, drop } of soldDrops) {
     const bucket = bucketOf(dateKey, drop.ocid)
     const payoutMeso = dropPayoutMeso(drop)
     bucket.dropMeso += payoutMeso
@@ -330,6 +524,9 @@ async function loadBossDaySummaries(
 /** 화면이 쓰는 강화 합계 한 줄. MVP 할인을 붙인 금액이다. */
 interface EnhancementSpending {
   dateKey: string
+  /** 그 줄을 붙인 캐릭터. 이름을 바꿔도 같은 값이라 이것으로 묶는다 */
+  ocid: string
+  /** 응답이 준 그날의 이름. 지금 이름을 모를 때 보인다 */
   characterName: string
   category: EnhancementCategory
   /** 장비 칸을 묶는 열쇠. 합계 표의 `item_group` 이다 */
@@ -343,22 +540,21 @@ interface EnhancementSpending {
 }
 
 /**
- * 그 범위의 강화 합계를 **금액이 붙은 줄**로. 스타포스는 그 날짜 · 그 캐릭터의 MVP 할인을 시도 비용에 붙인다.
+ * 그 범위의 강화 합계를 **금액이 붙은 줄**로. 스타포스는 그 날짜 · 그 캐릭터의 메이플 ID 의 MVP 할인을 시도 비용에 붙인다.
  *
  * 이벤트 월드 줄과 판정하지 못한 줄은 지출이 아니라 뺀다. 읽기가 실패하면 빈 목록이다. 칸이 지출을 빼고 보이지만 화면은 산다.
  */
 async function loadEnhancementSpending(fromDateKey: string, toDateKey: string): Promise<EnhancementSpending[]> {
   await ensureEnhancementTotals()
-  const [totals, histories, sightings] = await Promise.all([
+  const [totals, histories] = await Promise.all([
     withSqliteFallback(loadEnhancementTotals(fromDateKey, toDateKey), []),
     withSqliteFallback(getMvpGradeHistories(), new Map<string, MvpGradeEntry[]>()),
-    withSqliteFallback(getCharacterAccountSightings(), []),
   ])
-  const mvpDiscountOf = starforceMvpDiscountResolver(histories, sightings)
   return totals
     .filter((total) => total.eventWorld === false)
     .map((total) => ({
       dateKey: total.historyDate,
+      ocid: total.ocid,
       characterName: total.characterName,
       category: total.enhancementCategory,
       itemGroup: total.itemGroup,
@@ -370,8 +566,12 @@ async function loadEnhancementSpending(fromDateKey: string, toDateKey: string): 
       costMeso:
         total.enhancementType === 'starforce'
           ? withMvpDiscount(
-              { attemptMeso: total.attemptCostMeso, destroyDefenceMeso: total.destroyDefenceCostMeso },
-              mvpDiscountOf(total.characterName, total.historyDate),
+              {
+                attemptMeso: total.attemptCostMeso,
+                destroyDefenceMeso: total.destroyDefenceCostMeso,
+                superiorMeso: total.superiorCostMeso,
+              },
+              starforceMvpDiscountOf(histories, total.accountId, total.historyDate),
             )
           : total.attemptCostMeso + total.destroyDefenceCostMeso,
     }))
@@ -413,6 +613,7 @@ export async function loadMonthDays(
       ...incomes.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
       ...spends.flatMap((record) => (record.ocid === null ? [] : [record.ocid])),
       ...bossSummaries.map((summary) => summary.ocid),
+      ...enhancements.map((row) => row.ocid),
     ]),
     loadAccountLabels([
       ...new Set([...incomes, ...spends].flatMap((record) => (record.accountId === undefined ? [] : [record.accountId]))),
@@ -440,7 +641,7 @@ export async function loadMonthDays(
     bucketOf(summary.dateKey).auto.push(...toAutoRecords([summary], names))
   }
   for (const [dateKey, rows] of groupByDate(enhancements)) {
-    bucketOf(dateKey).auto.push(...toEnhancementRecords(rows))
+    bucketOf(dateKey).auto.push(...toEnhancementRecords(rows, names))
   }
   for (const record of incomes) {
     bucketOf(record.earnedOn).manual.push({
@@ -518,7 +719,7 @@ export async function loadTrackedCharacters(): Promise<
       return {
         ocid,
         name: profile?.name ?? '',
-        // 레벨은 사냥 계산기가 쓴다. 지역을 ±20 으로 거르고 레벨 차이 페널티를 낸다. 캐시가 아직
+        // 레벨은 사냥 계산기가 쓴다. 지역을 거르고 레벨 차이 페널티를 낸다. 캐시가 아직
         // 안 따뜻하면 `null` 이고 그때는 페널티 없이 계산하며 시트가 그 사실을 한 줄로 말한다.
         level: profile?.level ?? null,
         // 시트의 캐릭터 드롭다운이 월드 엠블럼을 그린다. 모르면 이름만 선다.
@@ -542,6 +743,16 @@ export async function loadLastHunts(): Promise<LastHunts> {
   return getLastHunts().catch(() => ({}))
 }
 
+/** 보내는 캐릭터를 고르면 설 마지막 수입 이전. 받는 캐릭터가 지금 목록에 있는지는 시트가 판정한다. */
+export async function loadLastBossIncomeTransfers(): Promise<LastBossIncomeTransfers> {
+  return getLastBossIncomeTransfers().catch(() => ({}))
+}
+
+/** 던전 타일을 누르면 설 마지막 에픽던전 리워드. 주인 · 단계가 지금 있는지는 시트가 판정한다. */
+export async function loadLastEpicDungeonRewards(): Promise<LastEpicDungeonRewards> {
+  return getLastEpicDungeonRewards().catch(() => ({}))
+}
+
 
 /**
  * 그날 목록의 손입력 줄. 여기서 고치고 지운다.
@@ -551,7 +762,7 @@ export async function loadLastHunts(): Promise<LastHunts> {
  */
 interface ManualDayRecordBase {
   /**
-   * 그 기록에 붙은 캐릭터의 이름, 메이플 ID 기록이면 `메이플 ID · 대표 캐릭터`. 없으면 빈 문자열이다.
+   * 그 기록에 붙은 캐릭터의 이름, 메이플 ID 기록이면 그 ID 의 이름(`메이플ID-da9b2f21`). 없으면 빈 문자열이다.
    *
    * 주인을 모르는 옛 기록이거나 캐시에 이름이 없으면 빈다. 줄은 그때 항목만 적는다.
    */
@@ -630,13 +841,15 @@ export interface SoldItem {
  * **자동 줄인데 지출이다.** 앞의 둘과 갈리는 자리가 이것뿐이고, `dayTotalsOf` 와 화면의 아이콘이
  * 그 하나를 안다.
  *
- * `ocid` 가 없다. 계정 단위 API 라 이름만 온다. 그래서 초상이 안 붙는다.
+ * 강화 응답은 이름만 주지만, 합계 줄은 그날 그 이름이었던 캐릭터(ocid)에 붙어 있다. 그래서 이름을 바꾼 캐릭터의 줄도 한
+ * 캐릭터로 묶인다.
  */
 export interface EnhancementDayRecord {
   kind: 'enhancement'
-  /** 갈래 key. 이름과 함께 이 줄의 신원이다. 제목에 적는 글자는 갈래 표에서 찾는다 */
+  /** 갈래 key. 캐릭터와 함께 이 줄의 신원이다. 제목에 적는 글자는 갈래 표에서 찾는다 */
   category: EnhancementCategory
-  /** 이름뿐이다 */
+  ocid: string
+  /** 그 캐릭터의 지금 이름. 모르면 그날의 이름이다 */
   characterName: string
   /** 그날 쓴 메소. 스타포스는 MVP 할인을 붙인 값이다 */
   payoutMeso: number
@@ -685,10 +898,8 @@ export function isManualRecord(entry: DayRecord): entry is ManualDayRecord {
  */
 export function rowKeyOf(entry: DayRecord): string {
   if (isManualRecord(entry)) return entry.record.id
-  // 강화 줄은 `ocid` 가 없다. 하루에 캐릭터 하나가 갈래마다 한 줄이라 그 둘이 신원이다.
-  return entry.kind === 'enhancement'
-    ? `${entry.kind}:${entry.category}:${entry.characterName}`
-    : `${entry.kind}:${entry.ocid}`
+  // 강화 줄은 하루에 캐릭터 하나가 갈래마다 한 줄이라 그 둘이 신원이다.
+  return entry.kind === 'enhancement' ? `${entry.kind}:${entry.category}:${entry.ocid}` : `${entry.kind}:${entry.ocid}`
 }
 
 /**
@@ -712,21 +923,25 @@ function isEmptySpend(entry: DayRecord): boolean {
 }
 
 /**
- * 강화 합계를 **캐릭터 · 분류마다 한 줄**로 접는다. 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
+ * 강화 합계를 **캐릭터(ocid) · 분류마다 한 줄**로 접는다. 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
  *
  * 펼친 장비 칸은 합계 표의 `item_group` 으로 묶는다. 이름은 처음 든 합계의 API 이름이다.
  */
-function toEnhancementRecords(rows: readonly EnhancementSpending[]): EnhancementDayRecord[] {
+function toEnhancementRecords(
+  rows: readonly EnhancementSpending[],
+  names: ReadonlyMap<string, string>,
+): EnhancementDayRecord[] {
   const groups = new Map<string, { record: EnhancementDayRecord; items: Map<string, EnhancedItem> }>()
   for (const row of rows) {
-    const key = `${row.category}|${row.characterName}`
+    const key = `${row.category}|${row.ocid}`
     let group = groups.get(key)
     if (group === undefined) {
       group = {
         record: {
           kind: 'enhancement',
           category: row.category,
-          characterName: row.characterName,
+          ocid: row.ocid,
+          characterName: names.get(row.ocid) ?? row.characterName,
           payoutMeso: 0,
           count: 0,
           items: [],
@@ -788,7 +1003,7 @@ function toEnhancementRecords(rows: readonly EnhancementSpending[]): Enhancement
  * 못 찾은 `ocid` 는 표에 안 든다. 부르는 쪽이 그때 빈 문자열을 쓴다. `ocid` 는 사용자에게 아무
  * 뜻도 없는 문자열이라 그것을 적을 바에 이름을 안 적는다.
  */
-async function namesByOcid(ocids: readonly string[]): Promise<Map<string, string>> {
+export async function namesByOcid(ocids: readonly string[]): Promise<Map<string, string>> {
   const profiles = await resolveDisplayProfiles(ocids).catch(() => new Map())
   return new Map([...profiles].map(([ocid, profile]) => [ocid, profile.name]))
 }
@@ -847,6 +1062,11 @@ const AUTO_TITLES: Record<AutoDayRecord['kind'], string> = {
   enhancement: '강화',
 }
 
+/** 자동 줄의 분류 이름(`보스 드롭 판매` 등). 거래 내역이 드롭 줄과 상세 시트 머리에 같은 이름을 쓴다. */
+export function autoRecordTitleOf(kind: AutoDayRecord['kind']): string {
+  return AUTO_TITLES[kind]
+}
+
 /** 하루 목록 카드의 두 줄. 둘째 줄이 없으면 `null` 이다. */
 export interface RecordCard {
   title: string
@@ -864,10 +1084,20 @@ function joined(parts: ReadonlyArray<string | null | undefined>, separator = ' '
   return kept.length === 0 ? null : kept.join(separator)
 }
 
-/** 직접 친 이름 뒤에 종류 단위의 수량을 붙인다. 장비는 수량이 없다. */
+/** 아이템 구매 · 판매 줄의 이름. 고른 아이템은 아이템 표의 이름이고, 특수스킬 반지는 이름 뒤에 레벨이 붙는다. */
+function tradedItemName(record: { item: string | null; itemKey: string | null; ringLevel?: number }): string | null {
+  const name = recordedItemNameOf(record.item, record.itemKey)
+  return name === null ? null : withRingLevel(name, record.ringLevel)
+}
+
+/** 종류 단위의 수량. 장비처럼 단위가 없는 종류는 수량이 없다. */
+function tradedItemQuantity(kind: ItemKindKey | null, quantity: number | null): string | null {
+  return kind !== null && countsQuantity(kind) && quantity !== null ? quantityText(quantity, itemKindUnitOf(kind)) : null
+}
+
+/** 직접 친 이름 뒤에 종류 단위의 수량을 붙인다. */
 function tradedItemDetail(item: string | null, kind: ItemKindKey | null, quantity: number | null): string | null {
-  const counted = kind !== null && countsQuantity(kind) && quantity !== null
-  return joined([item, counted ? quantityText(quantity, itemKindUnitOf(kind)) : null])
+  return joined([item, tradedItemQuantity(kind, quantity)])
 }
 
 /** 사냥에서 조각 가격을 적었으면 판 개수. 보관한 조각은 안 적는다. */
@@ -897,7 +1127,7 @@ function incomeCard(record: IncomeRecord): RecordCard {
       return { title, detail: record.quantity === null ? name : `${name} ${quantityText(record.quantity, '개')} 판매` }
     }
     case 'item_sale':
-      return { title, detail: tradedItemDetail(record.item, record.itemKind ?? 'equipment', record.quantity) }
+      return { title, detail: tradedItemDetail(tradedItemName(record), record.itemKind ?? 'equipment', record.quantity) }
     case 'etc':
       return { title, detail: joined([record.item, etcQuantity(record.quantity, category?.unit)]) }
   }
@@ -917,13 +1147,10 @@ function spendCard(record: SpendRecord): RecordCard {
       const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
       return { title: categoryTitle, detail: found === null ? record.item : joined([found.symbol.name, levels]) }
     }
-    case 'hexa_matrix': {
-      const target = hexaTargetOf(record.itemKey, record.hexa?.activation != null)
-      const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
-      return { title: categoryTitle, detail: joined([target?.name ?? record.item, levels]) }
-    }
+    case 'hexa_matrix':
+      return { title: categoryTitle, detail: joined(hexaParts(record)) }
     case 'item_purchase':
-      return { title: categoryTitle, detail: tradedItemDetail(record.item, record.itemKind ?? 'equipment', record.quantity) }
+      return { title: categoryTitle, detail: tradedItemDetail(tradedItemName(record), record.itemKind ?? 'equipment', record.quantity) }
     case 'etc':
       return { title: categoryTitle, detail: joined([record.item, etcQuantity(record.quantity, category?.unit)]) }
     default: {
@@ -948,6 +1175,110 @@ function spendCard(record: SpendRecord): RecordCard {
       }
     }
   }
+}
+
+/** 헥사 기록의 이름(코어의 첫 스킬이나 스탯)과 레벨. */
+function hexaParts(record: SpendRecord): [string | null, string | null] {
+  const target = hexaTargetOf(record.itemKey, record.hexa?.activation != null)
+  const levels = record.levelFrom === null || record.levelTo === null ? null : `${record.levelFrom} → ${record.levelTo}`
+  return [target?.name ?? record.item, levels]
+}
+
+/**
+ * 합친 줄을 펼친 칸의 두 줄. 기록 줄의 둘째 줄을 이름과 레벨 · 수량으로 나눈 것이라 두 곳이 같은 조각을 쓴다.
+ * 이름을 모르면 갈래 이름이다.
+ */
+export function spendTileOf(record: SpendRecord): RecordCard {
+  const [name, detail] =
+    record.category === 'hexa_matrix'
+      ? hexaParts(record)
+      : [tradedItemName(record), tradedItemQuantity(record.itemKind ?? 'equipment', record.quantity)]
+  return { title: name ?? cashbookCategoryOf('spend', record.category)?.name ?? record.category, detail }
+}
+
+/** 거래 내역 줄의 윗줄. 아이템 이름과 개수를 갈라 든다. 이름이 길면 이름만 줄이고 개수는 남기기 때문이다. */
+export interface TradeLine {
+  name: string
+  /** 종류 단위의 개수(`3,000개`). 장비처럼 단위가 없는 종류는 `null` */
+  quantity: string | null
+  /** 아이템 검색이 찾는 이름인가. 지출 목록에서 고른 항목의 이름은 찾지 않는다 */
+  searchable: boolean
+}
+
+/**
+ * 아이템을 사고판 기록의 윗줄. 이름 · 단위는 하루 목록 줄과 같은 표에서 찾는다. 거래가 아닌 기록(기타 · 심볼 · 헥사 · 조각을
+ * 팔지 않은 사냥)은 `null` 이다.
+ */
+export function tradeLineOf(entry: ManualDayRecord): TradeLine | null {
+  if (entry.kind === 'income') {
+    const record = entry.record
+    const category = cashbookCategoryOf('income', record.category)
+    switch (record.category) {
+      case 'item_sale':
+        return {
+          name: tradedItemName(record) ?? category?.name ?? record.category,
+          quantity: tradedItemQuantity(record.itemKind ?? 'equipment', record.quantity),
+          searchable: true,
+        }
+      case 'sol_erda_fragment':
+        return {
+          name: category?.name ?? record.category,
+          quantity: record.quantity === null ? null : quantityText(record.quantity, category?.unit),
+          searchable: true,
+        }
+      case 'hunt_loot_sale':
+        return {
+          name: findHuntLoot(record.itemKey)?.name ?? category?.name ?? record.category,
+          quantity: record.quantity === null ? null : quantityText(record.quantity, '개'),
+          searchable: true,
+        }
+      case 'hunting': {
+        // 조각 가격을 적은 사냥만 판 기록이다. 가격이 `null` 이면 조각은 보관에 든다.
+        const hunt = record.hunt
+        if (hunt === null || hunt.fragmentPrice === null || hunt.fragments <= 0) return null
+        const fragment = cashbookCategoryOf('income', 'sol_erda_fragment')
+        return {
+          name: fragment?.name ?? 'sol_erda_fragment',
+          quantity: quantityText(hunt.fragments, fragment?.unit),
+          searchable: true,
+        }
+      }
+      case 'etc':
+        return null
+    }
+  }
+  const record = entry.record
+  switch (record.category) {
+    case 'item_purchase':
+      return {
+        name: tradedItemName(record) ?? cashbookCategoryOf('spend', record.category)?.name ?? record.category,
+        quantity: tradedItemQuantity(record.itemKind ?? 'equipment', record.quantity),
+        searchable: true,
+      }
+    case 'scroll':
+    case 'buff':
+    case 'event_bm':
+    case 'content': {
+      const reward = findSpendRewardChoice(record.category, record.formItemKeys)
+      if (reward !== null) {
+        const name = buildSpendRewardName(reward.choice, reward.tierByForm) ?? cashbookCategoryOf('spend', record.category)?.name
+        return { name: name ?? record.category, quantity: null, searchable: false }
+      }
+      const chosen = findSpendChoice(record.category, record.itemKey)
+      return {
+        name: chosen?.item.name ?? record.item ?? cashbookCategoryOf('spend', record.category)?.name ?? record.category,
+        quantity: chosen === null || record.quantity === null ? null : quantityText(record.quantity, chosen.item.unit),
+        searchable: false,
+      }
+    }
+    default:
+      return null
+  }
+}
+
+/** 판 드롭의 개수. 드롭은 늘 하나이고, 장비가 아니면 `1개` 다. */
+export function dropTradeQuantityOf(kind: ItemKindKey): string | null {
+  return tradedItemQuantity(kind, 1)
 }
 
 function autoDetail(entry: AutoDayRecord): string {
@@ -1016,7 +1347,7 @@ export function recordCashOf(entry: DayRecord): number | null {
 }
 
 /**
- * 한 캐릭터가 고른 날까지 보관 중인 솔 에르다 조각 개수. 정산 폼이 쓴다.
+ * 한 캐릭터가 그 날 쓸 수 있는 솔 에르다 조각. 그 날과 뒤 모든 날의 남은 개수 가운데 가장 작은 값이고, 정산 폼이 쓴다.
  *
  * 못 읽으면 `null` 이다. 0 으로 읽으면 보관이 있는데도 정산 폼이 없다고 적는다.
  *
@@ -1024,42 +1355,65 @@ export function recordCashOf(entry: DayRecord): number | null {
  */
 export function loadFragmentStorage(
   ocid: string,
-  onOrBeforeDateKey: string,
+  dateKey: string,
   excludeRecordId: string | undefined,
 ): Promise<number | null> {
-  return withSqliteFallback<number | null>(
-    getFragmentStorage(ocid, onOrBeforeDateKey, excludeRecordId),
-    null,
-  )
+  return withSqliteFallback<number | null>(getFragmentStorage(ocid, dateKey, excludeRecordId), null)
 }
 
 /**
- * 헥사 강화가 보관 조각을 가져올 캐릭터와 그 보관. 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID · 같은 월드의
- * 추적 캐릭터를 캐릭터 관리 순서로 둔다. 월드는 캐릭터 기본 정보 캐시에서 읽는다.
- *
- * 한 캐릭터라도 못 읽으면 `null` 이다. 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
- *
- * @param excludeRecordId 수정 중인 헥사 기록. 그 기록이 가져간 몫을 보관에 되돌려야 다시 배분할 수 있다.
+ * 헥사 강화가 보관 조각을 가져올 캐릭터의 차례를 내는 함수. 강화한 캐릭터가 먼저이고, 그다음은 같은 메이플 ID · 같은
+ * 월드의 추적 캐릭터를 캐릭터 관리 순서로 둔다. 월드는 캐릭터 기본 정보 캐시에서 읽는다.
  */
-export async function loadHexaStorages(
-  ocid: string,
-  onOrBeforeDateKey: string,
-  excludeRecordId: string | undefined,
-): Promise<{ ocid: string; stored: number }[] | null> {
-  try {
-    const [trackedOcids, sightings] = await Promise.all([getTrackedCharacterOcids(), getCharacterAccountSightings()])
-    const candidates = hexaStorageCandidates({
+export async function loadHexaCandidatesOf(): Promise<(ocid: string) => string[]> {
+  const [trackedOcids, sightings] = await Promise.all([getTrackedCharacterOcids(), getCharacterAccountSightings()])
+  return (ocid) =>
+    hexaStorageCandidates({
       ocid,
       trackedOcids: trackedOcids ?? [],
       accountOf: (each) => accountOfOcid(sightings, each),
       worldOf: (each) => readCharacterBasic(each)?.profile?.worldKey ?? null,
     })
-    return await Promise.all(
-      candidates.map(async (each) => ({
-        ocid: each,
-        stored: await getFragmentStorage(each, onOrBeforeDateKey, excludeRecordId),
-      })),
-    )
+}
+
+/** 헥사 강화가 기타 조각을 가져올 메이플 ID · 월드를 내는 함수. 월드는 캐릭터 기본 정보 캐시에서 읽는다. */
+export async function loadHexaOwnerOf(): Promise<(ocid: string) => { accountId: string; worldKey: string } | null> {
+  const sightings = await getCharacterAccountSightings()
+  return (ocid) => {
+    const accountId = accountOfOcid(sightings, ocid)
+    const worldKey = readCharacterBasic(ocid)?.profile?.worldKey ?? null
+    return accountId === null || worldKey === null ? null : { accountId, worldKey }
+  }
+}
+
+/**
+ * 헥사 강화가 가져올 보관. 강화한 캐릭터의 메이플 ID · 월드의 기타 조각과, 그 날 쓸 수 있는 캐릭터별 사냥 조각이다. 사냥
+ * 조각의 차례는 `loadHexaCandidatesOf` 다.
+ *
+ * 한 자리라도 못 읽으면 `null` 이다. 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
+ *
+ * @param excludeRecordId 수정 중인 헥사 기록. 그 기록이 가져간 몫을 보관에 되돌려야 다시 배분할 수 있다.
+ */
+export async function loadHexaStorages(
+  ocid: string,
+  dateKey: string,
+  excludeRecordId: string | undefined,
+): Promise<HexaStorages | null> {
+  try {
+    const [candidatesOf, ownerOf] = await Promise.all([loadHexaCandidatesOf(), loadHexaOwnerOf()])
+    const owner = ownerOf(ocid)
+    const [other, hunts] = await Promise.all([
+      owner === null
+        ? null
+        : getOtherFragmentStorage(owner.accountId, owner.worldKey, excludeRecordId).then((stored) => ({ ...owner, stored })),
+      Promise.all(
+        candidatesOf(ocid).map(async (each) => ({
+          ocid: each,
+          stored: await getFragmentStorage(each, dateKey, excludeRecordId),
+        })),
+      ),
+    ])
+    return { other, hunts }
   } catch {
     return null
   }
@@ -1071,7 +1425,8 @@ export function loadHexaStorageChecks(): Promise<HexaStorageChecks> {
 }
 
 /** 고치기. `recordedAt` 은 안 바뀐다. 시세를 기억하는 순서는 넣을 때와 같다. 성공한 뒤에만. */
-export async function editSpend(record: SpendRecord): Promise<void> {
+export async function editSpend(edited: SpendRecord): Promise<void> {
+  const record = withMesoMarketFee(edited)
   await updateSpendRecord(record)
   await quietly(() => rememberAfterEdit(record))
   if (record.pointPer100mMeso !== null) {
@@ -1079,8 +1434,34 @@ export async function editSpend(record: SpendRecord): Promise<void> {
   }
 }
 
+/** 사냥 기록을 고쳐 조각이 모자라면 헥사 강화를 옮길 곳. 강화할 때 가져오는 차례와 같다. */
+async function loadHexaSources(): Promise<HexaSources> {
+  const [candidatesOf, ownerOf] = await Promise.all([loadHexaCandidatesOf(), loadHexaOwnerOf()])
+  return { candidatesOf, ownerOf }
+}
+
+/** 사냥 기록만 옮길 곳을 넘긴다. 정산은 폼이 쓸 수 있는 개수까지만 받아, 모자라면 그 저장만 실패한다. */
+async function sourcesFor(record: IncomeRecord): Promise<HexaSources | undefined> {
+  return record.category === 'hunting' ? loadHexaSources() : undefined
+}
+
 export async function editIncome(record: IncomeRecord): Promise<void> {
-  await updateIncomeRecord(record)
+  await updateIncomeRecord(record, await sourcesFor(record))
+}
+
+/**
+ * 수정으로 연 사냥 기록의 조각을 이보다 적게 저장할 수 없는 개수. 정산 · 헥사 강화가 가져간 몫이다. 못 읽으면 0 이고,
+ * 그때는 저장이 막히는지를 본다.
+ */
+export function loadHuntFragmentFloor(record: IncomeRecord): Promise<number> {
+  return loadHexaSources()
+    .then((sources) => getHuntFragmentFloor(record, sources))
+    .catch(() => 0)
+}
+
+/** 조각 장부가 모자라 저장이 막혔는가. 다시 저장해도 같아서 화면이 다른 실패와 문구를 가른다. */
+export function isFragmentShortage(error: unknown): boolean {
+  return error instanceof FragmentShortageError
 }
 
 /** 지우기. 갈래가 어느 테이블인지를 안다. 손입력만 받는다. */
@@ -1094,5 +1475,5 @@ export async function removeRecord(entry: ManualDayRecord): Promise<void> {
     })
     await deleteSpendRecord(record.id)
     await quietly(() => rememberAfterRemove(record, latestId))
-  } else await deleteIncomeRecord(entry.record.id)
+  } else await deleteIncomeRecord(entry.record.id, await sourcesFor(entry.record))
 }

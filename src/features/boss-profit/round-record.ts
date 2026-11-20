@@ -25,6 +25,7 @@ import { resolveDisplayProfiles } from '../character-profile/resolve'
 import type { CharacterScheduleSync } from '../schedule-sync/schedule-sync'
 import { useToastStore } from '../toast/store'
 import { autoRecordRows, nexonCompletedKeysOf } from './auto-record'
+import { judgeCrystalLimit } from './crystal-limit-judge'
 import { sweepOrphanDrops } from './orphan-drops'
 import {
   appendRecordOnlyRows,
@@ -35,6 +36,7 @@ import {
   type CharacterProfileInfo,
 } from './rows'
 import { withSqliteFallback } from './sqlite-guards'
+import { moveWorldLeapRecords } from './world-leap-moves'
 import { cleanUpWorldLeapDuplicates } from './world-leap-records'
 
 /** 지금 주와 지금 달. 회차가 사실을 아는 기간은 이 둘뿐이다. */
@@ -198,11 +200,17 @@ export async function recordBossProfitFromRound(
       nexonCompleted,
     })
 
-    // 리프 중복 정리는 방금 쓴 새 기록의 짝을 봐야 해서 자동 기록 뒤다. 지운 것이 있으면 기록을 다시 읽어 고아 정리가
-    // 지운 기록의 행을 안 본다.
+    // 리프 중복 정리는 방금 쓴 새 기록의 짝을 봐야 해서 자동 기록 뒤이고, 옛 기록 옮기기는 짝을 지은 뒤다. 지우거나 옮긴 것이
+    // 있으면 기록을 다시 읽어 고아 정리가 바뀐 기록의 행을 본다.
     let settledRecords = liveRecords
-    if (liveRecords !== null && (await withSqliteFallback(cleanUpWorldLeapDuplicates(now), 0)) > 0) {
-      settledRecords = await withSqliteFallback(getBossProfitRecords([...ocids], periodKeys), liveRecords)
+    if (liveRecords !== null) {
+      const removed = await withSqliteFallback(cleanUpWorldLeapDuplicates(now), 0)
+      const moved = await withSqliteFallback(moveWorldLeapRecords(), 0)
+      if (removed + moved > 0) {
+        settledRecords = await withSqliteFallback(getBossProfitRecords([...ocids], periodKeys), liveRecords)
+      }
+      // 옮긴 옛 캐릭터 기록은 어느 주인지 모르므로 그때는 모든 주를 판정한다.
+      await judgeCrystalLimit(removed + moved > 0 ? 'all' : periodKeys)
     }
     if (settledRecords === null) return
 

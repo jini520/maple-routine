@@ -1,8 +1,12 @@
 import { useEffect } from 'react'
 
 import { useDropEffectStore } from '../features/drop-effect/store'
+import { useOverFrameStore } from '../features/over-frame/store'
 import { useBarOrderStore } from '../features/bar-order/store'
 import { useQuickLinksStore } from '../features/quick-links/store'
+import { useFigureMotionStore } from '../features/figure-motion/store'
+import { useTodaySharedMapleIdStore } from '../features/today/shared-maple-id'
+import { useMapleIdNamesStore } from '../features/maple-id/names'
 import { startKeyboardHeightRecorder } from '../features/input-card/keyboard-height'
 import { loadMesoUnits } from '../features/input-card/meso-unit'
 import { useNoticeStore } from '../features/notice/store'
@@ -81,7 +85,11 @@ function ReadyShell(): React.JSX.Element {
   const restoreAuth = useAuthStore((state) => state.restoreFromStorage)
   const restoreTrackingMode = useTrackingModeStore((state) => state.restoreFromStorage)
   const restoreDropEffect = useDropEffectStore((state) => state.restoreFromStorage)
+  const restoreOverFrame = useOverFrameStore((state) => state.restoreFromStorage)
   const restoreQuickLinks = useQuickLinksStore((state) => state.restoreFromStorage)
+  const restoreFigureMotions = useFigureMotionStore((state) => state.restoreFromStorage)
+  const restoreSharedMapleId = useTodaySharedMapleIdStore((state) => state.restoreFromStorage)
+  const restoreMapleIdNames = useMapleIdNamesStore((state) => state.restoreFromStorage)
   const restoreNotice = useNoticeStore((state) => state.restore)
   const resubscribeNotice = useNoticeStore((state) => state.resubscribe)
   const isKeyboardVisible = useKeyboardVisible()
@@ -115,7 +123,15 @@ function ReadyShell(): React.JSX.Element {
   }, [])
 
   useEffect(() => {
+    void restoreOverFrame()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
     void restoreQuickLinks()
+    void restoreFigureMotions()
+    void restoreSharedMapleId()
+    void restoreMapleIdNames()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -246,6 +262,11 @@ function refreshOnReturn(): void {
   void refreshGameData()
 }
 
+/** 백그라운드에서 돌아올 때의 OTA 처리. 받아 둔 번들을 적용할지와 1시간 간격은 스토어가 정한다. */
+function checkUpdateOnReturn(awayMs: number): void {
+  void useLiveUpdateStore.getState().checkOnReturn(awayMs)
+}
+
 export function AppShell(): React.JSX.Element {
   const restoreTheme = useThemeStore((state) => state.restoreFromStorage)
   const restoreTextSize = useTextSizeStore((state) => state.restoreFromStorage)
@@ -276,6 +297,7 @@ export function AppShell(): React.JSX.Element {
   }, [])
 
   useReturnToForeground(refreshOnReturn)
+  useReturnToForeground(checkUpdateOnReturn)
 
   return (
     <>

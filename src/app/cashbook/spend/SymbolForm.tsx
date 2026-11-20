@@ -157,7 +157,7 @@ export function SymbolForm(props: SpendFormProps): React.JSX.Element {
               aria-label="심볼"
               testID="spend-sheet-symbol"
               onPress={open}
-              className="min-h-6 flex-1 flex-row items-center gap-3 active:opacity-60"
+              className="min-h-6 flex-1 flex-row items-center gap-3"
             >
               <Text className="shrink-0 text-xs text-text-muted">심볼</Text>
               <View className="ml-auto shrink flex-row items-center gap-1.5">

@@ -5,9 +5,10 @@
 // 적은 줄에서만 그림이 사라진다.
 import type { IncomeRecord } from '../../../storage/income'
 import type { SpendRecord } from '../../../storage/spend'
-import { imageOfPath } from '../../../assets/__tests__/asset-uri'
-import type { DayRecord } from '../records'
-import { recordIconKeyOf, recordIconOf } from '../row-icon'
+import { assetIdOfPath, imageOfPath } from '../../../assets/__tests__/asset-uri'
+import { enhancementCostsTable } from '../../../lib/enhancement/cost'
+import type { DayRecord, EnhancedItem } from '../records'
+import { enhancedItemIconOf, recordIconKeyOf, recordIconOf } from '../row-icon'
 
 const income = (over: Partial<IncomeRecord> = {}): DayRecord => ({
   kind: 'income',
@@ -138,5 +139,61 @@ describe('recordIconOf', () => {
     expect(recordIconOf(income({ category: 'etc', item: '아무거나' }))).toBe(imageOfPath('items/meso.webp'))
     expect(recordIconOf(spend({ category: 'item_purchase', item: '루즈 컨트롤 머신 마크' }))).toBeNull()
     expect(recordIconOf(income({ category: 'item_sale', item: '앱솔 무기' }))).toBeNull()
+  })
+
+  it('목록에서 고른 아이템 구매 · 판매는 그 아이템의 그림이다', () => {
+    expect(recordIconOf(spend({ category: 'item_purchase', item: null, itemKey: 'risk_taker_ring' }))).toBe(
+      imageOfPath('items/rings/Risk_Taker_Ring.webp'),
+    )
+    expect(recordIconOf(income({ category: 'item_sale', item: null, itemKey: 'risk_taker_ring' }))).toBe(
+      imageOfPath('items/rings/Risk_Taker_Ring.webp'),
+    )
+  })
+})
+
+// 펼친 강화 줄의 장비 그림. 강화 장비 표의 장비는 아이템 표에 같은 key 로 들어 있어 key 로 찾는다.
+describe('enhancedItemIconOf', () => {
+  const 장비 = (itemKey: string | null, targetItem: string): EnhancedItem => ({
+    itemKey,
+    targetItem,
+    count: 1,
+    costMeso: 1,
+    fromStar: null,
+    toStar: null,
+  })
+
+  it('장비 key 로 아이템 표의 그림을 찾고, key 로 찾으면 이름은 보지 않는다', () => {
+    expect(imageOfPath('items/dark_boss_ring.png')).not.toBeNull()
+    expect(enhancedItemIconOf(장비('giant_terror', '거대한 공포'))).toBe(imageOfPath('items/dark_boss_ring.png'))
+    expect(enhancedItemIconOf(장비('giant_terror', '루즈 컨트롤 머신 마크'))).toBe(imageOfPath('items/dark_boss_ring.png'))
+  })
+
+  // 강화 장비 표에 없는 장비는 합계 줄에 key 없이 넥슨이 준 이름만 남는다. 그 이름은 띄어쓰기가 아이템 표와 다를 수 있다.
+  it('key 로 못 찾으면 공백을 지운 이름으로 아이템 표를 찾는다', () => {
+    expect(imageOfPath('items/dark_boss_face_acc.png')).not.toBeNull()
+    expect(enhancedItemIconOf(장비(null, '루즈 컨트롤머신 마크'))).toBe(imageOfPath('items/dark_boss_face_acc.png'))
+    expect(enhancedItemIconOf(장비('nope', '루즈 컨트롤 머신 마크'))).toBe(imageOfPath('items/dark_boss_face_acc.png'))
+  })
+
+  // 타일런트 신발 · 장갑 · 망토와 노바 · 헬리시움 정예는 아이템 표에 없고 슈페리얼 장비 표에만 그림이 있다.
+  describe('아이템 표에 없는 슈페리얼 장비', () => {
+    const fixture = enhancementCostsTable.get()
+    afterEach(() => enhancementCostsTable.set(fixture))
+
+    it('슈페리얼 장비 표의 그림을 쓴다', () => {
+      const icon = assetIdOfPath('items/dark_boss_belt.png')
+      expect(icon).toBeDefined()
+      enhancementCostsTable.set({
+        ...fixture,
+        superiorItems: [{ name: '노바 리카온 벨트', seriesKey: 'nova', iconAssetId: icon ?? null }],
+      })
+
+      expect(enhancedItemIconOf(장비(null, '노바 리카온벨트'))).toBe(imageOfPath('items/dark_boss_belt.png'))
+    })
+  })
+
+  // 비슷한 장비의 그림을 대신 붙이면 다른 장비를 그린다.
+  it('key 로도 이름으로도 못 찾으면 그림이 없다', () => {
+    expect(enhancedItemIconOf(장비(null, '왕푸'))).toBeNull()
   })
 })

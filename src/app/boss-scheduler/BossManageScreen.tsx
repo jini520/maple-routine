@@ -22,6 +22,7 @@ import { PartySizeModal } from '../../components/organisms/PartySizeModal/PartyS
 import { activeBossesInSection, activeDifficultiesNow, bossPortraitAssetIdOf, getMaxPartySize } from '../../lib/boss/bosses'
 import { countManualWeeklyBosses, WEEKLY_BOSS_CLEAR_LIMIT } from '../../lib/boss/boss-matching'
 import { bossCycleOf, isSeasonBoss, type BossEntry } from '../../lib/boss/bosses'
+import { currentCrystalPriceMeso } from '../../lib/boss/boss-crystal-prices'
 import { isChallengersWorld } from '../../lib/world/worlds'
 import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
@@ -291,6 +292,7 @@ export function BossManageScreen(): React.JSX.Element {
           myShare: columns.crystalMyShare,
           sharesTotal: columns.crystalSharesTotal,
           splitFeePercent: columns.splitFeePercent,
+          excluded: columns.crystalExcluded === true,
         }}
         side="end"
         onPress={() => setPartyModal({ entry, difficulty })}
@@ -478,13 +480,19 @@ export function BossManageScreen(): React.JSX.Element {
       {partyModal !== null && selected !== null && (
         <PartySizeModal
           bossName={partyModal.entry.name}
-          cycleLabel={bossCycleOf(partyModal.entry.key) === 'monthly' ? '월간 보스' : '주간 보스'}
           portraitAssetId={bossPortraitAssetIdOf(partyModal.entry.key)}
           difficulties={activeDifficultiesNow(partyModal.entry.key)}
           difficulty={partyModal.difficulty}
           partySize={partySizes[partySizeKey(selected.ocid, partyModal.entry.key, partyModal.difficulty)] ?? 1}
           maxPartySize={getMaxPartySize(partyModal.entry.key, partyModal.difficulty)}
           shares={modalShares}
+          crystalPriceMeso={currentCrystalPriceMeso(
+            partyModal.entry.key,
+            partyModal.difficulty,
+            // 보스 표에 없는 key 는 주기를 모른다. 관리 화면 목록은 보스 표에서 오므로 주간으로 둔다.
+            bossCycleOf(partyModal.entry.key) ?? 'weekly',
+            new Date(),
+          )}
           // 설정은 앞으로 적힐 기록의 약속이라 이번 주 등급을 보인다.
           autoFee={gradeContext === null ? null : autoFeeFrom(gradeContext, selected.ocid, getCurrentKstDateKey(new Date()))}
           // 난이도는 행의 고르개가 정한다. 그래서 모달은 난이도를 배지로만 보인다.

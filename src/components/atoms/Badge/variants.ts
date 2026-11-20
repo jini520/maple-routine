@@ -1,5 +1,5 @@
 /**
- * 배지의 **외형 표** 17종과 크기·두께 계단. 난이도 색은 게임 안의 값이다.
+ * 배지의 **외형 표** 16종과 크기·두께 계단. 난이도 색은 게임 안의 값이다.
  *
  * `Badge.tsx` 와 파일이 나뉘어 있다. 스타일 표와 컴포넌트 코드를 섞지 않는다.
  * 표가 한 곳이라 같은 자리에 서는 배지의 크기가 어긋날 수 없다.
@@ -55,11 +55,16 @@ function difficulty(
   return { gradient, border: { borderWidth, borderColor }, textStyle, weight: 'bold', text: 'text-chip-sm' }
 }
 
-/** 색·테두리·그림자 15종. 난이도 key 가 그대로 키라 `variant={boss.difficulty}` 로 쓴다. 글자는 `DIFFICULTY_NAME` 이다. */
+/** 색·테두리·그림자 16종. 난이도 key 가 그대로 키라 `variant={boss.difficulty}` 로 쓴다. 글자는 `DIFFICULTY_NAME` 이다. */
 export const BADGE_VARIANT = {
   primary: { className: 'bg-primary-tint text-primary-ink' },
   third: { className: 'bg-third-tint text-third-ink' },
   secondary: { className: 'bg-secondary-tint text-secondary-ink', weight: 'bold' },
+  /** 그림 위에 걸치는 작은 배지. 옅은 `secondary` 는 라이트 테마에서 글자 대비가 약 2.0 이다 */
+  secondarySolid: { className: 'bg-secondary text-on-secondary', weight: 'bold' },
+  // 시세의 등락. 오르면 빨강 · 내리면 파랑이고 수입 · 지출의 두 색과 같다.
+  rise: { className: 'bg-rise-tint text-rise-ink' },
+  fall: { className: 'bg-fall-tint text-fall-ink' },
   muted: { className: 'bg-surface-2 text-text-muted' },
   neutral: { className: 'bg-surface-2 text-text' },
   disabled: { className: 'bg-surface-2 text-text-disabled' },

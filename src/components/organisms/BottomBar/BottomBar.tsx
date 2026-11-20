@@ -15,18 +15,19 @@ import {
   Easing,
   Pressable,
   StyleSheet,
-  useWindowDimensions,
   View,
 } from 'react-native'
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
 
 import { useBarOrderStore } from '../../../features/bar-order/store'
+import { useButtonNavigation } from '../../../hooks/useButtonNavigation'
 import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
 import { tapFeedback } from '../../../native/haptics'
 import { scrollPageToTop } from '../../../navigation/scroll-to-top'
 import { isSecondTap, type TapRecord } from './double-tap'
-import { BAR_LIFT, resolveBottomBarMetrics } from '../../../lib/bottom-bar-metrics'
+import { resolveBottomBarMetrics, resolveRailBarMetrics } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { boxShadowOf } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
 import { resolveBarColors } from './bar-colors'
@@ -96,11 +97,11 @@ interface BarItemProps {
    * 자체가 연보라인 테마에서 비활성까지 같은 색 계열로 읽힌다.
    */
   muted: string
-  /** 층과 무관하게 같은 값이다. 그룹 다섯이 꽉 찼을 때의 칸 폭(`BottomBar` 의 `itemWidth`). */
+  /** 층과 무관하게 같은 값이다. 가로 바는 칸 폭, 세로 막대는 알약 폭(`BottomBar` 의 `itemBox`). */
   width: number
   /**
-   * 알약 높이 = 바 높이 − 여백×2. 상수가 아니라 프롭인 것은 바 세로가 기기 폭에서 나오기
-   * 때문이다. 이 항목의 과녁도 함께 자란다(글리프는 안 자란다).
+   * 가로 바는 알약 높이(바 높이 − 여백×2), 세로 막대는 칸 높이. 상수가 아니라 프롭인 것은 가로 바 세로가 기기 폭에서
+   * 나오기 때문이다. 이 항목의 과녁도 함께 자란다(글리프는 안 자란다).
    */
   height: number
   testID: string
@@ -144,12 +145,17 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
   const isKeyboardShown = useKeyboardShown()
   // 바의 세로는 창 폭에서 나온다. 콘텐츠가 남기는 몫도 같은 함수를 보므로
   // (`ScreenScroll` → `bottom-inset.ts`) 두 값이 어긋날 자리가 없다.
-  const { width: windowWidth } = useWindowDimensions()
-  const metrics = resolveBottomBarMetrics(windowWidth)
-  const barHeight = metrics.heightPx
-  /** 바 높이에서 위아래 여백을 뺀 값. 둘은 함께 움직인다. 따로 두면 알약이 바 안에서 떠 버린다. */
-  const pillHeight = barHeight - BAR_PADDING * 2
-  const backCircle = Math.round(pillHeight * BACK_CIRCLE_RATIO)
+  // 오른쪽 레일 화면에서는 바를 세로 막대로 세워 콘텐츠가 비운 오른쪽 안전영역에 둔다.
+  const screenLayout = useScreenLayout()
+  const vertical = screenLayout.kind === 'side-rail'
+  const buttonNavigation = useButtonNavigation()
+  const metrics = resolveBottomBarMetrics(screenLayout.contentWidthPx, buttonNavigation)
+  const rail = resolveRailBarMetrics({
+    layout: screenLayout,
+    bottomSafeAreaPx,
+    itemCount: BAR_GROUPS.length,
+    paddingPx: BAR_PADDING,
+  })
 
   const bar: BarState = useMemo(() => ({ page, lastSub, order }), [page, lastSub, order])
 
@@ -180,26 +186,40 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
 
   // 재는 것이 하나도 없다. 바 폭이 창 폭의 함수라 계산으로 나오고, 계산은 첫 프레임부터 맞다
   // (측정은 첫 프레임에 0 이라 알약이 한 프레임 접힌다). 트랙 폭은 애니메이션이 바꾸는 값이라
-  // 그것으로 `itemWidth` 를 정하면 애니메이션 → 측정 → `itemWidth` → 애니메이션 고리가 돈다.
+  // 그것으로 `itemMain` 을 정하면 애니메이션 → 측정 → `itemMain` → 애니메이션 고리가 돈다.
   //
   // 그래서 폭을 움직이는 애니메이션이 하나도 없다. ← 자리는 상자를 넓히는 대신 행을 한 칸
   // 옆으로 옮겨 만든다. 이동·불투명도·크기는 전부 네이티브 드라이버가 나를 수 있어, 탭 직후
   // 화면 마운트로 JS 가 막혀도 전환이 끝까지 매끄럽다.
-  const itemWidth = (metrics.widthPx - BAR_PADDING * 2 - PILL_OVERHANG) / BAR_GROUPS.length
+  //
+  // 아래 값은 축으로 적는다. `Main` 은 칸이 늘어선 방향(가로 바는 가로, 세로 막대는 세로), `Cross` 는 그것을 가로지르는 방향이다.
+  const itemMain = vertical
+    ? rail.itemHeightPx
+    : (metrics.widthPx - BAR_PADDING * 2 - PILL_OVERHANG) / BAR_GROUPS.length
+  /** 알약의 가로지르는 길이 = 바 두께 − 여백×2. 둘은 함께 움직인다. 따로 두면 알약이 바 안에서 떠 버린다. */
+  const itemCross = vertical ? rail.widthPx - BAR_PADDING * 2 : metrics.heightPx - BAR_PADDING * 2
+  /** 알약이 칸보다 긴 정도. 세로 막대는 칸 높이가 곧 알약 높이라 0 이다. */
+  const overhang = vertical ? 0 : PILL_OVERHANG
   /** 항목 영역을 바 안쪽에서 들여쓰는 양. 끝 칸 알약이 `BAR_PADDING` 만큼만 남기게 하는 값. */
-  const trackInset = PILL_OVERHANG / 2
+  const trackInset = overhang / 2
+  const backCircle = Math.round(itemCross * BACK_CIRCLE_RATIO)
   /**
-   * ← 원이 바 가장자리에서 남기는 여백. 위아래와 같은 값이다.
+   * ← 원이 바 가장자리에서 남기는 여백. 가로지르는 방향과 칸 방향이 같은 값이다.
    *
-   * 원은 알약 높이의 행 안에서 세로 가운데라 위아래로 `패딩 + (행 − 원)/2` 만큼 남는다.
-   * 가로도 그 값이어야 사방이 같은 원이 된다. 다른 항목은 이 값과 무관하다. ← 는 절대
+   * 원은 알약 두께의 행 안에서 가운데라 양옆으로 `패딩 + (행 − 원)/2` 만큼 남는다.
+   * 칸 방향도 그 값이어야 사방이 같은 원이 된다. 다른 항목은 이 값과 무관하다. ← 는 절대
    * 배치라 하위 행의 자리를 밀지 않는다.
    */
-  const backCircleMargin = BAR_PADDING + (pillHeight - backCircle) / 2
-  const pillWidth = itemWidth + PILL_OVERHANG
+  const backCircleMargin = BAR_PADDING + (itemCross - backCircle) / 2
+  const pillMain = itemMain + overhang
   /** 행이 시작하는 칸. 하위 행은 ← 가 차지한 첫 칸 다음이고 격자는 그룹 행과 같다. */
-  const rowOffset = layer === 'sub' ? itemWidth : 0
-  const pillX = rowOffset + activeIndex * itemWidth + (itemWidth - pillWidth) / 2
+  const rowOffset = layer === 'sub' ? itemMain : 0
+  const pillX = rowOffset + activeIndex * itemMain + (itemMain - pillMain) / 2
+  /** 항목 하나의 과녁. */
+  const itemBox = vertical ? { width: itemCross, height: itemMain } : { width: itemMain, height: itemCross }
+  /** 칸 방향으로 옮기는 변환. 알약 · 두 행 · ← 가 같은 축을 탄다. */
+  const along = (value: Animated.AnimatedInterpolation<number> | Animated.Value) =>
+    vertical ? { translateY: value } : { translateX: value }
 
   // `useRef(new Animated.Value(…)).current` 가 아니라 **lazy `useState`** 다. 값이 마운트 동안
   // 고정이라는 뜻은 같은데, 그쪽은 **렌더 중 ref 읽기** 라 `react-hooks/refs` 가 막는다.
@@ -246,7 +266,7 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
   // 하위 행은 **한 칸 옆** 이 제자리다. 들어올 때만 거기서 조금 더 오른쪽에서 온다.
   const subShift = visual.interpolate({
     inputRange: [0, 1],
-    outputRange: [itemWidth + ROW_SHIFT, itemWidth],
+    outputRange: [itemMain + ROW_SHIFT, itemMain],
   })
   // ← 는 전환의 뒷절반에만 존재한다. 나갈 땐 먼저 비키고 들어올 땐 자리가 다 생긴 뒤에 든다.
   // 투명도가 아니라 마운트로 나타나고 사라진다.
@@ -337,14 +357,25 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
       testID="bottom-bar"
       style={{
         position: 'absolute',
-        // 좌우 여백은 남는 폭을 가른 값이다. 상한(420)에 안 걸리는 기기에서는 그냥 14 이고,
+        // 가로 바의 좌우 여백은 남는 폭을 가른 값이다. 상한(420)에 안 걸리는 기기에서는 그냥 14 이고,
         // 걸리면 남는 폭이 좌우로 갈라져 바가 가운데 선다. `width` 대신 좌우를 주는 것은 부모가
         // 창 전체를 전제로 폭을 계산했기 때문이다. 같은 전제를 쓰면 둘이 어긋날 수 없다.
-        left: metrics.sideMarginPx,
-        right: metrics.sideMarginPx,
-        bottom: bottomSafeAreaPx + BAR_LIFT,
-        height: barHeight,
-        flexDirection: 'row',
+        // 세로 막대는 레일 가운데에 서고 아래 끝이 아래쪽 안전영역에 닿는다.
+        ...(vertical
+          ? {
+              left: rail.leftPx,
+              top: rail.topPx,
+              width: rail.widthPx,
+              height: rail.heightPx,
+              flexDirection: 'column' as const,
+            }
+          : {
+              left: metrics.sideMarginPx,
+              right: metrics.sideMarginPx,
+              bottom: bottomSafeAreaPx + metrics.liftPx,
+              height: metrics.heightPx,
+              flexDirection: 'row' as const,
+            }),
         alignItems: 'center',
         padding: BAR_PADDING,
         borderRadius: 999,
@@ -381,11 +412,11 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
           style={{
             position: 'absolute',
             // 바 루트 기준이다. 트랙 기준이 아니다(아래 **왜 트랙 밖인가**).
-            top: BAR_PADDING,
-            left: BAR_PADDING + trackInset,
-            height: pillHeight,
-            width: pillWidth,
-            transform: [{ translateX: x }],
+            top: BAR_PADDING + (vertical ? trackInset : 0),
+            left: BAR_PADDING + (vertical ? 0 : trackInset),
+            height: vertical ? pillMain : itemCross,
+            width: vertical ? itemCross : pillMain,
+            transform: [along(x)],
             borderRadius: 999,
             // 유리일 때 뒤판을 깔지 않는다. 깔면 `GlassView` 가 그 판을 배경으로 삼아 뒤 콘텐츠
             // 대신 그 색을 굴절시켜 재질이 아니라 흰 알약이 된다. 그림자 모양은 `borderRadius`
@@ -424,12 +455,11 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
           같아 위아래 그림자가 통째로 없어지고 좌우도 사각 경계로 깎인다. 알약은 바 루트가
           갖고 좌표만 패딩만큼 옮긴다. */}
       <View
-        style={{
-          flex: 1,
-          height: pillHeight,
-          marginHorizontal: trackInset,
-          overflow: 'hidden',
-        }}
+        style={
+          vertical
+            ? { flex: 1, width: itemCross, marginVertical: trackInset, overflow: 'hidden' }
+            : { flex: 1, height: itemCross, marginHorizontal: trackInset, overflow: 'hidden' }
+        }
       >
         {/* 두 층이 **같은 자리에 겹쳐** 있다가 교차한다. 하나만 마운트하면 **갈아 끼우기** 가 된다. */}
         <Animated.View
@@ -439,12 +469,12 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
             position: 'absolute',
             top: 0,
             left: 0,
-            right: 0,
-            height: pillHeight,
-            flexDirection: 'row',
+            ...(vertical
+              ? { bottom: 0, width: itemCross, flexDirection: 'column' as const }
+              : { right: 0, height: itemCross, flexDirection: 'row' as const }),
             alignItems: 'center',
             opacity: groupOpacity,
-            transform: [{ translateX: groupShift }],
+            transform: [along(groupShift)],
           }}
         >
           {groupItems.map((item) => (
@@ -455,8 +485,8 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
               active={item.active}
               accent={colors.accent}
               muted={colors.muted}
-              width={itemWidth}
-              height={pillHeight}
+              width={itemBox.width}
+              height={itemBox.height}
               testID={`bar-group-${item.key}`}
               onPress={() => {
                 pressItem(item.key, item.active, (bar) => pressGroup(bar, item.key))
@@ -472,12 +502,12 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
             position: 'absolute',
             top: 0,
             left: 0,
-            right: 0,
-            height: pillHeight,
-            flexDirection: 'row',
+            ...(vertical
+              ? { bottom: 0, width: itemCross, flexDirection: 'column' as const }
+              : { right: 0, height: itemCross, flexDirection: 'row' as const }),
             alignItems: 'center',
             opacity: subOpacity,
-            transform: [{ translateX: subShift }],
+            transform: [along(subShift)],
           }}
         >
           {subItems.map((item) => (
@@ -488,8 +518,8 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
               active={item.active}
               accent={colors.accent}
               muted={colors.muted}
-              width={itemWidth}
-              height={pillHeight}
+              width={itemBox.width}
+              height={itemBox.height}
               testID={`bar-sub-${item.key}`}
               onPress={() => {
                 pressItem(item.key, item.active, (bar) => pressSub(bar, item.key))
@@ -515,11 +545,11 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
         style={{
           position: 'absolute',
           left: backCircleMargin,
-          top: BAR_PADDING + (pillHeight - backCircle) / 2,
+          top: backCircleMargin,
           width: backCircle,
           height: backCircle,
           borderRadius: 999,
-          transform: [{ translateX: backShift }, { scale: backScale }],
+          transform: [along(backShift), { scale: backScale }],
           backgroundColor: glass ? 'transparent' : colors.pill,
           boxShadow: boxShadowOf(definition.shadowColor, PLATE_SHADOW),
         }}
@@ -552,9 +582,9 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
         pointerEvents={hasBack ? 'auto' : 'none'}
         style={{
           position: 'absolute',
-          left: backCircleMargin,
-          top: BAR_PADDING,
-          transform: [{ translateX: backShift }, { scale: backScale }],
+          left: vertical ? BAR_PADDING : backCircleMargin,
+          top: vertical ? backCircleMargin : BAR_PADDING,
+          transform: [along(backShift), { scale: backScale }],
         }}
       >
         <Pressable
@@ -571,12 +601,12 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
             applyRef.current(pressBack(barRef.current))
           }}
           // 누르는 자리는 **한 칸 전체**로 남긴다. 메뉴 항목과 같은 크기의 과녁이라야 손이 같은
-          // 규칙으로 움직인다. 다만 화살표는 그 칸의 가운데가 아니라 **왼쪽 끝**의 판 위에 앉는다.
+          // 규칙으로 움직인다. 다만 화살표는 그 칸의 가운데가 아니라 **칸이 시작하는 끝**(가로 바는 왼쪽,
+          // 세로 막대는 위)의 판 위에 앉는다.
           style={{
-            width: itemWidth,
-            height: pillHeight,
-            alignItems: 'flex-start',
-            justifyContent: 'center',
+            ...itemBox,
+            alignItems: vertical ? 'center' : 'flex-start',
+            justifyContent: vertical ? 'flex-start' : 'center',
           }}
         >
           <View

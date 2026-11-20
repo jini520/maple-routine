@@ -11,9 +11,11 @@ const 자격 = (value: string): NexonCredential => ({ type: 'key', value, accoun
 // 검증하면 된다. 직업은 쿼리 캐시 `characterBasic(ocid)` 에서 읽으므로 `setQueryData` 로 심는다.
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../nexon/meso-rate', () => ({ fetchMesoRate: jest.fn() }))
+jest.mock('../../../storage/character-accounts', () => ({ getNexonAccountIdsOfOcids: jest.fn() }))
 
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 const { fetchMesoRate } = jest.requireMock('../../../nexon/meso-rate') as Record<string, jest.Mock>
+const { getNexonAccountIdsOfOcids } = jest.requireMock('../../../storage/character-accounts') as Record<string, jest.Mock>
 
 const { loadMesoRate } = require('../meso-rate') as typeof import('../meso-rate')
 
@@ -31,8 +33,23 @@ const 마지막값심기 = (ocid: string, percent: number): void => {
 
 beforeEach(() => {
   queryClient.clear()
-  getAuthConfig.mockReset().mockResolvedValue({ login: null, apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'api-key' }] })
+  getAuthConfig.mockReset().mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'api-key', loginId: null }] })
   fetchMesoRate.mockReset().mockResolvedValue(149)
+  getNexonAccountIdsOfOcids.mockReset().mockResolvedValue(new Map())
+})
+
+// 부계정 캐릭터를 로그인 자격으로 부르면 다른 계정의 캐릭터라 조회 불가가 된다.
+it('부계정 캐릭터는 그 부계정 키로 부른다', async () => {
+  getAuthConfig.mockResolvedValue({
+    login: { type: 'login', id: 'account-login', session: '세션' },
+    mainKeyId: null,
+    apiKeys: [{ type: 'key', id: 'account-부', label: '', value: '부-키', loginId: 'account-login' }],
+  })
+  getNexonAccountIdsOfOcids.mockResolvedValue(new Map([['ocid-부', 'account-부']]))
+
+  await loadMesoRate('ocid-부')
+
+  expect(fetchMesoRate).toHaveBeenCalledWith({ type: 'key', value: '부-키', accountId: 'account-부' }, 'ocid-부', null)
 })
 
 it('읽히면 자동값이다. 그 값으로 캐시를 갱신한다', async () => {

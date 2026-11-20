@@ -33,7 +33,7 @@ describe('PartyShareSummary', () => {
       <PartyShareSummary label="스우" partySize={2} crystal={이대일} onPress={jest.fn()} />,
     )
 
-    expect(getByTestId('party-share-badge')).toHaveTextContent('66.7%')
+    expect(getByTestId('party-share-badge')).toHaveTextContent('66.667%')
     expect(queryByText('결정석')).toBeNull()
     expect(queryByText('파티 2인')).toBeNull()
   })
@@ -50,7 +50,7 @@ describe('PartyShareSummary', () => {
       />,
     )
 
-    expect(작은.getByText('66.7%')).toBeTruthy()
+    expect(작은.getByText('66.667%')).toBeTruthy()
   })
 
   // 보스 수익 카드는 금액과 한 줄을 나눠 쓴다. 이 줄이 커지면 카드가 통째로 커진다.
@@ -69,7 +69,7 @@ describe('PartyShareSummary', () => {
     )
 
     const 크기 = (view: typeof 기본): number =>
-      flattenStyle(view.getByText('66.7%').props.style).fontSize as number
+      flattenStyle(view.getByText('66.667%').props.style).fontSize as number
 
     expect(크기(작은)).toBeLessThan(크기(기본))
   })
@@ -94,5 +94,27 @@ describe('PartyShareSummary', () => {
 
     expect(차례(오른쪽)).toEqual(['변경', '배지'])
     expect(차례(왼쪽)).toEqual(['배지', '변경'])
+  })
+})
+
+describe('PartyShareSummary: `제외`', () => {
+  // 숨긴 인원을 적으면 모달에서 고칠 수 없는 값이 배지에 보인다.
+  it('분배 방식 `제외` 면 인원 · 비율 대신 `제외` 하나를 적는다', async () => {
+    const { getAllByText, getByTestId, queryByText } = await renderAtom(
+      <PartyShareSummary label="스우" partySize={2} crystal={{ ...이대일, excluded: true }} onPress={jest.fn()} />,
+    )
+
+    expect(getByTestId('party-share-badge')).toHaveTextContent('제외')
+    expect(getAllByText('제외')).toHaveLength(1)
+    expect(queryByText('66.667%')).toBeNull()
+  })
+
+  it('한도를 넘긴 처치는 인원 배지 옆에 `제외` 배지를 붙인다', async () => {
+    const { getByTestId } = await renderAtom(
+      <PartyShareSummary label="스우" partySize={3} crystal={EVEN} overCrystalLimit onPress={jest.fn()} />,
+    )
+
+    expect(getByTestId('party-share-badge')).toHaveTextContent('파티 3인')
+    expect(getByTestId('party-share-over-limit-badge')).toHaveTextContent('제외')
   })
 })

@@ -28,7 +28,10 @@ export function stopQueryPersist(): void {
 }
 
 export function shouldPersistQuery(query: Query): boolean {
-  return query.meta?.persist === true && query.state.status === 'success'
+  if (query.meta?.persist !== true || query.state.status !== 'success') return false
+  // 보관 기한이 지난 데이터는 저장에서 빼, 다음 저장 때 기기에서 사라지게 한다.
+  const retainMs = query.meta.retainMs
+  return retainMs === undefined || Date.now() - query.state.dataUpdatedAt < retainMs
 }
 
 export function createQueryPersistOptions(): Omit<PersistQueryClientOptions, 'queryClient'> {

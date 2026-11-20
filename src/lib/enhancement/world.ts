@@ -5,7 +5,7 @@
  * 1년치 실측에서 스페셜이 3,043.9억 중 1,611.1억(52.9%)이었다.
  */
 import type { MapleAccount } from '../../types'
-import { isEventWorld, isInWorldPeriod, worldKeyOfApiName } from '../world/worlds'
+import { isEventWorld, worldKeyOfApiName } from '../world/worlds'
 
 /** 줄 하나의 판정. */
 export interface EventWorldJudgment {
@@ -15,15 +15,7 @@ export interface EventWorldJudgment {
   unknownWorld: string | null
 }
 
-/** 회차마다 하나 만드는 판정 근거. */
-export interface EventWorldEvidence {
-  /** 그 회차 캐릭터 목록의 이름별 판정. **목록을 못 받았으면 `null`** 이고 빈 목록과 다르다 */
-  listed: ReadonlyMap<string, EventWorldJudgment> | null
-  /** 이벤트 월드 스타포스 줄에서 남겨 둔 이름별 월드 key. 목록에서 사라진 캐릭터를 가르는 단서다 */
-  remembered: ReadonlyMap<string, readonly string[]>
-}
-
-const UNKNOWN: EventWorldJudgment = { eventWorld: null, unknownWorld: null }
+const NORMAL: EventWorldJudgment = { eventWorld: false, unknownWorld: null }
 
 /**
  * 월드 이름 원문의 판정. 표에 없는 월드는 일반 월드가 아니라 모름이다.
@@ -61,30 +53,31 @@ export function eventWorldCharacterNames(accounts: readonly MapleAccount[]): Set
   return names
 }
 
+/** 줄을 붙인 캐릭터에서 판정에 쓰는 것. */
+export interface OwnerWorld {
+  /** 그 캐릭터의 월드 이름 원문. 모르면 `null` */
+  worldName: string | null
+  /** 그 캐릭터의 월드 key. 모르면 `null` */
+  worldKey: string | null
+  /** 리프 전 기간의 줄인가 */
+  preLeap: boolean
+}
+
 /**
  * 강화 줄 하나가 이벤트 월드인가.
  *
- * 차례가 셋이다. 줄이 월드를 주면(스타포스) 그 월드가 이긴다. 그때의 월드라 지금 목록보다 정확하다. 월드가 없으면(큐브 ·
- * 잠재 · 소울) 목록이 1순위이고, 목록에 없는 이름은 남겨 둔 월드의 기간 안일 때만 이벤트 월드다. 이벤트가 끝나기 전에 지운
- * 캐릭터가 그렇다. 남은 이름은 일반 월드다. 삭제 · 이전된 일반 캐릭터는 앞으로도 목록에 안 나오고, 모름으로 두면 그 날을
- * 영원히 다시 부른다.
+ * 줄이 월드를 주면(스타포스) 그 월드가 이긴다. 그때의 월드라 캐릭터의 지금 월드보다 정확하다. 월드가 없으면(큐브 · 잠재 ·
+ * 소울) 줄을 붙인 캐릭터의 월드다. 같은 ocid 의 월드는 바뀌지 않는다.
  *
- * 이름 판정은 이벤트 월드에서 쓰던 이름을 일반 월드에서 다시 만들지 않는다는 데 기댄다. 다시 만들면 그 캐릭터의 기간 안
- * 기록도 빠지는데, 그 경우는 무시한다(사용자 지정).
+ * 리프 전 기간의 줄은 이벤트 월드가 아니다. 스페셜 월드에서 일반 월드로는 리프할 수 없다. 캐릭터의 월드를 모르면 일반 월드로
+ * 센다. 모름으로 두면 그 날이 굳지 않아 같은 날을 끝없이 다시 받는다.
  *
  * @param worldName 줄의 `world_name`. 큐브 · 잠재 · 소울은 빈 글자
- * @param dateKey 줄의 KST 날짜. 남겨 둔 이름을 그 월드의 기간과 맞춘다
  */
-export function judgeEventWorld(
-  worldName: string,
-  characterName: string,
-  dateKey: string,
-  evidence: EventWorldEvidence,
-): EventWorldJudgment {
+export function judgeEventWorld(worldName: string, owner: OwnerWorld): EventWorldJudgment {
   if (worldName !== '') return judgmentOfWorld(worldName)
-  if (evidence.listed === null) return UNKNOWN
-  const listed = evidence.listed.get(characterName)
-  if (listed !== undefined) return listed
-  const keys = evidence.remembered.get(characterName) ?? []
-  return { eventWorld: keys.some((key) => isEventWorld(key) && isInWorldPeriod(key, dateKey)), unknownWorld: null }
+  if (owner.preLeap) return NORMAL
+  if (owner.worldName !== null) return judgmentOfWorld(owner.worldName)
+  if (owner.worldKey !== null) return { eventWorld: isEventWorld(owner.worldKey), unknownWorld: null }
+  return NORMAL
 }

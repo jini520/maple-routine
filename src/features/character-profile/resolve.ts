@@ -78,6 +78,7 @@ export async function resolveDisplayProfiles(
           ocid,
           ...profile,
           jobClass: cached.profile.jobClass ?? null,
+          createdDate: cached.profile.createdDate ?? null,
           updatedAt: cached.cachedAt,
         })
         // 값이 지워지지 않는 표로 옮겨졌으니 옛 키는 더 필요 없다. 표에 못 심었으면 남겨 다음 조회가 다시 옮긴다.

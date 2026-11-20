@@ -110,6 +110,7 @@ export async function fetchCharacterBasicCached(
     // 월드 이전 판정이 읽는다. 출처는 `character/list` 라 이 경로에서만 알 수 있고, 모르면
     // 위 UPSERT 의 COALESCE 가 이미 박아 둔 값을 지킨다.
     jobClass: profile.jobClass ?? null,
+    createdDate: profile.createdDate ?? null,
     updatedAt: now.toISOString(),
   }).catch(() => undefined)
 

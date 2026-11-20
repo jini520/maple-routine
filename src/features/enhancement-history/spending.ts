@@ -1,10 +1,11 @@
 /**
- * 받은 강화 내역 줄을 날짜 · 캐릭터 · 분류 · 장비별 합계로 묶는다. 응답 원본은 저장하지 않고 이 합계만 저장한다.
+ * 받은 강화 내역 줄을 날짜 · 캐릭터(ocid) · 분류 · 장비별 합계로 묶는다. 응답 원본은 저장하지 않고 이 합계만 저장한다.
  *
- * 비용은 MVP 할인 전 두 몫이다. 할인은 화면에 보일 때 붙인다. 값을 못 매기는 줄과 전용 재화 줄은 합계에 넣지 않는다.
+ * 비용은 MVP 할인 전 세 몫이다. 할인은 화면에 보일 때 붙인다. 값을 못 매기는 줄과 전용 재화 줄은 합계에 넣지 않는다.
  */
 import {
   cubeAppraisalCost,
+  findSuperiorItem,
   potentialResetCost,
   soulPotentialResetCost,
   starforceCostParts,
@@ -12,9 +13,8 @@ import {
   type StarforceCostParts,
 } from '../../lib/enhancement/cost'
 import type { EnhancementCategory } from '../../lib/enhancement/categories'
-import { judgeEventWorld, type EventWorldEvidence, type EventWorldJudgment } from '../../lib/enhancement/world'
-import { isEventWorld, worldKeyOfApiName } from '../../lib/world/worlds'
-import type { EventWorldCharacter } from '../../storage/event-world-characters'
+import { judgeEventWorld, type EventWorldJudgment, type OwnerWorld } from '../../lib/enhancement/world'
+import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { comparableEquipmentName, equipmentItemLevelOf } from '../../lib/equipment/equipment-items'
 import type { EnhancementKind } from '../../nexon/history/client'
 
@@ -37,7 +37,14 @@ export interface EnhancementSource {
 /** 합계 한 줄. 기기 `enhancement_totals` 의 칸과 맞는다. */
 export interface EnhancementTotalDraft {
   historyDate: string
+  /** 응답이 준 그날의 이름 */
   characterName: string
+  /** 그날 그 이름이었던 캐릭터 */
+  ocid: string
+  /** 그 캐릭터의 메이플 ID */
+  accountId: string
+  /** 그 줄의 월드 key. 스타포스는 줄의 월드, 아니면 그 캐릭터의 월드다. 리프 전 줄이라 모르면 `null` */
+  worldKey: string | null
   enhancementType: EnhancementKind
   /** 화면이 가르는 단위. `enhancementType` 과 달리 잠재를 본 · 에디셔널로 나눈다 */
   enhancementCategory: EnhancementCategory
@@ -48,12 +55,20 @@ export interface EnhancementTotalDraft {
   attempts: number
   attemptCostMeso: number
   destroyDefenceCostMeso: number
+  /** 슈페리얼 장비의 스타포스 비용. 어떤 할인도 받지 않는다 */
+  superiorCostMeso: number
   /** 스타포스의 가장 이른 시도의 강화 전 성. 다른 분류는 `null` */
   fromStar: number | null
   /** 스타포스의 가장 늦은 시도의 강화 후 성. 다른 분류는 `null` */
   toStar: number | null
-  /** 이벤트 월드 캐릭터인가. 캐릭터 목록을 못 받아 판정하지 못했으면 `null` */
+  /** 이벤트 월드 캐릭터인가. 월드 표에 없는 월드라 판정하지 못했으면 `null` */
   eventWorld: boolean | null
+}
+
+/** 줄을 붙인 캐릭터. 붙이지 못한 줄은 합계에 넣지 않는다. */
+export interface EntryOwner extends OwnerWorld {
+  ocid: string
+  accountId: string
 }
 
 function categoryOf(entry: EnhancementSource): EnhancementCategory {
@@ -108,9 +123,28 @@ function discountRate(payload: unknown): number {
   return rate
 }
 
+/**
+ * 응답이 슈페리얼 장비라고 하는가. 일반 장비는 `슈페리얼 장비 미해당` 이 온다. 슈페리얼 쪽 글자는 아직 못 봐서 그 밖의 글자를
+ * 슈페리얼로 본다. 표에 없는 슈페리얼 장비를 알아채는 데만 쓴다.
+ */
+function isFlaggedSuperior(payload: unknown): boolean {
+  const flag = text(payload, 'superior_item_flag')
+  return flag !== '' && flag !== '슈페리얼 장비 미해당'
+}
+
+/** 줄들 가운데 슈페리얼 장비 표의 장비를 강화한 스타포스 줄이 있나. */
+export function hasSuperiorItem(entries: readonly EnhancementSource[]): boolean {
+  return entries.some((entry) => entry.kind === 'starforce' && findSuperiorItem(entry.targetItem) !== null)
+}
+
 function starforceParts(entry: EnhancementSource): StarforceCostParts | null {
   // 강화권은 메소가 안 든다. 0 이지 모르는 것이 아니다.
-  if (text(entry.payload, 'upgrade_item') !== '') return { attemptMeso: 0, destroyDefenceMeso: 0 }
+  if (text(entry.payload, 'upgrade_item') !== '') return { attemptMeso: 0, destroyDefenceMeso: 0, superiorMeso: 0 }
+
+  // 슈페리얼 장비는 계열 금액 하나다. 성 · 이벤트 할인 · 파괴 방지를 안 본다.
+  const superior = findSuperiorItem(entry.targetItem)
+  if (superior !== null) return { attemptMeso: 0, destroyDefenceMeso: 0, superiorMeso: superior.starforceCostMeso }
+  if (isFlaggedSuperior(entry.payload)) return null
 
   // 장비 레벨은 장비 표에서만 찾는다. 표에 없는 장비는 값을 못 매긴다.
   const level = equipmentItemLevelOf(entry.itemKey)
@@ -164,7 +198,7 @@ function soulPotentialMeso(entry: EnhancementSource): number | null {
 }
 
 /**
- * 이 줄의 MVP 할인 전 비용 두 몫. **모르면 `null`. 0 이 아니다.** 못 매긴 것을 0 으로 세우면 합계가 조용히 거짓이 된다.
+ * 이 줄의 MVP 할인 전 비용 세 몫. **모르면 `null`. 0 이 아니다.** 못 매긴 것을 0 으로 세우면 합계가 조용히 거짓이 된다.
  */
 export function enhancementCostPartsOf(entry: EnhancementSource): StarforceCostParts | null {
   if (entry.kind === 'starforce') return starforceParts(entry)
@@ -176,7 +210,7 @@ export function enhancementCostPartsOf(entry: EnhancementSource): StarforceCostP
       : entry.kind === 'potential'
         ? potentialMeso(entry)
         : soulPotentialMeso(entry)
-  return cost === null ? null : { attemptMeso: cost, destroyDefenceMeso: 0 }
+  return cost === null ? null : { attemptMeso: cost, destroyDefenceMeso: 0, superiorMeso: 0 }
 }
 
 /** 값을 못 매긴 이유. 서버에 알려 운영자가 원인을 본다. */
@@ -188,6 +222,7 @@ export type UnpricedReason = 'no_level' | 'no_grade' | 'no_star' | 'no_type' | '
 export function unpricedReasonOf(entry: EnhancementSource): UnpricedReason | null {
   if (enhancementCostPartsOf(entry) !== null) return null
   if (entry.kind === 'starforce') {
+    if (isFlaggedSuperior(entry.payload)) return 'no_cost'
     if (equipmentItemLevelOf(entry.itemKey) === null) return 'no_level'
     return typeof field(entry.payload, 'before_starforce_count') === 'number' ? 'no_cost' : 'no_star'
   }
@@ -202,20 +237,15 @@ export function unpricedReasonOf(entry: EnhancementSource): UnpricedReason | nul
   return gradeBeforeReset(entry.payload, 'before_soul_potential_option') === null ? 'no_grade' : 'no_cost'
 }
 
-/** 이벤트 월드 스타포스 줄의 캐릭터와 월드. 이벤트 중에 지운 캐릭터를 가를 단서라 수집기가 남긴다. */
-export function eventWorldCharactersOf(entries: readonly EnhancementSource[]): EventWorldCharacter[] {
-  const seen = new Map<string, EventWorldCharacter>()
-  for (const entry of entries) {
-    const worldKey = worldKeyOfApiName(text(entry.payload, 'world_name'))
-    if (worldKey === null || !isEventWorld(worldKey)) continue
-    seen.set(`${entry.characterName}|${worldKey}`, { characterName: entry.characterName, worldKey })
-  }
-  return [...seen.values()]
+/** 이 줄이 이벤트 월드인가. 스타포스는 응답의 `world_name` 을 들고, 큐브 · 잠재 · 소울은 빈 글자라 줄을 붙인 캐릭터로 가른다. */
+export function eventWorldOf(entry: EnhancementSource, owner: OwnerWorld): EventWorldJudgment {
+  return judgeEventWorld(text(entry.payload, 'world_name'), owner)
 }
 
-/** 이 줄이 이벤트 월드인가. 스타포스는 응답의 `world_name` 을 들고, 큐브 · 잠재 · 소울은 빈 글자라 이름으로 가른다. */
-export function eventWorldOf(entry: EnhancementSource, evidence: EventWorldEvidence): EventWorldJudgment {
-  return judgeEventWorld(text(entry.payload, 'world_name'), entry.characterName, entry.dateKey, evidence)
+/** 줄의 월드 key. 스타포스는 그때의 월드인 줄의 `world_name`, 아니면 줄을 붙인 캐릭터의 월드다. */
+function worldKeyOfEntry(entry: EnhancementSource, owner: EntryOwner): string | null {
+  const worldName = text(entry.payload, 'world_name')
+  return worldName !== '' ? worldKeyOfApiName(worldName) : owner.worldKey
 }
 
 /** 장비별로 묶는 열쇠. 장비 key 와 이름이 같은 글자여도 섞이지 않게 앞에 표시를 단다. */
@@ -224,14 +254,19 @@ export function itemGroupOf(itemKey: string | null, targetItem: string): string 
 }
 
 /**
- * 줄들을 날짜 · 캐릭터 · 분류 · 장비별 합계로 묶는다.
+ * 줄들을 날짜 · 캐릭터(ocid) · 분류 · 장비별 합계로 묶는다.
  *
- * 전용 재화 줄과 값을 못 매기는 줄은 넣지 않는다. 전용 재화는 메소가 안 들고, 0 원으로 세우면 건수만 뜬다(사용자 지정).
- * 이벤트 월드 판정은 묶음의 첫 줄로 적는다. 묶음 열쇠가 날짜 · 캐릭터라 한 묶음의 줄은 판정이 같다.
+ * 붙이지 못한 줄은 넣지 않는다. 어느 캐릭터의 기록인지 모르는 줄을 남기지 않는다. 이름으로 묶으면 이름을 바꾼 캐릭터가 둘로
+ * 갈리고, 이름이 다시 쓰이면 다른 캐릭터에 붙는다. 전용 재화 줄과 값을 못 매기는 줄도 넣지 않는다. 전용 재화는 메소가 안 들고,
+ * 0 원으로 세우면 건수만 뜬다(사용자 지정). 이벤트 월드 판정은 묶음의 첫 줄로 적는다.
+ *
+ * @param ownerOf 줄을 붙인 캐릭터. 붙이지 못했으면 `null`
+ * @param judge 이벤트 월드 판정. 옛 원본을 옮기는 단계가 남겨 둔 이름을 더 보려고 바꾼다
  */
 export function summarizeEnhancement(
   entries: readonly EnhancementSource[],
-  evidence: EventWorldEvidence,
+  ownerOf: (entry: EnhancementSource) => EntryOwner | null,
+  judge: (entry: EnhancementSource, owner: EntryOwner) => EventWorldJudgment = eventWorldOf,
 ): EnhancementTotalDraft[] {
   const totals = new Map<string, Omit<EnhancementTotalDraft, 'fromStar' | 'toStar'>>()
   const firsts = new Map<string, EnhancementSource>()
@@ -240,9 +275,11 @@ export function summarizeEnhancement(
     if (usesSpecialCurrency(entry)) continue
     const parts = enhancementCostPartsOf(entry)
     if (parts === null) continue
+    const owner = ownerOf(entry)
+    if (owner === null) continue
     const category = categoryOf(entry)
     const itemGroup = itemGroupOf(entry.itemKey, entry.targetItem)
-    const key = [entry.dateKey, entry.characterName, category, itemGroup].join('|')
+    const key = [entry.dateKey, owner.ocid, category, itemGroup].join('|')
     if (entry.kind === 'starforce') {
       const first = firsts.get(key)
       if (first === undefined || timeOf(entry) < timeOf(first)) firsts.set(key, entry)
@@ -252,6 +289,9 @@ export function summarizeEnhancement(
     const total = totals.get(key) ?? {
       historyDate: entry.dateKey,
       characterName: entry.characterName,
+      ocid: owner.ocid,
+      accountId: owner.accountId,
+      worldKey: worldKeyOfEntry(entry, owner),
       enhancementType: entry.kind,
       enhancementCategory: category,
       itemGroup,
@@ -260,11 +300,13 @@ export function summarizeEnhancement(
       attempts: 0,
       attemptCostMeso: 0,
       destroyDefenceCostMeso: 0,
-      eventWorld: eventWorldOf(entry, evidence).eventWorld,
+      superiorCostMeso: 0,
+      eventWorld: judge(entry, owner).eventWorld,
     }
     total.attempts += 1
     total.attemptCostMeso += parts.attemptMeso
     total.destroyDefenceCostMeso += parts.destroyDefenceMeso
+    total.superiorCostMeso += parts.superiorMeso
     totals.set(key, total)
   }
   return [...totals].map(([key, total]) => ({

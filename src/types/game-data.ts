@@ -91,6 +91,8 @@ export interface WorldsTable extends TableHead {
 export interface SpendCatalogRules {
   tariffPercent: number
   rewardCoinPriceMeso: number
+  /** 메소마켓에서 메소를 팔 때 받는 메포에서 떼는 수수료(%). */
+  mesoMarketFeePercent: number
 }
 export interface SpendGroupRow {
   key: string
@@ -350,11 +352,25 @@ export interface StarforceStepRow {
   exponent: number
   divisor: number
 }
+/** 슈페리얼 장비의 계열. 스타포스 1회 비용이 계열마다 하나이고, 성수 · 할인과 상관없다. */
+export interface SuperiorSeriesRow {
+  key: string
+  starforceCostMeso: number
+}
+/** 슈페리얼 장비 하나. 넥슨 응답의 장비 이름과 공백을 지운 뒤 통째로 맞춘다. */
+export interface SuperiorItemRow {
+  name: string
+  seriesKey: string
+  /** 펼친 강화 줄의 장비 그림. 아이템 표에 없는 슈페리얼 장비도 그림이 서게 둔다 */
+  iconAssetId: string | null
+}
 export interface EnhancementCostsTable extends TableHead {
   rules: EnhancementRules
   potentialResetCosts: PotentialResetCostRow[]
   soulPotentialResetCosts: SoulPotentialResetCostRow[]
   starforceSteps: StarforceStepRow[]
+  superiorSeries: SuperiorSeriesRow[]
+  superiorItems: SuperiorItemRow[]
 }
 
 export const MVP_GRADE_KEYS = ['normal', 'bronze', 'silver', 'gold', 'diamond', 'red', 'black'] as const
@@ -405,6 +421,7 @@ export interface HuntingGroundRow {
   name: string
   force: number
   mobs: number
+  popular: boolean
 }
 export interface HuntingGroundLevelRow {
   ground: string
@@ -433,7 +450,12 @@ export interface AssetFilesTable extends TableHead {
   files: AssetFileRow[]
 }
 
-/** 크롭 표의 종류. 같은 그림도 놓이는 자리마다 잘 보이는 곳이 달라 표가 갈린다. */
+/**
+ * 크롭 표의 종류. 같은 그림도 놓이는 자리마다 잘 보이는 곳이 달라 표가 갈린다.
+ *
+ * `boss_portrait_modal` 은 앱이 더 읽지 않지만 서버 표에 줄이 남아 있다. 여기서 빼면 그 줄이 계약을 어겨 크롭 표
+ * 전체를 버린다.
+ */
 export const IMAGE_CROP_KINDS = ['boss_portrait', 'boss_portrait_icon', 'boss_portrait_modal', 'daily_quest_region'] as const
 export type ImageCropKind = (typeof IMAGE_CROP_KINDS)[number]
 
@@ -477,7 +499,20 @@ export interface AppImagesTable extends TableHead {
   images: AppImageRow[]
 }
 
-/** 계약을 통과한 칸 스물. */
+/** 고르기 목록이 쓰는 아이템 표 한 줄. 종류는 서버 분류 트리의 첫 단(장비 · 장신구 · 소비 · 기타 · 캐시)이고 묶음은 둘째 단이다. */
+export interface ItemRow {
+  key: string
+  name: string
+  kind: string
+  category: string
+  /** 그림 id(`assets` 칸). 그림이 없는 아이템은 빠진다. */
+  iconAssetId?: string
+}
+export interface ItemsTable extends TableHead {
+  items: ItemRow[]
+}
+
+/** 계약을 통과한 칸 스물하나. */
 export interface GameData {
   bosses: BossCatalog
   dropItems: DropItemsTable
@@ -499,11 +534,12 @@ export interface GameData {
   imageCrops: ImageCropsTable
   faqs: FaqsTable
   appImages: AppImagesTable
+  items: ItemsTable
 }
 
 export type GameDataSection = keyof GameData
 
-/** 칸 이름 스물. 응답과 기기 사본이 같은 차례로 든다. */
+/** 칸 이름 스물하나. 응답과 기기 사본이 같은 차례로 든다. */
 export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'bosses',
   'dropItems',
@@ -525,6 +561,7 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'imageCrops',
   'faqs',
   'appImages',
+  'items',
 ]
 
 /** 서버 응답을 칸마다 검사한 결과. 못 받았거나 계약을 어겼거나 서버가 아직 안 넣은 칸은 `null` 이다. */

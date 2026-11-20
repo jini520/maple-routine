@@ -4,14 +4,15 @@
  * 화면은 떠날 때 머문 시간과 함께 적는다. 백그라운드로 가는 것도 떠나는 것이라, 백그라운드에 있던 시간은 체류에 들지 않는다.
  * 돌아오면 같은 화면을 새로 잰다.
  */
+import type { AppStateStatus } from 'react-native'
 import type { UsageEvent } from '../../types/usage-event'
 
 /** 이만큼 비웠다 돌아오면 방문을 새로 센다. 짧으면 알림을 잠깐 본 것까지 방문으로 잡힌다. */
 export const VISIT_GAP_MS = 30 * 60_000
 
 export interface UsageTracker {
-  /** 앱을 새로 열었다 */
-  start(now: Date): Promise<void>
+  /** 앱을 새로 열었다. `appState` 가 `background` 면 OS 가 띄운 실행이라 처음 앞으로 나올 때 방문을 적는다 */
+  start(now: Date, appState: AppStateStatus): Promise<void>
   background(now: Date): Promise<void>
   foreground(now: Date): Promise<void>
   /** 보이는 화면의 라우트 이름 */
@@ -23,6 +24,8 @@ export function createUsageTracker(append: (event: UsageEvent) => Promise<void>)
   let current: { name: string; since: Date } | null = null
   let pausedName: string | null = null
   let backgroundAt: Date | null = null
+  /** OS 가 배경에서 띄운 실행이 아직 앞으로 나온 적 없다. 30분이 안 지나도 방문이다 */
+  let launchedInBackground = false
 
   const visit = (now: Date) => append({ type: 'visit', name: '', durationMs: null, at: now.toISOString() })
 
@@ -34,7 +37,13 @@ export function createUsageTracker(append: (event: UsageEvent) => Promise<void>)
   }
 
   return {
-    start: visit,
+    async start(now, appState) {
+      if (appState !== 'background') return visit(now)
+      launchedInBackground = true
+      backgroundAt = now
+      pausedName = current?.name ?? null
+      current = null
+    },
     async background(now) {
       if (backgroundAt !== null) return
       backgroundAt = now
@@ -47,7 +56,9 @@ export function createUsageTracker(append: (event: UsageEvent) => Promise<void>)
       backgroundAt = null
       if (pausedName !== null) current = { name: pausedName, since: now }
       pausedName = null
-      if (away >= VISIT_GAP_MS) await visit(now)
+      const isVisit = launchedInBackground || away >= VISIT_GAP_MS
+      launchedInBackground = false
+      if (isVisit) await visit(now)
     },
     async screen(name, now) {
       if (backgroundAt !== null) {

@@ -3,6 +3,7 @@ import {
   setBackGesturePort,
   setColorSchemePort,
   setBrowserPort,
+  setClipboardPort,
   setHapticsPort,
   setBackgroundTaskPort,
   setScreenCornersPort,
@@ -26,6 +27,7 @@ import { streamFriends } from './server/friends-stream'
 
 import { rnAdsPort } from './native/adapters/rn-ads'
 import { rnBackGesturePort } from './native/adapters/rn-back-gesture'
+import { rnClipboardPort } from './native/adapters/rn-clipboard'
 import { rnColorSchemePort } from './native/adapters/rn-color-scheme'
 import { rnHapticsPort } from './native/adapters/rn-haptics'
 import { rnScreenCornersPort } from './native/adapters/rn-screen-corners'
@@ -83,6 +85,8 @@ import { rnAssetFilesPort } from './storage/adapters/rn-asset-files'
  *
  * `StoreReviewPort` 는 앱 안 리뷰 팝업 하나다(`rn-store-review.ts`). 쓸 수 없는 기기에서는 아무것도 하지 않는다.
  *
+ * `ClipboardPort` 는 글자 복사 하나다(`rn-clipboard.ts`). OS 가 복사를 스스로 알리는 기기인지도 답한다.
+ *
  * 그 목록을 먼저 떠난 것이 셋이다:
  * - `ThemeAppearancePort`. `rn-theme-appearance.ts` 가 자리를 채웠다.
  * - `BackGesturePort`. **절반만 구현이다.** `moveToBackground` 는 실구현이고
@@ -107,6 +111,7 @@ export function installPorts(): void {
   setScreenCornersPort(rnScreenCornersPort)
   setBackgroundTaskPort(rnBackgroundTaskPort)
   setStoreReviewPort(rnStoreReviewPort)
+  setClipboardPort(rnClipboardPort)
   setKeyboardPort(rnKeyboardPort)
   setNotificationsPort(rnNotificationsPort)
   setPushPort(rnPushPort)

@@ -43,6 +43,7 @@ jest.mock('@op-engineering/op-sqlite', () => ({
 
 import { IOS_DOCUMENT_PATH } from '@op-engineering/op-sqlite'
 import { BOSS_PROFIT_TABLE_NAMES, closeBossProfitDb, getBossProfitDb } from '../../sqlite/db'
+import { LEGACY_TABLE_NAMES } from '../../sqlite/legacy-tables'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 
 import { rnSqlitePort } from '../rn-sqlite'
@@ -124,31 +125,24 @@ describe('db.ts 와 맞물리는가', () => {
   })
 
   it('옛 스키마 DB 에는 빠진 컬럼을 더한다', async () => {
+    // 옛 기기에는 강화 원본 표가 아직 남아 있다.
     mockRowsFor = (statement) =>
-      statement.startsWith('PRAGMA table_info') ? [{ name: 'ocid' }] : []
+      statement.startsWith('PRAGMA table_info')
+        ? [{ name: 'ocid' }]
+        : statement.includes('FROM sqlite_master')
+          ? [{ present: 1 }]
+          : []
 
     await getBossProfitDb()
 
     const executed = mockOpened[0].statements.map((entry) => entry.statement.trim())
     expect(executed.filter((statement) => /^ALTER TABLE \S+ ADD COLUMN/.test(statement))).toEqual([
-      'ALTER TABLE character_profiles ADD COLUMN job_class TEXT',
       'ALTER TABLE boss_profit_records ADD COLUMN world TEXT',
       'ALTER TABLE boss_profit_records ADD COLUMN defeated_on TEXT',
       // 월드도 이름 대신 월드 key 를 든다.
       'ALTER TABLE boss_profit_records ADD COLUMN world_key TEXT',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN fragment_count INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN untradable_fragment_count INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN fragment_price_meso INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_activation INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_use_storage INTEGER',
-      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_storage_as_spend INTEGER',
       // 사용자가 직접 적은 완료를 가르는 칸.
       'ALTER TABLE boss_profit_records ADD COLUMN source TEXT',
-      'ALTER TABLE character_profiles ADD COLUMN world_key TEXT',
-      "ALTER TABLE enhancement_history ADD COLUMN target_item TEXT NOT NULL DEFAULT ''",
-      'ALTER TABLE enhancement_history ADD COLUMN item_level INTEGER',
-      // 강화 기록도 장비 이름 대신 장비 key 를 든다.
-      'ALTER TABLE enhancement_history ADD COLUMN item_key TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN price_state TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN price_meso INTEGER',
       'ALTER TABLE boss_drop_records ADD COLUMN price_share INTEGER',
@@ -205,12 +199,40 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE boss_drop_records ADD COLUMN world TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN world_key TEXT',
       'ALTER TABLE boss_drop_records ADD COLUMN drop_record_id TEXT',
+      // 지금 표의 칸은 옛 표를 준비한 뒤에 더한다.
+      'ALTER TABLE character_profiles ADD COLUMN job_class TEXT',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN fragment_count INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN untradable_fragment_count INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN fragment_price_meso INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_activation INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_use_storage INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN hexa_storage_as_spend INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN meso_market_fee_percent INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN inventory_item_id TEXT REFERENCES inventory_items(id)',
+      'ALTER TABLE inventory_items ADD COLUMN ring_level INTEGER',
+      'ALTER TABLE cashbook_entry_items ADD COLUMN ring_level INTEGER',
+      'ALTER TABLE character_profiles ADD COLUMN world_key TEXT',
+      "ALTER TABLE enhancement_history ADD COLUMN target_item TEXT NOT NULL DEFAULT ''",
+      'ALTER TABLE enhancement_history ADD COLUMN item_level INTEGER',
+      // 강화 기록도 장비 이름 대신 장비 key 를 든다.
+      'ALTER TABLE enhancement_history ADD COLUMN item_key TEXT',
       // 계정 단위 기록이 어느 넥슨 계정의 것인지.
       'ALTER TABLE cashbook_entries ADD COLUMN nexon_account_id TEXT',
       'ALTER TABLE cashbook_entries ADD COLUMN account_id TEXT',
       // 스타포스 첫 성 · 끝 성.
       'ALTER TABLE enhancement_totals ADD COLUMN from_star INTEGER',
       'ALTER TABLE enhancement_totals ADD COLUMN to_star INTEGER',
+      'ALTER TABLE enhancement_totals ADD COLUMN superior_cost_meso INTEGER NOT NULL DEFAULT 0',
+      'ALTER TABLE character_accounts ADD COLUMN world_key TEXT',
+      // 캐릭터 기록의 그때 월드와 리프 자동 판정이 읽는 만든 날.
+      'ALTER TABLE cashbook_entries ADD COLUMN world_key TEXT',
+      'ALTER TABLE character_profiles ADD COLUMN created_date TEXT',
+      // 분배 방식 `제외` 와 한도를 넘긴 처치.
+      'ALTER TABLE boss_parties ADD COLUMN crystal_excluded INTEGER',
+      'ALTER TABLE boss_party_periods ADD COLUMN crystal_excluded INTEGER',
+      'ALTER TABLE boss_party_periods ADD COLUMN over_crystal_limit INTEGER',
+      // 아이템 구매 · 판매의 메모. 버전 17 이 지운 칸이라 `ensureColumn` 이 아니라 버전 22 가 더한다.
+      'ALTER TABLE cashbook_entries ADD COLUMN memo TEXT',
     ])
   })
 
@@ -272,8 +294,16 @@ describe('db.ts 와 맞물리는가', () => {
             { name: 'hexa_activation' },
             { name: 'hexa_use_storage' },
             { name: 'hexa_storage_as_spend' },
+            { name: 'meso_market_fee_percent' },
+            { name: 'inventory_item_id' },
+            { name: 'ring_level' },
             { name: 'from_star' },
             { name: 'to_star' },
+            { name: 'superior_cost_meso' },
+            { name: 'created_date' },
+            { name: 'crystal_excluded' },
+            { name: 'over_crystal_limit' },
+            { name: 'memo' },
           ]
         : []
 
@@ -284,8 +314,9 @@ describe('db.ts 와 맞물리는가', () => {
     // 테이블 생성과 메이린 키 이관은 그대로 돈다. 개수를 박지 않는다. db.ts 가 테이블을 더할
     // 때마다 이 숫자가 조용히 스탈해진다.
     // 버전 이관이 다시 만드는 표(`_rebuild`)는 세지 않는다. 그 수는 이관 단계가 정한다.
+    // `user_version` 을 흉내 내지 않아 옛 표를 지우기 전 DB 로 열린다. 그래서 옛 표도 만든다.
     expect(executed.filter((statement) => /^CREATE TABLE IF NOT EXISTS/.test(statement))).toHaveLength(
-      BOSS_PROFIT_TABLE_NAMES.length,
+      BOSS_PROFIT_TABLE_NAMES.length + LEGACY_TABLE_NAMES.length,
     )
     /**
      * 여기도 개수를 안 박는다. 대신 성질을 본다. 데이터 이관은 전부 `WHERE` 를 갖고, 그것이 이미

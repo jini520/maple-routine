@@ -4,6 +4,7 @@ import {
   getWorldSharedProgress,
   setAccountSharedProgressEntry,
   setWorldSharedProgressEntry,
+  splitWorldSharedProgress,
 } from '../shared-progress-cache'
 
 const sampleEntry: SharedProgressEntry = {
@@ -15,64 +16,73 @@ const sampleEntry: SharedProgressEntry = {
   lastUpdatedBucket: '2026-07-21',
 }
 
-const KEYS_USED_IN_TESTS = [
-  'worldSharedProgress:엘리시움',
-  'worldSharedProgress:elysium',
-  'worldSharedProgress:scania',
-  'accountSharedProgress:acc-1',
-  'accountSharedProgress:acc-2',
-  'accountSharedProgress:acc-unknown',
-]
-
 let prefs = installFakePreferences()
 
-beforeEach(async () => {
+beforeEach(() => {
   prefs = installFakePreferences()
-  await Promise.all(KEYS_USED_IN_TESTS.map((key) => prefs.remove(key)))
 })
 
+// 같은 월드라도 메이플 ID 가 다르면 따로 센다. 섞이면 다른 메이플 ID 캐릭터의 진행이 내 진행으로 보인다.
 describe('world 원장', () => {
   it('같은 월드에 다른 항목을 추가로 저장해도 기존 항목이 유지된다', async () => {
-    await setWorldSharedProgressEntry('elysium', 'monster_park', sampleEntry)
+    await setWorldSharedProgressEntry('maple-a', 'elysium', 'monster_park', sampleEntry)
     const second: SharedProgressEntry = { ...sampleEntry, nowCount: 3 }
-    await setWorldSharedProgressEntry('elysium', 'maple_union_weekly_dragon', second)
+    await setWorldSharedProgressEntry('maple-a', 'elysium', 'maple_union_weekly_dragon', second)
 
-    await expect(getWorldSharedProgress('elysium')).resolves.toEqual({
+    await expect(getWorldSharedProgress('maple-a', 'elysium')).resolves.toEqual({
       monster_park: sampleEntry,
       maple_union_weekly_dragon: second,
     })
+  })
+
+  it('같은 월드라도 메이플 ID 마다 따로 둔다', async () => {
+    await setWorldSharedProgressEntry('maple-a', 'elysium', 'monster_park', sampleEntry)
+
+    await expect(getWorldSharedProgress('maple-b', 'elysium')).resolves.toEqual({})
   })
 })
 
-// 이 원장은 다시 받을 수 없어 옮긴다. 옛 키의 월드 부분은 월드 표의 이름이다.
-describe('월드 key 이관', () => {
-  it('월드 이름 키의 옛 원장을 월드 key 키로 옮기고 옛 키를 지운다', async () => {
-    await prefs.set('worldSharedProgress:엘리시움', JSON.stringify({ monster_park: sampleEntry }))
+// 이 원장은 넥슨에서 다시 받을 수 없어 버리지 않고 베낀다.
+describe('월드로만 묶던 옛 원장 나누기', () => {
+  it('그 월드에 추적 캐릭터가 있는 메이플 ID 마다 베끼고, 옛 원장은 지운다', async () => {
+    await prefs.set('worldSharedProgress:elysium', JSON.stringify({ monster_park: sampleEntry }))
+    await prefs.set('worldSharedProgress:scania', JSON.stringify({ monster_park: sampleEntry }))
 
-    await expect(getWorldSharedProgress('elysium')).resolves.toEqual({ monster_park: sampleEntry })
-    expect(await prefs.get('worldSharedProgress:엘리시움')).toBeNull()
-    expect(JSON.parse((await prefs.get('worldSharedProgress:elysium'))!)).toEqual({ monster_park: sampleEntry })
+    await splitWorldSharedProgress([
+      { accountId: 'maple-a', worldKey: 'elysium' },
+      { accountId: 'maple-b', worldKey: 'elysium' },
+    ])
+
+    await expect(getWorldSharedProgress('maple-a', 'elysium')).resolves.toEqual({ monster_park: sampleEntry })
+    await expect(getWorldSharedProgress('maple-b', 'elysium')).resolves.toEqual({ monster_park: sampleEntry })
+    expect(await prefs.get('worldSharedProgress:elysium')).toBeNull()
+    expect(await prefs.get('worldSharedProgress:scania')).toBeNull()
   })
 
-  it('새 키에 이미 값이 있으면 덮지 않고 옛 키만 지운다', async () => {
+  // 더 옛 원장은 월드 이름을 열쇠로 들었다. 표 이름이 곧 API 표기다.
+  it('월드 이름 열쇠의 옛 원장도 베낀다', async () => {
+    await prefs.set('worldSharedProgress:엘리시움', JSON.stringify({ monster_park: sampleEntry }))
+
+    await splitWorldSharedProgress([{ accountId: 'maple-a', worldKey: 'elysium' }])
+
+    await expect(getWorldSharedProgress('maple-a', 'elysium')).resolves.toEqual({ monster_park: sampleEntry })
+    expect(await prefs.get('worldSharedProgress:엘리시움')).toBeNull()
+  })
+
+  it('새 원장에 이미 적힌 항목이 이기고, 한 번 나눈 뒤에는 다시 돌지 않는다', async () => {
     const fresh: SharedProgressEntry = { ...sampleEntry, nowCount: 1 }
-    await prefs.set('worldSharedProgress:elysium', JSON.stringify({ monster_park: fresh }))
-    await prefs.set('worldSharedProgress:엘리시움', JSON.stringify({ monster_park: sampleEntry }))
+    await setWorldSharedProgressEntry('maple-a', 'elysium', 'monster_park', fresh)
+    await prefs.set('worldSharedProgress:elysium', JSON.stringify({ monster_park: sampleEntry, maple_union_weekly_dragon: sampleEntry }))
 
-    await expect(getWorldSharedProgress('elysium')).resolves.toEqual({ monster_park: fresh })
-    expect(await prefs.get('worldSharedProgress:엘리시움')).toBeNull()
-  })
+    await splitWorldSharedProgress([{ accountId: 'maple-a', worldKey: 'elysium' }])
+    await prefs.set('worldSharedProgress:elysium', JSON.stringify({ monster_park: sampleEntry }))
+    await splitWorldSharedProgress([{ accountId: 'maple-b', worldKey: 'elysium' }])
 
-  it('쓰기 전에도 옛 원장을 옮겨 옛 항목을 잃지 않는다', async () => {
-    await prefs.set('worldSharedProgress:엘리시움', JSON.stringify({ monster_park: sampleEntry }))
-    const second: SharedProgressEntry = { ...sampleEntry, nowCount: 3 }
-
-    await setWorldSharedProgressEntry('elysium', 'maple_union_weekly_dragon', second)
-
-    await expect(getWorldSharedProgress('elysium')).resolves.toEqual({
-      monster_park: sampleEntry,
-      maple_union_weekly_dragon: second,
+    await expect(getWorldSharedProgress('maple-a', 'elysium')).resolves.toEqual({
+      monster_park: fresh,
+      maple_union_weekly_dragon: sampleEntry,
     })
+    await expect(getWorldSharedProgress('maple-b', 'elysium')).resolves.toEqual({})
   })
 })
 
@@ -80,11 +90,11 @@ describe('월드 key 이관', () => {
 describe('컨텐츠 key 이관', () => {
   it('이름 열쇠를 컨텐츠 key 로 옮긴다. 띄어쓰기가 달라도 찾고, 표에 없는 이름은 버린다', async () => {
     await prefs.set(
-      'worldSharedProgress:elysium',
+      'worldSharedProgress:maple-a:elysium',
       JSON.stringify({ 몬스터파크: sampleEntry, '에픽던전:악몽선경': sampleEntry, 없어진컨텐츠: sampleEntry }),
     )
 
-    await expect(getWorldSharedProgress('elysium')).resolves.toEqual({
+    await expect(getWorldSharedProgress('maple-a', 'elysium')).resolves.toEqual({
       monster_park: sampleEntry,
       epic_dungeon_nightmare_paradise: sampleEntry,
     })
@@ -104,7 +114,7 @@ describe('컨텐츠 key 이관', () => {
 
 describe('손상된 JSON', () => {
   it('저장된 값이 손상된 JSON이면 예외를 던지지 않고 빈 객체를 반환한다', async () => {
-    await prefs.set('worldSharedProgress:elysium', 'not-valid-json{')
-    await expect(getWorldSharedProgress('elysium')).resolves.toEqual({})
+    await prefs.set('worldSharedProgress:maple-a:elysium', 'not-valid-json{')
+    await expect(getWorldSharedProgress('maple-a', 'elysium')).resolves.toEqual({})
   })
 })

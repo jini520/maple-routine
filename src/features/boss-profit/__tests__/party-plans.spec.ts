@@ -58,7 +58,14 @@ describe('buildPartyPlans', () => {
       crystalSharesTotal: 3,
       splitFeePercent: 5,
       splitFeeAuto: true,
+      crystalExcluded: false,
     })
+  })
+
+  it('그 기간만 `제외` 로 고친 값도 설정을 이긴다', () => {
+    const plans = buildPartyPlans([setting()], [override({ crystalExcluded: true })], ['2026-W39'])
+
+    expect(plans[partyPlanKey('ocid-1', 'black_mage', 'hard', '2026-W39')]?.crystalExcluded).toBe(true)
   })
 
   it('설정이 없는 보스도 갈라진 값만으로 칸이 선다', () => {

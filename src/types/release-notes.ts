@@ -7,10 +7,10 @@
  */
 
 /**
- * 항목의 성격. 축은 이 저장소가 이미 쓰는 이슈 접두사(`[기능]`·`[개선]`·`[버그]`)와 같다.
- * 노트를 쓸 때 새로 분류할 필요가 없도록 그 이름을 그대로 승계한다.
+ * 항목의 성격. 기능 · 개선 · 버그는 이 저장소가 이미 쓰는 이슈 접두사(`[기능]`·`[개선]`·`[버그]`)와 같다.
+ * 변경은 게임 패치처럼 바깥 규칙이 바뀌어 앱의 계산이 달라진 항목이다. 새 기능도 개선도 결함 수정도 아니다.
  */
-export type ReleaseNoteCategory = 'feature' | 'improvement' | 'fix'
+export type ReleaseNoteCategory = 'change' | 'feature' | 'improvement' | 'fix'
 
 export interface ReleaseNoteItem {
   /** 화면과 매니페스트 문자열 양쪽에 배지·머리표로 붙는다. */

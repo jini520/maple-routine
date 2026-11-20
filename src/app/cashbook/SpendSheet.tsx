@@ -30,10 +30,12 @@ import {
 } from '../../lib/cashbook/categories'
 import type { SpendRecord } from '../../storage/spend'
 import { CategoryPicker } from './CategoryPicker'
+import { BossIncomeTransferForm } from './spend/BossIncomeTransferForm'
 import { CatalogForm } from './spend/CatalogForm'
 import { EtcForm } from './spend/EtcForm'
 import { HexaMatrixForm } from './spend/HexaMatrixForm'
 import { ItemBuyForm } from './spend/ItemBuyForm'
+import { MesoMarketExchangeForm } from './spend/MesoMarketExchangeForm'
 import { SymbolForm } from './spend/SymbolForm'
 import {
   SaveRow,
@@ -65,6 +67,9 @@ export interface SpendSheetProps {
   loadHexaStorages: SpendFormProps['loadHexaStorages']
   /** 새 헥사 폼의 두 체크. 화면이 읽어서 넘긴다. */
   hexaStorageChecks: SpendFormProps['hexaStorageChecks']
+  /** 아이템 구매를 인벤토리에 보관할 주인을 찾는 콜백. 화면이 넘긴다. */
+  loadStoreOwnerOf?: SpendFormProps['loadStoreOwnerOf']
+  loadWeekCrystalMeso?: SpendFormProps['loadWeekCrystalMeso']
   /**
    * 고칠 기록. 있으면 수정 모드다. 머리와 버튼 글자가 갈리고 삭제가 선다. 화면을 따로 만들지
    * 않는 것은 입력 규칙이 한 벌이어야 하기 때문이다.
@@ -76,9 +81,18 @@ export interface SpendSheetProps {
    * `null` 이면 아직 한 번도 안 넣었다는 뜻이다.
    */
   lastPointRate: number | null
+  lastBossIncomeTransfers: SpendFormProps['lastBossIncomeTransfers']
+  lastEpicDungeonRewards: SpendFormProps['lastEpicDungeonRewards']
   /** 던지면 **안 닫는다**. 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
   onSave: SpendFormProps['onSave']
   onClose: () => void
+}
+
+/** 수정으로 연 기록의 폼. 주간 보스 수입 이전 · 메소마켓 환전 수수료는 `기타` 로 저장하므로 시트 입력이 있는지로 가른다 */
+function formCategoryOf(record: SpendRecord): SpendCategoryKey {
+  if (record.transfer !== undefined) return 'boss_income_transfer'
+  if (record.exchange !== undefined) return 'meso_market_exchange'
+  return record.category
 }
 
 export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
@@ -88,7 +102,9 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    * 수정으로 열면 기록이 정하므로 고르는 단계를 건너뛴다. 갈래를 바꾸면 그 기록은 다른 것이
    * 되고, 무엇이었는지는 제목이 이미 말한다.
    */
-  const [category, setCategory] = useState<SpendCategoryKey | null>(props.editing?.category ?? null)
+  const [category, setCategory] = useState<SpendCategoryKey | null>(
+    props.editing === undefined ? null : formCategoryOf(props.editing),
+  )
   /**
    * 스크롤을 되돌릴 열쇠. 목록 갈래가 단계를 오갈 때 채운다. 갈래가 바뀌거나 단계를 오가면
    * 내용이 통째로 갈리므로 **밀린 자리에서 시작하면 안 된다.**
@@ -134,12 +150,14 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           setHeader: setHead,
           dateKey,
           characters: props.characters,
-          accounts: ACCOUNT_SPEND_CATEGORY_KEYS.includes(category) ? props.accounts : [],
+          accounts: ACCOUNT_SPEND_CATEGORY_KEYS.includes(category) || category === 'meso_market_exchange' ? props.accounts : [],
           category,
           onBack: clearCategory,
           editing: props.editing,
           onDelete: props.onDelete,
           lastPointRate: props.lastPointRate,
+          lastBossIncomeTransfers: props.lastBossIncomeTransfers,
+          lastEpicDungeonRewards: props.lastEpicDungeonRewards,
           onSave: props.onSave,
           onClose: props.onClose,
           onScrollKeyChange: setScrollKey,
@@ -149,6 +167,8 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
           loadRememberedLevels: props.loadRememberedLevels,
           loadHexaStorages: props.loadHexaStorages,
           hexaStorageChecks: props.hexaStorageChecks,
+          loadStoreOwnerOf: props.loadStoreOwnerOf,
+          loadWeekCrystalMeso: props.loadWeekCrystalMeso,
         }
 
   return (
@@ -212,5 +232,7 @@ function SpendForm(props: {
   if (props.category === 'etc') return <EtcForm {...props.formProps} />
   if (props.category === 'symbol') return <SymbolForm {...props.formProps} />
   if (props.category === 'hexa_matrix') return <HexaMatrixForm {...props.formProps} />
+  if (props.category === 'boss_income_transfer') return <BossIncomeTransferForm {...props.formProps} />
+  if (props.category === 'meso_market_exchange') return <MesoMarketExchangeForm {...props.formProps} />
   return <CatalogForm {...props.formProps} />
 }

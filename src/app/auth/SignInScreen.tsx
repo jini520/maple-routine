@@ -117,7 +117,7 @@ export function SignInScreen(): React.JSX.Element {
 
   // 키로 들어갈 때와 같이 민다. 처음 쓰는 사용자는 고른 캐릭터가 없어 앱이 열리지 않으므로, 안 밀면 이 화면에 머문다.
   async function signInWithNexonAndContinue(): Promise<void> {
-    if (!(await signInWithNexonAccount())) return
+    if (!(await signInWithNexonAccount({ fresh: true }))) return
     if (useAppEntryStore.getState().stage !== 'ready') navigation.navigate('CharacterSetup')
   }
 

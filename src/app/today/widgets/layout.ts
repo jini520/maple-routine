@@ -4,17 +4,19 @@
  * ```
  * 0  4칸  대표 캐릭터
  * 1  4칸  빠른 이동
- * 2  2칸  초기화 카운트다운        2칸  주간 결정석 판매 한도
- * 3  4칸  다음 파티 스케줄(보여 줄 회차가 없으면 숨는다)
- * 4  4칸  계정 및 메이플 ID 공유 컨텐츠
- * 5  4칸  캐릭터별 남은 스케줄
- * 6  4칸  이번 주 수익
- * 7  2칸  이번 주 최고가 아이템    2칸  가격 미입력
+ * 2  4칸  MASPI
+ * 3  2칸  초기화 카운트다운        2칸  주간 결정석 판매 한도
+ * 4  4칸  다음 파티 스케줄(보여 줄 회차가 없으면 숨는다)
+ * 5  4칸  계정 및 메이플 ID 공유 컨텐츠
+ * 6  4칸  캐릭터별 남은 스케줄
+ * 7  4칸  이번 주 수익
+ * 8  2칸  이번 주 최고가 아이템    2칸  가격 미입력
  * ```
  *
  * 읽는 순서가 배열의 근거다. 정체 → 마감·상한 → 한 번만 하면 되는 것 → 캐릭터별 할 일 → 결과 →
  * 결과의 디테일. 공유가 남은 스케줄 위인 것은 먼저 치우면 아래 목록이 줄어드는 관계라서다.
  * 빠른 이동은 읽는 것이 아니라 누르는 것이라 이 순서 밖이고, 앱을 켜자마자 스크롤 없이 누르도록 정체 바로 아래다.
+ * MASPI 는 높이 44 의 한 줄이라 아래 위젯을 크게 밀어내지 않아 빠른 이동 바로 아래다(사용자 지정).
  *
  * 이 배열은 코드 상수다. 저장 스키마도 마이그레이션도 만들지 않는다.
  */
@@ -28,12 +30,25 @@ export type TilePlacement = Omit<WidgetPlacement, 'id'> & { id: WidgetId }
 export const TILE_LAYOUT: readonly TilePlacement[] = [
   { id: 'representative-character', col: 0, row: 0, w: 4 },
   { id: 'quick-links', col: 0, row: 1, w: 4 },
-  { id: 'reset-countdown', col: 0, row: 2, w: 2 },
-  { id: 'crystal-limit', col: 2, row: 2, w: 2 },
-  { id: 'next-party-schedule', col: 0, row: 3, w: 4 },
-  { id: 'shared-contents', col: 0, row: 4, w: 4 },
-  { id: 'remaining-schedule', col: 0, row: 5, w: 4 },
-  { id: 'weekly-income', col: 0, row: 6, w: 4 },
-  { id: 'top-valuable-item', col: 0, row: 7, w: 2 },
-  { id: 'unpriced-drops', col: 2, row: 7, w: 2 },
+  { id: 'maspi', col: 0, row: 2, w: 4 },
+  { id: 'reset-countdown', col: 0, row: 3, w: 2 },
+  { id: 'crystal-limit', col: 2, row: 3, w: 2 },
+  { id: 'next-party-schedule', col: 0, row: 4, w: 4 },
+  { id: 'shared-contents', col: 0, row: 5, w: 4 },
+  { id: 'remaining-schedule', col: 0, row: 6, w: 4 },
+  { id: 'weekly-income', col: 0, row: 7, w: 4 },
+  { id: 'top-valuable-item', col: 0, row: 8, w: 2 },
+  { id: 'unpriced-drops', col: 2, row: 8, w: 2 },
 ]
+
+/**
+ * 메이플 ID 가 둘 이상일 때의 배치. 결정석 위젯을 4칸으로 넓히고 초기화 카운트다운도 4칸으로 그 위에 둔다.
+ *
+ * 결정석 위젯만 넓히면 카운트다운이 그 줄에 혼자 남는다(사용자 지정). 두 위젯의 순서는 기본 배치와 같고, 그 아래는 한 줄씩 내려간다.
+ */
+export const WIDE_CRYSTAL_LAYOUT: readonly TilePlacement[] = TILE_LAYOUT.map((placement) => {
+  if (placement.id === 'reset-countdown') return { ...placement, w: 4 }
+  if (placement.id === 'crystal-limit') return { ...placement, col: 0, row: 4, w: 4 }
+  return placement.row >= 4 ? { ...placement, row: placement.row + 1 } : placement
+})
+

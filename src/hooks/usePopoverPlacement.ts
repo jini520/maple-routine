@@ -5,14 +5,16 @@
  * 그리되 보이지 않게 둔다(앵커를 재기 전과 같은 규약).
  */
 import { useState } from 'react'
-import { useWindowDimensions, type LayoutChangeEvent } from 'react-native'
+import { type LayoutChangeEvent } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { resolveBottomBarMetrics } from '../lib/bottom-bar-metrics'
+import { resolveBottomBarSpace } from '../lib/bottom-bar-metrics'
 import { overlayWindowHeightPx } from '../lib/modal-metrics'
 import { placePopover } from '../lib/place-dropdown'
 import { useBottomSafeAreaPx } from '../lib/safe-area'
+import { useScreenLayout } from '../lib/screen-layout'
 import type { PopoverAnchorRect } from './useAnchoredPopover'
+import { useButtonNavigation } from './useButtonNavigation'
 
 /** 상자가 화면 위아래 안전영역에서 띄우는 여백. 드롭다운과 같은 값이다. */
 const EDGE_GAP_PX = 12
@@ -28,9 +30,10 @@ export interface PopoverPlacement {
 
 /** 팝오버 자리. `gap` 은 앵커와 상자 사이 간격이다. */
 export function usePopoverPlacement(anchor: PopoverAnchorRect | null, gap: number): PopoverPlacement {
-  const window = useWindowDimensions()
+  const layout = useScreenLayout()
   const insets = useSafeAreaInsets()
   const bottomSafeAreaPx = useBottomSafeAreaPx()
+  const buttonNavigation = useButtonNavigation()
   const [height, setHeight] = useState<number | null>(null)
 
   function onLayout(event: LayoutChangeEvent): void {
@@ -45,13 +48,13 @@ export function usePopoverPlacement(anchor: PopoverAnchorRect | null, gap: numbe
     anchorTop: anchor.top,
     anchorHeight: anchor.height,
     contentHeight: height,
-    windowHeight: overlayWindowHeightPx(window.height),
+    windowHeight: overlayWindowHeightPx(layout.windowHeightPx),
     safeTop: insets.top,
     safeBottom: insets.bottom,
     edgeGap: EDGE_GAP_PX,
     gap,
     // 하단바 윗변. 토스트가 서는 자리와 같은 계산이다
-    coveredBottomPx: bottomSafeAreaPx + resolveBottomBarMetrics(window.width).spacePx,
+    coveredBottomPx: bottomSafeAreaPx + resolveBottomBarSpace(layout, buttonNavigation).spacePx,
   })
   return { ...placed, measured: true, onLayout }
 }

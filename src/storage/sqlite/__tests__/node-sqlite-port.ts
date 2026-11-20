@@ -88,6 +88,9 @@ export function createRealSqlite(): RealSqlite {
       async createConnection(database) {
         return connection(database)
       },
+      async removeFile(path) {
+        rmSync(path, { force: true })
+      },
     },
     inspect(read) {
       const db = new DatabaseSync(file)

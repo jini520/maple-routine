@@ -1,5 +1,5 @@
 /**
- * 테마 페이지. **고르면 이 페이지만 바뀌고, `적용` 을 눌러야 앱 전체에 적용된다.**
+ * 테마 페이지. **고르면 이 페이지만 바뀌고, `적용` 을 눌러야 앱 전체에 적용된다.** 목록 위의 오버 프레임 스위치도 같다.
  *
  * 페이지를 `ThemeScope` 로 감싸 고른 테마로 그린다. 고르는 즉시 앱 전체를 바꾸면 둘러보는 동안 모든 화면이 계속
  * 다시 그려진다. `적용` 없이 나가면 고른 것은 버리고, 상태바 · 내비바 명암도 지금 테마로 돌려놓는다.
@@ -7,12 +7,13 @@
 import { useEffect, useState } from 'react'
 import { View } from 'react-native'
 
+import { useOverFrameStore } from '../../features/over-frame/store'
 import { showSystemBarsOf, useThemeStore } from '../../features/theme/store'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 import { ThemeScope } from '../../theme/ThemeScope'
 import type { ThemeName } from '../../types/theme'
 
-import { Button, Text } from '../../components/atoms'
+import { Button, Card, Switch, Text } from '../../components/atoms'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
@@ -21,6 +22,7 @@ import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { ThemeBackdrop } from '../../components/templates/ThemeBackdrop/ThemeBackdrop'
+import { SETTINGS_CARD_CLASS, SETTINGS_SWITCH_ROW_CLASS } from './row-class'
 import { SettingsActionBar } from './SettingsActionBar'
 import { ThemeSelector } from './ThemeSelector'
 
@@ -42,6 +44,9 @@ export function SettingsThemeScreen(): React.JSX.Element {
   const navigation = useSettingsNavigation()
   const { theme, selectTheme } = useThemeStore()
   const [draft, setDraft] = useState<ThemeName>(theme)
+  const overFrame = useOverFrameStore((state) => state.enabled)
+  const setOverFrame = useOverFrameStore((state) => state.setEnabled)
+  const [overFrameDraft, setOverFrameDraft] = useState(overFrame)
   const [filter, setFilter] = useState<ModeFilter>('전체')
   const [actionBarHeightPx, setActionBarHeightPx] = useState(0)
 
@@ -53,11 +58,12 @@ export function SettingsThemeScreen(): React.JSX.Element {
   useEffect(() => () => showSystemBarsOf(useThemeStore.getState().theme), [])
 
   async function handleApply(): Promise<void> {
-    await selectTheme(draft)
+    if (draft !== theme) await selectTheme(draft)
+    if (overFrameDraft !== overFrame) await setOverFrame(overFrameDraft)
     navigation.goBack()
   }
 
-  const isUnchanged = draft === theme
+  const isUnchanged = draft === theme && overFrameDraft === overFrame
 
   return (
     <ThemeScope theme={draft}>
@@ -79,7 +85,19 @@ export function SettingsThemeScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
-        <View className="px-4 pb-4" testID="screen-SettingsTheme" style={{ paddingBottom: actionBarHeightPx }}>
+        <View className="gap-3 px-4 pb-4" testID="screen-SettingsTheme" style={{ paddingBottom: actionBarHeightPx }}>
+          {/* 설명 글은 두지 않는다(사용자 지정). */}
+          <Card className={SETTINGS_CARD_CLASS}>
+            <View className={SETTINGS_SWITCH_ROW_CLASS}>
+              <Text className="shrink text-sm font-semibold text-text">오버 프레임</Text>
+              <Switch
+                on={overFrameDraft}
+                label="오버 프레임"
+                className="ml-auto"
+                onToggle={() => setOverFrameDraft(!overFrameDraft)}
+              />
+            </View>
+          </Card>
           <ThemeSelector theme={draft} mode={FILTERED_MODE[filter]} onSelect={setDraft} />
         </View>
       </ScreenScroll>

@@ -47,7 +47,7 @@ function spy(options: {
       readIds.push(recordId)
       return options.value ?? null
     },
-    send: async (_headers, _recordId, value) => {
+    send: async (_recordId, value) => {
       sentValues.push(value)
       return options.result ?? { outcome: 'sent' }
     },
@@ -190,7 +190,7 @@ describe('서버 전송 대기 표 훑기', () => {
       handlers: {
         'drop-price': {
           read: async () => ({ priceMeso: 1 }),
-          send: async (_headers, recordId) =>
+          send: async (recordId) =>
             recordId === 'r2' ? { outcome: 'rejected', status: 503 } : { outcome: 'sent' },
         },
       },

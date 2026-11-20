@@ -1,16 +1,18 @@
 import { bossNameOf } from '../lib/boss/bosses'
 import { worldNameOf } from '../lib/world/worlds'
+import type { CrystalLimitRecord } from '../lib/boss/crystal-limit'
 import {
+  CRYSTAL_SPLIT_COLUMN_NAMES,
   PERIODS_JOIN,
   PERIOD_ID_OF_KEY,
   PERIOD_KEY_WHERE,
-  SPLIT_COLUMN_NAMES,
   crystalSplitValues,
   deletePeriodIfEmpty,
   ensurePartyId,
   numberOrNull,
   periodKeyValues,
 } from './boss-periods'
+import { bumpBossDropRecordsRevision } from './boss-drops'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { NEW_UUID_SQL } from './sqlite/uuid'
@@ -37,14 +39,18 @@ export interface BossProfitRecord {
   splitFeePercent: number | null
   /** 송금 수수료가 등급을 따라가나. 없으면 손으로 고른 값이다 */
   splitFeeAuto?: boolean
+  /** 분배 방식 `제외`. 결정석을 팔지 않은 처치라 `payoutMeso` 가 0 이다 */
+  crystalExcluded?: boolean
+  /** 주간 결정석 판매 한도를 넘긴 처치. 읽을 때만 오고 `payoutMeso` 는 0 으로 온다. 쓸 때는 안 본다 */
+  overCrystalLimit?: boolean
   recordedAt: string // ISO 8601
   /**
    * 기록 시점의 월드 스냅샷. `null` 이면 "월드 모름"이고 월드별 결정석 집계에서
    * 제외된다.
    *
    * 파생값(캐시된 `character/basic` 의 `world_name`)으로 두면 **월드 리프가 모든 과거 주의 귀속을
-   * 소급 이동**시킨다. 분모(`90 × 월드 수`)까지 바뀐다. 판매 한도가 월드마다 따로 산정된다는
-   * 사실(사용자 확인)과 정면으로 어긋나므로 기록에 박아 고정한다.
+   * 소급 이동**시킨다. 그러면 지난 주의 판매 한도 줄(2026-11-19 전 주는 월드, 그 뒤는 일반 월드와
+   * 챌린저스 월드)까지 바뀌므로 기록에 박아 고정한다.
    */
   world: string | null
   /** 기록 시점의 월드 key. 집계는 이 값으로 가른다. 저장되는 것은 이 값이고 `world` 는 읽을 때 이 값으로 찾는다 */
@@ -81,8 +87,8 @@ export type BossProfitRecordSource = 'auto' | 'manual'
 const UPSERT_SQL = `
   INSERT INTO boss_party_periods
     (id, party_id, period_key, cycle, world_key, clear_status, price_meso, payout_meso, source,
-     ${SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
-  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, 'cleared', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ${CRYSTAL_SPLIT_COLUMN_NAMES.join(', ')}, created_at, updated_at)
+  VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, 'cleared', ?, ?, ?, ${CRYSTAL_SPLIT_COLUMN_NAMES.map(() => '?').join(', ')}, ?, ?)
   ON CONFLICT (party_id, period_key) DO UPDATE SET
     clear_status = 'cleared',
     cycle = excluded.cycle,
@@ -90,7 +96,7 @@ const UPSERT_SQL = `
     price_meso = excluded.price_meso,
     payout_meso = excluded.payout_meso,
     source = excluded.source,
-    ${SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(',\n    ')},
+    ${CRYSTAL_SPLIT_COLUMN_NAMES.map((column) => `${column} = excluded.${column}`).join(',\n    ')},
     updated_at = excluded.updated_at
 `
 
@@ -189,11 +195,14 @@ export async function fillMissingRecordWorlds(
   bumpRecordsRevision()
 }
 
+/** 받은 몫. 한도를 넘긴 처치는 원래 몫을 남겨 둔 채 0 으로 읽는다. 다시 판정할 때 그 몫이 차례를 정한다 */
+const PAYOUT_SELECT = 'CASE WHEN pe.over_crystal_limit = 1 THEN 0 ELSE pe.payout_meso END AS payout_meso'
+
 /** 처치 행을 읽는 SELECT. 결정석 비율은 비율 분배일 때만 있다. */
 const RECORD_SELECT = `
-  SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.cycle, pe.period_key, pe.party_size, pe.price_meso, pe.payout_meso,
+  SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.cycle, pe.period_key, pe.party_size, pe.price_meso, ${PAYOUT_SELECT},
          pe.my_share, pe.shares_total, pe.split_fee_percent, pe.split_fee_auto, pe.updated_at, pe.world_key,
-         pe.defeated_date, pe.source
+         pe.defeated_date, pe.source, pe.crystal_excluded, pe.over_crystal_limit
     FROM ${PERIODS_JOIN}`
 
 function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
@@ -213,6 +222,8 @@ function rowToRecord(row: Record<string, unknown>): BossProfitRecord {
     crystalSharesTotal: numberOrNull(row.shares_total),
     splitFeePercent: numberOrNull(row.split_fee_percent),
     splitFeeAuto: Number(row.split_fee_auto) === 1,
+    crystalExcluded: Number(row.crystal_excluded) === 1,
+    overCrystalLimit: Number(row.over_crystal_limit) === 1,
     recordedAt: row.updated_at as string,
     world: worldKey === null ? null : worldNameOf(worldKey, worldKey),
     worldKey,
@@ -289,6 +300,50 @@ export async function updateProfitSplitFees(updates: readonly ProfitSplitFeeUpda
          WHERE clear_status = 'cleared' AND id = ${PERIOD_ID_OF_KEY}`,
         [update.splitFeePercent, update.payoutMeso, ...periodKeyValues(update)],
       )
+    }
+  })
+  bumpRecordsRevision()
+}
+
+/**
+ * 주간 결정석 판매 한도를 판정할 처치 기록. 주간 보스만 주고, 받은 몫은 0 으로 읽기 전의 원래 값이다.
+ *
+ * @param weekKeys 판정할 주. `'all'` 이면 기록이 있는 모든 주다
+ */
+export async function getCrystalLimitRecords(
+  weekKeys: readonly string[] | 'all',
+): Promise<(CrystalLimitRecord & { overCrystalLimit: boolean })[]> {
+  if (weekKeys !== 'all' && weekKeys.length === 0) return []
+  const db = await getBossProfitDb()
+  const inWeeks = weekKeys === 'all' ? '' : ` AND pe.period_key IN (${weekKeys.map(() => '?').join(', ')})`
+  const { values } = await db.query(
+    `SELECT pe.id, pa.ocid, pa.boss_key, pa.difficulty, pe.cycle, pe.period_key, pe.world_key, pe.payout_meso,
+            pe.crystal_excluded, pe.over_crystal_limit
+       FROM ${PERIODS_JOIN}
+      WHERE pe.clear_status = 'cleared' AND pe.cycle = 'weekly'${inWeeks}`,
+    weekKeys === 'all' ? [] : [...weekKeys],
+  )
+  return (values ?? []).map((row) => ({
+    id: row.id as string,
+    ocid: row.ocid as string,
+    bossKey: row.boss_key as string,
+    difficulty: row.difficulty as string,
+    cycle: row.cycle as BossCycle,
+    periodKey: row.period_key as string,
+    worldKey: (row.world_key as string | null | undefined) ?? null,
+    payoutMeso: row.payout_meso as number,
+    crystalExcluded: Number(row.crystal_excluded) === 1,
+    overCrystalLimit: Number(row.over_crystal_limit) === 1,
+  }))
+}
+
+/** 한도를 넘긴 처치 표시를 고쳐 쓴다. 바뀐 행만 넘기고, 없으면 판을 올리지 않는다 */
+export async function setOverCrystalLimit(changes: readonly { id: string; over: boolean }[]): Promise<void> {
+  if (changes.length === 0) return
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    for (const change of changes) {
+      await db.run('UPDATE boss_party_periods SET over_crystal_limit = ? WHERE id = ?', [change.over ? 1 : null, change.id])
     }
   })
   bumpRecordsRevision()
@@ -448,6 +503,10 @@ export interface DatedBossProfitRecord {
   periodKey: string
   payoutMeso: number
   defeatedOn: string
+  /** 분배 방식 `제외` */
+  crystalExcluded: boolean
+  /** 주간 결정석 판매 한도를 넘긴 처치. `payoutMeso` 는 0 으로 온다 */
+  overCrystalLimit: boolean
 }
 
 /**
@@ -470,7 +529,8 @@ export async function getDatedBossProfitRecords(
   const db = await getBossProfitDb()
   const ocidPlaceholders = ocids.map(() => '?').join(', ')
   const { values } = await db.query(
-    `SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.period_key, pe.payout_meso, pe.defeated_date
+    `SELECT pa.ocid, pa.boss_key, pa.difficulty, pe.period_key, ${PAYOUT_SELECT}, pe.defeated_date,
+            pe.crystal_excluded, pe.over_crystal_limit
        FROM ${PERIODS_JOIN}
       WHERE pa.ocid IN (${ocidPlaceholders})
         AND pe.defeated_date IS NOT NULL
@@ -488,6 +548,8 @@ export async function getDatedBossProfitRecords(
       periodKey: record.period_key as string,
       payoutMeso: record.payout_meso as number,
       defeatedOn: record.defeated_date as string,
+      crystalExcluded: Number(record.crystal_excluded) === 1,
+      overCrystalLimit: Number(record.over_crystal_limit) === 1,
     }
   })
 }
@@ -566,6 +628,47 @@ export async function getEarliestBossProfitPeriodKeys(
 }
 
 /**
+ * 월드 리프한 캐릭터의 보스 기록을 새 ocid 로 옮긴다. 옮긴 기간 수를 돌려준다.
+ *
+ * 새 캐릭터에 같은 보스 · 난이도 조합이 없으면 조합째 옮겨 옛 파티 설정도 따라간다. 있으면 기간만 옮기고 설정은 리프 뒤에 고른
+ * 새 것을 둔다. 새 조합에 이미 있는 기간은 옮기지 않는다. 리프 중복 정리가 짝을 짓지 않은 기간이라 어느 쪽이 맞는지 모른다.
+ * 기간의 월드 칸은 그대로라 리프 전 월드로 센다. 드롭은 기간을 따라간다.
+ */
+export async function moveBossRecordsToOcid(fromOcid: string, toOcid: string): Promise<number> {
+  const db = await getBossProfitDb()
+  const moved = await inTransaction(db, async () => {
+    const { values } = await db.query(
+      `SELECT src.id AS from_id, dst.id AS to_id,
+              (SELECT COUNT(*) FROM boss_party_periods pe WHERE pe.party_id = src.id) AS periods
+         FROM boss_parties src
+         LEFT JOIN boss_parties dst ON dst.ocid = ? AND dst.boss_key = src.boss_key AND dst.difficulty = src.difficulty
+        WHERE src.ocid = ?`,
+      [toOcid, fromOcid],
+    )
+    let count = 0
+    for (const row of values ?? []) {
+      if (row.to_id === null || row.to_id === undefined) {
+        await db.run(`UPDATE boss_parties SET ocid = ? WHERE id = ?`, [toOcid, row.from_id])
+        count += Number(row.periods)
+        continue
+      }
+      const free = `party_id = ? AND period_key NOT IN (SELECT period_key FROM boss_party_periods WHERE party_id = ?)`
+      const params = [row.from_id, row.to_id]
+      const { values: counted } = await db.query(`SELECT COUNT(*) AS n FROM boss_party_periods WHERE ${free}`, params)
+      const periods = Number(counted?.[0]?.n ?? 0)
+      if (periods > 0) await db.run(`UPDATE boss_party_periods SET party_id = ? WHERE ${free}`, [row.to_id, ...params])
+      count += periods
+    }
+    return count
+  })
+  if (moved > 0) {
+    bumpRecordsRevision()
+    bumpBossDropRecordsRevision()
+  }
+  return moved
+}
+
+/**
  * 처치 한 행을 걷는다. 드롭이 남아 있으면 기간 행은 남기고 처치 칸과 분배 칸을 비운다. 그 기간은 보스 관리
  * 설정을 따른다. 처치 전에 그 기간만 고쳐 둔 값은 처치할 때 덮여 돌아오지 않는다.
  *
@@ -582,7 +685,7 @@ export async function deleteBossProfitRecord(key: BossProfitRecordKey): Promise<
     await db.run(
       `UPDATE boss_party_periods
           SET clear_status = 'open', price_meso = NULL, payout_meso = NULL, defeated_date = NULL, source = NULL,
-              ${SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')}
+              over_crystal_limit = NULL, ${CRYSTAL_SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')}
         WHERE id = ?`,
       [periodId],
     )

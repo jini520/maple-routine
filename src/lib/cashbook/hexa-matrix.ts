@@ -246,18 +246,42 @@ export function hexaStorageCandidates(input: {
   return [input.ocid, ...others]
 }
 
+/** 한 메이플 ID · 월드의 기타 조각(인벤토리에 넣은 조각). 날짜가 없어 어느 날의 강화에도 쓴다. */
+export interface OtherFragmentStorage {
+  accountId: string
+  worldKey: string
+  stored: number
+}
+
+/** 헥사 강화가 가져올 수 있는 보관. 기타 조각은 강화한 캐릭터의 메이플 ID · 월드를 모르면 `null` 이다. */
+export interface HexaStorages {
+  other: OtherFragmentStorage | null
+  /** `hexaStorageCandidates` 차례의 캐릭터별 사냥 조각 보관 */
+  hunts: readonly { ocid: string; stored: number }[]
+}
+
 /**
- * 보관에서 가져오는 배분. 교환 불가를 먼저 빼고 남은 개수를 `storages` 차례대로 가져온다. 보관이 0 이하인
- * 캐릭터는 건너뛴다.
+ * 보관에서 가져오는 배분. 교환 불가를 먼저 빼고, 남은 개수를 강화한 캐릭터의 메이플 ID · 월드의 기타 조각에서 먼저
+ * 가져온 뒤 `storages` 차례대로 사냥 조각에서 가져온다. 보관이 0 이하인 자리는 건너뛴다.
  *
- * @param input.storages `hexaStorageCandidates` 차례의 캐릭터별 보관
+ * 기타 조각이 먼저인 것은 캐릭터가 아니라 메이플 ID · 월드의 것이라 어느 캐릭터의 강화에 써도 같아서다.
+ *
+ * @param input.storages `hexaStorageCandidates` 차례의 캐릭터별 사냥 조각 보관
  */
 export function allocateHexaStorage(input: {
   fragments: number
   untradable: number
+  other?: OtherFragmentStorage | null
   storages: readonly { ocid: string; stored: number }[]
-}): { uses: { ocid: string; fragments: number }[]; taken: number } {
+}): {
+  uses: { ocid: string; fragments: number }[]
+  otherUse?: { accountId: string; worldKey: string; fragments: number }
+  taken: number
+} {
   let rest = Math.max(0, input.fragments - input.untradable)
+  const other = input.other ?? null
+  const otherTaken = other === null || other.stored <= 0 ? 0 : Math.min(other.stored, rest)
+  rest -= otherTaken
   const uses: { ocid: string; fragments: number }[] = []
   for (const { ocid, stored } of input.storages) {
     if (rest === 0) break
@@ -266,7 +290,10 @@ export function allocateHexaStorage(input: {
     uses.push({ ocid, fragments })
     rest -= fragments
   }
-  return { uses, taken: uses.reduce((sum, use) => sum + use.fragments, 0) }
+  const taken = uses.reduce((sum, use) => sum + use.fragments, otherTaken)
+  return otherTaken === 0 || other === null
+    ? { uses, taken }
+    : { uses, otherUse: { accountId: other.accountId, worldKey: other.worldKey, fragments: otherTaken }, taken }
 }
 
 /** 여러 스킬을 묶은 코어 이름(`가/나/다`)의 첫 스킬과 나머지 수. 목록에서 이름을 한 줄에 두기 위해서다. */

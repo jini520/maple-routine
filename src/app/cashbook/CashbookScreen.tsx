@@ -26,15 +26,18 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
+import { useRoute, type RouteProp } from '@react-navigation/native'
 
 import {
   Badge,
+  Button,
   CalendarIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   ChevronUpIcon,
   ProfitIcon,
   ShoppingCartIcon,
+  StickyNoteIcon,
   Text,
 } from '../../components/atoms'
 import { CalendarGrid } from '../../components/molecules/CalendarGrid/CalendarGrid'
@@ -52,6 +55,13 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
+import { useScreenNavigation } from '../../hooks/useScreenNavigation'
+import { useMvpGradeContext } from '../../features/mvp-grade/store'
+import { tapFeedback } from '../../native/haptics'
+import { useRunAfterTransition } from '../../hooks/useRunAfterTransition'
+import { openDropPriceCardOf } from './open-drop-price-card'
+import type { IncomeCategoryKey } from '../../lib/cashbook/categories'
+import type { TabParamList } from '../../navigation/routes'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import {
   formatBossProfitPeriodLabel,
@@ -77,7 +87,7 @@ import {
   historyFloorDateKey,
   monthWindow,
 } from '../../features/cashbook/range'
-import { recordIconOf } from '../../features/cashbook/row-icon'
+import { enhancedItemIconOf, recordIconOf } from '../../features/cashbook/row-icon'
 import { loadSheetAccounts, type SheetAccount } from '../../features/cashbook/account-names'
 import { formatMesoCompact, formatMesoSigned } from '../../lib/cashbook/meso-compact'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
@@ -87,29 +97,55 @@ import {
   loadLastPointRate,
   loadLastHunts,
   nextLastHunts,
+  loadLastBossIncomeTransfers,
+  loadLastEpicDungeonRewards,
+  nextLastBossIncomeTransfers,
+  nextLastEpicDungeonRewards,
   loadFragmentStorage,
+  loadHuntFragmentFloor,
+  isFragmentShortage,
   loadHexaStorageChecks,
   loadHexaStorages,
+  loadHexaOwnerOf,
   loadTrackedCharacters,
   recordIncome,
   recordIncomes,
   recordSpend,
   editIncome,
+  editMesoMarketExchange,
   editSpend,
+  exchangeSpendViewOf,
   removeRecord,
   recordCardOf,
   recordMesoOf,
   recordCashOf,
   isManualRecord,
   rowKeyOf,
+  spendMesoOf,
+  spendTileOf,
   type DayRecord,
   type DefeatedBoss,
   type EnhancedItem,
   type ManualDayRecord,
+  type RecordCard,
   type SoldItem,
+  type SpendSheetState,
 } from '../../features/cashbook/records'
+import { loadWeekCrystalMeso } from '../../features/cashbook/week-crystal'
+import {
+  mergeDayRows,
+  mergedRowCardOf,
+  mergedRowIconOf,
+  mergedRowKeyOf,
+  mergedRowMesoOf,
+  type MergedDayRow,
+  type SpendDayRecord,
+} from '../../features/cashbook/merged-rows'
+import type { ImageAssetRef } from '../../types/image-asset'
 import type { HexaStorageChecks } from '../../storage/hexa-storage-checks'
 import type { LastHunts } from '../../storage/last-hunts'
+import type { LastBossIncomeTransfers } from '../../storage/last-boss-income-transfers'
+import type { LastEpicDungeonRewards } from '../../storage/last-epic-dungeon-rewards'
 import { useLedgerDays } from '../../features/cashbook/ledger-query'
 import { loadMesoRate } from '../../features/cashbook/meso-rate'
 import { loadRememberedLevels } from '../../features/cashbook/remembered-levels'
@@ -123,6 +159,7 @@ import { useToastStore } from '../../features/toast/store'
 import { SETTLEMENT_BANNER_DETAIL_LEDGER } from '../../features/settlement/banner-text'
 import { SettlementBanner } from '../SettlementBanner'
 import { IncomeSheet, type IncomeDraft } from './IncomeSheet'
+import type { SpendRecord } from '../../storage/spend'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
 import { useMonthDays } from './useMonthDays'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
@@ -357,6 +394,8 @@ function DefeatedBossTiles(props: { rowKey: string; bosses: readonly DefeatedBos
  *
  * 결정석처럼 타일을 안 쓴다. 장비에는 초상이 없고 사용자가 여기서 보려는 것이 **어디에 썼나**
  * 라서, 이름과 금액이 한 줄에 나란히 서는 쪽이 답을 바로 준다.
+ *
+ * 이름 앞 그림은 판매 줄의 판처럼 못 찾으면 그림 자리 없이 이름부터 선다. 크기는 한 줄 20 · 두 줄 24 로 같은 높이의 판매 줄 · 합친 줄 칸과 같다.
  */
 function EnhancedItemRows(props: {
   rowKey: string
@@ -377,8 +416,19 @@ function EnhancedItemRows(props: {
             {formatMesoSigned(item.costMeso, '−')}
           </Text>
         )
+        const icon = enhancedItemIconOf(item)
+        const image = icon !== null && (
+          <Image
+            testID={`cashbook-item-image-${itemId}`}
+            source={icon}
+            className={`${props.starforce ? 'h-6 w-6' : 'h-5 w-5'} shrink-0`}
+            resizeMode="contain"
+            aria-hidden
+          />
+        )
         return props.starforce ? (
           <View key={itemId} testID={`cashbook-item-row-${itemId}`} className="flex-row items-center gap-2">
+            {image}
             <View className="min-w-0 flex-1">
               <Text numberOfLines={1} className="text-xs font-semibold text-text">
                 {item.targetItem}
@@ -398,6 +448,7 @@ function EnhancedItemRows(props: {
           </View>
         ) : (
           <View key={itemId} testID={`cashbook-item-row-${itemId}`} className="flex-row items-center gap-2">
+            {image}
             <Text numberOfLines={1} className="shrink text-11 text-text-muted">
               {item.targetItem}
             </Text>
@@ -473,6 +524,112 @@ function DayTotalHalf(props: {
   )
 }
 
+/** 메모가 있는 기록의 제목 뒤 아이콘. lucide 아이콘은 `testID` 를 받지 못해 상자가 든다. */
+function MemoMark(props: { testID: string }): React.JSX.Element {
+  return (
+    <View testID={props.testID} className="shrink-0">
+      <StickyNoteIcon className="h-[11px] w-[11px] text-text-muted" strokeWidth={2} aria-hidden />
+    </View>
+  )
+}
+
+/** 줄 카드의 머리 한 줄(표식 · 두 줄 · 금액 · 화살촉). 기록 줄과 합친 줄이 함께 쓰는 부품. */
+function RowHeader(props: {
+  rowKey: string
+  card: RecordCard
+  amountText: string
+  income: boolean
+  rowIcon: ImageAssetRef | null
+  Chevron: typeof ChevronRightIcon
+  /** 읽어 주는 이름 끝의 할 일. `고치기` · `펼치기` · `접기` */
+  action: string
+  /** 펼칠 수 없는 줄이면 `undefined` */
+  expanded: boolean | undefined
+  /** 메모가 있는 손입력 줄. 제목 뒤에 메모 아이콘이 선다 */
+  memo: boolean
+  onPress: () => void
+}): React.JSX.Element {
+  const { rowKey, card, income, rowIcon, Chevron } = props
+  const Icon = income ? ProfitIcon : ShoppingCartIcon
+  return (
+    <Pressable
+      role="button"
+      testID={`cashbook-row-${rowKey}`}
+      // 자동 줄은 고치러 가는 것이 아니라 보러 가는 것이다. 읽어 주는 이름이 그 사실을 말해야
+      // 눌렀더니 시트가 안 열린다 가 고장으로 읽히지 않는다.
+      // 둘째 줄까지 읽는다. 강화 줄은 제목이 모두 `강화` 라 둘째 줄이 있어야 줄이 갈린다.
+      aria-label={`${card.title}${card.detail === null ? '' : ` ${card.detail}`}${props.memo ? ' 메모 있음' : ''} ${props.action}`}
+      aria-expanded={props.expanded}
+      onPress={props.onPress}
+      className="flex-row items-center gap-2.5 py-3 pl-3 pr-2.5"
+    >
+      {/* 자리는 그림이 있든 없든 **같은 28**다. 크기가 갈리면 줄 높이가 흔들려 목록이
+          울퉁불퉁해진다.
+
+          바탕은 아이콘일 때만 칠한다(사용자 지정). 선 아이콘은 색 있는 판이 있어야 표식으로
+          읽히지만 게임 그림은 그 자체가 이미 그림이라, 뒤에 원을 깔면 두 그림이 겹쳐 보인다. */}
+      <View
+        testID={`cashbook-row-icon-${rowKey}`}
+        className={`h-7 w-7 items-center justify-center rounded-full ${
+          rowIcon !== null ? '' : income ? 'bg-rise-tint' : 'bg-fall-tint'
+        }`}
+      >
+        {rowIcon === null ? (
+          <Icon
+            className={`h-4 w-4 ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+            strokeWidth={2}
+            aria-hidden
+          />
+        ) : (
+          <Image
+            testID={`cashbook-row-image-${rowKey}`}
+            source={rowIcon}
+            className="h-6 w-6"
+            resizeMode="contain"
+            aria-hidden
+          />
+        )}
+      </View>
+
+      {/* 첫 줄은 캐릭터 · 제목, 둘째 줄은 무엇을 얼마나다. 갈래마다 다른 규칙은 화면이 아니라
+          `recordCardOf` 가 든다. */}
+      <View className="min-w-0 flex-1">
+        {/* 제목이 길면 제목이 먼저 줄고 메모 아이콘은 남는다. 아이콘은 읽어 주지 않아 이름이 `메모 있음` 을 말한다. */}
+        <View className="flex-row items-center gap-2">
+          <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="shrink text-xs font-semibold text-text">
+            {card.title}
+          </Text>
+          {props.memo && <MemoMark testID={`cashbook-row-memo-${rowKey}`} />}
+        </View>
+        {card.detail !== null && (
+          <Text
+            numberOfLines={1}
+            testID={`cashbook-row-detail-${rowKey}`}
+            className="text-11 text-text-muted"
+            style={TABULAR_NUMS}
+          >
+            {card.detail}
+          </Text>
+        )}
+      </View>
+
+      <Text
+        className={`shrink-0 text-xs font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
+        style={TABULAR_NUMS}
+      >
+        {props.amountText}
+      </Text>
+      {/* 화살촉이 상자를 하나 쓰는 이유는 lucide 아이콘이 `testID` 를 SVG 안으로 안 흘려보내
+          화살촉이 사라졌다 를 테스트가 못 잡기 때문이다. 상자는 `shrink-0` 도 함께 든다.
+
+*/}
+      <View testID={`cashbook-row-chevron-${rowKey}`} className="shrink-0">
+        <Chevron className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
+      </View>
+    </Pressable>
+  )
+}
+
 function DayRecordRow(props: {
   entry: DayRecord
   expanded: boolean
@@ -483,11 +640,6 @@ function DayRecordRow(props: {
   // 나가는 돈은 둘이다. 손으로 적은 지출과 강화 사용 내역. 결정석·판매는 들어오는 돈이다.
   const income = entry.kind !== 'spend' && entry.kind !== 'enhancement'
   const cash = recordCashOf(entry)
-  const card = recordCardOf(entry)
-  const Icon = income ? ProfitIcon : ShoppingCartIcon
-  // 화면 글자가 아니라 줄의 신원으로 찾는다. 손입력 줄은 이름을 적으면 그것이 뜨므로
-  // 보이는 글자로 찾으면 이름을 적은 줄에서만 그림이 사라진다.
-  const rowIcon = recordIconOf(entry)
   /**
    * 펼칠 수 있는 줄은 둘이다. 결정석은 잡은 보스를, 강화는 만진 장비를 편다. 판매 줄은 둘 중
    * 어느 칸도 안 갖는 타입이라(`AutoDayRecord` 가 합집합이다) 분기를 잘못 쓰면 컴파일 단계에서
@@ -498,89 +650,29 @@ function DayRecordRow(props: {
   const soldItems = entry.kind === 'dropSale' ? entry.items : null
   const expandable = bosses !== null || items !== null || soldItems !== null
   const isOpen = expanded && expandable
-  /**
-   * 무슨 일이 일어날지 미리 말하는 화살촉. 같은 카드 두 줄이 서로 다르게 반응하는데
-   * 그림이 같으면 그것이 고장으로 읽힌다.
-   */
-  const Chevron = !expandable ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon
-  const action = !expandable ? '고치기' : isOpen ? '접기' : '펼치기'
 
   return (
     // 줄과 펼친 판이 테두리 없는 카드 하나다. 판이 카드 밖에 따로 붙으면 둘 사이에 다시 경계 선이 필요해진다.
     <View testID={`cashbook-row-card-${rowKey}`} className="rounded-[14px] bg-surface">
-      <Pressable
-        role="button"
-        testID={`cashbook-row-${rowKey}`}
-        // 자동 줄은 고치러 가는 것이 아니라 보러 가는 것이다. 읽어 주는 이름이 그 사실을 말해야
-        // 눌렀더니 시트가 안 열린다 가 고장으로 읽히지 않는다.
-        // 둘째 줄까지 읽는다. 강화 줄은 제목이 모두 `강화` 라 둘째 줄이 있어야 줄이 갈린다.
-        aria-label={`${card.title}${card.detail === null ? '' : ` ${card.detail}`} ${action}`}
-        aria-expanded={expandable ? isOpen : undefined}
-        onPress={props.onPress}
-        className="flex-row items-center gap-2.5 py-3 pl-3 pr-2.5"
-      >
-        {/* 자리는 그림이 있든 없든 **같은 28**다. 크기가 갈리면 줄 높이가 흔들려 목록이
-            울퉁불퉁해진다.
-
-            바탕은 아이콘일 때만 칠한다(사용자 지정). 선 아이콘은 색 있는 판이 있어야 표식으로
-            읽히지만 게임 그림은 그 자체가 이미 그림이라, 뒤에 원을 깔면 두 그림이 겹쳐 보인다. */}
-        <View
-          testID={`cashbook-row-icon-${rowKey}`}
-          className={`h-7 w-7 items-center justify-center rounded-full ${
-            rowIcon !== null ? '' : income ? 'bg-rise-tint' : 'bg-fall-tint'
-          }`}
-        >
-          {rowIcon === null ? (
-            <Icon
-              className={`h-4 w-4 ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
-              strokeWidth={2}
-              aria-hidden
-            />
-          ) : (
-            <Image
-              testID={`cashbook-row-image-${rowKey}`}
-              source={rowIcon}
-              className="h-6 w-6"
-              resizeMode="contain"
-              aria-hidden
-            />
-          )}
-        </View>
-
-        {/* 첫 줄은 캐릭터 · 제목, 둘째 줄은 무엇을 얼마나다. 갈래마다 다른 규칙은 화면이 아니라
-            `recordCardOf` 가 든다. */}
-        <View className="min-w-0 flex-1">
-          <Text numberOfLines={1} testID={`cashbook-row-title-${rowKey}`} className="text-xs font-semibold text-text">
-            {card.title}
-          </Text>
-          {card.detail !== null && (
-            <Text
-              numberOfLines={1}
-              testID={`cashbook-row-detail-${rowKey}`}
-              className="text-11 text-text-muted"
-              style={TABULAR_NUMS}
-            >
-              {card.detail}
-            </Text>
-          )}
-        </View>
-
-        <Text
-          className={`shrink-0 text-xs font-semibold ${income ? 'text-rise-ink' : 'text-fall-ink'}`}
-          style={TABULAR_NUMS}
-        >
-          {cash === null
+      <RowHeader
+        rowKey={rowKey}
+        card={recordCardOf(entry)}
+        amountText={
+          cash === null
             ? formatMesoSigned(recordMesoOf(entry), income ? '+' : '−')
-            : `${cash === 0 ? '' : income ? '+' : '−'}${cash.toLocaleString()}원`}
-        </Text>
-        {/* 화살촉이 상자를 하나 쓰는 이유는 lucide 아이콘이 `testID` 를 SVG 안으로 안 흘려보내
-            화살촉이 사라졌다 를 테스트가 못 잡기 때문이다. 상자는 `shrink-0` 도 함께 든다.
-
-*/}
-        <View testID={`cashbook-row-chevron-${rowKey}`} className="shrink-0">
-          <Chevron className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
-        </View>
-      </Pressable>
+            : `${cash === 0 ? '' : income ? '+' : '−'}${cash.toLocaleString()}원`
+        }
+        income={income}
+        // 화면 글자가 아니라 줄의 신원으로 찾는다. 손입력 줄은 이름을 적으면 그것이 뜨므로
+        // 보이는 글자로 찾으면 이름을 적은 줄에서만 그림이 사라진다.
+        rowIcon={recordIconOf(entry)}
+        // 무슨 일이 일어날지 미리 말하는 화살촉. 같은 카드 두 줄이 서로 다르게 반응하는데 그림이 같으면 그것이 고장으로 읽힌다.
+        Chevron={!expandable ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon}
+        action={!expandable ? '고치기' : isOpen ? '접기' : '펼치기'}
+        expanded={expandable ? isOpen : undefined}
+        memo={isManualRecord(entry) && entry.record.memo !== undefined}
+        onPress={props.onPress}
+      />
       {isOpen && bosses !== null && <DefeatedBossTiles rowKey={rowKey} bosses={bosses} />}
       {isOpen && items !== null && (
         <EnhancedItemRows
@@ -592,6 +684,104 @@ function DayRecordRow(props: {
       {isOpen && soldItems !== null && <SoldItemRows rowKey={rowKey} items={soldItems} />}
     </View>
   )
+}
+
+/**
+ * 헥사 매트릭스 · 아이템 구매를 캐릭터마다 합친 줄. 누르면 그 자리에서 기록마다 칸이 펼쳐지고, 칸을 누르면 그 기록의
+ * 시트가 열린다. 합친 뒤에는 기록을 고칠 곳이 그 칸뿐이다.
+ */
+function MergedRecordRow(props: {
+  row: MergedDayRow
+  expanded: boolean
+  onToggle: () => void
+  onOpenRecord: (entry: ManualDayRecord) => void
+}): React.JSX.Element {
+  const { row, expanded } = props
+  const rowKey = mergedRowKeyOf(row)
+  return (
+    <View testID={`cashbook-row-card-${rowKey}`} className="rounded-[14px] bg-surface">
+      <RowHeader
+        rowKey={rowKey}
+        card={mergedRowCardOf(row)}
+        amountText={formatMesoSigned(mergedRowMesoOf(row), '−')}
+        income={false}
+        rowIcon={mergedRowIconOf(row)}
+        Chevron={expanded ? ChevronUpIcon : ChevronDownIcon}
+        action={expanded ? '접기' : '펼치기'}
+        expanded={expanded}
+        // 접힌 합친 줄에는 메모 아이콘을 세우지 않는다. 메모가 있는 기록은 펼친 칸이 알린다.
+        memo={false}
+        onPress={props.onToggle}
+      />
+      {expanded && (
+        <View testID={`cashbook-merged-tiles-${rowKey}`} className="mx-2.5 mb-2.5 gap-y-1.5">
+          {row.records.map((entry) => (
+            <MergedRecordTile key={entry.record.id} entry={entry} onPress={() => props.onOpenRecord(entry)} />
+          ))}
+        </View>
+      )}
+    </View>
+  )
+}
+
+/**
+ * 펼친 합친 줄의 기록 칸 하나. 칸 하나가 눌러서 시트를 여는 단위라, 판 하나에 줄을 늘어놓지 않고 칸마다 card-inset 이다.
+ *
+ * 최소 높이 49 는 두 줄 칸의 높이. 둘째 줄이 없는 칸(헥사 스탯 · 장비)도 높이가 같다.
+ */
+function MergedRecordTile(props: { entry: SpendDayRecord; onPress: () => void }): React.JSX.Element {
+  const { record } = props.entry
+  const tile = spendTileOf(record)
+  const icon = recordIconOf(props.entry)
+  return (
+    <Pressable
+      role="button"
+      testID={`cashbook-merged-tile-${record.id}`}
+      aria-label={`${tile.title}${tile.detail === null ? '' : ` ${tile.detail}`}${record.memo === undefined ? '' : ' 메모 있음'} 고치기`}
+      onPress={props.onPress}
+      className="min-h-[49px] flex-row items-center gap-2.5 rounded-[10px] bg-card-inset px-2.5 py-2"
+    >
+      {/* 그림이 없는 기록(직접 친 이름)은 판매 줄의 판처럼 그림 자리 없이 이름부터 선다. */}
+      {icon !== null && (
+        <Image
+          testID={`cashbook-merged-tile-image-${record.id}`}
+          source={icon}
+          className="h-6 w-6 shrink-0"
+          resizeMode="contain"
+          aria-hidden
+        />
+      )}
+      <View className="min-w-0 flex-1">
+        <View className="flex-row items-center gap-2">
+          <Text numberOfLines={1} className="shrink text-xs font-semibold text-text">
+            {tile.title}
+          </Text>
+          {record.memo !== undefined && <MemoMark testID={`cashbook-merged-tile-memo-${record.id}`} />}
+        </View>
+        {tile.detail !== null && (
+          <Text numberOfLines={1} className="text-11 text-text-muted" style={TABULAR_NUMS}>
+            {tile.detail}
+          </Text>
+        )}
+      </View>
+      <Text className="shrink-0 text-xs font-semibold text-fall-ink" style={TABULAR_NUMS}>
+        {formatMesoSigned(spendMesoOf(record), '−')}
+      </Text>
+      <View className="shrink-0">
+        <ChevronRightIcon className="h-4 w-4 text-text-disabled" strokeWidth={2} aria-hidden />
+      </View>
+    </Pressable>
+  )
+}
+
+/** 체크 박스가 부르는 그 주 결정석 몫. 모듈에 두어야 폼의 효과가 렌더마다 다시 돌지 않는다 */
+function loadWeekCrystal(ocid: string, dateKey: string): Promise<number> {
+  return loadWeekCrystalMeso(ocid, dateKey, new Date())
+}
+
+/** 지출 시트가 열 기록. 수입으로 저장된 메소마켓 환전도 그 시트에서 적었으므로 지출 모양으로 바꿔 연다 */
+function spendViewOf(entry: ManualDayRecord): SpendRecord {
+  return entry.kind === 'spend' ? entry.record : exchangeSpendViewOf(entry.record)
 }
 
 export function CashbookScreen(): React.JSX.Element {
@@ -609,6 +799,19 @@ export function CashbookScreen(): React.JSX.Element {
   const [monthKey, setMonthKey] = useState(() => getCurrentMonthKey(now))
   const [weekStartKey, setWeekStartKey] = useState(() => resetWeekStartOf(todayDateKey))
   const [selectedDateKey, setSelectedDateKey] = useState(todayDateKey)
+  const navigation = useScreenNavigation()
+  /**
+   * today 빠른 이동의 가계부 분류 칸이 보낸 분류. 있으면 그 분류의 새 수입 폼을 연 채로 그린다. 이 화면은 today 에서
+   * 올 때 새로 마운트되므로 고른 날이 곧 오늘이고, 시트도 오늘 날짜로 열린다.
+   */
+  const routeParams = useRoute<RouteProp<TabParamList, 'Cashbook'>>().params
+  const quickLinkCategory = routeParams?.incomeCategory
+  /**
+   * 거래 내역의 `거래로 이동` 이 보낸 기록. 이 화면은 거래 내역 아래에 마운트된 채라 처음 값이 아니라 효과에서 받는다.
+   */
+  const tradeTarget = routeParams?.trade
+  const gradeContext = useMvpGradeContext()
+  const runAfterTransition = useRunAfterTransition()
   /**
    * 시트가 무엇을 하고 있나. 셋이다.
    *
@@ -616,7 +819,20 @@ export function CashbookScreen(): React.JSX.Element {
    * 있으므로 어느 시트를 열까 와 무엇을 채울까 가 한 값에서 나온다. 자동 줄은 타입이 막아
    * 여기 못 들어온다.
    */
-  const [sheet, setSheet] = useState<'income' | 'expense' | ManualDayRecord | null>(null)
+  const [sheet, setSheet] = useState<'income' | 'expense' | ManualDayRecord | null>(() =>
+    quickLinkCategory === undefined ? null : 'income',
+  )
+  /** 새 수입 시트를 이 분류의 폼으로 바로 연다. today 빠른 이동으로 들어올 때만 있다. */
+  const [startCategory, setStartCategory] = useState<IncomeCategoryKey | undefined>(quickLinkCategory)
+  /**
+   * 마지막으로 받은 `거래로 이동` 기록. 손입력이면 받은 그 렌더에서 수정 시트를 연다. 효과에서 열면 그린 뒤에 상태를 바꿔 한 번
+   * 더 그린다. 파라미터를 지우고 기간을 옮기는 일은 아래 효과가 한다.
+   */
+  const [receivedTrade, setReceivedTrade] = useState<typeof tradeTarget>(undefined)
+  if (tradeTarget !== undefined && tradeTarget !== receivedTrade) {
+    setReceivedTrade(tradeTarget)
+    if (tradeTarget.kind === 'entry') setSheet(tradeTarget.entry)
+  }
   /**
    * 펼쳐 둔 결정석 줄. 한 번에 하나다. 값은 `rowKeyOf` 가 만든 줄의 신원
    * (`bossCrystal:{ocid}`)이고, 그것이 날짜를 안 들고 있으므로 날을 바꿀 때 여기서 지워야 한다.
@@ -627,6 +843,9 @@ export function CashbookScreen(): React.JSX.Element {
   const [lastHunts, setLastHunts] = useState<LastHunts>({})
   /** 새 헥사 폼의 두 체크. 기억이 없으면 둘 다 꺼져 있다. */
   const [hexaStorageChecks, setHexaStorageChecks] = useState<HexaStorageChecks>({ useStorage: false, storageAsSpend: false })
+  /** 보내는 캐릭터별 마지막 수입 이전과 던전별 마지막 에픽던전 리워드. 새 지출 폼이 그 몫을 세운다. */
+  const [lastBossIncomeTransfers, setLastBossIncomeTransfers] = useState<LastBossIncomeTransfers>({})
+  const [lastEpicDungeonRewards, setLastEpicDungeonRewards] = useState<LastEpicDungeonRewards>({})
   /**
    * 시트의 캐릭터 고르개가 쓸 목록. 화면이 읽는다(시트는 `storage/` 를 모른다).
    * 들어올 때 한 번이면 된다. 추적 목록이 시트를 여는 사이에 바뀌지 않는다.
@@ -636,6 +855,11 @@ export function CashbookScreen(): React.JSX.Element {
   >([])
   /** 시트의 캐릭터 칸에 캐릭터 뒤로 서는 메이플 ID. 캐릭터 목록과 같이 들어올 때 한 번 읽는다. */
   const [accounts, setAccounts] = useState<readonly SheetAccount[]>([])
+
+  // 파라미터는 받자마자 지운다. 탭 파라미터는 스택에 남아, 안 지우면 탭을 떠났다 돌아올 때 시트가 다시 열린다.
+  useEffect(() => {
+    if (quickLinkCategory !== undefined) navigation.setParams({ incomeCategory: undefined })
+  }, [quickLinkCategory, navigation])
 
   const monthWeeks = buildCalendarMonth(monthKey)
   const weeks = isWeekly ? [buildResetWeek(weekStartKey)] : monthWeeks
@@ -730,6 +954,8 @@ export function CashbookScreen(): React.JSX.Element {
     void loadLastPointRate().then(setLastPointRate)
     void loadLastHunts().then(setLastHunts)
     void loadHexaStorageChecks().then(setHexaStorageChecks)
+    void loadLastBossIncomeTransfers().then(setLastBossIncomeTransfers)
+    void loadLastEpicDungeonRewards().then(setLastEpicDungeonRewards)
     void loadTrackedCharacters().then(setCharacters)
     void loadSheetAccounts().then(setAccounts, () => undefined)
   }, [])
@@ -762,9 +988,9 @@ export function CashbookScreen(): React.JSX.Element {
     }
   }
 
-  async function saveSpend(draft: SpendDraft): Promise<void> {
+  async function saveSpend(draft: SpendDraft, sheet: SpendSheetState = {}): Promise<void> {
     try {
-      await recordSpend(draft, new Date())
+      await recordSpend(draft, new Date(), sheet)
     } catch (error) {
       useToastStore.getState().showError('지출을 적지 못했습니다')
       throw error
@@ -774,6 +1000,9 @@ export function CashbookScreen(): React.JSX.Element {
     // 헥사 체크도 같다. 다음 새 헥사 폼이 이 상태로 열린다.
     const hexa = draft.hexa
     if (hexa !== null) setHexaStorageChecks({ useStorage: hexa.useStorage, storageAsSpend: hexa.storageAsSpend })
+    // 수입 이전 · 에픽던전도 저장과 같은 규칙으로 든다.
+    setLastBossIncomeTransfers((current) => nextLastBossIncomeTransfers(draft, sheet, current))
+    setLastEpicDungeonRewards((current) => nextLastEpicDungeonRewards(draft, current))
   }
 
   /**
@@ -782,13 +1011,24 @@ export function CashbookScreen(): React.JSX.Element {
    */
   async function saveEdit(entry: ManualDayRecord, draft: IncomeDraft | SpendDraft): Promise<void> {
     try {
-      if (entry.kind === 'spend') {
-        await editSpend({ ...(draft as SpendDraft), id: entry.record.id, recordedAt: entry.record.recordedAt })
+      // 메소마켓 환전 수수료는 금액의 부호로 지출 · 수입을 다시 고른다. 원본이 수입이어도 지출 시트에서 고친다.
+      if ('exchange' in draft && draft.exchange !== undefined) {
+        await editMesoMarketExchange(entry, draft as SpendDraft)
+      } else if (entry.kind === 'spend') {
+        // 메소마켓 수수료율도 원본의 것을 얹는다. 시트는 요율을 모르고, 적힌 요율은 고쳐도 그대로다.
+        await editSpend({
+          ...(draft as SpendDraft),
+          id: entry.record.id,
+          recordedAt: entry.record.recordedAt,
+          mesoMarketFeePercent: entry.record.mesoMarketFeePercent,
+        })
       } else {
         await editIncome({ ...(draft as IncomeDraft), id: entry.record.id, recordedAt: entry.record.recordedAt })
       }
     } catch (error) {
-      useToastStore.getState().showError('기록을 고치지 못했습니다')
+      // 사냥 기록의 조각을 정산 · 헥사 강화가 가져갔으면 다시 저장해도 막힌다. 그 기록을 먼저 고쳐야 해서 까닭을 말한다.
+      const blocked = entry.kind === 'income' && entry.record.category === 'hunting' && isFragmentShortage(error)
+      useToastStore.getState().showError(blocked ? '조각을 사용한 기록이 있어 고칠 수 없습니다' : '기록을 고치지 못했습니다')
       throw error
     }
   }
@@ -797,7 +1037,8 @@ export function CashbookScreen(): React.JSX.Element {
     try {
       await removeRecord(entry)
     } catch (error) {
-      useToastStore.getState().showError('기록을 지우지 못했습니다')
+      const blocked = entry.kind === 'income' && entry.record.category === 'hunting' && isFragmentShortage(error)
+      useToastStore.getState().showError(blocked ? '조각을 사용한 기록이 있어 지울 수 없습니다' : '기록을 지우지 못했습니다')
       throw error
     }
   }
@@ -819,7 +1060,11 @@ export function CashbookScreen(): React.JSX.Element {
      *
      * 판매 줄도 편다. 가계부는 판 것만 보여 주고 값을 넣을 일은 보스 수익 탭이 든다.
      */
-    const key = rowKeyOf(entry)
+    toggleRow(rowKeyOf(entry))
+  }
+
+  /** 줄 하나 펴고 접기. 펼친 줄은 한 번에 하나. */
+  function toggleRow(key: string): void {
     setExpandedRowKey((current) => (current === key ? null : key))
   }
 
@@ -850,6 +1095,33 @@ export function CashbookScreen(): React.JSX.Element {
       setMonthKey(nextMonthOfDay)
     }
   }
+
+  /**
+   * `거래로 이동` 으로 온 기록. 손입력의 수정 시트는 위에서 받은 렌더에 열었고, 드롭은 가격 입력 카드를 바로 연다. 그 날짜가 든
+   * 기간으로 옮겨 날짜를 고르는 일은 거래 내역이 빠지는 전환이 끝난 뒤에 한다. 기간을 옮기면 조회 회차와 달 읽기가 시작되는데,
+   * 전환 · 시트가 열리는 때와 겹치면 둘 다 느려진다. 시트는 그 기록의 날짜로 열려 달 데이터가 없어도 된다. 날짜는 조회 한도
+   * 안이다. 거래 내역이 가계부 시트와 같은 범위에서만 기록을 읽기 때문이다.
+   *
+   * `selectDate` 를 부르므로 그 선언 뒤에 둔다.
+   */
+  useEffect(() => {
+    if (tradeTarget === undefined) return
+    navigation.setParams({ trade: undefined })
+    // 전환 이벤트가 오지 않는 이동(이미 가계부가 보이던 때)에도 옮기도록 시간 제한을 둔다. 전환은 0.35초쯤이다.
+    runAfterTransition(() => {
+      if (isWeekly) setWeekStartKey(resetWeekStartOf(tradeTarget.dateKey))
+      selectDate(tradeTarget.dateKey)
+    }, 600)
+    if (tradeTarget.kind === 'entry') return
+    void openDropPriceCardOf({
+      drop: tradeTarget.drop,
+      characterName: tradeTarget.characterName,
+      gradeContext,
+      onError: (message) => useToastStore.getState().showError(message),
+    })
+    // 받은 기록이 바뀔 때만 돈다. 기간 · 등급이 바뀔 때 다시 열면 닫은 드롭 카드가 되살아난다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tradeTarget])
 
   function showWeekly(): void {
     setWeekStartKey(resetWeekStartOf(selectedDateKey))
@@ -996,14 +1268,27 @@ export function CashbookScreen(): React.JSX.Element {
             <PageHeaderTitleRow
               fetchedAt={fetchedAt}
               trailing={
-                // 보스 수익이 이 자리에 두는 `보스 관리` 는 여기 없다. 세그먼트만 선다.
-                <Segment
-                  size="lg" className="self-start"
-                  options={PERIOD_TABS}
-                  selected={isWeekly ? 'weekly' : 'monthly'}
-                  onSelect={(value) => (value === 'weekly' ? showWeekly() : showMonthly())}
-                  labelOf={(value) => PERIOD_TAB_LABELS[value]}
-                />
+                // 거래 내역으로 가는 글자 버튼이 세그먼트 왼쪽에 선다. 보스 수익의 `보스 관리` 와 같은 생김새다.
+                <View className="flex-row items-center gap-1">
+                  <Button
+                    variant="text"
+                    size="sm"
+                    testID="cashbook-trade-history"
+                    onPress={() => {
+                      tapFeedback()
+                      navigation.navigate('TradeHistory')
+                    }}
+                  >
+                    거래 내역
+                  </Button>
+                  <Segment
+                    size="lg" className="self-start"
+                    options={PERIOD_TABS}
+                    selected={isWeekly ? 'weekly' : 'monthly'}
+                    onSelect={(value) => (value === 'weekly' ? showWeekly() : showMonthly())}
+                    labelOf={(value) => PERIOD_TAB_LABELS[value]}
+                  />
+                </View>
               }
             >
               <Text className="text-lg font-bold text-text">가계부</Text>
@@ -1084,17 +1369,27 @@ export function CashbookScreen(): React.JSX.Element {
                 </View>
 
                 {dayRecords.length > 0 && (
-                  // 합계 아래에 적은 것이 한 줄씩 선다. 접지 않는다. 같은 날 같은 것을 두 번
-                  // 적은 것은 정상이고, 접으면 어느 쪽을 고치는지 못 고른다.
+                  // 손입력은 한 기록이 한 줄이다. 헥사 매트릭스 · 아이템 구매만 같은 캐릭터의 기록 둘 이상을 한 줄로 합치고,
+                  // 고칠 기록은 펼친 칸에서 고른다.
                   <View className="gap-1.5">
-                    {dayRecords.map((entry) => (
-                      <DayRecordRow
-                        key={rowKeyOf(entry)}
-                        entry={entry}
-                        expanded={expandedRowKey === rowKeyOf(entry)}
-                        onPress={() => openRecord(entry)}
-                      />
-                    ))}
+                    {mergeDayRows(dayRecords).map((row) =>
+                      row.kind === 'merged' ? (
+                        <MergedRecordRow
+                          key={mergedRowKeyOf(row)}
+                          row={row}
+                          expanded={expandedRowKey === mergedRowKeyOf(row)}
+                          onToggle={() => toggleRow(mergedRowKeyOf(row))}
+                          onOpenRecord={openRecord}
+                        />
+                      ) : (
+                        <DayRecordRow
+                          key={rowKeyOf(row)}
+                          entry={row}
+                          expanded={expandedRowKey === rowKeyOf(row)}
+                          onPress={() => openRecord(row)}
+                        />
+                      ),
+                    )}
                   </View>
                 )}
               </View>
@@ -1113,7 +1408,10 @@ export function CashbookScreen(): React.JSX.Element {
             description: '사냥 · 아이템 판매 등을 기록',
             accessibilityLabel: '수입 추가',
             Icon: ProfitIcon,
-            onSelect: () => setSheet('income'),
+            onSelect: () => {
+              setStartCategory(undefined)
+              setSheet('income')
+            },
           },
           {
             key: 'expense',
@@ -1127,7 +1425,7 @@ export function CashbookScreen(): React.JSX.Element {
       />
 
       {/* 시트는 조건부 마운트다. 마운트가 곧 열림이고 `onClose` 로 언마운트한다. */}
-      {(sheet === 'income' || (typeof sheet === 'object' && sheet?.kind === 'income')) && (
+      {(sheet === 'income' || (typeof sheet === 'object' && sheet?.kind === 'income' && sheet.record.exchange === undefined)) && (
         // 고치는 것이면 그 기록의 날짜로 연다. 고른 날이 아니다(둘은 지금 같지만 목록이
         // 여러 날을 걸치게 되는 날 갈린다).
         <IncomeSheet
@@ -1138,10 +1436,12 @@ export function CashbookScreen(): React.JSX.Element {
           // 캐릭터의 메소 획득량. 시트는 `nexon/` 도 `storage/` 도 모른다.
           loadMesoRate={loadMesoRate}
           loadFragmentStorage={loadFragmentStorage}
+          loadHuntFragmentFloor={loadHuntFragmentFloor}
           dateKey={typeof sheet === 'object' ? sheet.record.earnedOn : selectedDateKey}
           todayDateKey={todayDateKey}
           earliestDateKey={historyFloorDateKey(todayDateKey)}
           editing={typeof sheet === 'object' ? sheet.record : undefined}
+          startCategory={startCategory}
           onSave={
             typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveIncome
           }
@@ -1150,20 +1450,27 @@ export function CashbookScreen(): React.JSX.Element {
           onClose={() => setSheet(null)}
         />
       )}
-      {(sheet === 'expense' || (typeof sheet === 'object' && sheet?.kind === 'spend')) && (
+      {(sheet === 'expense' ||
+        (typeof sheet === 'object' && (sheet?.kind === 'spend' || sheet?.record.exchange !== undefined))) && (
         <SpendSheet
           characters={characters}
           accounts={accounts}
-          dateKey={typeof sheet === 'object' ? sheet.record.spentOn : selectedDateKey}
+          dateKey={typeof sheet === 'object' ? spendViewOf(sheet).spentOn : selectedDateKey}
           todayDateKey={todayDateKey}
           earliestDateKey={historyFloorDateKey(todayDateKey)}
           lastPointRate={lastPointRate}
+          lastBossIncomeTransfers={lastBossIncomeTransfers}
+          lastEpicDungeonRewards={lastEpicDungeonRewards}
           // 심볼 강화 드롭다운이 만렙인 심볼을 가를 때 부른다. 시트는 `nexon/` 도 `storage/` 도 모른다.
           loadRememberedLevels={loadRememberedLevels}
           // 헥사 매트릭스 폼이 보관 조각을 가져올 캐릭터와 그 보관을 읽을 때 부른다.
           loadHexaStorages={loadHexaStorages}
           hexaStorageChecks={hexaStorageChecks}
-          editing={typeof sheet === 'object' ? sheet.record : undefined}
+          // 아이템 구매가 인벤토리에 보관할 메이플 ID · 월드를 찾을 때 부른다. 헥사의 기타 조각 주인과 같은 규칙이다.
+          loadStoreOwnerOf={loadHexaOwnerOf}
+          // 주간 보스 수입 이전의 체크 박스가 그 주 결정석 몫을 읽을 때 부른다.
+          loadWeekCrystalMeso={loadWeekCrystal}
+          editing={typeof sheet === 'object' ? spendViewOf(sheet) : undefined}
           onSave={typeof sheet === 'object' ? (draft) => saveEdit(sheet, draft) : saveSpend}
           onDelete={typeof sheet === 'object' ? () => deleteEntry(sheet) : undefined}
           onClose={() => setSheet(null)}

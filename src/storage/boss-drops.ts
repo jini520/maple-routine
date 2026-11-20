@@ -154,7 +154,8 @@ function identityOf(parts: {
  * 읽는 쪽을 전부 알아야** 해서, 캐시가 하나 늘 때마다 모든 호출부를 다시 훑어야 한다. 실제로
  * 전 기간 집계가 그렇게 빠진 적이 있다. 지금은 이 판을 쿼리 무효화(`features/query/invalidation.ts`)가 구독한다.
  *
- * 이 수는 그 방향을 뒤집는다. **쓰기 경로가 이 함수 하나뿐**이므로(세 호출부가 전부 여기로 온다)
+ * 이 수는 그 방향을 뒤집는다. **쓰기 경로가 이 함수 하나뿐**이므로(세 호출부가 전부 여기로 온다. 기간째 옮기는 월드 리프
+ * 옮기기만 `bumpBossDropRecordsRevision` 으로 판을 올린다)
  * 여기서 한 번 올리면 캐시가 몇 개든 물어볼 수 있는 상태가 되고, 새 캐시가 생겨도 쓰는 쪽은
  * 손댈 것이 없다.
  *
@@ -187,6 +188,11 @@ function notifyRevisionListeners(): void {
 function bumpRecordsRevision(): void {
   recordsRevision += 1
   notifyAfterBatch(notifyRevisionListeners)
+}
+
+/** 드롭 행을 안 거치고 드롭의 캐릭터가 바뀔 때 판을 올리는 함수. 월드 리프 옮기기가 기간째 새 캐릭터로 옮길 때 쓴다. */
+export function bumpBossDropRecordsRevision(): void {
+  bumpRecordsRevision()
 }
 
 /** 테스트 전용. 모듈 수준 상태라 테스트끼리 오염된다. 프로덕션에서 부르지 말 것. */

@@ -231,7 +231,7 @@ beforeEach(() => {
     goBack,
     setParams: jest.fn(),
   } as unknown as ReturnType<typeof useSettingsNavigation>)
-  mockedGetAuthConfig.mockResolvedValue({ login: null, apiKeys: [{ type: 'key' as const, id: 'account-key', label: '', value: 'key' }] })
+  mockedGetAuthConfig.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key' as const, id: 'account-key', label: '', value: 'key', loginId: null }] })
   mockedFetchCharacterList.mockResolvedValue([계정A, 계정B])
   // `character/list` 가 5분 동안 쿼리 캐시에 남는다. 앞 케이스의 응답을 물려받지 않게 비우고 다시 심는다.
   queryClient.clear()
@@ -685,9 +685,10 @@ describe('못 고르는 계정', () => {
   describe('넥슨 로그인으로 부른 목록이 비면', () => {
     const 빈로그인설정 = {
       login: { type: 'login' as const, id: 'login-id', session: '빈세션' },
-      apiKeys: [{ type: 'key' as const, id: 'account-key', label: '', value: 'key' }],
+      mainKeyId: 'account-key',
+      apiKeys: [{ type: 'key' as const, id: 'account-key', label: '', value: 'key', loginId: null }],
     }
-    const 키만남은설정 = { login: null, apiKeys: 빈로그인설정.apiKeys }
+    const 키만남은설정 = { ...빈로그인설정, login: null }
 
     it('넥슨 ID 문구와 `다른 넥슨 ID 로 로그인` 이 서고, API 키 문구는 없다', async () => {
       mockedGetAuthConfig.mockResolvedValue(빈로그인설정)

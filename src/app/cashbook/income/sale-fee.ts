@@ -30,6 +30,8 @@ export interface SaleFeeChoice {
   ready: boolean
   /** 그 캐릭터에서 뗄 요율. 모든 캐릭터로 정산할 때 자동 요율이 캐릭터마다 다르다 */
   percentOf: (ocid: string) => FeePercent | null
+  /** 자동 여부와 고른 요율을 그 값으로 바꾸는 함수. 새 기록이 기억한 수수료를 세울 때 쓴다 */
+  restore: (auto: boolean, percent: FeePercent | null) => void
   /** `FeeRow` 에 그대로 넘기는 값 */
   row: {
     auto: boolean
@@ -49,7 +51,7 @@ export interface SaleFeeChoice {
  * @example const fee = useSaleFeeChoice(props.editing, ocid, props.dateKey)
  */
 export function useSaleFeeChoice(
-  editing: IncomeRecord | undefined,
+  editing: Pick<IncomeRecord, 'saleFeeAuto' | 'saleFeePercent'> | undefined,
   ocid: string | null,
   dateKey: string,
   everyone?: readonly string[],
@@ -68,6 +70,10 @@ export function useSaleFeeChoice(
     auto,
     ready: !auto || (everyone === undefined ? autoFee !== null : context !== null),
     percentOf: (each) => (auto ? (autoFeeOf(each)?.percent ?? null) : manual),
+    restore: (nextAuto, percent) => {
+      setAuto(nextAuto)
+      setManual(percent)
+    },
     row: {
       auto,
       onAutoChange: (next) => {

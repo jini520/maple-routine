@@ -36,6 +36,7 @@ import { HuntCalculatorForm } from './income/HuntCalculatorForm'
 import { ItemSaleForm } from './income/ItemSaleForm'
 import { HuntManualForm } from './income/HuntManualForm'
 import { SaveRow, type IncomeDraft, type IncomeFormProps, type SaveSlot, type SheetCharacter } from './income/form-shared'
+import type { LoadHuntFragmentFloor } from './income/hunt-fragment-floor'
 
 export type { IncomeDraft } from './income/form-shared'
 
@@ -66,10 +67,14 @@ export interface IncomeSheetProps {
   lastHunts: LastHunts
   /** 솔 에르다 조각 보관 개수 조회. 사냥 전리품 판매의 조각 칸이 쓰고 화면이 넘긴다. */
   loadFragmentStorage: LoadFragmentStorage
+  /** 수정으로 연 사냥 기록의 조각 최소 개수 조회. 사냥 폼의 조각 개수 카드가 쓰고 화면이 넘긴다. */
+  loadHuntFragmentFloor: LoadHuntFragmentFloor
   /**
    * 고칠 기록. 있으면 **수정 모드**다. 머리와 버튼 글자가 갈리고 삭제가 선다.
    */
   editing?: IncomeRecord
+  /** 이 갈래로 바로 연다. 갈래 고르개와 되돌아가는 누르개가 없다. 인벤토리가 사냥 조각을 팔 때 쓴다 */
+  startCategory?: IncomeCategoryKey
   onDelete?: () => void | Promise<void>
   /** 던지면 **안 닫는다**. 친 것을 잃지 않는다. 실패를 말하는 것은 화면 몫이다(토스트). */
   onSave: IncomeFormProps['onSave']
@@ -86,7 +91,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
    * 수정으로 열면 기록이 정하므로 고르는 단계를 건너뛴다. 갈래를 바꾸면 그 기록은 다른 것이
    * 되고, 무엇이었는지는 제목이 이미 말한다.
    */
-  const [category, setCategory] = useState<IncomeCategoryKey | null>(props.editing?.category ?? null)
+  const [category, setCategory] = useState<IncomeCategoryKey | null>(props.editing?.category ?? props.startCategory ?? null)
   /**
    * 어느 날에 적히나. 시트를 연 날로 시작하고 머리에서 바꾼다.
    *
@@ -142,7 +147,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
 
             수정 모드에는 안 붙는다. 그 기록의 갈래는 이미 정해졌고 바꾸면 다른 기록이 된다.
           */}
-          {editing ? (
+          {editing || props.startCategory !== undefined ? (
             <Text testID="income-sheet-title" numberOfLines={1} className="shrink text-base font-bold text-text">
               {incomeCategoryNameOf(category)}
             </Text>
@@ -153,7 +158,7 @@ export function IncomeSheet(props: IncomeSheetProps): React.JSX.Element {
               testID="income-sheet-back"
               onPress={() => setCategory(null)}
               hitSlop={8}
-              className="-ml-1 shrink flex-row items-center gap-1 active:opacity-60"
+              className="-ml-1 shrink flex-row items-center gap-1"
             >
               <ChevronLeftIcon className="h-5 w-5 shrink-0 text-text" strokeWidth={2} aria-hidden />
               <Text testID="income-sheet-title" numberOfLines={1} className="shrink text-base font-bold text-text">
@@ -253,12 +258,13 @@ function IncomeForm(
     return <EtcForm {...props.formProps} lastPointRate={props.lastPointRate} />
   }
   return props.huntMode === 'manual' ? (
-    <HuntManualForm {...props.formProps} />
+    <HuntManualForm {...props.formProps} loadHuntFragmentFloor={props.loadHuntFragmentFloor} />
   ) : (
     <HuntCalculatorForm
       {...props.formProps}
       loadMesoRate={props.loadMesoRate}
       lastHunts={props.lastHunts}
+      loadHuntFragmentFloor={props.loadHuntFragmentFloor}
     />
   )
 }

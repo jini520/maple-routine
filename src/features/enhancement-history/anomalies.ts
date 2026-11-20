@@ -4,12 +4,11 @@
  *
  * @see docs/foundation/server-sync.md 강화 합계에서 빠진 줄
  */
-import type { EventWorldEvidence } from '../../lib/enhancement/world'
+import type { EventWorldJudgment } from '../../lib/enhancement/world'
 import { sendEnhancementAnomalies } from '../../server/enhancement-anomalies'
 import type { EnhancementAnomaly } from '../../types/server-records'
 import { serverIdentityHeaders } from '../auth/server-identity'
 import {
-  eventWorldOf,
   starOf,
   unpricedReasonOf,
   usesSpecialCurrency,
@@ -35,14 +34,13 @@ function isUnwatchedNoLevel(entry: EnhancementSource, reason: UnpricedReason): b
 
 /**
  * 줄들의 상황을 날짜 · 종류 · 이유 · 장비마다 센다. 전용 재화 줄은 빼는 것이 정상이라 세지 않고, 장비 표에 없는 장비의
- * 스타포스는 시도 뒤 10성 이상인 줄만 센다. 판정하지 못한 줄은 까닭(`detail`)마다 따로 센다.
+ * 스타포스는 시도 뒤 10성 이상인 줄만 센다. 판정하지 못한 줄은 까닭(`detail`, 표에 없는 월드 이름)마다 따로 센다.
  *
- * @param listError 캐릭터 목록 요청의 실패 이유. 목록 없이 판정하지 못한 줄에 싣는다. 표에 없는 월드의 줄은 그 월드 이름을 싣는다
+ * @param judgmentOf 줄의 이벤트 월드 판정. 캐릭터에 붙이지 못한 줄은 `null` 이고 판정을 세지 않는다
  */
 export function enhancementAnomaliesOf(
   entries: readonly EnhancementSource[],
-  evidence: EventWorldEvidence,
-  listError: string | null,
+  judgmentOf: (entry: EnhancementSource) => EventWorldJudgment | null,
 ): EnhancementAnomaly[] {
   const counted = new Map<string, EnhancementAnomaly>()
   const count = (
@@ -76,8 +74,8 @@ export function enhancementAnomaliesOf(
       count(entry, reason, entry.itemKey, entry.targetItem, null)
       continue
     }
-    const judgment = eventWorldOf(entry, evidence)
-    if (judgment.eventWorld === null) count(entry, 'event_world_unknown', null, '', judgment.unknownWorld ?? listError)
+    const judgment = judgmentOf(entry)
+    if (judgment !== null && judgment.eventWorld === null) count(entry, 'event_world_unknown', null, '', judgment.unknownWorld)
   }
   return [...counted.values()]
 }

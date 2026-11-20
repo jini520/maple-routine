@@ -5,11 +5,12 @@ import { View } from 'react-native'
 
 import { useToastStore } from '../../../features/toast/store'
 
+import { useButtonNavigation } from '../../../hooks/useButtonNavigation'
+import { resolveBottomBarSpace } from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { Toast } from './Toast'
 
-/** 하단 탭바 높이. */
-const TAB_BAR_H = 64
 /** 탭바(또는 안전영역) 위로 띄우는 간격. 웹 `0.75rem`. */
 const GAP = 12
 
@@ -24,6 +25,11 @@ export function ToastStack(props: ToastStackProps): React.JSX.Element | null {
   // 같은 자리에서 출발해야 한다. 여기만 인셋으로 두면 안드로이드 제스처 기기에서 바는 34 에
   // 뜨는데 토스트는 15 + 바 높이에 서서 캡슐 안으로 7px 들어간다.
   const bottomSafeAreaPx = useBottomSafeAreaPx()
+  // 바 높이는 창 폭에 따라 바뀌고 3버튼 내비게이션 바 위에서는 더 뜬다. 바와 같은 함수를 봐야 토스트가 바에 겹치지 않는다.
+  // 오른쪽 레일 화면은 바가 옆에 서서 몫이 0 이고, 토스트는 콘텐츠 폭 안에 선다.
+  const layout = useScreenLayout()
+  const buttonNavigation = useButtonNavigation()
+  const barSpacePx = resolveBottomBarSpace(layout, buttonNavigation).spacePx
   const { toasts, dismiss } = useToastStore()
 
   if (toasts.length === 0) return null
@@ -32,8 +38,8 @@ export function ToastStack(props: ToastStackProps): React.JSX.Element | null {
     <View
       testID="toast-stack"
       pointerEvents="box-none"
-      className="absolute inset-x-0 gap-2 px-4"
-      style={{ bottom: (hasTabBar ? TAB_BAR_H : 0) + bottomSafeAreaPx + GAP }}
+      className="absolute left-0 gap-2 px-4"
+      style={{ right: layout.railWidthPx, bottom: (hasTabBar ? barSpacePx : 0) + bottomSafeAreaPx + GAP }}
     >
       {toasts.map((toast) => (
         <Toast key={toast.id} toast={toast} onDismiss={() => dismiss(toast.id)} />

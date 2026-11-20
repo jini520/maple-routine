@@ -159,8 +159,35 @@ describe('fetchMesoRate', () => {
     await expect(fetchMesoRate(자격('api-key'), 'ocid-1', null)).rejects.toBeInstanceOf(NexonNetworkError)
   })
 
-  it('미접속 캐릭터의 축약 응답(빈 몸)에서도 던지지 않고 0 을 낸다', async () => {
-    stubGlobal('fetch', jest.fn(async () => jsonResponse(200, {})))
+  // 2026-11-11 실측: 저레벨 · 미접속 캐릭터도 데이터가 없는 칸은 null 이 아니라 빈 배열로 온다.
+  it('데이터가 없는 칸이 빈 배열이면 0 을 읽은 것이다', async () => {
+    const 빈응답: Record<string, unknown> = {
+      '/maplestory/v1/character/item-equipment': { item_equipment: [] },
+      '/maplestory/v1/character/ability': { ability_info: [] },
+      '/maplestory/v1/character/symbol-equipment': { symbol: [] },
+      '/maplestory/v1/user/union-raider': { union_raider_stat: [] },
+      '/maplestory/v1/user/union-artifact': { union_artifact_effect: [] },
+      '/maplestory/v1/character/skill': { character_skill: [] },
+    }
+    stubGlobal(
+      'fetch',
+      jest.fn(async (url: string) => jsonResponse(200, 빈응답[Object.keys(빈응답).find((path) => url.includes(path)) ?? ''])),
+    )
     await expect(fetchMesoRate(자격('api-key'), 'ocid-1', null)).resolves.toBe(0)
+  })
+
+  // null 이나 빈 몸을 0 으로 세면 넥슨이 값을 비워 보낸 날 0% 가 읽은 값으로 서고 칠 수도 없다.
+  it('지금 적용본 칸이 null 이거나 없으면 못 읽은 것으로 던진다', async () => {
+    stubGlobal('fetch', jest.fn(async () => jsonResponse(200, {})))
+    await expect(fetchMesoRate(자격('api-key'), 'ocid-1', null)).rejects.toBeInstanceOf(NexonNetworkError)
+
+    const 심볼만null = 정상응답()
+    stubGlobal(
+      'fetch',
+      jest.fn(async (url: string) =>
+        url.includes('/character/symbol-equipment') ? jsonResponse(200, { symbol: null }) : 심볼만null(url),
+      ),
+    )
+    await expect(fetchMesoRate(자격('api-key'), 'ocid-1', null)).rejects.toBeInstanceOf(NexonNetworkError)
   })
 })

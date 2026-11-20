@@ -14,8 +14,10 @@ jest.mock('../../../storage/income', () => ({
   getIncomeRecordsBetween: jest.fn(),
   getIncomeMonthRows: jest.fn(),
   getFragmentStorage: jest.fn(),
+  bumpIncomeRecordsRevision: jest.fn(),
 }))
 jest.mock('../../../storage/spend', () => ({
+  bumpSpendRecordsRevision: jest.fn(),
   insertSpendRecord: jest.fn(),
   updateSpendRecord: jest.fn(),
   deleteSpendRecord: jest.fn(),
@@ -26,6 +28,15 @@ jest.mock('../../../storage/last-point-rate', () => ({ setLastPointRate: jest.fn
 jest.mock('../../../storage/last-hunts', () => ({
   setLastHunt: jest.fn(),
   getLastHunts: jest.fn(),
+}))
+jest.mock('../../../storage/last-boss-income-transfers', () => ({
+  setLastBossIncomeTransfer: jest.fn(),
+  getLastBossIncomeTransfers: jest.fn(),
+}))
+jest.mock('../../../storage/last-epic-dungeon-rewards', () => ({
+  ...jest.requireActual('../../../storage/last-epic-dungeon-rewards'),
+  setLastEpicDungeonReward: jest.fn(),
+  getLastEpicDungeonRewards: jest.fn(),
 }))
 jest.mock('../../../storage/boss-profit', () => ({
   getDatedBossProfitRecords: jest.fn(),
@@ -43,8 +54,9 @@ jest.mock('../../../storage/enhancement-totals', () => ({ loadEnhancementTotals:
 jest.mock('../../enhancement-history/legacy-totals', () => ({ ensureEnhancementTotals: jest.fn() }))
 jest.mock('../../../storage/mvp-grades', () => ({ getMvpGradeHistories: jest.fn() }))
 jest.mock('../../../storage/character-accounts', () => ({ getCharacterAccountSightings: jest.fn() }))
+jest.mock('../../../storage/inventory', () => ({ getOtherFragmentStorage: jest.fn(async () => 0) }))
 jest.mock('../../../storage/hexa-storage-checks', () => ({ setHexaStorageChecks: jest.fn(), getHexaStorageChecks: jest.fn() }))
-jest.mock('../../../lib/mvp/starforce', () => ({ starforceMvpDiscountResolver: jest.fn() }))
+jest.mock('../../../lib/mvp/starforce', () => ({ starforceMvpDiscountOf: jest.fn() }))
 jest.mock('../../app-review/request', () => ({ countCoreSave: jest.fn() }))
 jest.mock('../account-names', () => ({ loadAccountLabels: jest.fn(async () => new Map()) }))
 
@@ -52,6 +64,8 @@ const income = jest.requireMock('../../../storage/income') as Record<string, jes
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
 const rate = jest.requireMock('../../../storage/last-point-rate') as Record<string, jest.Mock>
 const lastHunts = jest.requireMock('../../../storage/last-hunts') as Record<string, jest.Mock>
+const lastTransfers = jest.requireMock('../../../storage/last-boss-income-transfers') as Record<string, jest.Mock>
+const lastEpic = jest.requireMock('../../../storage/last-epic-dungeon-rewards') as Record<string, jest.Mock>
 const bossProfit = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 const bossDrops = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 const selection = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
@@ -89,7 +103,7 @@ beforeEach(() => {
   legacyTotals.ensureEnhancementTotals.mockResolvedValue(undefined)
   mvpGrades.getMvpGradeHistories.mockResolvedValue(new Map())
   characterAccounts.getCharacterAccountSightings.mockResolvedValue([])
-  mvp.starforceMvpDiscountResolver.mockReturnValue(() => 0)
+  mvp.starforceMvpDiscountOf.mockReturnValue(0)
   lastHunts.getLastHunts.mockResolvedValue({})
   income.getIncomeMonthRows.mockResolvedValue([])
   spend.getSpendMonthRows.mockResolvedValue([])
@@ -340,18 +354,166 @@ describe('캐릭터별 마지막 사냥을 기억한다', () => {
   })
 })
 
+/**
+ * 주간 보스 수입 이전은 매주 같은 두 캐릭터 사이에서 같은 방식으로 옮긴다. 새 기록을 저장하면 보내는 캐릭터 몫으로 받는
+ * 캐릭터 · 수수료 · 체크를 남긴다. 체크는 기록에 없는 시트의 상태라 저장과 함께 따로 받는다.
+ */
+describe('주간 보스 수입 이전의 마지막 입력을 기억한다', () => {
+  beforeEach(() => {
+    spend.insertSpendRecord.mockResolvedValue(undefined)
+  })
+
+  const 수입이전: SpendDraft = {
+    ...메포지출,
+    ocid: 'ocid-1',
+    category: 'etc',
+    item: '주간 보스 수입 이전',
+    formItemKeys: null,
+    mesoAmount: 108_000_000,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    transfer: { receiverOcid: 'ocid-2', transferMeso: 3_600_000_000, feePercent: 3, feeAuto: false },
+  }
+
+  it('새 기록을 저장하면 보내는 캐릭터 몫으로 받는 캐릭터 · 수수료 · 체크를 남긴다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend(수입이전, 지금, { transferFillsWeek: true })
+
+    expect(lastTransfers.setLastBossIncomeTransfer).toHaveBeenCalledWith('ocid-1', {
+      receiverOcid: 'ocid-2',
+      feeAuto: false,
+      feePercent: 3,
+      fillsWeek: true,
+    })
+  })
+
+  // 자동이면 요율은 받는 캐릭터의 등급이 정한다. 기록의 요율은 그때의 등급 값이라 남기지 않는다.
+  it('자동 수수료는 요율 없이, `없음` 은 요율 없음으로 남기고, 체크를 안 받으면 꺼진 것이다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend({ ...수입이전, transfer: { ...수입이전.transfer!, feePercent: 5, feeAuto: true } }, 지금)
+    await recordSpend({ ...수입이전, transfer: { ...수입이전.transfer!, feePercent: 0, feeAuto: false } }, 지금)
+
+    expect(lastTransfers.setLastBossIncomeTransfer.mock.calls).toEqual([
+      ['ocid-1', { receiverOcid: 'ocid-2', feeAuto: true, feePercent: null, fillsWeek: false }],
+      ['ocid-1', { receiverOcid: 'ocid-2', feeAuto: false, feePercent: null, fillsWeek: false }],
+    ])
+  })
+
+  it('저장이 실패하면 기억하지 않는다', async () => {
+    spend.insertSpendRecord.mockRejectedValue(new Error('이전'))
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await expect(recordSpend(수입이전, 지금, { transferFillsWeek: true })).rejects.toThrow()
+
+    expect(lastTransfers.setLastBossIncomeTransfer).not.toHaveBeenCalled()
+  })
+
+  // 수정은 지난 기록을 고치는 일이다. 지난주 기록을 고쳤다고 다음 새 기록의 기본값이 바뀌면 안 된다.
+  it('고쳐 저장하면 기억하지 않는다', async () => {
+    const { editSpend } = require('../records') as typeof import('../records')
+
+    await editSpend({ ...수입이전, id: 'x', recordedAt: 지금.toISOString(), mesoMarketFeePercent: null })
+
+    expect(lastTransfers.setLastBossIncomeTransfer).not.toHaveBeenCalled()
+  })
+
+  // 화면이 저장 뒤에 드는 기억도 같은 규칙이다.
+  it('nextLastBossIncomeTransfers 는 보내는 캐릭터 몫만 바꾸고, 이전 기록이 아니면 그대로 둔다', () => {
+    const { nextLastBossIncomeTransfers } = require('../records') as typeof import('../records')
+    const 지금기억 = { 'ocid-3': { receiverOcid: 'ocid-1', feeAuto: true, feePercent: null, fillsWeek: false } }
+
+    expect(nextLastBossIncomeTransfers(수입이전, { transferFillsWeek: true }, 지금기억)).toEqual({
+      'ocid-3': { receiverOcid: 'ocid-1', feeAuto: true, feePercent: null, fillsWeek: false },
+      'ocid-1': { receiverOcid: 'ocid-2', feeAuto: false, feePercent: 3, fillsWeek: true },
+    })
+    expect(nextLastBossIncomeTransfers(메포지출, {}, 지금기억)).toBe(지금기억)
+  })
+})
+
+/**
+ * 같은 캐릭터가 매주 같은 에픽던전에서 같은 단계를 산다. 새 기록을 저장하면 그 던전의 마지막 주인과 그 주인이 고른
+ * 형태별 항목 key 를 남긴다.
+ */
+describe('에픽던전 리워드의 마지막 입력을 기억한다', () => {
+  beforeEach(() => {
+    spend.insertSpendRecord.mockResolvedValue(undefined)
+  })
+
+  const 하이마운틴: SpendDraft = { ...메포지출, ocid: 'ocid-1' }
+
+  it('새 기록을 저장하면 그 던전의 마지막 주인과 그 주인의 형태별 항목 key 를 남긴다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend(하이마운틴, 지금)
+
+    expect(lastEpic.setLastEpicDungeonReward).toHaveBeenCalledWith('high_mountain', { ocid: 'ocid-1' }, { sol_erda: 'high_mountain_2' })
+  })
+
+  it('메이플 ID 로 적은 기록은 그 메이플 ID 를 주인으로 남긴다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend({ ...메포지출, ocid: null, accountId: 'maple-a' }, 지금)
+
+    expect(lastEpic.setLastEpicDungeonReward).toHaveBeenCalledWith(
+      'high_mountain',
+      { accountId: 'maple-a' },
+      { sol_erda: 'high_mountain_2' },
+    )
+  })
+
+  // 몬스터 파크 · 퀵 패스는 고를 단계가 없고 수량만 친다.
+  it('다른 컨텐츠 항목은 남기지 않는다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend(
+      { ...하이마운틴, item: '몬스터 파크', itemKey: 'monster_park', formItemKeys: null, pointAmount: 600 },
+      지금,
+    )
+
+    expect(lastEpic.setLastEpicDungeonReward).not.toHaveBeenCalled()
+  })
+
+  it('저장이 실패하거나 고쳐 저장하면 남기지 않는다', async () => {
+    const { recordSpend, editSpend } = require('../records') as typeof import('../records')
+
+    await editSpend({ ...하이마운틴, id: 'x', recordedAt: 지금.toISOString(), mesoMarketFeePercent: 1 })
+    spend.insertSpendRecord.mockRejectedValue(new Error('에픽'))
+    await expect(recordSpend(하이마운틴, 지금)).rejects.toThrow()
+
+    expect(lastEpic.setLastEpicDungeonReward).not.toHaveBeenCalled()
+  })
+
+  it('nextLastEpicDungeonRewards 는 그 던전의 마지막 주인과 그 주인의 단계만 바꾸고, 남기지 않는 행이면 그대로 둔다', () => {
+    const { nextLastEpicDungeonRewards } = require('../records') as typeof import('../records')
+    const 지금기억 = {
+      high_mountain: { last: { ocid: 'ocid-2' }, characters: { 'ocid-2': { exp: 'high_mountain_1' } }, accounts: {} },
+    }
+
+    expect(nextLastEpicDungeonRewards(하이마운틴, 지금기억)).toEqual({
+      high_mountain: {
+        last: { ocid: 'ocid-1' },
+        characters: { 'ocid-2': { exp: 'high_mountain_1' }, 'ocid-1': { sol_erda: 'high_mountain_2' } },
+        accounts: {},
+      },
+    })
+    expect(nextLastEpicDungeonRewards(메포지출, 지금기억)).toBe(지금기억)
+  })
+})
+
 describe('spendMesoOf: 메소 축으로 접는다', () => {
   const { spendMesoOf } = require('../records') as typeof import('../records')
 
-  // 환산만 보는 줄이라 주화를 안 받는 행이다. 주화는 아래 describe 가 따로 본다.
-  const 행 = { ...메포지출, id: 'x', recordedAt: '', formItemKeys: null }
+  // 환산만 보는 줄이라 주화를 안 받는 행이다. 주화는 아래 describe 가, 수수료는 그 아래 describe 가 따로 본다.
+  const 행 = { ...메포지출, id: 'x', recordedAt: '', formItemKeys: null, mesoMarketFeePercent: null }
 
   it('메포는 시세로 환산해 더한다', () => {
-    expect(spendMesoOf(행)).toBe(2_542_372_881)
+    expect(spendMesoOf(행)).toBe(2_542_372_882)
   })
 
   it('둘 다 쓴 행은 합친다. 아이템 구매의 모양이다', () => {
-    expect(spendMesoOf({ ...행, mesoAmount: 935_000_000 })).toBe(935_000_000 + 2_542_372_881)
+    expect(spendMesoOf({ ...행, mesoAmount: 935_000_000 })).toBe(935_000_000 + 2_542_372_882)
   })
 
   // **캐시는 안 든다**. 환산 자체를 안 하므로 칸의 숫자가 그날 지출의
@@ -370,11 +532,11 @@ describe('spendMesoOf: 메소 축으로 접는다', () => {
 describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
   const { spendMesoOf } = require('../records') as typeof import('../records')
 
-  const 행 = { ...메포지출, id: 'x', recordedAt: '' }
+  const 행 = { ...메포지출, id: 'x', recordedAt: '', mesoMarketFeePercent: null }
 
   // 솔 에르다 2단계 하나라 주화 8개다. 8 × 40,000,000 = 320,000,000.
   it('고른 단계의 주화 판매가만큼 뺀다', () => {
-    expect(spendMesoOf(행)).toBe(2_542_372_881 - 320_000_000)
+    expect(spendMesoOf(행)).toBe(2_542_372_882 - 320_000_000)
   })
 
   // 형태마다 각각 주므로 둘을 다 사면 4 + 8 = 12개다.
@@ -385,7 +547,7 @@ describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
       pointAmount: 37_500,
     }
 
-    expect(spendMesoOf(둘)).toBe(3_177_966_101 - 480_000_000)
+    expect(spendMesoOf(둘)).toBe(3_177_966_102 - 480_000_000)
   })
 
   // 0 에서 멈추면 그 줄과 하루 합계가 조용히 달라진다(사용자 결정).
@@ -402,7 +564,7 @@ describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
 
   // 무엇을 샀는지 모르는 행이라 셀 주화가 없다.
   it('형태별 항목 key 가 없는 옛 행은 안 뺀다', () => {
-    expect(spendMesoOf({ ...행, formItemKeys: null })).toBe(2_542_372_881)
+    expect(spendMesoOf({ ...행, formItemKeys: null })).toBe(2_542_372_882)
   })
 
   // 메포를 메소로 환산하지 않는 행이라 뺄 값을 얹을 축이 없다.
@@ -413,7 +575,69 @@ describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
 
   // 주화를 안 주는 갈래는 그대로다. 되짚어도 개수가 0 이다.
   it('에픽던전이 아닌 행은 그대로다', () => {
-    expect(spendMesoOf({ ...행, category: 'etc', formItemKeys: null })).toBe(2_542_372_881)
+    expect(spendMesoOf({ ...행, category: 'etc', formItemKeys: null })).toBe(2_542_372_882)
+  })
+})
+
+/**
+ * 메포를 쓰려면 메소를 팔아야 하고, 메소마켓은 메소를 1억 단위로 팔 때만 수수료를 뗀다. 받은 메포를 메소로 바꾸는 수입은
+ * 메소를 사는 쪽이라 수수료가 없다(사용자 확인 2026-11-10 · 2026-11-11).
+ */
+describe('spendMesoOf: 메소마켓 수수료', () => {
+  const { incomeMesoOf, spendMesoOf } = require('../records') as typeof import('../records')
+
+  const 행 = { ...메포지출, id: 'x', recordedAt: '', formItemKeys: null, mesoMarketFeePercent: 1 }
+
+  // 1,180 에 1% 를 떼면 26억을 팔아 30,374 메포를 받고, 남은 374 메포를 되돌리면 2,568,305,085 다. 같은 메포의 수입은 2,542,372,881 이다.
+  it('지출의 메포는 1억 단위로 판 것으로 세고, 같은 메포의 수입은 수수료 없이 바꾼다', () => {
+    const 메포수입 = { ...수입행, mesoAmount: null, pointAmount: 30_000, pointPer100mMeso: 1_180 }
+
+    expect(spendMesoOf(행)).toBe(2_568_305_085)
+    expect(incomeMesoOf(메포수입)).toBe(2_542_372_881)
+  })
+
+  // 솔 에르다 2단계라 주화 8개(320,000,000)다.
+  it('세라자르 주화는 수수료를 넣은 값에서 뺀다', () => {
+    expect(spendMesoOf({ ...행, formItemKeys: { sol_erda: 'high_mountain_2' } })).toBe(2_568_305_085 - 320_000_000)
+  })
+})
+
+/** 요율은 기록마다 저장한다. 요율이 바뀌는 날 지난 기록의 금액이 따라 바뀌면 안 된다. */
+describe('메소마켓 수수료율을 기록에 적는다', () => {
+  beforeEach(() => {
+    spend.insertSpendRecord.mockResolvedValue(undefined)
+    spend.updateSpendRecord.mockResolvedValue(undefined)
+  })
+
+  it('새 메포 지출은 참조표 규칙의 요율을 적고, 메소 지출은 비운다', async () => {
+    const { recordSpend } = require('../records') as typeof import('../records')
+
+    await recordSpend(메포지출, 지금)
+    await recordSpend({ ...메포지출, mesoAmount: 4_000_000, pointAmount: null, pointPer100mMeso: null }, 지금)
+
+    const [메포, 메소] = spend.insertSpendRecord.mock.calls.map((call) => call[0])
+    expect(메포.mesoMarketFeePercent).toBe(1)
+    expect(메소.mesoMarketFeePercent).toBeNull()
+  })
+
+  it('고칠 때는 그 기록에 적힌 요율을 지킨다. 지금 규칙이 달라도 그대로다', async () => {
+    const { editSpend } = require('../records') as typeof import('../records')
+
+    await editSpend({ ...지출행, quantity: 3, mesoMarketFeePercent: 2 })
+
+    expect(spend.updateSpendRecord.mock.calls[0][0].mesoMarketFeePercent).toBe(2)
+  })
+
+  // 메소로 적었던 `기타` 를 메포로 고친 경우다. 적힌 요율이 없으니 그때의 규칙을 적는다.
+  it('요율이 없던 기록을 메포로 고치면 그때의 규칙을 적고, 메소로 고치면 비운다', async () => {
+    const { editSpend } = require('../records') as typeof import('../records')
+
+    await editSpend({ ...지출행, mesoMarketFeePercent: null })
+    await editSpend({ ...지출행, mesoAmount: 4_000_000, pointAmount: null, pointPer100mMeso: null, mesoMarketFeePercent: 1 })
+
+    const [메포, 메소] = spend.updateSpendRecord.mock.calls.map((call) => call[0])
+    expect(메포.mesoMarketFeePercent).toBe(1)
+    expect(메소.mesoMarketFeePercent).toBeNull()
   })
 })
 
@@ -430,7 +654,7 @@ describe('칸 금액', () => {
     expect(amounts['2026-08-23']).toEqual({
       incomeMeso: 1_743_000_000,
       // 메포 환산에서 주화 8개(320,000,000)가 빠진 값이다.
-      expenseMeso: 2_542_372_881 - 320_000_000,
+      expenseMeso: 2_542_372_882 - 320_000_000,
     })
   })
 
@@ -486,6 +710,8 @@ const 지출행 = {
   tariffMeso: null,
   pointAmount: 1_200,
   pointPer100mMeso: 1_180,
+  // 수수료는 아래 describe 가 따로 본다. 다른 케이스는 환산값을 그대로 쓰려고 비운다.
+  mesoMarketFeePercent: null,
   cashAmount: null,
   hexa: null,
   recordedAt: '2026-08-25T02:00:00.000Z',
@@ -634,6 +860,22 @@ describe('하루 목록 카드의 두 줄', () => {
     ).toEqual(['아이템 판매', '마력의 돌 3개'])
   })
 
+  // 인벤토리에서 판 기록은 이름 칸이 비어 있다. 서버에서 이름을 고쳐도 따라오게 아이템 표에서 찾는다.
+  it('이름 칸이 빈 아이템 판매는 아이템 표에서 key 로 이름을 찾는다', () => {
+    const 판매 = { ...수입행, category: 'item_sale' as const, item: null, itemKey: 'soul_ether_1', itemKind: 'consumable' as const, quantity: 2 }
+
+    expect(카드({ kind: 'income', record: 판매, characterName: '' })).toEqual(['아이템 판매', '1단계 소울 에테르 2개'])
+  })
+
+  // 목록에서 고른 구매도 이름을 비우고 key 를 적는다. 같은 반지도 레벨마다 다른 물건이라 레벨을 붙인다.
+  it('목록에서 고른 구매 · 판매는 아이템 표의 이름이고, 특수스킬 반지는 이름 뒤에 Lv.N 이 붙는다', () => {
+    const 구매 = { ...지출행, category: 'item_purchase' as const, item: null, itemKey: 'soul_ether_1', itemKind: 'consumable' as const, quantity: 2 }
+    const 반지 = { ...수입행, category: 'item_sale' as const, item: null, itemKey: 'risk_taker_ring', itemKind: 'equipment' as const, quantity: null, ringLevel: 4 }
+
+    expect(카드({ kind: 'spend', record: 구매, characterName: '' })).toEqual(['아이템 구매', '1단계 소울 에테르 2개'])
+    expect(카드({ kind: 'income', record: 반지, characterName: '' })).toEqual(['아이템 판매', '리스크테이커 링 Lv.4'])
+  })
+
   it('기타는 직접 친 이름이고 수량이 2 이상일 때만 붙인다. 이름이 없으면 둘째 줄이 없다', () => {
     const 기타 = { ...지출행, category: 'etc' as const, item: '모멘텀 프라임 패스', itemKey: null, quantity: 1 }
 
@@ -684,7 +926,7 @@ describe('줄의 금액', () => {
   it('메포 지출은 시세로 환산한 메소다', () => {
     const { recordMesoOf } = require('../records') as typeof import('../records')
 
-    expect(recordMesoOf({ kind: 'spend', record: 지출행, characterName: '' })).toBe(101_694_915)
+    expect(recordMesoOf({ kind: 'spend', record: 지출행, characterName: '' })).toBe(101_694_916)
   })
 
   // 캐시는 환산 자체를 안 한다. 메소 축에 0 으로 들되 줄은 원으로 적는다.
@@ -704,7 +946,8 @@ describe('고치기와 지우기', () => {
 
     await editSpend({ ...지출행, quantity: 3 })
 
-    expect(spend.updateSpendRecord).toHaveBeenCalledWith({ ...지출행, quantity: 3 })
+    // 메포 기록이라 요율이 없으면 그때의 규칙(1)이 붙는다.
+    expect(spend.updateSpendRecord).toHaveBeenCalledWith({ ...지출행, quantity: 3, mesoMarketFeePercent: 1 })
     expect(rate.setLastPointRate).toHaveBeenCalledWith(1_180)
   })
 
@@ -724,7 +967,24 @@ describe('고치기와 지우기', () => {
     await removeRecord({ kind: 'income', record: 수입행, characterName: '' })
 
     expect(spend.deleteSpendRecord).toHaveBeenCalledWith('spd-1')
-    expect(income.deleteIncomeRecord).toHaveBeenCalledWith('inc-1')
+    expect(income.deleteIncomeRecord.mock.calls[0]?.[0]).toBe('inc-1')
+  })
+
+  // 사냥 기록을 고쳐 조각이 모자라면 헥사 강화를 다른 보관으로 옮긴다. 정산은 폼이 쓸 수 있는 개수까지만 받아 넘기지 않는다.
+  it('사냥 기록의 고치기 · 지우기에만 헥사 강화를 옮길 곳을 넘긴다', async () => {
+    const { editIncome, removeRecord } = require('../records') as typeof import('../records')
+    const 기타행 = { ...수입행, id: 'inc-2', category: 'etc' as const }
+    const 옮길곳 = expect.objectContaining({ candidatesOf: expect.any(Function), ownerOf: expect.any(Function) })
+
+    await editIncome(수입행)
+    await editIncome(기타행)
+    await removeRecord({ kind: 'income', record: 수입행, characterName: '' })
+    await removeRecord({ kind: 'income', record: 기타행, characterName: '' })
+
+    expect(income.updateIncomeRecord).toHaveBeenCalledWith(수입행, 옮길곳)
+    expect(income.updateIncomeRecord).toHaveBeenCalledWith(기타행, undefined)
+    expect(income.deleteIncomeRecord).toHaveBeenCalledWith('inc-1', 옮길곳)
+    expect(income.deleteIncomeRecord).toHaveBeenCalledWith('inc-2', undefined)
   })
 })
 
@@ -815,6 +1075,30 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     expect(rows.map(titleOf)).toEqual(['루디 · 보스 결정석', '루디 · 보스 드롭 판매'])
     expect(rows.map(recordMesoOf)).toEqual([3_600_000_000, 4_000_000_000])
     expect(rows.map(detailOf)).toEqual(['2마리', '1건'])
+  })
+
+  // 가계부는 돈이 오간 기록만 세운다. 0 이 된 결정석(`제외` · 한도 초과)은 판 것이 아니다.
+  it('0 이 된 결정석은 결정석 줄의 목록과 마리 수에서 빠진다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([
+      스우기록,
+      { ...데미안기록, payoutMeso: 0, overCrystalLimit: true },
+      { ...스우기록, bossKey: 'lucid', boss: '루시드', payoutMeso: 0, crystalExcluded: true },
+    ])
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(rows.map(titleOf)).toEqual(['루디 · 보스 결정석'])
+    expect(detailOf(rows[0])).toBe('1마리')
+    expect(rows[0]?.kind === 'bossCrystal' && rows[0].bosses.map((boss) => boss.bossKey)).toEqual(['lotus'])
+  })
+
+  it('그날 결정석이 모두 0 이면 결정석 줄은 안 서고 드롭 판매 줄은 선다', async () => {
+    bossProfit.getDatedBossProfitRecords.mockResolvedValue([{ ...스우기록, payoutMeso: 0, overCrystalLimit: true }])
+    bossDrops.getBossDropRecords.mockResolvedValue([드롭()])
+
+    const rows = await loadDayRecords('2026-08-21')
+
+    expect(rows.map(titleOf)).toEqual(['루디 · 보스 드롭 판매'])
   })
 
   it('판매가 하나도 없으면 그 줄이 안 선다', async () => {
@@ -1070,7 +1354,7 @@ describe('loadTrackedCharacters', () => {
     seedBasic('ocid-2', { name: '아델', level: 275, worldKey: 'elysium' })
     const { loadTrackedCharacters } = require('../records') as typeof import('../records')
 
-    // 레벨은 사냥 계산기가 쓴다. 지역을 ±20 으로 거르고 페널티를 낸다.
+    // 레벨은 사냥 계산기가 쓴다. 지역을 거르고 페널티를 낸다.
     expect(await loadTrackedCharacters()).toEqual([
       { ocid: 'ocid-1', name: '루디', level: 294, worldKey: 'scania', jobClass: '렌' },
       { ocid: 'ocid-2', name: '아델', level: 275, worldKey: 'elysium', jobClass: null },
@@ -1305,7 +1589,7 @@ describe('헥사 보관 체크 기억', () => {
     expect(hexaChecks.setHexaStorageChecks).toHaveBeenCalledWith({ useStorage: true, storageAsSpend: false })
 
     hexaChecks.setHexaStorageChecks.mockClear()
-    await editSpend({ ...헥사지출, id: 'rec-1', recordedAt: '2026-08-23T05:00:00.000Z' })
+    await editSpend({ ...헥사지출, id: 'rec-1', recordedAt: '2026-08-23T05:00:00.000Z', mesoMarketFeePercent: null })
     await recordSpend(메포지출, 지금)
     expect(hexaChecks.setHexaStorageChecks).not.toHaveBeenCalled()
   })
@@ -1338,11 +1622,25 @@ describe('loadHexaStorages', () => {
     income.getFragmentStorage.mockImplementation(async (ocid: string) => ({ main: 10, alt: 20 })[ocid] ?? 0)
     const { loadHexaStorages } = require('../records') as typeof import('../records')
 
-    await expect(loadHexaStorages('main', '2026-10-30', 'rec-1')).resolves.toEqual([
-      { ocid: 'main', stored: 10 },
-      { ocid: 'alt', stored: 20 },
-    ])
+    await expect(loadHexaStorages('main', '2026-10-30', 'rec-1')).resolves.toMatchObject({
+      hunts: [
+        { ocid: 'main', stored: 10 },
+        { ocid: 'alt', stored: 20 },
+      ],
+    })
     expect(income.getFragmentStorage).toHaveBeenCalledWith('main', '2026-10-30', 'rec-1')
+  })
+
+  it('강화한 캐릭터의 메이플 ID · 월드의 기타 조각을 함께 읽는다', async () => {
+    const inventory = jest.requireMock('../../../storage/inventory') as Record<string, jest.Mock>
+    inventory.getOtherFragmentStorage.mockResolvedValueOnce(30)
+    income.getFragmentStorage.mockResolvedValue(0)
+    const { loadHexaStorages } = require('../records') as typeof import('../records')
+
+    await expect(loadHexaStorages('main', '2026-10-30', 'rec-1')).resolves.toMatchObject({
+      other: { accountId: 'A', worldKey: 'scania', stored: 30 },
+    })
+    expect(inventory.getOtherFragmentStorage).toHaveBeenCalledWith('A', 'scania', 'rec-1')
   })
 
   // 못 읽은 캐릭터를 건너뛰면 차례가 뒤 캐릭터로 밀려 다른 보관이 빠진다.
@@ -1372,6 +1670,9 @@ const 합계 = (over: Partial<EnhancementTotal> = {}): EnhancementTotal => ({
   nexonAccountId: 'account-main',
   historyDate: '2026-08-23',
   characterName: '낟낟',
+  ocid: `ocid-${over.characterName ?? '낟낟'}`,
+  accountId: 'maple-1',
+  worldKey: 'elysium',
   enhancementType: 'cube',
   enhancementCategory: 'cube_reset',
   itemGroup: 'key:arcane_umbra_knuckle',
@@ -1380,6 +1681,7 @@ const 합계 = (over: Partial<EnhancementTotal> = {}): EnhancementTotal => ({
   attempts: 1,
   attemptCostMeso: 450_000,
   destroyDefenceCostMeso: 0,
+  superiorCostMeso: 0,
   fromStar: null,
   toStar: null,
   eventWorld: false,
@@ -1405,7 +1707,7 @@ describe('강화 지출이 칸에 든다', () => {
     enhancementTotals.loadEnhancementTotals.mockResolvedValue([합계()])
 
     expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso)
-      .toBe(2_542_372_881 - 320_000_000 + 450_000)
+      .toBe(2_542_372_882 - 320_000_000 + 450_000)
   })
 
   // 판정하지 못한 줄을 세우면 이벤트 월드 지출까지 섞여 지출이 부푼다.
@@ -1419,22 +1721,28 @@ describe('강화 지출이 칸에 든다', () => {
   })
 
   // 파괴 방지 추가분은 MVP 할인을 받지 않는다. 두 몫을 따로 저장한 이유다.
-  it('스타포스는 그 캐릭터 · 날짜의 MVP 할인을 시도 비용에만 붙인다', async () => {
-    const asked: [string, string][] = []
-    mvp.starforceMvpDiscountResolver.mockReturnValue((name: string, dateKey: string) => {
-      asked.push([name, dateKey])
-      return 10
-    })
+  it('스타포스는 그 캐릭터의 메이플 ID · 날짜의 MVP 할인을 시도 비용에만 붙인다', async () => {
+    mvp.starforceMvpDiscountOf.mockReturnValue(10)
     enhancementTotals.loadEnhancementTotals.mockResolvedValue([
       스타포스합계({ attemptCostMeso: 1_000_000, destroyDefenceCostMeso: 2_000_000 }),
     ])
 
     expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso).toBe(900_000 + 2_000_000)
-    expect(asked).toEqual([['낟낟', '2026-08-23']])
+    expect(mvp.starforceMvpDiscountOf).toHaveBeenCalledWith(expect.any(Map), 'maple-1', '2026-08-23')
+  })
+
+  // 슈페리얼 장비의 스타포스는 어떤 할인도 받지 않는다(사용자 확인 2026-11-15).
+  it('슈페리얼 비용에는 MVP 할인을 붙이지 않는다', async () => {
+    mvp.starforceMvpDiscountOf.mockReturnValue(10)
+    enhancementTotals.loadEnhancementTotals.mockResolvedValue([
+      스타포스합계({ attemptCostMeso: 1_000_000, superiorCostMeso: 55_382_200 }),
+    ])
+
+    expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso).toBe(900_000 + 55_382_200)
   })
 
   it('MVP 할인은 스타포스에만 붙는다', async () => {
-    mvp.starforceMvpDiscountResolver.mockReturnValue(() => 10)
+    mvp.starforceMvpDiscountOf.mockReturnValue(10)
     enhancementTotals.loadEnhancementTotals.mockResolvedValue([합계()])
 
     expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso).toBe(450_000)
@@ -1462,6 +1770,14 @@ describe('강화 지출이 칸에 든다', () => {
 describe('강화 줄', () => {
   const 잠재합계 = (over: Partial<EnhancementTotal> = {}) =>
     합계({ enhancementType: 'potential', enhancementCategory: 'potential', attemptCostMeso: 38_250_000, ...over })
+
+  // 캐릭터의 지금 이름은 프로필이 준다. `ocid-이름` 의 지금 이름은 그 이름이다.
+  beforeEach(() => {
+    profileLookup.resolveDisplayProfiles.mockImplementation(
+      async (ocids: readonly string[]) =>
+        new Map([...new Set(ocids)].map((ocid) => [ocid, { name: ocid.replace('ocid-', ''), imageUrl: null, world: null, level: 285 }])),
+    )
+  })
 
   async function 줄들(rows: EnhancementTotal[]) {
     enhancementTotals.loadEnhancementTotals.mockResolvedValue(rows)
@@ -1509,11 +1825,20 @@ describe('강화 줄', () => {
     expect(detailOf(row)).toMatch(/ 3회$/)
   })
 
-  it('줄의 신원이 분류와 이름이다. ocid 가 안 온다', async () => {
+  it('줄의 신원이 분류와 캐릭터(ocid)다', async () => {
     const { rowKeyOf } = require('../records') as typeof import('../records')
     const [row] = await 줄들([합계()])
 
-    expect(rowKeyOf(row)).toBe('enhancement:cube_reset:낟낟')
+    expect(rowKeyOf(row)).toBe('enhancement:cube_reset:ocid-낟낟')
+  })
+
+  // 강화 줄은 그날 그 이름이었던 캐릭터에 붙어 있다. 이름으로 묶으면 이름을 바꾼 캐릭터가 둘로 갈린다.
+  it('이름을 바꾼 캐릭터의 옛 이름 줄도 같은 캐릭터의 한 줄로 접는다', async () => {
+    const rows = await 줄들([합계(), 합계({ id: 't2', characterName: '살름', ocid: 'ocid-낟낟' })])
+
+    expect(rows.filter((row) => row.kind === 'enhancement')).toEqual([
+      expect.objectContaining({ ocid: 'ocid-낟낟', characterName: '낟낟', count: 2 }),
+    ])
   })
 
   // 캐릭터로 먼저 모으고 그 안에서 큰 금액이 위다. 분류를 고정 순서로 두면 그날 제일 많이 쓴
@@ -1592,7 +1917,7 @@ describe('강화 줄', () => {
   // 칸에 적힌 수와 그 칸을 눌러 나온 수가 갈리면 안 된다.
   it('칸 금액과 상세 합계가 같은 수를 낸다', async () => {
     const { dayTotalsOf } = require('../records') as typeof import('../records')
-    mvp.starforceMvpDiscountResolver.mockReturnValue(() => 10)
+    mvp.starforceMvpDiscountOf.mockReturnValue(10)
     enhancementTotals.loadEnhancementTotals.mockResolvedValue([
       합계(),
       잠재합계({ id: 't2' }),
@@ -1627,5 +1952,90 @@ describe('손입력 지출의 0', () => {
     ])
 
     expect(rows).toHaveLength(1)
+  })
+})
+
+// 메소마켓 환전 수수료는 지출 시트에서 적지만, 금액이 0 보다 작으면 수익이라 `기타` 수입으로 적는다. 고쳐서 부호가 바뀌면
+// 같은 기록이 지출과 수입 사이를 옮긴다.
+describe('메소마켓 환전 수수료', () => {
+  const { editMesoMarketExchange, recordSpend } = require('../records') as typeof import('../records')
+  const NOW = new Date('2026-11-20T10:00:00+09:00')
+  const 판매만: SpendDraft = {
+    ocid: null,
+    accountId: 'maple-1',
+    spentOn: '2026-11-20',
+    category: 'etc',
+    item: '메소마켓 환전 수수료',
+    itemKey: null,
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: null,
+    levelTo: null,
+    quantity: 1,
+    mesoAmount: 4_962_193,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    cashAmount: null,
+    hexa: null,
+    exchange: { soldMeso: 500_000_000, sellPointPer100mMeso: 2_116, boughtMeso: null, buyPointPer100mMeso: null, mesoMarketFeePercent: 1 },
+  }
+  const 수익: SpendDraft = {
+    ...판매만,
+    mesoAmount: 22_448_015,
+    exchange: { ...판매만.exchange!, boughtMeso: 500_000_000, buyPointPer100mMeso: 2_000 },
+  }
+
+  it('금액이 0 이상이면 메이플 ID 의 기타 지출로 적는다', async () => {
+    await recordSpend(판매만, NOW)
+
+    expect(spend.insertSpendRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ accountId: 'maple-1', category: 'etc', mesoAmount: 4_962_193, exchange: 판매만.exchange }),
+    )
+    expect(income.insertIncomeRecord).not.toHaveBeenCalled()
+  })
+
+  it('금액이 0 보다 작으면 같은 시트 입력으로 기타 수입으로 적는다', async () => {
+    await recordSpend(수익, NOW)
+
+    expect(income.insertIncomeRecord).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ocid: null,
+        accountId: 'maple-1',
+        category: 'etc',
+        earnedOn: '2026-11-20',
+        item: '메소마켓 환전 수수료',
+        mesoAmount: 22_448_015,
+        exchange: 수익.exchange,
+      }),
+    )
+    expect(spend.insertSpendRecord).not.toHaveBeenCalled()
+  })
+
+  it('지출로 적은 기록을 고쳐 수익이 되면 같은 id 로 수입을 고치고 지출 판도 올린다', async () => {
+    const 원본 = { ...판매만, id: 'e1', recordedAt: '2026-11-20T00:00:00.000Z', mesoMarketFeePercent: null }
+
+    await editMesoMarketExchange({ kind: 'spend', record: 원본, characterName: '' }, 수익)
+
+    expect(income.updateIncomeRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'e1', recordedAt: '2026-11-20T00:00:00.000Z', mesoAmount: 22_448_015 }),
+    )
+    expect(spend.updateSpendRecord).not.toHaveBeenCalled()
+    expect(spend.bumpSpendRecordsRevision).toHaveBeenCalled()
+  })
+
+  it('수입으로 적은 기록도 같은 부호면 그대로 수입을 고친다', async () => {
+    const 원본 = {
+      id: 'e2', ocid: null, accountId: 'maple-1', earnedOn: '2026-11-20', category: 'etc' as const, item: '메소마켓 환전 수수료',
+      itemKey: null, mesoAmount: 22_448_015, saleFeePercent: null, saleFeeMeso: null, saleFeeAuto: false, pointAmount: null,
+      pointPer100mMeso: null, cashAmount: null, quantity: 1, itemKind: null, hunt: null, recordedAt: '2026-11-20T00:00:00.000Z',
+      exchange: 수익.exchange,
+    }
+
+    await editMesoMarketExchange({ kind: 'income', record: 원본, characterName: '' }, 수익)
+
+    expect(income.updateIncomeRecord).toHaveBeenCalledWith(expect.objectContaining({ id: 'e2' }))
+    expect(spend.bumpSpendRecordsRevision).not.toHaveBeenCalled()
+    expect(income.bumpIncomeRecordsRevision).not.toHaveBeenCalled()
   })
 })

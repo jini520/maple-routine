@@ -35,9 +35,15 @@ import { openInputCard } from '../../../features/input-card/store'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import { useSaveSlot, type IncomeFormProps } from './form-shared'
+import { fragmentCountContextOf, useHuntFragmentFloor, type LoadHuntFragmentFloor } from './hunt-fragment-floor'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 
-export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
+export function HuntManualForm(
+  props: IncomeFormProps & {
+    /** 수정으로 연 기록의 조각 최소 개수 조회. 조각 개수 카드가 쓴다 */
+    loadHuntFragmentFloor: LoadHuntFragmentFloor
+  },
+): React.JSX.Element {
   const editing = props.editing !== undefined
   /**
    * 되살릴 입력. 수동으로 적힌 행일 때만 값이 있다.
@@ -66,6 +72,11 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
   const typedMeso = mesoValueOf(typedMesoText)
   const fragments = mesoValueOf(fragmentsText)
   const fragmentPrice = optionalMesoValueOf(fragmentPriceText)
+  const fragmentFloor = useHuntFragmentFloor(props.editing, props.loadHuntFragmentFloor, {
+    ocid,
+    dateKey: props.dateKey,
+    fragmentPrice,
+  })
   const fee = useSaleFeeChoice(props.editing, ocid, props.dateKey)
   /** 조각을 그 자리에서 판 몫에만 붙는 판매 수수료. 가격을 안 적었으면 0 이다. */
   const fragmentFee = fragmentSaleFeeOf({ fragments, fragmentPrice }, fee.percent)
@@ -160,7 +171,8 @@ export function HuntManualForm(props: IncomeFormProps): React.JSX.Element {
             onPress={() =>
               openInputCard({
                 label: '조각 개수',
-                context: '솔 에르다 조각',
+                context: fragmentCountContextOf(fragmentFloor),
+                ...(fragmentFloor === undefined ? {} : { min: fragmentFloor }),
                 icon: 'fragment',
                 unit: '개',
                 chips: COUNT_QUICK_ADDS,

@@ -108,3 +108,32 @@ export async function getPartyAppointments(): Promise<PartyAppointment[]> {
 export async function setPartyAppointments(appointments: readonly PartyAppointment[]): Promise<void> {
   await preferences.set(STORAGE_KEYS.partyAppointments, JSON.stringify(appointments))
 }
+
+/**
+ * 월드 리프한 캐릭터가 가는 보스 판을 새 ocid 로 바꾸는 함수. 이 주만 바꾼 회차도 바꾼다. 바꾼 것이 있으면 참이다.
+ *
+ * 파티원 칸은 다루지 않는다. 약속에 파티원을 넣는 화면이 없어 늘 비어 있다.
+ */
+export async function movePartyAppointmentsToOcid(fromOcid: string, toOcid: string): Promise<boolean> {
+  const appointments = await getPartyAppointments()
+  let changed = false
+  const moveBosses = (bosses: PartyAppointmentBoss[]): PartyAppointmentBoss[] =>
+    bosses.map((boss) => {
+      if (boss.ocid !== fromOcid) return boss
+      changed = true
+      return { ...boss, ocid: toOcid }
+    })
+  const next = appointments.map((appointment) => ({
+    ...appointment,
+    bosses: moveBosses(appointment.bosses),
+    exceptions: Object.fromEntries(
+      Object.entries(appointment.exceptions).map(([dateKey, exception]) => [
+        dateKey,
+        { ...exception, bosses: moveBosses(exception.bosses) },
+      ]),
+    ),
+  }))
+  if (!changed) return false
+  await setPartyAppointments(next)
+  return true
+}

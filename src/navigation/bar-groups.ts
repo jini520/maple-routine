@@ -69,6 +69,8 @@ export const BAR_GROUPS: readonly BarGroup[] = [
       { page: 'Cashbook', label: '가계부' },
       // 두 화면의 기록을 기간 단위로 모아 읽기만 한다.
       { page: 'Stats', label: '통계' },
+      // 팔면 가계부 · 통계에 잡히는 아이템이라 같은 그룹에 둔다.
+      { page: 'Inventory', label: '인벤토리' },
     ],
   },
   { id: 'utility', label: '유틸리티', subs: [], page: 'Utility', layer: null },

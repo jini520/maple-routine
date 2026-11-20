@@ -40,6 +40,7 @@ function planOf(source: BossPartySetting | BossPartyPeriodOverride): BossPartyPl
     crystalSharesTotal: source.crystalSharesTotal,
     splitFeePercent: source.splitFeePercent,
     splitFeeAuto: source.splitFeeAuto === true,
+    crystalExcluded: source.crystalExcluded === true,
   }
 }
 

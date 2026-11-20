@@ -12,6 +12,7 @@ import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { AccountRow } from '../../components/organisms/AccountSelect/AccountSelect'
+import { useMapleIdNameOf } from '../../features/maple-id/names'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
@@ -103,6 +104,7 @@ function AccountCard(props: {
   onChange: () => void
   onOpenHistory: () => void
 }): React.JSX.Element {
+  const nameOf = useMapleIdNameOf()
   const { account } = props
   const current = account.history[account.history.length - 1]
   const change = (
@@ -117,7 +119,7 @@ function AccountCard(props: {
       <View className="px-1 pb-1 pt-0.5">
         {account.summary === null ? (
           <View className="flex-row items-center justify-between gap-2.5">
-            <Text className="text-sm font-semibold text-text">메이플 ID</Text>
+            <Text className="text-sm font-semibold text-text">{nameOf(account.accountId)}</Text>
             {change}
           </View>
         ) : (

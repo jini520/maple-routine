@@ -29,10 +29,10 @@ import {
   type BossProfitStore,
   type BossProfitWeeklySubtotal } from '../../../features/boss-profit/store'
 import { queryKeys } from '../../../features/query/keys'
+import { useResetBoundaryTick } from '../../../features/query/reset-timer'
 import { useRefetchStaleOnFocus } from '../../../hooks/useRefetchStaleOnFocus'
 import { useRealtimeFetchedAt } from '../../../features/refresh/freshness'
 import { useTrackedOcids } from '../../../features/schedule-sync/use-schedule-queries'
-import { WEEKLY_CRYSTAL_SALE_LIMIT } from '../../../lib/boss/boss-matching'
 import { getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
 import { bossesInSection, bossNameOf } from '../../../lib/boss/bosses'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
@@ -139,9 +139,11 @@ function mockStore(overrides: Partial<화면값> = {}): void {
   const value: 화면값 = {
     tab: 'weekly',
     periodKey: CURRENT_WEEKLY,
+    followsCurrentPeriod: true,
     partyPlans: {},
     setTab: jest.fn(),
     goToCurrentPeriod: jest.fn(),
+    followCurrentPeriod: jest.fn(),
     resetToCurrentWeek: jest.fn(),
     goToPreviousPeriod: jest.fn().mockResolvedValue(undefined),
     goToNextPeriod: jest.fn().mockResolvedValue(undefined),
@@ -172,9 +174,11 @@ function mockStore(overrides: Partial<화면값> = {}): void {
   mockedStore.mockReturnValue({
     tab: value.tab,
     periodKey: value.periodKey,
+    followsCurrentPeriod: value.followsCurrentPeriod,
     partyPlans: value.partyPlans,
     setTab: value.setTab,
     goToCurrentPeriod: value.goToCurrentPeriod,
+    followCurrentPeriod: value.followCurrentPeriod,
     resetToCurrentWeek: value.resetToCurrentWeek,
     goToPreviousPeriod: value.goToPreviousPeriod,
     goToNextPeriod: value.goToNextPeriod,
@@ -364,11 +368,49 @@ describe('빈 상태', () => {
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'Groups',
       params: { screen: 'Settings', params: { openPicker: true } },
-    })
+    }, { pop: true })
   })
 })
 
 // 파티 인원 관리는 보스 수익과 바로 이어지는데 이 화면에서 보스 관리로 가는 길이 없었다.
+describe('초기화 시각', () => {
+  const NOT_FAKED = [
+    'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'setImmediate', 'clearImmediate', 'nextTick', 'queueMicrotask',
+    'performance', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'hrtime',
+  ] as never
+
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
+  // 스토어의 기간은 앱을 켤 때 정해진다. 수요일에 켠 앱에서 목요일에 처음 열어도 이번 주를 봐야 한다.
+  it('처음 마운트하면 지금 기간을 따라가게 부른다', async () => {
+    const followCurrentPeriod = jest.fn()
+    mockStore({ followCurrentPeriod })
+
+    await renderScreen()
+
+    expect(followCurrentPeriod).toHaveBeenCalledTimes(1)
+  })
+
+  it('보던 중에 목요일 0시의 틱이 올라 지금 기간이 바뀌면 다시 부른다', async () => {
+    jest.useFakeTimers({ doNotFake: NOT_FAKED })
+    jest.setSystemTime(new Date('2026-11-11T23:55:00+09:00'))
+    const followCurrentPeriod = jest.fn()
+    mockStore({ followCurrentPeriod, periodKey: '2026-11-05', loadedPeriodKey: '2026-11-05' })
+    await renderScreen()
+    expect(followCurrentPeriod).toHaveBeenCalledTimes(1)
+
+    jest.setSystemTime(new Date('2026-11-12T00:30:00+09:00'))
+    await act(async () => {
+      useResetBoundaryTick.setState((state) => ({ tick: state.tick + 1 }))
+    })
+
+    expect(followCurrentPeriod).toHaveBeenCalledTimes(2)
+    expect(followCurrentPeriod.mock.calls[1][0]).toEqual(new Date('2026-11-12T00:30:00+09:00'))
+  })
+})
+
 describe('보스 관리로 가는 길', () => {
   it('헤더의 `보스 관리` 를 누르면 보스 관리 화면을 연다', async () => {
     const { getByText } = await renderScreen()
@@ -997,7 +1039,7 @@ describe('총 수입 헤드라인', () => {
     mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행({ world: '스카니아', worldKey: 'scania' })] })
     const { getByLabelText } = await renderScreen()
 
-    expect(getByLabelText(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 0개`)).toBeTruthy()
+    expect(getByLabelText(`주간 결정석 판매 1개, 월간 결정석 0개`)).toBeTruthy()
   })
 
   // 주간 탭 행에 그 주에 선 월간 보스가 들어 있어, 그 주의 칩이 월간 결정석을 센다.
@@ -1011,7 +1053,7 @@ describe('총 수입 헤드라인', () => {
       ] })
     const { getByLabelText } = await renderScreen()
 
-    expect(getByLabelText(`주간 결정석 판매 1 / ${WEEKLY_CRYSTAL_SALE_LIMIT}, 월간 결정석 1개`)).toBeTruthy()
+    expect(getByLabelText(`주간 결정석 판매 1개, 월간 결정석 1개`)).toBeTruthy()
   })
 
   it('기간 전체 고가 드롭이 있으면 헤드라인에도 뱃지가 붙는다', async () => {
@@ -1176,7 +1218,7 @@ describe('조회 불가 카드의 캐릭터 관리로 이동', () => {
     expect(navigate).toHaveBeenCalledWith('Main', {
       screen: 'Groups',
       params: { screen: 'Settings', params: { openPicker: true } },
-    })
+    }, { pop: true })
   })
 })
 

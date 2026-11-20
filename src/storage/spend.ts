@@ -8,8 +8,21 @@
  * 한 행 = 한 통화로는 표현이 안 된다.
  */
 import type { ItemKindKey, SpendCategoryKey } from '../lib/cashbook/categories'
-import { assignLegacyEntryAccounts, deleteEntry, insertEntry, readEntries, replaceEntry } from './cashbook-entries'
+import {
+  assignLegacyEntryAccounts,
+  assignOwnerlessEntries,
+  deleteEntry,
+  insertEntry,
+  moveEntriesToOcid,
+  moveFragmentUsesToOcid,
+  readEntries,
+  replaceEntry,
+} from './cashbook-entries'
+import type { EntryExchange, EntryTransfer, OtherFragmentUse } from './cashbook-entries'
 import { spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
+import { writeCheckingFragments } from './fragment-ledger'
+import { deleteEmptyInventoryRows, inventoryRowForPurchase, linkedInventoryItemOf } from './inventory'
+import type { SqliteDbConnection } from './ports'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
@@ -74,6 +87,12 @@ export interface SpendRecord {
    */
   pointPer100mMeso: number | null
   /**
+   * 메포 지출의 메소마켓 수수료율(%). 메소 · 캐시 지출은 `null` 이다.
+   *
+   * 요율을 기록마다 박는다. 지금 규칙을 읽을 때 쓰면 요율이 바뀌는 날 지난 메포 지출이 전부 소급해 달라진다.
+   */
+  mesoMarketFeePercent: number | null
+  /**
    * **환산하지 않는다**. 그래서 짝이 되는 환율 칸이 없다. 현금과 게임
    * 재화의 교환비가 실제로 성립하는 경로가 운영정책 위반 거래라, 앱이 그 숫자를 적으면 **그 경로에
    * 값을 매기는 것처럼 읽힌다.** 정확도의 문제가 아니라 무엇을 정상으로 보이게 하는가의 문제다.
@@ -82,6 +101,21 @@ export interface SpendRecord {
   /** 헥사 매트릭스 기록의 조각. 다른 갈래는 `null` 이다. */
   hexa: SpendHexa | null
   recordedAt: string
+  /** 아이템 구매에서 목록으로 고른 특수스킬 반지의 레벨. 다른 기록은 칸이 없다. */
+  ringLevel?: number
+  /** 아이템 구매의 메모. 저장할 때 앞뒤 공백을 걷고, 메모가 없는 기록은 읽을 때 칸이 없다. */
+  memo?: string
+  /** 인벤토리에 보관한 아이템 구매가 가리키는 인벤토리 줄. 읽을 때만 채운다. 저장은 `inventoryStore` 로 고른다. */
+  inventoryItemId?: string
+  /**
+   * 아이템 구매를 보관할 메이플 ID · 월드. 있으면 저장할 때 그 주인의 인벤토리 줄을 찾거나 만들어 잇고, 없으면 보관을 푼다. 읽은
+   * 기록에는 칸이 없다. 주인을 정하는 캐릭터 정보가 저장 계층 밖에 있어 고르는 쪽이 넘긴다.
+   */
+  inventoryStore?: { accountId: string; worldKey: string }
+  /** `주간 보스 수입 이전` 시트의 입력. 그 시트로 적은 `기타` 지출만 칸이 있다 */
+  transfer?: EntryTransfer
+  /** `메소마켓 환전 수수료` 시트의 입력. 그 시트로 적은 `기타` 지출만 칸이 있다 */
+  exchange?: EntryExchange
 }
 
 /**
@@ -102,6 +136,8 @@ export interface SpendHexa {
   storageAsSpend: boolean
   /** 보관에서 가져온 조각을 캐릭터마다. 보관을 안 쓰면 빈 배열이다. */
   storageUses: readonly { ocid: string; fragments: number }[]
+  /** 강화한 캐릭터의 메이플 ID · 월드의 기타 조각에서 가져온 조각. 가져온 것이 없으면 칸이 없다. */
+  otherUse?: OtherFragmentUse
 }
 
 /**
@@ -140,18 +176,52 @@ export function subscribeSpendRecordsRevision(listener: () => void): () => void 
   }
 }
 
-function bumpSpendRecordsRevision(): void {
-  spendRecordsRevision += 1
-  notifyAfterBatch(() => {
-    for (const listener of revisionListeners) listener()
-  })
+/** 구독자를 부르는 함수. `notifyAfterBatch` 가 같은 함수로 알아봐 반복 끝에 한 번만 부르도록 모듈에 하나만 둔다. */
+function notifyRevisionListeners(): void {
+  for (const listener of revisionListeners) listener()
 }
 
+/** 판을 올린다. 사냥 기록을 고쳐 헥사 기록이 함께 바뀌면 수입 어댑터도 부른다. */
+export function bumpSpendRecordsRevision(): void {
+  spendRecordsRevision += 1
+  notifyAfterBatch(notifyRevisionListeners)
+}
+
+/**
+ * 보관할 아이템 구매면 그 주인의 인벤토리 줄을 찾거나 만들어 기록에 잇는다. 보관하지 않으면 잇지 않는다. 부르는 쪽이 트랜잭션으로
+ * 감싼다.
+ *
+ * @param previousId 고치기 전 그 기록이 가리키던 줄. 같은 주인 · 아이템이면 다시 쓴다
+ */
+async function withInventoryLink(db: SqliteDbConnection, record: SpendRecord, previousId: string | null): Promise<SpendRecord> {
+  const rest: SpendRecord = { ...record, inventoryItemId: undefined }
+  const store = record.inventoryStore
+  if (record.category !== 'item_purchase' || store === undefined || record.itemKey === null) return rest
+  const id = await inventoryRowForPurchase(db, {
+    ...store,
+    itemKey: record.itemKey,
+    itemKindKey: record.itemKind ?? 'equipment',
+    ringLevel: record.ringLevel ?? null,
+    previousId,
+    now: new Date(),
+  })
+  return { ...rest, inventoryItemId: id }
+}
+
+/**
+ * 조각 장부나 인벤토리를 모자라게 하면 던진다(`FragmentShortageError` · `InventoryShortageError`). 넣기 · 고치기 · 지우기가 모두
+ * 같다. 보관한 구매를 고치거나 지워 이미 판 것보다 적어지는 저장도 여기서 되돌아간다.
+ */
 export async function insertSpendRecord(record: SpendRecord): Promise<void> {
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await inTransaction(db, () => insertEntry(db, spendEntryOf(record)))
+  await inTransaction(db, () =>
+    writeCheckingFragments(db, async () => {
+      await insertEntry(db, spendEntryOf(await withInventoryLink(db, record, null)))
+      await deleteEmptyInventoryRows(db)
+    }),
+  )
   bumpSpendRecordsRevision()
 }
 
@@ -163,7 +233,13 @@ export async function updateSpendRecord(record: SpendRecord): Promise<void> {
   assertPointRate(record)
 
   const db = await getBossProfitDb()
-  await inTransaction(db, () => replaceEntry(db, spendEntryOf(record), new Date()))
+  await inTransaction(db, () =>
+    writeCheckingFragments(db, async () => {
+      const linked = await withInventoryLink(db, record, await linkedInventoryItemOf(db, record.id))
+      await replaceEntry(db, spendEntryOf(linked), new Date())
+      await deleteEmptyInventoryRows(db)
+    }),
+  )
   bumpSpendRecordsRevision()
 }
 
@@ -177,10 +253,70 @@ export async function assignLegacySpendAccounts(categoryKeys: readonly SpendCate
   if (await assignLegacyEntryAccounts(db, 'spend', categoryKeys)) bumpSpendRecordsRevision()
 }
 
+/**
+ * 남은 주인 모르는 옛 지출을 대표 캐릭터에게 붙인다. 붙인 것이 있을 때만 판이 오른다.
+ *
+ * @param categoryKeys 메이플 ID 를 고를 수 있는 지출 분류
+ */
+export async function assignOwnerlessSpends(
+  owner: { ocid: string; accountId: string },
+  categoryKeys: readonly SpendCategoryKey[],
+): Promise<void> {
+  const db = await getBossProfitDb()
+  if (await assignOwnerlessEntries(db, 'spend', owner, categoryKeys)) bumpSpendRecordsRevision()
+}
+
+/** 월드 리프한 캐릭터의 지출과 그 캐릭터 보관에서 가져간 조각을 새 ocid 로 옮긴다. 옮긴 것이 있을 때만 판이 오른다. */
+export async function moveSpendRecordsToOcid(fromOcid: string, toOcid: string): Promise<void> {
+  const db = await getBossProfitDb()
+  const moved = await inTransaction(db, async () => {
+    const entries = await moveEntriesToOcid(db, 'spend', fromOcid, toOcid)
+    const uses = await moveFragmentUsesToOcid(db, fromOcid, toOcid)
+    return entries || uses
+  })
+  if (moved) bumpSpendRecordsRevision()
+}
+
 /** 한 건만 지우는 삭제. 대리키라 같은 날 같은 것 두 건 중 하나만 골라 지울 수 있다. */
 export async function deleteSpendRecord(id: string): Promise<void> {
   const db = await getBossProfitDb()
-  await deleteEntry(db, id)
+  await inTransaction(db, () =>
+    writeCheckingFragments(db, async () => {
+      await deleteEntry(db, id)
+      await deleteEmptyInventoryRows(db)
+    }),
+  )
+  bumpSpendRecordsRevision()
+}
+
+/** 수수료가 자동인 `주간 보스 수입 이전` 기록. 등급 기록이 바뀌면 다시 셀 대상이다 */
+export async function getAutoFeeTransferRecords(): Promise<SpendRecord[]> {
+  const db = await getBossProfitDb()
+  const entries = await readEntries(
+    db,
+    `e.entry_type = 'spend' AND EXISTS (SELECT 1 FROM cashbook_entry_transfer_inputs t WHERE t.entry_id = e.id AND t.fee_auto = 1)`,
+    [],
+  )
+  return entries.map(spendRecordOf)
+}
+
+export interface TransferFeeUpdate {
+  id: string
+  feePercent: number
+  /** 수수료. 이 기록의 지출 금액이다 */
+  mesoAmount: number
+}
+
+/** `주간 보스 수입 이전` 기록의 요율과 수수료를 고쳐 쓴다. 수수료가 곧 지출이라 품목 금액도 함께 간다 */
+export async function updateTransferFees(updates: readonly TransferFeeUpdate[]): Promise<void> {
+  if (updates.length === 0) return
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    for (const update of updates) {
+      await db.run('UPDATE cashbook_entry_transfer_inputs SET fee_percent = ? WHERE entry_id = ?', [update.feePercent, update.id])
+      await db.run('UPDATE cashbook_entry_items SET amount_meso = ? WHERE entry_id = ?', [update.mesoAmount, update.id])
+    }
+  })
   bumpSpendRecordsRevision()
 }
 

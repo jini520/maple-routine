@@ -2,7 +2,7 @@
  * 사냥 메소 계산. 어디서·얼마나·무슨 버프로를 주면 메소를 내는 순수 함수 둘.
  *
  * ⚠️ **수치는 전부 사용자가 준 것이다.** 젠 주기(분당 8회) · 메소 계수(몬스터 레벨 × 7.5) · 레벨
- * 차이 페널티 표 둘 · 아이템 증가율 둘. 하나도 추정하지 않았다. 맵마다 다른 값은
+ * 차이 페널티 표 셋 · 아이템 증가율 둘. 하나도 추정하지 않았다. 맵마다 다른 값은
  * `hunting-grounds.json` 이고 여기 있는 것은 게임 전체의 규칙이라 코드에 산다.
  *
  * ```
@@ -105,48 +105,77 @@ export type UnionTier = keyof typeof UNION_TIER_MINUTES
 export const UNION_TIERS: readonly UnionTier[] = [1, 2, 3]
 
 /**
- * 레벨 차이 페널티. **차이 11 부터의 감소폭**이고 배열 자리가 곧 차이다(`[0]` = 차이 11).
+ * 몬스터가 낮은 쪽 페널티 표가 바뀐 게임 패치 날짜(사용자 제공). 이 날짜와 그 뒤의 기록이 새 표다.
  *
- * 방향마다 표가 다르다. 몬스터가 높은 쪽은 규칙으로 접히지만(-3%씩 → -5%씩) **낮은 쪽은 안
- * 접힌다**. …-11 다음이 -8, 그다음이 -13, -3 이다. 게임의 표가 그런 것이라 배열이 곧 사실이다.
- *
- * 두 배열은 합이 각각 70·80 이고 앞의 열 칸(-3%씩·-2%씩)이 30·20 이라 **정확히 -100% 에서
- * 끝난다**. 옮겨 적다 틀리면 테스트가 거기서 잡는다.
+ * 패치 전의 사냥은 옛 표대로 메소를 받았다. 날짜로 가르지 않으면 옛 기록을 수정으로 열어 저장할 때 새 표로
+ * 다시 세어져 금액이 줄어든다.
  */
-const PENALTY_STEPS_MONSTER_HIGHER = [
-  // 차이 11~20. -3%씩
-  3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-  // 차이 21~34. -5%씩
-  5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
-] as const
+export const LEVEL_PENALTY_PATCHED_ON = '2026-11-19'
 
-const PENALTY_STEPS_MONSTER_LOWER = [
-  // 차이 11~20. -2%씩
-  2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-  // 차이 21~30. 고르지 않다. 규칙이 아니라 표다.
-  5, 6, 7, 8, 9, 10, 11, 8, 13, 3,
-] as const
+/**
+ * 레벨 차이 페널티 표 하나. `freeDiff` 까지는 0% 이고 그 뒤의 감소폭이 `steps` 다.
+ * 배열 자리가 곧 차이다(`[0]` = 차이 `freeDiff + 1`).
+ *
+ * 세 표 모두 **정확히 -100% 에서 끝난다**. 옮겨 적다 틀리면 테스트가 거기서 잡는다.
+ */
+interface PenaltyTable {
+  freeDiff: number
+  steps: readonly number[]
+}
 
-/** 페널티가 안 걸리는 차이의 상한. 여기까지는 0% 다. */
-const PENALTY_FREE_DIFF = 10
+/** 몬스터가 높을 때. 패치가 바꾸지 않았다. */
+const PENALTY_MONSTER_HIGHER: PenaltyTable = {
+  freeDiff: 10,
+  steps: [
+    // 차이 11~20. -3%씩
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    // 차이 21~34. -5%씩
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+  ],
+}
+
+/**
+ * 몬스터가 낮을 때, 패치 전 날짜. **규칙으로 접히지 않는다**. …-11 다음이 -8, 그다음이 -13, -3 이다.
+ * 게임의 표가 그런 것이라 배열이 곧 사실이다.
+ */
+const PENALTY_MONSTER_LOWER_BEFORE_PATCH: PenaltyTable = {
+  freeDiff: 10,
+  steps: [
+    // 차이 11~20. -2%씩
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    // 차이 21~30. 고르지 않다. 규칙이 아니라 표다.
+    5, 6, 7, 8, 9, 10, 11, 8, 13, 3,
+  ],
+}
+
+/** 몬스터가 낮을 때, 패치 날짜부터. 차이 6 에서 -50%, 그 뒤 1 마다 -10%씩. */
+const PENALTY_MONSTER_LOWER: PenaltyTable = {
+  freeDiff: 5,
+  steps: [50, 10, 10, 10, 10, 10],
+}
 
 /**
  * 레벨 차이가 깎는 몫(%). 0 이면 안 깎이고 100 이면 아무것도 안 나온다.
  *
- * 표 밖(몬스터가 높으면 34 초과 · 낮으면 30 초과)은 **-100% 에 머문다**. 배열을 넘어가면
- * `undefined` 가 더해져 `NaN` 이 되므로 길이로 먼저 자른다.
+ * 표 밖은 **-100% 에 머문다**. 배열을 넘어가면 `undefined` 가 더해져 `NaN` 이 되므로 길이로 먼저 자른다.
+ *
+ * @param earnedOn 기록 날짜(KST `YYYY-MM-DD`). 몬스터가 낮은 쪽의 표를 고른다
  */
-export function levelPenaltyPercent(characterLevel: number, monsterLevel: number): number {
+export function levelPenaltyPercent(characterLevel: number, monsterLevel: number, earnedOn: string): number {
   const diff = Math.abs(monsterLevel - characterLevel)
-  if (diff <= PENALTY_FREE_DIFF) return 0
+  const table =
+    monsterLevel > characterLevel
+      ? PENALTY_MONSTER_HIGHER
+      : earnedOn < LEVEL_PENALTY_PATCHED_ON
+        ? PENALTY_MONSTER_LOWER_BEFORE_PATCH
+        : PENALTY_MONSTER_LOWER
+  if (diff <= table.freeDiff) return 0
 
-  const steps =
-    monsterLevel > characterLevel ? PENALTY_STEPS_MONSTER_HIGHER : PENALTY_STEPS_MONSTER_LOWER
-  const taken = diff - PENALTY_FREE_DIFF
-  if (taken >= steps.length) return 100
+  const taken = diff - table.freeDiff
+  if (taken >= table.steps.length) return 100
 
   let percent = 0
-  for (let index = 0; index < taken; index += 1) percent += steps[index]
+  for (let index = 0; index < taken; index += 1) percent += table.steps[index]
   return percent
 }
 
@@ -213,6 +242,8 @@ export interface HuntingMesoInput {
   boostMultiplier: number
   /** 소재 수. 하나가 30분이다. */
   sojae: number
+  /** 기록 날짜(KST `YYYY-MM-DD`). 레벨 차이 페널티 표를 고른다. */
+  earnedOn: string
 }
 
 /**
@@ -229,7 +260,7 @@ export function huntingMesoOf(input: HuntingMesoInput): number {
 
   const sum = input.ground.levels.reduce((total, level) => {
     const penalty =
-      input.characterLevel === null ? 0 : levelPenaltyPercent(input.characterLevel, level)
+      input.characterLevel === null ? 0 : levelPenaltyPercent(input.characterLevel, level, input.earnedOn)
     const base = level * MESO_PER_MONSTER_LEVEL * mobsPerMinute * minutes
     return total + base * (1 - penalty / 100)
   }, 0)

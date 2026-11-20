@@ -21,11 +21,13 @@ export async function linkWorldLeap(fromOcid: string, toOcid: string, now: Date)
 }
 
 /**
- * 모달을 안 거친 리프를 **이름·직업**으로 잇는다. `character/list` 응답을 받은 자리에서 부른다.
+ * 모달을 안 거친 리프를 **이름 · 직업 · 만든 날**로 잇는다. `character/list` 응답을 받은 자리에서 부른다.
  *
- * 캐릭터 이름은 게임 전체에서 하나라 이름·직업 말고는 조건을 안 건다. 방향은 목록이 정한다. 목록에 없는
- * 스냅샷이 옛 캐릭터이고, 목록의 같은 이름·직업이 새 캐릭터다. 둘 다 목록에 있으면 판단할 근거가 없어
- * 안 잇는다. 옛 캐릭터 후보가 추적 목록이 아닌 것은 사용자가 옛 캐릭터를 `✕` 로 뺀 장면이 겨냥이라서다.
+ * 방향은 목록이 정한다. 목록에 없는 스냅샷이 옛 캐릭터이고, 목록의 같은 이름 · 직업이 새 캐릭터다. 둘 다 목록에 있으면 판단할
+ * 근거가 없어 안 잇는다. 옛 캐릭터 후보가 추적 목록이 아닌 것은 사용자가 옛 캐릭터를 `✕` 로 뺀 장면이 겨냥이라서다.
+ *
+ * 이름은 옛 캐릭터가 내준 뒤 다른 캐릭터가 쓸 수 있어, 두 스냅샷이 만든 날을 모두 알면 같아야 잇는다. 하나라도 모르면 이
+ * 조건은 건너뛴다. 이 칸 전에 리프한 옛 캐릭터는 다시 부를 수 없어 만든 날을 영영 모른다.
  *
  * @param roster `character/list` 가 준 전 계정 캐릭터
  */
@@ -36,13 +38,19 @@ export async function linkWorldLeapsByNameAndJob(roster: readonly MapleCharacter
   }
 
   const listed = new Set(roster.map((character) => character.ocid))
-  for (const profile of await getCharacterProfilesByNames(names)) {
+  const profiles = await getCharacterProfilesByNames(names)
+  const createdDates = new Map(profiles.map((profile) => [profile.ocid, profile.createdDate ?? null]))
+  for (const profile of profiles) {
     if (listed.has(profile.ocid) || profile.jobClass === null) continue
 
     const matches = roster.filter(
       (character) => character.name === profile.name && character.jobClass === profile.jobClass,
     )
     if (matches.length !== 1) continue
+
+    const fromCreated = profile.createdDate ?? null
+    const toCreated = createdDates.get(matches[0]!.ocid) ?? null
+    if (fromCreated !== null && toCreated !== null && fromCreated !== toCreated) continue
 
     await linkWorldLeap(profile.ocid, matches[0]!.ocid, now)
   }

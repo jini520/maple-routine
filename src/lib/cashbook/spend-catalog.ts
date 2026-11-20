@@ -138,7 +138,12 @@ function toRules(value: unknown): SpendCatalogRules | null {
   if (!isRow(value) || !isNonNegativeInteger(value.tariffPercent) || !isNonNegativeInteger(value.rewardCoinPriceMeso)) {
     return null
   }
-  return { tariffPercent: value.tariffPercent, rewardCoinPriceMeso: value.rewardCoinPriceMeso }
+  if (!isNonNegativeInteger(value.mesoMarketFeePercent)) return null
+  return {
+    tariffPercent: value.tariffPercent,
+    rewardCoinPriceMeso: value.rewardCoinPriceMeso,
+    mesoMarketFeePercent: value.mesoMarketFeePercent,
+  }
 }
 
 // 갈래는 앱이 폼을 모르는 key 도 온다. 그 갈래는 시트에서 못 골라 묶음도 안 선다.
@@ -229,7 +234,7 @@ export function parseSpendCatalog(value: unknown): SpendCatalogTable | null {
   return { updatedAt, rules, groups, tiles, items, itemOptions, itemForms, forms }
 }
 
-export const spendCatalogTable = gameTable('spendCatalog', { updatedAt: null, rules: { tariffPercent: 0, rewardCoinPriceMeso: 0 }, groups: [], tiles: [], items: [], itemOptions: [], itemForms: [], forms: [] }, parseSpendCatalog)
+export const spendCatalogTable = gameTable('spendCatalog', { updatedAt: null, rules: { tariffPercent: 0, rewardCoinPriceMeso: 0, mesoMarketFeePercent: 0 }, groups: [], tiles: [], items: [], itemOptions: [], itemForms: [], forms: [] }, parseSpendCatalog)
 
 interface CatalogIndex {
   /** 항목 줄에 축 값과 형태를 붙인 것. 차례는 표의 차례다. */
@@ -308,6 +313,17 @@ export function spendTariffPercent(): number {
 /** 세라자르 주화 1개의 상점 판매가(메소). 규칙이라 표가 든다. */
 export function rewardCoinPriceMeso(): number {
   return spendCatalogTable.get().rules.rewardCoinPriceMeso
+}
+
+/**
+ * 메포 지출에 쓰는 메소마켓 수수료율(%). 기록에 적힌 요율이 있으면 그것이고, 없으면 지금 규칙이다.
+ *
+ * 적힌 요율을 지금 규칙으로 덮으면 규칙이 바뀐 뒤 고친 지난 기록의 금액이 달라진다.
+ *
+ * @param stored 그 기록에 적힌 요율. 새 기록은 `undefined` 다
+ */
+export function mesoMarketFeeOf(stored: number | null | undefined): number {
+  return stored ?? spendCatalogTable.get().rules.mesoMarketFeePercent
 }
 
 /** 세라자르 주화. 에픽던전 추가 리워드가 주고 상점에 팔면 메소가 된다. 이름과 그림은 앱 상수이고 판매가는 `rewardCoinPriceMeso()` 다. */
@@ -531,6 +547,24 @@ export function findSpendRewardChoice(
 }
 
 /**
+ * 형태별 항목 key 를 그 대표의 형태별 단계로. 이 대표의 단계가 아니거나 대표에 없는 형태의 key 는 빼서, 그 형태는 0단계로 선다.
+ *
+ * 기억한 key 가 참조표에서 사라졌을 때 목록에 없는 단계가 줄에 남지 않게 하는 거름.
+ */
+export function spendRewardTiersOf(
+  choice: SpendCatalogChoice,
+  formItemKeys: Readonly<Record<string, string>>,
+): Record<string, string> {
+  const forms = formsOf(choice)
+  const tierByForm: Record<string, string> = {}
+  for (const [form, itemKey] of Object.entries(formItemKeys)) {
+    const item = choice.items.find((each) => each.key === itemKey)
+    if (item !== undefined && forms.includes(form)) tierByForm[form] = tierNameOf(item)
+  }
+  return tierByForm
+}
+
+/**
  * 이름만 저장된 옛 기록의 key. key 칸을 채우는 이관(`storage/sqlite`)만 쓴다.
  *
  * 옛 모양은 셋이다. ① 항목 이름 하나 ② 형태별 단계를 이은 이름(`하이마운틴 EXP 1단계, 솔 2단계`)
@@ -670,7 +704,7 @@ export function optionItemOf(
 }
 
 /**
- * 메포 → 메소. 시세의 단위가 **1억 메소당 메포**라 이것은 **나눗셈**이다.
+ * 받은 메포를 메소로 바꾼 값. 메포로 메소를 사는 쪽이라 수수료가 없다.
  *
  * ```
  * 메소 = 메포 × 100,000,000 ÷ 시세
@@ -685,6 +719,33 @@ export function optionItemOf(
 export function pointToMeso(pointAmount: number, pointPer100mMeso: number): number {
   if (pointPer100mMeso <= 0) return 0
   return Math.floor((pointAmount * MESO_PER_RATE_UNIT) / pointPer100mMeso)
+}
+
+/**
+ * 메소 `hundredMillions` 억을 메소마켓에 팔아 받는 메포. 수수료를 떼고 소수점은 올린다.
+ *
+ * @param mesoMarketFeePercent 판매 수수료율. `null` 은 0 이다
+ */
+export function receivedPointOf(hundredMillions: number, pointPer100mMeso: number, mesoMarketFeePercent: number | null): number {
+  const scaled = hundredMillions * pointPer100mMeso * (100 - (mesoMarketFeePercent ?? 0))
+  return Math.floor((scaled + 99) / 100)
+}
+
+/**
+ * 메포 지출의 메소. 필요한 메포를 받을 수 있는 가장 적은 억 수를 팔았다고 보고, 쓰고 남은 메포는 수수료 없이 메소로 되돌려 뺀다.
+ *
+ * 시세가 0 이하이거나 요율이 100 이상이면 0 이다.
+ *
+ * @param mesoMarketFeePercent 그 기록의 메소마켓 수수료율. 요율 없는 옛 기록은 `null` 이고 수수료 0 으로 센다
+ */
+export function spentPointToMeso(pointAmount: number, pointPer100mMeso: number, mesoMarketFeePercent: number | null): number {
+  const keep = 100 - (mesoMarketFeePercent ?? 0)
+  if (pointAmount <= 0 || pointPer100mMeso <= 0 || keep <= 0) return 0
+  let sold = Math.max(1, Math.ceil((pointAmount * 100) / (pointPer100mMeso * keep)))
+  while (sold > 1 && receivedPointOf(sold - 1, pointPer100mMeso, mesoMarketFeePercent) >= pointAmount) sold -= 1
+  while (receivedPointOf(sold, pointPer100mMeso, mesoMarketFeePercent) < pointAmount) sold += 1
+  const left = receivedPointOf(sold, pointPer100mMeso, mesoMarketFeePercent) - pointAmount
+  return sold * MESO_PER_RATE_UNIT - pointToMeso(left, pointPer100mMeso)
 }
 
 /**

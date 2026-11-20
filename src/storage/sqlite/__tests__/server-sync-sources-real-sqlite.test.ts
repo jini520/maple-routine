@@ -34,8 +34,8 @@ afterEach(async () => {
 })
 
 it('과거 올리기는 드롭을 id 차례로 나눠 읽는다', async () => {
-  await expect(listRecordIdsAfter('dropPrice', '', 1)).resolves.toEqual(['d-1'])
-  await expect(listRecordIdsAfter('dropPrice', 'd-1', 10)).resolves.toEqual(['d-2'])
+  await expect(listRecordIdsAfter('dropPriceOwner', '', 1)).resolves.toEqual(['d-1'])
+  await expect(listRecordIdsAfter('dropPriceOwner', 'd-1', 10)).resolves.toEqual(['d-2'])
 })
 
 it('드롭이 붙은 기간 행 id 를 읽고, 없는 드롭은 null 이다', async () => {

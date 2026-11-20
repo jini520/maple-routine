@@ -78,6 +78,10 @@ export interface StatusBarPort {
 export interface SystemBarsPort {
   setNavigationBarStyle(isDarkTheme: boolean): Promise<void>
   refreshSafeAreaInsets(): Promise<void>
+  /** 아래에 3버튼 내비게이션 바가 있는가. 제스처 내비게이션과 iOS 는 거짓. 인셋 크기로는 둘을 못 가른다 */
+  isButtonNavigation(): boolean
+  /** 위 값이 바뀌면 부를 함수. 돌려준 함수로 뗀다 */
+  addButtonNavigationListener(listener: () => void): () => void
 }
 
 /**
@@ -106,6 +110,18 @@ export interface HapticsPort {
 export interface StoreReviewPort {
   /** 이 기기에서 쓸 수 없으면 아무것도 하지 않는다. */
   request(): Promise<void>
+}
+
+/**
+ * 클립보드.
+ *
+ * 복사를 OS 가 스스로 알리는 기기인지는 능력으로 답한다. 그런 기기에서 앱이 또 알리면 한 번 누른 것이 두 번 알려진다.
+ */
+export interface ClipboardPort {
+  /** OS 가 거절하면 던진다. */
+  setText(text: string): Promise<void>
+  /** 값이 들어가면 OS 가 스스로 복사 알림을 띄우는 기기인지. */
+  announcesCopy(): boolean
 }
 
 export interface KeyboardPort {
@@ -364,6 +380,7 @@ const statusBarSlot = createPortSlot<StatusBarPort>('StatusBarPort')
 const systemBarsSlot = createPortSlot<SystemBarsPort>('SystemBarsPort')
 const hapticsSlot = createPortSlot<HapticsPort>('HapticsPort')
 const storeReviewSlot = createPortSlot<StoreReviewPort>('StoreReviewPort')
+const clipboardSlot = createPortSlot<ClipboardPort>('ClipboardPort')
 const keyboardSlot = createPortSlot<KeyboardPort>('KeyboardPort')
 const notificationsSlot = createPortSlot<NotificationsPort>('NotificationsPort')
 const pushSlot = createPortSlot<PushPort>('PushPort')
@@ -397,6 +414,9 @@ export const getHapticsPort = hapticsSlot.get
 
 export const setStoreReviewPort = storeReviewSlot.set
 export const getStoreReviewPort = storeReviewSlot.get
+
+export const setClipboardPort = clipboardSlot.set
+export const getClipboardPort = clipboardSlot.get
 
 export const setKeyboardPort = keyboardSlot.set
 export const getKeyboardPort = keyboardSlot.get
@@ -436,6 +456,7 @@ export function __resetNativePortsForTest(): void {
     systemBarsSlot,
     hapticsSlot,
     storeReviewSlot,
+    clipboardSlot,
     keyboardSlot,
     notificationsSlot,
     pushSlot,

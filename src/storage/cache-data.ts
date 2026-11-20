@@ -1,6 +1,6 @@
 import { preferences } from './ports'
 import { characterBasicCacheKey, STORAGE_KEYS } from './keys'
-import { SPLIT_COLUMN_NAMES } from './boss-periods'
+import { CRYSTAL_SPLIT_COLUMN_NAMES } from './boss-periods'
 import { getCachedCharacterBasic } from './character-basic-cache'
 import { addMissingCharacterProfile, type CharacterProfileSnapshot } from './character-profiles'
 import { getBossProfitDb } from './sqlite/db'
@@ -20,6 +20,8 @@ const MANUAL_KEYS = new Set<string>([
   STORAGE_KEYS.lastHuntSelection,
   STORAGE_KEYS.lastHuntToggles,
   STORAGE_KEYS.lastPointRate,
+  STORAGE_KEYS.lastBossIncomeTransfers,
+  STORAGE_KEYS.lastEpicDungeonRewards,
 ])
 
 function isManualKey(key: string): boolean {
@@ -38,18 +40,31 @@ const RECORD_GROUPS: readonly CacheDataGroupId[] = ['manual', 'boss', 'cashbook'
 
 // 품목 · 사냥 입력 · 보관에서 가져온 조각은 기록의 자식이라 기록과 함께 지워야 고아가 안 생긴다. 강화 레벨 기억은
 // 기록에서 나온 값이라 기록만 지우고 남기면 다음 기록의 강화 전 칸이 지운 기록의 레벨로 선다.
+// 인벤토리에 넣은 아이템은 남은 개수를 가계부 판매에서 센다. 가계부만 지우면 판 아이템이 다시 서고, 인벤토리만 지우면 판
+// 기록이 가리키는 줄이 사라진다. 판 품목이 그 줄을 가리키므로 품목 뒤에 지운다.
 const CASHBOOK_TABLES = [
   'cashbook_entries',
   'cashbook_entry_items',
   'cashbook_entry_hunt_inputs',
+  'cashbook_entry_transfer_inputs',
+  'cashbook_entry_exchange_inputs',
   'cashbook_entry_fragment_uses',
+  'inventory_items',
   'remembered_levels',
 ]
 
-// 확인 기록만 남으면 그 날짜를 다시 부르지 않아 합계가 빈 채로 굳는다. 셋을 함께 지워야 다시 받는다.
-const ENHANCEMENT_TABLES = ['enhancement_totals', 'enhancement_history_checks', 'enhancement_recomputes', 'event_world_characters']
+// 확인 기록만 남으면 그 날짜를 다시 부르지 않아 합계가 빈 채로 굳는다. 함께 지워야 다시 받는다. 그날 이름 · 처음 값이 온 날은
+// 줄을 캐릭터에 붙이려고 넥슨에서 받은 값이라 다시 받으면 다시 찬다.
+const ENHANCEMENT_TABLES = [
+  'enhancement_totals',
+  'enhancement_history_checks',
+  'enhancement_recomputes',
+  'enhancement_refetches',
+  'character_dated_names',
+  'character_first_days',
+]
 
-const NULL_SPLIT = SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')
+const NULL_SPLIT = CRYSTAL_SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')
 
 // 보스 기록 표 셋은 한 표에 두 그룹의 행이 섞여 있어 행 단위로 지운다. 조합 행이 처치와 드롭의 부모라 표를 통째로
 // 지우면 외래키를 따라 다른 그룹까지 사라진다.
@@ -155,7 +170,8 @@ export async function getCacheDataCounts(): Promise<CacheDataCounts> {
     manualCharacters: keys.filter((key) => key.startsWith('manualTrackedContent:')).length,
     bossClears: await scalar(`SELECT count(*) AS n FROM boss_party_periods WHERE clear_status = 'cleared'`),
     bossDrops: await scalar('SELECT count(*) AS n FROM boss_drops'),
-    cashbookEntries: await scalar('SELECT count(*) AS n FROM cashbook_entries'),
+    cashbookEntries:
+      (await scalar('SELECT count(*) AS n FROM cashbook_entries')) + (await scalar('SELECT count(*) AS n FROM inventory_items')),
     enhancementDays: await scalar('SELECT count(DISTINCT history_date) AS n FROM enhancement_totals'),
     cacheEntries: keys.filter(isCacheKey).length,
   }

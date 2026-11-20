@@ -1,5 +1,5 @@
 import type { MapleAccount } from '../../../types'
-import { eventWorldCharacterNames, judgeEventWorld, listedJudgmentsOf, type EventWorldEvidence } from '../world'
+import { eventWorldCharacterNames, judgeEventWorld, type OwnerWorld } from '../world'
 
 const accounts: MapleAccount[] = [
   {
@@ -13,15 +13,11 @@ const accounts: MapleAccount[] = [
   },
 ]
 
-const evidence = (over: Partial<EventWorldEvidence> = {}): EventWorldEvidence => ({
-  listed: listedJudgmentsOf(accounts),
-  remembered: new Map(),
-  ...over,
-})
+/** 줄을 붙인 캐릭터. 기본은 리프 전이 아니고 월드를 모른다. */
+const owner = (over: Partial<OwnerWorld> = {}): OwnerWorld => ({ worldName: null, worldKey: null, preLeap: false, ...over })
 
 /** 큐브 · 잠재 · 소울 줄. 응답에 월드가 없다. */
-const nameOnly = (characterName: string, dateKey: string, from: EventWorldEvidence) =>
-  judgeEventWorld('', characterName, dateKey, from)
+const nameOnly = (of: OwnerWorld) => judgeEventWorld('', of)
 
 // 이벤트 월드인지는 월드 표의 칸이 정한다(`lib/world/worlds` 의 `isEventWorld`). 챌린저스는 재화가 본섭으로 넘어와 아니다.
 describe('이름으로 거를 대상', () => {
@@ -35,66 +31,43 @@ describe('이름으로 거를 대상', () => {
       { accountId: 'b', characters: [{ ocid: '5', name: '빈키', world: '스페셜2', worldKey: null, jobClass: '히어로', level: 1 }] },
     ]
     expect(eventWorldCharacterNames(stale)).toEqual(new Set(['빈키']))
-    expect(nameOnly('빈키', '2025-11-25', evidence({ listed: listedJudgmentsOf(stale) })).eventWorld).toBe(true)
+    expect(nameOnly(owner({ worldName: '스페셜2' })).eventWorld).toBe(true)
   })
 })
 
-// 스타포스는 줄이 그때의 월드를 준다. 지금 목록보다 정확하고, 캐릭터를 지워도 남는다.
+// 스타포스는 줄이 그때의 월드를 준다. 캐릭터의 지금 월드보다 정확하고, 캐릭터를 지워도 남는다.
 describe('월드를 주는 줄', () => {
-  it('그 월드로 판정하고 목록은 안 본다', () => {
-    expect(judgeEventWorld('스페셜2', '낟낟', '2025-11-25', evidence()).eventWorld).toBe(true)
-    expect(judgeEventWorld('엘리시움', '머리맨들맨둘', '2025-11-25', evidence()).eventWorld).toBe(false)
-    expect(judgeEventWorld('챌린저스2', '누구든', '2025-11-25', evidence({ listed: null })).eventWorld).toBe(false)
+  it('그 월드로 판정하고 캐릭터의 월드는 안 본다', () => {
+    expect(judgeEventWorld('스페셜2', owner({ worldName: '엘리시움' })).eventWorld).toBe(true)
+    expect(judgeEventWorld('엘리시움', owner({ worldName: '스페셜' })).eventWorld).toBe(false)
+    expect(judgeEventWorld('챌린저스2', owner({ preLeap: true })).eventWorld).toBe(false)
   })
 
   // 표에 없는 월드를 일반 월드로 세면 새 이벤트 월드의 지출이 그대로 굳는다(스페셜2 가 그랬다).
   it('표에 없는 월드는 모름이고 그 월드 이름을 든다', () => {
-    expect(judgeEventWorld('스페셜3', '누구든', '2025-11-25', evidence())).toEqual({
-      eventWorld: null,
-      unknownWorld: '스페셜3',
-    })
+    expect(judgeEventWorld('스페셜3', owner())).toEqual({ eventWorld: null, unknownWorld: '스페셜3' })
   })
 })
 
+// 큐브 · 잠재 · 소울은 줄을 붙인 캐릭터의 월드로 가른다. 같은 ocid 의 월드는 바뀌지 않는다.
 describe('월드를 주지 않는 줄', () => {
-  it('목록에 있는 이름은 그 캐릭터의 월드로 판정한다', () => {
-    expect(nameOnly('머리맨들맨둘', '2025-11-25', evidence()).eventWorld).toBe(true)
-    expect(nameOnly('낟낟', '2025-11-25', evidence()).eventWorld).toBe(false)
+  it('붙인 캐릭터의 월드로 판정한다. 월드 이름이 없으면 월드 key 로 본다', () => {
+    expect(nameOnly(owner({ worldName: '스페셜' })).eventWorld).toBe(true)
+    expect(nameOnly(owner({ worldName: '엘리시움' })).eventWorld).toBe(false)
+    expect(nameOnly(owner({ worldKey: 'special_2' })).eventWorld).toBe(true)
   })
 
-  it('목록 캐릭터의 월드가 표에 없으면 모름이고 그 월드 이름을 든다', () => {
-    expect(nameOnly('새월드', '2025-11-25', evidence())).toEqual({ eventWorld: null, unknownWorld: '스페셜3' })
+  it('붙인 캐릭터의 월드가 표에 없으면 모름이고 그 월드 이름을 든다', () => {
+    expect(nameOnly(owner({ worldName: '스페셜3' }))).toEqual({ eventWorld: null, unknownWorld: '스페셜3' })
   })
 
-  // 목록이 1순위다. 남겨 둔 이름이라도 목록에 일반 월드로 있으면 일반 월드다.
-  it('목록에 있으면 남겨 둔 이름보다 목록이 이긴다', () => {
-    const remembered = new Map([['낟낟', ['special']]])
-    expect(nameOnly('낟낟', '2025-11-25', evidence({ remembered })).eventWorld).toBe(false)
+  // 스페셜 월드에서 일반 월드로는 리프할 수 없다. 리프 전 줄을 모름으로 두면 그 날이 굳지 않는다.
+  it('리프 전 줄은 이벤트 월드가 아니다', () => {
+    expect(nameOnly(owner({ preLeap: true, worldKey: 'challengers_2' })).eventWorld).toBe(false)
   })
 
-  // 이벤트가 끝나기 전에 지운 캐릭터는 목록에 없다. 스타포스에서 본 월드의 기간 안이면 뺀다.
-  it('목록에 없는 이름은 남겨 둔 월드의 기간 안이면 이벤트 월드다', () => {
-    const remembered = new Map([['지운캐릭', ['special_2']]])
-    expect(nameOnly('지운캐릭', '2025-11-20', evidence({ remembered })).eventWorld).toBe(true)
-    expect(nameOnly('지운캐릭', '2025-12-18', evidence({ remembered })).eventWorld).toBe(true)
-  })
-
-  it('남겨 둔 이름이라도 기간 밖이면 일반 월드다', () => {
-    const remembered = new Map([['지운캐릭', ['special_2']]])
-    expect(nameOnly('지운캐릭', '2025-11-19', evidence({ remembered })).eventWorld).toBe(false)
-    expect(nameOnly('지운캐릭', '2025-12-19', evidence({ remembered })).eventWorld).toBe(false)
-  })
-
-  // 삭제 · 이전으로 목록에서 사라진 일반 캐릭터는 앞으로도 영영 목록에 안 나온다. 모름으로 두면 그 날을 영원히 다시 부른다.
-  it('목록에도 없고 남겨 둔 이름도 아니면 일반 월드다', () => {
-    expect(nameOnly('살름', '2025-11-25', evidence()).eventWorld).toBe(false)
-    expect(nameOnly('살름', '2025-11-25', evidence({ listed: new Map() })).eventWorld).toBe(false)
-  })
-
-  // 목록을 못 받은 것과 목록에 없는 것은 다르다. 앞은 다음 회차가 회복하고 뒤는 답이 난 것이다.
-  it('목록을 못 받았으면 모름이다', () => {
-    const remembered = new Map([['지운캐릭', ['special_2']]])
-    expect(nameOnly('머리맨들맨둘', '2025-11-25', evidence({ listed: null }))).toEqual({ eventWorld: null, unknownWorld: null })
-    expect(nameOnly('지운캐릭', '2025-11-25', evidence({ listed: null, remembered })).eventWorld).toBeNull()
+  // 목록에서 사라진 캐릭터의 월드를 모를 수 있다. 모름으로 두면 그 날을 영원히 다시 부른다.
+  it('캐릭터의 월드를 모르면 일반 월드다', () => {
+    expect(nameOnly(owner())).toEqual({ eventWorld: false, unknownWorld: null })
   })
 })

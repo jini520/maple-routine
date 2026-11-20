@@ -5,9 +5,10 @@
  * 빈 공간이 넓은 쪽 10 에 가운데를 맞춰, 초상 쪽 변을 기준으로 0.7 배에서 튀어나온다(시안과 같은 값).
  */
 import { useState } from 'react'
-import { Pressable, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native'
+import { Pressable, View, type LayoutChangeEvent } from 'react-native'
 import Animated, { Easing, Keyframe } from 'react-native-reanimated'
 
+import { useScreenLayout } from '../../../lib/screen-layout'
 import { Badge, Text } from '../../atoms'
 import { PopoverLayer } from '../../molecules/Popover/Popover'
 import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
@@ -43,7 +44,7 @@ export interface BossDifficultyPopoverProps {
 }
 
 export function BossDifficultyPopover(props: BossDifficultyPopoverProps): React.JSX.Element {
-  const { width: windowWidth } = useWindowDimensions()
+  const { contentWidthPx } = useScreenLayout()
   const [size, setSize] = useState<{ width: number; height: number } | null>(null)
   const { anchor } = props
   const placement = usePopoverPlacement(anchor, GAP)
@@ -52,7 +53,7 @@ export function BossDifficultyPopover(props: BossDifficultyPopoverProps): React.
   const left =
     size === null
       ? 0
-      : Math.max(EDGE_GAP, Math.min(windowWidth - size.width - EDGE_GAP, anchor.left + anchor.width / 2 - size.width / 2))
+      : Math.max(EDGE_GAP, Math.min(contentWidthPx - size.width - EDGE_GAP, anchor.left + anchor.width / 2 - size.width / 2))
 
   function onLayout(event: LayoutChangeEvent): void {
     setSize(event.nativeEvent.layout)

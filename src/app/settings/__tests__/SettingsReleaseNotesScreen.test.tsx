@@ -145,16 +145,18 @@ describe('SettingsReleaseNotesScreen', () => {
           { category: 'fix', text: '고친 것' },
           { category: 'feature', text: '새 기능' },
           { category: 'improvement', text: '나아진 것' },
+          { category: 'change', text: '바뀐 것' },
         ],
       },
     ])
     const view = await renderOverlay(<SettingsReleaseNotesScreen />)
 
     const groups = view.getAllByTestId('release-note-group')
-    expect(groups.map((group) => textsIn(group)[0])).toEqual(['기능', '개선', '버그'])
-    expect(textsIn(groups[0])).toContain('새 기능')
-    expect(textsIn(groups[1])).toContain('나아진 것')
-    expect(textsIn(groups[2])).toContain('고친 것')
+    expect(groups.map((group) => textsIn(group)[0])).toEqual(['변경', '기능', '개선', '버그'])
+    expect(textsIn(groups[0])).toContain('바뀐 것')
+    expect(textsIn(groups[1])).toContain('새 기능')
+    expect(textsIn(groups[2])).toContain('나아진 것')
+    expect(textsIn(groups[3])).toContain('고친 것')
   })
 
   // 버전 줄은 카드 머리이고 묶음이 칸 하나씩이다. 칸 색이 묶음 사이 경계다.

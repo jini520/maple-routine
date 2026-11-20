@@ -13,6 +13,8 @@
 
 import type { NavigatorScreenParams } from '@react-navigation/native'
 
+import type { CashbookTradeTarget } from '../features/trade-history/target'
+import type { IncomeCategoryKey } from '../lib/cashbook/categories'
 import type { NoticeKind } from '../types/notice'
 import type { BossCycle } from '../types/scheduler'
 
@@ -33,6 +35,7 @@ export type TabRouteName =
   | 'Profit'
   | 'Cashbook'
   | 'Stats'
+  | 'Inventory'
   | 'Utility'
   | 'Settings'
 
@@ -42,8 +45,9 @@ export type TabParamList = {
   Boss: undefined
   Appointments: undefined
   Profit: undefined
-  Cashbook: undefined
+  Cashbook: CashbookParams | undefined
   Stats: undefined
+  Inventory: undefined
   Utility: undefined
   /**
    * 캐릭터 관리 피커를 열어 둔 채로 이 탭에 보내는 파라미터. 보내는 쪽은 셋이다. 보스 수익의
@@ -81,8 +85,9 @@ export type ScheduleSubsParamList = {
 
 export type LedgerSubsParamList = {
   Profit: undefined
-  Cashbook: undefined
+  Cashbook: CashbookParams | undefined
   Stats: undefined
+  Inventory: undefined
 }
 
 export type LayerParamList = {
@@ -104,9 +109,26 @@ export interface NoticeDetailParams {
   noticeId: string
 }
 
+/** 계정 상세가 받는 파라미터. 계정은 스토어가 들고 있어 그 계정의 `key` 만 넘긴다. */
+export interface AccountDetailParams {
+  accountKey: string
+  /** 참이면 열자마자 `API 키 변경` 시트를 띄운다. 429 모달의 `다른 키 입력` 이 준다 */
+  openKeySheet?: boolean
+}
+
 /** MVP 등급 이력 상세가 받는 파라미터. 이력은 스토어가 들고 있어 ID 만 넘긴다. */
 export interface MvpGradeHistoryParams {
   accountId: string
+}
+
+/**
+ * 가계부 탭에 보내는 파라미터. 둘 다 `Settings` 의 `openPicker` 처럼 스택에 남으므로 화면이 `setParams` 로 지운다(`CashbookScreen`).
+ */
+export interface CashbookParams {
+  /** 이 분류의 새 수입 폼을 열어 둔 채로 연다. today 빠른 이동의 가계부 분류 칸이 보낸다 */
+  incomeCategory?: IncomeCategoryKey
+  /** 이 기록의 날짜를 고르고 수정 시트(드롭은 가격 입력 카드)를 연다. 거래 내역의 `거래로 이동` 이 보낸다 */
+  trade?: CashbookTradeTarget
 }
 
 /**
@@ -116,6 +138,13 @@ export interface MvpGradeHistoryParams {
  * 주간 · 이번 주를 센다. 보스 수익 스토어의 `periodKey` 를 읽지 않는 것은 그 값이 계산해 둔 날짜
  * 글자라 보스 수익 화면이 없을 때 낡을 수 있어서다.
  */
+/** MASPI 상세 하나. 장비는 서버가 월드를 보지 않아 `general` 로 연다 */
+export interface MarketItemParams {
+  itemKey: string
+  ringLevel: number | null
+  world: string
+}
+
 export interface DropPriceParams {
   cycle: BossCycle
   periodKey: string
@@ -141,6 +170,8 @@ export type RootStackParamList = {
   ContentManage: undefined
   DropHistory: undefined
   DropPrice: DropPriceParams | undefined
+  /** 거래 내역. 가계부 머리의 `거래 내역` 이 연다 */
+  TradeHistory: undefined
   SettingsReleaseNotes: undefined
   SettingsAbout: undefined
   /**
@@ -150,6 +181,10 @@ export type RootStackParamList = {
    * 쌓이는 하위 페이지이고, 뒤에 오는 도구들이 그대로 물려받는다.
    */
   UtilityItemSplit: undefined
+  /** MASPI 목록. 유틸리티 `데이터` 분류의 도구이고 today 의 MASPI 위젯도 연다 */
+  UtilityMaspi: undefined
+  /** MASPI 상세. 목록의 아이템 줄이 연다 */
+  UtilityMaspiItem: MarketItemParams
   /** 주간 보스 수익 계산기. 유틸리티의 둘째 도구다 */
   UtilityBossProfitCalculator: undefined
   /** 주간 보스 수익 계산기의 계산 기록. 기록을 누르면 계산기로 돌아간다 */
@@ -158,6 +193,10 @@ export type RootStackParamList = {
    * 캐릭터 관리. 두 층 + 드롭다운 + 순서 + 대표가 385px 모달 본문에 안 들어가 하위 페이지가 됐다.
    */
   SettingsCharacters: undefined
+  /** 계정 관리 목록. 넥슨 계정마다 행 하나와 그 계정의 메이플 ID 이름. 앱 설정의 `계정 관리` 행이 연다 */
+  SettingsAccounts: undefined
+  /** 넥슨 계정 하나의 상세. 메이플 ID 이름 칸과 API 키 행. 목록의 계정 행과 429 모달의 `다른 키 입력` 이 연다 */
+  SettingsAccountDetail: AccountDetailParams
   /** 보스 관리. 스케줄러 하위 탭이던 것이 설정에서 여는 하위 페이지가 됐다 */
   BossManage: undefined
   /** 테마. 고르면 이 페이지만 바뀌고 `적용` 으로 앱 전체에 적용한다 */
@@ -282,8 +321,12 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
   { path: '/today', screen: 'TodayScreen', target: { kind: 'tab', route: 'Today' }, origin: 'rn' },
   { path: '/appointments', screen: 'AppointmentsScreen', target: { kind: 'tab', route: 'Appointments' }, origin: 'rn' },
   { path: '/cashbook', screen: 'CashbookScreen', target: { kind: 'tab', route: 'Cashbook' }, origin: 'rn' },
+  { path: '/cashbook/trades', screen: 'TradeHistoryScreen', target: { kind: 'push', route: 'TradeHistory' }, origin: 'rn' },
   { path: '/stats', screen: 'StatsScreen', target: { kind: 'tab', route: 'Stats' }, origin: 'rn' },
+  { path: '/inventory', screen: 'InventoryScreen', target: { kind: 'tab', route: 'Inventory' }, origin: 'rn' },
   { path: '/utility', screen: 'UtilityScreen', target: { kind: 'tab', route: 'Utility' }, origin: 'rn' },
+  { path: '/utility/maspi', screen: 'MaspiScreen', target: { kind: 'push', route: 'UtilityMaspi' }, origin: 'rn' },
+  { path: '/utility/maspi/item', screen: 'MaspiItemScreen', target: { kind: 'push', route: 'UtilityMaspiItem' }, origin: 'rn' },
   {
     path: '/utility/item-split',
     screen: 'ItemSplitScreen',
@@ -336,6 +379,18 @@ export const ROUTE_TABLE: readonly RouteRow[] = [
     path: '/settings/notices/alerts',
     screen: 'SettingsNoticeAlertsScreen',
     target: { kind: 'push', route: 'SettingsNoticeAlerts' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/accounts',
+    screen: 'SettingsAccountsScreen',
+    target: { kind: 'push', route: 'SettingsAccounts' },
+    origin: 'rn',
+  },
+  {
+    path: '/settings/accounts/detail',
+    screen: 'SettingsAccountDetailScreen',
+    target: { kind: 'push', route: 'SettingsAccountDetail' },
     origin: 'rn',
   },
   {

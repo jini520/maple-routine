@@ -14,7 +14,15 @@ import type { Notice } from '../../../types/notice'
 import { queryClient } from '../../query/client'
 import { queryKeys } from '../../query/keys'
 import { resetNoticeDismissalForTests } from '../banner-dismissal'
-import { findCachedNotice, forgetNotice, noticesOptions, refreshNoticeKinds, useNoticeBanner, useNotices } from '../notice-query'
+import {
+  findCachedNotice,
+  forgetNotice,
+  NEXON_NOTICE_RETAIN_MS,
+  noticesOptions,
+  refreshNoticeKinds,
+  useNoticeBanner,
+  useNotices,
+} from '../notice-query'
 
 const { receiveNoticeKind: receiveMock } = jest.requireMock('../notice-feed') as Record<string, jest.Mock>
 const { keepDismissedNotices: keepMock, getDismissedNoticeIds: dismissedMock } = jest.requireMock(
@@ -40,7 +48,8 @@ beforeEach(() => {
 it('분류마다 열쇠이고, 기기에 저장되며, 진입과 복귀마다 받는다', () => {
   const options = noticesOptions('event')
   expect(options.queryKey).toEqual(queryKeys.notices('event'))
-  expect(options.meta).toEqual({ persist: true, source: 'server' })
+  expect(options.meta).toEqual({ persist: true, source: 'server', retainMs: NEXON_NOTICE_RETAIN_MS })
+  expect(noticesOptions('app').meta).toEqual({ persist: true, source: 'server' })
   expect(options.staleTime).toBe(0)
   expect(options.refetchOnWindowFocus).toBe('always')
 })
@@ -98,6 +107,19 @@ describe('useNotices', () => {
     await waitFor(() => expect(result.current.app).toEqual([notice('app-1')]))
     await waitFor(() => expect(result.current.event).toEqual([]))
   })
+
+  // 조회가 계속 실패해도 넥슨 공지는 받은 지 30일이 지나면 그리지 않는다. 다시 받을 때까지 처음 받는 것처럼 스켈레톤이다.
+  it('받은 지 30일이 지난 넥슨 공지 목록은 `null` 이고, 앱 공지는 그대로다', async () => {
+    const old = Date.now() - NEXON_NOTICE_RETAIN_MS - 1
+    queryClient.setQueryData(queryKeys.notices('event'), [notice('event-1', 'event')], { updatedAt: old })
+    queryClient.setQueryData(queryKeys.notices('app'), [notice('app-1')], { updatedAt: old })
+    receiveMock.mockResolvedValue(null)
+
+    const { result } = await renderHook(() => useNotices(['app', 'event']), { wrapper })
+
+    await waitFor(() => expect(receiveMock).toHaveBeenCalledWith('event'))
+    expect(result.current).toEqual({ app: [notice('app-1')], event: null })
+  })
 })
 
 describe('캐시 안의 공지 하나', () => {
@@ -111,6 +133,14 @@ describe('캐시 안의 공지 하나', () => {
     await forgetNotice('event-1')
     expect(findCachedNotice('event-1')).toBeNull()
     expect(queryClient.getQueryData(queryKeys.notices('app'))).toEqual([notice('app-1')])
+  })
+
+  it('받은 지 30일이 지난 넥슨 공지는 찾지 않는다', () => {
+    queryClient.setQueryData(queryKeys.notices('event'), [notice('event-1', 'event')], {
+      updatedAt: Date.now() - NEXON_NOTICE_RETAIN_MS - 1,
+    })
+
+    expect(findCachedNotice('event-1')).toBeNull()
   })
 })
 

@@ -37,6 +37,18 @@ export interface NexonApiKeyMethod {
   id: string
   label: string
   value: string
+  /**
+   * 이 키를 부계정으로 등록한 넥슨 로그인의 계정 id. 어느 로그인에도 귀속되지 않은 키면 `null`.
+   *
+   * 로그인이 만료되거나 로그아웃해도 귀속은 남는다. 부계정 키는 등록한 로그인이 살아 있을 때만 부른다.
+   */
+  loginId: string | null
+  /**
+   * 넥슨에서 무효가 된 부계정 키의 표시. 그때 추적에서 뺀 캐릭터를 든다.
+   *
+   * 키를 지우지 않는 것은 계정 관리에 그 계정을 남겨 사용자가 어느 계정의 키인지 보고 바꾸게 하려는 것이다. 표시가 있으면 부르지 않는다.
+   */
+  invalid?: { untrackedOcids: string[] }
 }
 
 /**
@@ -73,4 +85,10 @@ export interface NexonLoginMethod {
 export interface NexonAuthConfig {
   login: NexonLoginMethod | null
   apiKeys: NexonApiKeyMethod[]
+  /**
+   * 로그인 없이 쓰는 메인 키의 id. 로그인이 있거나 메인 키가 없으면 `null`.
+   *
+   * 귀속(`loginId`)과 따로 둔다. 로그아웃 뒤 앞 로그인의 부계정 키로 로그인하면 그 키가 귀속을 든 채 메인 키가 된다.
+   */
+  mainKeyId: string | null
 }

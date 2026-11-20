@@ -7,16 +7,19 @@
  * 목록은 한 줄에 카드 하나다. 카드에는 일러스트와 이름만 있고 설명은 없다. 도구 이름이 곧
  * 설명이어야 한다는 뜻이고, 그렇지 않은 이름은 이름 쪽을 고칠 일이다.
  *
- * 도구를 더할 때는 아래 카드를 형제로 하나 더 놓고 `TOOL_PALETTES` 에 색을 더한다. 그리고
+ * 도구는 분류로 묶는다. 위가 `데이터`(MASPI), 아래가 `계산기` 다. MASPI 는 금액을 따지는 도구가 아니라 시세를 보는
+ * 도구라 두 계산기와 하는 일이 다르다.
+ *
+ * 도구를 더할 때는 그 분류에 카드를 형제로 하나 더 놓고 `TOOL_PALETTES` 에 색을 더한다. 그리고
  * `routes.ts` 한 줄, `RootNavigator` 의 `STACK_SCREENS` 한 줄, `docs/features/utility.md`.
- * 목록을 데이터 배열로 돌리지 않는 것은 아직 둘뿐이기 때문이고, 셋쯤 되면 그때 돌린다.
  */
 
 import { Image, Pressable, View } from 'react-native'
 
 import bossProfitIllustration from '../../assets/utility/boss-profit-calculator.webp'
 import itemSplitIllustration from '../../assets/utility/item-split.webp'
-import { Text } from '../../components/atoms'
+import maspiIllustration from '../../assets/utility/maspi.webp'
+import { Badge, Text } from '../../components/atoms'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
@@ -25,7 +28,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { useThemeMode } from '../../theme/context'
 import type { ThemeMode } from '../../types/theme'
-import { BOSS_PROFIT_CALCULATOR_TOOL_NAME, ITEM_SPLIT_TOOL_NAME } from './tool-names'
+import { BOSS_PROFIT_CALCULATOR_TOOL_NAME, ITEM_SPLIT_TOOL_NAME, MASPI_TOOL_NAME } from './tool-names'
 
 interface ToolPalette {
   /** 카드 바탕 */
@@ -39,7 +42,12 @@ interface ToolPalette {
  *
  * 일러스트는 색이 정해진 그림이라, 테마 색을 따르면 그림과 바탕이 어긋난다.
  */
-const TOOL_PALETTES: Record<'itemSplit' | 'bossProfit', Record<ThemeMode, ToolPalette>> = {
+const TOOL_PALETTES: Record<'maspi' | 'itemSplit' | 'bossProfit', Record<ThemeMode, ToolPalette>> = {
+  // 그림의 보라 막대 · 분홍 선과 겹치지 않는 청록이다.
+  maspi: {
+    light: { tint: '#D5F2EC', ink: '#0E5E52' },
+    dark: { tint: '#102522', ink: '#9FE3D5' },
+  },
   itemSplit: {
     light: { tint: '#E3DAFC', ink: '#4A3A9A' },
     dark: { tint: '#1E1A30', ink: '#D2C7FF' },
@@ -65,9 +73,9 @@ const ILLUSTRATION_LANE = 96
  * 가운데 정렬이다. 정렬은 `Text` 의 `text-center` 가 아니라 이 줄의 `justify-center` 가 한다.
  * 글자가 단어별 flex 아이템이라 각 줄을 미는 것이 그쪽 축이기 때문이다.
  */
-function ToolLabel(props: { text: string; color: string }): React.JSX.Element {
+function ToolLabel(props: { text: string; color: string; beta?: boolean }): React.JSX.Element {
   return (
-    <View className="flex-1 flex-row flex-wrap justify-center gap-x-1">
+    <View className="flex-1 flex-row flex-wrap items-center justify-center gap-x-1">
       {props.text.split(' ').map((word, index) => (
         <Text
           key={`${word}-${index}`}
@@ -77,6 +85,11 @@ function ToolLabel(props: { text: string; color: string }): React.JSX.Element {
           {word}
         </Text>
       ))}
+      {props.beta === true && (
+        <Badge variant="primary" size="sm" className="ml-0.5">
+          beta
+        </Badge>
+      )}
     </View>
   )
 }
@@ -86,6 +99,8 @@ function ToolCard(props: {
   name: string
   palette: ToolPalette
   illustration: React.ReactNode
+  /** 베타 기능이면 이름 오른쪽에 `beta` 배지 */
+  beta?: boolean
   onPress: () => void
 }): React.JSX.Element {
   return (
@@ -105,8 +120,18 @@ function ToolCard(props: {
       >
         {props.illustration}
       </View>
-      <ToolLabel text={props.name} color={props.palette.ink} />
+      <ToolLabel text={props.name} color={props.palette.ink} beta={props.beta} />
     </Pressable>
+  )
+}
+
+/** 분류 하나. 섹션 제목 아래에 카드를 10 씩 띄워 쌓는다. */
+function ToolGroup(props: { title: string; children: React.ReactNode }): React.JSX.Element {
+  return (
+    <View className="gap-2">
+      <Text className="px-1 text-sm font-bold text-text">{props.title}</Text>
+      <View className="gap-2.5">{props.children}</View>
+    </View>
   )
 }
 
@@ -127,31 +152,45 @@ export function UtilityScreen(): React.JSX.Element {
           </PageHeader>
         }
       >
-        <View className="gap-2.5 px-4 pb-4">
-          <ToolCard
-            name={ITEM_SPLIT_TOOL_NAME}
-            palette={TOOL_PALETTES.itemSplit[mode]}
-            // 원본 400×560. 카드(80)보다 크게 그려 위아래를 잘라 내고, 계산기 화면 부분이 보이게 둔다.
-            illustration={
-              <Image
-                source={itemSplitIllustration}
-                style={{ position: 'absolute', left: 6, top: -14, width: 107, height: 150 }}
-              />
-            }
-            onPress={() => navigation.navigate('UtilityItemSplit')}
-          />
-          <ToolCard
-            name={BOSS_PROFIT_CALCULATOR_TOOL_NAME}
-            palette={TOOL_PALETTES.bossProfit[mode]}
-            // 원본 정사각. 왕관과 눈이 보이도록 위에서 28 잘라 낸다.
-            illustration={
-              <Image
-                source={bossProfitIllustration}
-                style={{ position: 'absolute', left: 4, top: -28, width: 120, height: 120 }}
-              />
-            }
-            onPress={() => navigation.navigate('UtilityBossProfitCalculator')}
-          />
+        <View className="gap-4 px-4 pb-4">
+          <ToolGroup title="데이터">
+            <ToolCard
+              name={MASPI_TOOL_NAME}
+              palette={TOOL_PALETTES.maspi[mode]}
+              beta
+              // 원본 정사각. 막대 위의 꺾은선이 보이도록 위에서 18 잘라 낸다.
+              illustration={
+                <Image source={maspiIllustration} style={{ position: 'absolute', left: 2, top: -18, width: 116, height: 116 }} />
+              }
+              onPress={() => navigation.navigate('UtilityMaspi')}
+            />
+          </ToolGroup>
+          <ToolGroup title="계산기">
+            <ToolCard
+              name={ITEM_SPLIT_TOOL_NAME}
+              palette={TOOL_PALETTES.itemSplit[mode]}
+              // 원본 400×560. 카드(80)보다 크게 그려 위아래를 잘라 내고, 계산기 화면 부분이 보이게 둔다.
+              illustration={
+                <Image
+                  source={itemSplitIllustration}
+                  style={{ position: 'absolute', left: 6, top: -14, width: 107, height: 150 }}
+                />
+              }
+              onPress={() => navigation.navigate('UtilityItemSplit')}
+            />
+            <ToolCard
+              name={BOSS_PROFIT_CALCULATOR_TOOL_NAME}
+              palette={TOOL_PALETTES.bossProfit[mode]}
+              // 원본 정사각. 왕관과 눈이 보이도록 위에서 28 잘라 낸다.
+              illustration={
+                <Image
+                  source={bossProfitIllustration}
+                  style={{ position: 'absolute', left: 4, top: -28, width: 120, height: 120 }}
+                />
+              }
+              onPress={() => navigation.navigate('UtilityBossProfitCalculator')}
+            />
+          </ToolGroup>
         </View>
       </ScreenScroll>
     </View>

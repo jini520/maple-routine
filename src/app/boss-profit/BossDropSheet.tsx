@@ -30,7 +30,7 @@ import { appImage, dropItemIconOf } from '../../lib/assets/asset-lookup'
 import { dropItemNameOf, isValuableDropItem } from '../../lib/drop/drop-items'
 import { dropPromptOf } from '../../lib/drop/drop-prompt'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
-import { dropPayoutMeso, dropShareFieldsOf, formatMesoCompact } from '../../lib/drop/drop-price'
+import { cardPayoutMeso, dropPayoutMeso, dropShareFieldsOf, formatMesoCompact } from '../../lib/drop/drop-price'
 import { bossNameOf, getMaxPartySize } from '../../lib/boss/bosses'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types'
 import type { DropCandidate, DropCategory, RecordedDrop, SelectableDropCategory } from '../../types/drops'
@@ -389,6 +389,8 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
         sale: saleSeed,
         split: splitSeed,
       },
+      // 저장 뒤 타일 알약에 적힐 값과 같은 셈이다.
+      payout: { label: '받는 금액', of: cardPayoutMeso },
       // 버튼 글자가 **지금 누르면 무슨 일이 나는가**를 말한다. 저장과 다음을 두 버튼으로
       // 두었더니 어느 쪽이 값을 쓰는지가 안 읽혔다(사용자 지적).
       ...confirmLabels({ 하나: items.length === 1, 마지막, 자리: index, 전체: items.length, 매긴것, 지금매김 }),

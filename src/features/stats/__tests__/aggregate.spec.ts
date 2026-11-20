@@ -1,5 +1,5 @@
 import type { DayRecord } from '../../cashbook/records'
-import type { IncomeRecord } from '../../../storage/income'
+import type { HuntingCalculatorDetail, IncomeRecord } from '../../../storage/income'
 import type { SpendRecord } from '../../../storage/spend'
 import {
   bossTotalsBetween,
@@ -7,6 +7,7 @@ import {
   characterCategoriesBetween,
   characterTotalsBetween,
   cumulativeNet,
+  huntTotalsBetween,
   totalsBetween,
   totalsSeries,
 } from '../aggregate'
@@ -87,10 +88,11 @@ function dropSale(ocid: string, characterName: string, payoutMeso: number): DayR
   }
 }
 
-function enhancement(characterName: string, category: 'starforce' | 'cube_reset', payoutMeso: number): DayRecord {
+function enhancement(ocid: string, characterName: string, category: 'starforce' | 'cube_reset', payoutMeso: number): DayRecord {
   return {
     kind: 'enhancement',
     category,
+    ocid,
     characterName,
     payoutMeso,
     count: 1,
@@ -105,7 +107,7 @@ describe('totalsBetween', () => {
     const byDate = {
       '2026-09-23': [crystal('a', '낟낟', 999)],
       '2026-09-24': [crystal('a', '낟낟', 500), spend(null, '', { mesoAmount: 120 })],
-      '2026-09-30': [enhancement('낟낟', 'starforce', 80)],
+      '2026-09-30': [enhancement('a', '낟낟', 'starforce', 80)],
       '2026-10-01': [income(null, '', { mesoAmount: 777 })],
     }
     expect(totalsBetween(byDate, WEEK)).toEqual({ incomeMeso: 500, expenseMeso: 200, netMeso: 300 })
@@ -176,14 +178,13 @@ describe('characterTotalsBetween', () => {
     ])
   })
 
-  // 강화 기록은 이름만 든다. 지금 이름과 같으면 그 캐릭터에 붙고, 개명 전 이름이면 따로 선다.
-  it('강화 지출은 기록의 이름으로 붙고 모르는 이름은 따로 선다', () => {
+  // 강화 줄은 그날 그 이름이었던 캐릭터(ocid)에 붙어 있다. 이름으로 묶으면 이름을 바꾼 캐릭터가 둘로 갈린다.
+  it('강화 지출은 그 줄을 붙인 캐릭터로 묶이고, 이름을 바꾼 캐릭터의 옛 이름 줄도 그 캐릭터다', () => {
     const byDate = {
-      '2026-09-24': [crystal('a', '낟낟', 500), enhancement('낟낟', 'starforce', 300), enhancement('단풍라떼', 'cube_reset', 40)],
+      '2026-09-24': [crystal('a', '낟낟', 500), enhancement('a', '낟낟', 'starforce', 300), enhancement('a', '살름', 'cube_reset', 40)],
     }
     expect(characterTotalsBetween(byDate, WEEK)).toEqual([
-      { key: 'ocid:a', ocid: 'a', name: '낟낟', incomeMeso: 500, expenseMeso: 300, netMeso: 200 },
-      { key: 'name:단풍라떼', ocid: null, name: '단풍라떼', incomeMeso: 0, expenseMeso: 40, netMeso: -40 },
+      { key: 'ocid:a', ocid: 'a', name: '낟낟', incomeMeso: 500, expenseMeso: 340, netMeso: 160 },
     ])
   })
 })
@@ -197,10 +198,10 @@ describe('characterCategoriesBetween', () => {
         crystal('a', '낟낟', 500),
         dropSale('a', '낟낟', 100),
         crystal('a', '낟낟', 200),
-        enhancement('낟낟', 'starforce', 300),
+        enhancement('a', '낟낟', 'starforce', 300),
         income('b', '낟넘', { category: 'hunting', mesoAmount: 70 }),
         spend('b', '낟넘', { category: 'buff', mesoAmount: 20 }),
-        enhancement('단풍라떼', 'cube_reset', 40),
+        enhancement('c', '단풍라떼', 'cube_reset', 40),
       ],
     }
     const byKey = characterCategoriesBetween(byDate, WEEK)
@@ -214,7 +215,7 @@ describe('characterCategoriesBetween', () => {
     })
     expect(byKey.get('ocid:b')?.income.map((total) => total.key)).toEqual(['hunting'])
     expect(byKey.get('ocid:b')?.expense.map((total) => total.key)).toEqual(['buff'])
-    expect(byKey.get('name:단풍라떼')?.expense.map((total) => total.meso)).toEqual([40])
+    expect(byKey.get('ocid:c')?.expense.map((total) => total.meso)).toEqual([40])
 
     for (const row of characterTotalsBetween(byDate, WEEK)) {
       const categories = byKey.get(row.key)!
@@ -341,9 +342,9 @@ describe('categoryTotalsBetween', () => {
   it('지출 갈래는 강화 갈래와 손입력 갈래이고 0 인 갈래는 없다', () => {
     const byDate = {
       '2026-09-24': [
-        enhancement('낟낟', 'starforce', 300),
-        enhancement('낟넘', 'starforce', 100),
-        enhancement('낟넘', 'cube_reset', 50),
+        enhancement('a', '낟낟', 'starforce', 300),
+        enhancement('b', '낟넘', 'starforce', 100),
+        enhancement('b', '낟넘', 'cube_reset', 50),
         spend(null, '', { category: 'symbol', mesoAmount: 70 }),
         spend(null, '', { category: 'etc', cashAmount: 10000 }),
       ],
@@ -473,12 +474,38 @@ describe('categoryTotalsBetween', () => {
       expect(income_.find((total) => total.key === 'etc')?.parts).toEqual([{ key: 'unnamed', name: '이름 없음', meso: 30 }])
     })
 
+    // 인벤토리에서 판 기록은 이름 칸이 비어 있어 아이템 표의 이름을 친 이름처럼 쓴다. 같은 이름을 친 판매와 한 줄이다.
+    it('이름 칸이 빈 아이템 판매는 아이템 표의 이름으로 묶는다', () => {
+      const byDate = {
+        '2026-09-24': [
+          income(null, '', { category: 'item_sale', item: null, itemKey: 'soul_ether_1', mesoAmount: 70 }),
+          income(null, '', { category: 'item_sale', item: '1단계 소울 에테르', mesoAmount: 30 }),
+        ],
+      }
+      expect(categoryTotalsBetween(byDate, WEEK, 'income').find((total) => total.key === 'item_sale')?.parts).toEqual([
+        { key: 'name:1단계 소울 에테르', name: '1단계 소울 에테르', meso: 100 },
+      ])
+    })
+
+    it('목록에서 고른 아이템 구매도 아이템 표의 이름으로 묶는다', () => {
+      const byDate = {
+        '2026-09-24': [
+          spend(null, '', { category: 'item_purchase', item: null, itemKey: 'soul_ether_1', mesoAmount: 70 }),
+          spend(null, '', { category: 'item_purchase', item: '1단계 소울 에테르', mesoAmount: 30 }),
+        ],
+      }
+      expect(categoryTotalsBetween(byDate, WEEK, 'expense').find((total) => total.key === 'item_purchase')?.parts).toEqual([
+        { key: 'name:1단계 소울 에테르', name: '1단계 소울 에테르', meso: 100 },
+      ])
+    })
+
     it('강화는 장비별이고 값을 못 매긴 건은 금액에 없다', () => {
       const byDate = {
         '2026-09-24': [
           {
             kind: 'enhancement' as const,
             category: 'starforce' as const,
+            ocid: 'a',
             characterName: '낟낟',
             payoutMeso: 300,
             count: 3,
@@ -554,5 +581,138 @@ describe('bossTotalsBetween', () => {
         'lucid',
       ])
     })
+  })
+})
+
+/** 계산기로 적은 사냥의 입력. 집계가 보는 칸은 소재 · 조각 · 조각 가격뿐이다. */
+function calculator(overrides: Partial<HuntingCalculatorDetail>): HuntingCalculatorDetail {
+  return {
+    mode: 'calculator',
+    characterLevel: 280,
+    missedMobs: 0,
+    boosts: [],
+    sojae: 1,
+    fragments: 0,
+    fragmentPrice: null,
+    mesoRate: 0,
+    unionTier: 3,
+    ...overrides,
+  }
+}
+
+describe('사냥 기록의 조각 판매 대금', () => {
+  // 사냥 기록 금액에는 수수료를 뗀 조각 값이 들어 있다. 수수료를 떼기 전 값을 빼면 사냥 메소가 수수료만큼 작아진다.
+  it('수입 내역의 사냥 메소는 수수료를 뗀 조각 판매 대금만 빼고, 사냥 조각 합계는 그대로다', () => {
+    const byDate = {
+      '2026-09-24': [
+        income(null, '', {
+          category: 'hunting',
+          mesoAmount: 1650,
+          saleFeePercent: 5,
+          saleFeeMeso: 50,
+          hunt: { mode: 'manual', typedMeso: 700, fragments: 10, fragmentPrice: 100 },
+        }),
+      ],
+    }
+    expect(categoryTotalsBetween(byDate, WEEK, 'income')).toEqual([
+      {
+        key: 'hunting',
+        name: '사냥',
+        meso: 1650,
+        parts: [
+          { key: 'sol_erda_fragment', name: '솔 에르다 조각', meso: 950 },
+          { key: 'hunting_meso', name: '사냥 메소', meso: 700 },
+        ],
+      },
+    ])
+  })
+})
+
+describe('huntTotalsBetween', () => {
+  const byDate = {
+    // 기간 밖
+    '2026-09-23': [income('a', '', { category: 'hunting', mesoAmount: 9_000, hunt: calculator({ sojae: 9, fragments: 90 }) })],
+    '2026-09-24': [
+      // 계산기 · 보관
+      income('a', '', { category: 'hunting', mesoAmount: 10_000, hunt: calculator({ sojae: 3, fragments: 100 }) }),
+      // 계산기 · 그 자리에서 판매. 조각 50 × 100 = 5,000 에서 수수료 250 을 뗀 4,750 이 합계에 들어 있다
+      income('a', '', {
+        category: 'hunting',
+        mesoAmount: 24_750,
+        saleFeePercent: 5,
+        saleFeeMeso: 250,
+        hunt: calculator({ sojae: 2, fragments: 50, fragmentPrice: 100 }),
+      }),
+    ],
+    '2026-09-26': [
+      // 직접 입력 · 보관
+      income('b', '', {
+        category: 'hunting',
+        mesoAmount: 7_000,
+        hunt: { mode: 'manual', typedMeso: 7_000, fragments: 10, fragmentPrice: null },
+      }),
+      // 계산기 전 기록
+      income('b', '', { category: 'hunting', mesoAmount: 500 }),
+      income('a', '', { category: 'sol_erda_fragment', mesoAmount: 9_999, quantity: 30 }),
+      income('b', '', { category: 'hunt_loot_sale', itemKey: 'reindeer_milk', mesoAmount: 300 }),
+      income('b', '', { category: 'hunt_loot_sale', itemKey: 'reindeer_milk', mesoAmount: 200 }),
+      income('b', '', { category: 'item_sale', mesoAmount: 777 }),
+    ],
+  }
+  /** 위 기록의 조각 장부. 가격을 비운 사냥은 들어오고, 정산 · 헥사 강화는 나간다 */
+  const moves = [
+    { ocid: 'a', date: '2026-09-23', delta: 90 },
+    { ocid: 'a', date: '2026-09-24', delta: 100 },
+    { ocid: 'a', date: '2026-09-26', delta: -30 },
+    { ocid: 'b', date: '2026-09-26', delta: 10 },
+    { ocid: 'b', date: '2026-09-27', delta: -40 },
+    // 기간 뒤
+    { ocid: 'a', date: '2026-10-02', delta: -20 },
+  ]
+
+  it('소재는 계산기 기록만 세고, 소재가 없는 기록은 직접 입력 건수로 센다', () => {
+    const totals = huntTotalsBetween(byDate, WEEK, moves)
+    expect(totals.sojae).toBe(5)
+    expect(totals.manualCount).toBe(2)
+  })
+
+  it('조각은 그 기간 사냥 기록에서 얻은 것을 판 것과 보관한 것 모두 센다', () => {
+    expect(huntTotalsBetween(byDate, WEEK, moves).fragments).toBe(160)
+  })
+
+  // 장부는 어느 사냥의 조각이 언제 팔렸는지 모른다. 그래서 기간이 끝날 때 들고 있는 개수를 센다
+  it('보유 조각은 기간의 마지막 날까지의 장부를 캐릭터마다 세고, 0 아래인 캐릭터는 0 으로 더한다', () => {
+    // a: 90 + 100 − 30 = 160, b: 10 − 40 → 0
+    expect(huntTotalsBetween(byDate, WEEK, moves).heldFragments).toBe(160)
+  })
+
+  it('조각 판매는 바로 판 대금과 정산을 더하고, 메소 합계는 세 금액의 합이다', () => {
+    expect(huntTotalsBetween(byDate, WEEK, moves)).toMatchObject({
+      recorded: true,
+      huntMeso: 37_500,
+      fragmentSaleMeso: 14_749,
+      lootSaleMeso: 500,
+      totalMeso: 52_749,
+    })
+  })
+
+  // 두 카드가 같은 나눔을 써야 사냥 메소가 갈리지 않는다
+  it('사냥 메소와 메소 합계는 수입 내역의 사냥 조각과 같다', () => {
+    const hunting = categoryTotalsBetween(byDate, WEEK, 'income').find((total) => total.key === 'hunting')
+    const totals = huntTotalsBetween(byDate, WEEK, moves)
+    expect(hunting?.parts?.find((each) => each.key === 'hunting_meso')?.meso).toBe(totals.huntMeso)
+    expect(hunting?.meso).toBe(totals.totalMeso)
+  })
+
+  it('정산이나 전리품 판매만 있는 기간도 기록이 있는 기간이다', () => {
+    const settleOnly = { '2026-09-24': [income('a', '', { category: 'sol_erda_fragment', mesoAmount: 9_999, quantity: 30 })] }
+    const lootOnly = { '2026-09-24': [income(null, '', { category: 'hunt_loot_sale', itemKey: 'reindeer_milk', mesoAmount: 300 })] }
+    expect(huntTotalsBetween(settleOnly, WEEK, [])).toMatchObject({ recorded: true, sojae: 0, fragments: 0, fragmentSaleMeso: 9_999 })
+    expect(huntTotalsBetween(lootOnly, WEEK, [])).toMatchObject({ recorded: true, huntMeso: 0, lootSaleMeso: 300 })
+  })
+
+  it('사냥 · 정산 · 전리품 판매 기록이 없으면 들고 있는 조각이 있어도 기록이 없는 기간이다', () => {
+    const otherOnly = { '2026-09-24': [income(null, '', { category: 'item_sale', mesoAmount: 777 })] }
+    expect(huntTotalsBetween(otherOnly, WEEK, moves).recorded).toBe(false)
   })
 })

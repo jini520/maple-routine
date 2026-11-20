@@ -2,8 +2,11 @@
  * 값은 전부 사용자(도메인 전문가)가 준 것이다. 여기서 그 값을 못박아 다음 세션이 식을 만지다
  * 조용히 어긋나는 것을 막는다.
  */
+import enhancementCostsFixture from '../../../__fixtures__/game-data/enhancement-costs.json'
 import {
   cubeAppraisalCost,
+  findSuperiorItem,
+  parseEnhancementCosts,
   potentialResetCost,
   soulPotentialResetCost,
   starforceCostParts,
@@ -125,13 +128,57 @@ describe('스타포스 비용', () => {
 // 합계는 MVP 할인 전 두 몫으로 저장한다. 파괴 방지 추가분은 어떤 할인도 받지 않는다.
 describe('스타포스 비용의 두 몫', () => {
   it('이벤트 할인은 시도 몫에만 붙고, 파괴 방지 추가분은 할인 전 값의 200% 다', () => {
-    expect(starforceCostParts(160, 17, 30, true)).toEqual({ attemptMeso: 46_839_170, destroyDefenceMeso: 133_826_200 })
+    expect(starforceCostParts(160, 17, 30, true)).toEqual({
+      attemptMeso: 46_839_170,
+      destroyDefenceMeso: 133_826_200,
+      superiorMeso: 0,
+    })
   })
 
   it('합계에 MVP 할인을 한 번 붙이면 시도마다 붙인 합과 시도당 1 메소 안으로 같다', () => {
     const one = starforceCostParts(200, 16, 30, true)!
-    const total = { attemptMeso: one.attemptMeso * 3, destroyDefenceMeso: one.destroyDefenceMeso * 3 }
+    const total = { attemptMeso: one.attemptMeso * 3, destroyDefenceMeso: one.destroyDefenceMeso * 3, superiorMeso: 0 }
 
     expect(Math.abs(withMvpDiscount(total, 3) - withMvpDiscount(one, 3) * 3)).toBeLessThan(3)
+  })
+})
+
+// 슈페리얼 장비의 스타포스는 계열마다 1회 금액이 하나다(사용자 확인 2026-11-15).
+describe('슈페리얼 장비', () => {
+  it('이름 전체로 찾아 그 계열의 1회 비용과 그림을 낸다. 공백 · 정규화가 달라도 같은 장비다', () => {
+    expect(findSuperiorItem('타일런트 리카온 벨트')).toEqual({
+      name: '타일런트 리카온 벨트',
+      seriesKey: 'tyrant',
+      starforceCostMeso: 55_382_200,
+      iconAssetId: '49d165ed-66b2-40f0-9013-753e2d94d3bb',
+    })
+    expect(findSuperiorItem('노바 히아데스 클록')?.starforceCostMeso).toBe(18_507_900)
+    expect(findSuperiorItem('헬리시움정예 도적 벨트'.normalize('NFD'))?.starforceCostMeso).toBe(5_956_000)
+  })
+
+  // 이름에 `노바` 가 든 장비 가운데 12개는 슈페리얼이 아니다. `노바 두건` 은 스타포스를 할 수 있는 일반 장비다.
+  it('이름 일부만 같으면 슈페리얼 장비가 아니다', () => {
+    expect(findSuperiorItem('노바 두건')).toBeNull()
+    expect(findSuperiorItem('타일런트')).toBeNull()
+  })
+})
+
+describe('강화 비용 표의 계약', () => {
+  it('슈페리얼 칸이 빠지면 표 전체가 null 이다. 빈 칸으로 받으면 그 사이 받은 날의 슈페리얼 줄이 값 없이 굳는다', () => {
+    expect(parseEnhancementCosts(enhancementCostsFixture)).not.toBeNull()
+    expect(parseEnhancementCosts({ ...enhancementCostsFixture, superiorSeries: undefined })).toBeNull()
+    expect(parseEnhancementCosts({ ...enhancementCostsFixture, superiorItems: undefined })).toBeNull()
+  })
+
+  it('계열의 금액이 양의 정수가 아니면 표 전체가 null 이다', () => {
+    const withCost = (starforceCostMeso: unknown) =>
+      parseEnhancementCosts({
+        ...enhancementCostsFixture,
+        superiorSeries: [{ key: 'tyrant', name: '타일런트', starforceCostMeso }],
+      })
+
+    expect(withCost(0)).toBeNull()
+    expect(withCost(55_382_200.5)).toBeNull()
+    expect(withCost('55382200')).toBeNull()
   })
 })

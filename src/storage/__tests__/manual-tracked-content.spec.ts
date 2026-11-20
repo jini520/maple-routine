@@ -1,6 +1,7 @@
 import { installFakePreferences } from './fake-preferences'
 import {
   getManualTrackedContent,
+  moveManualTrackedContentToOcid,
   setManualTrackedContent,
   type ManualTrackedItem,
 } from '../manual-tracked-content'
@@ -113,5 +114,28 @@ describe('쓰기 실패 전파', () => {
   it('Preferences.set이 reject되면 setManualTrackedContent도 에러를 그대로 전파한다', async () => {
     prefs.set.mockRejectedValueOnce(new Error('disk full'))
     await expect(setManualTrackedContent('ocid-1', SAMPLE_ITEMS)).rejects.toThrow('disk full')
+  })
+})
+
+// 리프 뒤에 새 캐릭터에 고른 목록은 사용자가 새로 정한 것이라 옛 목록으로 덮지 않는다.
+describe('월드 리프 옮기기', () => {
+  it('새 캐릭터에 목록이 없으면 옛 목록을 옮기고 옛 키를 지운다', async () => {
+    await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
+
+    await moveManualTrackedContentToOcid('ocid-1', 'ocid-2')
+
+    await expect(getManualTrackedContent('ocid-2')).resolves.toEqual(SAMPLE_ITEMS)
+    expect(await prefs.get('manualTrackedContent:ocid-1')).toBeNull()
+  })
+
+  it('새 캐릭터에 목록이 있으면 새 목록을 두고 옛 키만 지운다', async () => {
+    const fresh: ManualTrackedItem[] = [{ contentKey: 'mu_lung_dojo', kind: 'weekly' }]
+    await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
+    await setManualTrackedContent('ocid-2', fresh)
+
+    await moveManualTrackedContentToOcid('ocid-1', 'ocid-2')
+
+    await expect(getManualTrackedContent('ocid-2')).resolves.toEqual(fresh)
+    expect(await prefs.get('manualTrackedContent:ocid-1')).toBeNull()
   })
 })

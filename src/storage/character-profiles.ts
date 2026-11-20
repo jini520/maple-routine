@@ -29,12 +29,14 @@ export interface CharacterProfileSnapshot {
    * 부르므로 이름·직업·레벨만으로 새 ocid 를 짚어야 하고, 이름 하나로는 유일하지 않다.
    */
   jobClass: string | null
+  /** `character_date_create` 의 KST 날짜. 모르면 `null` 이고, 리프 자동 판정이 리프 뒤에도 그대로인 이 값을 읽는다. */
+  createdDate?: string | null
   updatedAt: string
 }
 
 const UPSERT_SQL = `
-  INSERT INTO character_profiles (ocid, name, image_url, world, world_key, level, job_class, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO character_profiles (ocid, name, image_url, world, world_key, level, job_class, created_date, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid) DO UPDATE SET
     name = excluded.name,
     image_url = excluded.image_url,
@@ -43,12 +45,13 @@ const UPSERT_SQL = `
     world_key = COALESCE(excluded.world_key, character_profiles.world_key),
     level = COALESCE(excluded.level, character_profiles.level),
     job_class = COALESCE(excluded.job_class, character_profiles.job_class),
+    created_date = COALESCE(excluded.created_date, character_profiles.created_date),
     updated_at = excluded.updated_at
 `
 
 const INSERT_MISSING_SQL = `
-  INSERT INTO character_profiles (ocid, name, image_url, world, world_key, level, job_class, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO character_profiles (ocid, name, image_url, world, world_key, level, job_class, created_date, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(ocid) DO NOTHING
 `
 
@@ -61,6 +64,7 @@ function paramsOf(snapshot: CharacterProfileSnapshot): (string | number | null)[
     snapshot.worldKey,
     snapshot.level,
     snapshot.jobClass,
+    snapshot.createdDate ?? null,
     snapshot.updatedAt,
   ]
 }
@@ -143,6 +147,7 @@ function rowToProfile(row: Record<string, unknown>): CharacterProfileSnapshot {
     worldKey: (row.world_key as string | null | undefined) ?? null,
     level: (row.level as number | null | undefined) ?? null,
     jobClass: (row.job_class as string | null | undefined) ?? null,
+    createdDate: (row.created_date as string | null | undefined) ?? null,
     updatedAt: row.updated_at as string,
   }
 }

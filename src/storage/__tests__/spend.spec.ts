@@ -10,6 +10,7 @@ import type { MapleAccount } from '../../types'
 import { recordCharacterAccounts } from '../character-accounts'
 import {
   assignLegacySpendAccounts,
+  assignOwnerlessSpends,
   deleteSpendRecord,
   getSpendRecordsBetween,
   getSpendRecordsRevision,
@@ -57,6 +58,7 @@ const mesoSpend: SpendRecord = {
   tariffMeso: null,
   pointAmount: null,
   pointPer100mMeso: null,
+  mesoMarketFeePercent: null,
   cashAmount: null,
   hexa: null,
   recordedAt: '2026-08-23T05:00:00.000Z',
@@ -197,6 +199,31 @@ describe('고치기 · 지우기', () => {
   })
 })
 
+// 아이템 구매 · 판매의 메모. 저장 계층이 다듬으므로 어느 시트가 적어도 같은 규칙이다.
+describe('메모', () => {
+  const purchase: SpendRecord = { ...mesoSpend, category: 'item_purchase', itemKey: 'dreamy_belt', itemKind: 'equipment', quantity: null }
+
+  it('앞뒤 공백을 걷어 저장하고, 공백만 있는 메모는 칸이 비어 메모 없는 기록으로 읽힌다', async () => {
+    await insertSpendRecord({ ...purchase, memo: '  17성 3추옵\n경매장 최저가  ' })
+    await insertSpendRecord({ ...purchase, id: '6f1b0e2c-0000-4000-8000-000000000009', memo: ' \n ' })
+
+    const [kept, blank] = await getSpendRecordsBetween('2026-08-23', '2026-08-23')
+    expect(kept!.memo).toBe('17성 3추옵\n경매장 최저가')
+    expect(blank).not.toHaveProperty('memo')
+    expect(all('SELECT memo FROM cashbook_entries ORDER BY id')).toEqual([{ memo: '17성 3추옵\n경매장 최저가' }, { memo: null }])
+  })
+
+  it('고치면 메모가 바뀌고, 메모를 지우고 고치면 칸이 빈다', async () => {
+    await insertSpendRecord({ ...purchase, memo: '첫 메모' })
+
+    await updateSpendRecord({ ...purchase, memo: '고친 메모' })
+    expect((await getSpendRecordsBetween('2026-08-23', '2026-08-23'))[0]!.memo).toBe('고친 메모')
+
+    await updateSpendRecord({ ...purchase, memo: '' })
+    expect(all('SELECT memo FROM cashbook_entries')).toEqual([{ memo: null }])
+  })
+})
+
 /** 주인을 모르는 옛 기록. 계정 칸만 든 채로 남은 행이다. */
 async function insertLegacySpend(record: SpendRecord, nexonAccountId: string | null): Promise<void> {
   await insertSpendRecord(record)
@@ -281,6 +308,37 @@ describe('assignLegacySpendAccounts: 주인을 모르는 옛 기록을 메이플
       { account_id: null },
       { account_id: null },
     ])
+    expect(getSpendRecordsRevision()).toBe(before)
+  })
+})
+
+// 지금까지 앱은 넥슨 계정을 하나만 두었다. 고르지 않고 적은 기록도 그 계정의 것이라, 사용자가 적은 기록으로 보고 대표 캐릭터에게
+// 붙인다.
+describe('assignOwnerlessSpends: 남은 옛 기록을 대표 캐릭터에게 붙인다', () => {
+  const ids = ['6f1b0e2c-0000-4000-8000-000000000301', '6f1b0e2c-0000-4000-8000-000000000302', '6f1b0e2c-0000-4000-8000-000000000303']
+
+  it('메이플 ID 를 고를 수 있는 분류는 그 메이플 ID 에, 캐릭터만 고르는 분류는 그 캐릭터에 붙이고 계정 칸을 비운다', async () => {
+    await insertLegacySpend({ ...mesoSpend, id: ids[0]!, category: 'etc' }, 'account-a')
+    await insertLegacySpend({ ...mesoSpend, id: ids[1]!, category: 'buff' }, null)
+    await insertSpendRecord({ ...mesoSpend, id: ids[2]!, category: 'buff', ocid: 'ocid-다른' })
+    const before = getSpendRecordsRevision()
+
+    await assignOwnerlessSpends({ ocid: 'ocid-대표', accountId: 'maple-대표' }, ['event_bm', 'etc'])
+
+    expect(all('SELECT id, ocid, account_id, nexon_account_id FROM cashbook_entries ORDER BY id')).toEqual([
+      { id: ids[0], ocid: null, account_id: 'maple-대표', nexon_account_id: null },
+      { id: ids[1], ocid: 'ocid-대표', account_id: null, nexon_account_id: null },
+      { id: ids[2], ocid: 'ocid-다른', account_id: null, nexon_account_id: null },
+    ])
+    expect(getSpendRecordsRevision()).toBe(before + 1)
+  })
+
+  it('붙일 기록이 없으면 판이 그대로다', async () => {
+    await insertSpendRecord({ ...mesoSpend, id: ids[0]!, category: 'buff', ocid: 'ocid-1' })
+    const before = getSpendRecordsRevision()
+
+    await assignOwnerlessSpends({ ocid: 'ocid-대표', accountId: 'maple-대표' }, ['event_bm', 'etc'])
+
     expect(getSpendRecordsRevision()).toBe(before)
   })
 })

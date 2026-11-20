@@ -20,6 +20,7 @@ import { monthBounds, monthKeyOf, type CalendarAmounts } from '../../lib/calenda
 import { ledgerDaysOptions, type LedgerDays } from '../../features/cashbook/ledger-query'
 import { amountsOfDays, type DayRecord } from '../../features/cashbook/records'
 import { monthWindow } from '../../features/cashbook/range'
+import { useQuerySubscribed } from '../../features/query/subscription'
 
 const NO_RECORDS: readonly DayRecord[] = []
 
@@ -38,6 +39,8 @@ export function useMonthDays(input: {
 } {
   const months = monthWindow(input.viewMonthKey, input.todayMonthKey)
   const results = useQueries({
+    // 가계부가 안 보이는 동안(다른 탭 · 하위 페이지)은 무효화돼도 다시 읽지 않고, 다시 보일 때 한 번 읽는다.
+    subscribed: useQuerySubscribed(),
     queries: months.map((monthKey) => {
       const { from, to } = monthBounds(monthKey)
       return { ...ledgerDaysOptions(from, to), enabled: !input.paused }
