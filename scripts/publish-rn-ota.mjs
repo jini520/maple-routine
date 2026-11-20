@@ -1,25 +1,23 @@
 #!/usr/bin/env node
-// RN OTA 배포 스크립트 ([[ADR-137]]). capacitor 쪽 `publish-live-update.mjs` 의 짝이고, 두 앱이
-// **서로 다른 프로토콜**을 쓰는 동안 둘 다 산다([[ADR-137]] 대가 4).
+// RN OTA 배포 스크립트.
 //
 // 사용법: node scripts/publish-rn-ota.mjs [--platform ios|android]
-//   --platform 을 주면 그 플랫폼만 발행한다(release.md 규칙 4-1). 안 주면 둘 다.
+//   --platform 을 주면 그 플랫폼만 발행한다. 두 스토어의 바이너리가 따로 게시될 때 쓴다. 안 주면 둘 다.
 //
-// 배포 버전은 CLI 인자로 받지 않고 app.json 의 expo.version 을 그대로 쓴다 —
-// capacitor 스크립트가 같은 이유를 적어 두었다(버전을 인자로 받으면 앱에 박히는 표시값과 실제
-// 배포된 버전이 어긋나고, 그것은 배포되고 나서야 드러난다).
+// 배포 버전은 CLI 인자로 받지 않고 package.json 의 version 을 그대로 쓴다. 버전을 인자로 받으면
+// 앱에 박히는 표시값과 실제 배포된 버전이 어긋나고, 그것은 배포되고 나서야 드러난다.
 //
 // 동작: 노트 가드 → expo export → runtimeVersion 해석 → 에셋 업로드(없는 것만) → 매니페스트 생성·업로드 → 옛 파일 정리 → 왕복 확인
 //
-// ## capacitor 스크립트와 갈리는 지점 셋
+// ## 알아 둘 것 셋
 //
 // 1. **zip 한 덩이가 아니라 파일 여럿**이다. `expo-updates` 는 매니페스트 + 에셋 목록 모델이고,
-//    에셋 이름이 이미 내용의 md5 라 «서버에 이미 있는 이름은 건너뛴다» 하나로 증분 업로드가 된다
-//    ([[ADR-137]] 결정 8). 실측 293개 중 JS 만 고친 배포는 번들 2개만 오른다.
+//    에셋 이름이 이미 내용의 md5 라 **서버에 이미 있는 이름은 건너뛴다** 하나로 증분 업로드가 된다.
+//    실측 293개 중 JS 만 고친 배포는 번들 2개만 오른다.
 // 2. **버전 축이 둘**이다. 프로토콜의 정체성은 매니페스트 `id`(UUID)이고, 사용자에게 보이는
-//    `1.0.6` 은 우리 축이라 `extra.appVersion` 으로 싣는다([[ADR-137]] 결정 5).
+//    `1.0.6` 은 우리 축이라 `extra.appVersion` 으로 싣는다.
 // 3. **`runtimeVersion` 을 우리가 안 적는다.** fingerprint 정책이라 네이티브 그래프에서 계산되고,
-//    여기서는 그 값을 CLI 에 물어 파일 이름에 넣기만 한다([[ADR-137]] 결정 3).
+//    여기서는 그 값을 CLI 에 물어 파일 이름에 넣기만 한다.
 
 import { execFileSync } from 'node:child_process'
 import { createHash, randomUUID } from 'node:crypto'
@@ -28,15 +26,15 @@ import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
-// 릴리스 노트의 진실 원천을 **그대로** 읽는다([[ADR-119]] 결정 1) — capacitor 스크립트와 같은 파일을
-// 같은 이유로 읽는다. 노트가 두 벌이 되면 갈라진 순간 어느 쪽이 사실인지 알 방법이 없다.
+// 릴리스 노트는 개발 노트 화면이 읽는 `src/data/release-notes.ts` 를 **그대로** 읽는다.
+// 노트가 두 벌이 되면 갈라진 순간 어느 쪽이 사실인지 알 방법이 없다.
 import { findReleaseNote } from '../src/data/release-notes.ts'
 import { baseAppVersion, parseAppVersion } from '../src/lib/app-version.ts'
-// 노트 가드([[ADR-126]] 결정 8). **캐패시터 스크립트에 살던 것을 옮겨 왔다** — [[ADR-155]] 가 그
-// 패키지를 지우면서 이 import 가 고아가 됐고, 그때부터 이 파일은 첫 줄에서 죽어 있었다.
+// 노트 가드. **캐패시터 스크립트에 살던 것을 옮겨 왔다.** 캐패시터 앱을 지우면서(2026-08-21)
+// 이 import 가 고아가 됐고, 옮기기 전까지 이 파일은 첫 줄에서 죽어 있었다.
 import { describeReleaseNoteGap } from './release-note-gap.mjs'
 import { selectRetainedFiles } from './ota-retention.mjs'
-// 지문 못박기는 **순수 로직이라 따로 산다**([[ADR-190]]) — 이 파일이 최상위 `await` 를 쓰는 ESM
+// 지문 못박기는 **순수 로직이라 따로 산다**. 이 파일이 최상위 `await` 를 쓰는 ESM
 // 이라 테스트가 import 하지 못하기 때문이다. 그쪽에는 테스트가 붙어 있다.
 import {
   IN_REVIEW_RUNTIME_VERSIONS,
@@ -61,7 +59,7 @@ function onBox(command) {
   return execFileSync('ssh', ['-o', 'BatchMode=yes', OTA_HOST, command], { encoding: 'utf-8' })
 }
 
-/** 스토어 이동 대상([[ADR-027]] 결정 7 · `extra.storeUrl`). */
+/** 스토어 이동 대상(`extra.storeUrl`). */
 const STORE_URLS = {
   ios: 'https://apps.apple.com/app/id6797579391',
   android: 'https://play.google.com/store/apps/details?id=com.mapleroutine.app',
@@ -70,7 +68,7 @@ const STORE_URLS = {
 /**
  * `dist/` 의 파일 하나를 서버 `files/` 의 이름으로 바꾼다.
  *
- * 평평한 이름 공간에 넣어도 안전한 근거는 실측이다 — `expo export` 산출물의 기본 이름 충돌이
+ * 평평한 이름 공간에 넣어도 안전한 근거는 실측이다. `expo export` 산출물의 기본 이름 충돌이
  * **0건**이었다(에셋은 내용 md5, 번들 이름엔 플랫폼이 들어간다).
  */
 export function releaseAssetName(distRelativePath) {
@@ -78,11 +76,10 @@ export function releaseAssetName(distRelativePath) {
 }
 
 /**
- * 매니페스트 한 장([[ADR-137]] 결정 5).
+ * 매니페스트 한 장.
  *
- * `extra` 에 넣는 넷은 프로토콜에 자리가 없어서 넣는 것이지 곁다리가 아니다 — 모달이 «버전 + 용량»
- * 을 말하고([[ADR-027]]) 「자세히 보기」가 핵심 목록을 펼치고([[ADR-126]] 결정 1) 설정 화면이
- * 「사용 중」을 판정하는 재료가 전부 여기서 온다.
+ * `extra` 에 넣는 넷은 프로토콜에 자리가 없어서 넣는 것이지 곁다리가 아니다. 업데이트 모달이 보여 주는
+ * 버전과 용량, `자세히 보기` 가 펼치는 핵심 목록, 개발 노트 화면의 `사용 중` 판정이 전부 여기서 온다.
  */
 export function buildManifest({ id, createdAt, runtimeVersion, platform, bundle, assets, appVersion, highlights }) {
   // 번들은 같은 주소로 내도 nginx 의 `gzip_static` 이 옆의 `.gz` 를 압축된 채 내준다. 해시는 압축하지 않은 번들의 것이다.
@@ -109,8 +106,8 @@ export function buildManifest({ id, createdAt, runtimeVersion, platform, bundle,
     extra: {
       appVersion,
       highlights,
-      // 이 번들을 받는 데 드는 바이트. 프로토콜엔 용량 필드가 없는데 [[ADR-027]] 이 모달의 재료를
-      // «버전 + 용량» 으로 정했다. 이미 기기에 있는 에셋은 안 받으므로(`path.exists()` →
+      // 이 번들을 받는 데 드는 바이트. 프로토콜엔 용량 필드가 없는데 업데이트 모달은 버전과 용량을
+      // 보여 준다. 이미 기기에 있는 에셋은 안 받으므로(`path.exists()` →
       // ALREADY_EXISTS) **번들 크기**가 사용자가 실제로 기다리는 양에 가장 가깝다.
       // 압축한 크기를 싣는다. 실제로 받는 양이고, 앱은 이 값이 5MB 이하면 묻지 않고 받는다.
       sizeBytes: bundle.compressedSize,
@@ -122,7 +119,7 @@ export function buildManifest({ id, createdAt, runtimeVersion, platform, bundle,
 /**
  * `expo-updates` 가 에셋 파일을 저장할 때 쓰는 키.
  *
- * 클라이언트가 «같은 key 면 같은 에셋» 으로 취급하므로(`guides/general.md`), 내용 해시를 그대로
+ * 클라이언트가 **같은 key 면 같은 에셋**으로 취급하므로(`guides/general.md`), 내용 해시를 그대로
  * 쓰는 것이 그 가정과 정확히 맞는다.
  */
 function sha256Base64Url(buffer) {
@@ -149,7 +146,7 @@ function contentTypeFor(ext) {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  // 저장소 루트가 곧 앱 프로젝트다([[ADR-155]] 결정 2) — 종전 `packages/app-rn` 자리다.
+  // 저장소 루트가 곧 앱 프로젝트다.
   const appDir = join(import.meta.dirname, '..')
   const distDir = join(appDir, 'dist')
 
@@ -174,8 +171,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1)
   }
 
-  // 노트·핵심 목록 없이는 배포가 나가지 않는다([[ADR-119]] 결정 6 + [[ADR-126]] 결정 8).
-  // 빌드(몇 분)보다 **앞**인 것이 요점이다 — capacitor 스크립트가 같은 자리에 둔 이유와 같다.
+  // 노트·핵심 목록 없이는 배포가 나가지 않는다.
+  // 빌드(몇 분)보다 **앞**인 것이 요점이다. 빌드가 끝난 뒤에 멈추면 그 몇 분을 버린다.
   // 패치 노트는 기본 버전 노트에 이어 붙인다. `1.0.10+1` 은 `1.0.10` 노트를 쓴다.
   const noteVersion = baseAppVersion(appVersion)
   const note = findReleaseNote(noteVersion)
@@ -185,10 +182,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     process.exit(1)
   }
 
-  // ── 못박은 지문 대조 ([[ADR-190]] 결정 2) ────────────────────────────────────────
+  // ── 못박은 지문 대조 ────────────────────────────────────────────────────────────────
   //
-  // **노트 가드와 같은 자리**에 둔다 — 빌드(몇 분) 앞이라야 고칠 시간이 있고, 여기서 걸리는
-  // 사고는 «배포는 성공했는데 스토어 사용자 전원에게 거짓 모달» 이라 사후에 알아채기 가장 어렵다.
+  // **노트 가드와 같은 자리**에 둔다. 빌드(몇 분) 앞이라야 고칠 시간이 있고, 여기서 걸리는
+  // 사고는 **배포는 성공했는데 스토어 사용자 전원에게 거짓 모달** 이라 사후에 알아채기 가장 어렵다.
   const latestBaseUrl = `${appConfig.expo.updates.url.replace(/\/manifest$/, '')}/latest`
   for (const platform of PLATFORMS) {
     const pin = pins[platform]
@@ -201,7 +198,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       })
       published = response.ok ? await response.json() : null
     } catch {
-      // 조회 자체가 실패하면 «어긋났다» 를 말할 근거가 없다 — 그때는 못 막는다(앱의
+      // 조회 자체가 실패하면 **어긋났다**를 말할 근거가 없다. 그때는 못 막는다(앱의
       // `checkStoreRequired` 가 같은 이유로 실패를 삼킨다).
       published = null
     }
@@ -219,7 +216,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (Object.keys(pins).length > 0) {
     console.error(
       `지문을 못박은 발행입니다(${Object.keys(pins).join(', ')}). 에셋 이름을 옛 바이너리에 맞추는 장치가 없어 나갈 수 없습니다.\n` +
-        '  git log -- scripts/ota-legacy-asset-paths.cjs 에서 되살리세요(docs/foundation/release.md 규칙 6).',
+        '  git log -- scripts/ota-legacy-asset-paths.cjs 에서 되살리세요. 이름 표는 그 바이너리가 설치된 기기의 logcat embeddedAssetFileMap 에서 뽑습니다.',
     )
     process.exit(1)
   }
@@ -233,8 +230,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const metadata = JSON.parse(readFileSync(join(distDir, 'metadata.json'), 'utf-8'))
 
   console.log('[2/5] runtimeVersion 해석 중...')
-  // fingerprint 정책이라 값이 **계산된다**([[ADR-137]] 결정 3). 우리가 적지 않는 것이 요점이다.
-  // 출력은 **JSON** 이다(`{"runtimeVersion":"…","fingerprintSources":[…]}`) — 맨 줄을 그대로
+  // fingerprint 정책이라 값이 **계산된다**. 우리가 적지 않는 것이 요점이다.
+  // 출력은 **JSON** 이다(`{"runtimeVersion":"…","fingerprintSources":[…]}`). 맨 줄을 그대로
   // 쓰면 JSON 통째로 파일 이름에 들어간다. 실측으로 확인한 형식이고, 형식이 바뀌면 아래 가드가
   // 파일 이름을 만들기 전에 막는다.
   const computedRuntimeVersions = Object.fromEntries(
@@ -249,7 +246,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ]),
   )
 
-  // 못박은 값이 있으면 그것이 이긴다([[ADR-190]] 결정 1) — 트리가 스토어 바이너리의 지문을
+  // 못박은 값이 있으면 그것이 이긴다. 트리가 스토어 바이너리의 지문을
   // 재현하지 못하는 동안의 상태다.
   const resolved = resolveRuntimeVersions(computedRuntimeVersions, pins)
   const runtimeVersions = Object.fromEntries(
@@ -266,7 +263,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   for (const platform of PLATFORMS) {
     const { pinned } = resolved[platform]
-    // **조용히 못박지 않는다** — 다음 사람이 트리 계산값으로 나가고 있다고 믿으면 안 된다.
+    // **조용히 못박지 않는다.** 다음 사람이 트리 계산값으로 나가고 있다고 믿으면 안 된다.
     console.log(
       pinned
         ? `      ${platform}=${runtimeVersions[platform]} ⚑ 못박음(${pinned.binaryAppVersion} 스토어 바이너리) · 트리 계산값 ${computedRuntimeVersions[platform]} 은 안 씀`
@@ -290,24 +287,24 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   // ── 올릴 것을 **`metadata.json` 에서** 정한다(디렉터리를 훑지 않는다) ──────────────────
   //
-  // 훑던 코드가 실제 사고를 냈다(2026-08-14). 전제는 «파일 이름이 곧 내용» 이었는데 **번들에는
+  // 훑던 코드가 실제 사고를 냈다(2026-08-14). 전제는 **파일 이름이 곧 내용**이었는데 **번들에는
   // 그것이 거짓**이다:
-  //   · `assets/<md5>` — 이름이 내용의 md5 다(293/293 실측 확인). 전제가 참이다.
-  //   · `_expo/static/js/<platform>/index-<hash>.hbc` — 그 `<hash>` 는 Hermes **이전** 단계의
+  //   · `assets/<md5>`: 이름이 내용의 md5 다(293/293 실측 확인). 전제가 참이다.
+  //   · `_expo/static/js/<platform>/index-<hash>.hbc`: 그 `<hash>` 는 Hermes **이전** 단계의
   //     것이라, **같은 이름으로 다른 바이트**가 나온다.
   //
-  // 그래서 두 번째 배포에서 «이미 있는 이름» 으로 걸러져 번들이 안 올라갔고, 매니페스트에는 새로
-  // 계산한 sha256 이 실렸다. 앱은 받아서 해시를 대조하다 실패한다 —
+  // 그래서 두 번째 배포에서 **이미 있는 이름**으로 걸러져 번들이 안 올라갔고, 매니페스트에는 새로
+  // 계산한 sha256 이 실렸다. 앱은 받아서 해시를 대조하다 실패한다.
   // `AssetsFailedToLoad ... SHA-256 did not match expected`. 배포도 성공하고 매니페스트도 멀쩡해
   // **앱을 실제로 실행하기 전에는 아무 데서도 안 드러난다.**
   //
   // 처방은 번들을 **자기 sha256 으로 이름 지어** 전제를 참으로 만드는 것이다. 이름이 내용에서
-  // 파생되면 «같은 이름 = 같은 내용» 이 규칙이 아니라 **구조**가 된다.
+  // 파생되면 **같은 이름 = 같은 내용**이 규칙이 아니라 **구조**가 된다.
   const plans = PLATFORMS.map((platform) => {
     const fileMetadata = metadata.fileMetadata[platform]
     const bundlePath = join(distDir, fileMetadata.bundle)
     const bundleBuffer = readFileSync(bundlePath)
-    // 내용에서 파생된 이름 — 위 사고를 구조적으로 불가능하게 만드는 한 줄이다.
+    // 내용에서 파생된 이름. 위 사고를 구조적으로 불가능하게 만드는 한 줄이다.
     const bundleName = `bundle-${platform}-${createHash('sha256').update(bundleBuffer).digest('hex')}.hbc`
     // nginx 가 그대로 내줄 압축본. 이름이 원본 이름에서 나오므로 같은 이름이면 같은 내용이다.
     const compressed = gzipSync(bundleBuffer, { level: 9 })
@@ -329,7 +326,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         const buffer = readFileSync(localPath)
         return {
           localPath,
-          // 에셋은 Metro 가 이미 내용 md5 로 이름 짓는다 — 그대로 쓴다.
+          // 에셋은 Metro 가 이미 내용 md5 로 이름 짓는다. 그대로 쓴다.
           name: releaseAssetName(asset.path),
           key: md5Hex(buffer),
           ext: asset.ext,
@@ -387,10 +384,10 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
     manifestFiles.push(manifestPath)
 
-    // `/latest` 가 읽는 파일([[ADR-137]] 결정 4) — 프로토콜이 204 로 삼키는 «스토어 업데이트 필요»
-    // 를 되살리는 유일한 재료다.
-    // 받는 지문 목록([[ADR-268]] 결정 2). 발행 지문 + 심사 중인 바이너리. 값 하나로 두면 심사
-    // 담당자가 아직 갱신되지 않은 이 파일 때문에 잠긴다.
+    // `/latest` 가 읽는 파일. 프로토콜이 204 로 삼키는 **스토어 업데이트 필요**를 이 파일로
+    // 되살린다.
+    // 받는 지문 목록은 발행 지문 + 심사 중인 바이너리다. 값 하나로 두면 발행할 때마다 심사 중인
+    // 지문이 빠져 심사 담당자와 TestFlight 의 앱이 잠긴다.
     const accepted = resolveAcceptedRuntimeVersions(runtimeVersions, IN_REVIEW_RUNTIME_VERSIONS)[platform]
     const latestPath = join(metaDir, `latest-${platform}.json`)
     writeFileSync(
@@ -445,18 +442,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   rmSync(workDir, { recursive: true, force: true })
 
-  // [6/6] **왕복 확인** — 클라이언트가 묻는 그대로 물어본다.
+  // [6/6] **왕복 확인**. 클라이언트가 묻는 그대로 물어본다.
   //
   // 이 단계가 있는 이유는 실제로 당한 사고 때문이다(2026-08-14). `runtimeVersion` 은 fingerprint 라
-  // **네이티브 트리의 함수**인데, 배포한 뒤 `expo prebuild` 를 돌리자 값이 바뀌었다
-  // (`2f68d187…` → `d1111d84…`). 매니페스트는 **아무도 묻지 않을 이름**으로 릴리스에 남았고,
-  // 앱은 204(업데이트 없음)를 받는다. **어디에서도 에러가 나지 않는다** — 배포도 성공하고 앱도
+  // **네이티브 트리의 함수**인데, 배포한 뒤 네이티브 트리가 바뀌어 값이 바뀌었다
+  // (`2f68d187…` → `d1111d84…`). 매니페스트는 **아무도 묻지 않을 이름**으로 남았고,
+  // 앱은 204(업데이트 없음)를 받았다. **어디에서도 에러가 나지 않는다.** 배포도 성공하고 앱도
   // 안 죽고, 그저 영원히 업데이트가 없다.
   //
-  // 그래서 «올렸다» 로 끝내지 않고 **«받아진다»** 까지 확인한다. 파일 이름·Worker 주소·헤더 중
+  // 그래서 **올렸다**로 끝내지 않고 **받아진다**까지 확인한다. 파일 이름 · 매니페스트 주소 · 헤더 중
   // 하나라도 어긋나면 여기서 걸린다.
-  //
-  // 순서 규칙: **네이티브를 건드렸으면 `expo prebuild` 를 먼저 끝내고 배포하라.**
   const manifestUrl = JSON.parse(readFileSync(join(appDir, 'app.json'), 'utf-8')).expo?.updates?.url
   console.log('[6/6] 왕복 확인 중...')
   for (const platform of PLATFORMS) {
@@ -476,7 +471,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       process.exit(1)
     }
 
-    // **매니페스트가 받아지는 것만으로는 부족하다** — 앱이 실패한 지점은 그 다음이었다.
+    // **매니페스트가 받아지는 것만으로는 부족하다.** 앱이 실패한 지점은 그 다음이었다.
     // 번들을 실제로 내려받아 매니페스트가 약속한 해시와 대조한다. 이 대조가 없어서
     // *"배포 성공 · 매니페스트 정상 · 앱만 못 받음"* 이 나왔다(위 [4/5] 주석).
     // 기기와 같은 `accept-encoding` 을 보낸다. `fetch` 는 응답을 풀어서 주므로 해시는 푼 내용으로 잰다.
@@ -493,7 +488,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const actualHash = sha256Base64Url(downloaded)
     if (actualHash !== launchAsset.hash) {
       console.error(
-        `${platform}: 번들 해시가 어긋납니다 — 앱이 받아서 버립니다.\n` +
+        `${platform}: 번들 해시가 어긋납니다. 앱이 받아서 버립니다.\n` +
           `  url=${launchAsset.url}\n  매니페스트=${launchAsset.hash}\n  실제=${actualHash}`,
       )
       process.exit(1)

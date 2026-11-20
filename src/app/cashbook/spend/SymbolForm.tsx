@@ -21,7 +21,8 @@ import {
   symbolUpgradeCost,
 } from '../../../lib/cashbook/symbol-costs'
 import { FIELD_CELL_CLASS, FieldCard, OwnerField } from '../sheet-fields'
-import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
+import { type SpendFormProps } from './form-shared'
+import { useHeaderSlot, useSaveSlot } from './form-slots'
 import { type LevelRange, type RangeEnd } from './level-range'
 import { LevelRangeGrid } from './LevelRangeGrid'
 

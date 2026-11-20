@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
-"""고가 드롭 연출(DropEff) 프레임 origin 계측 스크립트 (ADR-048).
+"""고가 드롭 연출(DropEff) 프레임 origin 계측 스크립트.
 
-`src/lib/drop-effect-layout.ts` 의 DROP_EFFECT_ORIGINS 테이블을 만들어 낸 도구다.
+`src/components/organisms/DropEffectOverlay/drop-effect-layout.ts` 의 DROP_EFFECT_ORIGINS 테이블을
+만들어 낸 도구다.
 
 왜 필요한가:
   인게임 클라이언트는 WZ 스프라이트마다 origin 좌표를 갖고 그 점 기준으로 렌더링하지만,
-  이 프로젝트 에셋은 원본 PNG 시퀀스를 검은배경 JPEG로 최적화하며(ADR-038 결정 9)
+  이 프로젝트 그림은 원본 PNG 시퀀스를 검은 배경 그림으로 압축하며
   origin 메타데이터가 유실됐다. 그래서 값을 추정하지 않고 비트맵에서 계측해 복원한다.
 
+프레임은 어디서 오나:
+  서버 앱 그림 표의 `drop_effect_<pre|loop|end>_<번호>` 다. 서버 게임 데이터(`/v1/game-data`)의
+  `appImages` 로 그림 id 를, `assets` 로 파일 이름을 찾아 `/assets/<파일>` 에서 받는다. 받은 파일은
+  임시 폴더에 두고 다음 실행에 다시 쓴다. 파일 이름이 내용의 sha256 이라 그림이 바뀌면 이름도 바뀐다.
+
 언제 다시 돌리나:
-  `src/assets/drop-effect/{pre,loop,end}` 를 다시 export 했을 때. 테이블과 에셋은
-  인덱스로만 묶여 있어서, 프레임 수가 어긋나는 것만 단위 테스트가 잡고 값의 드리프트는
-  잡지 못한다. 에셋을 갈아끼웠으면 이 스크립트를 돌려 테이블을 통째로 교체할 것.
+  서버의 빛기둥 프레임을 바꿨을 때. 테이블과 그림은 번호로만 묶여 있어서, 프레임 수가 어긋나는 것만
+  단위 테스트가 잡고 값의 드리프트는 잡지 못한다. 그림을 갈아끼웠으면 이 스크립트를 돌려 테이블을
+  통째로 교체할 것.
 
 사용법:
   pip install numpy pillow
@@ -22,11 +28,11 @@
   ① 하단 80행(지면 플레어)의 휘도 가중 중심을 x 초기값으로 잡고,
   ② loop 전 프레임 평균을 템플릿 삼아 matched filter(Σ template·frame)로 재정합,
   ③ 템플릿을 다시 만들며 ITERATIONS 회 반복, ④ 포물선 보간으로 x 를 서브픽셀까지 내린다.
-  pre/end 는 기둥 길이가 달라 SSD 가 아니라 matched filter 를 쓴다 — 겹치는 하단부만으로
+  pre/end 는 기둥 길이가 달라 SSD 가 아니라 matched filter 를 쓴다. 겹치는 하단부만으로
   정합되므로 짧은 프레임(pre/0)이나 꺼져가는 프레임(end/4)도 같은 기준으로 맞는다.
 
   y 는 정합 중에는 자유도로 열어 두지만(±SEARCH_RADIUS_Y), 결과는 쓰지 않고 **출력 테이블의
-  y 는 항상 비트맵 높이**다. 렌더링 기준이 지면선이고 그게 곧 비트맵 바닥이기 때문 — 전 프레임의
+  y 는 항상 비트맵 높이**다. 렌더링 기준이 지면선이고 그게 곧 비트맵 바닥이기 때문이다. 전 프레임의
   콘텐츠 하단 여백이 3~6px로 일정하고, 세로 정합 점수 곡선은 ±12px 구간에서 5% 이내로 평평해
   세로 미세조정은 신호가 아니라 노이즈다. 그럼에도 정합 중에 y 를 묶어두지 않는 이유는 그래야
   x 가 조금 더 안정적으로 잡히기 때문이다(기둥 몸통 축 표준편차 0.37px vs 묶었을 때 0.44px).
@@ -35,7 +41,10 @@
 """
 
 import argparse
+import json
 import sys
+import tempfile
+import urllib.request
 from pathlib import Path
 
 try:
@@ -44,7 +53,8 @@ try:
 except ImportError:  # pragma: no cover - 개발자 도구라 런타임 의존성 아님
     sys.exit("numpy 와 pillow 가 필요합니다: pip install numpy pillow")
 
-ASSETS = Path(__file__).resolve().parent.parent / "src" / "assets" / "drop-effect"
+SERVER = "https://mapleroutine.store"
+CACHE = Path(tempfile.gettempdir()) / "maple-routine-drop-effect"
 PHASES = ("pre", "loop", "end")
 
 # 정합용 캔버스. 가장 큰 프레임(약 285x826)이 앵커 기준으로 다 들어가고 탐색 여유가 있으면 된다.
@@ -53,26 +63,38 @@ ANCHOR_X, ANCHOR_Y = 280, 862
 
 SEARCH_RADIUS_X = 24  # 관측된 최대 어긋남이 26px 이라 넉넉히 잡는다.
 SEARCH_RADIUS_Y = 8  # 정합 자유도로만 쓰고 결과는 버린다(docstring 참고).
-# 템플릿이 매 회 갱신돼 마지막까지 1px 안팎에서 미세하게 흔들린다 — 수렴을 기다리지 않고 회차로 끊는다.
+# 템플릿이 매 회 갱신돼 마지막까지 1px 안팎에서 미세하게 흔들린다. 수렴을 기다리지 않고 회차로 끊는다.
 # 이 값을 바꾸면 결과가 서브픽셀 단위로 달라진다(현재 테이블은 6회 기준).
 ITERATIONS = 6
 EMPTY_MAX = 0.05  # 이 밝기에 못 미치면 정합할 내용이 없는 프레임(end 마지막 = 완전 페이드아웃)
 
 
-def load_phase(phase):
-    """`0.webp`, `1.webp` … 를 숫자 순으로 읽는다(파일명 렉시코 정렬 함정 방지: 10 < 2).
+def frame_files():
+    """단계마다 프레임 파일 이름을 번호 순으로 고른다(파일명 렉시코 정렬 함정 방지: 10 < 2)."""
+    with urllib.request.urlopen(f"{SERVER}/v1/game-data", timeout=30) as response:
+        data = json.load(response)
+    file_of = {row["id"]: row["file"] for row in data["assets"]["files"]}
+    numbered = {phase: [] for phase in PHASES}
+    for image in data["appImages"]["images"]:
+        parts = image["key"].split("_")
+        # 키는 drop_effect_<단계>_<번호> 다. 같은 표의 screen 연출은 다른 그림이라 뺀다.
+        if len(parts) == 4 and parts[:2] == ["drop", "effect"] and parts[2] in numbered:
+            numbered[parts[2]].append((int(parts[3]), file_of[image["assetId"]]))
+    return {phase: [name for _, name in sorted(rows)] for phase, rows in numbered.items()}
 
-    확장자를 둘 다 받는 이유는 `lib/drop-effect-frames.ts` 와 같다 — 프레임은 JPEG 였다가 WebP 로
-    바뀌었고([[ADR-093]] 결정 2 정정), `*.jpg` 만 훑던 이 스크립트는 그 뒤로 «프레임을 찾을 수
-    없습니다» 만 뱉었다(2026-08-26 확인). 재계측 경로가 문서에 적힌 채로 죽어 있었던 셈이다.
-    """
-    paths = sorted(
-        [*(ASSETS / phase).glob("*.jpg"), *(ASSETS / phase).glob("*.webp")],
-        key=lambda p: int(p.stem),
-    )
-    if not paths:
-        sys.exit(f"프레임을 찾을 수 없습니다: {ASSETS / phase}")
-    return [np.asarray(Image.open(p).convert("L"), dtype=np.float32) / 255 for p in paths]
+
+def load_phase(phase, names):
+    """번호 순 프레임을 받아 0~1 휘도 배열로 읽는다."""
+    if not names:
+        sys.exit(f"서버에 {phase} 프레임이 없습니다")
+    CACHE.mkdir(parents=True, exist_ok=True)
+    frames = []
+    for name in names:
+        path = CACHE / name
+        if not path.exists():
+            urllib.request.urlretrieve(f"{SERVER}/assets/{name}", path)
+        frames.append(np.asarray(Image.open(path).convert("L"), dtype=np.float32) / 255)
+    return frames
 
 
 def base_axis(frame, rows=80):
@@ -140,7 +162,7 @@ def measure(frames):
 
 
 def beam_axis(canvas, top=620, bottom=120):
-    """정렬 결과 평가용 — 기둥 몸통 구간의 축 x."""
+    """정렬 결과 평가용. 기둥 몸통 구간의 축 x."""
     band = canvas[ANCHOR_Y - top : ANCHOR_Y - bottom]
     col = band.sum(axis=0)
     col = np.maximum(col - col.max() * 0.1, 0)
@@ -150,7 +172,7 @@ def beam_axis(canvas, top=620, bottom=120):
 
 
 def report_metrics(frames, origins):
-    print("\n정합 지표 — loop 전 프레임, 기둥 몸통 축 x")
+    print("\n정합 지표: loop 전 프레임, 기둥 몸통 축 x")
     print(f"{'':<22}{'표준편차':>10}{'최대-최소':>12}{'프레임 간 최대 점프':>22}")
     for label, get_x in (
         ("하단-중앙(기존 방식)", lambda f, x: f.shape[1] / 2),
@@ -170,26 +192,27 @@ def report_metrics(frames, origins):
 
 
 def emit_table(frames, origins):
-    print("\n// ↓ src/lib/drop-effect-layout.ts 의 DROP_EFFECT_ORIGINS 를 통째로 교체\n")
+    print("\n// ↓ src/components/organisms/DropEffectOverlay/drop-effect-layout.ts 의 DROP_EFFECT_ORIGINS 를 통째로 교체\n")
     print("export const DROP_EFFECT_ORIGINS: Record<DropEffectPhase, readonly DropEffectOrigin[]> = {")
     for phase in PHASES:
         print(f"  {phase}: [")
         for i, (frame, (x, _)) in enumerate(zip(frames[phase], origins[phase])):
             h, w = frame.shape  # y 는 정합 결과가 아니라 항상 비트맵 높이(= 지면선)
-            note = "" if frame.max() >= EMPTY_MAX else " — 전 픽셀 검정, 정합 대상 없음(하단-중앙)"
+            note = "" if frame.max() >= EMPTY_MAX else " (전 픽셀 검정, 정합 대상 없음, 하단-중앙)"
             print(f"    [{round(x, 1)}, {h}], // {i} ({w}x{h}){note}")
         print("  ],")
     print("}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="DropEff 프레임 origin 계측 (ADR-048)")
+    parser = argparse.ArgumentParser(description="DropEff 프레임 origin 계측")
     parser.add_argument("--metrics", action="store_true", help="TS 테이블 없이 지표만 출력")
     args = parser.parse_args()
 
-    frames = {p: load_phase(p) for p in PHASES}
+    files = frame_files()
+    frames = {p: load_phase(p, files[p]) for p in PHASES}
     print(
-        "프레임: " + ", ".join(f"{p} {len(frames[p])}장" for p in PHASES) + " — 정합 시작",
+        "프레임: " + ", ".join(f"{p} {len(frames[p])}장" for p in PHASES) + ". 정합 시작",
         file=sys.stderr,
     )
     origins = measure(frames)

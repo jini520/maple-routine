@@ -9,7 +9,6 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { fontSize, fontWeight } = require('../../typography.cjs') as {
   fontSize: Record<string, unknown>
   fontWeight: Record<string, unknown>

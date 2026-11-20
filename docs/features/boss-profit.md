@@ -19,7 +19,7 @@
 | 파일 | 하는 일 |
 |---|---|
 | `app/boss-profit/BossProfitScreen.tsx` | 헤더 · 기간 줄 · 총 수익 요약 · 캐릭터 카드 목록 |
-| `app/boss-profit/boss-profit-context.tsx` | 탭 · 기간 · 스토어 함수를 카드와 행에 넘기는 컨텍스트 |
+| `app/boss-profit/boss-profit-context.ts` | 탭 · 기간 · 스토어 함수를 카드와 행에 넘기는 컨텍스트 |
 | `app/boss-profit/CharacterAccordion.tsx` | 캐릭터 카드. 펼침 · 진행 링 · 고가 드롭 강조 · 조회 불가 배지 |
 | `app/boss-profit/AccordionBody.tsx` | 카드 본문. 주간은 월간 · 주간 라벨 줄과 보스 행, 월간은 열람 행과 주차 줄 |
 | `app/boss-profit/InsetCell.tsx` | 본문 행의 불투명 card-inset 칸. 고가 드롭 행은 칸 안에 카드보다 약한 오로라 금속빛을 깐다 |

@@ -10,7 +10,8 @@
 // 기호 둘은 데이터 `.json` 과 `src` 안 `.md` 의 설명 글까지 본다. 주석이 아니지만 같은 사람이 같은
 // 뜻으로 쓰는 자리이고, `.ts` 만 보던 사이에 스물한 건이 쌓여 있었다. `—` 는 그 글에서 날짜와 설명을
 // 잇는 목록 구분자라 소스에만 건다. 셋째만 예외가 또 있다. 아래 `DASH_ALLOWED` 를 볼 것.
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const SRC = join(__dirname, '..')
@@ -70,7 +71,7 @@ describe('주석 문체', () => {
     expect(offenders(/[「」]/, MARK_FILES)).toEqual([])
   })
 
-  it('`—` 는 정해진 두 자리에만 남는다', () => {
+  it('`—` 는 허용 목록의 자리에만 남는다', () => {
     const allow = new Set(DASH_ALLOWED.map((a) => a.file))
     expect(offenders(/—/, FILES, allow)).toEqual([])
   })
@@ -95,5 +96,37 @@ describe('주석 문체', () => {
     const stale = DASH_ALLOWED.filter((a) => !readFileSync(join(SRC, a.file), 'utf8').includes('—'))
 
     expect(stale.map((s) => s.file)).toEqual([])
+  })
+})
+
+// 설정 · 스크립트 · 네이티브 모듈도 같은 사람이 같은 글로 쓴다. 이 가드가 `src/` 만 보는 동안 그쪽에
+// `—` 가 백 줄 가까이 쌓였다. 문서(`docs/` · `*.md`)는 표의 빈 칸과 넥슨 가이드 원문이 있어 뺀다.
+describe('src 밖의 소스 문체', () => {
+  const REPO_ROOT = join(SRC, '..')
+  const SOURCES = execFileSync('git', ['ls-files'], { cwd: REPO_ROOT, encoding: 'utf8' })
+    .split('\n')
+    .filter(
+      (rel) =>
+        /\.(m?[jt]sx?|cjs|py|kt|swift|gradle|toml|podspec|sh)$|(^|\/)\.gitignore$|^\.env\.example$/.test(rel) &&
+        !rel.startsWith('src/') &&
+        existsSync(join(REPO_ROOT, rel)),
+    )
+
+  function outside(mark: RegExp): string[] {
+    const out: string[] = []
+    for (const rel of SOURCES) {
+      for (const [i, line] of readFileSync(join(REPO_ROOT, rel), 'utf8').split('\n').entries()) {
+        if (mark.test(line)) out.push(`${rel}:${i + 1}: ${line.trim().slice(0, 60)}`)
+      }
+    }
+    return out
+  }
+
+  it('훑을 것을 실제로 찾았다', () => {
+    expect(SOURCES.length).toBeGreaterThan(30)
+  })
+
+  it('`—` · `«»` · `「」` 를 쓰지 않는다', () => {
+    expect(outside(/[—«»「」]/)).toEqual([])
   })
 })

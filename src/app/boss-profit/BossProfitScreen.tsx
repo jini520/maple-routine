@@ -1,8 +1,7 @@
 /**
- * 보스 수익. 처치 보스 수익·기간 네비게이터·캐릭터별 아코디언.
+ * 보스 수익. 처치 보스 수익 · 기간 이동 · 캐릭터별 아코디언.
  *
- * 이 저장소에서 밀도가 가장 높은 화면이라 동작 명세를 따로 뽑아 뒀다
- * (`BossProfitScreen.contract.md`). 그 표가 이 파일의 계약이고, 아래 주석은 그중 코드가 실제로
+ * 화면의 결정은 `docs/features/boss-profit.md` 가 가리키는 ADR 에 있다. 아래 주석은 코드가 실제로
  * 갈린 자리만 짚는다.
  *
  * 구조가 대신 지키는 것 여섯.
@@ -62,6 +61,7 @@ import { Segment } from '../../components/molecules/Segment/Segment'
 import { tapFeedback } from '../../native/haptics'
 import { PeriodStepper } from '../../components/molecules/PeriodStepper/PeriodStepper'
 import { ValuableDropMark } from '../../components/molecules/ValuableDropMark/ValuableDropMark'
+import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
@@ -333,13 +333,9 @@ export function BossProfitScreen(): React.JSX.Element {
   }
 
   const header = (
-    // 공용 `PageHeader` 를 쓰지 않는다. 그 셸의 하단 페이드를 이 화면은 금지한다. 나머지 값은
-    // 그 컴포넌트와 같고 상단 여백을 더하지 않는 것도 함께다. 그 안전영역은 `useTopSafeAreaPx()`
-    // 다. 셸을 복제한 화면이 인셋을 직접 읽으면 이 화면만 안드로이드에서 16.7px 위에 선다.
-    //
     // 헤더는 제목 줄 하나다. 주간/월간 · 기간 이동 · 총 수익 요약은 **이 화면에서 무엇을
     // 보는가**에 딸린 것이라 콘텐츠로 내려갔다.
-    <View testID="page-header" className="z-10 px-4" style={{ paddingTop: topSafeAreaPx }}>
+    <PageHeader>
       {/* 제목과 주기 탭 둘이다. 아이템 가격 입력으로 가는 문은 오른쪽 아래에 떠 있는 원이고
           (`DropPriceFab`), `히스토리` 링크는 자리를 다시 정할 때까지 걷혀 있다. */}
       <PageHeaderTitleRow
@@ -372,7 +368,7 @@ export function BossProfitScreen(): React.JSX.Element {
         <Text className="text-lg font-bold text-text">보스 수입</Text>
         <FaqButton sheet={faq} />
       </PageHeaderTitleRow>
-    </View>
+    </PageHeader>
   )
 
   // 기간을 고르고 그 기간의 총 수익을 말하는 덩어리. 헤더가 아니라 콘텐츠의 첫 블록이다.

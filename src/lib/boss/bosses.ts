@@ -1,8 +1,8 @@
 /**
  * 보스 표 조회. 보스를 key 로 찾는 자리는 전부 이 모듈을 거친다.
  *
- * 표는 `catalog.ts` 가 든다. 번들 `src/data/bosses.json` 으로 시작하고 기기 사본과 서버 응답이
- * 덮는다. 기록 · 캐시 · 데이터 파일은 보스 key 를 들고, 이름 · 주기 · 요구 레벨 · 초상은 이 표에서
+ * 표는 `catalog.ts` 가 든다. 앱에서는 빈 표로 시작하고 기기 사본과 서버 응답이 채운다(jest 에서는
+ * fixture 로 시작한다). 기록 · 캐시 · 데이터 파일은 보스 key 를 들고, 이름 · 주기 · 요구 레벨 · 초상은 이 표에서
  * 찾는다. API 이름에서 key 를 얻는 규칙도 여기 하나다(`bossKeyOfApiName`).
  */
 import { BOSS_DIFFICULTIES, type BossCycle, type BossDifficulty } from '../../types'

@@ -28,12 +28,8 @@ import { MonthlyAccordionBody, WeeklyAccordionBody } from './AccordionBody'
 import { ItemRevenueTrigger } from './ItemRevenueTrigger'
 import { useBossProfitContext } from './boss-profit-context'
 import { CharacterPortrait } from '../../components/organisms/CharacterPortrait/CharacterPortrait'
-import {
-  CharacterIssueAmount,
-  CharacterIssueBadge,
-  CharacterIssuePopover,
-  type CharacterIssue,
-} from './CharacterIssue'
+import { CharacterIssueAmount, CharacterIssueBadge, CharacterIssuePopover } from './CharacterIssue'
+import type { CharacterIssue } from './character-issue-text'
 import {
   collectRevenueDrops,
   collectGroupValuableDrops,

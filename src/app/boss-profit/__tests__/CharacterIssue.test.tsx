@@ -7,7 +7,8 @@ import { act, fireEvent, within } from '@testing-library/react-native'
 import { Pressable, Text } from 'react-native'
 
 import { renderAtom, renderOverlay } from '../../../components/__tests__/render-atom'
-import { CHARACTER_ISSUE_LABEL, CharacterIssueBadge, CharacterIssuePopover } from '../CharacterIssue'
+import { CharacterIssueBadge, CharacterIssuePopover } from '../CharacterIssue'
+import { CHARACTER_ISSUE_LABEL } from '../character-issue-text'
 
 describe('CharacterIssueBadge', () => {
   // 문구가 처방을 가른다. 조회 불가는 캐릭터 관리에서 손봐야 하고, 동기화 실패는 새로고침이면

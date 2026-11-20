@@ -1,19 +1,12 @@
-// 웹 `BossProfitScreen.test.tsx`(3,232줄)· `.count-up.test.tsx`· `.dom-snapshot.test.tsx` 셋의
-// **명세를 읽어 다시 쓴 것**이다. 카드 안쪽 케이스는 `CharacterAccordion.test.tsx` 가 갖는다.
+// 보스 수익 화면. 카드 안쪽 케이스는 `CharacterAccordion.test.tsx` 가 갖는다.
 //
-// 옮기지 않은 계약 여섯
+// 이 파일이 보지 않는 것 넷. 구조가 대신 지키거나 RN 에 그 자리가 없다.
 //
-// ① **당김 제스처 시뮬레이션 다섯**. 임계 넘김/미달·목록 `transform`·
-//  전환 켜고 끄기는 이제 OS 가 갖는다. 남는 계약은 *"당김이 헤더 버튼과 같은
-//    재조회를 부르는가"* 와 *"의미 없는 기간에서는 꺼지는가"* 둘이고 그것은 본다.
-// ② **`fixed` 헤더 + 실측 spacer + 한 커밋 반영**. 헤더가 스크롤 뷰의 형제라 spacer 도
-//    실측도 없다. 대신 *"헤더가 셸의 `header` 로 들어간다"* 를 본다.
-// ③ **중첩 sticky 오프셋**. sticky 를 못 옮겼다(`contract.md`).
-// ④ **DOM 스냅샷 두 파일**. 트리가 다르다. RN 트리 스냅샷을 **새 기준선**으로 남기고, 그것이
-//    답하는 것은 *"앞으로 안 바뀌는가"* 뿐이다(**예전과 같은가** 는 사람이 두 앱을 나란히 놓고 답한다).
-// ⑤ **히스토리 왕복에도 언마운트되지 않는가**. 루트 스택 push 라 구조가 지킨다.
-//    화면 안에서 볼 자리가 없다.
-// ⑥ **접기 전후 스크롤**. 접기에 스크롤 코드가 아예 없다(`CharacterAccordion`).
+// ① **당김 제스처 자체**(임계 넘김 · 목록 `transform`). OS 가 갖는다. 이 파일은 당김이 층의
+//    다시 불러오기를 부르는가와 언제 도는가만 본다.
+// ② **헤더 높이 실측**. 헤더가 셸의 `header` 로 스크롤 흐름 안에 들어가 잴 것이 없다.
+// ③ **중첩 sticky 오프셋**. 화면에 고정되는 영역을 두지 않는다(`src/__tests__/sticky-policy.test.ts`).
+// ④ **하위 페이지를 오가도 언마운트되지 않는가**. 루트 스택 push 라 구조가 지킨다.
 import { act, fireEvent, within } from '@testing-library/react-native'
 import { render } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'

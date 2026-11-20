@@ -23,8 +23,10 @@ import { CASH_QUICK_ADDS, POINT_AMOUNT_QUICK_ADDS } from '../../../constants/dom
 import { spendCategoryNameOf } from '../../../lib/cashbook/categories'
 import { mesoMarketFeeOf, spentPointToMeso } from '../../../lib/cashbook/spend-catalog'
 import { ownerFieldsOf, ownerValueOf } from '../character-options'
-import { AmountInput, FieldCard, FieldRow, OwnerField, TextField, useCountField } from '../sheet-fields'
-import { RateRow, useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
+import { AmountInput, FieldCard, FieldRow, OwnerField, TextField } from '../sheet-fields'
+import { useCountField } from '../use-count-field'
+import { RateRow, type SpendFormProps } from './form-shared'
+import { useHeaderSlot, useSaveSlot } from './form-slots'
 import { useSpendSubmit } from '../../../hooks/useSpendSubmit'
 
 export function EtcForm(props: SpendFormProps): React.JSX.Element {

@@ -2,7 +2,7 @@
  * **일간** 컨텐츠 카드(화면에서 분리). 일일 퀘스트와 몬스터파크.
  *
  * 일일 퀘스트는 지역 배경 일러스트를 bleed 로 깔고, 몬스터파크는 진행 카운트를
- * 진행률 바로 보여준다. 어느 카드를 그릴지는 `renderDailyContentCard` 가 종류로 가른다.
+ * 진행률 바로 보여준다. 어느 카드를 그릴지는 `DailyContentCard` 가 종류로 가른다.
  */
 import { isContentBlocked } from '../../lib/scheduler/required-level'
 import {
@@ -17,7 +17,7 @@ import { Image, View } from 'react-native'
 
 import { Badge, Card, ProgressBar, Text } from '../../components/atoms'
 import { ILLUSTRATION_TEXT_SHADOW_STYLE } from '../../constants/style/text-styles'
-import { QUEST_STATE_LABELS, QUEST_STATE_VARIANT } from './content-badges'
+import { QUEST_STATE_LABELS, QUEST_STATE_VARIANT } from './quest-state'
 import { IllustratedCard, FadedIllustration } from '../../components/molecules/FadedIllustration/FadedIllustration'
 
 // "몬스터파크"만 배경+아이콘 카드로 확장한다. 다른 kind: 'contents' 항목이 생기면 그때
@@ -132,11 +132,12 @@ export function MonsterParkCard(props: {
 }
 
 // 카드 종류 분기를 한 곳으로 모은다. 카드 컴포넌트 자체는 그대로 재사용한다.
-export function renderDailyContentCard(
-  content: DailyContent,
+export function DailyContentCard(props: {
+  content: DailyContent
   /** 이 카드를 보는 캐릭터의 레벨. 판정은 `lib/scheduler/required-level` 한 곳이 한다. */
-  characterLevel: number | null,
-): React.JSX.Element {
+  characterLevel: number | null
+}): React.JSX.Element {
+  const { content, characterLevel } = props
   const isBlocked = isContentBlocked(characterLevel, content.contentKey)
 
   if (content.kind === 'quest') {

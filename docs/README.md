@@ -67,12 +67,13 @@ docs/
 
 - **작업을 시작할 때**: [[ADR-188]] 결정 11 · 12. 이슈 마일스톤으로 운영 버전 · 릴리즈 대기 버전 · 새 버전 가운데 어느 버전의 일인지 먼저 정한다. 운영 버전의 고침은 hotfix, 릴리즈 대기 버전의 고침은 `patch/x.y.z`, 새 버전의 작업은 develop 이다.
 - **사용자에게 물을 것이 생겼을 때**: [[ADR-188]] 결정 10. 묻기 전에 그 주제의 ADR 결정과 문서, 지금 코드, 실제 값을 모두 확인하고, 다듬은 질문을 한 번에 낸다.
+- **작업 중에 잘못된 문서 · 주석, 린트 경고, 실패하는 테스트를 찾았을 때**: [[ADR-188]] 결정 13. 지금 작업과 관계가 없어도 같은 작업에서 고친다. 보고만 하고 넘어가지 않는다.
 - **화면이나 기능을 만들거나 고칠 때**: 그 기능 문서와 ADR, 그리고 [foundation/architecture.md](./foundation/architecture.md) 의 계층 규칙과 [foundation/design-system.md](./foundation/design-system.md) 의 공용 부품.
 - **디자인을 고치거나 시안을 만들 때**: [foundation/design-system.md](./foundation/design-system.md) 의 `디자인 작업 전에` 부터 읽는다.
 - **넥슨 Open API 를 부르거나 그 응답을 다룰 때**: [foundation/nexon-api/agent-guide.md](./foundation/nexon-api/agent-guide.md) 를 먼저 읽고, [foundation/nexon-api.md](./foundation/nexon-api.md) 의 실측을 본다. 둘이 다르면 사용자에게 묻는다.
 - **게임 수치를 바꿀 때**: [foundation/game-data.md](./foundation/game-data.md). 값은 반드시 사용자에게 확인받는다.
 - **저장 형식을 바꿀 때**: [persistence/](./persistence/README.md) 의 해당 문서와 그 기능 문서.
 - **기존 사용자의 기기 데이터를 다룰 때**: [persistence/capacitor-storage.md](./persistence/capacitor-storage.md). 이름에 `capacitor` 가 붙은 파일을 지우면 안 되는 이유가 여기 있다.
-- **스토어에 올릴 바이너리를 만들 때**: [foundation/release.md](./foundation/release.md). OTA 발행은 [features/live-update.md](./features/live-update.md) 를 본다.
+- **스토어에 올릴 바이너리를 만들 때**: [foundation/release.md](./foundation/release.md). **업로드하면 그 자리에서 지문을 등록한다**(같은 문서의 `업로드하면 곧바로: 지문 등록`, [[ADR-188]] 결정 5). OTA 발행은 [features/live-update.md](./features/live-update.md) 를 본다.
 - **문서 · 주석 · 앱 문구를 쓸 때**: [foundation/writing.md](./foundation/writing.md).
 - **브랜치를 따거나 핫픽스 · 출시를 할 때, ADR 새 번호가 필요할 때**: [[ADR-188]].

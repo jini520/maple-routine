@@ -10,8 +10,8 @@
 //
 // 무엇을 훑을지는 이 파일이 아니라 `src/assets/asset-groups.ts` 가 정한다.
 // 같은 표를 생성물 검사 테스트도 읽는다(표가 두 벌이면 검사가 통과하는데 목록이 틀릴 수 있다).
-// `.ts` 를 그대로 import 하는 것은 Node 내장 타입 스트리핑이고, `publish-live-update.mjs` 가
-// `data/release-notes.ts` 를 읽는 방식과 같다.
+// `.ts` 를 그대로 import 하는 것은 Node 내장 타입 스트리핑이고, `publish-rn-ota.mjs` 가
+// `src/data/release-notes.ts` 를 읽는 방식과 같다.
 
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'

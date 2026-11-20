@@ -8,7 +8,7 @@
 // 스타일이 굳은 것처럼 보인다(이 파일이 한동안 그렇게 적혀 있었다). 아래 세 번째 describe 가
 // 그 방식이고, 그것으로만 잡히는 회귀가 있다.
 import { act, fireEvent } from '@testing-library/react-native'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import Animated, { getAnimatedStyle } from 'react-native-reanimated'
 
@@ -97,9 +97,10 @@ function ThumbHarness(props: { onFirstLayout: (fn: ItemLayout) => void }): React
   const 알리기 = props.onFirstLayout
 
   // 첫 렌더가 만든 핸들러를 붙잡아 둔다. 그것이 자리가 잡힐 때 붙어 있던 핸들러다.
+  const 첫핸들러 = useRef(thumb.onItemLayout)
   useEffect(() => {
-    알리기(thumb.onItemLayout)
-  }, [])
+    알리기(첫핸들러.current)
+  }, [알리기])
 
   return (
     <View>

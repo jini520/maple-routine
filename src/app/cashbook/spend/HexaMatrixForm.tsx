@@ -41,7 +41,8 @@ import {
   type HexaStorages,
 } from '../../../lib/cashbook/hexa-matrix'
 import { AmountInput, CharacterField, FIELD_CELL_CLASS, FieldCard, FieldRow, SelectRow } from '../sheet-fields'
-import { useHeaderSlot, useSaveSlot, type SpendFormProps } from './form-shared'
+import { type SpendFormProps } from './form-shared'
+import { useHeaderSlot, useSaveSlot } from './form-slots'
 import { type LevelRange, type RangeEnd } from './level-range'
 import { LevelRangeGrid } from './LevelRangeGrid'
 

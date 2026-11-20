@@ -129,15 +129,15 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 |---|---|---|---|
 | [ADR-001+084+235+241+247](./adr/ADR-001+084+235+241+247_utility_item-split.md) | 🟢 | utility | 판매 분배금 계산기 · 정산 금액 복사 · 비율 % 입력 · 유틸리티 도구 분류 |
 | [ADR-002+094+165+237](./adr/ADR-002+094+165+237_stats_overview.md) | 🟢 | stats | 통계 화면 |
-| [ADR-003](./adr/ADR-003_docs_writing-rules.md) | 🟢 | docs | 문서 · 주석 · 앱 문구 쓰는 규칙 |
+| [ADR-003+273](./adr/ADR-003+273_docs_writing-rules.md) | 🟢 | docs | 문서 · 주석 · 앱 문구 쓰는 규칙 |
 | [ADR-004+065](./adr/ADR-004+065_architecture_local-first-adapters.md) | 🟢 | architecture | 기기 저장소와 네이티브 어댑터 경계 |
 | [ADR-005](./adr/ADR-005_architecture_react-native.md) | 🟢 | architecture | React Native 앱 하나로 만든다 |
-| [ADR-006+069+154](./adr/ADR-006+069+154_architecture_testing.md) | 🟢 | architecture | 테스트 러너 · 검증 명령 · 네이티브 빌드 캐시 |
+| [ADR-006+069+154+271](./adr/ADR-006+069+154+271_architecture_testing.md) | 🟢 | architecture | 테스트 러너 · 검증 명령 · 네이티브 빌드 캐시 |
 | [ADR-007+077](./adr/ADR-007+077_persistence_sqlite.md) | 🟢 | persistence | SQLite 커넥션 · 스키마 진화 · 기본키 |
 | [ADR-008](./adr/ADR-008_release_android-signing.md) | 🟢 | release | Android 릴리스 서명 |
 | [ADR-009](./adr/ADR-009_release_binary-size.md) | 🟢 | release | 에셋과 스토어 바이너리 크기 |
 | [ADR-010](./adr/ADR-010_release_ios-scene.md) | 🟢 | release | 화면 회전 잠금과 iOS 씬 |
-| [ADR-011+138+257](./adr/ADR-011+138+257_live-update_protocol.md) | 🟢 | live-update | OTA 발행과 프로토콜 |
+| [ADR-011+138+257+272](./adr/ADR-011+138+257+272_live-update_protocol.md) | 🟢 | live-update | OTA 발행과 프로토콜 |
 | [ADR-012+139+183+210](./adr/ADR-012+139+183+210_live-update_prompt.md) | 🟢 | live-update | 업데이트 동의 모달과 적용 |
 | [ADR-013+151+232](./adr/ADR-013+151+232_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
 | [ADR-014](./adr/ADR-014_ads_inline.md) | 🟢 | ads | 광고 배선 |
@@ -170,7 +170,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-040+208](./adr/ADR-040+208_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
 | [ADR-041+203](./adr/ADR-041+203_boss-profit_period.md) | 🟢 | boss-profit | 보스 수익 기간 |
 | [ADR-042+135+178+212+221](./adr/ADR-042+135+178+212+221_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 · 결정석 판매 한도를 넘긴 처치의 0 메소 |
-| [ADR-043](./adr/ADR-043_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
+| [ADR-043+270](./adr/ADR-043+270_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
 | [ADR-092+112+153](./adr/ADR-092+112+153_boss-profit_redesign.md) | 🟢 | boss-profit | 보스 수익 리디자인과 고가 드롭 홀로그램 강조 |
 | [ADR-044+066+076+111+120+239](./adr/ADR-044+066+076+111+120+239_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
 | [ADR-045](./adr/ADR-045_item-drop_effect.md) | 🟢 | item-drop | 고가 드롭 연출과 강조 |
@@ -215,7 +215,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-160+200](./adr/ADR-160+200_cashbook_exclusions.md) | ⚪ | cashbook | 가계부에서 빼는 강화 기록 |
 | [ADR-161+202](./adr/ADR-161+202_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
 | [ADR-187+213+216](./adr/ADR-187+213+216_game-data_item-catalog.md) | ⚪ | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 · 고르기 목록 칸 · 묶음 표 |
-| [ADR-188+260](./adr/ADR-188+260_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기, 사용자에게 묻기 전에 확인할 것, 버전의 역할과 릴리즈 대기 단계 |
+| [ADR-188+260+269](./adr/ADR-188+260+269_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기, 사용자에게 묻기 전에 확인할 것, 버전의 역할과 릴리즈 대기 단계, 찾은 잘못을 그 자리에서 고치기 |
 | [ADR-191+230](./adr/ADR-191+230_design-system_screen-size.md) | 🟢 | design-system | 태블릿과 접는 폰 외부 화면의 배치 |
 | [ADR-209](./adr/ADR-209_inventory_items.md) | 🟢 | inventory | 인벤토리 |
 | [ADR-228](./adr/ADR-228_trade-history_page.md) | 🟢 | trade-history | 거래 내역 |

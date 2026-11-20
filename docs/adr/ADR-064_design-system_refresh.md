@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-072 · ADR-130 · ADR-160 · ADR-218 결정 3 · ADR-226
-> 관련 소스: `components/templates/ScreenScroll/` · `hooks/usePullRefresh.ts` · `features/refresh/progress.ts` · `features/ledger/useLedgerData.tsx` · `components/organisms/LoadingModal/`
+> 관련 소스: `components/templates/ScreenScroll/` · `hooks/usePullRefresh.ts` · `features/refresh/progress.ts` · `features/ledger/LedgerDataProvider.tsx` · `useLedgerData.ts` · `components/organisms/LoadingModal/`
 
 ## 배경
 
