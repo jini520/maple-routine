@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { renderHook, waitFor } from '@testing-library/react-native'
+import { act, renderHook, waitFor } from '@testing-library/react-native'
 import type { ReactNode } from 'react'
 
 jest.mock('../notice-feed', () => ({ receiveNoticeKind: jest.fn() }))
@@ -152,8 +152,10 @@ describe('useNoticeBanner', () => {
     const { result } = await renderHook(() => useNoticeBanner(), { wrapper })
     await waitFor(() => expect(result.current.notice?.id).toBe('app-2'))
 
-    await result.current.dismiss()
-    await waitFor(() => expect(result.current.notice).toBeNull())
+    await act(async () => {
+      await result.current.dismiss()
+    })
+    expect(result.current.notice).toBeNull()
   })
 
   it('기기에 닫은 기록이 있으면 처음부터 안 세운다', async () => {

@@ -103,7 +103,8 @@ describe('누르기', () => {
 describe('가계부 분류 칸', () => {
   // 앱에 든 테스트 데이터는 옛 표라 `사냥 전리품 판매` 줄이 없다.
   const 옛표 = cashbookCategoriesTable.get()
-  afterEach(() => cashbookCategoriesTable.set(옛표))
+  // 위젯이 아직 마운트돼 있어 표를 되돌리면 다시 그린다. 그 갱신도 `act` 안에서 끝낸다.
+  afterEach(() => act(() => cashbookCategoriesTable.set(옛표)))
 
   function 전리품판매를더한표(): typeof 옛표 {
     const 조각 = 옛표.categories.find((each) => each.key === 'sol_erda_fragment')!

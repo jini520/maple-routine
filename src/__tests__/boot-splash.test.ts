@@ -16,7 +16,7 @@ jest.mock('../native/splash-screen', () => ({
   hideSplashScreen: () => mockHideSplashScreen(),
 }))
 
-import { renderHook } from '@testing-library/react-native'
+import { act, renderHook } from '@testing-library/react-native'
 
 import { holdSplashUntilAppReady, SPLASH_FAILSAFE_MS } from '../boot-splash'
 import { markBootSplashDone, useBootSplashDone } from '../hooks/useBootSplashDone'
@@ -70,6 +70,10 @@ describe('holdSplashUntilAppReady', () => {
 
     const { result } = await renderHook(() => useBootSplashDone())
     expect(result.current).toBe(false)
-    markBootSplashDone()
+
+    await act(async () => {
+      markBootSplashDone()
+    })
+    expect(result.current).toBe(true)
   })
 })

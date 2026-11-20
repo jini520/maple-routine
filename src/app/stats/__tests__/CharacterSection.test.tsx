@@ -25,12 +25,10 @@ const 숨김포함 = { includeHiddenElements: true } as const
 
 /** 단상 블록 셋의 높이를 잰 것처럼 알린다. 키는 순위다 */
 async function 블록재기(view: Awaited<ReturnType<typeof 그리기>>, heights: Record<1 | 2 | 3, number>): Promise<void> {
-  await act(async () => {
-    for (const rank of [1, 2, 3] as const) {
-      const block = within(view.getByTestId(`stats-podium-${rank}`)).getByTestId('stats-podium-block')
-      fireEvent(block, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 42, height: heights[rank] } } })
-    }
-  })
+  for (const rank of [1, 2, 3] as const) {
+    const block = within(view.getByTestId(`stats-podium-${rank}`)).getByTestId('stats-podium-block')
+    await fireEvent(block, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 42, height: heights[rank] } } })
+  }
 }
 
 function 그림칸(view: Awaited<ReturnType<typeof 그리기>>, rank: number): Record<string, unknown> {
@@ -189,12 +187,11 @@ describe('CharacterSection', () => {
     const view = await 그리기()
     const 폭 = (width: number) => ({ nativeEvent: { layout: { x: 0, y: 0, width, height: 15 } } })
 
-    await act(async () => {
-      fireEvent(view.getAllByTestId('stats-podium-amount')[0]!, 'layout', 폭(45))
-      view.getAllByTestId('stats-podium-amount-measure', { includeHiddenElements: true }).forEach((measure, i) => {
-        fireEvent(measure, 'layout', 폭(i === 0 ? 60 : 30))
-      })
-    })
+    await fireEvent(view.getAllByTestId('stats-podium-amount')[0]!, 'layout', 폭(45))
+    const measures = view.getAllByTestId('stats-podium-amount-measure', { includeHiddenElements: true })
+    for (const [i, measure] of measures.entries()) {
+      await fireEvent(measure, 'layout', 폭(i === 0 ? 60 : 30))
+    }
 
     const sizes = view.getAllByTestId('stats-podium-amount').map((amount) => flattenStyle(amount.props.style).fontSize)
     expect(new Set(sizes).size).toBe(1)

@@ -56,13 +56,13 @@ it('탭을 누르면 고르는 쪽이 바뀌고, 막힌 칸은 눌러도 안 바
     <LevelRangeGrid min={0} max={30} range={{ from: 25, to: 28 }} editing="to" onChange={onChange} testID="grid" />,
   )
 
-  fireEvent.press(view.getByTestId('grid-tab-from'))
+  await fireEvent.press(view.getByTestId('grid-tab-from'))
   expect(onChange).toHaveBeenLastCalledWith({ range: { from: 25, to: 28 }, editing: 'from' })
 
   onChange.mockClear()
-  fireEvent.press(view.getByTestId('grid-level-20'))
+  await fireEvent.press(view.getByTestId('grid-level-20'))
   expect(onChange).not.toHaveBeenCalled()
 
-  fireEvent.press(view.getByTestId('grid-level-29'))
+  await fireEvent.press(view.getByTestId('grid-level-29'))
   expect(onChange).toHaveBeenLastCalledWith({ range: { from: 25, to: 29 }, editing: 'to' })
 })

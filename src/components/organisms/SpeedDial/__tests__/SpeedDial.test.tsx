@@ -2,7 +2,7 @@
 //
 // **움직임은 여기서 안 본다**. 값은 `speed-dial-motion.ts` 가 들고 그쪽 테스트가 붙든다. 여기서
 // 보는 것은 **무엇이 눌리고 무엇이 안 눌리는가** 다.
-import { act, fireEvent } from '@testing-library/react-native'
+import { fireEvent } from '@testing-library/react-native'
 import { useReducedMotion } from 'react-native-reanimated'
 
 import { flattenStyle, renderOverlay, 기본테마 } from '../../../__tests__/render-atom'
@@ -63,9 +63,7 @@ async function 그리기(options: 항목옵션 = {}) {
 }
 
 async function 누르기(view: Rendered, label: string): Promise<void> {
-  await act(async () => {
-    fireEvent.press(view.getByLabelText(label))
-  })
+  await fireEvent.press(view.getByLabelText(label))
 }
 
 describe('접혀 있을 때', () => {
@@ -145,9 +143,7 @@ describe('펼친 뒤', () => {
     const onSelectExpense = jest.fn()
     const view = await 펼치기({ onSelectIncome, onSelectExpense })
 
-    await act(async () => {
-      fireEvent.press(view.getByTestId('speed-dial-scrim-button'))
-    })
+    await fireEvent.press(view.getByTestId('speed-dial-scrim-button'))
 
     expect(view.getByLabelText('기록 추가')).toBeTruthy()
     expect(onSelectIncome).not.toHaveBeenCalled()
@@ -332,10 +328,8 @@ describe('알약의 모양', () => {
   it('펼친 알약은 모두 가장 긴 글자에 맞춘 같은 폭이다', async () => {
     jest.mocked(useReducedMotion).mockReturnValue(true)
     const view = await 그리기({ descriptions: true })
-    await act(async () => {
-      fireEvent(view.getByTestId('speed-dial-label-income'), 'layout', { nativeEvent: { layout: { width: 72, height: 34 } } })
-      fireEvent(view.getByTestId('speed-dial-label-expense'), 'layout', { nativeEvent: { layout: { width: 28, height: 19 } } })
-    })
+    await fireEvent(view.getByTestId('speed-dial-label-income'), 'layout', { nativeEvent: { layout: { width: 72, height: 34 } } })
+    await fireEvent(view.getByTestId('speed-dial-label-expense'), 'layout', { nativeEvent: { layout: { width: 28, height: 19 } } })
     await 누르기(view, '기록 추가')
 
     // 움직이는 값의 최신은 `style` 이 아니라 Reanimated 가 테스트용으로 남기는 `jestAnimatedStyle` 에 있다.

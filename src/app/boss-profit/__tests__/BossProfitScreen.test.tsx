@@ -26,7 +26,7 @@ import { useResetBoundaryTick } from '../../../features/query/reset-timer'
 import { useRefetchStaleOnFocus } from '../../../hooks/useRefetchStaleOnFocus'
 import { useRealtimeFetchedAt } from '../../../features/refresh/freshness'
 import { useTrackedOcids } from '../../../features/schedule-sync/use-schedule-queries'
-import { getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
+import { getAdjacentPeriodKey, getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
 import { bossesInSection, bossNameOf } from '../../../lib/boss/bosses'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
@@ -317,7 +317,17 @@ describe('빈 상태', () => {
 
   // 떠날 때 보는 기간이 이번 주로 돌아가므로, 지난 주 금액을 기억한 채 다시 들어오면 그 값에서 굴러간다.
   it('지난 주를 보다 떠났다 다시 들어오면 총 수입이 굴러가지 않고 이번 주 금액으로 선다', async () => {
-    mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행({ payoutMeso: 30_000_000 })] })
+    // 카드와 행의 금액 키에는 기간이 들어 있다. 첫 화면도 이번 주로 그리면 그 금액들이 30,000,000 에서
+    // 굴러가고, 그 갱신이 테스트가 끝난 뒤에 남는다.
+    const 지난주 = getAdjacentPeriodKey('weekly', CURRENT_WEEKLY, 'prev')
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      periodKey: 지난주,
+      loadedPeriodKey: 지난주,
+      followsCurrentPeriod: false,
+      rows: [보스행({ periodKey: 지난주, payoutMeso: 30_000_000 })],
+    })
     const first = await renderScreen()
     await act(async () => {
       first.unmount()

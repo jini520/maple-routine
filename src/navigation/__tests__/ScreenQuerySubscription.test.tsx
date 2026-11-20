@@ -12,13 +12,23 @@ const queryFn = jest.fn(async () => 'v')
 
 function Reader(): React.JSX.Element {
   const subscribed = useQuerySubscribed()
-  useQuery({ queryKey: ['ledger-days', 'a', 'b'], queryFn, staleTime: Number.POSITIVE_INFINITY, subscribed })
-  return <Text>{subscribed ? '구독' : '끊김'}</Text>
+  const { data } = useQuery({ queryKey: ['ledger-days', 'a', 'b'], queryFn, staleTime: Number.POSITIVE_INFINITY, subscribed })
+  return (
+    <>
+      <Text>{subscribed ? '구독' : '끊김'}</Text>
+      <Text>{data ?? '읽기 전'}</Text>
+    </>
+  )
+}
+
+/** 앱의 클라이언트처럼 캐시를 버리지 않는 클라이언트. 기본값인 5분짜리 캐시 정리 타이머가 남으면 jest 프로세스가 끝나지 않는다. */
+function newClient(): QueryClient {
+  return new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Number.POSITIVE_INFINITY } } })
 }
 
 describe('ScreenQuerySubscription', () => {
   it('화면이 안 보이는 동안은 무효화돼도 다시 읽지 않고, 다시 보일 때 한 번 읽는다', async () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const client = newClient()
     const 화면 = 초점가짜(true)
     const view = await render(
       <QueryClientProvider client={client}>
@@ -45,7 +55,7 @@ describe('ScreenQuerySubscription', () => {
 
   // 모달 · 공급자처럼 화면 밖에서 읽는 쿼리는 늘 구독한다.
   it('감싸개 밖에서는 늘 구독한다', async () => {
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const client = newClient()
     const view = await render(
       <QueryClientProvider client={client}>
         <Reader />
@@ -53,5 +63,6 @@ describe('ScreenQuerySubscription', () => {
     )
 
     expect(view.getByText('구독')).toBeTruthy()
+    expect(await view.findByText('v')).toBeTruthy()
   })
 })

@@ -149,7 +149,7 @@ describe('SettingsBarOrderScreen', () => {
     expect(useBarOrderStore.getState().order).toEqual(DEFAULT_BAR_ORDER)
     expect(await getBarOrder()).toBeNull()
 
-    view.unmount()
+    await view.unmount()
     const reopened = await renderOverlay(<SettingsBarOrderScreen />)
     expect(previewLabels(reopened, 'groups')).toEqual(['today', '스케줄러', '수입·지출', '유틸리티', '더보기'])
   })

@@ -102,7 +102,9 @@ it('FAQ 묶음에 문항이 없으면 줄을 탭해도 시트가 열리지 않�
     expect(screen.getByText('스케줄러 데이터를 결산 중입니다.')).toBeTruthy()
     expect(screen.queryByText('스케줄러 결산')).toBeNull()
   } finally {
-    faqsTable.set(before)
+    await act(() => {
+      faqsTable.set(before)
+    })
   }
 })
 

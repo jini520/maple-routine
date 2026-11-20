@@ -11,8 +11,8 @@
 const mockWithTiming = jest.fn()
 
 jest.mock('react-native-reanimated', () => {
-  // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다**. 그래서 `require` 가
-  // 선택이 아니라 이 길뿐이다(`reduced-motion.ts` `쓰는 법`).
+  // `jest.mock` 팩토리는 import 위로 끌어올려져 **밖의 값을 참조할 수 없다**. 그래서 팩토리 안에서
+  // `require` 로 가져온다(`reduced-motion.ts` `쓰는 법`).
   const reanimated = require('../../../__tests__/reduced-motion').reanimatedWithReducedMotion()
   return {
     ...reanimated,
@@ -25,11 +25,12 @@ jest.mock('react-native-reanimated', () => {
 })
 
 import { fireEvent, within } from '@testing-library/react-native'
+import type { ReactElement } from 'react'
 
-import type { ToastAction, ToastItem } from '../../../../features/toast/store'
+import type { ToastItem } from '../../../../features/toast/store'
 
 import { mockReducedMotion } from '../../../__tests__/reduced-motion'
-import { renderAtom, type AtomElement } from '../../../__tests__/render-atom'
+import { flushAnimationFrame, renderAtom, type AtomElement } from '../../../__tests__/render-atom'
 import { SettingsIcon } from '../../../atoms'
 import { Toast } from '../Toast'
 
@@ -61,10 +62,17 @@ function pathsUnder(node: AtomElement): string[] {
 
 const noop = (): void => {}
 
+/** 토스트는 마운트 다음 프레임에 들어선다(`setIsEntered`). 그 갱신까지 마친 트리를 돌려주는 렌더. */
+async function 그리기(ui: ReactElement): ReturnType<typeof renderAtom> {
+  const view = await renderAtom(ui)
+  await flushAnimationFrame()
+  return view
+}
+
 describe('Toast', () => {
   it('닫기 버튼을 누르면 onDismiss 가 호출된다', async () => {
     const onDismiss = jest.fn()
-    const { getByLabelText } = await renderAtom(<Toast toast={makeToast()} onDismiss={onDismiss} />)
+    const { getByLabelText } = await 그리기(<Toast toast={makeToast()} onDismiss={onDismiss} />)
 
     await fireEvent.press(getByLabelText('닫기'))
 
@@ -74,7 +82,7 @@ describe('Toast', () => {
   it('action 이 있으면 액션 버튼이 렌더되고, 누르면 onClick 과 onDismiss 가 모두 호출된다', async () => {
     const onClick = jest.fn()
     const onDismiss = jest.fn()
-    const { getByLabelText } = await renderAtom(
+    const { getByLabelText } = await 그리기(
       <Toast toast={makeToast({ action: { label: '다시 시도', onClick } })} onDismiss={onDismiss} />,
     )
 
@@ -87,18 +95,13 @@ describe('Toast', () => {
   // 기본 아이콘은 '다시 시도'를 전제한 RefreshCw 다. 뜻이 다른 액션은 자기 아이콘을
   // 넘겨야 하고, 그러지 않으면 무엇을 하는 버튼인지 어긋난다.
   it('action.icon 을 주면 기본 새로고침 아이콘 대신 그 아이콘을 그린다', async () => {
-    const { getByLabelText } = await renderAtom(
+    const { getByLabelText } = await 그리기(
       <>
         <Toast toast={makeToast({ action: { label: '다시 시도', onClick: noop } })} onDismiss={noop} />
         <Toast
           toast={makeToast({
             id: 'toast-2',
-            // **core 의 타입이 웹을 향해 있다**. `ToastAction.icon` 이 `lucide-react` 의
-            // `LucideIcon` 이라 `lucide-react-native` 아이콘이 그대로 안 들어간다(SVG DOM 프롭이
-            // 달라 `fillRule` 에서 갈린다). core 는 이 단계에서 손대지 않는 것이 원칙이라
-            // (원칙 3) 여기서는 캐스팅으로 넘기고, **호출부가 아이콘을 넘기는 화면
-            // 단계에서 core 타입을 풀어야 한다**는 사실을 여기 남긴다.
-            action: { label: '설정 열기', onClick: noop, icon: SettingsIcon as unknown as ToastAction['icon'] } })}
+            action: { label: '설정 열기', onClick: noop, icon: SettingsIcon } })}
           onDismiss={noop}
         />
       </>,
@@ -112,7 +115,7 @@ describe('Toast', () => {
   })
 
   it('error 변형은 role="alert"·aria-live="assertive" 를 갖는다', async () => {
-    const { getByTestId } = await renderAtom(
+    const { getByTestId } = await 그리기(
       <Toast toast={makeToast({ variant: 'error', duration: null })} onDismiss={noop} />,
     )
 
@@ -122,7 +125,7 @@ describe('Toast', () => {
   })
 
   it.each(['success', 'info'] as const)('%s 변형은 role="status"·aria-live="polite" 를 갖는다', async (variant) => {
-    const { getByTestId } = await renderAtom(
+    const { getByTestId } = await 그리기(
       <Toast toast={makeToast({ variant })} onDismiss={noop} />,
     )
 
@@ -132,13 +135,13 @@ describe('Toast', () => {
   })
 
   it('duration 이 있으면 닫기 버튼 둘레에 남은 시간 링을 그린다', async () => {
-    const { getByLabelText, getByTestId } = await renderAtom(<Toast toast={makeToast()} onDismiss={noop} />)
+    const { getByLabelText, getByTestId } = await 그리기(<Toast toast={makeToast()} onDismiss={noop} />)
 
     expect(within(getByLabelText('닫기')).getByTestId('toast-timer')).toBe(getByTestId('toast-timer'))
   })
 
   it('duration 이 null 이면 남은 시간 링을 그리지 않는다', async () => {
-    const { queryByTestId } = await renderAtom(
+    const { queryByTestId } = await 그리기(
       <Toast toast={makeToast({ duration: null })} onDismiss={noop} />,
     )
 
@@ -157,7 +160,7 @@ describe('Toast: 스와이프로 닫기', () => {
 
   it('임계값을 넘겨 좌우로 끌면 onDismiss 가 호출된다', async () => {
     const onDismiss = jest.fn()
-    const { getByTestId } = await renderAtom(<Toast toast={makeToast()} onDismiss={onDismiss} />)
+    const { getByTestId } = await 그리기(<Toast toast={makeToast()} onDismiss={onDismiss} />)
 
     await swipe(getByTestId('toast'), 120)
 
@@ -166,7 +169,7 @@ describe('Toast: 스와이프로 닫기', () => {
 
   it('임계값 미만으로 끌면 onDismiss 가 호출되지 않는다', async () => {
     const onDismiss = jest.fn()
-    const { getByTestId } = await renderAtom(<Toast toast={makeToast()} onDismiss={onDismiss} />)
+    const { getByTestId } = await 그리기(<Toast toast={makeToast()} onDismiss={onDismiss} />)
 
     await swipe(getByTestId('toast'), 30)
 
@@ -179,14 +182,14 @@ describe('Toast: 스와이프로 닫기', () => {
 describe('Toast: 모션 줄이기', () => {
   it('켜져 있으면 남은 시간 링이 그려지지 않는다', async () => {
     mockReducedMotion(true)
-    const { getByTestId } = await renderAtom(<Toast toast={makeToast()} onDismiss={noop} />)
+    const { getByTestId } = await 그리기(<Toast toast={makeToast()} onDismiss={noop} />)
 
     expect(getByTestId('toast-timer').children).toHaveLength(0)
   })
 
   it('꺼져 있으면 남은 시간 링이 그 토스트의 지속시간 동안 줄어든다', async () => {
     mockReducedMotion(false)
-    await renderAtom(<Toast toast={makeToast({ duration: 2500 })} onDismiss={noop} />)
+    await 그리기(<Toast toast={makeToast({ duration: 2500 })} onDismiss={noop} />)
 
     expect(mockWithTiming).toHaveBeenCalledWith(
       expect.any(Number),

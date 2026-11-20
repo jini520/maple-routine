@@ -115,7 +115,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
   }
 })
 
-import { QueryClient, QueryClientProvider, notifyManager } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { useToastStore } from '../../../features/toast/store'
 import { FragmentShortageError } from '../../../storage/fragment-ledger'
@@ -239,14 +239,6 @@ function 하루읽은날(): string[] {
     .filter((call: string[]) => call[0] === call[1])
     .map((call: string[]) => call[0])
 }
-
-/**
- * TanStack 은 구독자 알림을 `setTimeout(0)` 으로 미루는데 이 파일은 가짜 타이머라 그 알림이 영영 안 온다.
- * 마이크로태스크로 내서 `act` 가 흘려보내게 한다.
- */
-notifyManager.setScheduler((callback) => {
-  void Promise.resolve().then(callback)
-})
 
 /** 그릴 때마다 새 캐시다. 한 케이스 안에서 두 번 그려도 둘째가 첫째의 달을 물려받지 않는다. */
 let queryClient = new QueryClient()

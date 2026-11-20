@@ -46,7 +46,15 @@ import { cashbookCategoriesTable } from '../../../lib/cashbook/categories'
 import { huntingGroundsTable } from '../../../lib/cashbook/hunting-grounds'
 import type { IncomeRecord } from '../../../storage/income'
 
-// 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
+// 시트는 단계가 바뀌면 `StepVeil` 의 흐림을 300ms 동안 걷는다. 진짜 시계면 그 끝이 케이스가 끝나고
+// 언마운트하기 전에 `act` 밖에서 와서 시트를 다시 그린다.
+beforeEach(() => {
+  jest.useFakeTimers()
+})
+
+afterEach(() => {
+  jest.useRealTimers()
+})
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
@@ -170,14 +178,14 @@ async function 대금치기(view: Rendered, text: string): Promise<void> {
 
 /** 아이디로 집은 칸에 치는 도우미. 큰 숫자가 아닌 폼 안의 입력들이다. */
 async function 아이디로치기(view: Rendered, testID: string, text: string): Promise<void> {
-  // 치는 칸이 입력 카드로 옮겨가는 중이라 두 모양이 섞여 있다. `칸에치기` 가 그 갈림을 든다.
+  // 치는 칸이 입력 카드로 옮겨가는 중이라 두 종류가 섞여 있다. 어느 쪽인지는 `칸에치기` 가 판단한다.
   await 칸에치기(view, testID, text)
 }
 
 /**
- * 칸에 값을 넣는다. **칸이 어느 모양인지 보고 길을 고른다.**
+ * 칸에 값을 넣는다. **칸이 `onChangeText` 를 받는지 보고 넣는 방법을 고른다.**
  *
- * 치는 칸이 입력 카드로 옮겨가는 중이라 두 모양이 섞여 있다. 옮겨간 칸은 줄이 누르개라 카드를
+ * 치는 칸이 입력 카드로 옮겨가는 중이라 두 종류가 섞여 있다. 옮겨간 칸은 줄이 누르개라 카드를
  * 열고 쳐서 확인해야 하고, 아직 안 옮긴 칸(사냥 수동 입력)은 줄에서 바로 친다. 폼이 하나씩
  * 옮겨갈 때 이 도우미는 안 고쳐도 된다.
  */
@@ -202,7 +210,7 @@ async function 칸에치기(view: Rendered, testID: string, text: string): Promi
  */
 function 줄글자(view: Rendered, testID: string): string {
   const 줄 = view.getByTestId(testID)
-  // 아직 안 옮긴 칸은 줄이 곧 입력이다(`칸에치기` 와 같은 갈림).
+  // 아직 안 옮긴 칸은 줄이 곧 입력이다(`칸에치기` 와 같은 `onChangeText` 판단).
   if (typeof 줄.props.onChangeText === 'function') return String(줄.props.value ?? '')
   const 값 = within(줄).getAllByText(/.*/)[0]?.props.children
   if (typeof 값 === 'string') return 값
@@ -597,7 +605,7 @@ describe('판매 수수료', () => {
    * **저장은 내용의 마지막 줄이다.** 키보드가 뜨면 시트가 그 높이만큼 자리를 만들고 스크롤이
    * 끝으로 가서 이 줄이 키보드 위에 온다. 시트 높이 계산은 안 건드린다.
    *
-   * 폼이 그 줄의 값을 올리고 자리는 시트가 준다. 올리는 길이 상태 하나뿐이라, 손잡이까지
+   * 폼이 그 줄의 값을 올리고 자리는 시트가 준다. 올리는 방법이 상태 하나뿐이라, 손잡이까지
    * 상태로 올리면 매 렌더가 부모를 다시 그려 무한 렌더가 된다. 이 테스트가 그 자리를 붙든다.
    * 고리가 나면 `Maximum update depth exceeded` 로 여기서 죽는다.
    */
@@ -1130,7 +1138,7 @@ describe('통화', () => {
   /**
    * 기타는 **금액 × 수량**이다. 지출 기타와 같은 식이다.
    *
-   * 수량은 `income_records.quantity` 에 박힌다. 안 남기면 그 행을 다시 열 때 되짚을 길이
+   * 수량은 `income_records.quantity` 에 박힌다. 안 남기면 그 행을 다시 열 때 되짚을 방법이
    * 없어 수량이 1 로 서고 금액 칸에 총액이 들어간다. 사용자가 안 적은 값을 적은 값처럼 보여 준다.
    */
   describe('금액 × 수량', () => {
@@ -1262,7 +1270,7 @@ describe('분류마다 자기 폼', () => {
   }
 
   /**
-   * 분류를 옮기는 길이 1차 시트로 옮겨 갔으므로, 값이 분류를 넘어가는지는 **다시 연 시트가
+   * 분류를 바꾸는 곳이 1차 시트로 옮겨 갔으므로, 값이 분류를 넘어가는지는 **다시 연 시트가
    * 빈 폼인가**로 잰다. 폼이 분류마다 따로 심기는 성질은 그대로다.
    */
   it('다시 연 시트는 빈 폼이다. 고른 캐릭터가 안 남는다', async () => {

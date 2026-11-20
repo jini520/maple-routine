@@ -290,7 +290,9 @@ describe('AppSettingsScreen', () => {
 
       expect(view.getAllByText('9.9.9').length).toBeGreaterThan(0)
     } finally {
-      useLiveUpdateStore.setState({ currentVersion: null })
+      await act(() => {
+        useLiveUpdateStore.setState({ currentVersion: null })
+      })
     }
   })
 
@@ -302,7 +304,9 @@ describe('AppSettingsScreen', () => {
       expect(view.getAllByText('9.9.9(2)').length).toBeGreaterThan(0)
       expect(view.getByText('v9.9.9(2)')).toBeTruthy()
     } finally {
-      useLiveUpdateStore.setState({ currentVersion: null })
+      await act(() => {
+        useLiveUpdateStore.setState({ currentVersion: null })
+      })
     }
   })
 
@@ -314,7 +318,9 @@ describe('AppSettingsScreen', () => {
 
       expect(view.getByText('v9.9.9')).toBeTruthy()
     } finally {
-      useLiveUpdateStore.setState({ currentVersion: null })
+      await act(() => {
+        useLiveUpdateStore.setState({ currentVersion: null })
+      })
     }
   })
 

@@ -38,7 +38,15 @@ import type { SpendRecord } from '../../../storage/spend'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 
-// 큰 숫자의 카운트업 기억은 **모듈 수준**이라 케이스 사이로 샌다.
+// 시트는 단계가 바뀌면 `StepVeil` 의 흐림을 300ms 동안 걷는다. 진짜 시계면 그 끝이 케이스가 끝나고
+// 언마운트하기 전에 `act` 밖에서 와서 시트를 다시 그린다.
+beforeEach(() => {
+  jest.useFakeTimers()
+})
+
+afterEach(() => {
+  jest.useRealTimers()
+})
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
@@ -207,7 +215,7 @@ describe('분류', () => {
   })
 
   /**
-   * **칩이 없다.** 분류를 바꾸는 길은 머리의 `‹` 로 1차에 돌아가는 것 하나다. 목록 분류에서도
+   * **칩이 없다.** 분류를 바꾸는 방법은 머리의 `‹` 로 1차에 돌아가는 것 하나다. 목록 분류에서도
    * 직접 입력에서도 같다.
    */
   it('2차에는 다른 분류로 옮기는 자리가 없다', async () => {
@@ -643,7 +651,7 @@ describe('수량. 곱셈은 앱이 한다', () => {
     expect(view.getByLabelText('저장').props.accessibilityState?.disabled).toBe(false)
   })
 
-  // 0단계로 되돌리면 그 형태는 안 산 것이 된다. 되돌릴 길이 없으면 잘못 누른 것이 저장된다.
+  // 0단계로 되돌리면 그 형태는 안 산 것이 된다. 되돌릴 방법이 없으면 잘못 누른 것이 저장된다.
   it('0단계로 되돌리면 다시 막힌다', async () => {
     const view = await 그리기({ lastPointRate: 1_180 })
     await 에픽던전(view, '하이마운틴', '경험치', '2단계')
@@ -1079,7 +1087,7 @@ describe('주문서', () => {
   const 조각 = (view: Rendered, 줄: string, 값: string) =>
     within(view.getByTestId(`spend-sheet-option-${줄}`)).getByLabelText(값).props.accessibilityState
 
-  // 표의 파일 이름이 틀리면 그림이 **조용히** 빠진다. 타일 셋으로 그 길을 붙든다.
+  // 표의 파일 이름이 틀리면 그림이 **조용히** 빠진다. 타일 셋에 그림이 서는지로 그것을 잡는다.
   it('타일이 저마다 그림을 든다', async () => {
     const view = await 그리기({}, '주문서')
 
