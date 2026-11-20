@@ -134,7 +134,7 @@ function mockStore(overrides: Partial<Store> = {}): Store {
 /**
  * 화면에 **선** 섹션 헤더를 위에서 아래 순서로. `['monthly', 'weekly']`.
  *
- * 무리가 비면 헤더도 안 서므로 이 배열이 곧 지금 무엇이 보이는가 다.
+ * 무리가 비면 헤더도 안 서므로 이 배열이 곧 지금 보이는 것이다.
  */
 function sectionOrder(): string[] {
   return screen

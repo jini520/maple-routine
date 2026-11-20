@@ -1,18 +1,17 @@
 /**
- * 지출 기록 시트의 껍데기. 갈래가 안 바꾸는 것만 여기 있다.
+ * 지출 기록 시트의 껍데기. 분류가 안 바꾸는 것만 여기 있다.
  *
- * **갈래를 먼저 묻는다.** 안 골랐으면 갈래 카드가 서고, 고르면 그 갈래의 폼이 같은 시트에서
- * 열린다. 그래서 2차에는 갈래를 옮기는 자리가 없고, 바꾸는 일은 1차로 돌아가는 일이 된다.
+ * **분류를 먼저 묻는다.** 안 골랐으면 분류 카드가 서고, 고르면 그 분류의 폼이 같은 시트에서
+ * 열린다. 그래서 2차에는 다른 분류로 옮기는 자리가 없고, 바꾸는 일은 1차로 돌아가는 일이 된다.
  *
- * 시트 상자와 지금 어느 갈래인가 하나뿐이고, 머리줄부터 저장까지는 갈래별 폼(`spend/`)이 든다.
- * 머리줄이 서는 자리가 갈래마다 달라서다. 갈래를 옮기면 폼이 언마운트되므로 고른 값이 함께
+ * 시트 상자 · 지금 어느 분류인가 · 날짜뿐이고, 머리줄부터 저장까지는 분류별 폼(`spend/`)이 든다.
+ * 머리줄이 서는 자리가 분류마다 달라서다. 다른 분류로 옮기면 폼이 언마운트되므로 고른 값이 함께
  * 사라진다.
  *
- * **자기가 어느 갈래인지 모른다.** 갈래는 펼침판이 시트 밖에서 갈랐고 이 시트는 지출이라는 사실조차
- * 프롭으로 안 받는다. 애초에 지출만 그리는 컴포넌트다.
+ * **자기가 수입 시트인지 지출 시트인지 모른다.** 수입과 지출은 펼침판이 시트 밖에서 갈랐고 이 시트는
+ * 지출이라는 사실조차 프롭으로 안 받는다. 애초에 지출만 그리는 컴포넌트다.
  *
- * 날짜는 머리에 적기만 하고 여기서 안 바꾼다. 캘린더에서 칸을 눌러 고르는 것이 이 시트를 여는
- * 경로다.
+ * 날짜는 시트가 들고, 폼이 올린 머리(`SpendHeader`)의 날짜 칸에서 바꾼다.
  *
  * @see docs/features/cashbook.md 정책
  */
@@ -59,7 +58,7 @@ export interface SpendSheetProps {
    * 비어 있고 메이플 ID 도 없으면 고를 것이 없어 저장할 수 없다.
    */
   characters: ReadonlyArray<{ ocid: string; name: string; level: number | null; worldKey: string | null; jobClass?: string | null }>
-  /** 추적 캐릭터가 속한 메이플 ID. 메이플 ID 를 고를 수 있는 갈래의 폼에만 넘긴다. 화면이 읽어서 넘긴다. */
+  /** 추적 캐릭터가 속한 메이플 ID. 메이플 ID 를 고를 수 있는 분류의 폼에만 넘긴다. 화면이 읽어서 넘긴다. */
   accounts: readonly SheetAccount[]
   /** 캐릭터의 기억한 강화 레벨을 읽는 콜백. 심볼 강화 · 헥사 매트릭스 폼이 쓴다. */
   loadRememberedLevels: SpendFormProps['loadRememberedLevels']
@@ -97,23 +96,23 @@ function formCategoryOf(record: SpendRecord): SpendCategoryKey {
 
 export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   /**
-   * 무엇을 적나. `null` 이면 **아직 안 골랐다**이고 그때 이 시트는 갈래 고르개다.
+   * 무엇을 적나. `null` 이면 **아직 안 골랐다**이고 그때 이 시트는 분류 고르개다.
    *
-   * 수정으로 열면 기록이 정하므로 고르는 단계를 건너뛴다. 갈래를 바꾸면 그 기록은 다른 것이
+   * 수정으로 열면 기록이 정하므로 고르는 단계를 건너뛴다. 분류를 바꾸면 그 기록은 다른 것이
    * 되고, 무엇이었는지는 제목이 이미 말한다.
    */
   const [category, setCategory] = useState<SpendCategoryKey | null>(
     props.editing === undefined ? null : formCategoryOf(props.editing),
   )
   /**
-   * 스크롤을 되돌릴 열쇠. 목록 갈래가 단계를 오갈 때 채운다. 갈래가 바뀌거나 단계를 오가면
+   * 스크롤을 되돌릴 열쇠. 목록 분류가 단계를 오갈 때 채운다. 분류가 바뀌거나 단계를 오가면
    * 내용이 통째로 갈리므로 **밀린 자리에서 시작하면 안 된다.**
    */
   const [scrollKey, setScrollKey] = useState('')
   /**
    * 어느 날에 적히나. 시트를 연 날로 시작하고 머리에서 바꾼다.
    *
-   * 갈래 폼은 `key={category}` 로만 다시 심기므로 날짜를 바꿔도 친 것이 안 사라진다.
+   * 분류별 폼은 `key={category}` 로만 다시 심기므로 날짜를 바꿔도 친 것이 안 사라진다.
    */
   const [dateKey, setDateKey] = useState(props.dateKey)
   /**
@@ -122,7 +121,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
    * **못 누르는 줄로 시작한다.** 폼이 올릴 때까지 비워 두면 시트가 열리는 도중에 바닥 줄이
    * 생기고, 그만큼 시트 키가 바뀌어 열리는 애니메이션 위에 크기 변화가 한 번 더 얹힌다.
    *
-   * `showSave` 의 첫 값이 거짓인 것은 목록 갈래가 항목 격자로 열리기 때문이다. 직접 입력 둘은
+   * `showSave` 의 첫 값이 거짓인 것은 목록 분류가 항목 격자로 열리기 때문이다. 직접 입력 둘은
    * 첫 렌더 직후에 참으로 올린다.
    */
   /** 폼이 올려 주는 머리. 시트는 자리만 준다(저장 줄과 같은 방식). */
@@ -178,7 +177,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       onClose={props.onClose}
       resetScrollKey={`${category ?? ''}|${scrollKey}`}
       // 단계가 갈리면 시트 전체가 흐려졌다 돌아온다. 항목을 고르는 것도 단계다.
-      stepKey={`${category ?? '갈래'}|${scrollKey}`}
+      stepKey={`${category ?? '분류'}|${scrollKey}`}
       /*
        * **항목 격자에서도 바닥 영역을 그대로 잡는다**(사용자 지시). 버튼만 안 선다. 영역째
        * 걷으면 단계를 오갈 때 시트의 아랫부분이 그 높이만큼 늘었다 줄었다 한다.
@@ -197,7 +196,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
         )
       }
       /*
-        **셀 것이 없는 단계에는 바닥 줄이 없다**(사용자 지정 2026-09-25). 1차(갈래 고르기)와
+        **셀 것이 없는 단계에는 바닥 줄이 없다**(사용자 지정 2026-09-25). 1차(분류 고르기)와
         항목 격자가 그렇다. 전에는 같은 높이의 빈 상자를 세워 단계를 오갈 때 바닥의 기하를
         붙들어 뒀는데, 버튼이 없는데 87 이 비어 있는 것이 더 크게 읽혔다. 닫는 길은 아래로
         쓸어내리기와 스크림 탭 둘이 이미 있다.
@@ -214,7 +213,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
       ) : (
         // 아래 여백을 안 붙인다. 바닥의 숨돌림은 껍데기가 한 값으로 낸다.
         <View className="gap-3 px-4">
-          {/* `key` 가 곧 갈래를 옮기면 값이 사라진다 다. 1차를 거쳐 돌아오면 리액트가 폼을
+          {/* 다른 분류로 옮기면 값이 사라지는 것은 이 `key` 덕분이다. 1차를 거쳐 돌아오면 리액트가 폼을
               새로 심는다. 지울 것을 손으로 세지 않는다. */}
           <SpendForm key={category} category={category} formProps={formProps} />
         </View>
@@ -223,7 +222,7 @@ export function SpendSheet(props: SpendSheetProps): React.JSX.Element {
   )
 }
 
-/** 갈래 하나에 폼 하나. 고르는 자리는 여기 하나뿐이다. */
+/** 분류 하나에 폼 하나. 고르는 자리는 여기 하나뿐이다. */
 function SpendForm(props: {
   category: SpendCategoryKey
   formProps: SpendFormProps

@@ -109,9 +109,9 @@ function Amount(props: { label: string; count: number }): React.JSX.Element {
 }
 
 /**
- * 갈래 라벨은 어느 탭에서나 붙는다. 일간은 퀘스트 N개, 월간은 보스 N개.
+ * 묶음 라벨은 어느 탭에서나 붙는다. 일간은 퀘스트 N개, 월간은 보스 N개.
  *
- * 탭 이름만으로 뜻이 닫히는 자리에도 라벨을 두는 대신 규칙이 하나로 준다. 값이 있는 갈래가
+ * 탭 이름만으로 뜻이 닫히는 자리에도 라벨을 두는 대신 규칙이 하나로 준다. 값이 있는 묶음이
  * 자기 이름과 함께 선다. 그래서 탭마다 다른 모양을 만들 분기가 없다.
  */
 function Amounts(props: { items: CycleItems }): React.JSX.Element {
@@ -195,8 +195,8 @@ function BossChip(props: { boss: RemainingBossView }): React.JSX.Element {
 }
 
 /**
- * 이름표는 **갈래가 둘일 때만**(주간) 붙는다. 여기서 라벨이 하는 일은 퀘스트 칩과 보스 칩을
- * 가르는 것 이라, 그릴 그룹이 하나뿐이면 할 일이 없다(접힘은 갈래마다 수치가 붙어 사정이 다르다).
+ * 이름표는 **묶음이 둘일 때만**(주간) 붙는다. 여기서 라벨이 하는 일은 퀘스트 칩과 보스 칩을
+ * 가르는 것 이라, 그릴 묶음이 하나뿐이면 할 일이 없다(접힘은 묶음마다 수치가 붙어 사정이 다르다).
  */
 function DetailGroup(props: { label: string | null; children: React.ReactNode }): React.JSX.Element {
   return (

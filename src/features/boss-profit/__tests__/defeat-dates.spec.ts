@@ -81,7 +81,7 @@ const WEEK = [
   '2026-08-26',
 ]
 
-describe('resolveDefeatedOn: 뒤집힌 날 (결정 2)', () => {
+describe('resolveDefeatedOn: 뒤집힌 날', () => {
   it('미완료 → 완료로 바뀐 날이 처치일이다', () => {
     expect(
       resolveDefeatedOn({
@@ -132,7 +132,7 @@ describe('resolveDefeatedOn: 뒤집힌 날 (결정 2)', () => {
   })
 })
 
-describe('resolveDefeatedOn: 구멍 (결정 2)', () => {
+describe('resolveDefeatedOn: 구멍', () => {
   it('시작일을 못 봤으면 확정하지 않는다. 그 앞을 모른다', () => {
     expect(
       resolveDefeatedOn({
@@ -203,7 +203,7 @@ describe('resolveDefeatedOn: 구멍 (결정 2)', () => {
   })
 })
 
-describe('resolveDefeatedOn: 창 하한 앞은 건너뛴다 (정정 6)', () => {
+describe('resolveDefeatedOn: 창 하한 앞은 건너뛴다', () => {
   // 8/20 주인데 창이 8/22 부터인 상황. 실제 데이터가 그랬다(9/4 백필, 창 하한 8/22).
   it('창 안에서 뒤집혔으면 앞에 못 본 날이 있어도 확정한다', () => {
     expect(
@@ -354,7 +354,7 @@ describe('resolveDefeatedOn: 못 캐면 가장 빠른 조회 가능일', () => {
   })
 })
 
-describe('resolveDefeatedOn: 오늘은 소거법 (결정 3)', () => {
+describe('resolveDefeatedOn: 오늘은 소거법', () => {
   it('어제까지 전부 미완료인데 기록이 있으면 오늘이다', () => {
     expect(
       resolveDefeatedOn({
@@ -448,7 +448,7 @@ const 미확정_스우 = {
   periodKey: '2026-08-20',
 }
 
-describe('resolveDefeatDates: 안 부르는 길 (결정 4)', () => {
+describe('resolveDefeatDates: 안 부르는 길', () => {
   it('캐릭터가 없으면 아무것도 안 한다', async () => {
     await expect(resolveDefeatDates([], NOW)).resolves.toBe(0)
     expect(getUndatedMock).not.toHaveBeenCalled()
@@ -469,7 +469,7 @@ describe('resolveDefeatDates: 안 부르는 길 (결정 4)', () => {
     expect(fetchStateMock).not.toHaveBeenCalled()
   })
 
-  it('창에 하루라도 걸치는 기간은 묻는다 (정정 6)', async () => {
+  it('창에 하루라도 걸치는 기간은 묻는다', async () => {
     await resolveDefeatDates(['ocid-1'], NOW)
 
     const [, periodKeys] = getUndatedMock.mock.calls[0]
@@ -484,7 +484,7 @@ describe('resolveDefeatDates: 안 부르는 길 (결정 4)', () => {
   })
 })
 
-describe('resolveDefeatDates: 원장이 겹침을 막는다 (결정 5)', () => {
+describe('resolveDefeatDates: 원장이 겹침을 막는다', () => {
   it('이미 bosses 를 들고 있는 날짜는 다시 안 부른다', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])
     getLedgerMock.mockResolvedValue({
@@ -580,7 +580,7 @@ describe('resolveDefeatDates: 캐낸 값을 박는다', () => {
   })
 
   // 창에 걸친 경계 주. 창 하한 앞(8/6~8/10)은 안 묻고 8/11~8/12 만 물어 답을 낸다.
-  it('시작일이 창 밖인 주도 걸친 날들만 물어 날짜를 낸다 (정정 6)', async () => {
+  it('시작일이 창 밖인 주도 걸친 날들만 물어 날짜를 낸다', async () => {
     const 경계주_스우 = { ...미확정_스우, periodKey: '2026-08-06' }
     getUndatedMock.mockResolvedValue([경계주_스우])
     fetchStateMock.mockImplementation(async (_key: string, _ocid: string, _resolveBossKey: unknown, dateKey: string) =>
@@ -594,7 +594,7 @@ describe('resolveDefeatDates: 캐낸 값을 박는다', () => {
     expect(setDefeatedOnMock).toHaveBeenCalledWith(경계주_스우, '2026-08-12')
   })
 
-  it('창 안이 전부 미완료면 오늘로 박는다. 소거법 (결정 3)', async () => {
+  it('창 안이 전부 미완료면 오늘로 박는다. 소거법', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])
     fetchStateMock.mockResolvedValue(schedulerState([]))
 
@@ -634,7 +634,7 @@ describe('resolveDefeatDates: 캐낸 값을 박는다', () => {
   })
 })
 
-describe('resolveDefeatDates: 두 화면이 같이 불러도 한 번만 돈다 (결정 9)', () => {
+describe('resolveDefeatDates: 두 화면이 같이 불러도 한 번만 돈다', () => {
   it('겹친 호출은 같은 약속을 나눠 쓴다', async () => {
     getUndatedMock.mockResolvedValue([미확정_스우])
     fetchStateMock.mockResolvedValue(schedulerState([]))

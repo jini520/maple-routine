@@ -1,7 +1,7 @@
 /**
- * 지출 시트의 **갈래별 폼이 함께 쓰는 것**.
+ * 지출 시트의 **분류별 폼이 함께 쓰는 것**.
  *
- * 머리줄 · 시세 줄 · 저장·삭제 줄은 갈래가 안 바꾼다. 세 벌로 갈리면 한쪽만 고쳐지는 자리가
+ * 머리줄 · 시세 줄 · 저장·삭제 줄은 분류가 안 바꾼다. 여러 벌로 갈리면 한쪽만 고쳐지는 자리가
  * 생기므로 한 벌만 둔다. 캐릭터 줄은 수입 시트와도 같은 것이라 `../sheet-fields` 에 산다.
  */
 import { SheetActionButton } from '../../../components/organisms/BottomSheet/SheetActionButton'
@@ -39,7 +39,6 @@ export interface SpendSaveSlot {
   onDelete?: () => void
 }
 
-/** 갈래별 폼이 **전부 받는 것**. */
 /**
  * 폼이 시트 머리로 올리는 값. 저장 줄(`SpendSaveSlot`)과 같은 짝이다.
  *
@@ -56,6 +55,7 @@ export interface SpendHeaderSlot {
   onBack?: () => void
 }
 
+/** 분류별 폼이 **전부 받는 것**. */
 export interface SpendFormProps {
   /** 저장 줄을 시트 바닥으로 올리는 손잡이. 폼이 값을 정하고 자리는 시트가 준다. */
   setSave: (slot: SpendSaveSlot) => void
@@ -63,9 +63,9 @@ export interface SpendFormProps {
   setHeader: (slot: SpendHeaderSlot) => void
   dateKey: string
   characters: ReadonlyArray<{ ocid: string; name: string; level: number | null; worldKey: string | null; jobClass?: string | null }>
-  /** 캐릭터 뒤에 서는 메이플 ID 보기. 메이플 ID 를 고를 수 없는 갈래는 시트가 빈 배열을 준다. */
+  /** 캐릭터 뒤에 서는 메이플 ID 보기. 메이플 ID 를 고를 수 없는 분류는 시트가 빈 배열을 준다. */
   accounts: readonly SheetAccount[]
-  /** 1차에서 고른 갈래 key. 머리의 제목은 이 key 로 찾은 갈래 이름이다. */
+  /** 1차에서 고른 분류 key. 머리의 제목은 이 key 로 찾은 분류 이름이다. */
   category: SpendCategoryKey
   /** 1차로 되돌아간다. 머리의 화살촉이 부른다. 수정 모드에서는 폼이 안 붙인다. */
   onBack: () => void
@@ -79,7 +79,7 @@ export interface SpendFormProps {
   /** `sheet` 는 기록에 저장하지 않고 기억에만 적는 시트의 상태 */
   onSave: (draft: SpendDraft, sheet?: SpendSheetState) => void | Promise<void>
   onClose: () => void
-  /** 시트 껍데기의 스크롤을 되돌릴 열쇠. 목록 갈래가 단계를 오갈 때 부른다. */
+  /** 시트 껍데기의 스크롤을 되돌릴 열쇠. 목록 분류가 단계를 오갈 때 부른다. */
   onScrollKeyChange: (key: string) => void
   /** 머리에서 날짜를 바꾸는 콜백. 수입 시트와 같은 계약이다. */
   onDateChange: (next: string) => void
@@ -105,7 +105,7 @@ export interface SpendFormProps {
 /**
  * 머리줄. 지금 어디인지를 말한다.
  *
- * 항목 격자에서는 갈래 이름이고 폼으로 들어가면 고른 항목의 이름이다. 왼쪽에는 한 걸음
+ * 항목 격자에서는 분류 이름이고 폼으로 들어가면 고른 항목의 이름이다. 왼쪽에는 한 걸음
  * 되돌아가는 자리가 선다. 제목을 그대로 두고 본문에 돌아가는 줄을 따로 두면 같은 것을 말하는
  * 자리가 둘이 되고 시트 위쪽 한 줄이 통째로 낭비된다.
  *

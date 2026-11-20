@@ -36,12 +36,12 @@ export function findNotifiedOccurrence(
   return { weekStart, occurrence }
 }
 
-/** 새 스케줄의 갈래. 파티 스케줄 탭 ＋ 메뉴의 `매주 반복` · `한 번만` 이다 */
+/** 새 스케줄의 종류. 파티 스케줄 탭 ＋ 메뉴의 `매주 반복` · `한 번만` 이다 */
 export type PartyAppointmentCreateKind = 'weekly' | 'once'
 
 interface PartyAppointmentOpenState {
   request: PartyAppointmentOpenRequest | null
-  /** 열 새 스케줄 시트의 갈래. today 위젯이 회차가 없을 때 남긴다 */
+  /** 열 새 스케줄 시트의 종류. today 위젯이 회차가 없을 때 남긴다 */
   create: PartyAppointmentCreateKind | null
   open: (request: PartyAppointmentOpenRequest) => void
   openCreate: (kind: PartyAppointmentCreateKind) => void

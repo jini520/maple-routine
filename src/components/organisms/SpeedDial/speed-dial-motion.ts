@@ -15,7 +15,7 @@ export interface DialStep {
   readonly durationMs: number
 }
 
-/** 갈래 하나가 쓰는 세 움직임 */
+/** 항목 하나가 쓰는 세 움직임 */
 export interface DialTiming {
   /** 원이 ＋ 자리에서 제자리로 솟는다(이동 · 크기 · 투명도) */
   readonly rise: DialStep
@@ -55,7 +55,7 @@ const CLOSE_RISE_DELAY_MS = CLOSE_EXPAND_DELAY_MS + CLOSE_MS - 30
 const CLOSE_RISE_STAIR_MS = 25
 
 /**
- * 갈래 하나의 움직임 값.
+ * 항목 하나의 움직임 값.
  *
  * @param index 위에서부터 차례(0 이 맨 위, `count - 1` 이 ＋ 에 가장 가깝다)
  * @param reduceMotion 움직임 줄이기. 지연을 0 으로 접는다. 계단은 이동이 있을 때만 보이고 지연만 남으면 툭 나타난다

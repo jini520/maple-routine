@@ -1,11 +1,11 @@
 /**
- * 가계부의 갈래 · 아이템 종류를 읽는 자리(`cashbookCategories` 칸). 에픽던전 형태는 지출 목록 칸이 든다
+ * 가계부의 분류 · 아이템 종류를 읽는 자리(`cashbookCategories` 칸). 에픽던전 형태는 지출 목록 칸이 든다
  * (`lib/cashbook/spend-catalog`).
  *
  * 이름 · 카드 제목 · 그림 · 설명 · 단위는 서버 표가 들고 관리 화면이 고친다. 기록은 key 를 저장하고 화면은 이 표에서
  * 이름을 찾으므로, 이름을 바꿔도 옛 기록이 따라온다.
  *
- * key 목록은 여기 코드에 남는다. 앱이 그 key 로 입력 폼을 가르기 때문이다. 서버가 더한 갈래는 key 가 이 목록에
+ * key 목록은 여기 코드에 남는다. 앱이 그 key 로 입력 폼을 가르기 때문이다. 서버가 더한 분류는 key 가 이 목록에
  * 없어 목록에 이름만 서고 못 고른다. 앱에 그 폼이 생길 때까지다.
  */
 import type { CashbookCategoriesTable, CashbookCategoryRow, CashbookItemKindRow } from '../../types/game-data'
@@ -24,7 +24,7 @@ import {
 import { gameTable, derive } from '../game-data/table'
 
 /**
- * 앱이 입력 폼을 아는 지출 갈래. 차례는 서버 표가 정한다. `boss_income_transfer` · `meso_market_exchange` 는 시트만 있고 기록은
+ * 앱이 입력 폼을 아는 지출 분류. 차례는 서버 표가 정한다. `boss_income_transfer` · `meso_market_exchange` 는 시트만 있고 기록은
  * `etc` 로 저장한다.
  */
 export const SPEND_CATEGORY_KEYS = [
@@ -41,14 +41,14 @@ export const SPEND_CATEGORY_KEYS = [
 ] as const
 export type SpendCategoryKey = (typeof SPEND_CATEGORY_KEYS)[number]
 
-/** 앱이 입력 폼을 아는 수익 갈래. 서버 표의 맨 앞이 기본 갈래다. */
+/** 앱이 입력 폼을 아는 수익 분류. 서버 표의 맨 앞이 기본 분류다. */
 export const INCOME_CATEGORY_KEYS = ['hunting', 'sol_erda_fragment', 'hunt_loot_sale', 'item_sale', 'etc'] as const
 export type IncomeCategoryKey = (typeof INCOME_CATEGORY_KEYS)[number]
 
 /**
- * 캐릭터 칸에 메이플 ID 보기가 서는 갈래. 나머지 갈래는 캐릭터만 고른다.
+ * 캐릭터 칸에 메이플 ID 보기가 서는 분류. 나머지 분류는 캐릭터만 고른다.
  *
- * 시트의 보기와 옛 기록을 메이플 ID 로 옮기는 부팅 단계가 같은 목록을 본다. 둘이 갈리면 메이플 ID 를 고를 수 없는 갈래에
+ * 시트의 보기와 옛 기록을 메이플 ID 로 옮기는 부팅 단계가 같은 목록을 본다. 둘이 갈리면 메이플 ID 를 고를 수 없는 분류에
  * 메이플 ID 기록이 생긴다.
  */
 export const ACCOUNT_INCOME_CATEGORY_KEYS: readonly IncomeCategoryKey[] = ['etc']
@@ -62,20 +62,20 @@ export type ItemKindKey = (typeof ITEM_KIND_KEYS)[number]
 export const SPEND_FORM_KEYS = ['exp', 'sol_erda'] as const
 export type SpendFormKey = (typeof SPEND_FORM_KEYS)[number]
 
-/** 갈래 하나. `known` 이 거짓이면 앱에 그 입력 폼이 없어 못 고른다. */
+/** 분류 하나. `known` 이 거짓이면 앱에 그 입력 폼이 없어 못 고른다. */
 export interface CashbookCategory<K extends string = string> {
   readonly key: K
   readonly name: string
-  /** 하루 목록 카드 첫 줄. 묶음이 있는 지출 갈래는 묶음의 카드 제목이 대신 선다. */
+  /** 하루 목록 카드 첫 줄. 묶음이 있는 지출 분류는 묶음의 카드 제목이 대신 선다. */
   readonly cardTitle: string
-  /** 갈래 그림의 id. */
+  /** 분류 그림의 id. */
   readonly iconAssetId: string
   /**
-   * 갈래 카드에만 서는 한 줄. 넘치면 말줄임표로 잘린다. 기기마다 가로 비율이 달라 다 들어간다고 못 박을 수가
+   * 분류 카드에만 서는 한 줄. 넘치면 말줄임표로 잘린다. 기기마다 가로 비율이 달라 다 들어간다고 못 박을 수가
    * 없고, 잘리는 쪽을 받기로 했다(사용자 지정 2026-09-21).
    */
   readonly description: string
-  /** 묶음이 없는 갈래의 수량 단위(사냥의 소재 등). */
+  /** 묶음이 없는 분류의 수량 단위(사냥의 소재 등). */
   readonly unit?: string
   readonly known: boolean
 }
@@ -149,19 +149,19 @@ const index = derive(cashbookCategoriesTable, (table) => ({
     .map((row): ItemKind => compact({ key: row.key, name: row.name, unit: row.unit, hasTariff: row.hasTariff })),
 }))
 
-/** 지출 갈래. **차례가 곧 화면**이다. */
+/** 지출 분류. **차례가 곧 화면**이다. */
 export function spendCategories(): readonly CashbookCategory[] {
   return index().spend
 }
 
-/** 수익 갈래. **차례가 곧 화면**이고 앱이 아는 첫 갈래가 기본 갈래다. */
+/** 수익 분류. **차례가 곧 화면**이고 앱이 아는 첫 분류가 기본 분류다. */
 export function incomeCategories(): readonly CashbookCategory[] {
   return index().income
 }
 
 /**
- * 수입 시트에서 고르는 갈래. 사냥 전리품 판매가 있으면 솔 에르다 조각 카드를 뺀다. 조각 정산이 그 갈래의 조각 칸으로
- * 옮겨 갔기 때문이다. 그 갈래가 서버 표에 없으면 조각 카드가 그대로 선다. 숨기면 조각 정산을 적을 곳이 사라진다.
+ * 수입 시트에서 고르는 분류. 사냥 전리품 판매가 있으면 솔 에르다 조각 카드를 뺀다. 조각 정산이 그 분류의 조각 칸으로
+ * 옮겨 갔기 때문이다. 그 분류가 서버 표에 없으면 조각 카드가 그대로 선다. 숨기면 조각 정산을 적을 곳이 사라진다.
  */
 export function incomePickerCategories(): readonly CashbookCategory[] {
   const list = incomeCategories()
@@ -174,7 +174,7 @@ export function itemKinds(): readonly ItemKind[] {
   return index().itemKinds
 }
 
-/** 표에 없는 key 는 key 글자 그대로다. 서버에서 갈래가 사라지지는 않지만 옛 사본에 없을 수 있다. */
+/** 표에 없는 key 는 key 글자 그대로다. 서버에서 분류가 사라지지는 않지만 옛 사본에 없을 수 있다. */
 export function spendCategoryNameOf(key: string): string {
   return spendCategories().find((each) => each.key === key)?.name ?? key
 }
@@ -187,7 +187,7 @@ export function itemKindNameOf(key: ItemKindKey): string {
   return itemKinds().find((each) => each.key === key)?.name ?? key
 }
 
-/** 갈래 하나. 표에 없는 key 는 `null` 이다. */
+/** 분류 하나. 표에 없는 key 는 `null` 이다. */
 export function cashbookCategoryOf(entryType: 'income' | 'spend', key: string): CashbookCategory | null {
   const list = entryType === 'income' ? incomeCategories() : spendCategories()
   return list.find((each) => each.key === key) ?? null

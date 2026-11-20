@@ -18,7 +18,7 @@ import { readCharacterBasic } from '../schedule-sync/read-schedule'
  *
  * `read` 면 자동값이라 못 치고, `fallback` 이면 치는 칸이 되며 `percent` 는 그 칸의 기본값
  * (마지막 성공값, 없으면 `null` 이라 빈 칸)이다. **`read` 의 0 과 `fallback` 의 0 은 다르다**.
- * 앞은 메획을 안 두른 캐릭터 이고 뒤는 못 읽었으니 사람이 적어라 다.
+ * 앞은 메획을 안 두른 캐릭터라는 뜻이고, 뒤는 못 읽었으니 사람이 적으라는 뜻이다.
  */
 export type MesoRateLoad =
   | { kind: 'read'; percent: number }

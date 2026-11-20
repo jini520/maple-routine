@@ -1,4 +1,4 @@
-// 소식 갈래의 조회 중 자리. 이 부품이 지키는 것은 하나다 - **결과와 같은 치수로 선다.**
+// 소식 분류의 조회 중 자리. 이 부품이 지키는 것은 하나다 - **결과와 같은 치수로 선다.**
 // 어긋나면 내용이 도착할 때 아래가 밀리고, 그 밀림을 없애려고 만든 부품이라 그때 존재 이유가 없다.
 //
 // 그래서 치수를 여기에 손으로 적지 않고 **결과가 쓰는 값에서 읽어 와** 대조한다. 배너는
@@ -20,7 +20,7 @@ function lineHeightOf(step: 'sm' | 'xs'): number {
 }
 
 describe('NoticeBannerSkeleton', () => {
-  it('배너 갈래의 비율로 자리를 잡는다', async () => {
+  it('배너로 보이는 분류의 비율로 자리를 잡는다', async () => {
     const { getByTestId } = await renderAtom(<NoticeBannerSkeleton kind="cashshop" />)
 
     expect(getByTestId('notice-banner-skeleton', HIDDEN)).toHaveStyle({
@@ -28,7 +28,7 @@ describe('NoticeBannerSkeleton', () => {
     })
   })
 
-  it('갈래마다 비율이 갈린다', async () => {
+  it('분류마다 비율이 갈린다', async () => {
     const event = await renderAtom(<NoticeBannerSkeleton kind="event" />)
     const cashshop = await renderAtom(<NoticeBannerSkeleton kind="cashshop" />)
 
@@ -61,7 +61,7 @@ describe('NoticeLinesSkeleton', () => {
 
 // 목록 화면(`전체`)의 카드 한 장. 위와 같은 규칙인데 재는 자리가 셋이다 - 그림 · 제목 · 기간.
 describe('NoticeBannerCardSkeleton', () => {
-  it('배너 갈래의 비율로 그림 자리를 잡는다', async () => {
+  it('배너로 보이는 분류의 비율로 그림 자리를 잡는다', async () => {
     const { getByTestId } = await renderAtom(<NoticeBannerCardSkeleton kind="event" />)
 
     expect(getByTestId('notice-card-skeleton-art', HIDDEN)).toHaveStyle({

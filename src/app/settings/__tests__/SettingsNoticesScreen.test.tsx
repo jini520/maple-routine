@@ -33,7 +33,7 @@ const refresh = jest.mocked(refreshNoticeKinds)
 const navigate = jest.fn()
 const goBack = jest.fn()
 
-/** 쿼리 캐시에 든 목록. 적지 않은 갈래는 `missing` 이다. `null` 은 아직 모른다, 빈 배열은 받아 봤는데 없다. */
+/** 쿼리 캐시에 든 목록. 적지 않은 분류는 `missing` 이다. `null` 은 아직 모른다, 빈 배열은 받아 봤는데 없다. */
 function cacheNotices(byKind: Partial<Record<NoticeKind, Notice[] | null>>, missing: Notice[] | null = []): void {
   cache.mockImplementation(
     (kinds) =>
@@ -61,7 +61,7 @@ const HIDDEN = { includeHiddenElements: true } as const
 // 더보기와 같은 버그가 이 화면에도 있었다. 받아 보기도 전에 `아직 받은 진행 중인 이벤트가 없습니다` 를
 // 세우고 그다음에 카드가 들어왔다. 캐시가 `null`(아직 모른다)인 동안은 스켈레톤이다.
 describe('조회 중', () => {
-  it('배너 갈래는 카드 모양 스켈레톤이 선다', async () => {
+  it('배너로 보이는 분류는 카드 모양 스켈레톤이 선다', async () => {
     cacheNotices({}, null)
 
     const view = await renderOverlay(
@@ -72,7 +72,7 @@ describe('조회 중', () => {
     expect(view.queryByText('아직 받은 진행 중인 이벤트가 없습니다')).toBeNull()
   })
 
-  it('글 갈래는 줄 모양 스켈레톤이 선다', async () => {
+  it('글로 보이는 분류는 줄 모양 스켈레톤이 선다', async () => {
     cacheNotices({}, null)
 
     const view = await renderOverlay(
@@ -216,7 +216,7 @@ describe('받기', () => {
 })
 
 // 이 화면도 소식을 받고는 머무는 동안 다시 받을 길이 없었다. 더보기와 같은 이유로 당김이 선다.
-// 인디케이터 조립은 `ScreenScroll` 이 지고, 화면이 지는 것은 무엇을 부르는가 와 실패를 말하는가 다.
+// 인디케이터 조립은 `ScreenScroll` 이 지고, 화면이 지는 것은 무엇을 부르는지와 실패를 말하는지다.
 describe('당겨서 새로고침', () => {
   async function pull(view: { getByTestId: (id: string) => AtomElement }): Promise<void> {
     await act(async () => {
@@ -224,7 +224,7 @@ describe('당겨서 새로고침', () => {
     })
   }
 
-  it('당기면 보고 있는 갈래만 다시 받는다', async () => {
+  it('당기면 보고 있는 분류만 다시 받는다', async () => {
     const view = await renderOverlay(
       <SettingsNoticesScreen route={{ params: { kinds: ['event'], title: '진행 중인 이벤트' } }} />,
     )
@@ -247,7 +247,7 @@ describe('당겨서 새로고침', () => {
     expect(useToastStore.getState().toasts.map((toast) => toast.message)).toEqual(['소식을 불러오지 못했습니다'])
   })
 
-  // 키가 없으면 넥슨 네 갈래가 언제나 실패다. 그때마다 말하면 앱 공지를 제대로 받고도 토스트가 뜬다.
+  // 키가 없으면 넥슨 분류 넷이 언제나 실패다. 그때마다 말하면 앱 공지를 제대로 받고도 토스트가 뜬다.
   it('하나라도 받으면 조용하다', async () => {
     const view = await renderOverlay(
       <SettingsNoticesScreen route={{ params: { kinds: ['app'], title: '앱 공지사항' } }} />,

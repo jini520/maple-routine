@@ -1,7 +1,7 @@
-/** 통계 도넛과 today 이번 주 수익 도넛이 함께 쓰는 조각 단계. 한쪽만 바꾸면 같은 갈래가 두 화면에서 다른 색이 된다 */
+/** 통계 도넛과 today 이번 주 수익 도넛이 함께 쓰는 조각 단계. 한쪽만 바꾸면 같은 분류가 두 화면에서 다른 색이 된다 */
 import { hexToOklch, oklchToHex } from '../color'
 
-/** 조각이 되는 갈래 수. 넘으면 앞 넷과 `그 외 n` 으로 묶는다. 하나만 넘으면 묶지 않는다 */
+/** 조각이 되는 분류 수. 넘으면 앞 넷과 `그 외 n` 으로 묶는다. 하나만 넘으면 묶지 않는다 */
 export const SLICE_LIMIT = 4
 
 /**
@@ -19,7 +19,7 @@ export function sliceColor(ink: string, index: number): string {
   return oklchToHex({ l: SLICE_LIGHTNESS[Math.min(index, SLICE_LIGHTNESS.length - 1)], c, h })
 }
 
-/** `그 외` 조각 색. 갈래 색과 섞이지 않게 거의 회색이다 */
+/** `그 외` 조각 색. 분류 색과 섞이지 않게 거의 회색이다 */
 export function restSliceColor(ink: string): string {
   return oklchToHex({ l: 0.42, c: 0.015, h: hexToOklch(ink).h })
 }

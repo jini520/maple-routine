@@ -116,7 +116,7 @@ export const dropHistoryOptions = queryOptions<DropHistoryData>({
 export type DropHistoryStatus = 'loading' | 'ready' | 'failed'
 
 export interface DropHistory extends DropHistoryData {
-  /** `loading` 은 아직 한 번도 못 읽었다 다. 다시 읽는 동안은 든 값이 그대로 `ready` 다. */
+  /** `loading` 은 아직 한 번도 못 읽었다는 뜻이다. 다시 읽는 동안은 든 값이 그대로 `ready` 다. */
   status: DropHistoryStatus
   /** 신선해도 다시 읽는다. 실패 화면의 다시 시도가 부른다. */
   reload: () => Promise<void>

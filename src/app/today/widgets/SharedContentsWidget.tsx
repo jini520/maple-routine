@@ -122,7 +122,7 @@ export function SharedContentsWidget({ data }: WidgetProps): React.JSX.Element {
             .filter((column) => column.length > 0)
             .map((column) => (
               <View key={column[0]?.category} testID="shared-column" className="min-w-0 flex-1 gap-2">
-                {/* 갈래마다 `card-inset` 칸 하나. 칸의 색이 갈래 사이 경계라 구분선을 긋지 않는다. */}
+                {/* 분류마다 `card-inset` 칸 하나. 칸의 색이 분류 사이 경계라 구분선을 긋지 않는다. */}
                 {column.map((group) => (
                   <View key={group.category} testID="shared-group" className="rounded-[10px] bg-card-inset px-2.5 py-2">
                     <View className="flex-row items-center justify-between gap-1.5">

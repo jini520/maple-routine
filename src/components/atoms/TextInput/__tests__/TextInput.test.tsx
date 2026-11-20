@@ -73,7 +73,7 @@ describe('TextInput: 조합이 도는 칸은 value 를 씨앗으로만 받는다
     expect(getByTestId('금액').props.defaultValue).toBeUndefined()
   })
 
-  it('숫자 갈래 넷을 모두 통제한다', async () => {
+  it('숫자 키보드 종류 넷을 모두 통제한다', async () => {
     for (const keyboardType of ['number-pad', 'numeric', 'decimal-pad', 'phone-pad'] as const) {
       const { getByTestId } = await renderAtom(
         <TextInput testID="칸" value="7" keyboardType={keyboardType} />,

@@ -575,7 +575,7 @@ describe('대표 캐릭터', () => {
 })
 
 // 통계 화면과 같은 집계 함수로 같은 주를 센다. 여기서는 그 함수를 이번 주 범위로 부르는지와,
-// 캐릭터 줄에 팝오버 갈래 · 그림이 붙는지를 본다. 집계 자체는 features/stats 의 테스트가 본다.
+// 캐릭터 줄에 팝오버 분류 · 그림이 붙는지를 본다. 집계 자체는 features/stats 의 테스트가 본다.
 describe('이번 주 수익', () => {
   const week = statsRanges('weekly', WEEK_KEY).current
   const crystalDay = (ocid: string, characterName: string, payoutMeso: number): DayRecord => ({
@@ -602,7 +602,7 @@ describe('이번 주 수익', () => {
     expect(model.weeklyIncome.income.map((total) => total.key)).toEqual(['boss_crystal'])
   })
 
-  it('캐릭터 줄에 갈래별 합계와 프로필 그림을 싣는다', () => {
+  it('캐릭터 줄에 분류별 합계와 프로필 그림을 싣는다', () => {
     const model = buildTodayViewModel(
       input({
         profilesByOcid: { a: profile({ imageUrl: 'https://example.test/a.png' }) },
@@ -1441,7 +1441,7 @@ describe('공유 컨텐츠. 에픽 던전 주간 한도', () => {
     expect(epic?.items.some((item) => item.isWeeklyLimitClosed)).toBe(false)
   })
 
-  // 한도는 갈래로 센다. 표에 없는 컨텐츠는 갈래가 없어 이름이 에픽 던전처럼 보여도 세지 않는다.
+  // 한도는 분류로 센다. 표에 없는 컨텐츠는 분류가 없어 이름이 에픽 던전처럼 보여도 세지 않는다.
   it('표에 없는 컨텐츠는 완료해도 한도에 안 든다', () => {
     const view = epicView([1, 1, 0, 0])
     const epic = epicOf({

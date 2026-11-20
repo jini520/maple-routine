@@ -184,7 +184,7 @@ export function ItemBuyForm(props: SpendFormProps): React.JSX.Element {
           />
         </FieldRow>
 
-        {/* 종류가 나머지 둘을 정한다. 세그먼트인 것은 통화와 같은 이유다. 갈래가 아니라 값의
+        {/* 종류가 나머지 둘을 정한다. 세그먼트인 것은 통화와 같은 이유다. 분류가 아니라 값의
             축이다. 목록에서 고른 아이템은 종류가 정해져 있어 칸이 없고, 목록에 없는 이름을 쳤을 때만 선다. */}
         {item.picked === null && name !== '' && (
           <FieldRow label="종류" testID="spend-sheet-item-kind">

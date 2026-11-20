@@ -92,8 +92,8 @@ describe('contentSectionOf', () => {
 })
 
 describe('contentCategoryOf', () => {
-  // 같은 갈래가 두 섹션에 걸친다. 섹션이 아니라 줄의 category 가 말한다.
-  it('줄의 갈래를 낸다', () => {
+  // 같은 분류가 두 섹션에 걸친다. 섹션이 아니라 줄의 category 가 말한다.
+  it('줄의 분류를 낸다', () => {
     expect(contentCategoryOf('monster_park')).toBe('monster_park')
     expect(contentCategoryOf('monster_park_extreme')).toBe('monster_park')
     expect(contentCategoryOf('weekly_quest_faithful_investigation_reward')).toBe('arcane_river_quest')
@@ -106,8 +106,8 @@ describe('contentCategoryOf', () => {
   })
 })
 
-describe('갈래 표 조회', () => {
-  it('갈래 태그는 정한 갈래만 있고, null 은 숨김 · undefined 는 정하지 않음이다', () => {
+describe('분류 표 조회', () => {
+  it('분류 태그는 정한 분류만 있고, null 은 숨김 · undefined 는 정하지 않음이다', () => {
     expect(contentCategoryTagOf('epic_dungeon')).toBe('ID당 1회')
     expect(contentCategoryTagOf('arcane_river_quest')).toBeNull()
     expect(contentCategoryTagOf('guild')).toBeUndefined()

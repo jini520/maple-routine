@@ -79,12 +79,12 @@ describe('주기 탭', () => {
     expect(view.getByLabelText('일간').props.accessibilityState?.selected).toBe(true)
     expect(view.getByText('퀘스트')).toBeTruthy()
     expect(view.getByText('4')).toBeTruthy()
-    // 일간엔 보스 갈래가 없다. 주간 보스 2 도 검마 1 도 이 탭의 값이 아니다.
+    // 일간엔 보스 묶음이 없다. 주간 보스 2 도 검마 1 도 이 탭의 값이 아니다.
     expect(view.queryByText('보스')).toBeNull()
     expect(view.queryByText('3')).toBeNull()
   })
 
-  it('주간 탭만 갈래가 둘이다. 퀘스트와 보스가 나란히 선다', async () => {
+  it('주간 탭만 묶음이 둘이다. 퀘스트와 보스가 나란히 선다', async () => {
     const view = await 위젯([스케줄행()])
 
     await 탭(view, '주간')
@@ -96,7 +96,7 @@ describe('주기 탭', () => {
     expect(view.getAllByText('개')).toHaveLength(2)
   })
 
-  it('주간 탭에서 값이 0 인 갈래는 그 행에서 빠진다', async () => {
+  it('주간 탭에서 값이 0 인 묶음은 그 행에서 빠진다', async () => {
     const view = await 위젯([스케줄행({ weeklyBosses: [] })])
 
     await 탭(view, '주간')
@@ -105,7 +105,7 @@ describe('주기 탭', () => {
     expect(view.queryByText('보스')).toBeNull()
   })
 
-  // 라벨은 **어느 탭에서나** 붙는다. 값이 있는 갈래가 자기 이름과 함께 선다.
+  // 라벨은 **어느 탭에서나** 붙는다. 값이 있는 묶음이 자기 이름과 함께 선다.
   it('월간 탭은 `보스 N개`다. `검마`라는 낱말은 안 쓴다', async () => {
     const view = await 위젯([스케줄행()])
 
@@ -118,8 +118,8 @@ describe('주기 탭', () => {
   })
 })
 
-describe('수치는 `갈래 N개`다', () => {
-  it('탭마다 다른 모양이 없다. 값이 있는 갈래가 자기 이름과 함께 선다', async () => {
+describe('수치는 `묶음 이름 N개`다', () => {
+  it('탭마다 다른 모양이 없다. 값이 있는 묶음이 자기 이름과 함께 선다', async () => {
     const view = await 위젯([스케줄행()])
 
     expect(view.getAllByText('퀘스트')).toHaveLength(1)

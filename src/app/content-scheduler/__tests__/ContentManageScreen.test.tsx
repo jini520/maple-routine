@@ -176,8 +176,8 @@ describe('ContentManageScreen', () => {
     expect(stateOf(row('몬스터파크')).selected).toBe(true)
   })
 
-  // 갈래 이름을 그룹 헤더로 한 번만 말하고 행에는 표의 `displayName` 만 남긴다.
-  it('갈래는 그룹 헤더가 되고 행에는 접두사 없는 이름만 남는다', async () => {
+  // 분류 이름을 그룹 헤더로 한 번만 말하고 행에는 표의 `displayName` 만 남긴다.
+  it('분류는 그룹 헤더가 되고 행에는 접두사 없는 이름만 남는다', async () => {
     mockSchedule({ characters: [character()] })
 
     await renderScreen()

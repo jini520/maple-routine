@@ -35,7 +35,7 @@ const SWITCH_SIZE = {
 /** iOS 26 시스템 스위치의 고정 크기(pt). `width` · `height` 로는 안 줄어 배율로만 준다. */
 const IOS_NATIVE = { width: 63, height: 28 }
 
-/** iOS 갈래의 보이는 높이(pt). 안드로이드 트랙과 같아 줄 높이가 안 바뀐다. */
+/** iOS 분기의 보이는 높이(pt). 안드로이드 트랙과 같아 줄 높이가 안 바뀐다. */
 const IOS_SWITCH_SIZE = { sm: 16, md: 24 } as const
 
 /**

@@ -160,8 +160,8 @@ export interface TrackedCharacterContext {
 /**
  * 추적 ocid 를 모든 넥슨 계정의 목록에서 찾아 각자의 메이플 ID · 자격과 함께 낸 목록.
  *
- * 위 `resolveRegisteredCharacters` 와 묻는 것이 다르다. 그쪽은 이 메이플 ID 에 누가 사는가 이고 이쪽은 이 ocid 들이 어디에
- * 사는가 다. 추적 목록이 메이플 ID 경계를 넘으면 전자로는 다른 계정 캐릭터가 필터에서 조용히 빠지고, 계정 공유 원장도 지금
+ * 위 `resolveRegisteredCharacters` 와 묻는 것이 다르다. 그쪽은 이 메이플 ID 에 누가 사는지를 묻고 이쪽은 이 ocid 들이 어디에
+ * 사는지를 묻는다. 추적 목록이 메이플 ID 경계를 넘으면 전자로는 다른 계정 캐릭터가 필터에서 조용히 빠지고, 계정 공유 원장도 지금
  * 고른 계정 키를 써서 에픽 던전 완료가 계정을 넘어 번진다.
  *
  * 응답에 없는 ocid 는 `characters` 에서 빠진다. 목록을 못 받은 계정의 캐릭터는 `unlisted`, 부를 자격이 없는 캐릭터는
@@ -375,7 +375,7 @@ export async function getCharacterPickerRoster(
   const trackedOcids = new Set((await getTrackedCharacterOcids()) ?? [])
 
   // 한 번이라도 사용자에게 보여줄 것을 흘렸는가. 인덱스에 ocid 가 있어도 전부 자격 미확인이면
-  // 아직 거짓이다. 판정 기준은 캐시 인덱스가 비었는가 가 아니라 실제로 방출했는가 다.
+  // 아직 거짓이다. 판정 기준은 캐시 인덱스가 비었는지가 아니라 실제로 방출했는지다.
   let hasVisibleView = false
   // 401/403·429 는 모든 캐릭터에 같이 적용되는 실패다. 아래 `emit` 이 방출 직전에 이 값을 본다.
   let globalError: unknown = null

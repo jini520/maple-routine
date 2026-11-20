@@ -58,7 +58,7 @@ function seedDevice(db: DatabaseSync): void {
     ('mg1abc-x2', 'ocid-1', '2026-10-01', '컨텐츠', 'content', '하이마운틴 EXP 1단계, 솔 2단계', NULL, '{"exp":"high_mountain_1","sol_erda":"high_mountain_2"}', NULL, 1, NULL, NULL, NULL, NULL, 37501, 1180, NULL, NULL, '2026-10-01T02:00:00.000Z'),
     ('mg1abc-x3', 'ocid-1', '2026-10-02', '심볼 강화', 'symbol', '세르니움', 'cernium', NULL, NULL, NULL, 7, 10, 90000000, NULL, NULL, NULL, NULL, NULL, '2026-10-02T00:00:00.000Z'),
     ('mg1abc-x4', NULL, '2026-10-02', '아이템 구매', 'item_purchase', '앱솔랩스 아처슈즈', NULL, NULL, 'equipment', NULL, NULL, NULL, 1100000000, 100000000, NULL, NULL, NULL, NULL, '2026-10-02T01:00:00.000Z'),
-    ('mg1abc-x5', NULL, '2026-10-03', '없어진 갈래', NULL, '옛 지출', NULL, NULL, NULL, NULL, NULL, NULL, 500, NULL, NULL, NULL, NULL, NULL, '2026-10-03T00:00:00.000Z')`)
+    ('mg1abc-x5', NULL, '2026-10-03', '없어진 분류', NULL, '옛 지출', NULL, NULL, NULL, NULL, NULL, NULL, 500, NULL, NULL, NULL, NULL, NULL, '2026-10-03T00:00:00.000Z')`)
   db.exec(`INSERT INTO income_records (${INCOME_COLUMNS}) VALUES
     ('mg1abc-y1', 'ocid-1', '2026-10-01', '사냥', 'hunting', '밤의 길 3', 'tallahart_road_of_night_3', 900000000, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 285, 2, 'wealth', 8, 30, NULL, 120, NULL, 2, NULL, '2026-10-01T03:00:00.000Z'),
     ('mg1abc-y2', 'ocid-1', '2026-10-02', '사냥', 'hunting', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 12, 0, NULL, 0, NULL, NULL, '2026-10-02T03:00:00.000Z'),
@@ -98,7 +98,7 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
       }),
       expect.objectContaining({ category: 'symbol', itemKey: 'cernium', levelFrom: 7, levelTo: 10, mesoAmount: 90_000_000 }),
       expect.objectContaining({ category: 'item_purchase', item: '앱솔랩스 아처슈즈', itemKind: 'equipment', mesoAmount: 1_100_000_000, tariffMeso: 100_000_000 }),
-      // 버전 2 가 key 를 못 찾은 갈래는 기타로 옮긴다. 버리면 그 지출이 사라진다.
+      // 버전 2 가 key 를 못 찾은 분류는 기타로 옮긴다. 버리면 그 지출이 사라진다.
       expect.objectContaining({ category: 'etc', item: '옛 지출', mesoAmount: 500 }),
     ])
     expect(withoutId(income)).toEqual([

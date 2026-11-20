@@ -145,7 +145,7 @@ function testIdsIn(node: AtomElement): string[] {
   return ids
 }
 
-/** 카드 안에 선 행 라벨들. 순서가 곧 화면 순서다. 소식은 행이 아니라 갈래로 펼친다. */
+/** 카드 안에 선 행 라벨들. 순서가 곧 화면 순서다. 소식은 행이 아니라 분류별로 펼친다. */
 const ROW_LABELS = [
   '개발 노트',
   // 둘 다 앱을 떠나는 줄이다. 문의는 응원보다 자주 써서 위다.
@@ -154,7 +154,7 @@ const ROW_LABELS = [
   '개발자 응원하기(앱 리뷰)',
 ]
 
-/** 소식 갈래의 이름과 분류. 순서는 사용자가 정했다. */
+/** 소식 분류의 이름과 `kind`. 순서는 사용자가 정했다. */
 const SECTIONS: readonly [string, NoticeKind][] = [
   ['NOTICE', 'app'],
   ['진행 중인 이벤트', 'event'],
@@ -171,7 +171,7 @@ function notice(id: string, kind: NoticeKind, patch: Partial<Notice> = {}): Noti
 const mockedUseNotices = jest.mocked(useNotices)
 const mockedRefreshKinds = jest.mocked(refreshNoticeKinds)
 
-/** 쿼리 캐시에 든 목록. 적지 않은 갈래는 `missing` 이다. `null` 은 아직 모른다, 빈 배열은 받아 봤는데 없다. */
+/** 쿼리 캐시에 든 목록. 적지 않은 분류는 `missing` 이다. `null` 은 아직 모른다, 빈 배열은 받아 봤는데 없다. */
 function cacheNotices(byKind: Partial<Record<NoticeKind, Notice[] | null>>, missing: Notice[] | null = []): void {
   mockedUseNotices.mockImplementation(
     (kinds) =>
@@ -243,7 +243,7 @@ afterEach(() => {
 })
 
 describe('SettingsScreen', () => {
-  //  딸림 작업. 문서 스크롤에 얹혀 있던 **마지막 탭 화면**이 자기 스크롤을 소유하게
+  // 문서 스크롤에 얹혀 있던 **마지막 탭 화면**이 자기 스크롤을 소유하게
   // 됐다. RN 에서는 그것이 기본값이지만, 셸을 안 쓰고 직접 그리면 다시 잃는다.
   it('자기 스크롤 컨테이너를 소유한다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
@@ -285,7 +285,7 @@ describe('SettingsScreen', () => {
 
     const texts = textsIn(view.getByTestId('screen-Settings'))
     expect(texts.indexOf('가이드 및 문의')).toBeLessThan(texts.indexOf('개발 노트'))
-    // 소식 갈래 제목이 아니므로 `전체` 를 안 단다 - 열 목록이 없다.
+    // 소식 분류 제목이 아니므로 `전체` 를 안 단다 - 열 목록이 없다.
     expect(view.queryByLabelText('가이드 및 문의 전체')).toBeNull()
   })
 
@@ -369,13 +369,7 @@ describe('SettingsScreen', () => {
     expect(textsIn(rowOf(view, '개발 노트'))).toEqual(['개발 노트'])
   })
 
-  //  정정: 모드 전환은 세 스토어를 **모두** 낡게 만든다(저장 경로에서 컨텐츠가
-  // 빠진 것은 그쪽이 저장의 주체여서일 뿐이다). 이것이 없으면 자동 → 수동 직후 보스 탭이
-  // "추적할 주간 보스가 없습니다"로 뜨고 새로고침해야 목록이 나온다.
-
-  // 셋 다 `/settings/account-data` 로 내려갔다. 되돌아오면 값을 고르는 카드가 다시 혼종이 된다.
-
-  // 버전 · 출처 표기는 설정 화면 맨 아래로 갔다. 소식 갈래로 길어진 이 화면 끝에 두면 멀리 밀린다.
+  // 버전 · 출처 표기는 설정 화면 맨 아래로 갔다. 소식 분류로 길어진 이 화면 끝에 두면 멀리 밀린다.
   // 값을 바꾸는 행은 전부 설정 화면에 산다. 같은 값을 바꾸는 행이 두 화면에 있으면 어느 쪽이
   // 기준인지 화면이 말을 못 한다(사용자 결정).
   it.each(['테마', '캐릭터 관리', '스케줄 관리 방법'])('"%s" 행을 두지 않는다', async (label) => {
@@ -413,8 +407,8 @@ describe('SettingsScreen: 머리글과 점검 배너', () => {
   })
 })
 
-describe('SettingsScreen: 소식 갈래', () => {
-  it('갈래 다섯이 앱 공지 → 진행 중인 이벤트 → 캐시샵 업데이트 → 게임 공지 → 업데이트 순이다', async () => {
+describe('SettingsScreen: 소식 분류', () => {
+  it('분류 다섯이 앱 공지 → 진행 중인 이벤트 → 캐시샵 업데이트 → 게임 공지 → 업데이트 순이다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     expect(view.getAllByTestId('notice-section').map((section) => textsIn(section)[0])).toEqual(
@@ -422,7 +416,7 @@ describe('SettingsScreen: 소식 갈래', () => {
     )
   })
 
-  // 갈래 이름이 목록 화면의 제목이자 빈 문구다.
+  // 분류 이름이 목록 화면의 제목이자 빈 문구다.
   it.each(SECTIONS)('"%s" 의 전체는 그 분류로 목록을 연다', async (label, kind) => {
     const view = await renderOverlay(<SettingsScreen />)
 
@@ -432,18 +426,18 @@ describe('SettingsScreen: 소식 갈래', () => {
   })
 
   // 받아 보기 전에 `없습니다` 라고 말하는 것은 거짓이고, 빈 문구 카드와 배너는 높이가 달라
-  // 도착할 때마다 아래가 밀렸다. 갈래가 다섯이라 그 밀림이 다섯 번 따로 일어난다.
-  it('받아 보기 전에는 갈래마다 스켈레톤이 선다', async () => {
+  // 도착할 때마다 아래가 밀렸다. 분류가 다섯이라 그 밀림이 다섯 번 따로 일어난다.
+  it('받아 보기 전에는 분류마다 스켈레톤이 선다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
-    // 글 갈래 셋 · 배너 갈래 둘.
+    // 글로 보이는 분류 셋 · 배너로 보이는 분류 둘.
     expect(view.getAllByTestId('notice-lines-skeleton', HIDDEN)).toHaveLength(3)
     expect(view.getAllByTestId('notice-banner-skeleton', HIDDEN)).toHaveLength(2)
     expect(view.queryByText('아직 받은 NOTICE가 없습니다')).toBeNull()
     expect(view.queryByText('아직 받은 진행 중인 이벤트가 없습니다')).toBeNull()
   })
 
-  // 갈래를 숨기면 화면 순서가 바뀐다.
+  // 분류를 숨기면 화면 순서가 바뀐다.
   it('받아 보고 없으면 그때 빈 문구로 바뀐다', async () => {
     cacheNotices({})
 
@@ -456,18 +450,18 @@ describe('SettingsScreen: 소식 갈래', () => {
     expect(view.queryAllByTestId('notice-lines-skeleton', HIDDEN)).toHaveLength(0)
   })
 
-  // 보여줄 것이 있으면 기다리게 하지 않는다. 캐시가 빈 갈래만 스켈레톤으로 남는다.
-  it('캐시에 글이 있는 갈래는 스켈레톤을 건너뛴다', async () => {
+  // 보여줄 것이 있으면 기다리게 하지 않는다. 캐시가 빈 분류만 스켈레톤으로 남는다.
+  it('캐시에 글이 있는 분류는 스켈레톤을 건너뛴다', async () => {
     cacheNotices({ app: [notice('app-1', 'app')] }, null)
 
     const view = await renderOverlay(<SettingsScreen />)
 
     expect(view.getByText('제목 app-1')).toBeTruthy()
-    // NOTICE 는 캐시가 섰고 나머지 글 갈래 둘만 스켈레톤이다.
+    // NOTICE 는 캐시가 섰고 나머지 글로 보이는 분류 둘만 스켈레톤이다.
     expect(view.getAllByTestId('notice-lines-skeleton', HIDDEN)).toHaveLength(2)
   })
 
-  // 들어올 때마다 만료된 쿼리를 받는다. 다섯 갈래를 다 보므로 열쇠는 공지 전체다.
+  // 들어올 때마다 만료된 쿼리를 받는다. 다섯 분류를 다 보므로 열쇠는 공지 전체다.
   it('들어오면 다섯 분류를 보고 만료된 공지 쿼리를 다시 받는다', async () => {
     await renderOverlay(<SettingsScreen />)
 
@@ -475,7 +469,7 @@ describe('SettingsScreen: 소식 갈래', () => {
     expect(useRefetchStaleOnFocus).toHaveBeenCalledWith(queryKeys.allNotices())
   })
 
-  it('글 갈래는 최근 글을 앱 공지 3 · 게임 공지 3 · 업데이트 2 줄만 보인다', async () => {
+  it('글로 보이는 분류는 최근 글을 앱 공지 3 · 게임 공지 3 · 업데이트 2 줄만 보인다', async () => {
     cacheNotices({
       app: [1, 2, 3, 4].map((n) => notice(`app-${n}`, 'app')),
       game: [1, 2, 3, 4].map((n) => notice(`game-${n}`, 'game')),
@@ -537,7 +531,7 @@ describe('SettingsScreen: 당겨서 새로고침', () => {
   }
 
   // 들어올 때의 재조회는 만료된 것만 받는 훅이 한다. 당김만이 신선해도 다시 받는 조회다.
-  it('당기면 다섯 갈래를 신선해도 다시 받는다', async () => {
+  it('당기면 다섯 분류를 신선해도 다시 받는다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 
     await pull(view)
@@ -556,7 +550,7 @@ describe('SettingsScreen: 당겨서 새로고침', () => {
     expect(useToastStore.getState().toasts.map((toast) => toast.message)).toEqual(['소식을 불러오지 못했습니다'])
   })
 
-  // 키가 없으면 넥슨 네 갈래가 언제나 실패다. 그때마다 말하면 앱 공지를 제대로 받고도 토스트가 뜬다.
+  // 키가 없으면 넥슨 분류 넷이 언제나 실패다. 그때마다 말하면 앱 공지를 제대로 받고도 토스트가 뜬다.
   it('하나라도 성공하면 조용하다', async () => {
     const view = await renderOverlay(<SettingsScreen />)
 

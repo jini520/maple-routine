@@ -76,7 +76,7 @@ describe.each(THEME_NAMES as readonly ThemeName[])('%s', (name) => {
 
   // **배경 이미지는 변수로 내지 않는다**(`theme-vars.ts`). RN 에서 그 값은 URL 문자열이 아니라
   // 에셋 id 라 `url("…")` 이 뜻을 잃는다.
-  // 벽지를 `<Image>` 로 그리는 것은 뷰 레이어 몫으로 남아 있다. 여기서 새어 나가면 조용히 죽는
+  // 배경 이미지를 `<Image>` 로 그리는 것은 뷰 레이어 몫으로 남아 있다. 여기서 새어 나가면 조용히 죽는
   // 스타일이 하나 생기므로 계약으로 막는다.
   it('배경 이미지는 변수 맵에 새어 나오지 않는다', () => {
     const names = Object.keys(buildThemeVariables(definition))

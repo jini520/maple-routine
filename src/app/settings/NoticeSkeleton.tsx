@@ -1,5 +1,5 @@
 /**
- * 소식 갈래의 조회 중 자리. 받아 보기 전에 `없습니다` 라고 말하지 않으려고 둔다.
+ * 소식 분류의 조회 중 자리. 받아 보기 전에 `없습니다` 라고 말하지 않으려고 둔다.
  *
  * **결과와 같은 치수로 서는 것이 전부다.** 어긋나면 내용이 도착할 때 아래가 밀리고, 그 밀림을
  * 없애려고 만든 부품이라 그때 존재 이유가 없다. 배너는 `NoticeBannerArt` 와 같은 비율, 글 줄은
@@ -21,7 +21,7 @@ import { NOTICE_LINE_CLASS, SETTINGS_CARD_CLASS } from './row-class'
 const TITLE_HEIGHT = 20
 const DATE_HEIGHT = 17
 
-/** 배너 갈래(진행 중인 이벤트 · 캐시샵 업데이트)의 자리. 화면 양끝까지 닿는 한 칸이다. */
+/** 배너로 보이는 분류(진행 중인 이벤트 · 캐시샵 업데이트)의 자리. 화면 양끝까지 닿는 한 칸이다. */
 export function NoticeBannerSkeleton(props: { kind: NoticeKind }): React.JSX.Element {
   return (
     // 조회 중임을 말하는 것은 이 상자다. 안쪽 막대는 장식이라 스스로 숨는다.
@@ -54,9 +54,9 @@ function SkeletonRow(): React.JSX.Element {
 }
 
 /**
- * 글 갈래(NOTICE · 공지 사항 · 업데이트)의 자리.
+ * 글로 보이는 분류(NOTICE · 공지 사항 · 업데이트)의 자리.
  *
- * @param props.lines 그 갈래가 보여 줄 줄 수. `NOTICE_SECTIONS` 의 `lines` 를 그대로 받는다
+ * @param props.lines 그 분류가 보여 줄 줄 수. `NOTICE_SECTIONS` 의 `lines` 를 그대로 받는다
  */
 export function NoticeLinesSkeleton(props: { lines: number }): React.JSX.Element {
   return (

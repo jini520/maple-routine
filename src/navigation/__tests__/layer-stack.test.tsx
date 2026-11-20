@@ -50,7 +50,7 @@ function 루트_단들(): string[] {
   return (navigationRef?.getRootState().routes ?? []).map((route) => route.name)
 }
 
-/** 층 스택이 든 단들. 이 배열의 길이가 곧 되돌아갈 단이 몇 개인가 다. */
+/** 층 스택이 든 단들. 이 배열의 길이가 곧 되돌아갈 단의 수다. */
 function 층_단들(): string[] {
   const main = navigationRef?.getRootState().routes.find((route) => route.name === 'Main')
   return (main?.state?.routes ?? []).map((route) => route.name)

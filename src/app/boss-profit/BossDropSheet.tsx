@@ -421,7 +421,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
 
   /** 아직 값도 기록 안함도 안 정한 것. `가격 입력` 이 여는 차례이고 카드의 확인이 잇는다. */
   const unpriced = selected.filter((drop) => drop.priceState === undefined)
-  /** 확인 줄이 할 말. 갈래가 다섯이라 `lib/drop/drop-prompt` 가 정한다. */
+  /** 확인 줄이 할 말. 경우가 다섯이라 `lib/drop/drop-prompt` 가 정한다. */
   const prompt = dropPromptOf(selected)
 
   function handleTileTap(candidate: DropCandidate): void {
@@ -473,7 +473,7 @@ export function BossDropSheet(props: BossDropSheetProps): React.JSX.Element {
     // 다른 시트의 바닥 줄처럼 구분선이 없다. 확인 줄이 테두리 없는 카드라 그것이 내용과 가른다.
     <View>
               {/* 기록 직후 그 아이템 하나에 대해 값을 매길지 묻는다. 흐름은 기록 → 확인 →
-                  (입력 →) 복귀 이고 어느 갈래든 타일 그리드로 돌아온다. 차단하지 않는다.
+                  (입력 →) 복귀 이고 어느 경우든 타일 그리드로 돌아온다. 차단하지 않는다.
                   일반 아이템은 확인창 없이 탭 즉시 기록된다. 기록은 이미 끝났고 이 줄은 그 옆에
                   설 뿐이라 무시하고 다음 아이템을 계속 골라도 된다. */}
               {prompt !== null && props.pricing !== undefined && (

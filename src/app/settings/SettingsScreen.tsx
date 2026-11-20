@@ -8,10 +8,10 @@
  * 순서는 **얼마나 자주 바뀌는가**로 정한다. 소식이 맨 위이고 응원이 맨 아래다. 자주 바뀌는 것을
  * 아래 두면 사용자가 스크롤을 배워야 한다.
  *
- * 소식은 행을 눌러 여는 목록이 아니라 첫 화면에 갈래로 펼친다. 이벤트 · 캐시샵은 본문이 그림 한 장이라 제목만으로는 무엇인지
- * 알 수 없어 배너로 세운다. 버전 · 출처 표기는 설정 화면 맨 아래에 있다. 소식 갈래로 길어진 이 화면 끝에 두면 멀리 밀린다.
+ * 소식은 행을 눌러 여는 목록이 아니라 첫 화면에 분류별로 펼친다. 이벤트 · 캐시샵은 본문이 그림 한 장이라 제목만으로는 무엇인지
+ * 알 수 없어 배너로 세운다. 버전 · 출처 표기는 설정 화면 맨 아래에 있다. 소식 분류로 길어진 이 화면 끝에 두면 멀리 밀린다.
  *
- * **이 화면에는 고정 헤더(`PageHeader`)를 두지 않는다**. 그 ADR 이 단 재판단 조건은 *"행이 늘어
+ * **이 화면에는 고정 헤더(`PageHeader`)를 두지 않는다**. 고정 헤더를 다시 판단할 조건은 *"행이 늘어
  * 세로가 길어지면"* 인데, 설정을 내보내 **순감**이라 조건에 걸리지 않는다.
  */
 import { useCallback, useEffect, useState } from 'react'
@@ -48,22 +48,22 @@ import { storeReviewUrl } from './store-review-link'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 /**
- * 소식 갈래 다섯. 순서는 사용자가 정했다.
+ * 소식 분류 다섯. 순서는 사용자가 정했다.
  *
- * 앱 공지와 게임 공지가 갈래 둘인 이유. 앱 공지는 이 앱의 일(점검·새 버전)이고 게임 공지는 넥슨의 일이라, 섞이면 한 줄만 보고
+ * 앱 공지와 게임 공지를 두 분류로 나눈 이유. 앱 공지는 이 앱의 일(점검·새 버전)이고 게임 공지는 넥슨의 일이라, 섞이면 한 줄만 보고
  * 어느 쪽 이야기인지 모른다. 이름은 `전체` 목록 화면의 제목이자 빈 문구에 들어간다.
  *
- * `lines` 는 글 갈래가 보이는 최근 글 수다. 배너 갈래는 받은 것 전부를 넘긴다.
+ * `lines` 는 글로 보이는 분류가 보여 주는 최근 글 수다. 배너로 보이는 분류는 받은 것 전부를 넘긴다.
  */
 interface NoticeSection {
   label: string
   kind: NoticeKind
-  /** 글 갈래가 보이는 최근 글 수. 없으면 배너 갈래다 */
+  /** 글로 보이는 분류가 보여 주는 최근 글 수. 없으면 배너로 보이는 분류다 */
   lines?: number
 }
 
 const NOTICE_SECTIONS: readonly NoticeSection[] = [
-  // 앱 공지 갈래의 이름은 영문 `NOTICE` 다(사용자 지정).
+  // 앱 공지 분류의 이름은 영문 `NOTICE` 다(사용자 지정).
   { label: 'NOTICE', kind: 'app', lines: 3 },
   // 넥슨 이벤트 목록은 지금 게시 중인 글만 준다.
   { label: '진행 중인 이벤트', kind: 'event' },
@@ -74,7 +74,7 @@ const NOTICE_SECTIONS: readonly NoticeSection[] = [
   { label: '업데이트', kind: 'update', lines: 2 },
 ]
 
-/** 갈래 제목 줄. 이름과 그 갈래의 목록 화면을 여는 `전체` 다. */
+/** 분류 제목 줄. 이름과 그 분류의 목록 화면을 여는 `전체` 다. */
 function NoticeSectionHeader(props: { label: string; onOpenAll: () => void }): React.JSX.Element {
   return (
     <View testID="notice-section" className="flex-row items-center justify-between px-1">
@@ -87,11 +87,11 @@ function NoticeSectionHeader(props: { label: string; onOpenAll: () => void }): R
 }
 
 /**
- * 갈래 하나의 본문. **상태 셋을 가르는 자리다** - 아직 모른다 · 받아 봤는데 없다 · 글이 있다.
+ * 분류 하나의 본문. **상태 셋을 가르는 자리다** - 아직 모른다 · 받아 봤는데 없다 · 글이 있다.
  *
  * 셋을 안 가르면 받아 보기 전에 `없습니다` 를 말하고, 그러고 나서 내용이 도착할 때 아래가 밀린다.
  *
- * @param props.items `null` 이면 아직 모르는 갈래다
+ * @param props.items `null` 이면 아직 모르는 분류다
  */
 function NoticeSectionBody(props: {
   section: NoticeSection
@@ -113,7 +113,7 @@ function NoticeSectionBody(props: {
   }
 
   if (items.length === 0) {
-    // 갈래를 숨기면 화면 순서가 바뀐다.
+    // 분류를 숨기면 화면 순서가 바뀐다.
     return (
       <Card className="px-5 py-4">
         <Text className="text-center text-sm text-text-disabled">{emptyNoticeText(section.label)}</Text>
@@ -151,13 +151,13 @@ export function SettingsScreen(): React.JSX.Element {
   }, [])
 
   const displayedVersion = useRunningAppVersion()
-  // 다섯 갈래의 목록은 쿼리 캐시에서 온다. 저장된 목록이 먼저 서고, 들어올 때마다 다시 받는다. 실패한 갈래는 든 값이 선다.
+  // 다섯 분류의 목록은 쿼리 캐시에서 온다. 저장된 목록이 먼저 서고, 들어올 때마다 다시 받는다. 실패한 분류는 든 값이 선다.
   // 앱 복귀에도 받는다. 전에는 포커스 사건이 없어 더보기를 연 채 돌아오면 새 글이 안 섰다.
   const notices = useNotices(NOTICE_KINDS)
   useRefetchStaleOnFocus(queryKeys.allNotices())
 
   // 당김은 사용자가 요청한 조회라 아무 일도 안 일어나면 고장으로 읽힌다. 그래서 전부 실패했을 때만
-  // 말한다 - 키가 없으면 넥슨 네 갈래가 언제나 실패라, 일부 실패에도 말하면 앱 공지를 제대로
+  // 말한다 - 키가 없으면 넥슨 분류 넷이 언제나 실패라, 일부 실패에도 말하면 앱 공지를 제대로
   // 받고도 매번 토스트가 뜬다.
   const refresh = useCallback(async (): Promise<void> => {
     const { allFailed } = await refreshNoticeKinds(NOTICE_KINDS)

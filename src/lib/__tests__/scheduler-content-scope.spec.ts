@@ -19,8 +19,8 @@ describe('getShareScope', () => {
     expect(getShareScope(null)).toBe('character')
   })
 
-  // 같은 갈래라도 공유 단위가 다르다. 줄마다 key 가 달라 따로 적는다.
-  describe('같은 갈래의 다른 컨텐츠', () => {
+  // 같은 분류라도 공유 단위가 다르다. 줄마다 key 가 달라 따로 적는다.
+  describe('같은 분류의 다른 컨텐츠', () => {
     // 같은 계열이라도 공유 단위가 다르다(사용자 확인). 이름으로 유추하면 틀린다.
     it('PC방 주간 드래곤 퇴치는 account다. PC방이 아닌 쪽(world)과 공유 단위가 다르다', () => {
       expect(getShareScope('maple_union_weekly_dragon')).toBe('world')
@@ -59,7 +59,7 @@ describe('getMaxCountOverride', () => {
 })
 
 describe('getSharedContentGroups', () => {
-  it('갈래는 카탈로그가 적어 둔 순서다. 배열을 읽은 첫 등장 순서가 아니다', () => {
+  it('분류는 카탈로그가 적어 둔 순서다. 배열을 읽은 첫 등장 순서가 아니다', () => {
     // 지금은 두 순서가 같다. 그래도 배열에 맡기지 않는 것은, 배열이 순서가 아니라 공유 단위로
     // 갈려 있어 계정 공유 컨텐츠 하나가 붙는 날 화면 순서가 조용히 바뀌기 때문이다.
     expect(getSharedContentGroups().map((group) => group.category)).toEqual([
@@ -69,7 +69,7 @@ describe('getSharedContentGroups', () => {
     ])
   })
 
-  it('갈래 안의 항목 순서는 worldShared → accountShared 를 이어 읽은 순서다', () => {
+  it('분류 안의 항목 순서는 worldShared → accountShared 를 이어 읽은 순서다', () => {
     const byCategory = new Map(getSharedContentGroups().map((group) => [group.category, group]))
 
     expect(byCategory.get('epic_dungeon')?.entries.map((entry) => entry.shortName)).toEqual([
@@ -78,19 +78,19 @@ describe('getSharedContentGroups', () => {
       '악몽선경',
       '아우룸레기스',
     ])
-    // 월드 것(몬스터파크)이 계정 것보다 앞이고, 사이에 낀 유니온 항목은 이 갈래에 안 든다.
+    // 월드 것(몬스터파크)이 계정 것보다 앞이고, 사이에 낀 유니온 항목은 이 분류에 안 든다.
     expect(byCategory.get('monster_park')?.entries.map((entry) => entry.shortName)).toEqual([
       '일간',
       '익스트림 몬스터파커',
     ])
-    // 월드 하나 + 계정 하나가 한 갈래로 묶이는 유일한 경우다.
+    // 월드 하나 + 계정 하나가 한 분류로 묶이는 유일한 경우다.
     expect(byCategory.get('maple_union')?.entries.map((entry) => entry.shortName)).toEqual([
       '주간 드래곤 퇴치',
       'PC방 주간 드래곤 퇴치',
     ])
   })
 
-  it('컨텐츠 key · 갈래 · section · scope 를 함께 나른다. 호출부가 응답에서 항목을 key 로 다시 찾는다', () => {
+  it('컨텐츠 key · 분류 · section · scope 를 함께 나른다. 호출부가 응답에서 항목을 key 로 다시 찾는다', () => {
     const epic = getSharedContentGroups().find((group) => group.category === 'epic_dungeon')
 
     expect(epic?.entries[0]).toEqual({

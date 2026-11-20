@@ -248,7 +248,7 @@ export function incomeEntryOf(record: IncomeRecord): StoredEntry {
         itemKey: record.itemKey,
         itemName: record.itemKey === null ? record.item : null,
         itemKindKey: record.itemKind,
-        // 사냥의 수량은 소재 수다. 그 줄의 단위(소재)를 갈래 표가 든다.
+        // 사냥의 수량은 소재 수다. 그 줄의 단위(소재)를 분류 표가 든다.
         quantity: record.category === 'hunting' ? sojae : record.quantity,
         amountMeso: record.mesoAmount,
         saleFeePercent: record.saleFeePercent,

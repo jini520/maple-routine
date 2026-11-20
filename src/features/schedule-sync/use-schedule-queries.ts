@@ -38,7 +38,7 @@ export interface ScheduleQueries {
   status: ScheduleStatus
   /** 회차 자체가 던진 실패(키 없음 등). 캐릭터마다의 실패는 스냅샷의 `round.outcomes` 에 있다. */
   error: ScheduleSyncError | null
-  /** `null` 은 0명이 아니라 저장소를 아직 안 읽었다 다. */
+  /** `null` 은 0명이 아니라 저장소를 아직 안 읽었다는 뜻이다. */
   trackedOcids: string[] | null
 }
 

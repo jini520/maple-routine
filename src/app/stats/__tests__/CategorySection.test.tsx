@@ -78,7 +78,7 @@ describe('CategorySection', () => {
     expect(view.getByTestId('stats-category-label-etc')).toBeTruthy()
   })
 
-  it('나눠 보이는 조각은 누르면 그 갈래의 세부 줄이 뜬다', async () => {
+  it('나눠 보이는 조각은 누르면 그 분류의 세부 줄이 뜬다', async () => {
     const view = await renderOverlay(<CategorySection title="수입 내역" side="income" items={수입} />)
 
     expect(within(view.getByTestId('stats-category-label-hunting')).getByText('사냥 ›')).toBeTruthy()

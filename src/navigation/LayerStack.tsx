@@ -117,8 +117,8 @@ export function LayerStack(): React.JSX.Element {
     <Layer.Navigator
       // `useOpenTab` 이 이 이름으로 층 깊이를 본다(`popToTop` 을 헛치지 않으려고).
       id={LAYER_STACK_ID}
-      // 벽지는 여기가 아니라 탭 쪽이다. 이 스택의 화면은 셋 다 탭 내비게이터이고 그 탭들이
-      // 자기 화면을 불투명하게 칠하므로 여기 깐 벽지는 어차피 덮인다. 두 겹 마운트하지 않도록
+      // 테마 배경 이미지는 여기가 아니라 탭 쪽이다. 이 스택의 화면은 셋 다 탭 내비게이터이고 그 탭들이
+      // 자기 화면을 불투명하게 칠하므로 여기 깐 배경 이미지는 어차피 덮인다. 두 겹 마운트하지 않도록
       // `TAB_LAYER_PROPS` 한 곳에만 둔다.
       layout={({ children, state, navigation }) => (
         <View className="flex-1">
@@ -167,14 +167,14 @@ function ConnectedBottomBar({ state, navigation }: ConnectedBottomBarProps): Rea
       openLayer: (layer: LayerRouteName, target: TabRouteName) => {
         // 같은 층이 스택에 두 번 서지 않는다. 이미 아래에 있으면 그리로 되돌아간다.
         // react-navigation 7 부터 `navigate` 는 되돌아가지 않고 한 단 더 쌓으므로(그 몫이
-        // `popTo` 로 갈라졌다) 갈래를 여기서 정한다.
+        // `popTo` 로 갈라졌다) 되돌아갈지를 여기서 정한다.
         //
         // 되돌아간 뒤에 안쪽 탭을 지정한다. `popTo` 의 파라미터는 그 라우트에 얹힐 뿐이고
         // 이미 마운트된 중첩 내비게이터의 탭을 바꾸지는 않는다.
         if (layer !== topLayer && layerKey.split('|').includes(layer)) {
           navigation.dispatch(StackActions.popTo(layer))
         }
-        // 층 이름이 유니온이라 `navigate` 의 파라미터가 하나로 안 좁혀진다. 좁히려면 갈래마다 손으로
+        // 층 이름이 유니온이라 `navigate` 의 파라미터가 하나로 안 좁혀진다. 좁히려면 층 이름마다 손으로
         // 적어야 하고 그러면 층 표가 두 벌이 된다. `RootNavigator.screenFor` 와 같은 대가다.
         ;(navigation.navigate as (name: string, params: { screen: string }) => void)(layer, {
           screen: target,

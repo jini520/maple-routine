@@ -35,7 +35,7 @@ export interface SpendRecord {
   accountId?: string
   /** `'YYYY-MM-DD'` KST. */
   spentOn: string
-  /** 갈래 key. */
+  /** 분류 key. */
   category: SpendCategoryKey
   /**
    * 직접 친 이름(`구매 아이템` · `내용`). key 가 있는 기록은 저장하지 않고 읽으면 `null` 이다. 화면은 key 로
@@ -54,11 +54,11 @@ export interface SpendRecord {
    * 아이템 구매 종류 key. 이 값 하나가 수량과 관세를 함께 가른다. 장비는 하나를 사고 관세가
    * 붙으며, 소비·기타는 여럿을 사고 월드 간 거래가 안 되어 관세가 없다.
    *
-   * 다른 갈래에서는 `null` 이고, 아이템 구매의 `null` 은 종류 칸이 생기기 전 행이라 장비로
+   * 다른 분류에서는 `null` 이고, 아이템 구매의 `null` 은 종류 칸이 생기기 전 행이라 장비로
    * 연다. 그때는 치는 금액 + 관세 하나뿐이었고 그것이 정확히 장비의 모양이다.
    */
   itemKind: ItemKindKey | null
-  /** 심볼 강화 · 헥사 스킬의 강화 전 레벨. 다른 갈래에서는 `null` 이다. */
+  /** 심볼 강화 · 헥사 스킬의 강화 전 레벨. 다른 분류에서는 `null` 이다. */
   levelFrom: number | null
   /** 심볼 강화 · 헥사 스킬의 강화 후 레벨. */
   levelTo: number | null
@@ -98,7 +98,7 @@ export interface SpendRecord {
    * 값을 매기는 것처럼 읽힌다.** 정확도의 문제가 아니라 무엇을 정상으로 보이게 하는가의 문제다.
    */
   cashAmount: number | null
-  /** 헥사 매트릭스 기록의 조각. 다른 갈래는 `null` 이다. */
+  /** 헥사 매트릭스 기록의 조각. 다른 분류는 `null` 이다. */
   hexa: SpendHexa | null
   recordedAt: string
   /** 아이템 구매에서 목록으로 고른 특수스킬 반지의 레벨. 다른 기록은 칸이 없다. */
@@ -334,7 +334,7 @@ export async function getSpendRecordsBetween(
 }
 
 /**
- * 그 캐릭터 · 갈래 · 대상(심볼 key · 코어 이름)의 가장 최근 지출. 날짜가 같으면 늦게 저장한 것이다.
+ * 그 캐릭터 · 분류 · 대상(심볼 key · 코어 이름)의 가장 최근 지출. 날짜가 같으면 늦게 저장한 것이다.
  * 강화 레벨 기억을 고칠지 가를 때 쓴다. 가장 최근 기록을 고치거나 지울 때만 기억이 따라 바뀐다.
  */
 export async function getLatestSpendFor(

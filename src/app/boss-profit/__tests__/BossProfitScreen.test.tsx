@@ -694,7 +694,7 @@ describe('기간 상태별 표현', () => {
   })
 
   // 기간 이동이 기록이 있는 기간으로만 착지하고 비-현재 기간의 행은 기록에서만 나오므로,
-  // 이 자리에 `outOfRange` 로 서는 길이 사라졌다. 남는 갈래는 달 경계 미리보기(아직 오지 않은
+  // 이 자리에 `outOfRange` 로 서는 길이 사라졌다. 남는 경우는 달 경계 미리보기(아직 오지 않은
   // 주)뿐이고 거기서 `조회 가능한 기간을 지났다` 는 거짓이다.
   it('`outOfRange` 에 조회 불가 고지를 안 세운다. 아직 안 잡은 것이다', async () => {
     mockStore({ status: 'loaded', periodState: 'outOfRange' })
@@ -724,7 +724,7 @@ describe('기간 상태별 표현', () => {
     expect(mockShowError).toHaveBeenCalledWith('이 기간을 불러오지 못했습니다', expect.anything())
   })
 
-  it('기록이 있으면 아무 고지도 띄우지 않는다(결정 7)', async () => {
+  it('기록이 있으면 아무 고지도 띄우지 않는다', async () => {
     mockStore({ status: 'loaded', periodState: 'recorded', rows: [보스행()] })
     const { queryByText } = await renderScreen()
 

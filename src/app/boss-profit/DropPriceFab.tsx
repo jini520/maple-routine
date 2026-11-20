@@ -48,7 +48,7 @@ export function DropPriceFab(props: {
   const unpriced = useUnpricedDropCount(props.periodKey)
   const showsBadge = unpriced !== null && unpriced > 0
 
-  // 움직임 줄이기면 진행률이 0 에 머문다. 그 값에서 각도가 0 이라 끄는 갈래를 따로 둘 필요가 없다.
+  // 움직임 줄이기면 진행률이 0 에 머문다. 그 값에서 각도가 0 이라 끄는 분기를 따로 둘 필요가 없다.
   const progress = useLoopedValue({
     from: 0,
     to: 1,

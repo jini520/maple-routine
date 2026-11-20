@@ -38,7 +38,7 @@ const KIND_NAMES: Record<HuntLootKind, string> = { fragment: '조각', consumabl
 
 export function HuntLootSaleForm(
   props: IncomeFormProps & {
-    /** 어느 갈래로 열었나. 솔 에르다 조각이면 조각 칸 하나뿐이다. */
+    /** 어느 분류로 열었나. 솔 에르다 조각이면 조각 칸 하나뿐이다. */
     category: 'sol_erda_fragment' | 'hunt_loot_sale'
     loadFragmentStorage: LoadFragmentStorage
     onSaveMany: (drafts: readonly IncomeDraft[]) => void | Promise<void>
@@ -94,7 +94,7 @@ export function HuntLootSaleForm(
   )
 
   if (kind === 'fragment') {
-    // 표에 조각 줄이 없으면 갈래 줄의 이름 · 그림을 쓴다. 옛 조각 정산 카드가 그 갈래다.
+    // 표에 조각 줄이 없으면 분류 줄의 이름 · 그림을 쓴다. 옛 조각 정산 카드가 그 분류다.
     const fragment = items.find((item) => item.kind === 'fragment')
     const category = cashbookCategoryOf('income', 'sol_erda_fragment')
     return (

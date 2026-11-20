@@ -1,4 +1,4 @@
-// 약속 시트. 한 번 · 반복은 ＋ 의 갈래에서 정해지고, 시트에는 그것을 바꾸는 칸이 없다.
+// 약속 시트. 한 번 · 반복은 ＋ 의 항목에서 정해지고, 시트에는 그것을 바꾸는 칸이 없다.
 import type { ReactNode } from 'react'
 import { act, fireEvent, within } from '@testing-library/react-native'
 
@@ -166,7 +166,7 @@ describe('수정 시트', () => {
   })
 })
 
-// 알림 체크 상자를 켤 때의 모달 둘(정정 21 · 23). 기기 권한 → 파티 약속 알림 스위치 차례다.
+// 알림 체크 상자를 켤 때의 모달 둘. 기기 권한 → 파티 약속 알림 스위치 차례다.
 describe('알림 체크 상자를 켤 때', () => {
   let granted = true
 
@@ -238,7 +238,7 @@ describe('알림 체크 상자를 켤 때', () => {
     expect(view.getByLabelText('알림').props.accessibilityState).toMatchObject({ checked: true })
   })
 
-  // 저장할 때 같은 차례를 저장할 값으로 한 번 더 본다(정정 22).
+  // 저장할 때 같은 차례를 저장할 값으로 한 번 더 본다.
   describe('저장할 때', () => {
     const weekly: PartyAppointment = {
       id: '3f2b6c1e-8d4a-4c2f-9b1e-5a7d0c9e2f41',

@@ -160,7 +160,7 @@ Expo SDK 의 공식 모듈이고, 패키지 하나로 동기로 부를 수 있�
 | `storage/__tests__/cache-data.spec.ts` | 결정 13: 데이터 삭제에서 기록이 지켜지는지 |
 | `features/boss-profit-calculator/__tests__/store.spec.ts` | 결정 4 · 5 · 9 · 11 · 12 · 13: 기록이 있어도 빈 상태로 열리는지, 기록을 열면 기록에 없는 캐릭터는 비어 있는지, 고친 값이 보스 관리에 쓰이지 않는지, 캐릭터별 가져오기 · 초기화, 덮기와 새 기록 가르기, 새 기록의 id 가 uuid 인지, 연 기록을 지우면 연 기록이 없어지는지 |
 | `features/boss-profit-calculator/__tests__/picker.spec.ts` | 결정 2 · 10: 보스 선택에 월간 보스가 없는지, 시즌 보스가 챌린저스 월드에서만 서는지, 12개를 고르면 잠그되 시즌 보스와 고른 보스는 안 잠그는지, 고른 보스가 보스 표 순서로 들어가는지 |
-| `app/utility/__tests__/BossProfitCalculatorScreen.test.tsx` | 결정 4 · 6 · 8 · 9 · 11: 처음 열면 모두 빈 상태인지, 가져오기가 고른 캐릭터만 채우고 바닥에 그 캐릭터 수익이 서는지, `n / 12` 배지, 난이도를 펼쳐 바꾸면 몫이 바로 바뀌는지, 초기화 뒤 카드 머리만 남고 빈 카드 메뉴에 초기화가 없는지, 결과 저장의 두 갈래 |
+| `app/utility/__tests__/BossProfitCalculatorScreen.test.tsx` | 결정 4 · 6 · 8 · 9 · 11: 처음 열면 모두 빈 상태인지, 가져오기가 고른 캐릭터만 채우고 바닥에 그 캐릭터 수익이 서는지, `n / 12` 배지, 난이도를 펼쳐 바꾸면 몫이 바로 바뀌는지, 초기화 뒤 카드 머리만 남고 빈 카드 메뉴에 초기화가 없는지, 결과 저장의 두 경우 |
 | `app/utility/__tests__/CalculatorBossPickerSheet.test.tsx` | 결정 10: 지금 고른 보스를 담고 여는지, `n / 12` 배지, 12개를 고르면 나머지 타일이 잠기는지 |
 | `app/utility/__tests__/BossProfitCalculatorRecordsScreen.test.tsx` | 결정 11 · 12: 기록 제목이 저장 날짜와 시간인지, 연 기록 표시, 기록 줄이 `이름 외 n` 이고 얼굴과 보스 수가 없는지, 기록을 열면 계산기로 돌아가는지, 지우면 빠지는지 |
 | `app/utility/boss-profit-calculator/__tests__/TotalCard.test.tsx` | 결정 6: 금액이 큰 순서로 늘어놓고 0 인 캐릭터를 그리지 않는지, 모두 0 이면 범례를 비우고 가운데가 `캐릭터 0` 인지, 다섯 캐릭터까지는 모두 적는지, 여섯 이상이면 `그 외 n캐릭터` 로 묶고 `명` 을 쓰지 않는지, 누르면 묶인 캐릭터가 팝오버에 나오는지 |

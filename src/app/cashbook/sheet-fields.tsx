@@ -205,8 +205,8 @@ export function SelectRow(props: {
 /**
  * 목록 맨 앞에 `선택 안함` 이 서는 캐릭터 칸. 헥사 매트릭스 폼이 쓴다.
  *
- * 폼 안에 사는 것은 갈래를 옮기면 폼이 언마운트되어 고른 것이 함께 사라지기 때문이다.
- * 껍데기에 두면 그것만 남아 **갈래를 옮겼는데 캐릭터는 그대로** 가 된다.
+ * 폼 안에 사는 것은 다른 분류로 옮기면 폼이 언마운트되어 고른 것이 함께 사라지기 때문이다.
+ * 껍데기에 두면 그것만 남아 **분류를 바꿨는데 캐릭터는 그대로** 가 된다.
  */
 export function CharacterField(props: {
   characters: ReadonlyArray<{ ocid: string; name: string; worldKey: string | null }>
@@ -231,11 +231,11 @@ export function CharacterField(props: {
 /**
  * 기록을 붙일 캐릭터나 메이플 ID 를 고르는 칸. `선택 안함` 이 없어 고르기 전에는 폼이 저장을 끈다.
  *
- * 캐릭터 없이 저장되던 갈래가 쓴다. 값은 `ownerValueOf` 의 모양이고 저장할 때 `ownerFieldsOf` 로 푼다.
+ * 캐릭터 없이 저장되던 분류가 쓴다. 값은 `ownerValueOf` 의 모양이고 저장할 때 `ownerFieldsOf` 로 푼다.
  */
 export function OwnerField(props: {
   characters: ReadonlyArray<{ ocid: string; name: string; worldKey: string | null }>
-  /** 메이플 ID 를 고를 수 없는 갈래는 시트가 빈 배열을 준다. */
+  /** 메이플 ID 를 고를 수 없는 분류는 시트가 빈 배열을 준다. */
   accounts: readonly SheetAccount[]
   selected: string | null
   onSelect: (next: string | null) => void

@@ -209,7 +209,7 @@ describe('isPeriodQueryable', () => {
     expect(getMaxQueryableDate(now)).toBe('2026-07-21')
   })
 
-  it('오늘-1일은 상한 안이다. 새벽엔 OPENAPI00009지만 집계가 끝나면 조회된다(정정 2)', () => {
+  it('오늘-1일은 상한 안이다. 새벽엔 OPENAPI00009지만 집계가 끝나면 조회된다', () => {
     // 조회일이 정확히 오늘-1일인 주 = periodKey 2026-07-15? weekly는 목요일이므로
     // 조회일 오늘-1일을 만들려면 periodKey = 2026-07-15 - 6 = 2026-07-15가 아니다. 대신 상한
     // 경계값 자체를 확인한다.
@@ -331,7 +331,7 @@ describe('resolvePeriodDataState', () => {
     expect(resolvePeriodDataState({ ...base, hasRecords: true, isQueryable: false })).toBe('recorded')
   })
 
-  it('관측이 있고 기록이 없으면 confirmedEmpty: 시간이 지나도 격하되지 않는다(결정 3)', () => {
+  it('관측이 있고 기록이 없으면 confirmedEmpty: 시간이 지나도 격하되지 않는다', () => {
     expect(resolvePeriodDataState({ ...base, isObserved: true })).toBe('confirmedEmpty')
     // 롤링 윈도우를 벗어난 뒤에도 "0건 확정"이 유지된다. 전에는 여기서 조회 불가로 바뀌었다
     expect(resolvePeriodDataState({ ...base, isObserved: true, isQueryable: false })).toBe('confirmedEmpty')

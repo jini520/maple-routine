@@ -1,4 +1,4 @@
-// 주간 보스 수익 계산기 화면. 합계 · 난이도 펼침 · 결과 저장의 두 갈래를 본다.
+// 주간 보스 수익 계산기 화면. 합계 · 난이도 펼침 · 결과 저장의 두 경우를 본다.
 import { act, fireEvent } from '@testing-library/react-native'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'

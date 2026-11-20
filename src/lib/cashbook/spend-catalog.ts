@@ -2,7 +2,7 @@
  * 지출 참조표(`spendCatalog` 칸)를 읽는 자리. 화면이 표를 직접 안 뒤지게 하는 조회 함수들.
  *
  * 응답은 묶음 · 타일 · 항목 · 축 값 · 형태가 납작한 줄 표다. 여기서 항목 줄에 축 값(`options`)과 형태(`forms`)를
- * 붙여 `SpendCatalogItem` 을 만들고, 그것을 갈래 → 묶음 → 항목으로 집어 주며 환산 둘(메포→메소 · 관세)을 든다.
+ * 붙여 `SpendCatalogItem` 을 만들고, 그것을 분류 → 묶음 → 항목으로 집어 주며 환산 둘(메포→메소 · 관세)을 든다.
  * 값은 사용자가 준 것이고 관리 화면이 고친다.
  *
  * **묶음을 앱이 다시 묶지 않는다.** `category` 는 앱이 정한 축이고 `group` 은 사용자가 적어 준 이름
@@ -45,7 +45,7 @@ import { SPEND_FORM_KEYS, type SpendCategoryKey } from './categories'
 export interface SpendCatalogItem extends EffectivePeriod {
   /** 기록이 이 항목을 가리키는 열쇠. 이름이 바뀌어도 그대로다. */
   readonly key: string
-  /** 갈래 key. */
+  /** 분류 key. */
   readonly category: string
   /** 묶음 key. */
   readonly group: string
@@ -135,7 +135,7 @@ function toRules(value: unknown): SpendCatalogRules | null {
   }
 }
 
-// 갈래는 앱이 폼을 모르는 key 도 온다. 그 갈래는 시트에서 못 골라 묶음도 안 선다.
+// 분류는 앱이 폼을 모르는 key 도 온다. 그 분류는 시트에서 못 골라 묶음도 안 선다.
 function toGroup(row: Row): SpendGroupRow | null {
   if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isBoolean(row.active)) return null
   if (!isNonEmptyString(row.category) || !isNonEmptyString(row.cardTitle)) return null
@@ -321,10 +321,10 @@ export const SPEND_REWARD_COIN = { name: '세라자르 주화' } as const
 const MESO_PER_RATE_UNIT = 100_000_000
 
 /**
- * 갈래 하나의 묶음들. **파일에 적힌 차례 그대로**다.
+ * 분류 하나의 묶음들. **파일에 적힌 차례 그대로**다.
  *
- * 직접 입력 갈래(아이템 구매 · 기타)는 목록이 없으므로 **빈 배열**이다. 예외가 아니라
- * 고를 것이 없다 는 사실이고, 화면은 그 갈래에서 입력 칸을 그린다.
+ * 직접 입력 분류(아이템 구매 · 기타)는 목록이 없으므로 **빈 배열**이다. 예외가 아니라
+ * 고를 것이 없다 는 사실이고, 화면은 그 분류에서 입력 칸을 그린다.
  *
  * 기간 밖의 항목은 뺀다. 기준은 오늘이 아니라 **적는 날짜**가 든 주간 기간이다. 항목이 하나도 안
  * 남은 묶음은 안 선다.
@@ -346,7 +346,7 @@ export function spendGroupsOf(category: SpendCategoryKey, dateKey: string): Spen
 }
 
 /**
- * 기간과 열림에 무관한 갈래의 묶음들. 기록을 되짚는 자리만 쓴다.
+ * 기간과 열림에 무관한 분류의 묶음들. 기록을 되짚는 자리만 쓴다.
  *
  * 기간이나 열림으로 거르면 출시 전 날짜로 적힌 기록이나 닫힌 묶음으로 적힌 기록을 수정 시트가 못 찾아 세부를 못 편다.
  */
@@ -386,7 +386,7 @@ function groupItems(items: readonly SpendCatalogItem[]): SpendCatalogGroup[] {
  * 기록에는 항목 key 만 있고 시트는 **대표와 단계 둘**을 든다. 수정으로 시트를 열려면 그 둘을
  * key 에서 되찾는다. 단계와 축 값은 항목이 들고 있다.
  *
- * **갈래를 함께 받는다.** 갈래가 다른 기록이 엉뚱한 목록으로 되살아나지 않게 한다.
+ * **분류를 함께 받는다.** 분류가 다른 기록이 엉뚱한 목록으로 되살아나지 않게 한다.
  *
  * 못 찾으면 `null` 이다. 예외가 아니다. 카탈로그에서 사라진 항목이 기록에는 남아 있을 수 있고,
  * 그때 **시트가 안 열리는 것보다 값만 채워 여는 편이 낫다**(대가).
@@ -486,7 +486,7 @@ export function rewardCoinMeso(coins: number): number {
  * 하루 목록의 줄 이름이고 기록의 이름 칸에 그때 이름으로도 남는다. **0단계는 안 적는다**. 안 산
  * 것이 적히면 그 줄이 산 것으로 읽힌다.
  *
- * 고른 것이 없으면 `null` 이고, 그 `null` 이 곧 저장할 수 없다 다.
+ * 고른 것이 없으면 `null` 이고, 그 `null` 이 곧 저장할 수 없다는 뜻이다.
  */
 export function buildSpendRewardName(
   choice: SpendCatalogChoice,
@@ -682,7 +682,7 @@ export function isOptionAxisOpen(
 
 /**
  * 고른 값이 가리키는 항목. 한 항목의 축 값과 **꼭 맞아야** 정해진다. 못 정하면 `null` 이고 그것이
- * 곧 저장할 수 없다 다.
+ * 곧 저장할 수 없다는 뜻이다.
  */
 export function optionItemOf(
   choice: SpendCatalogChoice,

@@ -39,8 +39,8 @@ const CREATE_KINDS = [
 ] as const satisfies readonly { kind: PartyAppointmentCreateKind; label: string; description: string; Icon: unknown }[]
 
 /**
- * 보여 줄 회차가 없을 때. 격자가 맨 아래 줄로 내리고, 여기서 새 스케줄의 갈래를 바로 고르게 한다. 메뉴를 한 번 더 거치지
- * 않도록 칸을 누르면 파티 스케줄 탭에서 그 갈래의 새 스케줄 시트가 열린다.
+ * 보여 줄 회차가 없을 때. 격자가 맨 아래 줄로 내리고, 여기서 새 스케줄의 종류를 바로 고르게 한다. 메뉴를 한 번 더 거치지
+ * 않도록 칸을 누르면 파티 스케줄 탭에서 그 종류의 새 스케줄 시트가 열린다.
  */
 function CreateCells(): React.JSX.Element {
   return (

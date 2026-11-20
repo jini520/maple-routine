@@ -84,7 +84,7 @@ describe('배너가 세우는 공지 고르기', () => {
     expect(picked?.id).toBe('ok')
   })
 
-  // 넥슨 네 갈래는 매일 들어온다. 분류를 안 가리면 배너가 사실상 항상 그것이 되고, 운영자가
+  // 넥슨 네 분류는 매일 들어온다. 분류를 안 가리면 배너가 사실상 항상 그것이 되고, 운영자가
   // 무슨 말을 해도 첫 화면에 못 닿는다. 읽는 자리는 더보기 · 소식의 자기 목록이다.
   it.each<NoticeKind>(['game', 'update', 'event', 'cashshop'])('%s 은 배너에 안 선다', (kind) => {
     expect(pickBannerNotice([notice('n', '2026-09-05T00:00:00Z', kind)], [])).toBeNull()

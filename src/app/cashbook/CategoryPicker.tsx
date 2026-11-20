@@ -1,12 +1,12 @@
 /**
- * 갈래를 고르는 1차 시트의 내용. 제목 · 카드 격자 · 닫기뿐이다.
+ * 분류를 고르는 1차 시트의 내용. 제목 · 카드 격자 · 닫기뿐이다.
  *
- * 수입과 지출이 **한 벌을 쓴다**. 갈래를 고르면 그 갈래의 폼이 같은 시트에서 열린다. 그래서
- * 2차에는 갈래 칩이 없고, 갈래를 바꾸는 일은 여기로 돌아오는 일이 된다.
+ * 수입과 지출이 **한 벌을 쓴다**. 분류를 고르면 그 분류의 폼이 같은 시트에서 열린다. 그래서
+ * 2차에는 분류 칩이 없고, 분류를 바꾸는 일은 여기로 돌아오는 일이 된다.
  *
- * 갈래는 **가로로 눕고 한 줄에 둘**이다(사용자 지정 2026-09-21). 갈래 전체가 테두리 없는 카드 하나이고, 갈래마다
- * 그 안의 `card-inset` 칸이다(사용자 선택 2026-10-28). 폼의 칸 카드와 같은 모양이라 두 단계가 한 시트로 읽힌다. 그림 옆에 이름이 서고, 갈래 표가
- * 그 아래 갈래 표의 `description` 이 한 줄 더 선다. 카드가 92 에서 56 으로 낮아진다. 갈래가 일곱인 지출은 줄이 셋에서 넷으로 늘지만, 줄당 높이가 더 많이 줄어 시트 전체는
+ * 분류는 **가로로 눕고 한 줄에 둘**이다(사용자 지정 2026-09-21). 분류 전체가 테두리 없는 카드 하나이고, 분류마다
+ * 그 안의 `card-inset` 칸이다(사용자 선택 2026-10-28). 폼의 칸 카드와 같은 모양이라 두 단계가 한 시트로 읽힌다. 그림 옆에 이름이 서고,
+ * 그 아래 분류 표의 `description` 이 한 줄 더 선다. 카드가 92 에서 56 으로 낮아진다. 분류가 많은 지출은 한 줄에 셋이던 때보다 줄 수가 늘지만, 줄당 높이가 더 많이 줄어 시트 전체는
  * 짧아진다.
  *
  * 그림은 게임 아이템이고 **파일명으로 찾는다**. `dropItemIconOf` 는 드롭 아이템 마스터 표의 key 만
@@ -23,13 +23,13 @@ const CARD_ICON_SIZE = 28
 
 export function CategoryPicker<T extends string>(props: {
   /**
-   * 갈래 표(`lib/cashbook/categories.ts`). 앱이 폼을 모르는 갈래(`known` 거짓)는 서기만 하고 못 누른다.
+   * 분류 표(`lib/cashbook/categories.ts`). 앱이 폼을 모르는 분류(`known` 거짓)는 서기만 하고 못 누른다.
    *
    * 설명이 **넘치면 말줄임표로 잘리게 둔다**(사용자 지정 2026-09-21). 글자를 줄여 맞추지도, 두 줄로 흘리지도
    * 않는다. 둘 다 줄 수가 갈려 카드 높이가 기기마다 달라진다. 참고로 390 화면의 글자 폭은 115 다.
    */
   categories: readonly CashbookCategory[]
-  /** 앱이 폼을 아는 key. `known` 인 갈래의 key 가 이 안에 있다. */
+  /** 앱이 폼을 아는 key. `known` 인 분류의 key 가 이 안에 있다. */
   knownKeys: readonly T[]
   /** `testID` 뿌리. `income-sheet` · `spend-sheet`. */
   testIdPrefix: string
@@ -64,7 +64,7 @@ export function CategoryPicker<T extends string>(props: {
                 testID={`${props.testIdPrefix}-category-box-${category.key}`}
                 className="h-[52px] flex-row items-center gap-2 rounded-[10px] bg-card-inset px-2.5"
               >
-                {/* 그림을 못 찾으면 자리만 지킨다. 카드 높이가 갈래마다 갈리지 않게. */}
+                {/* 그림을 못 찾으면 자리만 지킨다. 카드 높이가 분류마다 갈리지 않게. */}
                 {icon === null ? (
                   <View style={{ width: CARD_ICON_SIZE, height: CARD_ICON_SIZE }} />
                 ) : (
@@ -77,7 +77,7 @@ export function CategoryPicker<T extends string>(props: {
                     aria-hidden
                   />
                 )}
-                {/* 둘 다 한 줄이다. 줄 수가 갈래마다 갈리면 카드 높이도 갈린다. */}
+                {/* 둘 다 한 줄이다. 줄 수가 분류마다 갈리면 카드 높이도 갈린다. */}
                 <View className="min-w-0 flex-1">
                   <Text numberOfLines={1} className="text-xs font-semibold leading-tight text-text">
                     {category.name}

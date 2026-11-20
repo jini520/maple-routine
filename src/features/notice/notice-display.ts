@@ -57,7 +57,7 @@ function subjectParticle(word: string): '이' | '가' {
   return /[aeiou]/i.test(last) ? '가' : '이'
 }
 
-/** 글이 없는 갈래 · 목록의 문구. 갈래 이름이 곧 목록 화면 제목이라 같은 이름을 넣는다. */
+/** 글이 없는 분류 · 목록의 문구. 분류 이름이 곧 목록 화면 제목이라 같은 이름을 넣는다. */
 export function emptyNoticeText(label: string): string {
   return `아직 받은 ${label}${subjectParticle(label)} 없습니다`
 }

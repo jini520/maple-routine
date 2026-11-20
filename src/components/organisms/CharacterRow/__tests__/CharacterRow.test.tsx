@@ -81,7 +81,7 @@ describe('CharacterRow: 얼굴과 이름', () => {
     expect(getByTestId('character-row-emblem')).toBeTruthy()
   })
 
-  it('onPress 를 주면 카드 전체가 버튼이다 (결정 3. 누르는 것은 `＋` 가 아니다)', async () => {
+  it('onPress 를 주면 카드 전체가 버튼이다 (누르는 것은 `＋` 가 아니다)', async () => {
     const onPress = jest.fn()
     const { getByRole } = await renderAtom(<CharacterRow {...기본} onPress={onPress} />)
 

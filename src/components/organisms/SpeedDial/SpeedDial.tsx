@@ -1,13 +1,13 @@
 /**
- * 펼치는 ＋. 떠 있는 ＋ 하나가 받은 갈래들을 같은 폭 알약으로 펴는 앱 공용 부품.
+ * 펼치는 ＋. 떠 있는 ＋ 하나가 받은 항목들을 같은 폭 알약으로 펴는 앱 공용 부품.
  *
- * 갈래가 시트 **밖**에서 갈린다. 시트는 자기가 어느 갈래인지 모른 채 프롭으로 받은 것을 그린다.
+ * 항목은 시트 **밖**에서 고른다. 시트는 어느 항목으로 열렸는지 모른 채 프롭으로 받은 것을 그린다.
  *
  * 지키는 것 셋.
  *
  * ① 반환 전체가 `<BottomBarOverlay>` 안이다. 화면 안에서 그리면 하단바가 그 위라 백드롭이 바를
  *    못 덮는다.
- * ② 접혀도 갈래는 **마운트된 채** 남고 `disabled` 로만 막는다. `aria-hidden` 은 쓰지 말 것.
+ * ② 접혀도 항목은 **마운트된 채** 남고 `disabled` 로만 막는다. `aria-hidden` 은 쓰지 말 것.
  *    RNTL 이 그 노드를 숨김으로 보고 쿼리에서 걷어내 테스트가 못 잡는다.
  * ③ 알약 폭은 모두 같고 가장 긴 글자에 맞춘다. 글자는 접혀 있어도 그려 두고 `onLayout` 으로 잰다.
  */
@@ -87,7 +87,7 @@ function useStepProgress(
 
 type IconComponent = React.ComponentType<{ className?: string; strokeWidth?: number }>
 
-/** ＋ 가 펴는 갈래 하나 */
+/** ＋ 가 펴는 항목 하나 */
 export interface SpeedDialAction {
   key: string
   /** 알약에 적는 이름 */

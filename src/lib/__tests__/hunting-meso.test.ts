@@ -259,7 +259,7 @@ describe('huntingMesoOf', () => {
     ).toBe(Math.floor((at200 + at201) / 2))
   })
 
-  it('레벨이 하나인 맵은 평균 갈래를 안 탄다. 곱셈 그대로다', () => {
+  it('레벨이 하나인 맵은 평균을 내도 곱셈 그대로다', () => {
     const perMinute = NIGHT_ROAD_3.mobs * 8
     expect(huntingMesoOf({ ...BASE, ground: NIGHT_ROAD_3 })).toBe(
       Math.floor(294 * 7.5 * perMinute * 60),
@@ -267,7 +267,7 @@ describe('huntingMesoOf', () => {
   })
 
   it('**언제나 정수**를 낸다. 메소에 소수점은 없다', () => {
-    // 레벨 계수 7.5 와 평균 갈래가 소수를 만들 수 있는 자리다. 실제 값으로는 8젠·30분이 늘
+    // 레벨 계수 7.5 와 레벨별 평균이 소수를 만들 수 있는 자리다. 실제 값으로는 8젠·30분이 늘
     // 걷어 가지만(그래서 이 단언이 통과한다) 내림은 그 사실에 기대지 않는다.
     for (const missedMobs of MISSED_MOB_OPTIONS) {
       // 메획이 든 통도 훑는다. 149 처럼 큰 값이 실제로 들어온다.

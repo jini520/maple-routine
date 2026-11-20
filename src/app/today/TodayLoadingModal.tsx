@@ -34,7 +34,7 @@ export function TodayLoadingModal(): React.JSX.Element | null {
    * 스냅샷에 스케줄이 하나도 없다는 것이 곧 캐시가 없다는 뜻이다. 회차가 도는 동안도 캐시의 값이 그대로
    * 보이므로, 캐시가 있으면 비어 있지 않다.
    *
-   * `trackedOcids` 의 `null` 은 0명이 아니라 저장소를 아직 안 읽었다 다. 모르는 사이에 세우면
+   * `trackedOcids` 의 `null` 은 0명이 아니라 저장소를 아직 안 읽었다는 뜻이다. 모르는 사이에 세우면
    * 캐릭터가 없는 계정에서도 뜬다.
    */
   const cold =

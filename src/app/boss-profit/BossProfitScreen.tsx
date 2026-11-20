@@ -192,7 +192,7 @@ export function BossProfitScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // `null` 은 0명이 아니라 저장소를 아직 안 읽었다 다. 둘을 묶으면 콜드 스타트 첫 페인트가
+  // `null` 은 0명이 아니라 저장소를 아직 안 읽었다는 뜻이다. 둘을 묶으면 콜드 스타트 첫 페인트가
   // 아직 모르는 사실을 단정한다.
   const isEmpty = trackedOcids !== null && trackedOcids.length === 0
 
@@ -474,7 +474,7 @@ export function BossProfitScreen(): React.JSX.Element {
 
                 **조회 불가 고지는 여기 없다.** 기간 이동이 기록이 있는 기간으로만 착지하고,
                 비-현재 기간의 행은 기록에서만 나오므로 이 자리는 그때 아예 안 그려진다. 남는
-                갈래는 달 경계 미리보기(아직 오지 않은 주)뿐이고, 거기서 조회 가능한 기간을
+                경우는 달 경계 미리보기(아직 오지 않은 주)뿐이고, 거기서 조회 가능한 기간을
                 지났다 는 거짓이다. 그 주에는 아직 안 잡은 것이 맞다. */}
             {!isPeriodLoading &&
               characterGroups.length === 0 &&

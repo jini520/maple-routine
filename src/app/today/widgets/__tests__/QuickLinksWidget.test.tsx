@@ -2,7 +2,7 @@
 // ① 칸은 구성 차례대로 다섯씩 줄을 이루고, 칸 아래는 짧은 이름 · 접근성 이름은 전체 이름이다
 // ② 탭 화면 칸은 그 탭을 열고, 하위 페이지 칸은 스택에 민다. 칸마다 갈 곳이 달라 타일 전체는 누를 수 없다
 // ③ 제목 줄의 `편집` 이 편집 시트를 연다
-// ④ 가계부 분류 칸은 그 분류를 넘겨 가계부 탭을 연다. 서버 갈래 표에 그 분류가 없으면 칸을 그리지 않는다
+// ④ 가계부 분류 칸은 그 분류를 넘겨 가계부 탭을 연다. 서버 분류 표에 그 분류가 없으면 칸을 그리지 않는다
 import type { ReactNode } from 'react'
 import { act, fireEvent, within } from '@testing-library/react-native'
 
@@ -118,7 +118,7 @@ describe('가계부 분류 칸', () => {
     expect(openTab).toHaveBeenCalledWith('Cashbook', { incomeCategory: 'hunting' })
   })
 
-  it('서버 갈래 표에 없는 분류의 칸은 그리지 않고, 표에 줄이 들어오면 그 자리에 다시 선다', async () => {
+  it('서버 분류 표에 없는 분류의 칸은 그리지 않고, 표에 줄이 들어오면 그 자리에 다시 선다', async () => {
     const view = await 위젯({ rows: 1, ids: ['profit', 'income-hunt-loot-sale', 'stats'] })
     expect(view.getByTestId('quick-links-row-0')).toHaveTextContent(/^보스 수입통계$/)
 

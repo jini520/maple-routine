@@ -192,7 +192,7 @@ describe('characterTotalsBetween', () => {
 // today 의 이번 주 수익 위젯이 캐릭터 줄을 누르면 띄우는 항목별 금액이다. 캐릭터를 가르는 기준은
 // characterTotalsBetween 과 같아야 한다. 다르면 줄의 금액과 팝오버의 합이 어긋난다.
 describe('characterCategoriesBetween', () => {
-  it('캐릭터마다 수입 · 지출 갈래별 합계를 큰 순서로 내고, 합은 그 캐릭터의 수입 · 지출과 같다', () => {
+  it('캐릭터마다 수입 · 지출 분류별 합계를 큰 순서로 내고, 합은 그 캐릭터의 수입 · 지출과 같다', () => {
     const byDate = {
       '2026-09-24': [
         crystal('a', '낟낟', 500),
@@ -226,7 +226,7 @@ describe('characterCategoriesBetween', () => {
 })
 
 describe('categoryTotalsBetween', () => {
-  it('수입 갈래는 결정석 · 보스 드롭 · 손입력 갈래이고 큰 순서다. 보스 드롭과 아이템 판매는 다른 갈래다', () => {
+  it('수입 분류는 결정석 · 보스 드롭 · 손입력 분류이고 큰 순서다. 보스 드롭과 아이템 판매는 다른 분류다', () => {
     const byDate = {
       '2026-09-24': [
         crystal('a', '낟낟', 500),
@@ -250,7 +250,7 @@ describe('categoryTotalsBetween', () => {
     ])
   })
 
-  it('사냥과 솔 에르다 조각은 사냥 한 갈래이고, 사냥 기록의 조각 값은 조각 쪽으로 나눈다', () => {
+  it('사냥과 솔 에르다 조각은 사냥 한 분류이고, 사냥 기록의 조각 값은 조각 쪽으로 나눈다', () => {
     const byDate = {
       '2026-09-24': [
         income(null, '', {
@@ -282,7 +282,7 @@ describe('categoryTotalsBetween', () => {
     ])
   })
 
-  it('조각만 있는 사냥도 사냥 갈래이고 0 인 줄은 나눈 목록에 없다', () => {
+  it('조각만 있는 사냥도 사냥 분류이고 0 인 줄은 나눈 목록에 없다', () => {
     const byDate = { '2026-09-24': [income(null, '', { category: 'sol_erda_fragment', mesoAmount: 200 })] }
     expect(categoryTotalsBetween(byDate, WEEK, 'income')).toEqual([
       {
@@ -295,7 +295,7 @@ describe('categoryTotalsBetween', () => {
   })
 
   // 사냥이 낸 돈을 한 조각에 모은다(사용자 선택 2026-10-29). 같은 아이템의 판매는 한 줄로 더한다.
-  it('사냥 전리품 판매도 사냥 갈래이고 아이템 이름으로 나눈다', () => {
+  it('사냥 전리품 판매도 사냥 분류이고 아이템 이름으로 나눈다', () => {
     const byDate = {
       '2026-09-24': [
         income(null, '', { category: 'sol_erda_fragment', mesoAmount: 200 }),
@@ -318,7 +318,7 @@ describe('categoryTotalsBetween', () => {
     ])
   })
 
-  it('버프는 한 갈래이고 선택 목록의 묶음(보스 버프 · 사냥 버프)으로 나눈다', () => {
+  it('버프는 한 분류이고 선택 목록의 묶음(보스 버프 · 사냥 버프)으로 나눈다', () => {
     const byDate = {
       '2026-09-24': [
         spend(null, '', { category: 'buff', itemKey: 'seiram_elixir', mesoAmount: 2000000 }),
@@ -339,7 +339,7 @@ describe('categoryTotalsBetween', () => {
     ])
   })
 
-  it('지출 갈래는 강화 갈래와 손입력 갈래이고 0 인 갈래는 없다', () => {
+  it('지출 분류는 강화 분류와 손입력 분류이고 0 인 분류는 없다', () => {
     const byDate = {
       '2026-09-24': [
         enhancement('a', '낟낟', 'starforce', 300),
@@ -366,7 +366,7 @@ describe('categoryTotalsBetween', () => {
     ])
   })
 
-  // 이슈 #632. 사냥 · 버프만 나뉘던 것을 보스 결정석 빼고 전부 나눈다. 줄의 축은 갈래마다 하나다.
+  // 이슈 #632. 사냥 · 버프만 나뉘던 것을 보스 결정석 빼고 전부 나눈다. 줄의 축은 분류마다 하나다.
   describe('조각마다의 줄', () => {
     it('보스 드롭은 아이템별이고 같은 아이템은 합친다', () => {
       const sale = (ocid: string, items: { itemKey: string | null; itemName: string; payoutMeso: number }[]): DayRecord => ({

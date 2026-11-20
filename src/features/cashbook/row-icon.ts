@@ -4,7 +4,7 @@
  * **화면에 적히는 글자가 아니다.** 손입력 줄의 글자는 `item ?? category` 라 사용자가 항목
  * 이름을 적으면 그것이 뜨는데, 그 글자로 그림을 찾으면 이름을 적은 줄에서만 그림이 사라진다.
  *
- * 그림이 없는 갈래도 열쇠는 낸다. 무엇을 그릴지는 조회표(`cashbookRowIconOf`)가 정하므로
+ * 그림이 없는 분류도 열쇠는 낸다. 무엇을 그릴지는 조회표(`cashbookRowIconOf`)가 정하므로
  * 나중에 그림을 붙일 때 고치는 것이 표 한 줄이다.
  */
 import { cashbookRowIconOf, getAssetImage } from '../../lib/assets/asset-lookup'
@@ -19,7 +19,7 @@ import type { ImageAssetRef } from '../../types/image-asset'
 import { isManualRecord, type DayRecord, type EnhancedItem } from './records'
 
 export function recordIconKeyOf(entry: DayRecord): string {
-  // 수익과 지출의 갈래 key 가 겹칠 수 있어(`etc`) 기록 종류를 앞에 붙인다. 강화 줄도 같은 모양이다.
+  // 수익과 지출의 분류 key 가 겹칠 수 있어(`etc`) 기록 종류를 앞에 붙인다. 강화 줄도 같은 모양이다.
   if (isManualRecord(entry)) return `${entry.kind}:${entry.record.category}`
   if (entry.kind === 'enhancement') return `${entry.kind}:${entry.category}`
   // 결정석 · 판매 줄은 기록 종류 하나가 곧 열쇠다.
@@ -33,7 +33,7 @@ export function recordIconKeyOf(entry: DayRecord): string {
  * 타일을 되짚고 시트 타일과 같은 그림 id 로 찾는다. 시트와 줄이 한 그림을 써야 시트에서 본 그림과 목록의 그림이
  * 갈리지 않는다. 그림 없는 타일이면 `null` 이다. 비슷한 그림을 붙이면 틀린 것을 그린다.
  *
- * 사냥 전리품 판매는 전리품 표에서 그 아이템의 그림을 찾는다. 나머지 줄은 `recordIconKeyOf` 의 열쇠로 찾는다. 목록 갈래의 열쇠(`spend:buff` 등)는 조회표에 없어, 타일을 되짚지
+ * 사냥 전리품 판매는 전리품 표에서 그 아이템의 그림을 찾는다. 나머지 줄은 `recordIconKeyOf` 의 열쇠로 찾는다. 목록으로 고르는 분류의 열쇠(`spend:buff` 등)는 조회표에 없어, 타일을 되짚지
  * 못한 옛 기록도 `null` 이다.
  */
 export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
@@ -49,7 +49,7 @@ export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
       const symbol = findSymbol(itemKey)?.symbol
       return symbol === undefined ? null : getAssetImage(symbol.iconAssetId)
     }
-    // 헥사 스킬은 그 코어의 스킬 그림, 헥사 스탯은 갈래 카드와 같은 헥사 매트릭스 원본 그림이다.
+    // 헥사 스킬은 그 코어의 스킬 그림, 헥사 스탯은 분류 카드와 같은 헥사 매트릭스 원본 그림이다.
     if (category === 'hexa_matrix') {
       if (entry.record.hexa?.activation != null) {
         return getAssetImage(cashbookCategoryOf('spend', category)?.iconAssetId)

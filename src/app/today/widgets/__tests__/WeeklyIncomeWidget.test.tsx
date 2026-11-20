@@ -1,5 +1,5 @@
 // 이번 주 수익. 값은 뷰모델이 통계와 같은 함수로 세어 오므로, 이 파일은 위젯이 고르는 것을 본다.
-// 세그먼트에 따라 큰 숫자 · 순위가 바뀌는지, 캐릭터 줄을 누르면 그 캐릭터의 갈래가 뜨는지다.
+// 세그먼트에 따라 큰 숫자 · 순위가 바뀌는지, 캐릭터 줄을 누르면 그 캐릭터의 분류가 뜨는지다.
 
 import { act, fireEvent, within } from '@testing-library/react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -56,7 +56,7 @@ describe('세그먼트', () => {
 })
 
 describe('캐릭터 줄의 팝오버', () => {
-  it('순 수익에서는 그 캐릭터의 수입 갈래와 지출 갈래를 함께 띄운다', async () => {
+  it('순 수익에서는 그 캐릭터의 수입 분류와 지출 분류를 함께 띄운다', async () => {
     const view = await 위젯()
 
     await act(async () => {
@@ -69,7 +69,7 @@ describe('캐릭터 줄의 팝오버', () => {
     expect(within(popover).getByText('스타포스')).toBeTruthy()
   })
 
-  it('수입에서는 수입 갈래만 띄운다', async () => {
+  it('수입에서는 수입 분류만 띄운다', async () => {
     const view = await 위젯()
     await 고르기(view, '수입')
 

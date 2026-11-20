@@ -47,7 +47,7 @@ const NOTICE_COPY: Record<Exclude<ApiKeyNoticeKind, 'rateLimited'>, NoticeCopy> 
     body: INVALID_KEY_BODY.signIn,
   },
   // 다음에 무슨 일이 일어나는지 말하지 않는다. 이 원인만 **사용자마다 다르다** - API 키가 남아
-  // 있으면 확인을 눌러도 화면이 그대로다. 대신 두 갈래에서 모두 참인 처방을 말한다.
+  // 있으면 확인을 눌러도 화면이 그대로다. 대신 두 경우에서 모두 참인 처방을 말한다.
   signInRequired: {
     icon: CircleUserRoundIcon,
     title: '넥슨 로그인이 만료됐습니다',

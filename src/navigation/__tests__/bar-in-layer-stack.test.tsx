@@ -236,7 +236,7 @@ describe('펼침판은 바보다 뒤에 그려진다', () => {
   })
 })
 
-describe('← 는 **한 층 내려온 자리**로 되돌린다 (결정 4)', () => {
+describe('← 는 **한 층 내려온 자리**로 되돌린다', () => {
   it('설정 → 스케줄 → ← → 설정', async () => {
     await render(<NavigationHarness />)
 

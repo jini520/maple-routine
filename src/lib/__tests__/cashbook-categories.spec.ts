@@ -18,16 +18,16 @@ import {
 const original = cashbookCategoriesTable.get()
 afterEach(() => cashbookCategoriesTable.set(original))
 
-/** 번들에서 갈래 하나를 바꾼 표. */
+/** 번들에서 분류 하나를 바꾼 표. */
 function withCategories(categories: unknown[]): void {
   const parsed = parseCashbookCategories({ ...bundled, categories })
   if (parsed === null) throw new Error('계약을 어겼다')
   cashbookCategoriesTable.set(parsed)
 }
 
-// 갈래 · 아이템 종류의 이름과 단위는 서버 표가 든다. 기록은 key 를 들고, 앱 코드는 key 로 폼을 가른다.
-describe('가계부 갈래 표', () => {
-  it('갈래 카드 그림을 모두 찾는다', () => {
+// 분류 · 아이템 종류의 이름과 단위는 서버 표가 든다. 기록은 key 를 들고, 앱 코드는 key 로 폼을 가른다.
+describe('가계부 분류 표', () => {
+  it('분류 카드 그림을 모두 찾는다', () => {
     for (const each of [...spendCategories(), ...incomeCategories()]) {
       expect(getAssetImage(each.iconAssetId)).not.toBeNull()
     }
@@ -41,7 +41,7 @@ describe('가계부 갈래 표', () => {
     expect(parseCashbookCategories(bundled)).not.toBeNull()
   })
 
-  it('서버가 더한 갈래는 차례대로 서지만 앱이 폼을 모르면 못 고른다', () => {
+  it('서버가 더한 분류는 차례대로 서지만 앱이 폼을 모르면 못 고른다', () => {
     const spend = bundled.categories.filter((each) => each.entryType === 'spend')
     withCategories([
       ...spend.slice(0, 1),
@@ -91,10 +91,10 @@ describe('가계부 갈래 표', () => {
   })
 
   /**
-   * 조각 정산은 사냥 전리품 판매의 조각 칸으로 옮겼다. 그 갈래 줄은 서버 관리 화면에서 더하고, 그 전에 조각 카드를
+   * 조각 정산은 사냥 전리품 판매의 조각 칸으로 옮겼다. 그 분류 줄은 서버 관리 화면에서 더하고, 그 전에 조각 카드를
    * 숨기면 조각 정산을 적을 곳이 사라진다.
    */
-  it('사냥 전리품 판매 갈래가 서버 표에 있을 때만 고르는 시트에서 솔 에르다 조각 카드를 뺀다', () => {
+  it('사냥 전리품 판매 분류가 서버 표에 있을 때만 고르는 시트에서 솔 에르다 조각 카드를 뺀다', () => {
     expect(incomePickerCategories().map((each) => each.key)).toContain('sol_erda_fragment')
 
     const fragment = bundled.categories.find((each) => each.key === 'sol_erda_fragment')!

@@ -53,7 +53,7 @@ describe('AppointmentAgenda', () => {
     const view = await renderAtom(<AppointmentAgenda {...props([appointment({ timeKst: '23:30' })])} />)
 
     expect(view.getByText('23:30')).toBeTruthy()
-    // 시각은 카드 위 한 줄이다. 종료는 시작 옆에 `~ 종료` 로 붙는다(정정 19).
+    // 시각은 카드 위 한 줄이다. 종료는 시작 옆에 `~ 종료` 로 붙는다.
     expect(view.getByText('~ 00:00')).toBeTruthy()
     expect(view.getByText('낟낟')).toBeTruthy()
   })
@@ -122,7 +122,7 @@ describe('AppointmentAgenda', () => {
     expect(view.queryByRole('button')).toBeNull()
   })
 
-  // 보스는 캐릭터별로 묶여 선다. 캐릭터 이름은 묶음 머리에 한 번만 적고 보스 줄에는 없다(정정 17).
+  // 보스는 캐릭터별로 묶여 선다. 캐릭터 이름은 묶음 머리에 한 번만 적고 보스 줄에는 없다.
   it('보스를 캐릭터를 처음 고른 순서로 묶고, 캐릭터 이름은 묶음마다 한 번 적는다', async () => {
     const view = await renderAtom(
       <AppointmentAgenda

@@ -50,8 +50,8 @@ describe('initialDraft', () => {
     expect(initialDraft(new Date('2026-10-01T12:00:00Z')).startMinutes).toBe(21 * 60)
   })
 
-  // 한 번 · 반복은 ＋ 의 갈래에서 고른다. 시트에는 그것을 바꾸는 칸이 없다.
-  it('반복 갈래로 열면 반복 약속이다', () => {
+  // 한 번 · 반복은 ＋ 의 항목에서 고른다. 시트에는 그것을 바꾸는 칸이 없다.
+  it('반복 항목으로 열면 반복 약속이다', () => {
     expect(initialDraft(new Date('2026-10-01T12:04:00Z'), true).repeats).toBe(true)
     expect(initialDraft(new Date('2026-10-01T12:04:00Z'), false).repeats).toBe(false)
   })

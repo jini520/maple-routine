@@ -1,4 +1,4 @@
-// 펼치는 ＋. ＋ 하나가 받은 갈래들을 편다.
+// 펼치는 ＋. ＋ 하나가 받은 항목들을 편다.
 //
 // **움직임은 여기서 안 본다**. 값은 `speed-dial-motion.ts` 가 들고 그쪽 테스트가 붙든다. 여기서
 // 보는 것은 **무엇이 눌리고 무엇이 안 눌리는가** 다.
@@ -31,14 +31,14 @@ jest.mock('react-native-reanimated', () => ({
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
-interface 갈래 {
+interface 항목옵션 {
   onSelectIncome?: () => void
   onSelectExpense?: () => void
   descriptions?: boolean
 }
 
-/** 가계부와 같은 두 갈래. 위가 수입, ＋ 에 가까운 아래가 지출이다 */
-function 갈래둘(options: 갈래 = {}): SpeedDialAction[] {
+/** 가계부와 같은 두 항목. 위가 수입, ＋ 에 가까운 아래가 지출이다 */
+function 항목둘(options: 항목옵션 = {}): SpeedDialAction[] {
   return [
     {
       key: 'income',
@@ -58,8 +58,8 @@ function 갈래둘(options: 갈래 = {}): SpeedDialAction[] {
   ]
 }
 
-async function 그리기(options: 갈래 = {}) {
-  return renderOverlay(<SpeedDial label="기록 추가" actions={갈래둘(options)} />)
+async function 그리기(options: 항목옵션 = {}) {
+  return renderOverlay(<SpeedDial label="기록 추가" actions={항목둘(options)} />)
 }
 
 async function 누르기(view: Rendered, label: string): Promise<void> {
@@ -75,16 +75,16 @@ describe('접혀 있을 때', () => {
     expect(view.getByLabelText('기록 추가').props.accessibilityState?.disabled).toBeFalsy()
   })
 
-  // 갈래 둘은 **마운트된 채로** 남는다. 접히는 움직임을 보여주려면 사라지면 안 된다. 대신
+  // 항목 둘은 **마운트된 채로** 남는다. 접히는 움직임을 보여주려면 사라지면 안 된다. 대신
   // 못 누르게 막는다(`aria-hidden` 은 안 쓴다: RNTL 이 노드를 숨김으로 보고 쿼리에서 걷어낸다).
-  it('갈래 둘은 서 있지만 눌리지 않는다', async () => {
+  it('항목 둘은 서 있지만 눌리지 않는다', async () => {
     const view = await 그리기()
 
     expect(view.getByLabelText('수입 추가').props.accessibilityState?.disabled).toBe(true)
     expect(view.getByLabelText('지출 추가').props.accessibilityState?.disabled).toBe(true)
   })
 
-  it('닫힌 갈래를 눌러도 아무 일이 없다', async () => {
+  it('닫힌 항목을 눌러도 아무 일이 없다', async () => {
     const onSelectExpense = jest.fn()
     const view = await 그리기({ onSelectExpense })
 
@@ -101,13 +101,13 @@ describe('접혀 있을 때', () => {
 })
 
 describe('펼친 뒤', () => {
-  async function 펼치기(options: 갈래 = {}) {
+  async function 펼치기(options: 항목옵션 = {}) {
     const view = await 그리기(options)
     await 누르기(view, '기록 추가')
     return view
   }
 
-  it('갈래 둘이 눌린다', async () => {
+  it('항목 둘이 눌린다', async () => {
     const view = await 펼치기()
 
     expect(view.getByLabelText('수입 추가').props.accessibilityState?.disabled).toBe(false)
@@ -129,7 +129,7 @@ describe('펼친 뒤', () => {
     expect(view.getByTestId('speed-dial-scrim').props.pointerEvents).toBe('auto')
   })
 
-  it('갈래를 고르면 알리고 접는다', async () => {
+  it('항목을 고르면 알리고 접는다', async () => {
     const onSelectIncome = jest.fn()
     const view = await 펼치기({ onSelectIncome })
 
@@ -277,7 +277,7 @@ describe('떠 있는 원의 입체감', () => {
   })
 })
 
-// `＋` 는 기록을 더하는 문을 여는 버튼이라 이동이다. 펼친 뒤 고르는 갈래 둘은 안 낸다(사용자 지정).
+// `＋` 는 기록을 더하는 문을 여는 버튼이라 이동이다. 펼친 뒤 고르는 항목 둘은 안 낸다(사용자 지정).
 describe('＋ 의 촉각', () => {
   const tap = jest.fn(async () => undefined)
 
@@ -299,7 +299,7 @@ describe('＋ 의 촉각', () => {
     expect(tap).toHaveBeenCalledTimes(2)
   })
 
-  it('펼친 뒤 고르는 갈래에는 안 난다', async () => {
+  it('펼친 뒤 고르는 항목에는 안 난다', async () => {
     const view = await 그리기()
     await 누르기(view, '기록 추가')
     tap.mockClear()
@@ -310,7 +310,7 @@ describe('＋ 의 촉각', () => {
   })
 })
 
-// 갈래 하나는 왼쪽 옅은 주황 원 + 이름 + (있으면) 설명이다. 원 색은 화면과 상관없이 주황 하나다.
+// 항목 하나는 왼쪽 옅은 주황 원 + 이름 + (있으면) 설명이다. 원 색은 화면과 상관없이 주황 하나다.
 describe('알약의 모양', () => {
   beforeEach(() => setHapticsPort({ tap: async () => {}, select: async () => {} }))
   afterEach(() => {
@@ -318,7 +318,7 @@ describe('알약의 모양', () => {
     jest.mocked(useReducedMotion).mockReturnValue(false)
   })
 
-  it('이름을 적고, 설명은 준 갈래에만 적는다', async () => {
+  it('이름을 적고, 설명은 준 항목에만 적는다', async () => {
     const view = await 그리기({ descriptions: true })
 
     expect(view.getByText('수입')).toBeTruthy()

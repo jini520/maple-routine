@@ -91,6 +91,12 @@ describe('주석 문체', () => {
     expect(slash).toEqual([])
   })
 
+  it('비유 `갈래` · `벽지` 를 쓰지 않는다', () => {
+    // 그 말로 `src/` 를 검색해도 가리키는 코드가 안 나온다. 규칙이 문서에만 있는 동안 `갈래` 가 800줄 넘게
+    // 쌓였다. 게임 사냥터 이름(`세 갈래길`)은 데이터 `.json` 에만 있어 `.ts` · `.tsx` 만 본다.
+    expect(offenders(/갈래|벽지/)).toEqual([])
+  })
+
   it('허용 목록이 낡지 않았다', () => {
     // 그 파일에서 `—` 가 사라졌으면 목록에서도 빼야 한다. 안 그러면 예외가 조용히 쌓인다.
     const stale = DASH_ALLOWED.filter((a) => !readFileSync(join(SRC, a.file), 'utf8').includes('—'))

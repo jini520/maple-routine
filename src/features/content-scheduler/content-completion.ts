@@ -46,7 +46,7 @@ function byParticipation(content: { nowCount: number }): ContentCompletion {
 }
 
 /**
- * 일간 항목. `DailyContentCard` 의 갈래와 같다.
+ * 일간 항목. `DailyContentCard` 의 분기와 같다.
  *
  * `kind: 'quest'` → 일일 퀘스트 카드가 `questState` 배지를 그린다.
  * 그 밖(몬스터파크·폴백) → 진행률 바라 카운트가 답이다.
@@ -56,7 +56,7 @@ export function dailyContentCompletion(content: DailyContent): ContentCompletion
 }
 
 /**
- * 주간 항목. `WeeklyContentCard` 의 **갈래를 같은 순서로** 따른다. 표에 없는 항목은 폴백 카드다.
+ * 주간 항목. `WeeklyContentCard` 의 **분기를 같은 순서로** 따른다. 표에 없는 항목은 폴백 카드다.
  */
 export function weeklyContentCompletion(content: WeeklyContent): ContentCompletion {
   // 점수가 0 이 아니면 완료다. 점수에 상한이 없어 다 했다 를 카운트로는 못 재지만 그 주에

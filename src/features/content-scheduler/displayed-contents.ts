@@ -20,7 +20,7 @@ import type { DailyContent, WeeklyContent } from '../../types'
 
 /**
  * 관리 페이지와 같은 `categorizeContentEntries` 평탄화 순서로 정렬한 템플릿
- * (일간은 첫 등장 순서, 주간은 갈래 표의 차례).
+ * (일간은 첫 등장 순서, 주간은 분류 표의 차례).
  * 컨텐츠 표가 켜는 동안 서버 응답으로 덮일 수 있어 부를 때 읽는다. 줄이 41 이라 값이 싸다.
  */
 function orderedDailyTemplate(): ContentEntry[] {

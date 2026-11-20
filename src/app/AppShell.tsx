@@ -77,7 +77,7 @@ import { useUsageLog } from '../features/usage-log/useUsageLog'
  * 화면 위에 업데이트 모달(`LockedUpdatePrompt`)을 두고, 처음 실행에서 OTA 를 적용하는 동안 `BootSplash` 를
  * 붙든다.
  *
- * `notifyLiveUpdateReady()` 는 **부르지 않는다.** 가 이 자리를 고른 이유
+ * `notifyLiveUpdateReady()` 는 **부르지 않는다.** 이 자리에서 부르던 이유
  * (*"렌더가 던지는 번들이 SUCCESS 로 찍혀 영구히 박히면 안 된다"*)는 여전히 유효하지만,
  * `expo-updates` 에는 그 신호를 받는 JS API 가 없고 네이티브가 직접 관찰해 되돌린다
  * (`rn-live-update.ts` 의 `notifyAppReady` 주석. 전수 확인). 즉 **자동 롤백은 있고, 그것을
@@ -321,7 +321,7 @@ export function AppShell(): React.JSX.Element {
 
   return (
     <>
-      {/* 테마 벽지. **첫 자식이어야 한다.** RN 은 형제 순서가 곧 그리는 순서다.
+      {/* 테마 배경 이미지. **첫 자식이어야 한다.** RN 은 형제 순서가 곧 그리는 순서다.
           배경을 선언하지 않은
           테마에서는 아무것도 그리지 않는다. */}
       <ThemeBackdrop />

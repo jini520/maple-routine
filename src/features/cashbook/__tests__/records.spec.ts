@@ -321,7 +321,7 @@ describe('캐릭터별 마지막 사냥을 기억한다', () => {
   })
 
   // 캐릭터 없는 몫은 없다. 사냥 기록은 캐릭터를 골라야 저장된다.
-  it('캐릭터가 없는 행 · 계산 입력이 없는 옛 행 · 다른 갈래는 안 남긴다', async () => {
+  it('캐릭터가 없는 행 · 계산 입력이 없는 옛 행 · 다른 분류는 안 남긴다', async () => {
     const { recordIncome } = require('../records') as typeof import('../records')
 
     await recordIncome({ ...계산기사냥, ocid: null }, 지금)
@@ -573,7 +573,7 @@ describe('spendMesoOf: 세라자르 주화를 뺀다', () => {
       .toBe(500_000)
   })
 
-  // 주화를 안 주는 갈래는 그대로다. 되짚어도 개수가 0 이다.
+  // 주화를 안 주는 분류는 그대로다. 되짚어도 개수가 0 이다.
   it('에픽던전이 아닌 행은 그대로다', () => {
     expect(spendMesoOf({ ...행, category: 'etc', formItemKeys: null })).toBe(2_542_372_882)
   })
@@ -797,7 +797,7 @@ describe('loadDayRecords: 그날 적은 것을 한 줄씩', () => {
   })
 })
 
-// 카드 두 줄의 규칙은 갈래마다 다르다. 이름 · 제목 · 단위는 서버 표에서 찾고, 사용자가 확정한 카드 이름표가 그 모양이다.
+// 카드 두 줄의 규칙은 분류마다 다르다. 이름 · 제목 · 단위는 서버 표에서 찾고, 사용자가 확정한 카드 이름표가 그 모양이다.
 describe('하루 목록 카드의 두 줄', () => {
   const 카드 = (entry: import('../records').DayRecord) => [titleOf(entry), detailOf(entry)]
 
@@ -822,14 +822,14 @@ describe('하루 목록 카드의 두 줄', () => {
     ).toEqual(['에픽던전', '하이마운틴 경험치 2단계, 솔 에르다 1단계'])
   })
 
-  it('심볼 강화는 갈래 제목과 심볼 이름 · 두 레벨이고, 심볼을 못 찾으면 적어 둔 이름이다', () => {
+  it('심볼 강화는 분류 제목과 심볼 이름 · 두 레벨이고, 심볼을 못 찾으면 적어 둔 이름이다', () => {
     const 심볼행 = { ...지출행, category: 'symbol' as const, item: '옛 이름', itemKey: 'cernium', levelFrom: 7, levelTo: 10, quantity: null }
 
     expect(카드({ kind: 'spend', record: 심볼행, characterName: '루디' })).toEqual(['루디 · 심볼강화', '세르니움 7 → 10'])
     expect(카드({ kind: 'spend', record: { ...심볼행, itemKey: 'removed_symbol' }, characterName: '' })).toEqual(['심볼강화', '옛 이름'])
   })
 
-  it('헥사 매트릭스는 갈래 제목과, 헥사 스킬이면 코어의 첫 스킬 이름 · 두 레벨, 헥사 스탯이면 스탯 이름이다', () => {
+  it('헥사 매트릭스는 분류 제목과, 헥사 스킬이면 코어의 첫 스킬 이름 · 두 레벨, 헥사 스탯이면 스탯 이름이다', () => {
     const 조각 = { fragmentCount: 345, untradableFragmentCount: 0, fragmentPrice: 7_200_000, useStorage: false, storageAsSpend: false, storageUses: [] }
     const 스킬행 = {
       ...지출행,
@@ -960,7 +960,7 @@ describe('고치기와 지우기', () => {
     expect(rate.setLastPointRate).not.toHaveBeenCalled()
   })
 
-  it('갈래대로 지운다', async () => {
+  it('종류대로 지운다', async () => {
     const { removeRecord } = require('../records') as typeof import('../records')
 
     await removeRecord({ kind: 'spend', record: 지출행, characterName: '' })
@@ -1063,7 +1063,7 @@ describe('칸 금액: 보스가 칸에 든다', () => {
   })
 })
 
-describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
+describe('loadDayRecords: 캐릭터당 두 줄', () => {
   it('결정석과 판매를 갈라 두 줄로 세운다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록, 데미안기록])
     bossDrops.getBossDropRecords.mockResolvedValue([드롭(), 드롭({ dropIndex: 1, priceState: null, priceMeso: null })])
@@ -1215,7 +1215,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     expect(rows.map(isManualRecord)).toEqual([false, true])
   })
 
-  it('이름을 모르면 ocid 대신 `알 수 없음` 을 안 적는다. 표에도 캐시에도 없으면 갈래만 적는다', async () => {
+  it('이름을 모르면 ocid 대신 `알 수 없음` 을 안 적는다. 표에도 캐시에도 없으면 종류 이름만 적는다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     profileLookup.resolveDisplayProfiles.mockResolvedValue(new Map())
 
@@ -1330,7 +1330,7 @@ describe('loadDayRecords: 캐릭터당 두 줄 (결정 7)', () => {
     expect(dayTotalsOf(rows)).toEqual(amounts['2026-08-21'])
   })
 
-  it('보스 줄은 손입력이 아니다. 여기서 못 고친다 (결정 8)', async () => {
+  it('보스 줄은 손입력이 아니다. 여기서 못 고친다', async () => {
     bossProfit.getDatedBossProfitRecords.mockResolvedValue([스우기록])
     const { isManualRecord, rowKeyOf } = require('../records') as typeof import('../records')
 
@@ -1394,7 +1394,7 @@ describe('loadTrackedCharacters', () => {
  * 사냥 줄은 `캐릭터 · 사냥` + `n소재` 다.
  *
  * 그 줄이 답하는 것은 오늘 무엇으로 벌었나 이고 어느 맵이었나 는 열어 봐야 뜻이 생기는 값이다.
- * 갈래 이름이 그 자리를 들고, 몇 소재를 돌았나 를 세는 칸이 보스 줄의 n마리와 같은 자리·같은
+ * 분류 이름이 그 자리를 들고, 몇 소재를 돌았나 를 세는 칸이 보스 줄의 n마리와 같은 자리·같은
  * 모양으로 선다. 글자가 시트의 시간 줄과 같은 이름이라(1소재 = 30분) 한 수가 두 이름을 안 갖는다.
  */
 describe('사냥 줄의 이름과 셈', () => {
@@ -1427,7 +1427,7 @@ describe('사냥 줄의 이름과 셈', () => {
     recordedAt: '2026-08-21T01:00:00.000Z',
   }
 
-  it('첫 칸이 **사냥터가 아니라 갈래**다', async () => {
+  it('첫 칸이 **사냥터가 아니라 분류**다', async () => {
     income.getIncomeRecordsBetween.mockResolvedValue([사냥기록])
 
     const rows = await loadDayRecords('2026-08-21')

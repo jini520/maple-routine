@@ -44,7 +44,7 @@ export function tabNavigateArgs(
  * 서 있을 때 그룹 층 페이지를 그냥 이동하면 바닥에 있는 것을 한 번 더 쌓는다. 그러면 바는
  * ← 를 안 그리는데 가장자리 스와이프는 뒤로 가는 어긋난 프레임이 된다.
  *
- * 이미 그룹 층이면 되돌리기가 무동작이라 갈래를 나누지 않고 늘 부르면 된다.
+ * 이미 그룹 층이면 되돌리기가 무동작이라 경우를 나누지 않고 늘 부르면 된다.
  */
 export function needsPopToGroupLayer(page: TabRouteName): boolean {
   return layerOfPage(page) === 'Groups'

@@ -1,7 +1,7 @@
 // 줄 표식을 고르는 열쇠.
 //
 // **화면 글자로 고르면 안 된다.** 손입력 줄에 적히는 것은 `item ?? category` 라 사용자가 항목
-// 이름을 적으면 그것이 뜨고, 갈래 이름은 비었을 때만 선다. 보이는 글자로 그림을 찾으면 이름을
+// 이름을 적으면 그것이 뜨고, 분류 이름은 비었을 때만 선다. 보이는 글자로 그림을 찾으면 이름을
 // 적은 줄에서만 그림이 사라진다.
 import type { IncomeRecord } from '../../../storage/income'
 import type { SpendRecord } from '../../../storage/spend'
@@ -39,7 +39,7 @@ const spend = (over: Partial<SpendRecord> = {}): DayRecord => ({
 })
 
 describe('recordIconKeyOf', () => {
-  it('강화 줄은 기록 종류와 갈래 key 로 잡는다', () => {
+  it('강화 줄은 기록 종류와 분류 key 로 잡는다', () => {
     expect(
       recordIconKeyOf({
         kind: 'enhancement',
@@ -53,15 +53,15 @@ describe('recordIconKeyOf', () => {
   })
 
   // 수익 `기타` 와 지출 `기타` 가 겹치지 않게 기록 종류를 앞에 붙인다.
-  it('손입력 줄은 이름을 적어도 기록 종류와 갈래 key 로 잡는다', () => {
+  it('손입력 줄은 이름을 적어도 기록 종류와 분류 key 로 잡는다', () => {
     expect(recordIconKeyOf(spend({ item: '세이람의 영약 3개' }))).toBe('spend:buff')
     expect(recordIconKeyOf(income({ item: '아무거나' }))).toBe('income:hunting')
     expect(recordIconKeyOf(income({ category: 'etc' }))).not.toBe(recordIconKeyOf(spend({ category: 'etc' })))
   })
 
-  // 그림이 없는 갈래도 열쇠는 낸다. 무엇을 그릴지는 조회표가 정하므로, 나중에 그림을 붙일 때
+  // 그림이 없는 분류도 열쇠는 낸다. 무엇을 그릴지는 조회표가 정하므로, 나중에 그림을 붙일 때
   // 고치는 것이 표 한 줄이지 이 함수가 아니다.
-  it('그림이 없는 갈래도 열쇠는 낸다', () => {
+  it('그림이 없는 분류도 열쇠는 낸다', () => {
     expect(
       recordIconKeyOf({
         kind: 'dropSale',
@@ -76,7 +76,7 @@ describe('recordIconKeyOf', () => {
   })
 })
 
-// 지출의 목록 갈래는 시트에서 고른 타일의 그림을 쓴다. 시트와 줄이 같은 조회를 써야 둘이 다른 그림을 그리지 않는다.
+// 지출에서 목록으로 고르는 분류는 시트에서 고른 타일의 그림을 쓴다. 시트와 줄이 같은 조회를 써야 둘이 다른 그림을 그리지 않는다.
 describe('recordIconOf', () => {
   it('에픽던전 추가 리워드는 형태별 항목 key 로 타일을 되짚어 지역 그림을 쓴다', () => {
     expect(
@@ -84,7 +84,7 @@ describe('recordIconOf', () => {
     ).toBe(imageOfPath('maps/icons/highMountain.png'))
   })
 
-  // 버프 갈래 전체가 세이람의 영약 하나이던 것이 끝난다.
+  // 버프 분류 전체가 세이람의 영약 하나이던 것이 끝난다.
   it('버프는 고른 영약의 그림이다', () => {
     expect(recordIconOf(spend({ category: 'buff', itemKey: 'alleria_elixir' }))).toBe(imageOfPath('items/alleria_elixir.webp'))
     expect(recordIconOf(spend({ category: 'buff', itemKey: 'alleria_elixir' }))).not.toBe(imageOfPath('items/seiram_elixir.webp'))
@@ -97,7 +97,7 @@ describe('recordIconOf', () => {
     expect(recordIconOf(spend({ category: 'event_bm', itemKey: 'nickname_change' }))).toBe(imageOfPath('items/npc_mr_newname.webp'))
   })
 
-  // 갈래 그림 하나로 그리면 순록의 우유와 돋보기 줄이 같은 그림이 된다.
+  // 분류 그림 하나로 그리면 순록의 우유와 돋보기 줄이 같은 그림이 된다.
   it('사냥 전리품 판매는 전리품 표에서 찾은 그 아이템의 그림이다', () => {
     expect(recordIconOf(income({ category: 'hunt_loot_sale', itemKey: 'reindeer_milk' }))).toBe(
       imageOfPath('items/reindeer_milk.webp'),
@@ -107,7 +107,7 @@ describe('recordIconOf', () => {
     )
   })
 
-  it('헥사 스킬은 그 코어의 스킬 그림이고, 헥사 스탯은 갈래 카드와 같은 헥사 매트릭스 그림이다', () => {
+  it('헥사 스킬은 그 코어의 스킬 그림이고, 헥사 스탯은 분류 카드와 같은 헥사 매트릭스 그림이다', () => {
     const 조각 = { fragmentCount: 345, untradableFragmentCount: 0, fragmentPrice: 1, useStorage: false, storageAsSpend: false, storageUses: [] }
     expect(recordIconOf(spend({ category: 'hexa_matrix', itemKey: '창룡파천검 : 만참', hexa: { ...조각, activation: null } }))).toBe(
       imageOfPath('skills/KEJDKDOEMH.webp'),
@@ -133,7 +133,7 @@ describe('recordIconOf', () => {
     expect(recordIconOf(spend({ category: 'buff', itemKey: 'nope' }))).toBeNull()
   })
 
-  // 이름을 치는 갈래는 갈래 key 로 잡는다. 기타 둘은 두 시트의 기타 카드와 같은 메소 주머니다.
+  // 이름을 치는 분류는 분류 key 로 잡는다. 기타 둘은 두 시트의 기타 카드와 같은 메소 주머니다.
   it('기타(수익) · 기타(지출)은 메소 주머니이고 아이템 구매 · 아이템 판매는 그림이 없다', () => {
     expect(recordIconOf(spend({ category: 'etc', item: '아무거나' }))).toBe(imageOfPath('items/meso.webp'))
     expect(recordIconOf(income({ category: 'etc', item: '아무거나' }))).toBe(imageOfPath('items/meso.webp'))

@@ -37,7 +37,7 @@ export const MESO_PER_MONSTER_LEVEL = 7.5
 export const MINUTES_PER_SOJAE = 30
 
 /**
- * 사냥 효율 조각 다섯. 고르는 것은 몇 마리를 놓치나 다.
+ * 사냥 효율 조각 다섯. 고르는 것은 몇 마리를 놓치는지다.
  *
  * 고정 퍼센트(100·95·90·85·80)는 맵을 모르는 값이다. 40마리에서 하나를 놓치는 것(97.5%)과
  * 22마리에서 하나를 놓치는 것(95.5%)은 같은 손해가 아니다. 그래서 고르는 축을 마릿수로 내리고
@@ -251,7 +251,7 @@ export interface HuntingMesoInput {
  *
  * **몬스터 레벨이 둘이면 레벨마다 재서 평균**낸다. 평균 레벨 하나로 접으면
  * 레벨 차이가 소수(20.5)가 되어 정수 표에 못 넣고, 내리든 올리든 임의의 선택이 하나 생긴다.
- * 레벨이 하나인 맵(408 중 356)에서는 이 갈래가 아예 안 돈다.
+ * 레벨이 하나인 맵(408 중 356)에서는 평균(`perLevelMean`)이 그 레벨 하나의 값 그대로다.
  */
 export function huntingMesoOf(input: HuntingMesoInput): number {
   const minutes = input.sojae * MINUTES_PER_SOJAE

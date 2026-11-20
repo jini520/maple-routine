@@ -9,7 +9,7 @@ import {
   pillWidth,
 } from '../speed-dial-motion'
 
-/** 갈래 셋, 위에서부터 0 · 1 · 2. 2 가 ＋ 에 가장 가깝다 */
+/** 항목 셋, 위에서부터 0 · 1 · 2. 2 가 ＋ 에 가장 가깝다 */
 const 셋 = [0, 1, 2].map((index) => dialTiming(index, 3, true, false))
 
 describe('펴기. 원이 먼저 솟고, 위 알약부터 펼쳐진다', () => {
@@ -35,7 +35,7 @@ describe('펴기. 원이 먼저 솟고, 위 알약부터 펼쳐진다', () => {
     for (const step of 셋) expect(step.label.delayMs).toBeGreaterThan(step.expand.delayMs)
   })
 
-  it('갈래 둘이면 위가 아래보다 먼저 펼쳐진다', () => {
+  it('항목 둘이면 위가 아래보다 먼저 펼쳐진다', () => {
     expect(dialTiming(0, 2, true, false).expand.delayMs).toBeLessThan(dialTiming(1, 2, true, false).expand.delayMs)
   })
 })

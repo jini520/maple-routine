@@ -113,7 +113,7 @@ export function symbolGroups(): readonly SymbolCostGroup[] {
   return index().groups
 }
 
-/** 표가 서는 첫날(KST). 비용 줄 중 가장 이른 `from` 이고 이 갈래의 날짜 고르개는 그 전 날짜를 못 고른다. 줄이 전부 처음부터면 `null`. */
+/** 표가 서는 첫날(KST). 비용 줄 중 가장 이른 `from` 이고 이 분류의 날짜 고르개는 그 전 날짜를 못 고른다. 줄이 전부 처음부터면 `null`. */
 export function symbolCostsFrom(): string | null {
   return index().earliestFrom
 }

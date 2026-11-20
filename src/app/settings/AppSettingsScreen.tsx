@@ -165,7 +165,7 @@ export function AppSettingsScreen(): React.JSX.Element {
           </View>
 
           {/* 이용약관 제6조④가 요구하는 출처 표기. 문구를 의역하지 않고 원문 그대로 노출한다.
-              더보기 맨 아래에 있다가 여기로 왔다. 더보기가 소식 갈래로 길어져 멀리 밀렸고, 이 화면은 카드 셋이라
+              더보기 맨 아래에 있다가 여기로 왔다. 더보기가 소식 분류로 길어져 멀리 밀렸고, 이 화면은 카드 셋이라
               스크롤 없이 보인다. 전부 읽고 끝나는 정적 문구라 톤(text-text-disabled)이 균일하다.
               (`text-center` 가 각 `Text` 에 있는 것은 RN 이 글자 정렬을 상속하지 않기 때문이다.) */}
           <View className="gap-1 pt-4" testID="settings-footer">
