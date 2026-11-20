@@ -38,8 +38,8 @@
 | `dropBoxes` | 개봉 결과를 직접 고르는 상자 7개(반지 상자 5 · 장신구 상자 2)의 레벨 범위와 후보. 1.0.15 에서 배열 `dropBoxes` · `dropBoxContents` 로 낸다([[ADR-099]] 결정 65) | `lib/boss/boss-drops` | `/admin/drop-boxes` |
 | `crystalPrices` | 보스 · 난이도마다 결정석 가격 줄 106개. 한 조합에 기간 줄이 여럿일 수 있다. 1.0.15 에서 배열 `bossCrystalPrices` 로 낸다([[ADR-099]] 결정 65) | `lib/boss/boss-crystal-prices` | `/admin/crystal-prices` |
 | `worlds` | 월드 20개의 key · 넥슨 표기 이름 · 엠블럼 · 챌린저스 여부 · 이벤트 월드 여부 · 열린 기간(월드마다 여러 줄, [[ADR-100]] 결정 9). 월드 key 마스터 표다 | `lib/world/worlds` | `/admin/worlds` |
-| `spendCatalog` | 가계부 지출 목록. 묶음 12(카드 제목) · 타일 54 · 항목 70(원본 이름 · 줄인 이름) 과 항목의 축 값 · 형태, 형태 이름 둘, 규칙(관세율 · 세라자르 주화 가격 · 메소마켓 수수료율) | `lib/cashbook/spend-catalog` | `/admin/spend-catalog` |
-| `cashbookCategories` | 가계부 수입 · 지출 갈래 11개의 이름 · 카드 제목 · 그림 · 설명 · 단위와 아이템 종류 4개(장비 · 소비 · 기타 · 캐시)의 이름 · 단위 · 관세 여부 | `lib/cashbook/categories` | `/admin/cashbook-categories` |
+| `spendCatalog` | 가계부 지출 목록. 묶음 13(카드 제목) · 타일 64 · 항목 80(원본 이름 · 줄인 이름) 과 항목의 축 값 · 형태, 형태 이름 둘, 규칙(관세율 · 세라자르 주화 가격 · 메소마켓 수수료율). 1.0.15 에서 배열 이름을 표 이름으로 바꾸고 다른 표의 줄을 줄 id 로 가리킨다([[ADR-099]] 결정 65) | `lib/cashbook/spend-catalog` | `/admin/spend-catalog` |
+| `cashbookCategories` | 가계부 수입 · 지출 갈래 15개의 이름 · 카드 제목 · 그림 · 설명 · 단위와 아이템 종류 4개(장비 · 소비 · 기타 · 캐시)의 이름 · 단위 · 관세 여부. 1.0.15 에서 배열 `cashbookCategories` · `cashbookItemTypes` 로 낸다([[ADR-099]] 결정 65) | `lib/cashbook/categories` | `/admin/cashbook-categories` |
 | `symbolCosts` | 심볼 묶음 3 · 심볼 14 · 레벨별 강화 비용 줄 194개. 비용 줄에는 기간이 있다 | `lib/cashbook/symbol-costs` | `/admin/symbol-costs` |
 | `hexaMatrix` | 헥사 코어 종류 6 · 종류별 레벨 비용 줄 180개(조각 · 솔 에르다) · 기본 종류가 아닌 코어 이름 50 · 직업 48 개의 코어 672 · 헥사 스탯 3 과 활성화 조각. 코어 그림은 `skills/` 에 있다. 1.0.15 에서 표 이름의 배열 다섯으로 바꾸고 이름 표를 없앤다([[ADR-099]] 결정 65) | `lib/cashbook/hexa-matrix` | `/admin/hexa-matrix` |
 | `contents` | 컨텐츠 분류 8 · 컨텐츠 41개의 넥슨 이름 · 표시 이름 · 배경 · 지역 아이콘 · 수동 모드 상한 · 요구 레벨 · 공유 범위 · 유효 기간. 컨텐츠 key 마스터 표다. 1.0.15 에서 배열 `contentCategories` · `contents` 로 내고 완료 조건(`checkType`)을 싣는다([[ADR-099]] 결정 65) | `lib/scheduler/contents` · `scheduler-content-scope` · `content-categories` | `/admin/contents` |
@@ -47,7 +47,7 @@
 | `enhancementCosts` | 잠재 재설정 비용 32줄 · 소울 잠재 재설정 비용 4줄 · 스타포스 단계 30줄 · 슈페리얼 계열 3줄(스타포스 1회 비용) · 슈페리얼 장비 50개와 규칙 셋. 식은 `lib/enhancement/cost.ts` 에 있다 | `lib/enhancement/cost` | `/admin/enhancement-costs` |
 | `mvpGrades` | MVP 등급 7개의 경매장 수수료 · 스타포스 할인 · 명패 그림. 순서가 등급의 높낮이다 | `lib/mvp/grades` | `/admin/mvp-grades` |
 | `huntingGrounds` | 사냥 지역 21 · 사냥터 408(인기 여부 포함) · 몬스터 레벨 줄 460. 계산 상수는 `lib/cashbook/hunting-meso.ts` 에 있다 | `lib/cashbook/hunting-grounds` | `/admin/hunting-grounds` |
-| `huntLoot` | 가계부 사냥 전리품 판매의 아이템 5개(조각 1 · 소비 2 · 이벤트 2)의 key · 분류 · 이름 · 그림 · NPC 개당 가격 · 유효 기간 | `lib/cashbook/hunt-loot` | `/admin/hunt-loot` |
+| `huntLoot` | 가계부 사냥 전리품 판매의 아이템 5개(조각 1 · 소비 2 · 이벤트 2)의 key · 분류 · 이름 · 그림 · NPC 개당 가격 · 유효 기간. 1.0.15 에서 배열 `huntLootItems` 로 내고 아이템을 줄 id 로 가리킨다([[ADR-099]] 결정 65) | `lib/cashbook/hunt-loot` | `/admin/hunt-loot` |
 | `assets` | 앱이 받는 그림 약 930장의 id · 경로 · 내용 해시 · 바이트 · 가로 · 세로 | `lib/assets/asset-files` | `/admin/assets` |
 | `imageCrops` | 보스 초상(카드 · 원형 아이콘 · 파티 모달 띠)과 컨텐츠 지역 지도의 크롭 | `lib/assets/image-crops` | `/admin/assets` |
 | `faqs` | 화면 FAQ 의 묶음(key · 제목)과 문항(질문 · 답 블록). 묶음 하나가 시트 하나다([[ADR-150]]) | `lib/faq/faqs` | `/admin/faqs` |

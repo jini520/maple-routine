@@ -2080,6 +2080,23 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
   - 관리 화면은 완료 조건을 고르고 최대 횟수를 적는 칸을 둔다. 완료 조건과 최대 횟수가 어긋나면 저장하지 않는다. 공유 줄의
     짧은 이름 칸과 표시 칸 셋(결정 42)은 없앤다. 카드 배경 둘과 지역 아이콘은 그림 고르개로 그림 줄 id 를 적는다. 지금처럼
     배경 이름으로 지역 아이콘을 찾아 채우지 않는다(결정 60).
+- 여섯째 묶음은 가계부가 쓰는 기준 표 · 지출 목록(`cashbook_categories` · `cashbook_item_types` · `hunt_loot_items` ·
+  `spend_reward_types` · `spend_groups` · `spend_tiles` · `spend_items` · `spend_item_options` · `spend_item_reward_types`)이다.
+  가계부 기록이 이 표들을 가리키므로 기록 표보다 먼저 바꾼다. 칸은 결정 32 · 36 · 51 · 60 그대로다. 이 줄과 아래 넷은 Claude 가
+  적었다.
+  - 게임 데이터 칸의 배열은 표 이름을 따른다(결정 59 · 60). `cashbookCategories` 칸은 `cashbookCategories` · `cashbookItemTypes`
+    를, `spendCatalog` 칸은 `spendRewardTypes` · `spendGroups` · `spendTiles` · `spendItems` · `spendItemOptions` ·
+    `spendItemRewardTypes` 를, `huntLoot` 칸은 `huntLootItems` 를 싣는다. 기록이 가리키는 줄(분류 · 아이템 종류 · 추가 리워드 종류
+    · 묶음 · 타일 · 지출 항목)은 `id` 를 싣고, 다른 표의 줄은 줄 id 로 가리킨다. 사냥 전리품 줄은 아이템을 `itemId` 로 가리키고
+    이름 · 그림은 `items` 칸에서 읽는다. 옛 그림 이름 `iconFile` · `iconMap` 은 걷는다. `spendCatalog` 칸의 규칙(`rules`)은 게임
+    규칙 표의 묶음에서 바꾼다.
+  - 옮길 때 지출 타일의 그림은 `icon_asset_id` 가 있으면 그것, 없으면 `icon_map_asset_id` 를 적는다(결정 60). 2026-11-20 운영 64줄에서
+    57줄 · 4줄 · 그림 없는 3줄이고 두 칸이 함께 찬 줄은 없다. `spend_items.short_name` 은 옮기지 않는다(결정 60). 운영 80줄 가운데
+    5줄에 값이 있다.
+  - 옛 마이그레이션 0014 · 0031 이 빈 DB 에도 가계부 분류 · 아이템 종류 · 지출 형태 줄을 넣는다. 옮기는 스크립트는 옮길 표를 비우고
+    다시 채우므로 옛 DB 의 줄과 줄 id 가 남는다.
+  - 관리 화면 셋(가계부 분류 · 지출 카탈로그 · 사냥 전리품)의 본문 칸 이름도 표를 따른다. 다른 표의 줄은 지금처럼 key 로 받고,
+    그림은 그림 줄 id 로 받는다. 지출 타일의 그림 고르개는 아이템 그림과 지역 아이콘을 함께 보인다.
 - 2026-11-20 의 서버는 스키마가 `src/database/schema.ts` 한 파일(68표)이고, 그 파일을 읽는 코드가 49개, 마이그레이션이 46개다.
 - 서버 PR #122 는 머지하지 않는다(사용자 선택 2026-11-20). 2026-11-17 에 지금 표 위에 쓴 #947 의 서버 첫 조각이다. 로그인
   없는 사용자를 메이플 ID 해시 헤더로 찾고, 부계정을 넥슨 ID 하나에만 등록하게 하고, 다계정 사용자를 한 명으로 센다. 같은
