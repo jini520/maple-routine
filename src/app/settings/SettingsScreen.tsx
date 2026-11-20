@@ -22,6 +22,7 @@ import { useRoute, type RouteProp } from '@react-navigation/native'
 import { useRunningAppVersion } from '../../features/live-update/use-running-app-version'
 import { useToastStore } from '../../features/toast/store'
 import { Card, GearIcon, Text } from '../../components/atoms'
+import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
@@ -169,72 +170,74 @@ export function SettingsScreen(): React.JSX.Element {
 
   return (
     <>
-      <ScreenScroll onRefresh={refresh}>
+      <ScreenScroll
+        onRefresh={refresh}
+        header={
+          <PageHeader>
+            {/* 설정은 머리의 아이콘 뒤에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에
+                밀려 내려간다. 톱니바퀴가 하단 바에서 여기로 옮겨 온 그림이다. */}
+            <PageHeaderTitleRow>
+              <Text className="text-lg font-bold text-text">더보기</Text>
+              <FaqButton sheet={faq} />
+              <Pressable
+                role="button"
+                aria-label="설정"
+                onPress={() => {
+                  tapFeedback()
+                  navigation.navigate('AppSettings')
+                }}
+                className="ml-auto p-1"
+              >
+                {/* 제목 글자(18)보다 크다. 이 화면에서 유일하게 누를 수 있는 머리 요소라 뒤로
+                    가기(20)와 같은 크기면 눈에 안 걸린다. */}
+                <GearIcon className="h-6 w-6 text-text-muted" strokeWidth={2} aria-hidden />
+              </Pressable>
+            </PageHeaderTitleRow>
+          </PageHeader>
+        }
+      >
         <NexonMaintenanceBanner testID="settings-maintenance-banner" />
         {/* `screen-Settings` 는 나머지 세 탭 화면과 같은 관례다(`screen-Content`·`-Boss`·`-Profit`).
             이것이 없어서 내비게이션 테스트가 **자리표시자의 같은 testID 를 보고 초록**이었고,
-            설정 탭이 통째로 빠진 것을 아무도 못 잡았다(실기기 관측). */}
-        <View className="gap-2 px-4 pb-4" testID="screen-Settings">
-          {/* 이 화면에는 `PageHeader` 가 없지만 제목 줄은 다른 탭과 **같은
-              프리미티브**다. 셸이 달라도 제목이 서는 선은 같아야 한다. */}
-          {/* 설정은 머리의 아이콘 뒤에 산다. 본문에 두면 매일 보는 소식이 가끔 쓰는 설정에
-              밀려 내려간다. 톱니바퀴가 하단 바에서 여기로 옮겨 온 그림이다. */}
-          <PageHeaderTitleRow>
-            <Text className="text-lg font-bold text-text">더보기</Text>
-            <FaqButton sheet={faq} />
-            <Pressable
-              role="button"
-              aria-label="설정"
-              onPress={() => {
-                tapFeedback()
-                navigation.navigate('AppSettings')
-              }}
-              className="ml-auto p-1"
-            >
-              {/* 제목 글자(18)보다 크다. 이 화면에서 유일하게 누를 수 있는 머리 요소라 뒤로
-                  가기(20)와 같은 크기면 눈에 안 걸린다. */}
-              <GearIcon className="h-6 w-6 text-text-muted" strokeWidth={2} aria-hidden />
-            </Pressable>
-          </PageHeaderTitleRow>
+            설정 탭이 통째로 빠진 것을 아무도 못 잡았다(실기기 관측).
 
-          {/* 영역 사이만 넓힌다. 머리와 첫 영역까지 벌리면 제목이 내용과 떨어져 보인다. */}
-          <View className="gap-7">
-            {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
-                한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
-            {NOTICE_SECTIONS.map((section) => (
-              <View key={section.kind} className="gap-2">
-                <NoticeSectionHeader
-                  label={section.label}
-                  onOpenAll={() =>
-                    navigation.navigate('SettingsNotices', { kinds: [section.kind], title: section.label })
-                  }
-                />
-                <NoticeSectionBody section={section} items={notices[section.kind]} onOpen={openNotice} />
-              </View>
-            ))}
-
-            {/* **읽는 행 셋이 한 카드다.** 첫 행은 읽고 끝나고 뒤 둘은 앱을 떠나는데, 카드를
-                갈라 두던 근거가 사라졌다 - 응원이 맨 아래여야 한다는 것이었고 고지 네 줄이 설정
-                화면으로 가면서 아래 카드가 곧 화면 끝이 됐다. 그러면 두 카드의 경계가 말하는 것이
-                없다.
-
-                제목은 `가이드 및 문의` 다(사용자 지정). 개발 노트가 가이드이고 뒤 둘이 문의다. */}
-            <View className="gap-2">
-              <SectionTitle>가이드 및 문의</SectionTitle>
-              <Card className={SETTINGS_CARD_CLASS} testID="settings-card">
-                <SettingsRow
-                  label="개발 노트"
-                  onPress={() => navigation.navigate('SettingsReleaseNotes')}
-                />
-                {/* 앱을 떠나 메일 · 카카오톡 · 스토어로 가는 행 둘이라 오른쪽이 chevron 이 아니라 외부 링크
-                    표식이다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 앱을 떠나 버린다.
-
-                    문의는 응원보다 자주 써서 위다. 메일과 오픈채팅 중에서 고르는 모달을 먼저 연다. */}
-                <SettingsLinkRow label="문의 · 버그 제보" onPress={() => setShowContact(true)} />
-                {/* 평생 한 번 누르는 것이라 맨 아래다. */}
-                <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
-              </Card>
+            영역 사이만 넓힌다. 머리와 첫 영역 사이는 셸의 간격이다. 함께 벌리면 제목이 내용과 떨어져 보인다. */}
+        <View className="gap-7 px-4 pb-4" testID="screen-Settings">
+          {/* **소식이 맨 위다.** 이 페이지에서 유일하게 매일 바뀌는 것이고, 나머지는 다 `가끔
+              한 번` 이다. 자주 바뀌는 것을 아래 두면 사용자가 스크롤을 배워야 한다. */}
+          {NOTICE_SECTIONS.map((section) => (
+            <View key={section.kind} className="gap-2">
+              <NoticeSectionHeader
+                label={section.label}
+                onOpenAll={() =>
+                  navigation.navigate('SettingsNotices', { kinds: [section.kind], title: section.label })
+                }
+              />
+              <NoticeSectionBody section={section} items={notices[section.kind]} onOpen={openNotice} />
             </View>
+          ))}
+
+          {/* **읽는 행 셋이 한 카드다.** 첫 행은 읽고 끝나고 뒤 둘은 앱을 떠나는데, 카드를
+              갈라 두던 근거가 사라졌다 - 응원이 맨 아래여야 한다는 것이었고 고지 네 줄이 설정
+              화면으로 가면서 아래 카드가 곧 화면 끝이 됐다. 그러면 두 카드의 경계가 말하는 것이
+              없다.
+
+              제목은 `가이드 및 문의` 다(사용자 지정). 개발 노트가 가이드이고 뒤 둘이 문의다. */}
+          <View className="gap-2">
+            <SectionTitle>가이드 및 문의</SectionTitle>
+            <Card className={SETTINGS_CARD_CLASS} testID="settings-card">
+              <SettingsRow
+                label="개발 노트"
+                onPress={() => navigation.navigate('SettingsReleaseNotes')}
+              />
+              {/* 앱을 떠나 메일 · 카카오톡 · 스토어로 가는 행 둘이라 오른쪽이 chevron 이 아니라 외부 링크
+                  표식이다. chevron 을 쓰면 다른 이동 행과 같은 약속을 하고는 앱을 떠나 버린다.
+
+                  문의는 응원보다 자주 써서 위다. 메일과 오픈채팅 중에서 고르는 모달을 먼저 연다. */}
+              <SettingsLinkRow label="문의 · 버그 제보" onPress={() => setShowContact(true)} />
+              {/* 평생 한 번 누르는 것이라 맨 아래다. */}
+              <SettingsLinkRow label="개발자 응원하기(앱 리뷰)" href={storeReviewUrl(Platform.OS)} />
+            </Card>
           </View>
         </View>
       </ScreenScroll>

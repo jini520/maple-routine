@@ -4,16 +4,16 @@
 //    실제로 그 화면이 열리는 것은 `RootNavigator` 테스트가 라우트 표 전체로 본다.
 // ② 행을 세는 축이 `SettingsRow` 가 심는 라벨 목록이다. RN 은 자식 글자를 합쳐 접근성 이름을
 //    만들지 않아 `row.textContent` 같은 축이 없다.
-// ③ 콘텐츠 블록이 상단 안전영역을 직접 갖지 않는다. `ScreenScroll` 이 헤더 없는 화면에서는
-//    스크롤포트 상자 자체를 내린다.
+// ③ 콘텐츠 블록이 상단 안전영역을 직접 갖지 않는다. 머리글(`PageHeader`)이 자기 패딩으로 먹는다.
 // ④ 하단 버전은 실행 중인 OTA 번들이 아니라 빌드 시점 값이다.
 // ⑤ 캐릭터 관리 행의 계약은 셋뿐이다. 배지(단위 개), 누르면 그 화면을 민다, `openPicker` 로
 //    들어와도 같은 곳으로 민다. 조회·저장·401/429 배선은 `SettingsCharactersScreen` 이 갖는다.
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, within } from '@testing-library/react-native'
 import { Linking, Platform } from 'react-native'
 
 import { useThemeStore } from '../../../features/theme/store'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
+import { useNexonMaintenanceStore } from '../../../features/nexon-maintenance/store'
 import { useContentSchedulerStore, type ContentSchedulerStore } from '../../../features/content-scheduler/store'
 import { getCharacterPickerRoster } from '../../../features/schedule-sync/schedule-sync'
 import { THEME_NAMES } from '../../../lib/theme/theme-registry'
@@ -131,6 +131,18 @@ function textsIn(node: AtomElement): string[] {
   }
   walk(node)
   return texts
+}
+
+/** 서브트리의 testID 를 나온 순서대로. 컴포넌트와 그것이 그린 뷰가 같은 값을 들어 하나로 접는다. */
+function testIdsIn(node: AtomElement): string[] {
+  const ids: string[] = []
+  const walk = (current: AtomElement): void => {
+    const id: unknown = current.props.testID
+    if (typeof id === 'string' && ids[ids.length - 1] !== id) ids.push(id)
+    for (const child of current.children) if (typeof child !== 'string') walk(child)
+  }
+  walk(node)
+  return ids
 }
 
 /** 카드 안에 선 행 라벨들. 순서가 곧 화면 순서다. 소식은 행이 아니라 갈래로 펼친다. */
@@ -377,6 +389,27 @@ describe('SettingsScreen', () => {
 
     expect(view.queryByTestId('settings-footer')).toBeNull()
     expect(view.queryByText('Data based on NEXON Open API')).toBeNull()
+  })
+})
+
+// 제목 줄을 본문에 두면 머리글 바로 아래에 서는 점검 배너가 제목 위로 올라간다(실기기). 다른 탭과 같게
+// 제목 줄을 머리글에 둔다.
+describe('SettingsScreen: 머리글과 점검 배너', () => {
+  afterEach(() => useNexonMaintenanceStore.setState({ scope: null }))
+
+  it('제목 줄은 머리글 안에 선다', async () => {
+    const view = await renderOverlay(<SettingsScreen />)
+
+    expect(within(view.getByTestId('page-header')).getByText('더보기')).toBeTruthy()
+  })
+
+  it('점검 배너는 머리글 다음, 소식 영역 앞에 선다', async () => {
+    useNexonMaintenanceStore.setState({ scope: 'game' })
+    const view = await renderOverlay(<SettingsScreen />)
+
+    const blocks = ['page-header', 'settings-maintenance-banner', 'screen-Settings']
+    const order = testIdsIn(view.getByTestId('screen-scroll')).filter((id) => blocks.includes(id))
+    expect(order).toEqual(blocks)
   })
 })
 

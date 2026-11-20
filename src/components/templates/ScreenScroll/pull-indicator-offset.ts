@@ -25,7 +25,7 @@
 export const ANDROID_CIRCLE_REST_TOP_PX = 24
 
 export function resolvePullIndicatorOffset(options: {
-  /** `resolveSafeAreaFade().topPx`. 0이면 상단을 안 깎는 화면이다. */
+  /** `resolveSafeAreaFade().topPx`. 0이면 상단을 안 깎는다. */
   fadeTopPx: number
   /** `Platform.OS`. */
   platform: string
