@@ -890,7 +890,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | 지금 이름 | 새 이름 | 든 값 | 고치는 이유 |
   |---|---|---|---|
   | `inventory_items.quantity` | `added_quantity` | 넣은 개수의 합. 판 것과 쓴 것도 포함한다 | 지금 남은 개수로 읽힌다 |
-  | `worlds.price_group` | `trade_group` | 장비를 서로 거래할 수 있는 월드의 묶음(거래권) | 가격의 묶음으로 읽힌다 |
+  | `worlds.price_group` | `trade_group_id` | 장비를 서로 거래할 수 있는 월드의 묶음(거래권). 거래권 표의 줄을 가리킨다(결정 63) | 가격의 묶음으로 읽힌다 |
   | `boss_difficulty_rewards.amount` | `quantity` | 고정 보상의 개수 | 지금은 `240개` 처럼 단위가 든 글자와 `200` 처럼 숫자만 든 글자가 섞여 있다. 숫자만 적고 형을 정수로 바꾼다 |
 
   고정 보상의 개수는 2026-11-19 운영의 408줄 가운데 154줄에 있다. 100줄은 숫자 뒤에 `개` 가 붙고 54줄은 숫자뿐이라, `개` 를 떼면
@@ -1129,18 +1129,13 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - `enhancement_anomalies.item_key` 는 없앤다(사용자 선택 2026-11-19). 읽는 곳이 없는 값이다(결정 27). 2026-11-19 운영 2,445줄이
   모두 비어 있고, 서버는 이 칸을 적기만 하고 읽지 않는다. 줄의 대부분(2,429줄)이 장비 표에 없는 장비라 가리킬 장비 줄이 없다.
   장비는 넥슨이 준 이름 `item_name` 으로 안다. 앱도 이 값을 보내지 않는다.
-- 아래 둘은 아직 고치지 않았다. 시세 표를 검토할 때 고친다.
-
-  | 칸 | 지금 적는 값 | 가리킬 표 |
-  |---|---|---|
-  | `market_days.scope` · `maspi_basket.scope` | 장비는 거래권 글자, 소비 아이템은 월드 key. 두 가지 값이 한 칸에 있다 | 월드는 `worlds`. 거래권은 표가 없다 |
-  | `market_judgements.person` | 넥슨 계정 id · 메이플 ID · 사용자 id 가운데 줄에 있는 것. 세 가지 값이 한 칸에 있다 | `nexon_accounts` · `maple_ids` · `users` |
+- 시세 표의 두 칸도 고친다(결정 63). `market_days.scope` · `maspi_basket.scope` 는 종류 칸 `scope_type` 과 줄 id 칸 `scope_id` 로,
+  `market_judgements.person` 은 `user_id` 로 바꾼다.
 
 - 메이플 ID 해시 글자(`maple_id`)로 메이플 ID 줄을 가리키던 칸도 줄 id 로 바꾼다(결정 48). `drop_sale_prices.ocid` 는
   없앤다(결정 26).
 - 가리킬 표가 없어 지금은 id 로 적을 수 없는 값이 있다. 강화 합계의 장비 이름(`enhancement_totals.item_name`, 결정 37)은 장비
-  표에 없는 장비가 있어 글자다. 거래권(`worlds.price_group`)도 서버 표가 없다. 표를 만들어 id 로 적을지는 그 표를
-  검토할 때 정한다. 하단바와 빠른 이동의 화면 이름(`account_settings` · `bottom_bar_sub_page_orders`)은 가리킬 표를 만들지 않고
+  표에 없는 장비가 있어 글자다. 거래권은 표 `trade_groups` 를 만들어 줄 id 로 가리킨다(결정 63). 하단바와 빠른 이동의 화면 이름(`account_settings` · `bottom_bar_sub_page_orders`)은 가리킬 표를 만들지 않고
   글자로 적는다(결정 57).
   아이템 묶음의 종류는 표가 아니라 enum 으로 둔다(결정 50).
 
@@ -1174,7 +1169,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   말로 부른다(결정 33).
 - `items.world_bound` 는 없앤다(결정 41).
 - `contents` 의 `only_when_scheduled` · `trust_registration_flag` · `cumulative_score` 는 없앤다(결정 42).
-  `market_judgements.dummy` 는 시세 표를 검토할 때 정한다.
+  `market_judgements.dummy` 는 `is_dummy` 로 바꾼다(결정 63).
 - 앱이 받는 게임 데이터도 새 이름으로 낸다(결정 43). 기기 표에 같은 칸이 있으면 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로
   바꾼다.
 
@@ -1462,7 +1457,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   - `row_count` 는 같은 상황이 몇 줄 나왔는지라 횟수로 보았다. `now_count` · `max_count` 는 넥슨 응답의 칸 이름이기도 하다.
 - 가격 · 비용 · 수수료를 적는 칸(`crystal_price_meso` · `attempt_cost_meso` · `sale_fee_meso` 같은 칸)은 이름을 바꾸지 않는다.
   무엇의 금액인지를 말하는 낱말과 단위(`_meso`)가 이미 붙어 있다.
-- 시세 표의 `voters` · `persons` 는 시세 표를 검토할 때 이 기준으로 고친다.
+- 시세 표의 `persons` 는 `voter_count` 로 바꾸고 `voters` 는 없앤다(결정 63).
 - 기기 표의 같은 칸도 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로 바꾼다. 앱이 받는 게임 데이터도 새 이름으로 낸다(결정 43).
 - 칸마다 물건의 개수인지 횟수인지를 가른 것은 Claude 다.
 
@@ -1703,7 +1698,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 상자 표 둘과 결정석 가격 표는 앞에서 정한 대로다. 상자의 레벨 범위는 `ring_level_min` · `ring_level_max`(결정 33), 유효 기간은
   `valid_from` · `valid_until`(결정 23)이다. 유효 기간의 값은 지금처럼 날짜(`2026-11-19`)이거나 분까지 적은
   시각(`2026-11-19T10:00`)이다.
-- 거래권(`worlds.trade_group`)을 표로 둘지는 시세 표를 볼 때 정한다.
+- 거래권은 표 `trade_groups` 로 두고 월드가 `trade_group_id` 로 가리킨다(결정 63).
 
 ### 결정 59. 심볼 · 헥사 · 강화 비용 · MVP 등급 · 사냥터 표의 이름 다섯을 고친다 (사용자 선택 2026-11-19)
 
@@ -1885,6 +1880,66 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 그 밖의 칸은 그대로 둔다. `users` · `maple_ids`(결정 48) · `nexon_login_attempts` 는 고칠 것이 없다. `created_at` · `updated_at` 은
   읽는 코드가 없어도 둔다(결정 27). 운영에서 사람 줄과 넥슨 계정 줄은 1대1 이다.
 
+### 결정 63. 시세의 범위는 거래권 표와 월드를 종류와 줄 id 로 가리키고, 시세 표의 이름에 기준가 · 범위 · 종가를 적는다 (사용자 선택 2026-11-20)
+
+시세 표 여섯을 칸까지 정했다. `market_reference_prices` · `market_judgements` · `market_published_days` · `market_responses` ·
+`maspi_basket_items` · `maspi_daily_closes` 다. 새 표 `trade_groups` 를 더한다. 이것으로 서버 표를 모두 칸까지 검토했다.
+
+- 표 이름 넷을 바꾼다(사용자 선택). 앞말 `market` 은 둔다. 화면 문구에는 없는 말이지만 서버(`modules/drop-market`)와
+  앱(`features/market`)의 코드가 시세를 이 말로 부른다.
+
+  | 지금 이름 | 새 이름 | 한 줄이 무엇인가 |
+  |---|---|---|
+  | `market_days` | `market_reference_prices` | 시세 하나(아이템 · 범위)의 하루 일일 기준가([[ADR-071]] 결정 8) |
+  | `market_runs` | `market_published_days` | 하루 작업이 시세를 낸 날. 기준가가 하나도 없는 날에도 줄이 있다 |
+  | `maspi_basket` | `maspi_basket_items` | MASPI 바스켓에 든 아이템의 범위 하나([[ADR-071]] 결정 10) |
+  | `maspi_days` | `maspi_daily_closes` | MASPI 의 하루 종가 |
+
+  `market_judgements`(한 사람이 하루에 받은 판정 수)와 `market_responses`(저장해 둔 앱 응답)는 그대로 둔다.
+- 거래권을 표 `trade_groups` 로 둔다(사용자 선택). 칸은 `id` · `key` · `name` 이고 줄은 둘이다(`general` · `helios_eos`). 지금은
+  `worlds.price_group` 에 글자로 적는다. 월드는 `trade_group_id` 로 거래권 줄을 가리키고, 거래권이 없는 월드(스페셜 둘)는 비운다.
+  서버 코드가 `general` · `helios_eos` 를 글자로 가르므로(`market-publish.service.ts`) `key` 를 둔다. 칸 구성은 Claude 가 적었다.
+- 시세의 범위 칸 `scope` 는 종류 칸 `scope_type`(enum `market_scope_type`, 값 `trade_group` · `world`)과 줄 id 칸 `scope_id` 로
+  바꾼다(사용자 선택, 결정 38 · 39). 지금은 한 칸에 거래권 글자나 월드 key 가 들어가고 어느 쪽인지 적는 칸이 없다. 2026-11-20
+  운영 1,892줄 가운데 거래권 글자가 822줄, 월드 key 가 1,070줄이다. 한 아이템이 양쪽 값을 함께 가진 경우는 없다.
+  - 어느 쪽으로 재는지는 아이템 묶음의 종류가 정한다(결정 41). 그래도 종류 칸을 두는 것은 지난 줄 때문이다. 소비 묶음인데
+    거래권으로 재던 아이템의 지난 줄이 운영에 172줄 있고, 이 줄들은 거래권 줄을 가리킨 채 남는다.
+  - 기타와 캐시 묶음의 범위는 여기서도 정하지 않는다. 운영 시세에 그런 아이템의 줄이 없다(결정 41).
+- 판정 표의 `person` 은 `user_id` 로 바꾼다. 1.0.15 에서 시세의 사람을 사람 줄로 가르기로 했다(결정 26). 운영 1,988줄 가운데
+  사람 줄 글자(`u:`)가 1,970줄, 넥슨 계정 글자(`a:`)가 18줄이다. 넥슨 계정 글자는 그 계정의 사람 줄로 옮긴다. 지워진 사람을
+  가리키는 40줄은 옮기지 않는다. 사람 줄이 지워지면 그 사람의 판정 줄도 함께 지운다. 직전 30일의 신뢰도를 세는 데만 쓰는
+  줄이다([[ADR-071]] 결정 3). 지우는 규칙은 Claude 가 적었다.
+- 칸 이름을 바꾼다. 위의 일곱 줄은 사용자가 고른 것이고, 나머지는 앞 결정에서 따라 나온다.
+
+  | 지금 이름 | 새 이름 | 든 값 |
+  |---|---|---|
+  | `market_days.ref_meso` | `reference_price_meso` | 일일 기준가 |
+  | `market_days.q1_meso` · `q3_meso` | `range_low_meso` · `range_high_meso` | 그날 기준가 둘레에서 거래가 몰린 범위의 아래 끝과 위 끝. 가격의 사분위 값이 아니다 |
+  | `market_days.fence_low` · `fence_high` | `fence_low_meso` · `fence_high_meso` | 그날 표를 판정한 울타리의 두 끝. 메소 값이고 정수가 아니다 |
+  | `market_days.source` 의 값 `carry` | `kept` | 합의가 없어 마지막 새 기준가를 유지한 날. `today` · `three_day` 는 그대로다 |
+  | `maspi_basket.weight` | `index_weight` | 지수에서 그 아이템이 차지하는 무게 |
+  | `maspi_basket.enters_on` | `from_date` | 그 아이템이 지수에 드는 첫 날 |
+  | `maspi_days.value` | `close` | 그날 종가. 앱이 받는 이름과 같다 |
+  | 다섯 표의 `day` | `date` | 결정 33 |
+  | `market_days.fresh_day` | `fresh_date` | 마지막으로 새 기준가를 낸 날(결정 33) |
+  | `market_judgements.judged` · `excluded` | `judged_count` · `excluded_count` | 그날 판정받은 표의 수와 울타리 밖이라 빠진 표의 수(결정 51) |
+  | `market_judgements.dummy` | `is_dummy` | 그날 더미 입력을 한 사람인지(결정 40) |
+  | `maspi_basket.persons` | `voter_count` | 기준 기간에 그 시세에 표를 낸 사람 수(결정 51) |
+
+- 칸 둘을 없앤다(사용자 선택).
+  - `market_days.voters`: 그날 표를 낸 사람 수다. 서버 코드가 적기만 하고 쓰지 않는다. 앱의 거래 수 표시는 최근 7일의 판매가
+    줄에서 센다([[ADR-071]] 결정 12).
+  - `maspi_days.change`: 전날 종가와의 차이다. 이웃한 두 날의 종가에서 다시 구한다. 지금은 반올림하기 전의 값으로 빼서 저장된
+    두 종가의 차이와 0.01 어긋날 수 있다. 응답의 전일 대비는 두 종가의 차이로 낸다.
+- 바스켓의 무게(`index_weight`)는 둔다(사용자 선택). 다시 계산할 수 있는 값이지만 바스켓을 정한 날의 구성을 그대로 보인다.
+- 반지 레벨 칸은 없앤다(결정 28). 운영 143줄이 레벨 줄로 옮겨진다. 앱이 받는 응답의 `ringLevel` 과 요청의 `?ring=`, 응답을 찾는
+  열쇠의 반지 레벨 조각도 함께 없어진다.
+- `maspi_basket.base_price_meso` 의 형을 `bigint` 로 바꾼다. 운영 26줄이 모두 정수다.
+- 한 줄의 기준이 바뀐다. 기준가 표는 `date` · `item_id` · `scope_type` · `scope_id`, 판정 표는 `date` · `user_id`, 바스켓은
+  `item_id` · `scope_type` · `scope_id` 다.
+- 응답 저장 표(`market_responses`)의 `key` · `body` · `etag` 는 그대로 둔다. 계산한 응답을 통째로 저장해 그대로 주는
+  표다([[ADR-071]] 결정 14). `created_at` 은 여섯 표 모두 둔다(결정 27).
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -1927,6 +1982,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 | (구현 때 더한다) | 결정 60: 옮긴 뒤 공유 컨텐츠 위젯과 남은 스케줄의 줄인 이름이 옮기기 전과 같은지, 지역 아이콘을 쓰던 타일 넷의 그림이 그대로 보이는지 |
 | (구현 때 더한다) | 결정 61: 옮긴 뒤 그림의 분류 · 파일 이름 · 확장자를 이으면 옛 경로가 되는지, 크롭 숫자 셋으로 그린 자리가 옮기기 전과 같은지, 규칙 아홉의 값이 옮기기 전과 같은지, FAQ 답의 문단 수가 같은지 |
 | (구현 때 더한다) | 결정 62: 메이플 ID 해시로 온 요청이 같은 넥슨 계정 줄을 찾는지, 세션으로 요청이 오면 `last_used_at` 이 밀리는지 |
+| (구현 때 더한다) | 결정 63: 옮긴 뒤 시세마다 줄 수와 기준가가 같은지, 거래권으로 재던 소비 아이템의 지난 줄이 거래권 줄을 가리키는지, 응답의 전일 대비가 두 종가의 차이와 같은지 |
 
 ## 번호 기록
 
