@@ -127,7 +127,7 @@ export function installPorts(): void {
   // 포트는 아니지만 방향을 뒤집는 것은 같다. `nexon/` 이 우리 서버를 직접 부르면 계층이
   // 거꾸로 선다. 로그인 자격의 프렌즈 조회는 이 함수를 거쳐 서버가 넥슨을 대신 부른다.
   setFriendsStream(streamFriends)
-  // 같은 이유다. 점검 응답을 받으면 화면 맨 위의 점검 배너를 세운다.
+  // 같은 이유다. 점검 응답을 받으면 머리글 바로 아래의 점검 배너를 세운다.
   setMaintenanceReporter(nexonMaintenanceReporter)
 }
 

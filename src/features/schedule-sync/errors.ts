@@ -42,7 +42,7 @@ export type ScheduleSyncError =
   // 없다. 교차 타입을 유지하는 것은 소비자가 `error.apiKey` 를 종류마다 갈라 읽지 않게 하려는
   // 것뿐이다.
   | ({ kind: 'signInRequired' } & WithApiKey)
-  // 400 OPENAPI00010 · 503 OPENAPI00011. 넥슨이 점검 중이라 기다리면 풀린다. 화면 맨 위의 점검 배너가 알린다.
+  // 400 OPENAPI00010 · 503 OPENAPI00011. 넥슨이 점검 중이라 기다리면 풀린다. 머리글 아래의 점검 배너가 알린다.
   | ({ kind: 'gameMaintenance' } & WithApiKey)
   | ({ kind: 'apiMaintenance' } & WithApiKey)
 
