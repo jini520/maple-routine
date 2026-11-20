@@ -2127,6 +2127,18 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
   - 관리 화면의 본문 칸 이름도 표를 따른다(`requiredForce` · `mobQuantity` · `mobLevels` · `isPopular`). 지역과 사냥터는 지금처럼
     key 로 받고, 지역 아이콘은 그림 고르개로 그림 줄 id 를 받는다. 이 화면이 그림 이름 글자를 받던 마지막 관리 화면이라 서버의
     글자 풀이 도우미도 함께 걷는다. 남은 글자는 그림 크롭의 `slug` 이고 그림 묶음에서 바꾼다.
+- 아홉째 묶음은 강화 비용 · MVP 등급 표 여섯(`potential_reset_costs` · `soul_potential_reset_costs` · `starforce_cost_steps` ·
+  `superior_series` · `superior_items` · `mvp_grades`)이다. 결정 59 가 정한 표의 마지막 묶음이다. 칸은 결정 59 그대로다. 이 줄과
+  아래 셋은 Claude 가 적었다.
+  - 게임 데이터 `enhancementCosts` 칸의 배열은 표 이름을 따른다(`starforceSteps` 를 `starforceCostSteps` 로). 슈페리얼 계열은 `id`
+    를 싣고 슈페리얼 장비는 계열을 `seriesId` 로 가리킨다. 잠재 비용의 구간 시작은 `minRequiredLevel` 이다. 이 칸의 규칙(`rules`)은
+    게임 규칙 표의 묶음에서 바꾼다. `mvpGrades` 칸은 배열 `mvpGrades` 를 싣고 줄마다 `id` 를 싣는다. MVP 등급 기록이 등급을 줄
+    id 로 가리키기 때문이다(결정 39).
+  - 옮길 때는 여섯 표의 줄을 줄 id 그대로 옮기고 칸 이름만 바꾼다. 옛 마이그레이션 0043 이 새 DB 에도 슈페리얼 계열 · 장비 줄을
+    넣으므로, 옮기는 스크립트가 이 두 표를 비우고 옛 DB 의 줄로 채운다. 2026-11-20 운영은 잠재 32 · 소울 4 · 스타포스 단계 30 ·
+    슈페리얼 계열 3(비용 5,956,000 ~ 55,382,200) · 슈페리얼 장비 50 · MVP 등급 7줄이다.
+  - 관리 화면의 본문 칸 이름도 표를 따른다(`minRequiredLevel` · 슈페리얼 장비 그림의 `iconAssetId`). 슈페리얼 계열은 지금처럼
+    key 로 받는다.
 - 2026-11-20 의 서버는 스키마가 `src/database/schema.ts` 한 파일(68표)이고, 그 파일을 읽는 코드가 49개, 마이그레이션이 46개다.
 - 서버 PR #122 는 머지하지 않는다(사용자 선택 2026-11-20). 2026-11-17 에 지금 표 위에 쓴 #947 의 서버 첫 조각이다. 로그인
   없는 사용자를 메이플 ID 해시 헤더로 찾고, 부계정을 넥슨 ID 하나에만 등록하게 하고, 다계정 사용자를 한 명으로 센다. 같은
@@ -2199,6 +2211,8 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
 | 서버 `symbol-costs/symbol-costs.repository.spec.ts` | 결정 59 · 65: `symbolCosts` 칸이 표 이름의 배열에 묶음 · 심볼을 줄 id 로 잇는지, 비용 줄이 강화 전 레벨과 유효 기간 칸으로 닫히고 열리는지, 그림 표에 없는 그림을 거절하는지 |
 | 서버 `cli/move-old-db.spec.ts`(심볼) | 결정 59 · 65: 심볼 표 셋을 줄 id 그대로 새 칸 이름으로 옮기는지 |
 | 서버 `hunting-grounds/hunting-grounds.repository.spec.ts` | 결정 59 · 65: `huntingGrounds` 칸이 표 이름의 배열에 지역 · 사냥터 · 몬스터 레벨을 줄 id 로 잇는지, 관리 줄은 key 로 잇는지, 그림 표에 없는 지역 아이콘을 거절하는지 |
+| 서버 `enhancement-costs/enhancement-costs.repository.spec.ts` · `mvp-grades/mvp-grades.repository.spec.ts` | 결정 39 · 59 · 65: `enhancementCosts` · `mvpGrades` 칸이 표 이름의 배열을 싣는지, 슈페리얼 장비가 계열을 줄 id 로 잇고 관리 줄은 key 로 잇는지, MVP 등급이 줄 id 를 싣는지 |
+| 서버 `cli/move-old-db.spec.ts`(강화 비용 · MVP) | 결정 59 · 65: 여섯 표를 줄 id 그대로 새 칸 이름으로 옮기는지, 마이그레이션이 새 DB 에 넣은 슈페리얼 줄이 옛 DB 의 줄로 바뀌는지 |
 | 서버 `cli/move-old-db.spec.ts`(사냥터) | 결정 40 · 51 · 59 · 65: 사냥터 표 셋을 줄 id 그대로 새 칸 이름으로 옮기는지, 아이콘 없는 지역이 빈 칸으로 남는지 |
 | 서버 `database/schema.spec.ts` | 결정 65: 새 표로 바꾼 표의 표 · 칸 이름 · 형 · 가리키는 표 · enum 값이 설계 페이지에서 뽑은 목록과 같은지 |
 | 서버 `bosses/bosses.repository.spec.ts` | 결정 19 · 43: 게임 데이터의 보스와 난이도마다 표의 줄 id 를 내는지, 칸 이름을 따른 응답에 난이도마다 주기가 실리는지 |
