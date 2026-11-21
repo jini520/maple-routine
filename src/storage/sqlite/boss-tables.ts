@@ -1,11 +1,12 @@
 /**
- * 보스 기록 표의 본문.
+ * 보스 기록 표의 본문. 세 무리다.
  *
- * 앞의 셋은 **옛 표**다. 버전 14 가 새 표 셋으로 옮긴 뒤로는 읽고 쓰는 코드가 없다. 그래도 지금 모양 그대로
- * 둔다. 버전 4 · 12 가 이 본문으로 표를 다시 만들고, 새 기기도 버전 1 부터 다 돌기 때문이다. 옛 코드가 새 DB 를
- * 열어도 열리도록 표 자체도 남긴다. 옛 표는 v1.0.14 에서 지운다(#685).
- *
- * 뒤의 셋(`BOSS_PARTIES_BODY` · `BOSS_PARTY_PERIODS_BODY` · `BOSS_DROPS_BODY`)이 지금 쓰는 표다.
+ * 1. 버전 14 전의 옛 표 셋(`BOSS_PROFIT_RECORDS_BODY` 등). 버전 4 · 12 가 이 본문으로 표를 다시 만들어서 그 모양 그대로 둔다.
+ *    버전 23 이 지운다.
+ * 2. 버전 14 가 만든 표 셋(`BOSS_PARTIES_BODY` · `BOSS_PARTY_PERIODS_BODY` · `PERIOD_BOSS_DROPS_BODY`). 1.0.15 기기 변환 전의 DB 가
+ *    이 모양이고, 변환 전 DB 를 열 때와 앞 버전 이관이 쓴다. 변환이 3 으로 옮긴 뒤 지운다.
+ * 3. 1.0.15 기기 변환이 만드는 표 셋(`BOSS_SPLIT_SETTINGS_BODY` · `BOSS_PROFIT_ENTRIES_BODY` · `BOSS_DROPS_BODY`). 지금 읽고 쓰는
+ *    표이고, 칸 이름이 서버 표와 같다. 서버는 캐릭터를 줄 id 로 가리키고 기기는 `ocid` 로 가리킨다.
  */
 
 export const BOSS_PROFIT_RECORDS_BODY = `(
@@ -194,7 +195,7 @@ export const BOSS_PARTY_PERIODS_BODY = `(
  * 가격 · 분배 · 수수료는 'completed' 일 때만 있다. 0메소는 저장하지 않는다. 앱은 매긴 것으로, 서버는
  * 미입력으로 봐서 상태가 갈렸다.
  */
-export const BOSS_DROPS_BODY = `(
+export const PERIOD_BOSS_DROPS_BODY = `(
     -- 서버로 보내는 drop_record_id 다.
     id TEXT NOT NULL PRIMARY KEY,
     period_id TEXT NOT NULL REFERENCES boss_party_periods(id) ON DELETE CASCADE,
@@ -218,6 +219,93 @@ export const BOSS_DROPS_BODY = `(
     CHECK (record_status = 'completed' OR (sale_fee_percent IS NULL AND sale_fee_auto IS NULL))
   )`
 
-/** 기간 하나의 드롭을 찾는 인덱스. */
-export const BOSS_DROPS_PERIOD_INDEX =
+/** 기간 하나의 드롭을 찾는 인덱스. 변환 전 표에만 건다. */
+export const PERIOD_BOSS_DROPS_INDEX =
   'CREATE INDEX IF NOT EXISTS boss_drops_period ON boss_drops (period_id, sort_order)'
+
+/** 분배 방식 셋. `excluded` 는 결정석을 팔지 않은 처치라 인원과 내 몫이 없다. */
+const SPLIT_TYPES = "('even', 'ratio', 'excluded')"
+
+/**
+ * 분배 칸 다섯. 세 표가 같은 칸을 쓴다. 내 몫은 % 에 1000 을 곱한 정수(0 ~ 100000)다. SQLite 에 참 · 거짓 형이 없어 등급을
+ * 따르는지는 1 · 0 이다.
+ */
+const SPLIT_FIVE_COLUMNS = (types: string): string => `
+    split_type TEXT CHECK (split_type IN ${types}),
+    party_size INTEGER,
+    split_share_millipercent INTEGER CHECK (split_share_millipercent BETWEEN 0 AND 100000),
+    split_fee_percent INTEGER,
+    split_fee_follows_mvp_grade INTEGER NOT NULL CHECK (split_fee_follows_mvp_grade IN (0, 1))`
+
+/** 고른 분배만 칸이 찬다. `excluded` 와 고르지 않은 분배는 인원이 없고, 비율일 때만 내 몫이 있다. */
+const SPLIT_FIVE_CHECKS = `
+    CHECK ((split_type IS NULL OR split_type = 'excluded') = (party_size IS NULL)),
+    CHECK ((split_type IS 'ratio') = (split_share_millipercent IS NOT NULL))`
+
+/** 캐릭터 · 보스 난이도마다의 기본 분배. 분배를 정한 줄만 있다. 자동이면 요율을 비우고 수동이면 채운다. */
+export const BOSS_SPLIT_SETTINGS_BODY = `(
+    id TEXT NOT NULL PRIMARY KEY,
+    ocid TEXT NOT NULL,
+    boss_difficulty_id TEXT NOT NULL,${SPLIT_FIVE_COLUMNS(SPLIT_TYPES)},${TIME_COLUMNS},${SPLIT_FIVE_CHECKS},
+    CHECK (split_type IS NOT NULL),
+    CHECK (split_fee_follows_mvp_grade = (split_fee_percent IS NULL)),
+    UNIQUE (ocid, boss_difficulty_id)
+  )`
+
+/**
+ * 한 캐릭터가 한 기간에 한 보스 난이도에서 거둔 수익 건. 처치 기록이고, 처치 전이면 그 기간만 고친 분배나 드롭만 있다.
+ *
+ * 처치했는지는 `clear_recorded_by` 가 찼는지로 안다. 처치한 비율 분배는 그 처치를 계산한 요율이 있어야 하고, 처치 전 줄은
+ * 자동이면 요율을 비우고 수동이면 채운다.
+ */
+export const BOSS_PROFIT_ENTRIES_BODY = `(
+    id TEXT NOT NULL PRIMARY KEY,
+    ocid TEXT NOT NULL,
+    boss_difficulty_id TEXT NOT NULL,
+    -- 주간 W + 년 + ISO 주차(W202647) · 월간 M + 년월(M202611).
+    period_code TEXT NOT NULL CHECK (
+      period_code GLOB 'W[0-9][0-9][0-9][0-9][0-5][0-9]' OR period_code GLOB 'M[0-9][0-9][0-9][0-9][01][0-9]'
+    ),
+    -- 그 기간에 캐릭터가 있던 월드의 줄 id. 모르면 NULL 이다. 지금 월드로 채우면 리프한 캐릭터의 과거가 옮겨간다.
+    world_id TEXT,
+    crystal_price_meso INTEGER,
+    crystal_received_meso INTEGER,${SPLIT_FIVE_COLUMNS(SPLIT_TYPES)},
+    -- 처치 날짜(KST YYYY-MM-DD). 모르면 NULL 이다.
+    cleared_date TEXT,
+    clear_recorded_by TEXT CHECK (clear_recorded_by IN ('auto', 'manual')),
+    -- 1 이면 주간 결정석 판매 한도를 넘긴 처치다. 받은 메소는 그대로 두고 읽을 때 0 으로 읽는다. 기기에만 있다.
+    over_crystal_sale_limit INTEGER,${TIME_COLUMNS},${SPLIT_FIVE_CHECKS},
+    CHECK ((clear_recorded_by IS NULL) = (crystal_price_meso IS NULL)),
+    CHECK ((clear_recorded_by IS NULL) = (crystal_received_meso IS NULL)),
+    CHECK (clear_recorded_by IS NULL OR split_type IS NOT NULL),
+    CHECK (clear_recorded_by IS NOT NULL OR cleared_date IS NULL),
+    CHECK (CASE WHEN clear_recorded_by IS NOT NULL THEN split_type IS NOT 'ratio' OR split_fee_percent IS NOT NULL
+                ELSE split_fee_follows_mvp_grade = (split_fee_percent IS NULL) END),
+    UNIQUE (ocid, boss_difficulty_id, period_code)
+  )`
+
+/**
+ * 한 수익 건에서 나온 드롭 한 개와 판매 기록. 가격을 적은 드롭만 판매가 · 받은 메소 · 분배가 있다. 판매 수수료가 비면 수수료
+ * 없음이다. 같은 수익 건에 같은 아이템 줄은 하나다. 직접 떨군 것과 상자에서 나온 것은 아이템 줄이 다르다.
+ */
+export const BOSS_DROPS_BODY = `(
+    id TEXT NOT NULL PRIMARY KEY,
+    profit_entry_id TEXT NOT NULL REFERENCES boss_profit_entries(id) ON DELETE CASCADE,
+    -- 얻은 아이템의 줄 id. 반지는 레벨 줄이다.
+    item_id TEXT NOT NULL,
+    category TEXT NOT NULL,
+    price_status TEXT NOT NULL CHECK (price_status IN ('pending', 'entered', 'skipped')),
+    -- 판매 총액. 내 몫이 아니다.
+    sale_price_meso INTEGER CHECK (sale_price_meso IS NULL OR sale_price_meso > 0),
+    -- 판매 수수료와 분배를 반영해 내가 받는 메소. 가격 · 분배 · 수수료를 고칠 때만 다시 센다.
+    sale_received_meso INTEGER,
+    -- 가격을 처음 적거나 바꾼 시각.
+    priced_at TEXT,
+    sale_fee_percent INTEGER,
+    sale_fee_follows_mvp_grade INTEGER NOT NULL CHECK (sale_fee_follows_mvp_grade IN (0, 1)),${SPLIT_FIVE_COLUMNS("('even', 'ratio')")},${TIME_COLUMNS},${SPLIT_FIVE_CHECKS},
+    CHECK ((price_status = 'entered') = (sale_price_meso IS NOT NULL)),
+    CHECK ((sale_price_meso IS NULL) = (sale_received_meso IS NULL)),
+    CHECK ((sale_price_meso IS NULL) = (priced_at IS NULL)),
+    CHECK ((price_status = 'entered') = (split_type IS NOT NULL)),
+    UNIQUE (profit_entry_id, item_id)
+  )`

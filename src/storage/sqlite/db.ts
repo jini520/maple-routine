@@ -1,6 +1,14 @@
 import { getSqlitePort } from '../ports'
 import type { SqliteDbConnection } from '../ports'
-import { BOSS_DROPS_BODY, BOSS_DROPS_PERIOD_INDEX, BOSS_PARTIES_BODY, BOSS_PARTY_PERIODS_BODY } from './boss-tables'
+import {
+  BOSS_DROPS_BODY,
+  BOSS_PARTIES_BODY,
+  BOSS_PARTY_PERIODS_BODY,
+  BOSS_PROFIT_ENTRIES_BODY,
+  BOSS_SPLIT_SETTINGS_BODY,
+  PERIOD_BOSS_DROPS_BODY,
+  PERIOD_BOSS_DROPS_INDEX,
+} from './boss-tables'
 import {
   CASHBOOK_ENTRIES_BODY,
   CASHBOOK_ENTRIES_DATE_INDEX,
@@ -20,11 +28,16 @@ import {
   CHARACTER_FIRST_DAYS_BODY,
   ENHANCEMENT_REFETCHES_BODY,
 } from './enhancement-tables'
-import { DEVICE_CONVERSION_BODY } from './device-conversion'
+import {
+  BOSS_TABLES_CONVERTED_AT,
+  DEVICE_CONVERSION_BODY,
+  deviceConversionVersionOf,
+  runDeviceConversion,
+} from './device-conversion'
 import { GAME_DATA_META_BODY, GAME_DATA_SECTIONS_BODY } from './game-data-tables'
 import { QUERY_CACHE_BODY } from './query-cache-tables'
 import { INCOME_RECORDS_BODY, LEGACY_TABLE_DEFINITIONS } from './legacy-tables'
-import { LEGACY_TABLES_DROPPED_AT, runVersionedMigrations, userVersionOf } from './migrations'
+import { LEGACY_TABLES_DROPPED_AT, isMigrationCeilingSet, runVersionedMigrations, userVersionOf } from './migrations'
 import { REMEMBERED_LEVELS_BODY } from './remembered-level-tables'
 import {
   CHARACTER_ACCOUNTS_BODY,
@@ -36,24 +49,30 @@ import {
 
 const DB_NAME = 'boss_profit'
 
-// 지금 쓰는 테이블의 정의는 여기 하나뿐이다. openBossProfitDb가 이 배열을 순회해 스키마를 만든다.
+/** 1.0.15 기기 변환이 마친 단계의 번호를 적는 표. 다른 표를 어느 정의로 만들지 이 번호가 정해서 맨 먼저 만든다. */
+const DEVICE_CONVERSION_TABLE = `CREATE TABLE IF NOT EXISTS device_conversion ${DEVICE_CONVERSION_BODY}`
+
+/** 보스 기록 표 셋. 기기 변환 전 DB 는 버전 14 의 모양이고 앞 버전 이관이 그 모양을 읽는다. 부모가 먼저 서야 외래키가 선다. */
+function bossTableDefinitions(converted: boolean): { name: string; createSql: string }[] {
+  if (!converted) {
+    return [
+      { name: 'boss_parties', createSql: `CREATE TABLE IF NOT EXISTS boss_parties ${BOSS_PARTIES_BODY}` },
+      { name: 'boss_party_periods', createSql: `CREATE TABLE IF NOT EXISTS boss_party_periods ${BOSS_PARTY_PERIODS_BODY}` },
+      { name: 'boss_drops', createSql: `CREATE TABLE IF NOT EXISTS boss_drops ${PERIOD_BOSS_DROPS_BODY}` },
+    ]
+  }
+  return [
+    { name: 'boss_split_settings', createSql: `CREATE TABLE IF NOT EXISTS boss_split_settings ${BOSS_SPLIT_SETTINGS_BODY}` },
+    { name: 'boss_profit_entries', createSql: `CREATE TABLE IF NOT EXISTS boss_profit_entries ${BOSS_PROFIT_ENTRIES_BODY}` },
+    { name: 'boss_drops', createSql: `CREATE TABLE IF NOT EXISTS boss_drops ${BOSS_DROPS_BODY}` },
+  ]
+}
+
+// 지금 쓰는 테이블의 정의는 여기와 위 보스 표 정의뿐이다. openBossProfitDb가 이 배열을 순회해 스키마를 만든다.
 // 버전 23 이 지우는 옛 표는 `legacy-tables.ts` 에 있다.
 // 데이터 삭제(storage/cache-data.ts)는 이 배열을 쓰지 않고 그룹마다 적은 표 목록으로 지운다.
 // 새 테이블은 그 목록에 더해야만 지워진다.
 const TABLE_DEFINITIONS = [
-  // 보스 기록. 옛 보스 표 넷을 버전 14 가 옮긴 표다. 부모가 먼저 서야 외래키가 선다.
-  {
-    name: 'boss_parties',
-    createSql: `CREATE TABLE IF NOT EXISTS boss_parties ${BOSS_PARTIES_BODY}`,
-  },
-  {
-    name: 'boss_party_periods',
-    createSql: `CREATE TABLE IF NOT EXISTS boss_party_periods ${BOSS_PARTY_PERIODS_BODY}`,
-  },
-  {
-    name: 'boss_drops',
-    createSql: `CREATE TABLE IF NOT EXISTS boss_drops ${BOSS_DROPS_BODY}`,
-  },
   // 캐릭터 이름·초상의 스냅샷. 캐릭터당 한 행이고 기록에 이름과 얼굴을 붙이는 데만 쓴다.
   // `character-basic-cache` 와 값이 같고 수명이 다르다. 그쪽은 5분 TTL 캐시다. 이름이 사라지면
   // 기록에서 행을 만드는 자리가 그 ocid 를 건너뛰어 기록이 있어도 화면에서 사라지므로, 데이터
@@ -138,11 +157,6 @@ const TABLE_DEFINITIONS = [
     name: 'remembered_levels',
     createSql: `CREATE TABLE IF NOT EXISTS remembered_levels ${REMEMBERED_LEVELS_BODY}`,
   },
-  // 1.0.15 기기 변환이 마친 단계의 번호. 한 줄이다. 지우면 바뀐 표를 다시 바꾸려다 던져서 데이터 삭제가 지우지 않는다.
-  {
-    name: 'device_conversion',
-    createSql: `CREATE TABLE IF NOT EXISTS device_conversion ${DEVICE_CONVERSION_BODY}`,
-  },
   // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 데이터 삭제가 지우지 않는다.
   {
     name: 'mvp_grade_history',
@@ -210,6 +224,12 @@ export const BOSS_PROFIT_TABLE_NAMES: readonly string[] = TABLE_DEFINITIONS.map(
 // 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.
 // SQLite에 ADD COLUMN IF NOT EXISTS가 없으므로 table_info로 있는지 보고 없을 때만 더한다
 // (ALTER를 try/catch로 삼키면 다른 원인의 실패까지 숨는다).
+/** 표가 하나라도 있는가. 없으면 새로 설치한 기기다. */
+async function anyTableExists(db: SqliteDbConnection): Promise<boolean> {
+  const { values } = await db.query(`SELECT 1 FROM sqlite_master WHERE type = 'table' LIMIT 1`)
+  return (values ?? []).length > 0
+}
+
 async function tableExists(db: SqliteDbConnection, table: string): Promise<boolean> {
   const { values } = await db.query(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?`, [table])
   return (values ?? []).length > 0
@@ -435,9 +455,15 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   // op-sqlite 는 외래키가 기본으로 꺼져 있다. 켜지 않으면 ON DELETE CASCADE 가 안 돌고 테스트(node:sqlite)에서만 돈다.
   // 트랜잭션 안에서는 이 문장이 안 먹으므로 여기서 켠다.
   await db.execute('PRAGMA foreign_keys = ON')
+  // 표가 하나도 없으면 새로 설치한 기기다. 이관을 다 돈 뒤 기기 변환도 곧바로 돈다. 바꿀 줄이 없어 게임 데이터 없이 돈다.
+  const fresh = !(await anyTableExists(db))
+  // 기기 변환이 지운 표를 빈 표로 다시 만들지 않게 보스 표의 정의를 마친 단계의 번호로 고른다. 데이터 삭제는 이 표를
+  // 지우지 않는다. 지우면 바뀐 표를 다시 바꾸려다 던진다.
+  await db.execute(DEVICE_CONVERSION_TABLE)
+  const bossConverted = (await deviceConversionVersionOf(db)) >= BOSS_TABLES_CONVERTED_AT
   // 앞 버전 이관이 읽는 옛 표는 버전 23 전 DB 에만 만든다.
   if ((await userVersionOf(db)) < LEGACY_TABLES_DROPPED_AT) await prepareLegacyTables(db)
-  for (const table of TABLE_DEFINITIONS) {
+  for (const table of [...bossTableDefinitions(bossConverted), ...TABLE_DEFINITIONS]) {
     await db.execute(table.createSql)
   }
   // 이미 프로필을 쌓아 둔 기기에는 CREATE 가 안 붙인다. 없으면 월드 이전 판정이 그 캐릭터를
@@ -478,13 +504,17 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await ensureColumn(db, 'cashbook_entries', 'world_key', 'TEXT')
   // 리프 자동 판정이 읽는 만든 날. 옛 행은 NULL 이고 다음 `character/basic` 이 채운다.
   await ensureColumn(db, 'character_profiles', 'created_date', 'TEXT')
-  // 분배 방식 `제외` 와 한도를 넘긴 처치. 옛 행은 NULL 이라 둘 다 아니다.
-  await ensureColumn(db, 'boss_parties', 'crystal_excluded', 'INTEGER')
-  await ensureColumn(db, 'boss_party_periods', 'crystal_excluded', 'INTEGER')
-  await ensureColumn(db, 'boss_party_periods', 'over_crystal_limit', 'INTEGER')
+  // 분배 방식 `제외` 와 한도를 넘긴 처치. 옛 행은 NULL 이라 둘 다 아니다. 기기 변환 뒤에는 이 표가 없다.
+  if (!bossConverted) {
+    await ensureColumn(db, 'boss_parties', 'crystal_excluded', 'INTEGER')
+    await ensureColumn(db, 'boss_party_periods', 'crystal_excluded', 'INTEGER')
+    await ensureColumn(db, 'boss_party_periods', 'over_crystal_limit', 'INTEGER')
+  }
   // 칸이 다 선 뒤에 돈다. 값을 옮기는 이관은 버전 번호로 한 번씩만 돈다.
   await runVersionedMigrations(db)
-  await db.execute(BOSS_DROPS_PERIOD_INDEX)
+  // 이관 상한을 건 DB 는 앞 버전 이관을 보는 테스트라 바꾸지 않는다.
+  if (fresh && !isMigrationCeilingSet()) await runDeviceConversion(db, { backup: false })
+  if ((await deviceConversionVersionOf(db)) < BOSS_TABLES_CONVERTED_AT) await db.execute(PERIOD_BOSS_DROPS_INDEX)
   await db.execute(CASHBOOK_ENTRIES_DATE_INDEX)
   await db.execute(ENHANCEMENT_TOTALS_DATE_INDEX)
   await db.execute(INVENTORY_ITEMS_OWNER_INDEX)

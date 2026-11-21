@@ -1,5 +1,5 @@
 import { bossDifficultyIdOf } from '../boss/bosses'
-import { dropItemIdOf, dropItemPartsOf } from '../boss/drop-item-ids'
+import { dropItemIdOf, dropItemPartsOf, onlyBoxOriginOf } from '../boss/drop-item-ids'
 import { findItem, findItemById } from '../item-catalog'
 
 const PERIOD = '2026-11-19'
@@ -67,5 +67,13 @@ describe('아이템 줄 id 를 칸 셋으로', () => {
     ]
 
     expect(drops.map((drop) => dropItemPartsOf(dropItemIdOf(drop)!, kalosChaos, PERIOD))).toEqual(drops)
+  })
+})
+
+// 1.0.13 앱은 상자에서 나온 연마석도 상자 칸 없이 올렸다. 상자로만 주는 난이도의 연마석은 상자 줄이 맞다.
+describe('상자로만 주는 아이템', () => {
+  it('직접 주지 않고 상자로만 주면 그 상자이고, 직접도 주면 null 이다', () => {
+    expect(onlyBoxOriginOf('life_whetstone', bossDifficultyIdOf('kaling', 'hard')!, PERIOD)).toBe('life_boss_ring_box')
+    expect(onlyBoxOriginOf('life_whetstone', bossDifficultyIdOf('guardian_kalos', 'chaos')!, PERIOD)).toBeNull()
   })
 })

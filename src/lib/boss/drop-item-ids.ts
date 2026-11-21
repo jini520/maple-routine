@@ -79,3 +79,26 @@ export function dropItemPartsOf(itemId: string, bossDifficultyId: string, period
     boxOriginKey: box === undefined ? null : (findItemById(box.box.itemId)?.key ?? null),
   }
 }
+
+/**
+ * 그 난이도가 그 기간에 직접 주지 않고 상자로만 주는 아이템이면 그 상자의 key. 직접도 주거나 주지 않으면 `null` 이다.
+ *
+ * 상자 칸 없이 올라온 옛 기록이 어느 줄인지 정할 때 쓴다. 1.0.13 앱은 상자에서 나온 연마석도 상자 칸 없이 적었다.
+ */
+export function onlyBoxOriginOf(itemKey: string, bossDifficultyId: string, periodKey: string): string | null {
+  const item = findItem(itemKey)
+  if (item === null) return null
+  const rewards = bossDropsTable
+    .get()
+    .bossDifficultyRewards.filter(
+      (row) => row.bossDifficultyId === bossDifficultyId && isEffectiveAnytimeIn(periodOf(row), periodKey),
+    )
+  if (rewards.some((row) => row.itemId === item.id)) return null
+  const box = rewards
+    .flatMap((row) => boxIndex().get(row.itemId) ?? [])
+    .find(({ contentIds }) => [...contentIds].some((id) => {
+      const content = findItemById(id)
+      return content !== null && originalItemOf(content).id === item.id
+    }))
+  return box === undefined ? null : (findItemById(box.box.itemId)?.key ?? null)
+}

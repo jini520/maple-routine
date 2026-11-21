@@ -5,6 +5,7 @@
  * 아직 없다. 마친 단계의 번호는 한 줄짜리 표 `device_conversion` 에 적는다.
  */
 import type { SqliteDbConnection } from '../ports'
+import { convertBossTables } from './convert-boss-tables'
 import { inTransaction } from './transaction'
 
 /** 변환 단계 하나. 앞 단계가 바꾼 표를 받아 다음 모양으로 바꾼다. */
@@ -32,7 +33,10 @@ async function dropLeftoverBossProfitPeriodChecks(db: SqliteDbConnection): Promi
 }
 
 /** 단계는 뒤에만 더한다. 차례를 바꾸거나 빼면 이미 그 번호까지 돈 기기가 다른 단계를 건너뛴다. */
-const STEPS: readonly DeviceConversionStep[] = [dropLeftoverBossProfitPeriodChecks]
+const STEPS: readonly DeviceConversionStep[] = [dropLeftoverBossProfitPeriodChecks, convertBossTables]
+
+/** 보스 기록 표 셋을 새 모양으로 바꾸는 단계의 번호. 이 번호까지 돈 DB 는 DB 를 열 때 새 표를 만든다. */
+export const BOSS_TABLES_CONVERTED_AT = STEPS.indexOf(convertBossTables) + 1
 
 /** 마지막 단계의 번호. */
 export const DEVICE_CONVERSION_VERSION = STEPS.length
@@ -65,21 +69,25 @@ async function backup(db: SqliteDbConnection): Promise<void> {
   }
 }
 
+/** 변환을 돌리는 방법. 새로 설치한 DB 는 바꿀 줄이 없어 사본을 뜨지 않는다. 단계는 테스트가 갈아 끼울 때만 넘긴다. */
+export interface DeviceConversionOptions {
+  backup?: boolean
+  steps?: readonly DeviceConversionStep[]
+}
+
 /**
  * 아직 안 돈 단계를 모두 한 트랜잭션으로 돌리고 같은 트랜잭션에 마친 번호를 적는다. 던지면 그 안의 변경과 번호가 함께
  * 되돌아가고 `DeviceConversionError` 로 던진다. 돌 단계가 있으면 먼저 사본을 뜬다. 트랜잭션 안에서는 `VACUUM` 이 돌지 않는다.
- *
- * @param steps 테스트가 단계를 갈아 끼울 때만 넘긴다
  */
-export async function runDeviceConversion(
-  db: SqliteDbConnection,
-  steps: readonly DeviceConversionStep[] = STEPS,
-): Promise<void> {
+export async function runDeviceConversion(db: SqliteDbConnection, options: DeviceConversionOptions = {}): Promise<void> {
+  const steps = options.steps ?? STEPS
   const current = await deviceConversionVersionOf(db)
   if (current >= steps.length) return
-  await backup(db).catch((error: unknown) => {
-    throw new DeviceConversionError(0, error)
-  })
+  if (options.backup !== false) {
+    await backup(db).catch((error: unknown) => {
+      throw new DeviceConversionError(0, error)
+    })
+  }
   await inTransaction(db, async () => {
     for (let version = current + 1; version <= steps.length; version += 1) {
       try {

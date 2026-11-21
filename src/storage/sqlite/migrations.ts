@@ -971,6 +971,11 @@ export function __setMigrationCeilingForTest(version: number | null): void {
   migrationCeiling = version
 }
 
+/** 테스트가 이관 상한을 걸었는가. 건 DB 는 앞 버전 이관을 보려는 것이라 기기 변환을 돌지 않는다. */
+export function isMigrationCeilingSet(): boolean {
+  return migrationCeiling !== null
+}
+
 /** DB 에 적힌 마지막 이관 버전. 새 DB 는 0 이다. */
 export async function userVersionOf(db: SqliteDbConnection): Promise<number> {
   const { values } = await db.query('PRAGMA user_version')
