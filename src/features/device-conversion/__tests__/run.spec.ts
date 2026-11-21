@@ -7,11 +7,22 @@ jest.mock('../../usage-log/flush', () => ({
   __esModule: true,
   reportUsageActionNow: jest.fn(async () => {}),
 }))
+jest.mock('../../../storage/api-key', () => ({
+  __esModule: true,
+  getAuthConfig: jest.fn(async () => null),
+}))
+jest.mock('../../../storage/character-selection', () => ({
+  __esModule: true,
+  getRepresentativeCharacter: jest.fn(async () => null),
+  getTrackedCharacterOcids: jest.fn(async () => null),
+}))
 jest.mock('../../../storage/sqlite/device-conversion', () => {
   const actual = jest.requireActual('../../../storage/sqlite/device-conversion')
   return { __esModule: true, ...actual, runDeviceConversion: jest.fn() }
 })
 
+import { getAuthConfig } from '../../../storage/api-key'
+import { getRepresentativeCharacter, getTrackedCharacterOcids } from '../../../storage/character-selection'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../../storage/ports'
 import { closeBossProfitDb, getBossProfitDb } from '../../../storage/sqlite/db'
 import { __setMigrationCeilingForTest, DB_VERSION } from '../../../storage/sqlite/migrations'
@@ -114,5 +125,25 @@ describe('기기 변환을 돌리는 때', () => {
 
     expect(getDeviceConversionPhase()).toBe('failed')
     expect(report).toHaveBeenCalledWith('device-conversion-failed:0')
+  })
+})
+
+describe('변환 맥락', () => {
+  // 주인을 모르는 옛 손입력을 붙일 값은 Preferences 에 있고 저장소 층의 변환은 Preferences 를 읽지 않는다. 기록 표를 거쳐 읽으면
+  // 변환이 끝나기를 기다리다 멈춘다.
+  it('Preferences 의 메인 넥슨 계정과 화면이 대표로 세우는 캐릭터를 변환에 넘긴다. 대표를 고르지 않았으면 첫 추적 캐릭터다', async () => {
+    jest.mocked(getAuthConfig).mockResolvedValue({ login: { type: 'login', id: 'account-main', session: 'session' }, apiKeys: [], mainKeyId: null })
+    jest.mocked(getTrackedCharacterOcids).mockResolvedValue(['ocid-첫째', 'ocid-둘째'])
+
+    startDeviceConversion()
+    await settle()
+
+    expect(run.mock.calls[0]?.[1]).toEqual({ context: { mainNexonAccountId: 'account-main', representativeOcid: 'ocid-첫째' } })
+
+    jest.mocked(getRepresentativeCharacter).mockResolvedValue('ocid-둘째')
+    run.mockClear()
+    await retryDeviceConversion()
+
+    expect(run.mock.calls[0]?.[1]).toEqual({ context: { mainNexonAccountId: 'account-main', representativeOcid: 'ocid-둘째' } })
   })
 })

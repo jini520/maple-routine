@@ -5,8 +5,16 @@
  */
 import { useSyncExternalStore } from 'react'
 
+import { mainNexonAccountIdOf } from '../../lib/nexon-credential'
+import { getAuthConfig } from '../../storage/api-key'
+import { getRepresentativeCharacter, getTrackedCharacterOcids } from '../../storage/character-selection'
 import { holdRecordTablesUntil, getBossProfitDbUngated } from '../../storage/sqlite/db'
-import { DeviceConversionError, runDeviceConversion } from '../../storage/sqlite/device-conversion'
+import {
+  DeviceConversionError,
+  runDeviceConversion,
+  type DeviceConversionContext,
+} from '../../storage/sqlite/device-conversion'
+import { resolveDisplayRepresentative } from '../character-manage/derivations'
 import { whenGameDataReady } from '../game-data/sync'
 import { reportUsageActionNow } from '../usage-log/flush'
 
@@ -39,13 +47,30 @@ export function useDeviceConversionStatus(): DeviceConversionPhase {
   return useSyncExternalStore(subscribe, getDeviceConversionPhase)
 }
 
+/**
+ * 단계가 쓰는 Preferences 의 값. 메인 넥슨 계정과 화면이 대표로 세우는 캐릭터다. Preferences 는 기록 표 막기와 상관없이 읽힌다.
+ * 기록 표를 거치는 조회(`getBossProfitDb()`)는 변환이 끝나기를 기다려 여기서 부르면 멈춘다.
+ */
+async function conversionContextOf(): Promise<DeviceConversionContext> {
+  const [config, stored, tracked] = await Promise.all([
+    getAuthConfig(),
+    getRepresentativeCharacter(),
+    getTrackedCharacterOcids(),
+  ])
+  return {
+    mainNexonAccountId: mainNexonAccountIdOf(config),
+    representativeOcid: resolveDisplayRepresentative(tracked ?? [], stored),
+  }
+}
+
 /** 겹쳐 부르면 도는 것을 기다린다. 실패하면 단계 번호를 사용 로그로 곧바로 보낸다. 던지지 않는다. */
 function convert(): Promise<void> {
   attempt ??= (async () => {
     setPhase('running')
     try {
       await whenGameDataReady()
-      await runDeviceConversion(await getBossProfitDbUngated())
+      const context = await conversionContextOf()
+      await runDeviceConversion(await getBossProfitDbUngated(), { context })
       setPhase('done')
       release()
     } catch (error: unknown) {

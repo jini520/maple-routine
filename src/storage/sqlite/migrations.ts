@@ -29,14 +29,14 @@ import { sightedOwnerOf, type OwnerSighting } from '../../lib/enhancement/sighte
 import { equipmentItemKeyOfApiName } from '../../lib/equipment/equipment-items'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
-import { insertEntry } from '../cashbook-entries'
 import { incomeEntryOf, spendEntryOf } from '../cashbook-entry-shape'
 import type { HuntingIncomeDetail, IncomeRecord } from '../income'
 import type { SqliteDbConnection } from '../ports'
 import type { SpendRecord } from '../spend'
 import { BOSS_DROP_RECORDS_BODY, BOSS_KEYED_TABLES } from './boss-tables'
-import { CASHBOOK_ENTRY_FRAGMENT_USES_BODY } from './cashbook-tables'
+import { UNCONVERTED_CASHBOOK_ENTRY_FRAGMENT_USES_BODY } from './cashbook-tables'
 import { ENHANCEMENT_TOTALS_BODY } from './enhancement-tables'
+import { insertUnconvertedEntry } from './legacy-cashbook-entries'
 import { LEGACY_TABLE_NAMES } from './legacy-tables'
 import {
   CHARACTER_ACCOUNTS_BODY,
@@ -576,7 +576,8 @@ function legacyIncomeRecordOf(row: Row, id: string): IncomeRecord {
  * 가계부 손입력 두 표를 기록 표 셋으로 옮긴다(버전 15). 옛 표는 옛 코드가 새 DB 를 열어도 열리도록 남긴다.
  *
  * 옛 id(`시각 + 난수`)는 새 uuid 로 바뀐다. 옛 id 를 가리키는 곳이 없다. 저장 함수와 같은 변환(`cashbook-entry-shape`)을
- * 써서 옮긴 기록과 새로 적은 기록이 같은 모양이다. 에픽던전 형태 둘은 품목 둘로 나뉘고 금액은 단계 단가로 나뉜다.
+ * 써서 옮긴 기록과 그때 새로 적은 기록이 같은 모양이다. 에픽던전 형태 둘은 품목 둘로 나뉘고 금액은 단계 단가로 나뉜다. 넣는 표는
+ * 1.0.15 기기 변환 전의 모양이다.
  */
 async function moveCashbookRecordsToEntries(db: SqliteDbConnection): Promise<void> {
   const newId = async (): Promise<string> => {
@@ -585,11 +586,11 @@ async function moveCashbookRecordsToEntries(db: SqliteDbConnection): Promise<voi
   }
   const spend = await db.query('SELECT * FROM spend_records ORDER BY spent_on, recorded_at, id')
   for (const row of spend.values ?? []) {
-    await insertEntry(db, spendEntryOf(legacySpendRecordOf(row, await newId())))
+    await insertUnconvertedEntry(db, spendEntryOf(legacySpendRecordOf(row, await newId())))
   }
   const income = await db.query('SELECT * FROM income_records ORDER BY earned_on, recorded_at, id')
   for (const row of income.values ?? []) {
-    await insertEntry(db, incomeEntryOf(legacyIncomeRecordOf(row, await newId())))
+    await insertUnconvertedEntry(db, incomeEntryOf(legacyIncomeRecordOf(row, await newId())))
   }
   await assertCashbookTotalsMoved(db)
 }
@@ -798,7 +799,7 @@ async function addFragmentUseSources(db: SqliteDbConnection): Promise<void> {
   if ((await columnsOf(db, table)).has('fragment_source')) return
 
   const rebuilt = `${table}_v21`
-  await db.execute(`CREATE TABLE ${rebuilt} ${CASHBOOK_ENTRY_FRAGMENT_USES_BODY}`)
+  await db.execute(`CREATE TABLE ${rebuilt} ${UNCONVERTED_CASHBOOK_ENTRY_FRAGMENT_USES_BODY}`)
   // rowid 차례가 헥사 기록의 보관 차례라(readEntries) 그 차례대로 옮긴다.
   await db.execute(
     `INSERT INTO ${rebuilt} (id, entry_id, fragment_source, ocid, fragments)
