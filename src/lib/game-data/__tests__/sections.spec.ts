@@ -50,14 +50,15 @@ const NOT_YET_MOVED: readonly GameDataSection[] = [
   'contents',
   'enhancementCosts',
   'mvpGrades',
-  'huntingGrounds',
-  'huntLoot',
   'imageCrops',
   'faqs',
 ]
 
-/** `null` 이 빠진 칸이 아니라 값인 칸. 지출 항목의 `unitPrice` 는 `null` 이 경매장 값이라 적을 때 친다는 뜻이다. */
-const NULL_IS_VALUE: ReadonlySet<string> = new Set(['unitPrice'])
+/**
+ * `null` 이 빠진 칸이 아니라 값인 칸. 지출 항목의 `unitPrice` 는 `null` 이 경매장 값이라 적을 때 친다는 뜻이고, 사냥 전리품의
+ * `npcPriceMeso` 는 `null` 이 NPC 에 팔지 않는 분류라는 뜻이다.
+ */
+const NULL_IS_VALUE: ReadonlySet<string> = new Set(['unitPrice', 'npcPriceMeso'])
 
 /** 응답의 `null` 칸을 지운 값. 계약 검사는 `null` 인 선택 칸을 빠진 칸으로 만든다. */
 function withoutNulls(value: unknown): unknown {

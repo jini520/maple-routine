@@ -1623,7 +1623,7 @@ describe('사냥 계산기', () => {
     beforeEach(() => {
       huntingGroundsTable.set({
         ...원래표,
-        grounds: 원래표.grounds.map((each) => (each.key === 인기 ? { ...each, popular: true } : each)),
+        huntingGrounds: 원래표.huntingGrounds.map((each) => (each.key === 인기 ? { ...each, isPopular: true } : each)),
       })
     })
     afterEach(() => huntingGroundsTable.set(원래표))

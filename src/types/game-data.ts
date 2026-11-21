@@ -414,48 +414,51 @@ export interface MvpGradesTable extends TableHead {
   grades: MvpGradeRow[]
 }
 
-export const HUNT_LOOT_KINDS = ['fragment', 'consumable', 'event'] as const
-export type HuntLootKind = (typeof HUNT_LOOT_KINDS)[number]
+export const HUNT_LOOT_TYPES = ['fragment', 'consumable', 'event'] as const
+export type HuntLootType = (typeof HUNT_LOOT_TYPES)[number]
 
-/** 사냥 전리품 판매의 아이템. `from` · `until` 은 이벤트 아이템이 서는 기간이다(KST 날짜). */
-export interface HuntLootRow {
-  key: string
-  kind: HuntLootKind
-  name: string
-  iconAssetId: string
+/** 사냥 전리품 판매의 아이템. 기간은 이벤트 아이템이 서는 기간이다(KST 날짜). */
+export interface HuntLootItemRow {
+  /** 아이템 줄 id(`items` 칸). 이름 · 그림은 아이템 표에서 읽는다. */
+  itemId: string
+  type: HuntLootType
   /** 소비 아이템의 NPC 개당 가격. 소비에만 있고 소비에는 반드시 있다. */
   npcPriceMeso: number | null
-  from?: string
-  until?: string
+  validFrom?: string
+  validUntil?: string
 }
 export interface HuntLootTable extends TableHead {
   /** 이 차례가 폼의 차례다. */
-  items: HuntLootRow[]
+  huntLootItems: HuntLootItemRow[]
 }
 
 export interface HuntingRegionRow {
+  id: string
   key: string
   name: string
   forceType: ForceType
-  /** 지역 아이콘 그림 id. 없으면 `null` 이다. */
-  iconAssetId: string | null
+  /** 지역 아이콘 그림 id. 없으면 빠진다. */
+  iconAssetId?: string
 }
 export interface HuntingGroundRow {
+  id: string
   key: string
-  region: string
+  regionId: string
   name: string
-  force: number
-  mobs: number
-  popular: boolean
+  /** 아케인/어센틱 포스 요구치 */
+  requiredForce: number
+  /** 맵에 한 번에 뜨는 몬스터 마릿수 */
+  mobQuantity: number
+  isPopular: boolean
 }
 export interface HuntingGroundLevelRow {
-  ground: string
-  level: number
+  groundId: string
+  mobLevel: number
 }
 export interface HuntingGroundsTable extends TableHead {
-  regions: HuntingRegionRow[]
-  grounds: HuntingGroundRow[]
-  groundLevels: HuntingGroundLevelRow[]
+  huntingRegions: HuntingRegionRow[]
+  huntingGrounds: HuntingGroundRow[]
+  huntingGroundLevels: HuntingGroundLevelRow[]
 }
 
 /** 서버 그림 한 장. 앱은 게임 데이터 표의 그림 칸이 든 `id` 로 찾고 기기에는 `file`(내용 해시 이름)로 둔다. */

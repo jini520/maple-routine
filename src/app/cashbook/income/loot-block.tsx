@@ -14,7 +14,7 @@ import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 const BLOCK_ICON_SIZE = 26
 
 /** 아이템 그림. 그림을 못 찾으면 자리만 지킨다. 이름의 시작점이 줄마다 갈리지 않게. */
-function LootIcon(props: { iconAssetId: string }): React.JSX.Element {
+function LootIcon(props: { iconAssetId?: string }): React.JSX.Element {
   const icon = getAssetImage(props.iconAssetId)
   const size = { width: BLOCK_ICON_SIZE, height: BLOCK_ICON_SIZE }
   // 아이템 아이콘은 원본 비율 그대로 둔다. 상자에 맞춰 늘리면 도트가 뭉갠다.
@@ -30,7 +30,7 @@ function LootIcon(props: { iconAssetId: string }): React.JSX.Element {
  * </LootBlock>
  */
 export function LootBlock(props: {
-  iconAssetId: string
+  iconAssetId?: string
   name: string
   right?: React.ReactNode
   children: React.ReactNode
@@ -63,7 +63,7 @@ export function LootLine(props: { label: string; unit: string; children: React.R
 
 /** 소비 아이템 한 줄. 이름 아래에 NPC 개당 가격이 작게 서고, 오른쪽이 개수 칸이다. */
 export function NpcLootRow(props: {
-  iconAssetId: string
+  iconAssetId?: string
   name: string
   npcPriceMeso: number
   children: React.ReactNode

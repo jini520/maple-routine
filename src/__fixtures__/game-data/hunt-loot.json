@@ -1,55 +1,40 @@
 {
   "updatedAt": "2026-10-29T08:07:35.238Z",
-  "items": [
+  "huntLootItems": [
     {
-      "key": "sol_erda_fragment",
-      "kind": "fragment",
-      "name": "솔 에르다 조각",
-      "iconFile": "sol_erda_fragment.webp",
-      "iconAssetId": "ee64d8fa-0fce-41d3-aee9-abf058a3cab3",
+      "itemId": "1f1c46e6-c209-4141-839a-a39e2ecf28c0",
+      "type": "fragment",
       "npcPriceMeso": null,
-      "from": null,
-      "until": null
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "key": "reindeer_milk",
-      "kind": "consumable",
-      "name": "순록의 우유",
-      "iconFile": "reindeer_milk.webp",
-      "iconAssetId": "835ac291-e5ba-4d00-a010-015ffd60bbda",
+      "itemId": "be3e414f-aaa8-442b-b928-f2a8cabf38a9",
+      "type": "consumable",
       "npcPriceMeso": 2750,
-      "from": null,
-      "until": null
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "key": "sunset_dew",
-      "kind": "consumable",
-      "name": "황혼의 이슬",
-      "iconFile": "sunset_dew.webp",
-      "iconAssetId": "24d8cfba-927b-414c-853d-a43664c5a52e",
+      "itemId": "5eca1f79-577a-4d34-b65d-a3b90846b6bb",
+      "type": "consumable",
       "npcPriceMeso": 5100,
-      "from": null,
-      "until": null
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "key": "suspicious_magnifier",
-      "kind": "event",
-      "name": "수상한 돋보기",
-      "iconFile": "suspicious_magnifier.webp",
-      "iconAssetId": "78c86d45-0ed4-4f39-900d-74b01b3e3d9f",
+      "itemId": "d683db9b-c577-4239-b917-20417128ef7c",
+      "type": "event",
       "npcPriceMeso": null,
-      "from": "2026-10-22",
-      "until": "2026-11-19"
+      "validFrom": "2026-10-22",
+      "validUntil": "2026-11-19"
     },
     {
-      "key": "detective_yeti_suspicious_magnifier",
-      "kind": "event",
-      "name": "탐정예티의 수상한 돋보기",
-      "iconFile": "detective_yeti_suspicious_magnifier.webp",
-      "iconAssetId": "030e9e0f-491f-429d-85f3-026d056a3912",
+      "itemId": "24b758bc-876e-4c95-bd84-cf722bd75bf2",
+      "type": "event",
       "npcPriceMeso": null,
-      "from": "2026-10-22",
-      "until": "2026-11-19"
+      "validFrom": "2026-10-22",
+      "validUntil": "2026-11-19"
     }
   ]
 }
