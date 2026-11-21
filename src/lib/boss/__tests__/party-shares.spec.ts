@@ -8,6 +8,7 @@
 // ③ **파티 인원이 값을 안 흔든다.** 비율은 `나 : 나머지` 라 두 쪽이고, 몇 명이 그 나머지를
 //    이루는지는 내 몫에도 송금액에도 안 쓰인다.
 
+import { auctionFeePercentOf } from '../../mvp/grades'
 import {
   acceptSharePercentText,
   crystalPayoutMeso,
@@ -25,11 +26,13 @@ const EVEN: PartyShares = { myShare: null, sharesTotal: null, splitFeePercent: n
 
 describe('parseShares: 저장 칸 셋을 계산이 쓰는 모양으로', () => {
   it('둘 다 NULL 이면 균등이다', () => {
-    expect(parseShares(EVEN)).toEqual({ myShare: 1, sharesTotal: 2, splitFeePercent: 3, isEven: true })
+    expect(parseShares(EVEN)).toEqual({ myShare: 1, sharesTotal: 2, splitFeePercent: auctionFeePercentOf(null), isEven: true })
   })
 
-  it('수수료율을 안 적었으면 3 이다', () => {
-    expect(parseShares({ myShare: 2, sharesTotal: 3, splitFeePercent: null }).splitFeePercent).toBe(3)
+  // 등급을 고르지 않은 메이플 ID 는 일반이다. 빈 요율을 3% 로 읽으면 일반 · 브론즈의 금액이 실제보다 커진다.
+  it('수수료율을 안 적었으면 일반 등급의 요율이다', () => {
+    expect(parseShares({ myShare: 2, sharesTotal: 3, splitFeePercent: null }).splitFeePercent).toBe(auctionFeePercentOf(null))
+    expect(auctionFeePercentOf(null)).toBe(5)
   })
 
   // 비율은 늘 비율이다(사용자 지정). 균등으로 읽으면 정해 둔 파티 인원으로 나눈다.

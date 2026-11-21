@@ -13,8 +13,7 @@
  * 정수 산술만 쓴다. 부동소수 곱은 메소 단위에서 값이 튄다.
  */
 
-/** 수수료를 안 적은 행이 쓰는 값. MVP 실버 등급 이상의 경매장 수수료다. */
-const DEFAULT_SPLIT_FEE_PERCENT = 3
+import { auctionFeePercentOf } from '../mvp/grades'
 
 /** 친 % 를 담는 비율 합. % 를 소수 셋째 자리까지 받으므로 `% × 1000` 이 내 비율이 된다. */
 export const SHARE_PERCENT_TOTAL = 100_000
@@ -29,7 +28,7 @@ export interface PartyShares {
   splitFeePercent: number | null
   /** 송금 수수료가 등급을 따라가나. 계산은 안 보고 기록에 함께 적힌다 */
   splitFeeAuto?: boolean
-  /** 분배 방식 `제외`. 결정석을 팔지 않은 처치라 내 몫이 0 이고, 위 칸들은 숨겨 둔 분배다 */
+  /** 분배 방식 `제외`. 결정석을 팔지 않은 처치라 내 몫이 0 이다 */
   excluded?: boolean
 }
 
@@ -53,7 +52,8 @@ export interface ResolvedShares {
  * 균등으로 읽으면 `가격 / 인원` 을 받은 것으로 센다.
  */
 export function parseShares(shares: PartyShares): ResolvedShares {
-  const splitFeePercent = shares.splitFeePercent ?? DEFAULT_SPLIT_FEE_PERCENT
+  // 요율을 모르면 일반 등급의 요율이다. 등급을 고르지 않은 메이플 ID 는 일반이라서, 빈 값을 3% 로 읽던 규칙을 걷었다.
+  const splitFeePercent = shares.splitFeePercent ?? auctionFeePercentOf(null)
   const { myShare, sharesTotal } = shares
   const isEven = myShare === null || sharesTotal === null || myShare < 0 || sharesTotal <= 0
 
@@ -67,7 +67,7 @@ export function parseShares(shares: PartyShares): ResolvedShares {
  * 비율이 안 적혔으면 `floor(가격 / 인원)` 이다. 반반(`myShare × 2 = 합`)은 비율 식의 분자와 분모의 괄호가 같아져
  * 게임 지급액 `floor(가격 / 2)` 만 남는다. 2인 균등과 한 메소도 안 다르고, 인원을 몇으로 정해 두었든 같다.
  *
- * `제외` 면 숨겨 둔 분배와 상관없이 0 이다.
+ * `제외` 면 0 이다.
  *
  * @param partySize **균등일 때만** 쓴다. 비율을 쓰면 두 쪽이라 이 수가 안 들어간다.
  */
