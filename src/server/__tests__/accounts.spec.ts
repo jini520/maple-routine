@@ -13,7 +13,7 @@ it('메이플 ID 해시를 그 신원으로 PUT 하고, 서버가 돌려준 목�
 
   await expect(reportMapleIdsToServer({ 'x-api-key-hash': 'k' }, ['h1'])).resolves.toEqual({ outcome: 'sent', mapleIds: ['h1', 'h2'] })
   expect(fetchMock).toHaveBeenCalledWith(
-    'https://mapleroutine.store/v1/me/maple-ids',
+    'https://api.mapleroutine.store/v1/me/maple-ids',
     expect.objectContaining({
       method: 'PUT',
       headers: { 'x-api-key-hash': 'k', 'content-type': 'application/json' },
@@ -38,7 +38,7 @@ it('부계정 등록은 세션으로 키 해시 · 메이플 ID 해시를 보내
   fetchMock.mockResolvedValueOnce({ ok: true, status: 204, json: async () => { throw new Error('빈 본문') } })
   await expect(registerSubAccountOnServer({ Authorization: 'Bearer S' }, 'kh', ['h1'])).resolves.toBe('registered')
   expect(fetchMock).toHaveBeenCalledWith(
-    'https://mapleroutine.store/v1/me/sub-accounts',
+    'https://api.mapleroutine.store/v1/me/sub-accounts',
     expect.objectContaining({ method: 'POST', body: JSON.stringify({ apiKeyHash: 'kh', mapleIds: ['h1'] }) }),
   )
 

@@ -1,7 +1,8 @@
 /**
  * 계정 삭제의 서버 경로. 삭제는 30일 예약이고, 유예 중에 다시 로그인한 앱이 예약을 묻고 취소한다.
  */
-import { BASE_URL, writeCall, type SendResult } from './write'
+import { writeCall, type SendResult } from './write'
+import { API_BASE_URL } from './base-url'
 
 /** 묻는 데 쓰는 시간. 로그인 직후 한 번 묻는 것이라 길게 기다리지 않는다. */
 const TIMEOUT_MS = 8_000
@@ -20,7 +21,7 @@ export async function fetchAccountDeletion(headers: Record<string, string>): Pro
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
   try {
-    const response = await fetch(`${BASE_URL}/me/deletion`, { headers, signal: controller.signal })
+    const response = await fetch(`${API_BASE_URL}/me/deletion`, { headers, signal: controller.signal })
     if (response.status !== 200) throw new Error(`삭제 예약을 묻지 못했다: ${response.status}`)
     const body = (await response.json()) as { deletion?: { deletesAt?: unknown } | null }
     const deletesAt = body.deletion?.deletesAt

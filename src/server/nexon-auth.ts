@@ -19,8 +19,7 @@
  * 필드를 더할 때 양쪽을 함께 볼 것.
  */
 import type { Platform } from '../types/auth'
-
-const BASE_URL = 'https://mapleroutine.store/v1'
+import { API_BASE_URL } from './base-url'
 
 /**
  * 얼마나 기다리나. 조회(8초)보다 길다.
@@ -33,7 +32,7 @@ async function postJson(path: string, body: unknown, headers: Record<string, str
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
   try {
-    return await fetch(`${BASE_URL}${path}`, {
+    return await fetch(`${API_BASE_URL}${path}`, {
       method: 'POST',
       headers: { ...headers, 'content-type': 'application/json' },
       body: JSON.stringify(body),
@@ -100,7 +99,7 @@ export async function revokeNexonSession(session: string): Promise<void> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
   try {
-    await fetch(`${BASE_URL}/auth/nexon/session`, {
+    await fetch(`${API_BASE_URL}/auth/nexon/session`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${session}` },
       signal: controller.signal,

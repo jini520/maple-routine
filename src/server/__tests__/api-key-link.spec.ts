@@ -12,7 +12,7 @@ it('세션을 Bearer 로, 해시를 본문으로 /me/api-key-links 에 보낸다
   await expect(linkApiKeyOnServer('세션', 'ab'.repeat(32))).resolves.toEqual({ outcome: 'sent' })
 
   expect(fetchMock).toHaveBeenCalledWith(
-    'https://mapleroutine.store/v1/me/api-key-links',
+    'https://api.mapleroutine.store/v1/me/api-key-links',
     expect.objectContaining({
       method: 'POST',
       headers: { Authorization: 'Bearer 세션', 'content-type': 'application/json' },

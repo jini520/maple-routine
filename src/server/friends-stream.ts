@@ -9,8 +9,7 @@
  * 풀어 주고 줄 단위로 증분 전달된다(두 플랫폼 실측 2026-10-14).
  */
 import { fetch as expoFetch } from 'expo/fetch'
-
-const BASE_URL = 'https://mapleroutine.store/v1'
+import { API_BASE_URL } from './base-url'
 
 /** 회차 전체의 상한. 서버가 120초에서 끊으므로 그보다 조금 길다. */
 const TIMEOUT_MS = 130_000
@@ -67,7 +66,7 @@ export async function streamFriends(
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
   try {
-    const res = await expoFetch(`${BASE_URL}/friends/stream`, {
+    const res = await expoFetch(`${API_BASE_URL}/friends/stream`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${session}`, 'content-type': 'application/json' },
       body: JSON.stringify({ tasks }),

@@ -33,7 +33,7 @@ it('세션을 Bearer 로 싣고 작업 목록을 JSON 으로 보낸다', async (
   await streamFriends('세션', [{ kind: 'character-list' }])
 
   const [url, init] = expoFetch.mock.calls[0] as [string, RequestInit]
-  expect(url).toBe('https://mapleroutine.store/v1/friends/stream')
+  expect(url).toBe('https://api.mapleroutine.store/v1/friends/stream')
   expect(init.method).toBe('POST')
   expect((init.headers as Record<string, string>).Authorization).toBe('Bearer 세션')
   expect(JSON.parse(init.body as string)).toEqual({ tasks: [{ kind: 'character-list' }] })

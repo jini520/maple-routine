@@ -25,7 +25,7 @@ it('묶음은 /batch 로 items 를 보내고 건마다의 결과를 돌려준다
     results: [{ recordId: 'a', ok: true }],
   })
   expect(fetchMock).toHaveBeenCalledWith(
-    'https://mapleroutine.store/v1/drop-prices/batch',
+    'https://api.mapleroutine.store/v1/drop-prices/batch',
     expect.objectContaining({ method: 'POST', body: JSON.stringify({ items: [{ id: 'a' }] }) }),
   )
 
