@@ -1,1500 +1,1503 @@
 {
   "updatedAt": "2026-10-17T01:50:19.603Z",
-  "groups": [
+  "symbolGroups": [
     {
+      "id": "0addbf68-7ff1-46d0-bcef-1b4092c03a0b",
       "key": "arcane",
       "name": "아케인 심볼",
       "maxLevel": 20,
-      "defaultFrom": 7,
-      "defaultTo": 12
+      "defaultFromLevel": 7,
+      "defaultToLevel": 12
     },
     {
+      "id": "8ac508d4-df87-4a47-bc0f-34d45c013841",
       "key": "authentic",
       "name": "어센틱 심볼",
       "maxLevel": 11,
-      "defaultFrom": 5,
-      "defaultTo": 8
+      "defaultFromLevel": 5,
+      "defaultToLevel": 8
     },
     {
+      "id": "5e090864-7f33-45f9-b857-e606673a469e",
       "key": "grand_authentic",
       "name": "그랜드 어센틱 심볼",
       "maxLevel": 11,
-      "defaultFrom": 5,
-      "defaultTo": 8
+      "defaultFromLevel": 5,
+      "defaultToLevel": 8
     }
   ],
   "symbols": [
     {
+      "id": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
       "key": "road_of_vanishing",
-      "group": "arcane",
+      "groupId": "0addbf68-7ff1-46d0-bcef-1b4092c03a0b",
       "name": "소멸의 여로",
       "requiredLevel": 200,
-      "iconFile": "arcane_symbol_road_of_vanishing.webp",
       "iconAssetId": "e896f323-02bf-4e83-8bb9-ca2982944ea2"
     },
     {
+      "id": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
       "key": "chew_chew",
-      "group": "arcane",
+      "groupId": "0addbf68-7ff1-46d0-bcef-1b4092c03a0b",
       "name": "츄츄 아일랜드",
       "requiredLevel": 210,
-      "iconFile": "arcane_symbol_chew_chew.webp",
       "iconAssetId": "6463a4af-83f6-4b1a-b2fe-b439bcd9467a"
     },
     {
+      "id": "15897fae-2c15-42de-bdd6-481c5842d373",
       "key": "lacheln",
-      "group": "arcane",
+      "groupId": "0addbf68-7ff1-46d0-bcef-1b4092c03a0b",
       "name": "레헬른",
       "requiredLevel": 220,
-      "iconFile": "arcane_symbol_lacheln.webp",
       "iconAssetId": "e43d7bac-bea8-486d-a8cd-9983194e366f"
     },
     {
+      "id": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
       "key": "arcana",
-      "group": "arcane",
+      "groupId": "0addbf68-7ff1-46d0-bcef-1b4092c03a0b",
       "name": "아르카나",
       "requiredLevel": 225,
-      "iconFile": "arcane_symbol_arcana.webp",
       "iconAssetId": "df831f02-dac3-45d8-93b0-e119a43f1c2f"
     },
     {
+      "id": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
       "key": "morass",
-      "group": "arcane",
+      "groupId": "0addbf68-7ff1-46d0-bcef-1b4092c03a0b",
       "name": "모라스",
       "requiredLevel": 230,
-      "iconFile": "arcane_symbol_morass.webp",
       "iconAssetId": "d0fc20ee-942b-45a8-be1b-69b8f0f5bb59"
     },
     {
+      "id": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
       "key": "esfera",
-      "group": "arcane",
+      "groupId": "0addbf68-7ff1-46d0-bcef-1b4092c03a0b",
       "name": "에스페라",
       "requiredLevel": 235,
-      "iconFile": "arcane_symbol_esfera.webp",
       "iconAssetId": "3b912192-549a-41fb-97f1-7447ff32ba19"
     },
     {
+      "id": "8668f670-e112-49a1-917e-ab7e40ba6e4a",
       "key": "cernium",
-      "group": "authentic",
+      "groupId": "8ac508d4-df87-4a47-bc0f-34d45c013841",
       "name": "세르니움",
       "requiredLevel": 260,
-      "iconFile": "authentic_symbol_cernium.webp",
       "iconAssetId": "76a8f6a5-b57e-4466-9c55-58b8c92d34a1"
     },
     {
+      "id": "e92629d5-19fd-4529-ad73-47072c8dc4fa",
       "key": "arcs",
-      "group": "authentic",
+      "groupId": "8ac508d4-df87-4a47-bc0f-34d45c013841",
       "name": "아르크스",
       "requiredLevel": 265,
-      "iconFile": "authentic_symbol_arcs.webp",
       "iconAssetId": "293e55a2-7e7c-4308-914c-1b75bdabb2ee"
     },
     {
+      "id": "2e4ec65f-bd46-40a6-badb-dabc3ad8d25a",
       "key": "odium",
-      "group": "authentic",
+      "groupId": "8ac508d4-df87-4a47-bc0f-34d45c013841",
       "name": "오디움",
       "requiredLevel": 270,
-      "iconFile": "authentic_symbol_odium.webp",
       "iconAssetId": "33909e6b-dc43-4daf-9f21-06f8cd1f119b"
     },
     {
+      "id": "d76fb221-4048-4696-9652-445bbe0fff9b",
       "key": "dowonkyung",
-      "group": "authentic",
+      "groupId": "8ac508d4-df87-4a47-bc0f-34d45c013841",
       "name": "도원경",
       "requiredLevel": 275,
-      "iconFile": "authentic_symbol_dowonkyung.webp",
       "iconAssetId": "9df65cbf-f452-40c1-b1d6-68f72a5b5d26"
     },
     {
+      "id": "bc4fcc0f-5c8e-4055-9c07-4a8b96973b45",
       "key": "arteria",
-      "group": "authentic",
+      "groupId": "8ac508d4-df87-4a47-bc0f-34d45c013841",
       "name": "아르테리아",
       "requiredLevel": 280,
-      "iconFile": "authentic_symbol_arteria.webp",
       "iconAssetId": "76062d27-ba36-4202-b952-689da8795425"
     },
     {
+      "id": "e46284ce-731a-49fe-b200-cdb39fb5c110",
       "key": "carcion",
-      "group": "authentic",
+      "groupId": "8ac508d4-df87-4a47-bc0f-34d45c013841",
       "name": "카르시온",
       "requiredLevel": 285,
-      "iconFile": "authentic_symbol_carcion.webp",
       "iconAssetId": "960e202d-fa8e-4a1d-8471-c79b259bfcba"
     },
     {
+      "id": "129d8d7f-b16c-4fe8-bef9-18ac6de7f242",
       "key": "tallahart",
-      "group": "grand_authentic",
+      "groupId": "5e090864-7f33-45f9-b857-e606673a469e",
       "name": "탈라하트",
       "requiredLevel": 290,
-      "iconFile": "grand_authentic_symbol_tallahart.webp",
       "iconAssetId": "794deba9-fe91-464e-8630-b653a62280d0"
     },
     {
+      "id": "85c9ffd2-88df-4449-9380-41e6def9a1c4",
       "key": "geardrak",
-      "group": "grand_authentic",
+      "groupId": "5e090864-7f33-45f9-b857-e606673a469e",
       "name": "기어드락",
       "requiredLevel": 295,
-      "iconFile": "grand_authentic_symbol_geardrak.webp",
       "iconAssetId": "aa5e91ae-2e39-4561-84f0-f4b93c0d9ba2"
     }
   ],
-  "levelCosts": [
+  "symbolLevelCosts": [
     {
-      "symbol": "road_of_vanishing",
-      "level": 1,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 1,
       "costMeso": 670000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 2,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 2,
       "costMeso": 860000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 3,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 3,
       "costMeso": 1160000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 4,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 4,
       "costMeso": 1580000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 5,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 5,
       "costMeso": 2140000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 6,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 6,
       "costMeso": 2820000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 7,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 7,
       "costMeso": 3650000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 8,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 8,
       "costMeso": 4620000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 9,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 9,
       "costMeso": 5720000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 10,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 10,
       "costMeso": 6990000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 11,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 11,
       "costMeso": 8400000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 12,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 12,
       "costMeso": 9980000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 13,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 13,
       "costMeso": 11710000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 14,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 14,
       "costMeso": 13610000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 15,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 15,
       "costMeso": 15690000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 16,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 16,
       "costMeso": 17940000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 17,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 17,
       "costMeso": 20370000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 18,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 18,
       "costMeso": 22980000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "road_of_vanishing",
-      "level": 19,
+      "symbolId": "f4960e59-3715-4e3a-9dcc-632c6afe5fc9",
+      "fromLevel": 19,
       "costMeso": 25770000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 1,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 1,
       "costMeso": 840000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 2,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 2,
       "costMeso": 1070000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 3,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 3,
       "costMeso": 1440000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 4,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 4,
       "costMeso": 1960000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 5,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 5,
       "costMeso": 2640000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 6,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 6,
       "costMeso": 3480000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 7,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 7,
       "costMeso": 4490000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 8,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 8,
       "costMeso": 5670000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 9,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 9,
       "costMeso": 7010000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 10,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 10,
       "costMeso": 8540000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 11,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 11,
       "costMeso": 10250000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 12,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 12,
       "costMeso": 12150000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 13,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 13,
       "costMeso": 14230000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 14,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 14,
       "costMeso": 16510000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 15,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 15,
       "costMeso": 18990000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 16,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 16,
       "costMeso": 21670000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 17,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 17,
       "costMeso": 24570000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 18,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 18,
       "costMeso": 27670000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "chew_chew",
-      "level": 19,
+      "symbolId": "cb37167e-e0d5-4f81-9d60-74a84093d8e1",
+      "fromLevel": 19,
       "costMeso": 30980000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 1,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 1,
       "costMeso": 1010000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 2,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 2,
       "costMeso": 1280000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 3,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 3,
       "costMeso": 1720000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 4,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 4,
       "costMeso": 2330000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 5,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 5,
       "costMeso": 3150000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 6,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 6,
       "costMeso": 4140000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 7,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 7,
       "costMeso": 5330000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 8,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 8,
       "costMeso": 6720000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 9,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 9,
       "costMeso": 8300000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 10,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 10,
       "costMeso": 10100000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 11,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 11,
       "costMeso": 12100000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 12,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 12,
       "costMeso": 14320000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 13,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 13,
       "costMeso": 16750000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 14,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 14,
       "costMeso": 19410000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 15,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 15,
       "costMeso": 22300000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 16,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 16,
       "costMeso": 25410000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 17,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 17,
       "costMeso": 28770000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 18,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 18,
       "costMeso": 32360000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "lacheln",
-      "level": 19,
+      "symbolId": "15897fae-2c15-42de-bdd6-481c5842d373",
+      "fromLevel": 19,
       "costMeso": 36190000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 1,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 1,
       "costMeso": 1180000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 2,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 2,
       "costMeso": 1490000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 3,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 3,
       "costMeso": 2000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 4,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 4,
       "costMeso": 2710000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 5,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 5,
       "costMeso": 3650000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 6,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 6,
       "costMeso": 4800000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 7,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 7,
       "costMeso": 6170000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 8,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 8,
       "costMeso": 7770000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 9,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 9,
       "costMeso": 9590000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 10,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 10,
       "costMeso": 11650000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 11,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 11,
       "costMeso": 13950000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 12,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 12,
       "costMeso": 16490000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 13,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 13,
       "costMeso": 19270000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 14,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 14,
       "costMeso": 22300000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 15,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 15,
       "costMeso": 25600000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 16,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 16,
       "costMeso": 29150000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 17,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 17,
       "costMeso": 32970000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 18,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 18,
       "costMeso": 37050000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcana",
-      "level": 19,
+      "symbolId": "ec8a962f-c7dd-4718-88e2-e4cfcc53f927",
+      "fromLevel": 19,
       "costMeso": 41390000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 1,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 1,
       "costMeso": 1350000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 2,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 2,
       "costMeso": 1700000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 3,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 3,
       "costMeso": 2280000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 4,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 4,
       "costMeso": 3090000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 5,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 5,
       "costMeso": 4150000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 6,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 6,
       "costMeso": 5460000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 7,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 7,
       "costMeso": 7010000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 8,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 8,
       "costMeso": 8820000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 9,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 9,
       "costMeso": 10870000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 10,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 10,
       "costMeso": 13200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 11,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 11,
       "costMeso": 15790000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 12,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 12,
       "costMeso": 18660000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 13,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 13,
       "costMeso": 21790000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 14,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 14,
       "costMeso": 25200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 15,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 15,
       "costMeso": 28910000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 16,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 16,
       "costMeso": 32890000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 17,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 17,
       "costMeso": 37170000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 18,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 18,
       "costMeso": 41740000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "morass",
-      "level": 19,
+      "symbolId": "3624ec42-fae3-4a19-8d15-1aa09d38dbd2",
+      "fromLevel": 19,
       "costMeso": 46600000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 1,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 1,
       "costMeso": 1510000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 2,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 2,
       "costMeso": 1910000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 3,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 3,
       "costMeso": 2560000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 4,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 4,
       "costMeso": 3470000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 5,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 5,
       "costMeso": 4660000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 6,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 6,
       "costMeso": 6110000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 7,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 7,
       "costMeso": 7850000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 8,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 8,
       "costMeso": 9870000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 9,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 9,
       "costMeso": 12160000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 10,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 10,
       "costMeso": 14760000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 11,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 11,
       "costMeso": 17640000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 12,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 12,
       "costMeso": 20830000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 13,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 13,
       "costMeso": 24310000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 14,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 14,
       "costMeso": 28100000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 15,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 15,
       "costMeso": 32210000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 16,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 16,
       "costMeso": 36630000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 17,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 17,
       "costMeso": 41370000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 18,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 18,
       "costMeso": 46430000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "esfera",
-      "level": 19,
+      "symbolId": "071a3fe7-e307-44b4-a63d-8cb7ddf7a713",
+      "fromLevel": 19,
       "costMeso": 51810000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "cernium",
-      "level": 1,
+      "symbolId": "8668f670-e112-49a1-917e-ab7e40ba6e4a",
+      "fromLevel": 1,
       "costMeso": 36500000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "cernium",
-      "level": 2,
+      "symbolId": "8668f670-e112-49a1-917e-ab7e40ba6e4a",
+      "fromLevel": 2,
       "costMeso": 91200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "cernium",
-      "level": 3,
+      "symbolId": "8668f670-e112-49a1-917e-ab7e40ba6e4a",
+      "fromLevel": 3,
       "costMeso": 160700000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "cernium",
-      "level": 4,
+      "symbolId": "8668f670-e112-49a1-917e-ab7e40ba6e4a",
+      "fromLevel": 4,
       "costMeso": 241900000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "cernium",
-      "level": 5,
+      "symbolId": "8668f670-e112-49a1-917e-ab7e40ba6e4a",
+      "fromLevel": 5,
       "costMeso": 331500000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "cernium",
-      "level": 6,
+      "symbolId": "8668f670-e112-49a1-917e-ab7e40ba6e4a",
+      "fromLevel": 6,
       "costMeso": 426200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "cernium",
-      "level": 7,
+      "symbolId": "8668f670-e112-49a1-917e-ab7e40ba6e4a",
+      "fromLevel": 7,
       "costMeso": 522900000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "cernium",
-      "level": 8,
+      "symbolId": "8668f670-e112-49a1-917e-ab7e40ba6e4a",
+      "fromLevel": 8,
       "costMeso": 618200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "cernium",
-      "level": 9,
+      "symbolId": "8668f670-e112-49a1-917e-ab7e40ba6e4a",
+      "fromLevel": 9,
       "costMeso": 709000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "cernium",
-      "level": 10,
+      "symbolId": "8668f670-e112-49a1-917e-ab7e40ba6e4a",
+      "fromLevel": 10,
       "costMeso": 792000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcs",
-      "level": 1,
+      "symbolId": "e92629d5-19fd-4529-ad73-47072c8dc4fa",
+      "fromLevel": 1,
       "costMeso": 41700000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcs",
-      "level": 2,
+      "symbolId": "e92629d5-19fd-4529-ad73-47072c8dc4fa",
+      "fromLevel": 2,
       "costMeso": 104800000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcs",
-      "level": 3,
+      "symbolId": "e92629d5-19fd-4529-ad73-47072c8dc4fa",
+      "fromLevel": 3,
       "costMeso": 186100000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcs",
-      "level": 4,
+      "symbolId": "e92629d5-19fd-4529-ad73-47072c8dc4fa",
+      "fromLevel": 4,
       "costMeso": 282200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcs",
-      "level": 5,
+      "symbolId": "e92629d5-19fd-4529-ad73-47072c8dc4fa",
+      "fromLevel": 5,
       "costMeso": 390000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcs",
-      "level": 6,
+      "symbolId": "e92629d5-19fd-4529-ad73-47072c8dc4fa",
+      "fromLevel": 6,
       "costMeso": 506100000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcs",
-      "level": 7,
+      "symbolId": "e92629d5-19fd-4529-ad73-47072c8dc4fa",
+      "fromLevel": 7,
       "costMeso": 627400000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcs",
-      "level": 8,
+      "symbolId": "e92629d5-19fd-4529-ad73-47072c8dc4fa",
+      "fromLevel": 8,
       "costMeso": 750700000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcs",
-      "level": 9,
+      "symbolId": "e92629d5-19fd-4529-ad73-47072c8dc4fa",
+      "fromLevel": 9,
       "costMeso": 872600000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arcs",
-      "level": 10,
+      "symbolId": "e92629d5-19fd-4529-ad73-47072c8dc4fa",
+      "fromLevel": 10,
       "costMeso": 990000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "odium",
-      "level": 1,
+      "symbolId": "2e4ec65f-bd46-40a6-badb-dabc3ad8d25a",
+      "fromLevel": 1,
       "costMeso": 46900000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "odium",
-      "level": 2,
+      "symbolId": "2e4ec65f-bd46-40a6-badb-dabc3ad8d25a",
+      "fromLevel": 2,
       "costMeso": 118500000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "odium",
-      "level": 3,
+      "symbolId": "2e4ec65f-bd46-40a6-badb-dabc3ad8d25a",
+      "fromLevel": 3,
       "costMeso": 211500000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "odium",
-      "level": 4,
+      "symbolId": "2e4ec65f-bd46-40a6-badb-dabc3ad8d25a",
+      "fromLevel": 4,
       "costMeso": 322500000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "odium",
-      "level": 5,
+      "symbolId": "2e4ec65f-bd46-40a6-badb-dabc3ad8d25a",
+      "fromLevel": 5,
       "costMeso": 448500000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "odium",
-      "level": 6,
+      "symbolId": "2e4ec65f-bd46-40a6-badb-dabc3ad8d25a",
+      "fromLevel": 6,
       "costMeso": 586000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "odium",
-      "level": 7,
+      "symbolId": "2e4ec65f-bd46-40a6-badb-dabc3ad8d25a",
+      "fromLevel": 7,
       "costMeso": 732000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "odium",
-      "level": 8,
+      "symbolId": "2e4ec65f-bd46-40a6-badb-dabc3ad8d25a",
+      "fromLevel": 8,
       "costMeso": 883200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "odium",
-      "level": 9,
+      "symbolId": "2e4ec65f-bd46-40a6-badb-dabc3ad8d25a",
+      "fromLevel": 9,
       "costMeso": 1036200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "odium",
-      "level": 10,
+      "symbolId": "2e4ec65f-bd46-40a6-badb-dabc3ad8d25a",
+      "fromLevel": 10,
       "costMeso": 1188000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "dowonkyung",
-      "level": 1,
+      "symbolId": "d76fb221-4048-4696-9652-445bbe0fff9b",
+      "fromLevel": 1,
       "costMeso": 52200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "dowonkyung",
-      "level": 2,
+      "symbolId": "d76fb221-4048-4696-9652-445bbe0fff9b",
+      "fromLevel": 2,
       "costMeso": 132200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "dowonkyung",
-      "level": 3,
+      "symbolId": "d76fb221-4048-4696-9652-445bbe0fff9b",
+      "fromLevel": 3,
       "costMeso": 236800000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "dowonkyung",
-      "level": 4,
+      "symbolId": "d76fb221-4048-4696-9652-445bbe0fff9b",
+      "fromLevel": 4,
       "costMeso": 362800000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "dowonkyung",
-      "level": 5,
+      "symbolId": "d76fb221-4048-4696-9652-445bbe0fff9b",
+      "fromLevel": 5,
       "costMeso": 507000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "dowonkyung",
-      "level": 6,
+      "symbolId": "d76fb221-4048-4696-9652-445bbe0fff9b",
+      "fromLevel": 6,
       "costMeso": 666000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "dowonkyung",
-      "level": 7,
+      "symbolId": "d76fb221-4048-4696-9652-445bbe0fff9b",
+      "fromLevel": 7,
       "costMeso": 836600000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "dowonkyung",
-      "level": 8,
+      "symbolId": "d76fb221-4048-4696-9652-445bbe0fff9b",
+      "fromLevel": 8,
       "costMeso": 1015600000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "dowonkyung",
-      "level": 9,
+      "symbolId": "d76fb221-4048-4696-9652-445bbe0fff9b",
+      "fromLevel": 9,
       "costMeso": 1199800000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "dowonkyung",
-      "level": 10,
+      "symbolId": "d76fb221-4048-4696-9652-445bbe0fff9b",
+      "fromLevel": 10,
       "costMeso": 1386000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arteria",
-      "level": 1,
+      "symbolId": "bc4fcc0f-5c8e-4055-9c07-4a8b96973b45",
+      "fromLevel": 1,
       "costMeso": 57400000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arteria",
-      "level": 2,
+      "symbolId": "bc4fcc0f-5c8e-4055-9c07-4a8b96973b45",
+      "fromLevel": 2,
       "costMeso": 145900000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arteria",
-      "level": 3,
+      "symbolId": "bc4fcc0f-5c8e-4055-9c07-4a8b96973b45",
+      "fromLevel": 3,
       "costMeso": 262200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arteria",
-      "level": 4,
+      "symbolId": "bc4fcc0f-5c8e-4055-9c07-4a8b96973b45",
+      "fromLevel": 4,
       "costMeso": 403200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arteria",
-      "level": 5,
+      "symbolId": "bc4fcc0f-5c8e-4055-9c07-4a8b96973b45",
+      "fromLevel": 5,
       "costMeso": 565500000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arteria",
-      "level": 6,
+      "symbolId": "bc4fcc0f-5c8e-4055-9c07-4a8b96973b45",
+      "fromLevel": 6,
       "costMeso": 745900000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arteria",
-      "level": 7,
+      "symbolId": "bc4fcc0f-5c8e-4055-9c07-4a8b96973b45",
+      "fromLevel": 7,
       "costMeso": 941200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arteria",
-      "level": 8,
+      "symbolId": "bc4fcc0f-5c8e-4055-9c07-4a8b96973b45",
+      "fromLevel": 8,
       "costMeso": 1148100000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arteria",
-      "level": 9,
+      "symbolId": "bc4fcc0f-5c8e-4055-9c07-4a8b96973b45",
+      "fromLevel": 9,
       "costMeso": 1363500000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "arteria",
-      "level": 10,
+      "symbolId": "bc4fcc0f-5c8e-4055-9c07-4a8b96973b45",
+      "fromLevel": 10,
       "costMeso": 1584000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "carcion",
-      "level": 1,
+      "symbolId": "e46284ce-731a-49fe-b200-cdb39fb5c110",
+      "fromLevel": 1,
       "costMeso": 62600000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "carcion",
-      "level": 2,
+      "symbolId": "e46284ce-731a-49fe-b200-cdb39fb5c110",
+      "fromLevel": 2,
       "costMeso": 159600000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "carcion",
-      "level": 3,
+      "symbolId": "e46284ce-731a-49fe-b200-cdb39fb5c110",
+      "fromLevel": 3,
       "costMeso": 287600000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "carcion",
-      "level": 4,
+      "symbolId": "e46284ce-731a-49fe-b200-cdb39fb5c110",
+      "fromLevel": 4,
       "costMeso": 443500000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "carcion",
-      "level": 5,
+      "symbolId": "e46284ce-731a-49fe-b200-cdb39fb5c110",
+      "fromLevel": 5,
       "costMeso": 624000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "carcion",
-      "level": 6,
+      "symbolId": "e46284ce-731a-49fe-b200-cdb39fb5c110",
+      "fromLevel": 6,
       "costMeso": 825800000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "carcion",
-      "level": 7,
+      "symbolId": "e46284ce-731a-49fe-b200-cdb39fb5c110",
+      "fromLevel": 7,
       "costMeso": 1045800000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "carcion",
-      "level": 8,
+      "symbolId": "e46284ce-731a-49fe-b200-cdb39fb5c110",
+      "fromLevel": 8,
       "costMeso": 1280600000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "carcion",
-      "level": 9,
+      "symbolId": "e46284ce-731a-49fe-b200-cdb39fb5c110",
+      "fromLevel": 9,
       "costMeso": 1527100000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "carcion",
-      "level": 10,
+      "symbolId": "e46284ce-731a-49fe-b200-cdb39fb5c110",
+      "fromLevel": 10,
       "costMeso": 1782000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "tallahart",
-      "level": 1,
+      "symbolId": "129d8d7f-b16c-4fe8-bef9-18ac6de7f242",
+      "fromLevel": 1,
       "costMeso": 113600000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "tallahart",
-      "level": 2,
+      "symbolId": "129d8d7f-b16c-4fe8-bef9-18ac6de7f242",
+      "fromLevel": 2,
       "costMeso": 293300000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "tallahart",
-      "level": 3,
+      "symbolId": "129d8d7f-b16c-4fe8-bef9-18ac6de7f242",
+      "fromLevel": 3,
       "costMeso": 535800000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "tallahart",
-      "level": 4,
+      "symbolId": "129d8d7f-b16c-4fe8-bef9-18ac6de7f242",
+      "fromLevel": 4,
       "costMeso": 837700000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "tallahart",
-      "level": 5,
+      "symbolId": "129d8d7f-b16c-4fe8-bef9-18ac6de7f242",
+      "fromLevel": 5,
       "costMeso": 1196000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "tallahart",
-      "level": 6,
+      "symbolId": "129d8d7f-b16c-4fe8-bef9-18ac6de7f242",
+      "fromLevel": 6,
       "costMeso": 1607200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "tallahart",
-      "level": 7,
+      "symbolId": "129d8d7f-b16c-4fe8-bef9-18ac6de7f242",
+      "fromLevel": 7,
       "costMeso": 2068300000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "tallahart",
-      "level": 8,
+      "symbolId": "129d8d7f-b16c-4fe8-bef9-18ac6de7f242",
+      "fromLevel": 8,
       "costMeso": 2576000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "tallahart",
-      "level": 9,
+      "symbolId": "129d8d7f-b16c-4fe8-bef9-18ac6de7f242",
+      "fromLevel": 9,
       "costMeso": 3126900000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "tallahart",
-      "level": 10,
+      "symbolId": "129d8d7f-b16c-4fe8-bef9-18ac6de7f242",
+      "fromLevel": 10,
       "costMeso": 3718000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "geardrak",
-      "level": 1,
+      "symbolId": "85c9ffd2-88df-4449-9380-41e6def9a1c4",
+      "fromLevel": 1,
       "costMeso": 139700000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "geardrak",
-      "level": 2,
+      "symbolId": "85c9ffd2-88df-4449-9380-41e6def9a1c4",
+      "fromLevel": 2,
       "costMeso": 361700000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "geardrak",
-      "level": 3,
+      "symbolId": "85c9ffd2-88df-4449-9380-41e6def9a1c4",
+      "fromLevel": 3,
       "costMeso": 662700000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "geardrak",
-      "level": 4,
+      "symbolId": "85c9ffd2-88df-4449-9380-41e6def9a1c4",
+      "fromLevel": 4,
       "costMeso": 1039300000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "geardrak",
-      "level": 5,
+      "symbolId": "85c9ffd2-88df-4449-9380-41e6def9a1c4",
+      "fromLevel": 5,
       "costMeso": 1488500000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "geardrak",
-      "level": 6,
+      "symbolId": "85c9ffd2-88df-4449-9380-41e6def9a1c4",
+      "fromLevel": 6,
       "costMeso": 2006800000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "geardrak",
-      "level": 7,
+      "symbolId": "85c9ffd2-88df-4449-9380-41e6def9a1c4",
+      "fromLevel": 7,
       "costMeso": 2591200000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "geardrak",
-      "level": 8,
+      "symbolId": "85c9ffd2-88df-4449-9380-41e6def9a1c4",
+      "fromLevel": 8,
       "costMeso": 3238400000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "geardrak",
-      "level": 9,
+      "symbolId": "85c9ffd2-88df-4449-9380-41e6def9a1c4",
+      "fromLevel": 9,
       "costMeso": 3945000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
-      "symbol": "geardrak",
-      "level": 10,
+      "symbolId": "85c9ffd2-88df-4449-9380-41e6def9a1c4",
+      "fromLevel": 10,
       "costMeso": 4708000000,
-      "from": "2026-09-17",
-      "until": null
+      "validFrom": "2026-09-17",
+      "validUntil": null
     }
   ]
 }

@@ -204,31 +204,35 @@ export interface CashbookCategoriesTable extends TableHead {
 }
 
 export interface SymbolGroupRow {
+  id: string
   key: string
   name: string
   maxLevel: number
-  defaultFrom: number
-  defaultTo: number
+  /** 심볼을 고르는 순간 서는 강화 전 레벨 */
+  defaultFromLevel: number
+  /** 심볼을 고르는 순간 서는 강화 후 레벨 */
+  defaultToLevel: number
 }
 export interface SymbolRow {
+  id: string
   key: string
-  group: string
+  groupId: string
   name: string
   requiredLevel: number
   iconAssetId: string
 }
 export interface SymbolLevelCostRow {
-  symbol: string
-  /** 강화 전 레벨. Lv.level → level+1 의 값이다. */
-  level: number
+  symbolId: string
+  /** 강화 전 레벨. Lv.fromLevel → fromLevel+1 의 값이다. */
+  fromLevel: number
   costMeso: number
-  from?: string
-  until?: string
+  validFrom?: string
+  validUntil?: string
 }
 export interface SymbolCostsTable extends TableHead {
-  groups: SymbolGroupRow[]
+  symbolGroups: SymbolGroupRow[]
   symbols: SymbolRow[]
-  levelCosts: SymbolLevelCostRow[]
+  symbolLevelCosts: SymbolLevelCostRow[]
 }
 
 /** 헥사 코어 종류. API 타입마다 기본 종류가 하나이고, 나머지 종류는 이름 표가 코어를 가리킨다. */

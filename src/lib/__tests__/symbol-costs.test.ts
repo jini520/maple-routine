@@ -33,10 +33,9 @@ describe('symbolUpgradeCost: 여러 단계를 한 번에 올린 비용', () => {
   })
 
   it('1 에서 최고 레벨까지는 그 심볼의 비용 줄 전부의 합이다', () => {
-    const 여로비용 = symbolCostsTable
-      .get()
-      .levelCosts.filter((row) => row.symbol === 'road_of_vanishing')
-      .reduce((sum, row) => sum + row.costMeso, 0)
+    const 표 = symbolCostsTable.get()
+    const 여로 = 표.symbols.find((symbol) => symbol.key === 'road_of_vanishing')?.id
+    const 여로비용 = 표.symbolLevelCosts.filter((row) => row.symbolId === 여로).reduce((sum, row) => sum + row.costMeso, 0)
     expect(symbolUpgradeCost(심볼('road_of_vanishing'), 1, 20, 패치뒤)).toBe(여로비용)
   })
 
