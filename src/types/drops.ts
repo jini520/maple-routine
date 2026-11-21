@@ -28,7 +28,8 @@ export interface DropCandidate {
 export interface FixedDropItem {
   key: string
   name: string
-  amount?: string
+  /** 보상 수량. 표에 없으면 빠지고 1 개로 그린다. */
+  quantity?: number
 }
 export interface FixedDropGroup {
   difficulty: BossDifficulty

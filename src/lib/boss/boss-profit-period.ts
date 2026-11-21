@@ -231,6 +231,14 @@ export interface EffectivePeriod {
   until?: string
 }
 
+/** 서버 줄의 기간 칸(`validFrom` · `validUntil`)을 판정이 읽는 모양으로. */
+export function periodOf(row: { validFrom?: string; validUntil?: string }): EffectivePeriod {
+  return {
+    ...(row.validFrom === undefined ? {} : { from: row.validFrom }),
+    ...(row.validUntil === undefined ? {} : { until: row.validUntil }),
+  }
+}
+
 /** KST 벽시계를 경계와 견줄 수 있는 `YYYY-MM-DDTHH:mm` 으로. */
 function kstStamp(now: Date): string {
   const kst = toKstWallClock(now)

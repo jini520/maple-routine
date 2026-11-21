@@ -11,7 +11,6 @@ import type { BossCatalog } from './boss-catalog'
 import type { DropCategory } from './drops'
 import type { FaqBlock } from './faq'
 import type { ForceType } from './hunting-grounds'
-import type { BossDifficulty } from './scheduler'
 
 /**
  * 게임 규칙 아홉. 서버 `game_rules` 표의 한 줄이고 칸 이름도 그 표를 따른다. 보스 · 가계부 지출 · 강화 비용이 읽는다.
@@ -45,43 +44,50 @@ export interface TableHead {
   updatedAt: string | null
 }
 
-export interface BossDropRow {
-  boss: string
-  difficulty: BossDifficulty
+/** 보스 난이도의 보상 한 줄. */
+export interface BossDifficultyRewardRow {
+  /** 난이도 줄 id(`bosses` 칸의 `bossDifficulties`) */
+  bossDifficultyId: string
   category: DropCategory
-  /** 아이템 key. */
-  item: string
-  /** 고정 보상의 수량 글자. `160개`. */
-  amount?: string
-  from?: string
-  until?: string
+  /** 아이템 줄 id(`items` 칸) */
+  itemId: string
+  /** 고정 보상의 수량. 장비 · 소비 보상은 빠진다. */
+  quantity?: number
+  validFrom?: string
+  validUntil?: string
 }
 export interface BossDropsTable extends TableHead {
-  rewards: BossDropRow[]
+  bossDifficultyRewards: BossDifficultyRewardRow[]
 }
 
+/** 개봉 결과를 직접 고르는 상자 한 줄. */
 export interface DropBoxRow {
-  /** 상자의 아이템 key. */
-  item: string
+  id: string
+  /** 상자의 아이템 줄 id */
+  itemId: string
   /** 반지 상자만 든다. 장신구 상자는 둘 다 빠진다. */
-  levelMin?: number
-  levelMax?: number
-  /** 개봉 후보의 아이템 key. 차례가 화면 차례다. */
-  contents: string[]
+  ringLevelMin?: number
+  ringLevelMax?: number
+}
+/** 상자의 개봉 후보 한 줄. 한 상자의 줄 차례가 화면 차례다. */
+export interface DropBoxContentRow {
+  boxId: string
+  itemId: string
 }
 export interface DropBoxesTable extends TableHead {
-  boxes: DropBoxRow[]
+  dropBoxes: DropBoxRow[]
+  dropBoxContents: DropBoxContentRow[]
 }
 
-export interface CrystalPriceRow {
-  boss: string
-  difficulty: BossDifficulty
+export interface BossCrystalPriceRow {
+  /** 난이도 줄 id(`bosses` 칸의 `bossDifficulties`) */
+  bossDifficultyId: string
   priceMeso: number
-  from?: string
-  until?: string
+  validFrom?: string
+  validUntil?: string
 }
 export interface CrystalPricesTable extends TableHead {
-  prices: CrystalPriceRow[]
+  bossCrystalPrices: BossCrystalPriceRow[]
 }
 
 export interface WorldRow {

@@ -66,3 +66,24 @@ export function derive<T, R>(table: GameTable<T>, build: (value: T) => R): () =>
     return result as R
   }
 }
+
+/**
+ * 표 여럿에서 만든 값. `derive` 와 같고, 넘긴 표 가운데 하나라도 바뀌면 다음 읽기에서 다시 만든다.
+ *
+ * 다른 칸의 줄을 줄 id 로 가리키는 칸이 그 칸과 함께 읽을 때 쓴다. 가리키는 칸만 바뀌어도 key 로 찾는 표를 새로 만들어야
+ * 한다.
+ */
+export function deriveAll<R>(tables: readonly GameTable<unknown>[], build: () => R): () => R {
+  let sources: readonly unknown[] = []
+  let result: R | undefined
+  let built = false
+  return () => {
+    const values = tables.map((table) => table.get())
+    if (!built || values.some((value, index) => value !== sources[index])) {
+      sources = values
+      result = build()
+      built = true
+    }
+    return result as R
+  }
+}
