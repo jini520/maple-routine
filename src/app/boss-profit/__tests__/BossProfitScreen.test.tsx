@@ -12,7 +12,7 @@ import { render } from '@testing-library/react-native'
 import { ScrollView } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 
-import dropItemsData from '../../../__fixtures__/game-data/drop-items.json'
+import itemsData from '../../../__fixtures__/game-data/items.json'
 import { useBossProfitPeriod, type BossProfitPeriod } from '../../../features/boss-profit/period-query'
 import type { PeriodSnapshot } from '../../../features/boss-profit/period-snapshot'
 import { useBossProfitRound, type BossProfitRound } from '../../../features/boss-profit/round-view'
@@ -113,7 +113,7 @@ const CURRENT_MONTHLY = getCurrentBossProfitPeriod('monthly', new Date()).period
 const 주간보스 = bossesInSection('weekly')[0].key
 const 주간보스이름 = bossesInSection('weekly')[0].name
 const 다른주간보스 = bossesInSection('weekly')[1].key
-const 고가아이템 = dropItemsData.items.filter((item) => item.valuable)[0].key
+const 고가아이템 = itemsData.items.filter((item) => item.isDrop && item.isValuable)[0].key
 
 /**
  * 화면이 네 훅에서 읽는 값을 한 벌로 적는다. 케이스는 바뀐 것만 덮고 `mockStore` 가 훅마다 나눠 세운다.

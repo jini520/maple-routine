@@ -177,20 +177,17 @@ describe('getRingBoxContents (백옥 기준 그룹핑)', () => {
     expect(c?.rings.every((r) => r.hasLevel)).toBe(true)
   })
 
-  it('홍옥은 백옥 밖 반지를 맨 뒤 단일 "기타"(레벨 있음)로 묶는다', () => {
+  // 서버 아이템 표에 백옥 밖 반지를 묶는 줄이 없다. 묶을 줄 없이 고르게 하면 서버가 받지 못하는 기록이 생긴다.
+  it('홍옥은 백옥 반지만 세우고, 백옥 밖 반지와 기타는 세우지 않는다', () => {
     const c = getRingBoxContents('red_boss_ring_box')
 
     expect(c?.levels).toEqual([1, 2, 3, 4])
     const names = c!.rings.map((r) => r.name)
-    // 명명 11 + 기타 1 = 12
-    expect(c?.rings.length).toBe(12)
+    expect(c?.rings.length).toBe(11)
     expect(names).toContain('리스트레인트 링')
-    // 백옥 밖 반지는 개별 노출되지 않는다
     expect(names).not.toContain('레벨퍼프 - S링')
     expect(names).not.toContain('버든리프트 링')
-    // 기타는 맨 뒤, 레벨 있음
-    expect(names[names.length - 1]).toBe('기타')
-    expect(c?.rings.find((r) => r.name === '기타')?.hasLevel).toBe(true)
+    expect(names).not.toContain('기타')
   })
 
   it('생명은 명명 반지 + 생명의 연마석(레벨 없음)이고 기타는 없다', () => {

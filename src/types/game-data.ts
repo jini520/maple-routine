@@ -1,5 +1,5 @@
 /**
- * 우리 서버 `GET /v1/game-data` 의 칸 스물하나. 칸 하나가 표 하나이고 기기 사본과 테스트 fixture(`src/__fixtures__/game-data/`)도
+ * 우리 서버 `GET /v1/game-data` 의 칸 스물. 칸 하나가 표 하나이고 기기 사본과 테스트 fixture(`src/__fixtures__/game-data/`)도
  * 같은 모양이다.
  *
  * 응답은 전부 납작한 줄 표다. 보스 · 난이도 · 분류로 묶거나 지역 안에 사냥터를 품는 것은 조회 모듈이 한다. 선택 칸은
@@ -43,18 +43,6 @@ export interface GameRulesTable extends TableHead {
 /** 칸 맨 위의 시각. `null` 은 서버에서 받은 적 없는 사본이다. */
 export interface TableHead {
   updatedAt: string | null
-}
-
-export interface DropItemRow {
-  key: string
-  name: string
-  /** 그림 id(`assets` 칸). 그림이 없는 아이템은 빠진다. */
-  iconAssetId?: string
-  /** 고가 드롭. 세트 소속이 아니라 이 칸 하나로 판정한다. */
-  valuable: boolean
-}
-export interface DropItemsTable extends TableHead {
-  items: DropItemRow[]
 }
 
 export interface BossDropRow {
@@ -343,17 +331,6 @@ export interface ContentsTable extends TableHead {
   contents: ContentRow[]
 }
 
-export interface EquipmentItemRow {
-  key: string
-  /** 붙여 쓴 이름. */
-  name: string
-  /** 착용 레벨. `null` 은 모른다는 뜻이고 0 이 아니다. */
-  level: number | null
-}
-export interface EquipmentItemsTable extends TableHead {
-  items: EquipmentItemRow[]
-}
-
 export const POTENTIAL_RESET_TYPES = ['potential', 'additional'] as const
 export type PotentialResetTypeKey = (typeof POTENTIAL_RESET_TYPES)[number]
 export const POTENTIAL_GRADES = ['rare', 'epic', 'unique', 'legendary'] as const
@@ -528,23 +505,53 @@ export interface AppImagesTable extends TableHead {
   images: AppImageRow[]
 }
 
-/** 고르기 목록이 쓰는 아이템 표 한 줄. 종류는 서버 분류 트리의 첫 단(장비 · 장신구 · 소비 · 기타 · 캐시)이고 묶음은 둘째 단이다. */
+/** 아이템 표 한 줄. 드롭 · 강화 장비 · 고르기 목록이 모두 이 표에서 아이템을 찾는다. */
 export interface ItemRow {
+  id: string
   key: string
   name: string
-  kind: string
-  category: string
+  /** 묶음 줄 id(`itemGroups`). 묶음이 없는 아이템은 빠진다. */
+  groupId?: string
   /** 그림 id(`assets` 칸). 그림이 없는 아이템은 빠진다. */
   iconAssetId?: string
+  /** 보스 드롭으로 적을 수 있는 아이템 */
+  isDrop: boolean
+  /** 고가 드롭. 화면의 고가 배지와 연출이 이 칸 하나로 가른다. */
+  isValuable: boolean
+  /** 강화 기록이 가리키는 장비 */
+  isEquipment: boolean
+  /** 착용 레벨. 모르면 빠지고 0 이 아니다. */
+  requiredLevel?: number
+}
+/** 아이템 묶음. `type` 은 서버 분류 트리의 첫 단(장비 · 장신구 · 소비 · 기타 · 캐시)이고 묶음은 둘째 단이다. */
+export interface ItemGroupRow {
+  id: string
+  key: string
+  name: string
+  type: string
+  sortOrder: number
+}
+/** 특수스킬 반지의 레벨 줄. 레벨마다 다른 아이템 줄이고 원래 반지를 가리킨다. */
+export interface RingLevelItemRow {
+  itemId: string
+  ringItemId: string
+  ringLevel: number
+}
+/** 다른 줄로 둔 같은 물건. 상자에서 나온 연마석처럼 따로 적어야 하는 아이템이 원래 아이템을 가리킨다. */
+export interface SameItemLinkRow {
+  itemId: string
+  originalItemId: string
 }
 export interface ItemsTable extends TableHead {
   items: ItemRow[]
+  itemGroups: ItemGroupRow[]
+  ringLevelItems: RingLevelItemRow[]
+  sameItemLinks: SameItemLinkRow[]
 }
 
-/** 계약을 통과한 칸 스물하나. */
+/** 계약을 통과한 칸 스물. */
 export interface GameData {
   bosses: BossCatalog
-  dropItems: DropItemsTable
   bossDrops: BossDropsTable
   dropBoxes: DropBoxesTable
   crystalPrices: CrystalPricesTable
@@ -554,7 +561,6 @@ export interface GameData {
   symbolCosts: SymbolCostsTable
   hexaMatrix: HexaMatrixTable
   contents: ContentsTable
-  equipmentItems: EquipmentItemsTable
   enhancementCosts: EnhancementCostsTable
   mvpGrades: MvpGradesTable
   huntingGrounds: HuntingGroundsTable
@@ -569,10 +575,9 @@ export interface GameData {
 
 export type GameDataSection = keyof GameData
 
-/** 칸 이름 스물하나. 응답과 기기 사본이 같은 차례로 든다. */
+/** 칸 이름 스물. 응답과 기기 사본이 같은 차례로 든다. */
 export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'bosses',
-  'dropItems',
   'bossDrops',
   'dropBoxes',
   'crystalPrices',
@@ -582,7 +587,6 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'symbolCosts',
   'hexaMatrix',
   'contents',
-  'equipmentItems',
   'enhancementCosts',
   'mvpGrades',
   'huntingGrounds',

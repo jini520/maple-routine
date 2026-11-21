@@ -14,26 +14,26 @@
 | `types/game-data.ts` | 칸 이름(`GAME_DATA_SECTIONS`)과 칸마다의 형식 |
 | `lib/game-data/table.ts` | 칸 하나의 현재 값(`gameTable` · `createTable` · `derive`) |
 | `lib/game-data/initial.ts` | 표의 첫 값. 앱은 빈 표이고, jest 는 `src/__fixtures__/game-data/initial.ts` 로 바꿔 fixture 로 시작한다 |
-| `lib/game-data/sections.ts` | 칸 스물하나의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
+| `lib/game-data/sections.ts` | 칸 스물의 표와 계약 검사(`SECTIONS`) · 사본 계약 판(`GAME_DATA_CONTRACT`) |
 | `lib/assets/asset-files.ts` | 그림 목록(`assets` 칸)과 받은 그림의 `{ uri, width, height }` |
 | `lib/assets/image-crops.ts` | 크롭 표(`imageCrops` 칸) |
 | `lib/assets/asset-lookup.ts` | 그림 칸의 id · 앱 그림 key 를 그림 · 크롭으로 바꾸는 조회 |
 | `lib/assets/app-images.ts` | 붙일 표가 없는 앱 그림(`appImages` 칸)의 key 와 드롭 연출 프레임 |
-| `lib/item-catalog.ts` | 아이템 표(`items` 칸). key 로 찾기 · 넥슨 API 이름으로 찾기(`findItemByApiName`)와 기록의 아이템 이름(`recordedItemNameOf`) |
+| `lib/item-catalog.ts` | 아이템 표(`items` 칸). key · 줄 id 로 찾기, 묶음(`itemGroupOf`) · 반지 레벨 줄(`ringLevelOf`) · 같은 물건의 원래 줄(`originalItemOf`), 넥슨 API 이름으로 찾기(`findItemByApiName`)와 기록의 아이템 이름(`recordedItemNameOf`) |
+| `lib/game-rules.ts` | 게임 규칙(`gameRules` 칸) |
 | `features/game-data/sync.ts` | 켤 때 사본 읽기 · 잠근 채 받기 · 돌아올 때 조용히 받기(`startGameData` · `refreshGameData`) · 칸 구독 훅(`useGameTable`) |
 | `app/game-data/GameDataLock.tsx` | 다 받기 전의 잠금 화면 |
 | `server/game-data.ts` | `GET /v1/game-data` 를 ETag 와 함께 받고 칸마다 검사한다 |
 | `storage/game-data-copy.ts` | 기기 사본(SQLite `game_data_sections` · `game_data_meta`) |
 | `storage/adapters/rn-asset-files.ts` | 그림 파일(문서 디렉터리 `game-assets/`) |
-| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 스물하나. 운영 서버 응답을 떠 둔 것이다 |
+| `src/__fixtures__/game-data/` | 테스트가 쓰는 칸 스물. 서버 응답을 떠 둔 것이다. 1.0.15 계약으로 옮긴 칸은 DB 박스 서버(운영 DB 사본)의 응답이다 |
 | `lib/boss/boss-profit-period.ts` | 줄의 유효 기간 판정(`isEffectiveIn` · `isEffectiveAnytimeIn`) |
 
-## 칸 스물하나
+## 칸 스물
 
 | 칸 | 담는 것 | 조회 모듈 | 관리 화면 |
 |---|---|---|---|
 | `bosses` | 보스 26개와 난이도 줄(요구 레벨 · 파티 인원 상한 · 유효 기간), 규칙(주간 보스 선택 한도 · 주간 결정석 판매 한도 · 기본 파티 인원 상한). 보스 key 마스터 표다. 1.0.15 에서 난이도 줄을 배열 `bossDifficulties` 로 따로 내고, 규칙은 `gameRules` 칸으로 옮긴다([[ADR-099]] 결정 65) | `lib/boss/bosses` · `lib/boss/catalog` | `/admin/bosses` |
-| `dropItems` | 드롭 아이템 109개의 key · 이름 · 그림 · 고가 여부. 드롭 아이템 key 마스터 표다. 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) | `lib/drop/drop-items` | `/admin/drop-items` |
 | `bossDrops` | 보스 · 난이도마다의 보상 줄 408개(고정 보상 · 장비 · 소비, 고정 보상 수량, 유효 기간). 1.0.15 에서 배열 `bossDifficultyRewards` 로 내고 수량을 정수로 바꾼다([[ADR-099]] 결정 65) | `lib/boss/boss-drops` | `/admin/boss-drops` |
 | `dropBoxes` | 개봉 결과를 직접 고르는 상자 7개(반지 상자 5 · 장신구 상자 2)의 레벨 범위와 후보. 1.0.15 에서 배열 `dropBoxes` · `dropBoxContents` 로 낸다([[ADR-099]] 결정 65) | `lib/boss/boss-drops` | `/admin/drop-boxes` |
 | `crystalPrices` | 보스 · 난이도마다 결정석 가격 줄 106개. 한 조합에 기간 줄이 여럿일 수 있다. 1.0.15 에서 배열 `bossCrystalPrices` 로 낸다([[ADR-099]] 결정 65) | `lib/boss/boss-crystal-prices` | `/admin/crystal-prices` |
@@ -43,7 +43,6 @@
 | `symbolCosts` | 심볼 묶음 3 · 심볼 14 · 레벨별 강화 비용 줄 194개. 비용 줄에는 기간이 있다. 1.0.15 에서 배열 `symbolGroups` · `symbols` · `symbolLevelCosts` 로 내고 묶음 · 심볼을 줄 id 로 가리킨다([[ADR-099]] 결정 65) | `lib/cashbook/symbol-costs` | `/admin/symbol-costs` |
 | `hexaMatrix` | 헥사 코어 종류 6 · 종류별 레벨 비용 줄 180개(조각 · 솔 에르다) · 기본 종류가 아닌 코어 이름 50 · 직업 48 개의 코어 672 · 헥사 스탯 3 과 활성화 조각. 코어 그림은 `skills/` 에 있다. 1.0.15 에서 표 이름의 배열 다섯으로 바꾸고 이름 표를 없앤다([[ADR-099]] 결정 65) | `lib/cashbook/hexa-matrix` | `/admin/hexa-matrix` |
 | `contents` | 컨텐츠 분류 8 · 컨텐츠 41개의 넥슨 이름 · 표시 이름 · 배경 · 지역 아이콘 · 수동 모드 상한 · 요구 레벨 · 공유 범위 · 유효 기간. 컨텐츠 key 마스터 표다. 1.0.15 에서 배열 `contentCategories` · `contents` 로 내고 완료 조건(`checkType`)을 싣는다([[ADR-099]] 결정 65) | `lib/scheduler/contents` · `scheduler-content-scope` · `content-categories` | `/admin/contents` |
-| `equipmentItems` | 강화 비용을 매길 장비 467개의 key · 띄어 쓴 이름 · 착용 레벨. 장비 key 마스터 표다. 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) | `lib/equipment/equipment-items` | `/admin/equipment-items` |
 | `enhancementCosts` | 잠재 재설정 비용 32줄 · 소울 잠재 재설정 비용 4줄 · 스타포스 단계 30줄 · 슈페리얼 계열 3줄(스타포스 1회 비용) · 슈페리얼 장비 50개와 규칙 셋. 식은 `lib/enhancement/cost.ts` 에 있다. 1.0.15 에서 배열 `starforceSteps` 를 `starforceCostSteps` 로 바꾸고 슈페리얼 장비가 계열을 줄 id 로 가리키며, 규칙은 `gameRules` 칸으로 옮긴다([[ADR-099]] 결정 65) | `lib/enhancement/cost` | `/admin/enhancement-costs` |
 | `mvpGrades` | MVP 등급 7개의 경매장 수수료 · 스타포스 할인 · 명패 그림. 순서가 등급의 높낮이다. 1.0.15 에서 배열 `mvpGrades` 로 내고 줄 id 를 싣는다([[ADR-099]] 결정 65) | `lib/mvp/grades` | `/admin/mvp-grades` |
 | `huntingGrounds` | 사냥 지역 21 · 사냥터 408(인기 여부 포함) · 몬스터 레벨 줄 460. 계산 상수는 `lib/cashbook/hunting-meso.ts` 에 있다. 1.0.15 에서 배열 `huntingRegions` · `huntingGrounds` · `huntingGroundLevels` 로 내고 지역 · 사냥터를 줄 id 로 가리킨다([[ADR-099]] 결정 65) | `lib/cashbook/hunting-grounds` | `/admin/hunting-grounds` |
@@ -51,9 +50,9 @@
 | `assets` | 앱이 받는 그림 약 930장의 id · 경로 · 내용 해시 · 바이트 · 가로 · 세로 | `lib/assets/asset-files` | `/admin/assets` |
 | `imageCrops` | 보스 초상(카드 · 원형 아이콘 · 파티 모달 띠)과 컨텐츠 지역 지도의 크롭. 1.0.15 에서 배열 `imageCrops` 에 폭 · 가로 · 세로 위치를 숫자로 내고 파티 모달 띠를 걷는다([[ADR-099]] 결정 65) | `lib/assets/image-crops` | `/admin/assets` |
 | `faqs` | 화면 FAQ 의 묶음(key · 제목)과 문항(질문 · 답 블록). 묶음 하나가 시트 하나다([[ADR-150]]). 1.0.15 에서 배열 `faqSheets` · `faqItems` 로 내고 답은 빈 줄로 문단을 나눈 글이다([[ADR-099]] 결정 65) | `lib/faq/faqs` | `/admin/faqs` |
-| `gameRules` | 1.0.15 에서 생긴다. 게임 규칙 아홉(주간 보스 선택 한도 · 주간 결정석 판매 한도 · 기본 파티 인원 상한 · 관세율 · 세라자르 주화 가격 · 메소마켓 수수료율 · 감정비용 무료 상한 · 감정비용 계수 · 파괴 방지 추가분)을 한 줄로 낸다([[ADR-099]] 결정 65) | `lib/boss/bosses` · `lib/cashbook/spend-catalog` · `lib/enhancement/cost` | 규칙을 쓰는 화면(보스 · 지출 카탈로그 · 강화 비용) |
+| `gameRules` | 게임 규칙 아홉(주간 보스 선택 한도 · 주간 결정석 판매 한도 · 기본 파티 인원 상한 · 관세율 · 세라자르 주화 가격 · 메소마켓 수수료율 · 감정비용 무료 상한 · 감정비용 계수 · 파괴 방지 추가분)의 한 줄. 1.0.14 까지는 `bosses` · `spendCatalog` · `enhancementCosts` 의 `rules` 에 나뉘어 있었다([[ADR-099]] 결정 65) | `lib/game-rules` | 규칙을 쓰는 화면(보스 · 지출 카탈로그 · 강화 비용) |
 | `appImages` | 붙일 표가 없는 앱 그림 72장의 key 와 그림 id. 결정석 칩 · 강화 다섯 · 메소 주머니 · 포스 · 모르는 캐릭터 · 드롭 연출 프레임 등이다([[ADR-187]] 결정 8) | `lib/assets/app-images` | 없음(S4 에서 만든다) |
-| `items` | 분류가 있는 아이템 652개의 key · 이름 · 종류(그 묶음의 종류) · 묶음 · 그림 id. 이름 차례다. 인벤토리 넣기와 가계부 아이템 고르기가 여기서 고르고, 상자를 빼는 일과 장신구를 장비로 옮기는 일은 고르는 쪽이 한다([[ADR-187]] 결정 10). 가계부의 펼친 강화 줄도 장비 그림을 여기서 찾는다([[ADR-047]] 결정 21) | `lib/item-catalog` | `/admin/items` |
+| `items` | 아이템 698개(key · 이름 · 묶음 · 그림 · 드롭 여부 `isDrop` · 고가 여부 `isValuable` · 강화 장비 여부 `isEquipment` · 착용 레벨)와 묶음 39(종류 · 차례), 특수스킬 반지의 레벨 줄, 같은 물건의 다른 줄(상자에서 나온 연마석). 이름 차례다. 1.0.14 까지의 `dropItems` · `equipmentItems` 칸이 여기로 합쳐졌다([[ADR-099]] 결정 65). 드롭 아이템 · 강화 장비 조회는 이 표에서 칸 하나로 고른다. 인벤토리 넣기와 가계부 아이템 고르기는 여기서 고르고, 상자 · 레벨 줄 · 같은 물건의 다른 줄을 빼는 일과 장신구를 장비로 옮기는 일은 고르는 쪽이 한다([[ADR-187]] 결정 10). 가계부의 펼친 강화 줄도 장비 그림을 여기서 찾는다([[ADR-047]] 결정 21) | `lib/item-catalog` · `lib/drop/drop-items` · `lib/equipment/equipment-items` | `/admin/items` |
 
 응답은 서버 표의 줄을 그대로 펼친 목록이다. 보스 · 난이도 · 분류로 묶거나 지역 안에 사냥터를 묶는 일은 조회 모듈이 한다.
 부르는 쪽은 값이 기기 사본에서 왔는지 서버 응답인지 모른다.
@@ -143,7 +142,7 @@ DB 박스에 서버 develop 을 띄운 뒤 develop 에 머지하므로, 그때�
 
 ## 값이 기기에 반영되는 순서
 
-1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 스물하나가 계약을 지키면 표를
+1. 켤 때 `startGameData` 가 기기 사본을 읽는다. 계약 판이 `GAME_DATA_CONTRACT` 와 같고 칸 스물이 계약을 지키면 표를
    세우고 바로 연다.
 2. 사본이 없거나 읽을 수 없으면 잠금 화면을 세운다. 먼저 OTA 부팅 확인(`checkOnBoot`)이 끝나기를 기다린다. 새 번들이
    계약 판을 바꾸면 먼저 받은 게임 데이터를 재시작 뒤 또 받기 때문이다. 그다음 게임 데이터를 받는다. 처음 실행(사본이

@@ -364,9 +364,6 @@ export function planConfirmedDifficultyDropMigration(
   }
 }
 
-// '기타': 백옥 반지 상자 목록 밖의 저가치 반지들을 한 칸으로 묶는 UI 전용 항목. 그림은 마스터 표가 든다.
-export const OTHER_RING_KEY = 'other_ring'
-
 // 명명 반지 기준(baseline) = 백옥 상자 반지 집합. 데이터에서 동적 산출(하드코딩·추정 없음).
 const BASELINE_RING_BOX_KEY = 'white_boss_ring_box'
 
@@ -403,30 +400,26 @@ function optionOf(key: string, hasLevel: boolean): RingOption {
   return { key, name: dropItemNameOf(key, key), hasLevel }
 }
 
-// 반지 상자의 등급 후보와 반지 후보. 백옥 목록을 기준으로 명명 반지만 개별 노출하고, 그 밖 반지는
-// 단일 '기타'로 묶는다. 연마석은 별도(레벨 없음). 정렬: 명명 → 연마석 → 기타. 아니면 null.
+/**
+ * 반지 상자의 등급 후보와 반지 후보. 백옥 상자에 든 반지와 연마석(레벨 없음)이고, 그 밖의 반지는 고를 수 없다. 서버 아이템 표에
+ * 그 반지들을 묶을 줄이 없어서다. 차례는 반지 다음 연마석이다. 반지 상자가 아니면 `null`.
+ */
 export function getRingBoxContents(boxKey: string): RingBoxContents | null {
   const box = boxIndex().byItem.get(boxKey)
   if (box === undefined || !isRingBox(box)) return null
 
   const named: RingOption[] = []
   const whetstones: RingOption[] = []
-  let hasOther = false
 
   for (const item of box.contents) {
     if (WHETSTONE_KEYS.has(item)) {
       whetstones.push(optionOf(item, false))
     } else if (boxIndex().baselineRingKeys.has(item)) {
       named.push(optionOf(item, true))
-    } else {
-      hasOther = true
     }
   }
 
   const rings: RingOption[] = [...named, ...whetstones]
-  if (hasOther) {
-    rings.push(optionOf(OTHER_RING_KEY, true))
-  }
 
   const levels: number[] = []
   for (let level = box.levelMin; level <= box.levelMax; level += 1) levels.push(level)

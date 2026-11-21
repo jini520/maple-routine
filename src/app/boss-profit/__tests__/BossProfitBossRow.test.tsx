@@ -5,7 +5,7 @@
 // "0원 벌었다"가 같은 화면이 된다.
 import { act, fireEvent, within } from '@testing-library/react-native'
 
-import dropItemsData from '../../../__fixtures__/game-data/drop-items.json'
+import itemsData from '../../../__fixtures__/game-data/items.json'
 import { dropItemNameOf } from '../../../lib/drop/drop-items'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
 import type { RecordedDrop } from '../../../types/drops'
@@ -227,7 +227,7 @@ describe('BossProfitBossRow: 드롭 지시자', () => {
 // 안 된다. 규칙 자체는 `lib/drop/drop-order` 가 갖고 여기서는 **화면이 그것을 쓰는가**만 본다.
 // 차례는 팝오버 목록에서 읽는다. 스택은 그림뿐이라 이름을 안 든다.
 describe('BossProfitBossRow: 아이템 차례', () => {
-  const 고가키 = dropItemsData.items.filter((item) => item.valuable)[0].key
+  const 고가키 = itemsData.items.filter((item) => item.isDrop && item.isValuable)[0].key
   const 고가아이템 = dropItemNameOf(고가키, 고가키)
 
   /** 팝오버를 열고 목록에 선 이름을 **선 차례대로** 읽는다. */
@@ -364,7 +364,7 @@ describe('BossProfitBossRow: 미완료 행도 기존 동작 그대로', () => {
 })
 
 describe('BossProfitBossRow: 고가 드롭 행의 약한 빛', () => {
-  const 고가 = dropItemsData.items.filter((item) => item.valuable)[0].key
+  const 고가 = itemsData.items.filter((item) => item.isDrop && item.isValuable)[0].key
   const 고가드롭 = [{ itemKey: 고가, itemName: 고가 } as RecordedDrop]
 
   it('완료한 행에 고가 아이템이 있을 때만 빛이 깔린다', async () => {
