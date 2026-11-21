@@ -416,7 +416,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 줄 id 를 찾지 못한 기록은 지운다(사용자 지정 2026-11-18). 기기에서는 변환 때 서버 표에 없는 보스 · 난이도를 든 줄을 지우고,
   서버의 기록 표는 운영에 줄이 없어 지울 줄이 없다. 드롭 판매가 표는 난이도 칸을 없애므로(결정 26) 난이도 줄 id 가 빈 줄을
   지우지 않는다.
-- 보스를 든 기기 표의 칸과 변환 순서는 칸 설계를 확정한 뒤 [[ADR-078]] 에 적는다.
+- 기기 표마다 바뀌는 칸과 변환 차례는 [[ADR-286]] 에 적는다.
 
 ### 결정 20. 캐릭터는 서버의 `characters` 표에 한 줄로 두고, 캐릭터의 기록은 그 줄 id 로 가리킨다 (사용자 선택 2026-11-18)
 
@@ -457,8 +457,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 입력이 내 % 하나로 바뀐 뒤로([[ADR-038]]) 새 기록의 비율 합은 언제나 100000 이다. 그 칸은 바뀌기 전에 적은 기록에만 뜻이 있다.
 - 옛 기록은 1.0.15 의 기기 변환(결정 19)에서 `내 비율 ÷ 비율 합` 을 소수 셋째 자리 % 로 반올림해 옮긴다. % 로 떨어지지 않는
   비율(3 가운데 2 등)은 받는 금액이 조금 바뀐다. 10억 메소에서 3,300메소쯤이다. 화면의 % 는 이미 셋째 자리까지만 보여서 그대로다.
-- 분배 칸은 보스 파티 설정 · 기간 행 · 드롭 · 가계부 품목 · 계산기 기록에 있다. 기기 표의 칸과 계산 코드는 구현할 때 그 기능의
-  문서([[ADR-038]] · [[ADR-044]] · [[ADR-001]] · [[ADR-078]])와 함께 고친다.
+- 분배 칸은 보스 파티 설정 · 기간 행 · 드롭 · 계산기 기록에 있다. 기기 표의 칸은 [[ADR-286]] 이 바꾸고, 계산 코드는 구현할 때 그
+  기능의 문서([[ADR-038]] · [[ADR-044]] · [[ADR-001]] · [[ADR-078]])와 함께 고친다.
 
 ### 결정 22. `제외` 는 분배 방식의 값으로 두고, 고르기 전의 분배는 남기지 않는다 (사용자 지정 2026-11-18)
 
@@ -897,7 +897,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 
 - 다른 표의 줄을 가리키는 칸은 그 표의 새 이름을 따른다(결정 23). 계산기 기록 안의 캐릭터 줄을 가리키는 칸은
   `record_character_id` 다(결정 36). `character_id` 로 두면 `characters` 표의 줄로 읽힌다. 가계부 품목의
-  `item_kind_key` 는 `cashbook_item_type_key` 가 된다.
+  `item_kind_key` 는 결정 46 에서 `item_type_id` 로 바꾼다.
 - `level` 한 낱말로 된 칸은 무슨 레벨인지를 이름에 넣는다(사용자 선택 2026-11-19). 레벨의 종류가 넷인데 칸 이름이 같았다.
 
   | 지금 이름 | 새 이름 | 든 값 |
@@ -1147,8 +1147,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   `ring_level` 칸은 없앤다(결정 28). 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 인벤토리의 아이템은 아이템 표에서
   고른 것만 있고(기기 표의 `item_key` 는 비울 수 없는 칸이다), 서버에는 아이템 줄을 지우거나 key 를 바꾸는 경로가 없어서 변환에서
   줄을 찾지 못하는 일이 없다.
-- 월드를 적는 칸 `world_key` 는 `world_id` 로 바꾸고 `worlds` 의 줄 id 를 적는다. `cashbook_entries` ·
-  `cashbook_entry_fragment_uses` · `inventory_items` · `enhancement_totals` · `shared_content_progress` 다섯 표다. 수익 건은 이미 `world_id` 로
+- 월드를 적는 칸 `world_key` 는 `world_id` 로 바꾸고 `worlds` 의 줄 id 를 적는다. `cashbook_entries` · `inventory_items` ·
+  `enhancement_totals` · `shared_content_progress` 네 표다. `cashbook_entry_fragment_uses` 의 월드 칸은 결정 54 에서 없앴다. 수익 건은 이미 `world_id` 로
   적는다(결정 19). 기기에서 서버로 올리는 표의 `world_key` 도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 캐릭터 목록처럼 올리지
   않는 기기 표는 이 문서가 다루지 않는다.
   - 월드를 모르는 줄은 지금처럼 빈 값이다. 앱은 넥슨이 준 월드 이름을 월드 표에서 찾아 key 를 얻고, 표에 없는 이름이면 비운다
@@ -1160,8 +1160,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   19)에서 컨텐츠 줄 id 로 찾게 바꾼다. 변환에서 줄을 찾지 못하는 값은 없다. 앱은 지금도 컨텐츠 표에 없는 key 를 읽을 때 버리고
   (`storage/shared-progress-cache.ts`), 서버는 컨텐츠 줄을 지우지 않고 `until` 로 닫는다.
 - `mvp_grade_history.grade` 는 `grade_id` 로 바꾸고 `mvp_grades` 의 줄 id 를 적는다. 두 표가 모두 `mvp` 로 시작해서 그 말은 칸
-  이름에 넣지 않는다(결정 36). 지금은 enum `mvp_grade` 의 값을 적는다. enum 은 등급 표의 `key` 칸이 계속 쓴다. 등급 없음은
-  지금처럼 빈 값이다. 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 등급은 일곱이고 등급 표에 줄이 모두 있어서
+  이름에 넣지 않는다(결정 36). 지금은 enum `mvp_grade` 의 값을 적는다. enum 은 등급 표의 `key` 칸이 계속 쓴다. 기기에는 등급이 빈
+  줄이 없다. 옛 판이 남긴 빈 줄은 켤 때 지운다(`features/mvp-grade/empty-rows.ts`). 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 등급은 일곱이고 등급 표에 줄이 모두 있어서
   변환에서 줄을 찾지 못하는 값이 없다.
 - `enhancement_anomalies.item_key` 는 없앤다(사용자 선택 2026-11-19). 읽는 곳이 없는 값이다(결정 27). 2026-11-19 운영 2,445줄이
   모두 비어 있고, 서버는 이 칸을 적기만 하고 읽지 않는다. 줄의 대부분(2,429줄)이 장비 표에 없는 장비라 가리킬 장비 줄이 없다.
@@ -1346,8 +1346,7 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   - 지금은 분류를 `entry_type` 과 `category_key` 두 칸으로 가린다. 기타(`etc`)가 수입과 지출 양쪽에 있기 때문이다. 줄 id 는 그
     둘을 한 칸으로 가린다.
   - enum `cashbook_entry_type` 은 분류 표가 계속 쓴다.
-  - 서버에는 기록의 `entry_type` 을 조건으로 쓰는 조회가 없다. 인덱스 `cashbook_entries_category_date_idx` 는 `category_id` ·
-    `entry_date` 로 바꾼다.
+  - 서버에는 기록의 `entry_type` 을 조건으로 쓰는 조회가 없다. 서버 표의 인덱스는 메이플 ID 하나(`cashbook_entries_maple_id_idx`)다.
 - 앱이 받는 게임 데이터는 분류마다 `id` 를 함께 낸다. 보스와 같은 방식이다(결정 19).
 - 기기 표도 1.0.15 의 기기 변환(결정 19)에서 `entry_type` · `category_key` 두 칸을 `category_id` 한 칸으로 바꾼다.
   - 기기에는 분류를 담은 SQL 표가 없다. 분류는 서버에서 받은 게임 데이터에 있다. 그래서 기기의 조회는 분류의 줄 id 를 게임
@@ -1396,14 +1395,14 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 일간인지 주간인지는 컨텐츠 줄에서도 알 수 있지만 `type` 의 값을 줄이지 않는다. 일간 · 주간 탭의 구분을 저장할 때 굳히는 것이
   지금의 규칙이다(`types/scheduler.ts`).
 - 기기의 목록(Preferences `manualTrackedContent:{ocid}`)도 1.0.15 의 기기 변환(결정 19)에서 항목마다 종류와 대상의 줄 id 를 적게
-  바꾼다. 변환에서 줄을 찾지 못한 항목은 지금처럼 뺀다. 앱은 지금도 컨텐츠 표나 보스 표에서 찾지 못한 항목을 읽을 때 뺀다
-  (`storage/manual-tracked-content.ts`).
+  바꾼다. 변환에서 줄을 찾지 못한 항목은 뺀다(결정 19). 지금 앱은 이름으로 적힌 옛 항목 가운데 표에서 찾지 못한 것만 읽을 때
+  빼고(`storage/manual-tracked-content.ts`), key 로 적힌 항목은 표에 없어도 남긴다(`lib/scheduler/manual-content-merge.ts`).
 
 ### 결정 48. 메이플 ID 는 `maple_ids` 표의 줄 id 로 가리킨다 (사용자 선택 2026-11-19)
 
 - 메이플 ID 에 붙는 기록 표는 메이플 ID 해시 글자 대신 메이플 ID 줄의 id 를 적는다(결정 39). `characters` · `cashbook_entries` ·
-  `inventory_items` · `mvp_grade_history` · `shared_content_progress` · `maple_id_names` 의 `maple_id` 와
-  `cashbook_entry_fragment_uses.source_maple_id` 일곱 곳이다.
+  `inventory_items` · `mvp_grade_history` · `shared_content_progress` · `maple_id_names` 의 `maple_id` 여섯 곳이다.
+  `cashbook_entry_fragment_uses` 의 메이플 ID 칸은 결정 54 에서 없앴다.
 - 표 `nexon_account_maple_ids` 의 이름을 `maple_ids` 로 바꾼다. 한 줄이 메이플 ID 하나다. 해시를 적는 칸 `maple_id` 는 `hash` 로
   바꾼다. 표 이름이 메이플 ID 라 그 말을 칸에 다시 붙이지 않는다(결정 36). 요청 헤더 `x-maple-id-hash` 와 같은 말이다.
 
@@ -1574,7 +1573,10 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   - 한 줄은 기록 · 가져온 곳 · 캐릭터(`entry_id` · `fragment_source` · `character_id`)로 가린다. `character_id` 는 사냥 조각을 가져온
     캐릭터이고 기타 조각 줄은 비어 있다. 사냥 조각은 기록의 캐릭터와 다른 캐릭터에서 가져올 수 있어서 이 칸은 둔다.
   - 가져온 줄의 차례는 적지 않는다. 조각을 옮기는 코드는 캐릭터로 줄을 찾는다(`storage/fragment-moves.ts`).
-  - 기기는 기타 조각의 남은 개수를 세는 조회 다섯 곳(`storage/inventory.ts`)에서 기록의 캐릭터로 메이플 ID 를 찾는다.
+  - 기기는 기타 조각의 남은 개수를 세는 조회 다섯 곳(`storage/inventory.ts`)에서 기록의 메이플 ID · 월드로 센다. 캐릭터 기록은
+    캐릭터로 메이플 ID 를 찾는다.
+  - 인벤토리에서 기타 조각을 판 기록은 캐릭터가 없는 메이플 ID 기록이라, 판 조각의 월드를 기록의 `world_id` 에 적는다([[ADR-286]]
+    결정 9).
 - enum `fragment_source` 의 값 `other` 를 `inventory` 로 바꾼다. 인벤토리에 넣은 기타 조각이다. 값은 `hunt` · `inventory` 다.
 - `cashbook_entry_hunt_inputs.boosts` 를 없애고 참 · 거짓 칸 둘로 나눈다. `uses_wealth_potion` 은 소형 재물 획득의 비약을 켰는지,
   `uses_union_wealth` 는 유니온의 부를 켰는지다(결정 40).
@@ -1588,8 +1590,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   `union_wealth_tier` 다. 유니온의 부 단계(1 ~ 3)이고, 유니온 등급으로 읽히지 않게 한다.
 - 계산기 사냥인지 직접 입력 사냥인지는 지금처럼 `typed_meso` 가 찼는지로 안다([[ADR-049]] 결정 1). 종류 칸을 따로 더하지 않는다.
   처치했는지를 `clear_recorded_by` 가 찼는지로 아는 것과 같다(결정 27).
-- `cashbook_entry_transfer_inputs` 와 `cashbook_entry_exchange_inputs` 의 칸은 그대로 둔다. 이전 시트와 환전 시트를 다시 열 때 쓰는
-  입력이다. `inventory_items` 는 결정 39 · 46 · 48 에서 정한 그대로다.
+- `cashbook_entry_transfer_inputs` 와 `cashbook_entry_exchange_inputs` 는 이름만 다른 결정에 맞춘다(`fee_auto` →
+  `fee_follows_mvp_grade` 결정 40, `sell_point_per_100m_meso` · `buy_point_per_100m_meso` → `sell_maple_point_per_100m_meso` ·
+  `buy_maple_point_per_100m_meso` 결정 53). 칸을 더하거나 빼지 않는다. 이전 시트와 환전 시트를 다시 열 때 쓰는 입력이다. `inventory_items` 는 결정 39 · 46 · 48 에서 정한 그대로다.
 - 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같이 바꾼다. 칸과 값의 새 이름은 Claude 가 낸 후보다.
 
 ### 결정 55. 굳은 날은 넥슨 계정마다 한 줄로 두고, 강화 합계에는 받은 API 종류를 적지 않는다 (사용자 선택 2026-11-19)

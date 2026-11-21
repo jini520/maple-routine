@@ -20,7 +20,6 @@
 | `features/cashbook/legacy-entry-accounts.ts` | 주인을 모르는 옛 손입력을 그 넥슨 계정의 하나뿐인 메이플 ID 로 옮기는 부팅 단계 |
 | `features/cashbook/row-icon.ts` | 하루 목록 줄의 그림과 펼친 강화 줄의 장비 그림(`enhancedItemIconOf`) |
 | `features/cashbook/merged-rows.ts` | 하루 목록에서 헥사 매트릭스 · 아이템 구매 기록을 캐릭터마다 한 줄로 합치기(`mergeDayRows`), 합친 줄의 두 줄 · 금액 · 그림. 펼친 칸의 두 줄은 `records.ts` 의 `spendTileOf` 다 |
-| `features/cashbook/exclusions.ts` | 강화 장비 한 줄을 가계부에서 빼고 되돌리기. 표식은 그 기록의 `excluded_from_cashbook` 칸이다 |
 | `features/cashbook/ledger-query.ts` | 날짜별 줄 쿼리 `ledgerDays(from, to)`. 기록 표의 판이 오르면 다시 읽는다. today · 통계도 같은 열쇠를 쓴다 |
 | `features/ledger/LedgerDataProvider.tsx` · `useLedgerData.ts` | 넥슨 API 회차를 관리하는 데이터 공급자와 그것을 읽는 훅. 진행률 · 모달 · 강화 범위를 들고 기록은 들지 않는다. 화면은 범위를 알리고 다시 받아 달라고 요청한다 |
 | `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` |
