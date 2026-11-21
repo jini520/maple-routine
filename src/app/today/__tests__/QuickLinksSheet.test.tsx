@@ -5,13 +5,14 @@
 // ④ `적용` 해야 저장된다. 하나도 고르지 않으면 `적용` 을 누를 수 없다
 // ⑤ 서버 분류 표에 없는 가계부 분류는 본문 타일도 트레이 칸도 서지 않는다
 import type { ReactNode } from 'react'
-import { fireEvent, waitFor, within } from '@testing-library/react-native'
+import { act, fireEvent, waitFor, within } from '@testing-library/react-native'
 
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { DEFAULT_QUICK_LINKS } from '../../../features/quick-links/config'
 import { useQuickLinksStore } from '../../../features/quick-links/store'
 import type { QuickLinksConfig } from '../../../types/quick-links'
 import { QuickLinksSheet } from '../QuickLinksSheet'
+import { cashbookCategoriesTable } from '../../../lib/cashbook/categories'
 
 // 시트 라이브러리를 맨 뷰로 바꾼다. 여기서 보는 것은 시트 안에 무엇이 서는가다.
 jest.mock('@gorhom/bottom-sheet', () => {
@@ -134,8 +135,15 @@ describe('적용', () => {
 })
 
 describe('가계부 분류 타일', () => {
-  // 앱에 든 테스트 데이터는 옛 표라 `사냥 전리품 판매` 줄이 없다.
+  const 표 = cashbookCategoriesTable.get()
+  // 시트가 아직 마운트돼 있어 표를 되돌리면 다시 그린다. 그 갱신도 `act` 안에서 끝낸다.
+  afterEach(() => act(() => cashbookCategoriesTable.set(표)))
+
   it('서버 분류 표에 없는 분류는 본문과 트레이에 서지 않고, 그대로 `적용` 하면 구성에서 빠진다', async () => {
+    cashbookCategoriesTable.set({
+      ...표,
+      cashbookCategories: 표.cashbookCategories.filter((each) => each.key !== 'hunt_loot_sale'),
+    })
     const { view } = await 시트({ rows: 1, ids: ['profit', 'income-hunt-loot-sale'] })
 
     expect(view.queryByTestId('quick-links-tile-income-hunt-loot-sale')).toBeNull()

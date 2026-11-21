@@ -187,10 +187,10 @@ describe('분류', () => {
   // 분류는 서버 표가 들고 관리 화면에서 더한다. 앱에 폼이 없는 분류를 누를 수 있으면 빈 시트가 서므로 못 누르게 둔다.
   it('서버가 더한 분류는 이름만 서고 눌러도 1차에 남는다', async () => {
     const original = cashbookCategoriesTable.get()
-    const 지출 = original.categories.find((each) => each.entryType === 'spend')!
+    const 지출 = original.cashbookCategories.find((each) => each.entryType === 'spend')!
     cashbookCategoriesTable.set({
       ...original,
-      categories: [...original.categories, { ...지출, key: 'hexa_skill', name: '헥사 스킬 강화' }],
+      cashbookCategories: [...original.cashbookCategories, { ...지출, id: 'c-hexa-skill', key: 'hexa_skill', name: '헥사 스킬 강화' }],
     })
     try {
       const view = await 그리기({}, null)
@@ -3604,25 +3604,6 @@ describe('가격을 치는 버프', () => {
 // 두 분류는 시트만 있고 기록은 `기타` 로 저장한다. 서버 분류 표에 줄이 있어야 카드가 서서, 케이스마다 표에 두 줄을 더한다.
 
 describe('주간 보스 수입 이전 · 메소마켓 환전 수수료 분류', () => {
-  let original: ReturnType<typeof cashbookCategoriesTable.get>
-
-  beforeEach(() => {
-    original = cashbookCategoriesTable.get()
-    const 기타 = original.categories.find((each) => each.entryType === 'spend' && each.key === 'etc')!
-    cashbookCategoriesTable.set({
-      ...original,
-      categories: [
-        ...original.categories,
-        { ...기타, key: 'boss_income_transfer', name: '주간 보스 수입 이전', description: '부계정 메소 송금 수수료' },
-        { ...기타, key: 'meso_market_exchange', name: '메소마켓 환전 수수료', description: '월드 간 메소 이동 비용' },
-      ],
-    })
-  })
-
-  afterEach(() => {
-    cashbookCategoriesTable.set(original)
-  })
-
   async function 새분류고르기(view: Rendered, key: 'boss_income_transfer' | 'meso_market_exchange'): Promise<void> {
     await act(async () => {
       fireEvent.press(view.getByTestId(`spend-sheet-category-${key}`))

@@ -113,7 +113,7 @@ async function missingImages(assets: AssetFilesTable): Promise<AssetFilesTable['
 }
 
 function bytesOf(files: AssetFilesTable['files']): number {
-  return files.reduce((sum, f) => sum + f.size, 0)
+  return files.reduce((sum, f) => sum + f.sizeBytes, 0)
 }
 
 /**
@@ -141,7 +141,7 @@ async function downloadImages(
         errors.push(error)
         return
       }
-      done += file.size
+      done += file.sizeBytes
       onBytes(done, total)
     }
   }

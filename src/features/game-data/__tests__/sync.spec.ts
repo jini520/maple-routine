@@ -40,7 +40,7 @@ const clearCopy = jest.mocked(clearGameDataCopy)
 
 const SHA_A = 'a'.repeat(64)
 const SHA_B = 'b'.repeat(64)
-const file = (path: string, sha: string, size = 100) => ({ id: path, path, file: `${sha}.webp`, sha256: sha, size, width: 1, height: 1 })
+const file = (id: string, sha: string, sizeBytes = 100) => ({ id, file: `${sha}.webp`, sha256: sha, sizeBytes, width: 1, height: 1 })
 
 /** fixture 칸 전부에 그림 목록만 바꾼 서버 응답. */
 function 응답(files: ReturnType<typeof file>[], worldsUpdatedAt = 't1', etag = '"e1"'): GameDataFetch {
@@ -136,7 +136,7 @@ describe('처음 켤 때 (사본 없음)', () => {
     expect(files.downloads.sort()).toEqual([`https://test/assets/${SHA_A}.webp`, `https://test/assets/${SHA_B}.webp`])
     expect(saveCopy).toHaveBeenCalledWith(expect.objectContaining({ contract: GAME_DATA_CONTRACT, etag: '"e1"' }))
     expect(saveCopy.mock.invocationCallOrder[0]).toBeGreaterThan(jest.mocked(files.download).mock.invocationCallOrder[1]!)
-    expect(assetFilesTable.get().files.map((f) => f.path)).toEqual(['bosses/a.webp', 'items/b.webp'])
+    expect(assetFilesTable.get().files.map((f) => f.id)).toEqual(['bosses/a.webp', 'items/b.webp'])
     expect(getGameDataStatus().phase).toBe('ready')
   })
 

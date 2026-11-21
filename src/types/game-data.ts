@@ -182,6 +182,7 @@ export interface SpendCatalogTable extends TableHead {
 }
 
 export interface CashbookCategoryRow {
+  id: string
   entryType: 'income' | 'spend'
   /** 기록이 든다. 앱이 입력 폼을 모르는 key 도 온다. */
   key: string
@@ -194,7 +195,8 @@ export interface CashbookCategoryRow {
   /** 묶음이 없는 분류의 수량 단위. */
   unit?: string
 }
-export interface CashbookItemKindRow {
+export interface CashbookItemTypeRow {
+  id: string
   key: string
   name: string
   /** 수량 단위. 없으면 수량이 없다(장비). */
@@ -203,8 +205,8 @@ export interface CashbookItemKindRow {
 }
 /** 분류는 수입 · 지출 순서이고 그 안은 차례대로다. */
 export interface CashbookCategoriesTable extends TableHead {
-  categories: CashbookCategoryRow[]
-  itemKinds: CashbookItemKindRow[]
+  cashbookCategories: CashbookCategoryRow[]
+  cashbookItemTypes: CashbookItemTypeRow[]
 }
 
 export interface SymbolGroupRow {
@@ -453,13 +455,10 @@ export interface HuntingGroundsTable extends TableHead {
 /** 서버 그림 한 장. 앱은 게임 데이터 표의 그림 칸이 든 `id` 로 찾고 기기에는 `file`(내용 해시 이름)로 둔다. */
 export interface AssetFileRow {
   id: string
-  /** 서버 경로. `bosses/bellona.webp` 처럼 디렉터리와 파일 이름이다 */
-  path: string
   /** `<sha256>.<확장자>`. 서버 `/assets/` 아래와 기기 디렉터리의 이름이다 */
   file: string
   sha256: string
-  /** 바이트 */
-  size: number
+  sizeBytes: number
   width: number
   height: number
 }

@@ -8,7 +8,7 @@
  * key 목록은 여기 코드에 남는다. 앱이 그 key 로 입력 폼을 가르기 때문이다. 서버가 더한 분류는 key 가 이 목록에
  * 없어 목록에 이름만 서고 못 고른다. 앱에 그 폼이 생길 때까지다.
  */
-import type { CashbookCategoriesTable, CashbookCategoryRow, CashbookItemKindRow } from '../../types/game-data'
+import type { CashbookCategoriesTable, CashbookCategoryRow, CashbookItemTypeRow } from '../../types/game-data'
 import {
   compact,
   isBoolean,
@@ -91,11 +91,13 @@ export interface ItemKind {
 const ENTRY_TYPES = ['income', 'spend'] as const
 
 function toCategory(row: Row): CashbookCategoryRow | null {
+  if (!isNonEmptyString(row.id)) return null
   if (!isOneOf(row.entryType, ENTRY_TYPES) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
   if (!isNonEmptyString(row.cardTitle) || !isNonEmptyString(row.iconAssetId) || typeof row.description !== 'string') return null
   const unit = optional(row.unit, isNonEmptyString)
   if (unit === false) return null
   return compact({
+    id: row.id,
     entryType: row.entryType,
     key: row.key,
     name: row.name,
@@ -106,11 +108,12 @@ function toCategory(row: Row): CashbookCategoryRow | null {
   })
 }
 
-function toItemKind(row: Row): CashbookItemKindRow | null {
-  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isBoolean(row.hasTariff)) return null
+function toItemType(row: Row): CashbookItemTypeRow | null {
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
+  if (!isBoolean(row.hasTariff)) return null
   const unit = optional(row.unit, isNonEmptyString)
   if (unit === false) return null
-  return compact({ key: row.key, name: row.name, unit, hasTariff: row.hasTariff })
+  return compact({ id: row.id, key: row.key, name: row.name, unit, hasTariff: row.hasTariff })
 }
 
 /** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
@@ -118,16 +121,19 @@ export function parseCashbookCategories(value: unknown): CashbookCategoriesTable
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const categories = rowsOf(value.categories, toCategory)
-  const itemKinds = rowsOf(value.itemKinds, toItemKind)
-  if (categories === null || itemKinds === null) return null
-  if (!uniqueBy(categories, (each) => `${each.entryType}.${each.key}`) || !uniqueBy(itemKinds, (each) => each.key)) {
-    return null
-  }
-  return { updatedAt, categories, itemKinds }
+  const cashbookCategories = rowsOf(value.cashbookCategories, toCategory)
+  const cashbookItemTypes = rowsOf(value.cashbookItemTypes, toItemType)
+  if (cashbookCategories === null || cashbookItemTypes === null) return null
+  if (!uniqueBy(cashbookCategories, (each) => `${each.entryType}.${each.key}`)) return null
+  if (!uniqueBy(cashbookCategories, (each) => each.id) || !uniqueBy(cashbookItemTypes, (each) => each.key)) return null
+  return { updatedAt, cashbookCategories, cashbookItemTypes }
 }
 
-export const cashbookCategoriesTable = gameTable('cashbookCategories', { updatedAt: null, categories: [], itemKinds: [] }, parseCashbookCategories)
+export const cashbookCategoriesTable = gameTable(
+  'cashbookCategories',
+  { updatedAt: null, cashbookCategories: [], cashbookItemTypes: [] },
+  parseCashbookCategories,
+)
 
 function categoryOf<K extends string>(row: CashbookCategoryRow, knownKeys: readonly K[]): CashbookCategory {
   return compact({
@@ -142,12 +148,19 @@ function categoryOf<K extends string>(row: CashbookCategoryRow, knownKeys: reado
 }
 
 const index = derive(cashbookCategoriesTable, (table) => ({
-  spend: table.categories.filter((row) => row.entryType === 'spend').map((row) => categoryOf(row, SPEND_CATEGORY_KEYS)),
-  income: table.categories.filter((row) => row.entryType === 'income').map((row) => categoryOf(row, INCOME_CATEGORY_KEYS)),
-  itemKinds: table.itemKinds
-    .filter((row): row is CashbookItemKindRow & { key: ItemKindKey } => isOneOf(row.key, ITEM_KIND_KEYS))
+  spend: table.cashbookCategories.filter((row) => row.entryType === 'spend').map((row) => categoryOf(row, SPEND_CATEGORY_KEYS)),
+  income: table.cashbookCategories.filter((row) => row.entryType === 'income').map((row) => categoryOf(row, INCOME_CATEGORY_KEYS)),
+  /** 줄 id → 분류. 지출 묶음이 분류를 줄 id 로 가리킨다. */
+  byId: new Map(table.cashbookCategories.map((row) => [row.id, row])),
+  itemKinds: table.cashbookItemTypes
+    .filter((row): row is CashbookItemTypeRow & { key: ItemKindKey } => isOneOf(row.key, ITEM_KIND_KEYS))
     .map((row): ItemKind => compact({ key: row.key, name: row.name, unit: row.unit, hasTariff: row.hasTariff })),
 }))
+
+/** 줄 id 로 찾은 분류 줄. 모르는 id 는 `null` 이다. */
+export function findCashbookCategoryById(id: string): CashbookCategoryRow | null {
+  return index().byId.get(id) ?? null
+}
 
 /** 지출 분류. **차례가 곧 화면**이다. */
 export function spendCategories(): readonly CashbookCategory[] {

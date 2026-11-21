@@ -10,18 +10,17 @@ const SHA256 = /^[0-9a-f]{64}$/
 const FILE = /^([0-9a-f]{64})\.(png|webp|jpg)$/
 
 function toFile(row: Row): AssetFileRow | null {
-  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.path)) return null
+  if (!isNonEmptyString(row.id)) return null
   if (typeof row.file !== 'string' || typeof row.sha256 !== 'string') return null
   // 기기에서 받은 파일을 이 해시로 확인한다. 이름과 해시가 다르면 확인할 수 없다.
   const file = FILE.exec(row.file)
   if (!SHA256.test(row.sha256) || file?.[1] !== row.sha256) return null
-  if (!isPositiveInteger(row.size) || !isPositiveInteger(row.width) || !isPositiveInteger(row.height)) return null
+  if (!isPositiveInteger(row.sizeBytes) || !isPositiveInteger(row.width) || !isPositiveInteger(row.height)) return null
   return {
     id: row.id,
-    path: row.path.normalize('NFC'),
     file: row.file,
     sha256: row.sha256,
-    size: row.size,
+    sizeBytes: row.sizeBytes,
     width: row.width,
     height: row.height,
   }
@@ -33,7 +32,7 @@ export function parseAssetFiles(value: unknown): AssetFilesTable | null {
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
   const files = rowsOf(value.files, toFile)
-  if (files === null || !uniqueBy(files, (file) => file.id) || !uniqueBy(files, (file) => file.path)) return null
+  if (files === null || !uniqueBy(files, (file) => file.id)) return null
   return { updatedAt, files }
 }
 
