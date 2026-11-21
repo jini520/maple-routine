@@ -97,7 +97,10 @@ async function getSharedProgress(key: string): Promise<SharedProgressMap> {
   return toMap(await readStoredSharedProgress(key))
 }
 
-/** 표에 없는 컨텐츠 · 꼴이 다른 기간 key 는 적을 수 없어 던진다. */
+/**
+ * 진행 하나를 적는다. 표에 없는 컨텐츠이거나 넥슨이 표와 다른 주기로 준 값은 기간 값으로 적을 수 없어 그 항목만 건너뛴다.
+ * 던지면 그 캐릭터의 회차 전체가 실패로 떨어진다. 읽기도 그런 항목을 버린다.
+ */
 async function setSharedProgressEntry(
   key: string,
   contentKey: string,
@@ -105,7 +108,7 @@ async function setSharedProgressEntry(
 ): Promise<void> {
   await whenRecordsReleased()
   const stored = storedSharedProgressEntryOf(contentKey, entry)
-  if (stored === null) throw new Error(`공유 진행을 적을 수 없다: ${contentKey} ${entry.lastUpdatedBucket}`)
+  if (stored === null) return
   const current = await readStoredSharedProgress(key)
   current[stored.contentId] = stored.stored
   await preferences.set(key, JSON.stringify(current))
@@ -127,7 +130,7 @@ export async function getWorldSharedProgress(accountId: string, worldKey: string
   return getSharedProgress(key)
 }
 
-/** 표에 없는 월드는 원장을 가리킬 수 없어 던진다. */
+/** 표에 없는 월드는 원장을 가리킬 수 없어 건너뛴다. 읽기도 그 월드를 빈 원장으로 읽는다. */
 export async function setWorldSharedProgressEntry(
   accountId: string,
   worldKey: string,
@@ -135,7 +138,10 @@ export async function setWorldSharedProgressEntry(
   entry: SharedProgressEntry,
 ): Promise<void> {
   const key = worldLedgerKeyOf(accountId, worldKey)
-  if (key === null) throw new Error(`게임 데이터에 없는 월드다: ${worldKey}`)
+  if (key === null) {
+    await whenRecordsReleased()
+    return
+  }
   await setSharedProgressEntry(key, contentKey, entry)
 }
 

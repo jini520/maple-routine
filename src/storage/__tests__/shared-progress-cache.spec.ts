@@ -55,10 +55,17 @@ describe('world 원장', () => {
     await expect(getWorldSharedProgress('maple-b', 'elysium')).resolves.toEqual({})
   })
 
-  // 원장 키는 월드 줄 id 로 짓는다. 표에 없는 월드는 가리킬 원장이 없다.
-  it('표에 없는 월드는 빈 원장으로 읽고, 적으려 하면 던진다', async () => {
+  // 원장 키는 월드 줄 id 로 짓는다. 표에 없는 월드는 가리킬 원장이 없다. 던지면 그 캐릭터의 회차 전체가 실패로 떨어진다.
+  it('표에 없는 월드는 빈 원장으로 읽고, 적으려 하면 아무것도 남기지 않고 건너뛴다', async () => {
     await expect(getWorldSharedProgress('maple-a', '없는월드')).resolves.toEqual({})
-    await expect(setWorldSharedProgressEntry('maple-a', '없는월드', 'monster_park', dailyEntry)).rejects.toThrow()
+    await expect(setWorldSharedProgressEntry('maple-a', '없는월드', 'monster_park', dailyEntry)).resolves.toBeUndefined()
+    await expect(getWorldSharedProgress('maple-a', '없는월드')).resolves.toEqual({})
+  })
+
+  // 넥슨이 표와 다른 주기로 준 값은 기간 값으로 적을 수 없다. 한 항목 때문에 회차가 떨어지면 안 된다.
+  it('표에 없는 컨텐츠의 진행은 적지 않고 건너뛴다', async () => {
+    await expect(setWorldSharedProgressEntry('maple-a', 'scania', 'no_such_content', dailyEntry)).resolves.toBeUndefined()
+    await expect(getWorldSharedProgress('maple-a', 'scania')).resolves.toEqual({})
   })
 })
 
