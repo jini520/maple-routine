@@ -66,6 +66,8 @@ function toHistoryRecord(record: BossDropRecord): DropHistoryRecord {
     splitFeePercent: record.splitFeePercent ?? undefined,
     saleFeeAuto: record.saleFeeAuto || undefined,
     splitFeeAuto: record.splitFeeAuto || undefined,
+    // 빠뜨리면 today 와 히스토리가 지난 금액을 지금 셈법으로 다시 세어, 셈법이 바뀐 옛 기록의 금액이 바뀐다.
+    saleReceivedMeso: record.saleReceivedMeso ?? undefined,
   }
 }
 

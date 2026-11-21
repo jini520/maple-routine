@@ -193,6 +193,20 @@ describe('보스 기록 단계: 지우는 것', () => {
     expect(all('SELECT id FROM boss_drops')).toEqual([{ id: 'd-first' }])
   })
 
+  // DB 를 열 때 도는 칸 보강과 인덱스는 옛 표의 칸을 쓴다. 변환 뒤에 돌면 없는 표를 만지다 DB 가 열리지 않는다.
+  it('변환한 DB 를 다시 열어도 옛 표를 다시 만들지 않고 열린다', async () => {
+    await convert([party('p1', 'lotus', 'hard'), clearedPeriod('pe1', 'p1', '2026-11-19', "'even', 1, NULL, NULL, NULL, NULL, NULL")])
+    await closeBossProfitDb()
+    __setMigrationCeilingForTest(null)
+
+    await getBossProfitDbUngated()
+
+    const tables = all(`SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'boss_%' ORDER BY name`).map((row) => row.name)
+    expect(tables).toEqual(['boss_drops', 'boss_profit_entries', 'boss_split_settings'])
+    expect(all(`SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'boss_drops_period'`)).toEqual([])
+    expect(all('SELECT id FROM boss_profit_entries')).toEqual([{ id: 'pe1' }])
+  })
+
   it('옛 표 셋을 지우고 새 표 셋만 남긴다', async () => {
     await convert([])
 

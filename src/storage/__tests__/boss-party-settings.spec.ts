@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
- * 보스 관리 설정 저장을 진짜 SQLite 로 태운다. 설정은 `boss_parties` 의 분배 칸이다. 처치나 드롭이 먼저
- * 생겨 만들어진 조합 행은 분배 칸이 비어 있고, 그 행은 설정이 없는 것으로 읽혀야 한다(솔로).
+ * 보스 관리 설정 저장을 진짜 SQLite 로 태운다. 설정은 `boss_split_settings` 의 줄이고 분배를 정한 줄만 있다. 처치나
+ * 드롭만 있는 조합은 설정 줄이 없어 설정이 없는 것으로 읽혀야 한다.
  */
 import {
   type BossPartySetting,

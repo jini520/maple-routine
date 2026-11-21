@@ -156,7 +156,7 @@ describe('월드 리프 옮기기', () => {
       .sort((a, b) => `${a.ocid}${a.periodKey}`.localeCompare(`${b.ocid}${b.periodKey}`))
   }
 
-  it('보스 기록: 새 캐릭터에 조합이 없으면 조합째 옮기고, 기간의 월드는 리프 전 월드로 둔다', async () => {
+  it('보스 기록: 새 캐릭터에 없는 수익 건과 설정을 옮기고, 수익 건의 월드는 리프 전 월드로 둔다', async () => {
     await setBossPartySetting({ ocid: 'old', bossKey: 'lotus', difficulty: 'hard', partySize: 3, ...EVEN, updatedAt: '2026-09-01T00:00:00.000Z' })
     await upsertBossProfitRecord(record({ ocid: 'old', periodKey: '2026-09-03' }))
     await upsertBossProfitRecord(record({ ocid: 'old', periodKey: '2026-09-10' }))

@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
- * 드롭을 다른 기간 행으로 옮기는 흐름을 진짜 SQLite 로 태운다. 처치 난이도가 확정되거나 직접 완료의 난이도를
- * 고치면, 드롭이 자기 식별자를 들고 새 난이도의 기간 행으로 옮겨 가고 옛 기간 행은 지워져야 한다.
+ * 드롭을 다른 수익 건으로 옮기는 흐름을 진짜 SQLite 로 태운다. 처치 난이도가 확정되거나 직접 완료의 난이도를
+ * 고치면, 드롭이 자기 식별자를 들고 새 난이도의 수익 건으로 옮겨 가고 옛 수익 건은 지워져야 한다.
  */
 import { migrateDropsToConfirmedDifficulty } from '../drops-loader'
 import { cancelManualCompletion, saveManualCompletion, type ManualCompletionInput } from '../../manual-completion/record'
@@ -33,7 +33,7 @@ const AT = '2026-10-03T00:00:00.000Z'
 const NOW = new Date('2026-10-05T00:00:00.000Z')
 
 describe('난이도 확정 이관', () => {
-  it('드롭이 식별자와 가격을 들고 확정 난이도로 옮겨 가고, 옛 기간 행은 지워진다', async () => {
+  it('드롭이 식별자와 가격을 들고 확정 난이도로 옮겨 가고, 옛 수익 건은 지워진다', async () => {
     await replaceBossDropRecords('o', 'lucid', 'hard', '2026-10-01', [
       {
         dropRecordId: null, category: 'equipment', itemKey: 'twilight_mark', itemName: '', quantity: 1,
@@ -86,7 +86,7 @@ describe('직접 완료', () => {
     return id
   }
 
-  it('난이도를 고치면 처치와 드롭이 새 난이도로 옮겨 가고 옛 기간 행은 남지 않는다', async () => {
+  it('난이도를 고치면 처치와 드롭이 새 난이도로 옮겨 가고 옛 수익 건은 남지 않는다', async () => {
     await saveManualCompletion(input, NOW)
     const id = await seedDrop('hard')
 
@@ -99,7 +99,7 @@ describe('직접 완료', () => {
     expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_profit_entries').get())).toEqual({ n: 1 })
   })
 
-  it('취소하면 처치와 드롭이 사라지고 기간 행도 남지 않는다', async () => {
+  it('취소하면 처치와 드롭이 사라지고 수익 건도 남지 않는다', async () => {
     await saveManualCompletion(input, NOW)
     await seedDrop('hard')
 

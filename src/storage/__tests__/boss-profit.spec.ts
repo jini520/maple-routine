@@ -133,7 +133,7 @@ describe('upsertBossProfitRecord', () => {
   })
 })
 
-describe('처치 읽기는 open 행을 세지 않는다', () => {
+describe('처치 읽기는 처치 전 줄을 세지 않는다', () => {
   beforeEach(async () => {
     await seedOpenRows()
     await upsertBossProfitRecord(record())
@@ -206,7 +206,7 @@ describe('처치 날짜', () => {
 })
 
 describe('deleteBossProfitRecord', () => {
-  it('드롭이 없으면 기간 행을 지운다', async () => {
+  it('드롭이 없으면 수익 건을 지운다', async () => {
     await upsertBossProfitRecord(record())
     await deleteBossProfitRecord(key)
 
@@ -292,7 +292,7 @@ describe('분배 방식 `제외`', () => {
     expect((await getBossProfitRecords(['ocid-1'], ['2026-10-01']))[0]).toMatchObject({ payoutMeso: 0, crystalExcluded: true })
   })
 
-  it('처치를 걷어 드롭만 남은 기간 행은 `제외` 와 한도 초과 표시도 비운다', async () => {
+  it('처치를 걷어 드롭만 남은 수익 건은 `제외` 와 한도 초과 표시도 비운다', async () => {
     await upsertBossProfitRecord(record({ payoutMeso: 0, crystalExcluded: true }))
     await replaceBossDropRecords('ocid-1', 'black_mage', 'extreme', '2026-10-01', [
       { dropRecordId: null, category: 'fixed', itemKey: 'black_boss_ring_box', itemName: '', quantity: 1 },

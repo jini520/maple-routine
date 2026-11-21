@@ -232,7 +232,7 @@ describe('crystalPayoutMeso: 분배 방식 `제외`', () => {
     expect(crystalPayoutMeso(1_000_000_000, 2, { myShare: 2, sharesTotal: 3, splitFeePercent: 3, excluded: true })).toBe(0)
   })
 
-  it('`제외` 가 아니면 숨긴 분배 그대로 센다', () => {
+  it('`제외` 가 아니면 분배대로 센다', () => {
     expect(crystalPayoutMeso(900, 3, { ...EVEN, excluded: false })).toBe(300)
   })
 })

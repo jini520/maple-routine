@@ -294,7 +294,7 @@ export function pruneUnobtainableDrops(
 }
 
 /**
- * SQLite `boss_drop_records` 한 행에서 이 계산에 필요한 부분만 추린 모양. 저장 계층 타입을 쓰지
+ * 저장 계층이 읽은 드롭 기록(`boss_drops`)에서 이 계산에 필요한 부분만 추린 모양. 저장 계층 타입을 쓰지
  * 않는 이유는 `lib/` 가 `storage/` 를 의존하지 않기 위함이다.
  */
 export interface StoredDropRecord extends RecordedDrop {
@@ -331,6 +331,8 @@ function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
     splitFeePercent: record.splitFeePercent,
     saleFeeAuto: record.saleFeeAuto,
     splitFeeAuto: record.splitFeeAuto,
+    // 다른 난이도로 옮겨도 가격 · 분배 · 수수료는 그대로라 저장된 받는 메소를 이어 든다.
+    saleReceivedMeso: record.saleReceivedMeso,
   }
 }
 

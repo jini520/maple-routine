@@ -32,7 +32,7 @@ export function crystalLimitLineKey(worldKey: string, weekKey: string): string {
 
 /** 한도 판정에 드는 처치 기록 한 건. */
 export interface CrystalLimitRecord {
-  /** 기간 행 id */
+  /** 수익 건 id */
   id: string
   ocid: string
   bossKey: string
@@ -59,7 +59,7 @@ export interface CrystalLimitOptions {
 /**
  * 한도 줄마다 넘친 개수만큼, 내 몫이 낮은 처치부터 고르는 함수.
  *
- * @returns 0 메소로 읽을 기간 행 id
+ * @returns 0 메소로 읽을 수익 건 id
  */
 export function overCrystalLimitIds(
   records: readonly CrystalLimitRecord[],

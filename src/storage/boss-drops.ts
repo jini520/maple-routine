@@ -45,21 +45,21 @@ export interface BossDropRecord {
   recordedAt: string // ISO 8601
   /** 판매가를 적은 시각. 같은 값을 다시 저장하면 그대로다. 판매가가 없으면 `null` */
   pricedAt: string | null
-  /** 기록 시점의 월드 이름. 기간 행의 `world_key` 로 찾는다. 모르면 `null`. */
+  /** 기록 시점의 월드 이름. 수익 건의 `world_id` 로 찾는다. 모르면 `null`. */
   world: string | null
-  /** 기간 행의 월드 key. */
+  /** 수익 건의 월드 key. */
   worldKey: string | null
   /** 저장된 `price_status` 를 화면의 말로. `'entered'`(entered) · `'excluded'`(skipped) · `null`(pending). */
   priceState: 'entered' | 'excluded' | null
   /** 입력한 판매가. 값을 매긴 드롭만 있고 1 이상이다. */
   priceMeso: number | null
-  /** `ratio` 의 비율 합. **기본은 이 칸을 안 본다.** */
-  /** 어떻게 나눴나. **아래 두 칸의 뜻을 이 칸이 정한다.** 없으면 방식을 모르는 옛 기록이다. */
+  /** 어떻게 나눴나. **아래 두 칸의 뜻을 이 칸이 정한다.** 가격을 적지 않은 드롭은 없다. */
   priceSplitMode: 'even' | 'ratio' | null
   /** `even` 의 분배 인원. **비율은 이 칸을 안 본다.** */
   pricePartySize: number | null
+  /** `ratio` 의 비율 합. 저장된 값을 읽으면 100000 이다. **기본은 이 칸을 안 본다.** */
   priceShare: number | null
-  /** 내 비율 스냅샷. `null` 은 1 이라 이 칸이 없던 옛 기록의 금액이 안 움직인다. */
+  /** `ratio` 의 내 비율(% 의 1000 배). 균등은 비어 있다. 지난 금액은 저장된 받는 메소가 지킨다. */
   priceMyShare: number | null
   /** 판매 수수료(%). `null` 은 없음 */
   saleFeePercent: number | null
@@ -77,7 +77,7 @@ export interface BossDropRecord {
 type DropPriceStatus = 'pending' | 'entered' | 'skipped'
 
 /**
- * 기록할 월드. 기간 행에 한 번 적는다. 그 기간의 처치와 드롭이 같은 월드다.
+ * 기록할 월드. 수익 건에 한 번 적는다. 그 기간의 처치와 드롭이 같은 월드다.
  *
  * 이미 적힌 월드는 덮지 않는다. 기록 시점의 스냅샷이라 가격만 고치는 저장이 그것을 지우면 안 된다.
  */
