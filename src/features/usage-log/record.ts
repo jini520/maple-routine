@@ -8,7 +8,11 @@ import type { UsageEvent } from '../../types/usage-event'
 import { createUsageTracker } from './tracker'
 
 /** 세는 동작. 다른 동작을 셀 때는 여기에 이름을 더하고 부르는 자리를 더한다. 서버는 64자까지 받는다. */
-export type UsageActionName = 'drop-save' | 'cashbook-add' | `device-conversion-failed:${number}`
+export type UsageActionName =
+  | 'drop-save'
+  | 'cashbook-add'
+  | `device-conversion-failed:${number}`
+  | 'device-conversion-failed:preferences'
 
 /** 사건 하나를 쌓는 함수. 저장소가 열리지 않으면 그 사건을 버린다. */
 export async function appendQuietly(event: UsageEvent): Promise<void> {

@@ -20,6 +20,10 @@ jest.mock('../../../storage/sqlite/device-conversion', () => {
   const actual = jest.requireActual('../../../storage/sqlite/device-conversion')
   return { __esModule: true, ...actual, runDeviceConversion: jest.fn() }
 })
+jest.mock('../../../storage/preferences-conversion', () => {
+  const actual = jest.requireActual('../../../storage/preferences-conversion')
+  return { __esModule: true, ...actual, runPreferencesConversion: jest.fn() }
+})
 
 import { getAuthConfig } from '../../../storage/api-key'
 import { getRepresentativeCharacter, getTrackedCharacterOcids } from '../../../storage/character-selection'
@@ -27,6 +31,7 @@ import { __resetStoragePortsForTest, setSqlitePort } from '../../../storage/port
 import { closeBossProfitDb, getBossProfitDb } from '../../../storage/sqlite/db'
 import { __setMigrationCeilingForTest, DB_VERSION } from '../../../storage/sqlite/migrations'
 import { DeviceConversionError, runDeviceConversion } from '../../../storage/sqlite/device-conversion'
+import { PreferencesConversionError, runPreferencesConversion } from '../../../storage/preferences-conversion'
 import { createRealSqlite, type RealSqlite } from '../../../storage/sqlite/__tests__/node-sqlite-port'
 import { whenGameDataReady } from '../../game-data/sync'
 import { reportUsageActionNow } from '../../usage-log/flush'
@@ -38,6 +43,7 @@ import {
 } from '../run'
 
 const run = jest.mocked(runDeviceConversion)
+const runPreferences = jest.mocked(runPreferencesConversion)
 const gameDataReady = jest.mocked(whenGameDataReady)
 const report = jest.mocked(reportUsageActionNow)
 
@@ -65,6 +71,7 @@ beforeEach(() => {
   setSqlitePort(real.port)
   gameDataReady.mockResolvedValue()
   run.mockResolvedValue()
+  runPreferences.mockResolvedValue()
 })
 
 afterEach(async () => {
@@ -114,6 +121,21 @@ describe('기기 변환을 돌리는 때', () => {
 
     expect(getDeviceConversionPhase()).toBe('done')
     expect(tables.opened()).toBe(true)
+  })
+
+  // Preferences 의 기록도 옛 모양을 새 코드가 읽지 못한다. SQLite 단계는 뒤에 더 늘어서 번호를 이어 매기지 않고 따로 적는다.
+  it('SQLite 변환이 끝난 뒤 같은 연결로 Preferences 변환을 돌고, 그것이 던지면 막은 채 preferences 로 알린다', async () => {
+    runPreferences.mockRejectedValueOnce(new PreferencesConversionError(new Error('disk full')))
+
+    startDeviceConversion()
+    const tables = watchRecordTables()
+    await settle()
+
+    expect(run.mock.invocationCallOrder[0]).toBeLessThan(runPreferences.mock.invocationCallOrder[0]!)
+    expect(runPreferences.mock.calls[0]?.[0]).toBe(run.mock.calls[0]?.[0])
+    expect(getDeviceConversionPhase()).toBe('failed')
+    expect(report).toHaveBeenCalledWith('device-conversion-failed:preferences')
+    expect(tables.opened()).toBe(false)
   })
 
   // 단계 밖의 실패(DB 열기 등)도 화면을 열지 못하게 하므로 알린다. 단계 번호가 없어 0 으로 적는다.
