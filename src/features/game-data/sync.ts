@@ -73,6 +73,21 @@ export function getGameDataStatus(): GameDataStatus {
   return status
 }
 
+/**
+ * 게임 데이터가 `ready` 가 되면 끝나는 약속. 이미 `ready` 면 곧바로 끝난다. 받기에 실패해도 끝나지 않고 `다시 시도` 로 준비될 때
+ * 끝난다. 기기 변환이 줄 id 를 새 게임 데이터에서 찾으므로 이것을 기다린다.
+ */
+export function whenGameDataReady(): Promise<void> {
+  if (status.phase === 'ready') return Promise.resolve()
+  return new Promise((resolve) => {
+    const unsubscribe = subscribe(() => {
+      if (status.phase !== 'ready') return
+      unsubscribe()
+      resolve()
+    })
+  })
+}
+
 /** 잠금 화면이 구독하는 상태. */
 export function useGameDataStatus(): GameDataStatus {
   return useSyncExternalStore(subscribe, getGameDataStatus)

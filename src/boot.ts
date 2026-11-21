@@ -20,6 +20,7 @@ import {
 } from './native/ports'
 import { setAssetFilesPort, setPreferencesPort, setSqlitePort } from './storage/ports'
 import { startGameData } from './features/game-data/sync'
+import { startDeviceConversion } from './features/device-conversion/run'
 import { useLiveUpdateStore } from './features/live-update/store'
 import { nexonMaintenanceReporter } from './features/nexon-maintenance/store'
 import { setFriendsStream, setMaintenanceReporter } from './nexon/http'
@@ -137,8 +138,12 @@ export function installPorts(): void {
  * OTA 부팅 확인도 여기서 띄운다. 처음 실행인지와 잠근 채인지는 사본을 읽어야 알고, 잠근 채면 게임 데이터 받기가
  * 그 확인을 기다린다. 두 기능이 서로를 모르게 이어 주는 자리가 여기다.
  *
+ * 1.0.15 기기 변환도 여기서 건다. 게임 데이터가 준비되면 돌고, 끝날 때까지 기록 표 접근을 막는다.
+ *
  * 결과를 안 기다린다. 화면은 `features/game-data/sync` 의 상태를 구독해 다 받기 전에는 잠금 화면을 그린다.
  */
 export function loadGameData(): void {
+  // 기록 표 막기를 먼저 건다. 막기 전에 저장소를 건드리면 옛 모양의 표를 새 코드가 읽는다.
+  startDeviceConversion()
   void startGameData((context) => useLiveUpdateStore.getState().checkOnBoot(context))
 }

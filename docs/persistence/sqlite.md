@@ -14,6 +14,7 @@
 | `storage/sqlite/cashbook-tables.ts` | 가계부 기록 표 여섯과 인벤토리 표의 정의 · 날짜 인덱스 · 인벤토리 한 줄 기준 인덱스 |
 | `storage/sqlite/record-key-tables.ts` | 버전 16 이 uuid 기본키로 다시 쓴 다섯 표(캐릭터 · 월드 리프 · 강화 조회 기록 · MVP 등급 · 메이플 ID 소속)의 정의 |
 | `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 23) |
+| `storage/sqlite/device-conversion.ts` | 1.0.15 기기 변환의 단계 목록과 돌리는 함수(`runDeviceConversion`). 아직 안 돈 단계를 한 트랜잭션으로 돌리고 마친 번호를 `device_conversion` 에 적는다. 돌 단계가 있으면 먼저 `…-before-1.0.15.db` 사본을 뜬다([[ADR-286]] 결정 1) |
 | `storage/sqlite/transaction.ts` | 쓰기 여럿을 트랜잭션 하나로 묶는 `inTransaction`. 같은 연결의 트랜잭션은 차례로 돈다. 겹쳐 열면 SQLite 가 뒤의 것을 거절하기 때문이다(앱을 켤 때 계정 칸 채우기와 강화 합계 옮기기가 겹쳤다). 그래서 `work` 안에서 다시 부르면 멈춘다. 트랜잭션 안에서 못 도는 `VACUUM` 은 같은 줄 뒤에 세운다(`outsideTransaction`) |
 | `storage/legacy-space.ts` | 옛 표를 다 지운 뒤 한 번 사본 파일을 지우고 `VACUUM` 하는 회수([[ADR-078]] 결정 11) |
 | `storage/sqlite/uuid.ts` | 행 식별자를 SQLite 가 만드는 식(`NEW_UUID_SQL`) |
@@ -38,12 +39,16 @@
 
 열기는 10초, 닫기(`closeBossProfitDb`)는 5초 상한이 있다. OTA 적용과 데이터 삭제는 리로드 전에 닫는다.
 
+`getBossProfitDb()` 는 1.0.15 기기 변환이 끝날 때까지 기다린다. 부팅(`boot.ts` 의 `loadGameData`)이 막기를 걸고 변환이 끝나면
+푼다. 새 앱 코드가 옛 모양의 기록 표를 읽지 않게 하려는 것이다. 게임 데이터 사본 · 조회 캐시 · 사용 로그와 변환은 잠금 화면
+동안에도 써야 해서 기다리지 않는 `getBossProfitDbUngated()` 를 쓴다([[ADR-286]] 결정 1).
+
 ## 테이블
 
-외래키는 보스 기록 표 셋과 가계부 기록 표 셋에만 있다. `boss_parties` → `boss_party_periods` → `boss_drops`, 그리고
+외래키는 보스 기록 표 셋과 가계부 기록 표 여섯에만 있다. `boss_parties` → `boss_party_periods` → `boss_drops`, 그리고
 `cashbook_entries` → `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` · `cashbook_entry_transfer_inputs` ·
 `cashbook_entry_exchange_inputs` 차례로 부모를 가리키고, 부모를 지우면 자식도
-지워진다(`ON DELETE CASCADE`). 다른 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서,
+지워진다(`ON DELETE CASCADE`). 가계부 품목의 `inventory_item_id` 도 `inventory_items` 를 가리킨다. 다른 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서,
 한쪽만 지우면 짝이 없는 행이 남는다. 그래서 데이터 삭제는 서로 이어 읽는 표를 한 그룹으로 함께 지운다(`lifecycle.md`).
 
 `데이터 삭제` 칸은 데이터 삭제의 어느 그룹이 그 표를 지우는지다. `남긴다` 는 어떤 그룹도 지우지 않는 표다. `행 단위` 는
@@ -81,6 +86,8 @@
 | `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 못 보낸 드롭. 평소에는 비어 있다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 줄은 전송이 보내지 않고 지운다(`registry.ts` 에 없는 종류다) | `storage/server-sync-queue.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-018]] |
 | `game_data_sections` | `id`(uuid, `section` 은 UNIQUE) | 게임 데이터 사본의 칸 하나. 서버 응답의 그 칸 JSON 을 그대로 든다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
 | `game_data_meta` | `id`(uuid, `key` 는 UNIQUE) | 사본의 표식(계약 판 · ETag). 칸과 한 트랜잭션으로 쓰고, 있으면 다 받은 사본이다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
+| `usage_events` | `id`(uuid) | 서버로 보낼 사용 로그. 백그라운드로 갈 때와 다음 실행 때 통째로 꺼내 보내고, 꺼낸 줄은 지운다. 신원이 없는 기기에서 끝없이 자라지 않게 500줄까지만 둔다 | `storage/usage-events.ts` | 남긴다 | [[ADR-158]] |
+| `device_conversion` | 없음(한 줄) | 1.0.15 기기 변환이 마친 단계의 번호. 지우면 바뀐 표를 다시 바꾸려다 던진다 | `storage/sqlite/device-conversion.ts` | 남긴다 | [[ADR-286]] |
 | `query_cache` | `id`(uuid, `key` 는 UNIQUE) | TanStack Query 캐시의 사본. 저장 표식(`meta.persist`)이 있는 쿼리(넥슨의 스케줄 · 캐릭터 기본 정보 · 회차 · 메소 획득량 · 이벤트 월드 이름, 서버 · 넥슨의 공지 다섯 분류)만 키 하나의 JSON 으로 든다. 기기 DB 를 읽는 쿼리와 결산 · 직접 완료 · 캐릭터 목록 · 파티 약속은 저장하지 않는다 | `storage/query-cache.ts` | 지운다 (캐시) | [[ADR-142]] |
 
 ### 칸
@@ -117,6 +124,8 @@
 | `server_sync_queue` | `id` NN · `record_type` NN · `record_id` NN UNIQUE · `attempts` NN(기본 0) · `last_error` · `created_at` NN |
 | `game_data_sections` | `id` NN · `section` NN UNIQUE · `body` NN |
 | `game_data_meta` | `id` NN · `key` NN UNIQUE · `value` NN |
+| `usage_events` | `id` NN · `type` NN · `name` NN · `duration_ms` · `occurred_at` NN |
+| `device_conversion` | `version` NN |
 | `query_cache` | `id` NN · `key` NN UNIQUE · `value` NN |
 
 분배 조건은 세 표가 같이 쓰는 여섯 칸이다. `split_mode`(`even` · `ratio`) · `party_size` · `my_share` · `shares_total` ·
