@@ -108,41 +108,82 @@ export interface CrystalShare {
   crystalExcluded?: boolean
 }
 
+/** 분배를 적는 칸 다섯. 이름은 서버 칸과 같다. Preferences 에 든 계산기 기록이 이 모양으로 적는다. */
+export interface SplitColumns {
+  splitType: 'even' | 'ratio' | 'excluded'
+  partySize: number | null
+  /** 내 몫. % 에 1000 을 곱한 정수. 비율일 때만 있다 */
+  splitShareMillipercent: number | null
+  splitFeePercent: number | null
+  splitFeeFollowsMvpGrade: boolean
+}
+
 /**
  * 결정석 분배를 칸 다섯으로. `제외` 는 인원 · 내 몫 · 요율을 비운다. 비율은 `내 비율 ÷ 비율 합` 을 % 의 1000 배로 반올림한다.
  *
  * @param keepFee 처치한 수익 건이면 참. 그 처치를 계산한 요율이라 등급을 따라도 남긴다. 설정과 처치 전 줄은 따르면 비운다
  */
-export function splitValues(share: CrystalShare, keepFee: boolean): (string | number | null)[] {
-  if (share.crystalExcluded === true) return ['excluded', null, null, null, 1]
+export function splitColumnsOf(share: CrystalShare, keepFee: boolean): SplitColumns {
+  if (share.crystalExcluded === true) {
+    return { splitType: 'excluded', partySize: null, splitShareMillipercent: null, splitFeePercent: null, splitFeeFollowsMvpGrade: true }
+  }
   const follows = share.splitFeeAuto === true || share.splitFeePercent === null
   const fee = keepFee || !follows ? share.splitFeePercent : null
   if (share.crystalMyShare !== null && share.crystalSharesTotal !== null) {
     const millipercent = Math.round((share.crystalMyShare * 100_000) / Math.max(1, share.crystalSharesTotal))
-    return ['ratio', share.partySize, Math.min(100_000, Math.max(0, millipercent)), fee, follows ? 1 : 0]
+    return {
+      splitType: 'ratio',
+      partySize: share.partySize,
+      splitShareMillipercent: Math.min(100_000, Math.max(0, millipercent)),
+      splitFeePercent: fee,
+      splitFeeFollowsMvpGrade: follows,
+    }
   }
-  return ['even', share.partySize, null, fee, follows ? 1 : 0]
+  return { splitType: 'even', partySize: share.partySize, splitShareMillipercent: null, splitFeePercent: fee, splitFeeFollowsMvpGrade: follows }
+}
+
+/** 결정석 분배를 표의 칸 다섯 값으로. `SPLIT_COLUMN_NAMES` 와 같은 차례다. */
+export function splitValues(share: CrystalShare, keepFee: boolean): (string | number | null)[] {
+  const columns = splitColumnsOf(share, keepFee)
+  return [
+    columns.splitType,
+    columns.partySize,
+    columns.splitShareMillipercent,
+    columns.splitFeePercent,
+    columns.splitFeeFollowsMvpGrade ? 1 : 0,
+  ]
 }
 
 /**
- * 칸 다섯을 결정석 분배로. 비율의 합은 100000 이다. `제외` 는 인원이 없어 솔로(1)로 읽는다. 분배를 고르지 않은 줄은 `null`.
+ * 칸 다섯을 결정석 분배로. 비율의 합은 100000 이다. `제외` 는 인원이 없어 솔로(1)로 읽는다. 분배 방식이 없으면 `null`.
  */
-export function shareOf(row: Record<string, unknown>): CrystalShare | null {
-  const fee = numberOrNull(row.split_fee_percent)
-  const splitFeeAuto = Number(row.split_fee_follows_mvp_grade) === 1
-  if (row.split_type === 'excluded') {
+export function shareOfColumns(columns: Omit<SplitColumns, 'splitType'> & { splitType: unknown }): CrystalShare | null {
+  const fee = columns.splitFeePercent
+  const splitFeeAuto = columns.splitFeeFollowsMvpGrade
+  if (columns.splitType === 'excluded') {
     return { partySize: 1, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: fee, splitFeeAuto, crystalExcluded: true }
   }
-  if (row.split_type !== 'even' && row.split_type !== 'ratio') return null
-  const ratio = row.split_type === 'ratio'
+  if (columns.splitType !== 'even' && columns.splitType !== 'ratio') return null
+  const ratio = columns.splitType === 'ratio'
   return {
-    partySize: numberOrNull(row.party_size) ?? 1,
-    crystalMyShare: ratio ? numberOrNull(row.split_share_millipercent) : null,
+    partySize: columns.partySize ?? 1,
+    crystalMyShare: ratio ? columns.splitShareMillipercent : null,
     crystalSharesTotal: ratio ? 100_000 : null,
     splitFeePercent: fee,
     splitFeeAuto,
     crystalExcluded: false,
   }
+}
+
+/** 표의 줄을 결정석 분배로. 분배를 고르지 않은 줄은 `null`. */
+export function shareOf(row: Record<string, unknown>): CrystalShare | null {
+  return shareOfColumns({
+    splitType: row.split_type,
+    partySize: numberOrNull(row.party_size),
+    splitShareMillipercent: numberOrNull(row.split_share_millipercent),
+    splitFeePercent: numberOrNull(row.split_fee_percent),
+    splitFeeFollowsMvpGrade: Number(row.split_fee_follows_mvp_grade) === 1,
+  })
 }
 
 /** 저장된 칸을 정수로. 비었으면 `null`. */

@@ -1,14 +1,17 @@
 /**
- * 1.0.15 기기 변환을 부팅에서 한 번 돌리는 흐름. 새 게임 데이터가 준비되면 변환을 돌리고, 끝날 때까지 기록 표 접근을 막는다.
+ * 1.0.15 기기 변환을 부팅에서 한 번 돌리는 흐름. 새 게임 데이터가 준비되면 변환을 돌리고, 끝날 때까지 기록 표와 Preferences 에
+ * 든 기록의 접근을 막는다.
  *
- * 화면은 `useDeviceConversionStatus` 를 구독해 끝나기 전에는 앱을 열지 않는다. 새 앱 코드는 옛 모양의 기록 표를 읽지 못한다.
+ * 화면은 `useDeviceConversionStatus` 를 구독해 끝나기 전에는 앱을 열지 않는다. 새 앱 코드는 옛 모양의 기록을 읽지 못한다.
  */
 import { useSyncExternalStore } from 'react'
 
 import { mainNexonAccountIdOf } from '../../lib/nexon-credential'
 import { getAuthConfig } from '../../storage/api-key'
 import { getRepresentativeCharacter, getTrackedCharacterOcids } from '../../storage/character-selection'
-import { holdRecordTablesUntil, getBossProfitDbUngated } from '../../storage/sqlite/db'
+import { PreferencesConversionError, runPreferencesConversion } from '../../storage/preferences-conversion'
+import { holdRecordsUntil } from '../../storage/record-hold'
+import { getBossProfitDbUngated } from '../../storage/sqlite/db'
 import {
   DeviceConversionError,
   runDeviceConversion,
@@ -48,8 +51,8 @@ export function useDeviceConversionStatus(): DeviceConversionPhase {
 }
 
 /**
- * 단계가 쓰는 Preferences 의 값. 메인 넥슨 계정과 화면이 대표로 세우는 캐릭터다. Preferences 는 기록 표 막기와 상관없이 읽힌다.
- * 기록 표를 거치는 조회(`getBossProfitDb()`)는 변환이 끝나기를 기다려 여기서 부르면 멈춘다.
+ * 단계가 쓰는 Preferences 의 값. 메인 넥슨 계정과 화면이 대표로 세우는 캐릭터다. 이 값이 든 키는 변환이 바꾸지 않아 기록 막기와
+ * 상관없이 읽힌다. 기록을 거치는 조회(`getBossProfitDb()` · 변환한 키의 저장소)는 변환이 끝나기를 기다려 여기서 부르면 멈춘다.
  */
 async function conversionContextOf(): Promise<DeviceConversionContext> {
   const [config, stored, tracked] = await Promise.all([
@@ -63,19 +66,30 @@ async function conversionContextOf(): Promise<DeviceConversionContext> {
   }
 }
 
-/** 겹쳐 부르면 도는 것을 기다린다. 실패하면 단계 번호를 사용 로그로 곧바로 보낸다. 던지지 않는다. */
+/** 사용 로그에 적는 멈춘 단계. SQLite 단계는 번호, Preferences 단계는 `preferences`, 그 밖(사본 · DB 열기)은 0 이다. */
+function failedStepOf(error: unknown): number | 'preferences' {
+  if (error instanceof DeviceConversionError) return error.step
+  return error instanceof PreferencesConversionError ? 'preferences' : 0
+}
+
+/**
+ * 겹쳐 부르면 도는 것을 기다린다. SQLite 변환이 끝난 뒤 Preferences 변환을 돈다. 실패하면 멈춘 단계를 사용 로그로 곧바로 보낸다.
+ * 던지지 않는다.
+ */
 function convert(): Promise<void> {
   attempt ??= (async () => {
     setPhase('running')
     try {
       await whenGameDataReady()
       const context = await conversionContextOf()
-      await runDeviceConversion(await getBossProfitDbUngated(), { context })
+      const db = await getBossProfitDbUngated()
+      await runDeviceConversion(db, { context })
+      await runPreferencesConversion(db)
       setPhase('done')
       release()
     } catch (error: unknown) {
       setPhase('failed')
-      await reportUsageActionNow(`device-conversion-failed:${error instanceof DeviceConversionError ? error.step : 0}`)
+      await reportUsageActionNow(`device-conversion-failed:${failedStepOf(error)}`)
     } finally {
       attempt = null
     }
@@ -84,13 +98,13 @@ function convert(): Promise<void> {
 }
 
 /**
- * 부팅에서 한 번. 기록 표 접근을 막고, 게임 데이터가 준비되면 변환을 돌린다. 저장소를 건드리는 어떤 부팅 단계보다 먼저 부른다.
+ * 부팅에서 한 번. 기록 접근을 막고, 게임 데이터가 준비되면 변환을 돌린다. 저장소를 건드리는 어떤 부팅 단계보다 먼저 부른다.
  * 결과를 안 기다린다.
  *
  * @example startDeviceConversion()
  */
 export function startDeviceConversion(): void {
-  holdRecordTablesUntil(
+  holdRecordsUntil(
     new Promise<void>((resolve) => {
       release = resolve
     }),
@@ -103,11 +117,11 @@ export function retryDeviceConversion(): Promise<void> {
   return convert()
 }
 
-/** 테스트 전용. 단계를 처음으로 되돌리고 기록 표 막기를 푼다. */
+/** 테스트 전용. 단계를 처음으로 되돌리고 기록 막기를 푼다. */
 export function __resetDeviceConversionForTest(): void {
   phase = 'running'
   listeners.clear()
   attempt = null
   release = () => {}
-  holdRecordTablesUntil(Promise.resolve())
+  holdRecordsUntil(Promise.resolve())
 }

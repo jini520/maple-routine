@@ -54,8 +54,8 @@
 
 열기는 10초, 닫기(`closeBossProfitDb`)는 5초 상한이 있다. OTA 적용과 데이터 삭제는 리로드 전에 닫는다.
 
-`getBossProfitDb()` 는 1.0.15 기기 변환이 끝날 때까지 기다린다. 부팅(`boot.ts` 의 `loadGameData`)이 막기를 걸고 변환이 끝나면
-푼다. 새 앱 코드가 옛 모양의 기록 표를 읽지 않게 하려는 것이다. 게임 데이터 사본 · 조회 캐시 · 사용 로그와 변환은 잠금 화면
+`getBossProfitDb()` 는 1.0.15 기기 변환이 끝날 때까지 기다린다(`storage/record-hold.ts`). 부팅(`boot.ts` 의 `loadGameData`)이
+막기를 걸고, SQLite 변환과 Preferences 변환이 다 끝나면 푼다. 새 앱 코드가 옛 모양의 기록 표를 읽지 않게 하려는 것이다. 게임 데이터 사본 · 조회 캐시 · 사용 로그와 변환은 잠금 화면
 동안에도 써야 해서 기다리지 않는 `getBossProfitDbUngated()` 를 쓴다([[ADR-286]] 결정 1).
 
 ## 테이블

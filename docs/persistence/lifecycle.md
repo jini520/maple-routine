@@ -22,7 +22,7 @@
 |---|---|
 | 인증(`useAuthStore.restoreFromStorage`) | `authMethods`(없으면 `apiKey`) |
 | 진입 단계(`useAppEntryStore.resolveFromStorage`) | 인증 수단 · 추적 캐릭터 |
-| 테마 · 추적 모드 · 드롭 연출 | `theme` · `trackingMode` · `dropEffect` |
+| 테마 · 추적 모드 · 드롭 연출 | `theme` · `trackingType` · `dropEffect` |
 | 공지(`useNoticeStore.restore`) | 구독 상태. 읽은 뒤 켜 둔 토픽을 다시 구독한다 |
 
 그보다 먼저 `index.ts` 의 `loadGameData()` 가 SQLite 의 게임 데이터 사본을 읽어 표를 세운다. 사본이 없으면 잠금 화면 뒤에서 받고,

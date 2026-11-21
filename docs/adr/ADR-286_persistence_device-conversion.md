@@ -1,7 +1,7 @@
 # ADR-286 1.0.15 기기 변환: 기기의 기록을 서버 표와 같은 모양으로 한 번 바꾼다
 
 > ⚪ 미구현
-> 관련 소스: `storage/sqlite/device-conversion.ts` · `features/device-conversion/run.ts` · `app/device-conversion/DeviceConversionFailed.tsx` · `app/AppShell.tsx` · `boot.ts` · `storage/sqlite/db.ts` · `storage/sqlite/convert-boss-tables.ts` · `storage/sqlite/convert-cashbook-tables.ts` · `storage/sqlite/legacy-cashbook-entries.ts` · `storage/sqlite/boss-tables.ts` · `storage/sqlite/cashbook-tables.ts` · `storage/sqlite/record-key-tables.ts` · `storage/sqlite/enhancement-tables.ts` · `storage/sqlite/remembered-level-tables.ts` · `storage/sqlite/migrations.ts` · `storage/keys.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `lib/cashbook/entry-ids.ts` · `storage/cashbook-entries.ts` · `storage/inventory.ts` · `storage/remembered-levels.ts` · `app/inventory/InventorySaleSheet.tsx` · `storage/sqlite/convert-enhancement-tables.ts` · `storage/enhancement-totals.ts` · `storage/character-world-leaps.ts` · `storage/mvp-grades.ts` · `features/enhancement-history/legacy-totals.ts` · `features/enhancement-history/spending.ts` · `features/cashbook/records.ts` · `features/boss-profit/world-leap-moves.ts` · `features/mvp-grade/empty-rows.ts`
+> 관련 소스: `storage/sqlite/device-conversion.ts` · `features/device-conversion/run.ts` · `app/device-conversion/DeviceConversionFailed.tsx` · `app/AppShell.tsx` · `boot.ts` · `storage/sqlite/db.ts` · `storage/sqlite/convert-boss-tables.ts` · `storage/sqlite/convert-cashbook-tables.ts` · `storage/sqlite/legacy-cashbook-entries.ts` · `storage/sqlite/boss-tables.ts` · `storage/sqlite/cashbook-tables.ts` · `storage/sqlite/record-key-tables.ts` · `storage/sqlite/enhancement-tables.ts` · `storage/sqlite/remembered-level-tables.ts` · `storage/sqlite/migrations.ts` · `storage/keys.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `lib/cashbook/entry-ids.ts` · `storage/cashbook-entries.ts` · `storage/inventory.ts` · `storage/remembered-levels.ts` · `app/inventory/InventorySaleSheet.tsx` · `storage/sqlite/convert-enhancement-tables.ts` · `storage/enhancement-totals.ts` · `storage/character-world-leaps.ts` · `storage/mvp-grades.ts` · `features/enhancement-history/legacy-totals.ts` · `features/enhancement-history/spending.ts` · `features/cashbook/records.ts` · `features/boss-profit/world-leap-moves.ts` · `features/mvp-grade/empty-rows.ts` · `storage/preferences-conversion.ts` · `storage/record-hold.ts` · `lib/boss/period-code.ts` · `lib/scheduler/contents.ts` · `storage/manual-tracked-content.ts` · `storage/shared-progress-cache.ts` · `storage/party-appointments.ts` · `storage/boss-profit-calculator-records.ts` · `storage/quick-links.ts` · `storage/bar-order.ts` · `storage/figure-motions.ts` · `storage/tracking-mode.ts` · `storage/stats-cumulative-start.ts` · `storage/mvp-grade-prefs.ts`
 
 ## 배경
 
@@ -31,10 +31,20 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
     사이 개발 빌드를 깐 기기는 새로 더해진 단계만 돈다.
 - 단계는 DB 와 함께 변환 맥락(`DeviceConversionContext`)을 받는다. 맥락은 Preferences 에 든 값 둘(메인 넥슨 계정 id · 대표
   캐릭터 ocid)이다. 저장소 층의 단계는 Preferences 를 읽지 않아서 `features/device-conversion/run.ts` 가 변환 전에 읽어 넘긴다.
-  Preferences 는 기록 표 막기와 상관없이 읽힌다. 기록 표를 거치는 함수(`getBossProfitDb()`)로 읽으면 변환이 끝나기를 기다리다
+  두 값이 든 Preferences 키(`authMethods` · `representativeCharacter` · `trackedCharacters`)는 변환이 바꾸지 않아 기록 막기와 상관없이 읽힌다. 기록 표를 거치는 함수(`getBossProfitDb()`)로 읽으면 변환이 끝나기를 기다리다
   멈춘다. 새로 설치한 DB 의 변환은 맥락이 비어 있다. 바꿀 줄이 없기 때문이다.
 - Preferences 는 SQLite 트랜잭션 밖이다. 그래서 Preferences 를 바꾸는 단계는 몇 번 돌아도 같은 결과가 나오게 만들고(이미 새 모양이면
   건너뛴다), 표식을 따로 둔다. SQLite 표식 뒤에 돈다.
+  - Preferences 의 변환(`storage/preferences-conversion.ts`)은 `run.ts` 가 SQLite 변환이 끝난 뒤에 부른다. 결정 7 의 키마다 옛
+    모양이면 새 모양으로 다시 적고, 새 모양이면 그대로 둔다. 다 바꾸면 Preferences `preferencesConversion` 에 변환한 판(1)을 적는다.
+    도중에 앱이 꺼지면 표식이 없어 다음에 켤 때 처음부터 다시 돈다. 이미 바꾼 키는 건너뛰므로 결과가 같다.
+  - Preferences 의 변환이 던지면 SQLite 단계와 같은 실패 패널을 띄운다. 사용 로그에는 단계 번호 대신
+    `device-conversion-failed:preferences` 를 적는다. SQLite 단계는 뒤에 더 늘어서, 번호를 이어 매기면 나중 단계의 번호와 겹친다.
+  - 결정 7 의 키를 읽고 쓰는 저장소도 기록 표처럼 변환이 끝나기를 기다린다(`storage/record-hold.ts`). 앱을 켜면 화면보다 먼저 도는
+    배경 갱신이 추적 방식 · 수동 추적 항목 · 공유 진행 · 약속을 읽고, 리프한 캐릭터의 약속을 옮겨 다시 적는다. 옛 모양을 새 코드로
+    읽고 다시 적으면 읽지 못한 항목이 사라진다.
+  - 하단바 순서(`barOrder`)만 기다리지 않고 두 모양을 다 읽는다. 셸(`app/AppShell.tsx`)이 변환보다 먼저 읽어 두기 때문이다.
+    기다리게 하면 변환이 끝난 뒤의 첫 화면에 바가 기본 순서로 잠깐 보인다.
 - 바꾸기 전에 DB 파일 사본을 하나 떠 둔다(`…-before-1.0.15.db`). 변환은 줄을 지우고 되돌릴 수 없으며, 사본이 있으면 변환 코드에
   잘못이 있을 때 사용자의 기록을 되살릴 수 있다. 버전 15 이관이 같은 방법을 썼다([[ADR-078]] 결정 11). 사본을 언제 지울지는 1.0.15
   출시 뒤 정한다.
@@ -58,8 +68,15 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 - DB 를 열 때마다 도는 칸 보강(`ensureColumn`)과 인덱스 만들기는 옛 표 · 옛 칸 이름을 쓴다. 변환 뒤에는 그 표와 칸이 없어 DB 열기가
   실패하므로, 변환 표식에 따라 옛 쪽과 새 쪽 가운데 하나만 돌린다. 옛 DB 버전 이관(버전 4 · 12 · 14 · 16)이 읽는 옛 표 정의는 이관
   전용으로 묶어 두고, 새 표 정의는 변환에서만 만든다.
-- 켤 때 돌던 옛 이관 가운데 옛 월드 공유 진행 나누기(`splitWorldSharedProgress`)는 옛 모양의 칸을 써서 변환보다 먼저 끝낸다.
-  주인을 모르는 옛 손입력 붙이기는 가계부 단계가 옮기기 전에 변환 안에서 한다(결정 10). 켜기 단계로 두면 기록 표 접근이 변환을
+- 켤 때 돌던 옛 이관 가운데 옛 월드 공유 진행 나누기(`splitWorldSharedProgress`)는 Preferences 의 변환이 공유 진행 키를 바꾼 뒤
+  같은 변환 안에서 돈다. 나누기는 월드로만 묶던 옛 원장을 새 모양으로 바꿔 메이플 ID · 월드 줄 id 의 원장에 적는다. 그래서 공유
+  진행 키를 바꾼 뒤에 돌아도 된다. 키를 바꾸기 전에 돌면 키 바꾸기가 나누기가 적은 원장을 덮는다.
+  - 추적 캐릭터의 메이플 ID 와 월드는 `character_accounts` 에서 그 캐릭터를 가장 늦게 본 줄로 찾는다. 그 줄의 월드가 비었으면
+    `character_profiles` 의 월드를 쓴다. 넥슨에서 캐릭터 목록을 받기를 기다리지 않으려는 것이다. 1.0.13 까지의 기기는
+    `character_accounts` 에 월드 칸이 생기기 전의 줄만 있어 월드가 비어 있다.
+  - 추적 캐릭터가 없거나, 메이플 ID · 월드를 못 찾은 추적 캐릭터가 있으면 옛 원장을 그대로 둔다. 그때는 지금처럼 모든 계정의 목록을
+    받은 스케줄 회차가 나눈다. 빠진 메이플 ID 는 옛 원장을 받지 못하기 때문이다.
+- 주인을 모르는 옛 손입력 붙이기는 가계부 단계가 옮기기 전에 변환 안에서 한다(결정 10). 켜기 단계로 두면 기록 표 접근이 변환을
   기다려서 늘 변환 뒤에 돈다.
 - 옛 강화 원본을 합계로 옮기기(`features/enhancement-history/legacy-totals.ts`)는 변환 뒤에 지금처럼 수집기와 가계부가 부를 때
   돈다. 합계를 저장소(`storage/enhancement-totals.ts`)로 적어서 변환한 표의 모양으로 들어간다. 원본 표(`enhancement_history`)는
@@ -271,6 +288,28 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 
 - 마지막 입력 기억(`lastHunts` · `lastEpicDungeonRewards` 등)과 앱 설정은 바꾸지 않는다(결정 15). 그 값을 읽는 코드는 key 로 찾는
   조회를 그대로 쓴다.
+- 저장소 어댑터는 새 모양(서버 칸 이름 · 줄 id)으로 적고, 읽을 때 화면이 드는 모양(key · 지금 칸 이름)으로 되돌린다. 기록 표의
+  어댑터와 같다. 게임 데이터에 없는 줄 id 를 가리키는 항목은 읽을 때 건너뛰고, 표에 없는 key 를 적으려 하면 던진다.
+  공유 진행만은 적을 수 없는 항목(표에 없는 컨텐츠 · 월드, 넥슨이 표와 다른 주기로 준 값)을 던지지 않고 건너뛴다. 넥슨 응답에서
+  자동으로 쌓는 값이라, 던지면 그 캐릭터의 회차 전체가 실패로 떨어진다.
+- 기기에만 있던 칸은 화면이 드는 모양에서도 없앤다. 수동 추적 항목의 `maxCount`, 약속의 `members`, 예외의 `type` 이다. 읽는 곳이
+  없거나 값이 하나뿐이다.
+- 수동 추적 항목: 한 캐릭터에 종류 · 대상이 같은 항목이 둘이면 서버의 유일 기준처럼 앞 항목만 남긴다. 이름으로 적힌 옛 항목과
+  key 로 적힌 항목이 같은 컨텐츠를 가리킬 때 생긴다.
+- 공유 진행: 읽을 때 `kind` 는 컨텐츠 줄의 `type` 으로, 기간 값은 기간 key 로 되돌린다. 일간 컨텐츠의 기간 값은 `D` 와 날짜다
+  (`lib/boss/period-code.ts` 의 `dailyPeriodCodeOf`). 키 글자의 월드가 월드 표에 없으면 그 키를 지운다. 월드 줄 id 로 가리킬 수 없어
+  읽는 코드가 닿지 못한다. 열쇠 둘이 같은 컨텐츠로 모이면 지금 읽는 코드처럼 뒤의 것을 남긴다.
+- 약속: 예외의 보스가 하나도 안 남으면 그 예외만 지운다. 그 주는 약속의 보스로 돈다. 지금 읽는 코드가 모양이 틀렸다고 버리는
+  약속은 변환도 지운다.
+- 계산기 기록: 분배 칸은 분배 설정과 같은 규칙(`storage/boss-periods.ts` 의 `splitValues`)으로 적는다. 계산기 화면은 수수료 자동을
+  저장하지 않아서, 요율이 비었으면 자동이고 요율이 있으면 수동이다. 보스를 뺀 뒤 보스가 하나도 안 남은 기록은 지운다. 보스가 없는
+  캐릭터 항목은 남긴다. 계산기는 보스를 고르지 않은 캐릭터도 함께 저장하기 때문이다.
+- 설정 키 다섯은 옛 키의 값을 새 키에 적고 옛 키를 지운다. 값은 그대로이고 `mvpLastCheckedWeekCode` 만 주차 값으로 바꾼다. 옛 값이
+  목요일이 아니면 옮기지 않는다. 주차 값으로 바꿀 수 없다.
+- 2026-11-20 기기 백업 사본으로 이 단계를 돌려 확인했다. 수동 추적 항목 192개(이름으로 적힌 옛 항목 64개 포함) · 공유 진행 9칸 ·
+  약속 7건(보스 판 34 · 예외 6) · 계산기 기록 1건(보스 60줄) · 빠른 이동 · 하단바 순서 · 대표 캐릭터 동작 · 설정 키 다섯이 빠짐없이
+  옮겨지고, 저장소로 되읽은 값이 1.0.14 의 읽는 코드로 읽은 값과 같았다. 두 번 돌려도 같았다. 백업은 옛 월드 원장을 이미 나눈
+  기기라 나누기는 돌지 않았다. 사본은 개인 기록이라 저장소의 테스트로 두지 않는다.
 
 ### 결정 8. 변환 때 지우는 것
 
@@ -343,14 +382,17 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 | `storage/sqlite/__tests__/device-conversion-real-sqlite.test.ts` | 결정 1: 한 트랜잭션이고 단계가 던지면 앞 단계의 변경과 번호가 함께 되돌아가며 다시 돌면 끝까지 가는지, 번호가 끝이면 다시 돌지 않는지, 사본 파일을 한 번만 뜨는지, 던진 단계의 번호를 알리는지 본다. 결정 8: 남은 빈 표 `boss_profit_period_checks` 를 지우는지 본다 |
 | `storage/sqlite/__tests__/convert-boss-tables-real-sqlite.test.ts` | 결정 3: 분배 설정은 분배를 정한 줄만 옮기는지, 비율을 % 의 1000 배로 반올림하고 `제외` 의 숨긴 분배를 버리는지, 수익 건을 기간 값 · 월드 줄 id · 바뀐 처치 칸으로 옮기는지, 처치한 비율 분배의 빈 요율을 그 날 등급 요율로 채우고 받은 메소를 다시 세는지 본다. 반지는 레벨 줄로, 상자 연마석과 상자로만 주는 난이도의 상자 칸 빈 연마석은 상자용 줄로 옮기는지, 가격을 적은 드롭의 받는 메소를 적는지, 모르는 보스 · 아이템의 기록과 빈 처치 전 줄을 지우는지, 같은 아이템 줄이 둘이면 먼저 적은 줄만 남기는지 본다 |
 | `lib/__tests__/drop-item-ids.spec.ts` | 결정 3: 아이템 key · 반지 레벨 · 나온 상자 칸 셋과 아이템 줄 id 가 서로 오가는지 본다 |
-| `lib/__tests__/period-code.spec.ts` | 결정 3: 기간 key 와 기간 값(`W202647` · `M202611`)이 서로 오가는지 본다 |
+| `lib/__tests__/period-code.spec.ts` | 결정 3: 기간 key 와 기간 값(`W202647` · `M202611`)이 서로 오가는지 본다. 결정 7: 일간 기간 값(`D20261119`)이 날짜와 오가는지 본다 |
 | `storage/__tests__/boss-drops.spec.ts` | 결정 3: 드롭을 드롭 표의 차례로 늘어놓는지, 아이템 줄로 같은 드롭을 찾아 식별자를 이어 받는지, 받는 메소를 이어 받는지, 수수료를 드롭 id 로 고치는지 본다 |
 | `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts` | 결정 4: 분류 · 품목 key 를 줄 id 로 옮기는지, 헥사 코어를 직업과 `전직업` 에서 찾고 못 찾으면 이름을 `item_name` 으로 옮기는지, 사냥 효과를 두 칸으로 나누는지, 모르는 분류 · 품목의 기록을 지우는지 본다. 결정 5: 인벤토리를 줄 id 로 옮기고 못 찾은 줄을 지우면 품목의 인벤토리 칸을 비우는지, 기억한 레벨을 대상 줄 id 로 옮기는지 본다. 결정 9: 기타 조각 사용 줄의 월드를 기록으로 옮기는지 본다. 결정 10: 옛 손입력을 메이플 ID · 대표 캐릭터에게 붙이고 붙일 곳 없는 기록을 지우는지 본다 |
 | `lib/__tests__/cashbook-entry-ids.spec.ts` | 결정 4: 분류 key · 품목 key 와 줄 id 가 서로 오가는지, 헥사 코어를 직업과 `전직업` 에서 찾는지 본다 |
 | `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` | 결정 4: 저장한 기록을 key 모양으로 되읽는지, 표에 없는 key 를 적으면 던지는지, 헥사 코어를 못 찾은 기록을 코어 이름으로 되읽는지 본다 |
-| `features/device-conversion/__tests__/run.spec.ts` | 결정 1: 게임 데이터가 준비되기 전에는 돌지 않고 기록 표 접근이 기다리는지, 끝나면 풀리는지, 실패하면 기록 표를 막은 채 사용 로그를 적어 보내고 `다시 시도` 로 이어 가는지, Preferences 의 메인 넥슨 계정과 대표 캐릭터를 변환 맥락으로 넘기는지 본다 |
+| `features/device-conversion/__tests__/run.spec.ts` | 결정 1: 게임 데이터가 준비되기 전에는 돌지 않고 기록 표 접근이 기다리는지, 끝나면 풀리는지, 실패하면 기록 표를 막은 채 사용 로그를 적어 보내고 `다시 시도` 로 이어 가는지, Preferences 의 메인 넥슨 계정과 대표 캐릭터를 변환 맥락으로 넘기는지, SQLite 변환 뒤에 Preferences 변환을 부르고 그것이 던지면 `preferences` 로 알리는지 본다 |
 | `__tests__/boot-order.test.tsx` | 결정 1: 변환이 끝나기 전에는 앱의 나머지를 마운트하지 않고 받은 실행이면 잠금 화면을 그대로 두는지, 실패하면 실패 패널과 업데이트 모달이 서는지 본다 |
-| `features/device-conversion/__tests__/preferences.spec.ts` | 결정 7: 키마다 새 모양으로 바뀌는지, 두 번 돌려도 같은지, 못 찾은 항목만 빠지는지 본다 |
+| `storage/__tests__/preferences-conversion.spec.ts` | 결정 7: 키마다 새 모양으로 바뀌는지, 두 번 돌려도 같은지, 못 찾은 항목만 빠지는지, 이름으로 적힌 옛 수동 추적 항목을 줄 id 로 옮기는지 본다. 결정 1: 옛 월드 공유 원장을 `character_accounts` · `character_profiles` 로 찾은 메이플 ID 와 월드로 나눠 새 모양으로 적는지, 못 찾은 추적 캐릭터가 있으면 옛 원장을 남기는지, 표식이 있으면 다시 돌지 않는지 본다 |
+| `storage/__tests__/manual-tracked-content.spec.ts` · `shared-progress-cache.spec.ts` · `party-appointments.spec.ts` · `boss-profit-calculator-records.spec.ts` · `figure-motions.spec.ts` · `mvp-grade-prefs.spec.ts` | 결정 7: 저장소가 새 모양으로 적고 화면이 드는 모양으로 되읽는지, 게임 데이터에 없는 줄 id 의 항목을 건너뛰는지, 표에 없는 key 를 적으면 던지는지 본다 |
+| `storage/__tests__/record-hold.spec.ts` | 결정 1: 변환한 키를 읽고 쓰는 저장소가 변환이 끝나기를 기다리는지, 하단바 순서는 기다리지 않고 두 모양을 다 읽는지 본다 |
+| `lib/__tests__/contents.spec.ts` | 결정 7: 컨텐츠 key 와 줄 id 가 서로 오가는지 본다 |
 | `storage/sqlite/__tests__/convert-boss-tables-real-sqlite.test.ts` | 결정 1: 변환 뒤 DB 를 다시 열어도 옛 표 · 옛 인덱스를 다시 만들지 않고 열리는지 본다 |
 | `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` | 결정 5: 장비가 아닌 아이템을 다시 넣으면 같은 줄의 개수를 더하는지 본다. 결정 9: 기록의 메이플 ID · 월드로 기타 조각의 남은 수를 월드마다 세는지, 캐릭터 기록은 그 캐릭터의 메이플 ID 로 세는지 본다 |
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 결정 10: 다시 받은 날의 줄을 갈아 끼울 때 그 넥슨 계정의 옛 ocid 줄도 지우는지, MVP 할인 메이플 ID 와 대신 쓰는 이름을 그 날짜로 찾고 없으면 가장 늦게 본 소속 기록에서 찾는지 본다. 결정 6: 같은 이름의 줄을 고쳐 적고, 받은 종류의 분류만 지우는지 본다. 결정 1: 변환한 표에 옛 원본을 합계로 옮기는지 본다 |

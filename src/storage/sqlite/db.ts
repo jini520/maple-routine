@@ -1,5 +1,6 @@
 import { getSqlitePort } from '../ports'
 import type { SqliteDbConnection } from '../ports'
+import { whenRecordsReleased } from '../record-hold'
 import {
   BOSS_DROPS_BODY,
   BOSS_PARTIES_BODY,
@@ -509,19 +510,6 @@ async function ensureUnconvertedCashbookColumns(db: SqliteDbConnection): Promise
 
 let dbPromise: Promise<SqliteDbConnection> | null = null
 
-/** 기기 변환이 끝나면 풀리는 약속. 부팅이 막기를 걸기 전에는 풀려 있다. */
-let converted: Promise<void> = Promise.resolve()
-
-/**
- * 기록 표 접근을 `ready` 가 풀릴 때까지 막는다. 새 앱 코드는 옛 모양의 기록 표를 읽지 못해서, 변환이 끝나기 전에는
- * `getBossProfitDb()` 가 기다린다. 부팅이 저장소를 건드리기 전에 한 번 부른다.
- *
- * @example holdRecordTablesUntil(conversionDone)
- */
-export function holdRecordTablesUntil(ready: Promise<void>): void {
-  converted = ready
-}
-
 async function openBossProfitDb(): Promise<SqliteDbConnection> {
   const connection = getSqlitePort()
 
@@ -636,7 +624,7 @@ function withOpenTimeout(promise: Promise<SqliteDbConnection>): Promise<SqliteDb
 
 /** 기록 표를 읽고 쓰는 저장소가 거치는 연결. 기기 변환이 끝날 때까지 기다린다. */
 export async function getBossProfitDb(): Promise<SqliteDbConnection> {
-  await converted
+  await whenRecordsReleased()
   return getBossProfitDbUngated()
 }
 

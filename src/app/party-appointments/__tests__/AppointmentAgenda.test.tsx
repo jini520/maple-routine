@@ -11,7 +11,6 @@ function appointment(overrides: Partial<PartyAppointment>): PartyAppointment {
   return {
     id: 'a1',
     bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
-    members: [],
     timeKst: '21:00',
     durationMinutes: 30,
     leadMinutes: null,

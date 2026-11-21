@@ -1,3 +1,5 @@
+import { bossDifficultyIdOf } from '../../lib/boss/bosses'
+import { contentIdOf } from '../../lib/scheduler/contents'
 import { installFakePreferences } from './fake-preferences'
 import {
   getManualTrackedContent,
@@ -15,91 +17,43 @@ beforeEach(async () => {
 })
 
 const SAMPLE_ITEMS: ManualTrackedItem[] = [
-  { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
+  { contentKey: 'monster_park', kind: 'daily' },
   { contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' },
   { contentKey: 'mu_lung_dojo', kind: 'weekly' },
   { kind: 'boss', bossKey: 'black_mage', difficulty: 'extreme' },
 ]
 
-describe('레거시 kind 마이그레이션', () => {
-  it("결정 19 이전의 kind: 'content' 항목은 템플릿 조회로 daily/weekly로 재분류된다", async () => {
-    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
-        { contentName: '몬스터파크', kind: 'content', maxCount: 14 },
-        { contentName: '무릉도장', kind: 'content' },
-        { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
-      ]))
+// 저장은 서버 `manual_tracked_items` 와 같은 칸이고 화면은 key 를 든다. 한 바퀴 돌아 다른 key 가 나오면 다른 컨텐츠를 추적한다.
+describe('저장 모양', () => {
+  it('종류와 줄 id(컨텐츠 줄 · 난이도 줄)로 적고 key 모양으로 되읽는다', async () => {
+    await setManualTrackedContent('ocid-1', SAMPLE_ITEMS)
 
-    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
-      { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
-      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
-      { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
+    expect(JSON.parse((await prefs.get('manualTrackedContent:ocid-1'))!)).toEqual([
+      { type: 'daily', targetId: contentIdOf('monster_park') },
+      { type: 'daily', targetId: contentIdOf('daily_quest_road_of_vanishing') },
+      { type: 'weekly', targetId: contentIdOf('mu_lung_dojo') },
+      { type: 'boss', targetId: bossDifficultyIdOf('black_mage', 'extreme') },
     ])
+    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual(SAMPLE_ITEMS)
   })
 
-  it("템플릿에 없는 레거시 'content' 항목은 목록에서 제외된다", async () => {
-    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
-        { contentName: '템플릿에 없는 콘텐츠', kind: 'content' },
-        { contentName: '몬스터파크', kind: 'content' },
-      ]))
-
-    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
-      { contentKey: 'monster_park', kind: 'daily' },
-    ])
-  })
-})
-
-// 보스가 key 대신 이름과 한글 난이도를 들던 모양. 읽을 때 보스 표에서 key 를 찾는다.
-describe('보스 항목 key 이관', () => {
-  it('보스 이름과 한글 난이도를 보스 key 와 난이도 key 로 옮긴다. 데이터 옛 표기도 찾는다', async () => {
-    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
-        { contentName: '루시드', kind: 'boss', difficulty: '이지' },
-        { contentName: '검은마법사', kind: 'boss', difficulty: '익스트림' },
-        { contentName: '몬스터파크', kind: 'daily', maxCount: 14 },
-      ]))
-
-    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
-      { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
-      { kind: 'boss', bossKey: 'black_mage', difficulty: 'extreme' },
-      { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
-    ])
-  })
-
-  // 보스 표에 없는 보스는 추적할 key 가 없다.
-  it('보스 표에서 못 찾는 보스 항목은 빠진다', async () => {
-    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
-        { contentName: '카이', kind: 'boss', difficulty: '노멀' },
-        { contentName: '루시드', kind: 'boss', difficulty: '헬' },
-        { contentName: '윌', kind: 'boss', difficulty: '하드' },
-      ]))
-
-    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([{ kind: 'boss', bossKey: 'will', difficulty: 'hard' }])
-  })
-})
-
-// 컨텐츠가 key 대신 이름을 들던 모양. 읽을 때 컨텐츠 표에서 key 를 찾는다.
-describe('컨텐츠 항목 key 이관', () => {
-  it('컨텐츠 이름을 컨텐츠 key 로 옮기고 maxCount 를 지킨다. 띄어쓰기가 달라도 찾는다', async () => {
-    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
-        { contentName: '[일일 퀘스트] 소멸의 여로 조사', kind: 'daily' },
-        { contentName: '에픽던전:하이마운틴', kind: 'weekly' },
-        { contentName: '[길드] 주간 미션 포인트', kind: 'weekly', maxCount: 10 },
-      ]))
-
-    await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([
-      { contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' },
-      { contentKey: 'epic_dungeon_high_mountain', kind: 'weekly' },
-      { contentKey: 'guild_weekly_mission_points', kind: 'weekly', maxCount: 10 },
-    ])
-  })
-
-  // 컨텐츠 표에 없는 항목은 관리 화면이 못 그리는 고아가 된다.
-  it('컨텐츠 표에서 못 찾는 항목은 빠진다', async () => {
-    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([
-        { contentName: '없어진 컨텐츠', kind: 'weekly' },
-        { contentName: '무릉도장', kind: 'weekly' },
-      ]))
+  // 게임 데이터에서 빠진 줄은 key 로 되돌릴 수 없다. 화면은 표에 있는 항목만 편집한다.
+  it('게임 데이터에 없는 줄 id 의 항목은 건너뛴다', async () => {
+    await prefs.set(
+      'manualTrackedContent:ocid-1',
+      JSON.stringify([
+        { type: 'weekly', targetId: '없는-id' },
+        { type: 'boss', targetId: '없는-id' },
+        { type: 'weekly', targetId: contentIdOf('mu_lung_dojo') },
+      ]),
+    )
 
     await expect(getManualTrackedContent('ocid-1')).resolves.toEqual([{ contentKey: 'mu_lung_dojo', kind: 'weekly' }])
+  })
+
+  // 대상 칸은 비울 수 없다. 조용히 빼면 사용자가 고른 항목이 저장되지 않은 채 화면에만 남는다.
+  it('게임 데이터에 없는 key 를 적으려 하면 던진다', async () => {
+    await expect(setManualTrackedContent('ocid-1', [{ contentKey: '없는-컨텐츠', kind: 'daily' }])).rejects.toThrow()
   })
 })
 

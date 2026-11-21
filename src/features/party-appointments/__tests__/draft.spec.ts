@@ -126,7 +126,6 @@ describe('toAppointment', () => {
     expect(toAppointment(draft({}), 'id-1')).toEqual({
       id: 'id-1',
       bosses: [LIMBO],
-      members: [],
       timeKst: '21:00',
       durationMinutes: 30,
       leadMinutes: null,

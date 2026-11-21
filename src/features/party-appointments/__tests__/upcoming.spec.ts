@@ -6,7 +6,6 @@ function appointment(id: string, schedule: PartyAppointment['schedule'], timeKst
   return {
     id,
     bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
-    members: [],
     timeKst,
     durationMinutes: 30,
     leadMinutes: 10,

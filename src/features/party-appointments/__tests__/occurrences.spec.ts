@@ -5,7 +5,6 @@ function appointment(overrides: Partial<PartyAppointment>): PartyAppointment {
   return {
     id: 'a1',
     bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
-    members: [],
     timeKst: '21:00',
     durationMinutes: 30,
     leadMinutes: null,
@@ -77,7 +76,6 @@ describe('occurrencesInWeek', () => {
       schedule: { type: 'weekly', weekday: 0, fromWeek: '2026-09-17', untilWeek: null },
       exceptions: {
         [WEEK]: {
-          type: 'override',
           dateKey: '2026-09-26',
           timeKst: '22:30',
           durationMinutes: 60,

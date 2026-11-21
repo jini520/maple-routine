@@ -1,4 +1,4 @@
-# ADR-074 주간 보스 수익 계산기
+# ADR-074+301 주간 보스 수익 계산기
 
 > 🟢 유효
 > 관련 소스: `app/utility/BossProfitCalculatorScreen.tsx` · `app/utility/BossProfitCalculatorRecordsScreen.tsx` · `app/utility/boss-profit-calculator/` · `components/molecules/DonutRing/` · `components/molecules/DifficultyExpander/` · `features/boss-profit-calculator/` · `lib/boss/boss-profit-calculator.ts` · `storage/boss-profit-calculator-records.ts` · `native/uuid.ts`
@@ -141,10 +141,18 @@ push 한다. 이름은 `tool-names.ts` 에 한 번만 적고 카드와 화면 �
 
 ### 결정 13. 기록은 Preferences 의 JSON 배열 한 칸에 둔다
 
-키는 `bossProfitCalculatorRecords` 다. 기록 하나는 id · 저장 시각 · 캐릭터마다 보스 · 난이도 · 파티 인원 · 분배 비율이다. (1.0.15 에서 바뀐다. 보스는 난이도 줄 id 로, 분배는 서버의 분배 칸과 같은 이름으로 적는다. [[ADR-099]] 결정 57)
+키는 `bossProfitCalculatorRecords` 다. 기록 하나는 id · 저장 시각 · 캐릭터마다 보스 · 난이도 · 파티 인원 · 분배 비율이다.
 날짜 범위로 찾거나 다른 표와 엮을 일이 없는 작은 목록이라 SQLite 표를 만들지 않는다([[ADR-004]] 결정 3, 파티 약속과 같은
 방식). 사용자가 만든 기록이라 데이터 삭제가 지우지 않는다. 데이터 삭제의 어느 그룹 목록에도 이 키가 없다. 형태가 맞지 않는 기록은 그 기록만 버리고
 나머지는 읽는다.
+
+JSON 안의 칸은 서버 `boss_profit_calculator_record_bosses` 와 같다([[ADR-099]] 결정 57). 보스는 난이도 줄 id(`bossDifficultyId`)이고,
+분배는 분배 설정과 같은 칸 다섯(`splitType` · `partySize` · `splitShareMillipercent` · `splitFeePercent` ·
+`splitFeeFollowsMvpGrade`)을 같은 규칙(`storage/boss-periods.ts` 의 `splitColumnsOf`)으로 적는다. 비율은 % 의 1000 배로 반올림한다.
+계산기 화면은 수수료 자동을 따로 저장하지 않는다. 그래서 요율이 비었으면 등급을 따르는 것으로, 요율이 있으면 손으로 고른 값으로
+적는다. 계산기는 `제외` 를 받지 않아 분배 방식은 균등 · 비율뿐이다. 화면은 보스 key 와 비율 칸을 들고, 저장소
+(`storage/boss-profit-calculator-records.ts`)가 그 사이를 바꾼다. 게임 데이터에 없는 난이도 줄 id 의 보스는 읽을 때 건너뛴다.
+1.0.15 전의 형식은 기기 변환이 한 번 옮겼다([[ADR-286]] 결정 7).
 
 기록 id 는 uuid(v4)다. PK 는 서버든 앱이든 uuid 한 칸이라는 원칙을 따른다([[ADR-077]] 결정 8). 값이 바뀌어도 기록을 가리킬 수
 있어야 하기 때문이다. Hermes 에는 `crypto.randomUUID` 가 없어서 `expo-crypto` 의 `randomUUID()` 로 만든다. 앱이 쓰는
@@ -156,7 +164,8 @@ Expo SDK 의 공식 모듈이고, 패키지 하나로 동기로 부를 수 있�
 | 파일 | 확인하는 것 |
 |---|---|
 | `lib/__tests__/boss-profit-calculator.spec.ts` | 결정 2 · 3 · 4: 몫을 보스 수익과 같은 식으로 세는지, 12개가 넘으면 몫이 큰 12개만 남기는지, 시즌 보스를 12개에 세지 않는지, 억 단위 반올림 |
-| `storage/__tests__/boss-profit-calculator-records.spec.ts` | 결정 13: 깨진 JSON 은 빈 목록, 형태가 맞지 않는 기록만 버리는지, 보스를 다 뺀 캐릭터도 읽는지 |
+| `storage/__tests__/boss-profit-calculator-records.spec.ts` | 결정 13: 보스를 난이도 줄 id 와 분배 칸 다섯으로 적어 되읽는지, 요율이 빈 균등은 등급을 따르고 비율은 % 의 1000 배인지, 게임 데이터에 없는 보스를 건너뛰는지, 깨진 JSON 은 빈 목록, 형태가 맞지 않는 기록만 버리는지, 보스를 다 뺀 캐릭터도 읽는지 본다 |
+| `storage/__tests__/preferences-conversion.spec.ts` | 결정 13: 옛 형식의 기록을 새 칸으로 옮기고, 못 찾은 보스를 뺀 뒤 보스가 안 남은 기록을 지우는지 본다 |
 | `storage/__tests__/cache-data.spec.ts` | 결정 13: 데이터 삭제에서 기록이 지켜지는지 |
 | `features/boss-profit-calculator/__tests__/store.spec.ts` | 결정 4 · 5 · 9 · 11 · 12 · 13: 기록이 있어도 빈 상태로 열리는지, 기록을 열면 기록에 없는 캐릭터는 비어 있는지, 고친 값이 보스 관리에 쓰이지 않는지, 캐릭터별 가져오기 · 초기화, 덮기와 새 기록 가르기, 새 기록의 id 가 uuid 인지, 연 기록을 지우면 연 기록이 없어지는지 |
 | `features/boss-profit-calculator/__tests__/picker.spec.ts` | 결정 2 · 10: 보스 선택에 월간 보스가 없는지, 시즌 보스가 챌린저스 월드에서만 서는지, 12개를 고르면 잠그되 시즌 보스와 고른 보스는 안 잠그는지, 고른 보스가 보스 표 순서로 들어가는지 |
@@ -171,3 +180,5 @@ Expo SDK 의 공식 모듈이고, 패키지 하나로 동기로 부를 수 있�
 
 - ADR-074 (2026-10-20): 처음 작성(#193). 구현하며 사용자와 디자인을 다듬은 결과(빈 상태로 열기 · 카드 머리 배치 · 바닥 수익 줄 · 금액순 범례 · 난이도 펼침 애니메이션 · 테마 색 도넛)를 이 번호에 담았다
 - (2026-11-04) 결정 12 에 기록 줄의 내용을 더했다. 얼굴과 보스 수 대신 `이름 외 n` 글자 한 줄이다([[ADR-155]] 결정 11 과 같은 작업)
+- ADR-301 (2026-11-22): 결정 13 의 JSON 을 난이도 줄 id 와 분배 설정의 칸 다섯으로 적게 바꾸고, 저장하지 않던 수수료 자동을 요율이
+  비었는지로 정했다(#947)

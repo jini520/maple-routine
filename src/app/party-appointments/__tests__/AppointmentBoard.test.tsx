@@ -11,7 +11,6 @@ function once(id: string, dateKey: string, timeKst: string): PartyAppointment {
   return {
     id,
     bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
-    members: [],
     timeKst,
     durationMinutes: 60,
     leadMinutes: null,

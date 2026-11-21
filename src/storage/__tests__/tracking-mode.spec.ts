@@ -5,12 +5,12 @@ let prefs = installFakePreferences()
 
 beforeEach(async () => {
   prefs = installFakePreferences()
-  await prefs.remove('trackingMode')
+  await prefs.remove('trackingType')
 })
 
 describe('손상된 값', () => {
   it('저장된 값이 알 수 없는 문자열이면 null(미선택)로 폴백한다', async () => {
-    await prefs.set('trackingMode', 'something-else')
+    await prefs.set('trackingType', 'something-else')
     await expect(getTrackingMode()).resolves.toBeNull()
   })
 })

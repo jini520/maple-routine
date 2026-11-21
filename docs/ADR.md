@@ -158,9 +158,9 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-029+108](./adr/ADR-029+108_character_manage.md) | 🟢 | character | 캐릭터 관리 화면 |
 | [ADR-030](./adr/ADR-030_character_selection.md) | 🟢 | character | 캐릭터 선택 |
 | [ADR-031+155+177+219](./adr/ADR-031+155+177+219_character_portrait.md) | 🟢 | character | 캐릭터 초상화 |
-| [ADR-032+204](./adr/ADR-032+204_content-scheduler_cache.md) | 🟢 | content-scheduler | 스케줄러 응답 병합과 캐시 |
+| [ADR-032+204+299](./adr/ADR-032+204+299_content-scheduler_cache.md) | 🟢 | content-scheduler | 스케줄러 응답 병합과 캐시 |
 | [ADR-033+274](./adr/ADR-033+274_content-scheduler_cards.md) | 🟢 | content-scheduler | 컨텐츠 카드와 완료 판정 |
-| [ADR-034+175](./adr/ADR-034+175_content-scheduler_tracking-mode.md) | 🟢 | content-scheduler | 자동 · 수동 추적 모드와 컨텐츠 관리 |
+| [ADR-034+175+298](./adr/ADR-034+175+298_content-scheduler_tracking-mode.md) | 🟢 | content-scheduler | 자동 · 수동 추적 모드와 컨텐츠 관리 |
 | [ADR-035](./adr/ADR-035_content-scheduler_layout.md) | 🟢 | content-scheduler | 스케줄러 화면의 레일 아래 간격 |
 | [ADR-036](./adr/ADR-036_boss-scheduler_boss-list.md) | 🟢 | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 |
 | [ADR-037](./adr/ADR-037_boss-scheduler_completion.md) | 🟢 | boss-scheduler | 보스 완료 판정과 주간 한도 |
@@ -180,7 +180,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-049+127+157+199+206+211+215+253](./adr/ADR-049+127+157+199+206+211+215+253_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
 | [ADR-050+110+128](./adr/ADR-050+110+128_mvp-grade_fees.md) | 🟢 | mvp-grade | MVP 등급과 수수료 · 스타포스 비용 |
-| [ADR-051+075+090+236](./adr/ADR-051+075+090+236_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
+| [ADR-051+075+090+236+300](./adr/ADR-051+075+090+236+300_party-appointments_schedule.md) | 🟢 | party-appointments | 파티 스케줄 |
 | [ADR-052+104+114+124+162+163+255+267](./adr/ADR-052+104+114+124+162+163+255+267_settings_screen.md) | 🟢 | settings | 더보기 · 설정 화면과 개발 노트 · 앱 안 리뷰 요청 · 카드 안 칸 · 문의 모달 |
 | [ADR-053+067+122+145](./adr/ADR-053+067+122+145_settings_cache-data.md) | 🟢 | settings | 데이터 삭제 |
 | [ADR-054+115+132](./adr/ADR-054+115+132_theme_tokens.md) | 🟢 | theme | 테마와 색 토큰 · 테마 페이지 |
@@ -196,7 +196,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-063+080+113+116+146+184+223+268](./adr/ADR-063+080+113+116+146+184+223+268_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 체계 · 화면 배율 · 글자 크기 페이지 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
 | [ADR-071+205+243+251](./adr/ADR-071+205+243+251_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
-| [ADR-074](./adr/ADR-074_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |
+| [ADR-074+301](./adr/ADR-074+301_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |
 | [ADR-078+254+287](./adr/ADR-078+254+287_persistence_boss-tables.md) | 🟢 | persistence | 보스 기록 테이블 재설계 |
 | [ADR-096+290](./adr/ADR-096+290_persistence_cashbook-tables.md) | 🟢 | persistence | 가계부 기록 테이블 재설계 |
 | [ADR-098+173](./adr/ADR-098+173_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |

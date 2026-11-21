@@ -3,14 +3,17 @@
  */
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'
+import { whenRecordsReleased } from './record-hold'
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
 
 export async function getStatsCumulativeStart(): Promise<string | null> {
-  const value = await preferences.get(STORAGE_KEYS.statsCumulativeStart)
+  await whenRecordsReleased()
+  const value = await preferences.get(STORAGE_KEYS.statsCumulativeStartDate)
   return value !== null && DATE_KEY.test(value) ? value : null
 }
 
 export async function setStatsCumulativeStart(dateKey: string): Promise<void> {
-  await preferences.set(STORAGE_KEYS.statsCumulativeStart, dateKey)
+  await whenRecordsReleased()
+  await preferences.set(STORAGE_KEYS.statsCumulativeStartDate, dateKey)
 }

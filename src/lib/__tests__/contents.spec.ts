@@ -1,7 +1,9 @@
 import {
   contentCategoryOf,
   contentDisplayNameOf,
+  contentIdOf,
   contentKeyOfApiName,
+  contentKeyOfId,
   contentSectionOf,
   contentShortNameOf,
   findContent,
@@ -49,6 +51,19 @@ describe('contentKeyOfApiName', () => {
   it('표의 모든 줄은 자기 content_name 으로 자기 key 를 얻는다', () => {
     const rows = [...contentTemplate().daily, ...contentTemplate().weekly]
     expect(rows.filter((row) => contentKeyOfApiName(row.content_name) !== row.key).map((row) => row.key)).toEqual([])
+  })
+})
+
+// 수동 추적 항목과 공유 원장은 컨텐츠를 줄 id 로 적고 화면은 key 를 든다. 한 바퀴 돌아 다른 key 가 나오면 다른 컨텐츠의 기록이 된다.
+describe('contentIdOf / contentKeyOfId', () => {
+  it('표의 모든 key 가 줄 id 를 거쳐 그대로 돌아오고, 모르는 key · id 는 null 이다', () => {
+    const keys = [...contentTemplate().daily, ...contentTemplate().weekly].map((entry) => entry.key)
+
+    expect(keys.filter((key) => contentKeyOfId(contentIdOf(key)!) !== key)).toEqual([])
+    expect(new Set(keys.map(contentIdOf)).size).toBe(keys.length)
+    expect(contentIdOf('없는-컨텐츠')).toBeNull()
+    expect(contentIdOf(null)).toBeNull()
+    expect(contentKeyOfId('없는-id')).toBeNull()
   })
 })
 

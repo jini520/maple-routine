@@ -65,6 +65,7 @@ export interface SchedulerCharacterState {
 // 월드/계정 단위로 완료가 공유되는 콘텐츠(예: 몬스터파크, 에픽 던전)의 진행 상태 원장 항목.
 // 캐릭터 개별 응답의 registration_flag는 "마지막 활성 캐릭터" API 오염으로 신뢰할 수 없어,
 // 한 번이라도 활성(등록) 확인된 적 있는지를 이 원장에 별도로 누적해 그 값을 기준으로 삼는다.
+// 병합이 드는 모양이다. 저장은 `storage/shared-progress-cache` 가 서버 칸(`isRegistered` · `periodCode`)으로 바꾼다.
 export interface SharedProgressEntry {
   active: boolean
   kind: 'contents' | 'quest'
@@ -75,7 +76,8 @@ export interface SharedProgressEntry {
 }
 
 // 멤버십만 저장한다. nowCount/questState/isComplete 같은
-// 동기화 유래 값은 절대 여기 두지 않고, 표시 시점에 schedulerCache에서 조회한다(단일 진실 공급원).
+// 동기화 유래 값은 절대 여기 두지 않고, 표시 시점에 스케줄 쿼리 캐시(`schedule(ocid)`)에서 조회한다(단일 진실 공급원).
+// 저장은 `storage/manual-tracked-content` 가 종류와 줄 id 로 바꾼다.
 // 컨텐츠는 일간/주간 탭 표시 구분을 저장 시점에 확정하기 위해 kind를
 // 'daily' | 'weekly'로 세분한다(표시 시점 추론 없음).
 //
@@ -89,7 +91,6 @@ export interface ManualTrackedContentItem {
   /** 컨텐츠 key. */
   contentKey: string
   kind: 'daily' | 'weekly'
-  maxCount?: number // 카운트형일 때만. 추가할 때 컨텐츠 표의 최대 횟수를 복사해 둔다. 읽는 곳은 없다
 }
 
 /** 보스는 이름만으로 유일하지 않아 난이도까지 든다. */

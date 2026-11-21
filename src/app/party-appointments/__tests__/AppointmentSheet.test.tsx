@@ -81,7 +81,6 @@ describe('수정 시트', () => {
   const weekly: PartyAppointment = {
     id: '3f2b6c1e-8d4a-4c2f-9b1e-5a7d0c9e2f41',
     bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
-    members: [],
     timeKst: '21:00',
     durationMinutes: 30,
     leadMinutes: null,
@@ -129,7 +128,6 @@ describe('수정 시트', () => {
       schedule: { type: 'weekly', weekday: 0, fromWeek: '2099-01-01', untilWeek: null },
       exceptions: {
         '2099-01-01': {
-          type: 'override',
           dateKey: '2099-01-05',
           timeKst: '21:00',
           durationMinutes: 30,
@@ -243,7 +241,6 @@ describe('알림 체크 상자를 켤 때', () => {
     const weekly: PartyAppointment = {
       id: '3f2b6c1e-8d4a-4c2f-9b1e-5a7d0c9e2f41',
       bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
-      members: [],
       timeKst: '21:00',
       durationMinutes: 30,
       leadMinutes: 10,
@@ -314,7 +311,6 @@ describe('메모', () => {
   const once: PartyAppointment = {
     id: '7a1d2e3f-4b5c-4d6e-8f70-1a2b3c4d5e6f',
     bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
-    members: [],
     timeKst: '21:00',
     durationMinutes: 30,
     leadMinutes: null,

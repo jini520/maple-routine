@@ -8,7 +8,7 @@ beforeEach(() => {
 })
 
 it('날짜 모양이 아닌 값은 없는 것으로 읽는다', async () => {
-  await prefs.set('statsCumulativeStart', '어제')
+  await prefs.set('statsCumulativeStartDate', '어제')
 
   expect(await getStatsCumulativeStart()).toBeNull()
 })

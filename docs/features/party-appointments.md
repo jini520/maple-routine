@@ -9,8 +9,8 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `types/party-appointment.ts` | 스케줄 · 보스 · 파티원 · 주별 예외 · 회차 |
-| `storage/party-appointments.ts` | Preferences `partyAppointments` 읽기 · 쓰기. 깨진 항목만 버린다 |
+| `types/party-appointment.ts` | 스케줄 · 보스 · 주별 예외 · 회차 |
+| `storage/party-appointments.ts` | Preferences `partyAppointments` 읽기 · 쓰기. 서버 칸 이름 · 주차 값 · 난이도 줄 id 로 적고 아래 형식으로 읽는다. 깨진 항목만 버린다 |
 | `storage/party-appointment-settings.ts` · `features/party-appointments/alarm-settings.ts` | `파티 스케줄 알림` 스위치 |
 | `features/party-appointments/query.ts` | 약속 목록 쿼리 `partyAppointments()`. 화면은 `usePartyAppointments` 로 읽고, 알림으로 들어온 화면은 `loadPartyAppointments` 로 먼저 읽는다. 저장(`savePartyAppointments`)은 저장소에 먼저 쓰고 캐시를 덮은 뒤 알림 재조정을 부른다 |
 | `features/party-appointments/occurrences.ts` | 한 주의 회차 펼치기 |
@@ -38,10 +38,13 @@
 
 ## 스케줄의 형식
 
+화면과 계산이 드는 형식이다. 저장은 서버 `party_appointments` 와 같은 칸 이름으로 한다(`time` · `alarmMinutesBefore` ·
+`schedule.date` · `fromWeekCode` · `untilWeekCode`, 주는 주차 값, 보스 판은 `{ bossDifficultyId, ocid }`). 저장소가 그 사이를
+바꾼다([[ADR-051]] 결정 12).
+
 | 칸 | 뜻 |
 |---|---|
 | `bosses` | 보스 한 판마다 `bossKey` · `difficulty` · `ocid`. 하나 이상이고 캐릭터 묶음 순서로 펼친 줄 |
-| `members` | 파티원. 입력 화면이 없어 새 스케줄은 빈 배열 |
 | `timeKst` | 시작 시각 `HH:mm`(KST) |
 | `durationMinutes` | 시작부터 종료까지의 분. 1 이상 |
 | `leadMinutes` | 몇 분 전에 알릴지. `null` 은 알림 없음, 0 은 정각 |
@@ -116,6 +119,6 @@ today 의 `다음 파티 스케줄` 위젯도 진행 중인 회차를, 없으면
 
 | 키 | 값 | 데이터 삭제 |
 |---|---|---|
-| `partyAppointments` | `PartyAppointment[]` | 남긴다 |
+| `partyAppointments` | 약속 배열(서버 칸 이름) | 남긴다 |
 | `partyAlarmEnabled` | `on` · `off`(없으면 켜짐) | 남긴다 |
 | `partyScheduleView` | `list` · `board`(없으면 목록) | 남긴다 |

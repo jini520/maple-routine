@@ -18,7 +18,7 @@
 | `lib/enhancement/cost.ts` | 스타포스 시도 비용에 붙이는 MVP 할인(`withMvpDiscount`) |
 | `storage/mvp-grades.ts` | `mvp_grade_history` 읽기 · 쓰기 · 등급 빈 줄 지우기. 등급은 등급 표의 줄 id 로 적고 key 로 되읽는다 |
 | `storage/character-accounts.ts` | `character_accounts` 읽기 · 쓰기. 소속을 어느 넥슨 계정의 목록에서 봤는지도 적는다 |
-| `storage/mvp-grade-prefs.ts` | `mvpWeeklyCheckOff` · `mvpLastCheckedWeek` · `mvpBulkApplyAsked` · `mvpOnboardingPending` |
+| `storage/mvp-grade-prefs.ts` | `isMvpWeeklyCheckOff` · `mvpLastCheckedWeekCode` · `isMvpBulkApplyAsked` · `mvpOnboardingPending` |
 | `features/mvp-grade/character-list.ts` | `character/list` 를 받고 소속을 기록한다(`fetchAndRecordCharacterList`). 목록을 받는 곳은 모두 이것을 거친다. 화면이 그리는 목록은 `fetchCharacterListCached` 가 쿼리 `characterList(credentialKey)` 로 5분 안에 같은 응답을 나눠 쓰고, 그 안에서도 이 함수를 부른다. 로그인 · 키 검증처럼 지금 답이 필요한 자리만 매번 받는다 |
 | `features/mvp-grade/ask.ts` · `flow-store.ts` | 묻는 규칙 · 모달의 답을 저장하는 흐름 |
 | `features/mvp-grade/accounts.ts` | 추적 캐릭터의 ID · ID 표시(대표 캐릭터 · 초상) |
@@ -56,9 +56,9 @@
 |---|---|---|
 | SQLite `mvp_grade_history` | 메이플 ID 마다 `(시작 날짜, 등급)` 줄. 시작 날짜는 등급을 달성한 날이고 아무 요일이나 된다 | 남긴다 |
 | SQLite `character_accounts` | `(ocid, 이름, 메이플 ID)` 와 처음 본 날 · 마지막으로 본 날 | 남긴다 |
-| `mvpWeeklyCheckOff` | `앞으로 등급은 직접 바꿀게요` | 남긴다 |
-| `mvpLastCheckedWeek` | 마지막으로 확인한 주 | 남긴다 |
-| `mvpBulkApplyAsked` | 일괄 적용을 물었는지 | 남긴다 |
+| `isMvpWeeklyCheckOff` | `앞으로 등급은 직접 바꿀게요` | 남긴다 |
+| `mvpLastCheckedWeekCode` | 마지막으로 확인한 주의 주차 값 | 남긴다 |
+| `isMvpBulkApplyAsked` | 일괄 적용을 물었는지 | 남긴다 |
 | `mvpOnboardingPending` | 온보딩 MVP 화면에 들어갔는지 | 남긴다 |
 
 ## 기록의 등급을 찾는 순서

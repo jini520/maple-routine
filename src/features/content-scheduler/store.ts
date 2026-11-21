@@ -19,12 +19,6 @@ import { useTrackingModeStore } from '../tracking-mode/store'
 
 export type { ContentCharacterView } from './views'
 
-// 수동 추적 항목에 저장할 max_count는 템플릿 파일의 확정값을 그대로 복사한다
-// (사용자가 숫자를 입력하는 UI는 없다). 템플릿에 없는 항목이면 undefined(카운트 표기 없음).
-function templateMaxCount(contentKey: string): number | undefined {
-  return findContent(contentKey)?.max_count
-}
-
 // 추가 시도의 결과. 컨텐츠에는 개수 한도가 없어 보스와 달리 limitReached 가 없고, 대신 길드
 // 콘텐츠 전용 사유 guildRequired 가 있다.
 export type ManualContentAddResult = 'added' | 'duplicate' | 'guildRequired'
@@ -96,11 +90,7 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
     if (current.some((item) => item.kind === kind && item.contentKey === contentKey)) {
       return 'duplicate'
     }
-    const maxCount = templateMaxCount(contentKey)
-    const next: ManualTrackedItem[] = [
-      ...current,
-      maxCount === undefined ? { contentKey, kind } : { contentKey, kind, maxCount },
-    ]
+    const next: ManualTrackedItem[] = [...current, { contentKey, kind }]
     await setManualTrackedContent(ocid, next)
     set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, [ocid]: next } }))
     return 'added'
