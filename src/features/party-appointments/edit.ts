@@ -75,7 +75,7 @@ export function applyEdit(
     appointments.flatMap((one) => (one.id === target.id ? next : [one]))
 
   if (schedule.type === 'once') {
-    return replace([{ ...toAppointment(draft, target.id), members: target.members }])
+    return replace([toAppointment(draft, target.id)])
   }
 
   if (options.thisWeekOnly) {
@@ -85,7 +85,6 @@ export function applyEdit(
       exceptions: {
         ...target.exceptions,
         [weekStart]: {
-          type: 'override',
           dateKey: draft.startDateKey,
           timeKst: edited.timeKst,
           durationMinutes: durationOf(draft),
@@ -103,10 +102,10 @@ export function applyEdit(
   // 앞으로 모두. 옛 주별 예외는 시각 · 보스가 바뀌면 뜻을 잃으므로 가져가지 않는다.
   if (schedule.fromWeek < weekStart) {
     const ended: PartyAppointment = { ...target, schedule: { ...schedule, untilWeek: weekStart } }
-    const opened = { ...toAppointment(draft, options.newId), members: target.members }
+    const opened = toAppointment(draft, options.newId)
     return replace([ended, opened])
   }
-  return replace([{ ...toAppointment(draft, target.id), members: target.members }])
+  return replace([toAppointment(draft, target.id)])
 }
 
 /**

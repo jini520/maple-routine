@@ -1,5 +1,6 @@
 import { preferences } from './ports'
 import { STORAGE_KEYS } from './keys'
+import { whenRecordsReleased } from './record-hold'
 
 export type TrackingMode = 'auto' | 'manual'
 
@@ -10,7 +11,8 @@ export type TrackingMode = 'auto' | 'manual'
 // 동작 기본값은 그대로 자동이다. 소비처가 `?? 'auto'` 로 흡수한다. 이 null 을 아직 안 골랐다
 // 로 읽는 곳은 온보딩 게이트 하나뿐이다.
 export async function getTrackingMode(): Promise<TrackingMode | null> {
-  const value = await preferences.get(STORAGE_KEYS.trackingMode)
+  await whenRecordsReleased()
+  const value = await preferences.get(STORAGE_KEYS.trackingType)
   if (value === 'manual' || value === 'auto') {
     return value
   }
@@ -18,5 +20,6 @@ export async function getTrackingMode(): Promise<TrackingMode | null> {
 }
 
 export async function setTrackingMode(mode: TrackingMode): Promise<void> {
-  await preferences.set(STORAGE_KEYS.trackingMode, mode)
+  await whenRecordsReleased()
+  await preferences.set(STORAGE_KEYS.trackingType, mode)
 }

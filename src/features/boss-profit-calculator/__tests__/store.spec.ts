@@ -1,7 +1,11 @@
 // 계산기 상태. 보스 관리 값으로 시작하되 고친 값은 계산기와 기록에만 남는다.
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
-import { getBossProfitCalculatorRecords, type BossProfitCalculatorRecord } from '../../../storage/boss-profit-calculator-records'
+import {
+  getBossProfitCalculatorRecords,
+  setBossProfitCalculatorRecords,
+  type BossProfitCalculatorRecord,
+} from '../../../storage/boss-profit-calculator-records'
 import { matchBossContent, type MatchedBoss } from '../../../lib/boss/boss-matching'
 import { bossKeyOfApiName } from '../../../lib/boss/bosses'
 import { partySizeKey, useBossSchedulerStore } from '../../boss-scheduler/store'
@@ -48,10 +52,8 @@ function character(ocid: string, weeklyBosses: MatchedBoss[]): BossCharacterView
 const 카링 = registered('카링', 'normal')
 const 루시드 = registered('루시드', 'hard')
 
-let prefs = installFakePreferences()
-
 beforeEach(() => {
-  prefs = installFakePreferences()
+  installFakePreferences()
   installNoopNativePorts()
   useTrackingModeStore.setState({ mode: 'auto' })
   mockedReadBossCharacters.mockReturnValue([character('ocid-1', [카링, 루시드]), character('ocid-2', [루시드])])
@@ -90,7 +92,7 @@ const 새것: BossProfitCalculatorRecord = {
 describe('처음 값', () => {
   // 캐릭터 하나만 따져 볼 때 다른 캐릭터의 값을 먼저 걷어 내지 않아도 되게 한다(사용자 결정).
   it('기록이 있어도 모든 캐릭터가 빈 상태로 열리고 연 기록이 없다', async () => {
-    await prefs.set('bossProfitCalculatorRecords', JSON.stringify([옛것, 새것]))
+    await setBossProfitCalculatorRecords([옛것, 새것])
 
     await useBossProfitCalculatorStore.getState().open()
 
@@ -101,7 +103,7 @@ describe('처음 값', () => {
   })
 
   it('기록을 열면 기록에 있는 캐릭터는 그 값이고, 기록 뒤에 추적을 시작한 캐릭터는 비어 있다', async () => {
-    await prefs.set('bossProfitCalculatorRecords', JSON.stringify([옛것, 새것]))
+    await setBossProfitCalculatorRecords([옛것, 새것])
     await useBossProfitCalculatorStore.getState().open()
 
     useBossProfitCalculatorStore.getState().openRecord('new')

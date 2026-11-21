@@ -104,21 +104,19 @@ describe('reloadLocal', () => {
 })
 
 describe('addManualContent', () => {
-  it('저장소에 멤버십(kind 포함)과 템플릿 max_count 를 저장하고 상태를 갱신한다', async () => {
+  // 최대 횟수는 읽는 곳이 없어 저장하지 않는다. 카드는 넥슨이 준 값이나 컨텐츠 표의 값을 쓴다.
+  it('저장소에 멤버십(kind 포함)만 저장하고 상태를 갱신한다', async () => {
     const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'monster_park', 'daily')
 
-    // monster_park 는 컨텐츠 표 daily 에 max_count 14 로 있다.
     expect(result).toBe('added')
-    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-      { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
-    ])
+    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [{ contentKey: 'monster_park', kind: 'daily' }])
     expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
-      'ocid-1': [{ contentKey: 'monster_park', kind: 'daily', maxCount: 14 }],
+      'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }],
     })
   })
 
   it('이미 추적 중인 콘텐츠면 쓰지 않고 duplicate 를 돌려준다', async () => {
-    getManualTrackedContentMock.mockResolvedValue([{ contentKey: 'monster_park', kind: 'daily', maxCount: 14 }])
+    getManualTrackedContentMock.mockResolvedValue([{ contentKey: 'monster_park', kind: 'daily' }])
 
     const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'monster_park', 'daily')
 
@@ -169,7 +167,7 @@ describe('addManualContent', () => {
 describe('removeManualContent', () => {
   it('해당 (kind, key) 항목만 제거하고 다른 kind(boss) · 다른 key 는 보존한다', async () => {
     getManualTrackedContentMock.mockResolvedValue([
-      { contentKey: 'monster_park', kind: 'daily', maxCount: 14 },
+      { contentKey: 'monster_park', kind: 'daily' },
       { contentKey: 'mu_lung_dojo', kind: 'weekly' },
       { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
     ])

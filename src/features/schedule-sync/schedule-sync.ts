@@ -19,8 +19,8 @@ import {
   getWorldSharedProgress,
   setAccountSharedProgressEntry,
   setWorldSharedProgressEntry,
-  splitWorldSharedProgress,
 } from '../../storage/shared-progress-cache'
+import { splitWorldSharedProgress } from '../../storage/preferences-conversion'
 import type { MapleCharacter, SchedulerCharacterState, SharedProgressEntry } from '../../types'
 
 import { isMaintenanceSyncError, toScheduleSyncError } from './errors'
@@ -372,8 +372,8 @@ async function runSyncRound(
   const skipped = new Set([...unlisted.map((one) => one.ocid), ...uncallable])
   const judged = ocids.filter((ocid) => !skipped.has(ocid))
 
-  // 월드로만 묶던 옛 월드 공유 원장을 메이플 ID 마다 나눈다. 목록을 못 받은 캐릭터가 있으면 그 메이플 ID 가 옛 원장을 못 받아
-  // 다음 회차로 미룬다.
+  // 월드로만 묶던 옛 월드 공유 원장을 메이플 ID 마다 나눈다. 기기 변환이 메이플 ID 를 다 찾은 기기는 이미 나눠 아무것도 안 한다.
+  // 목록을 못 받은 캐릭터가 있으면 그 메이플 ID 가 옛 원장을 못 받아 다음 회차로 미룬다.
   if (skipped.size === 0) {
     await splitWorldSharedProgress(
       targets.flatMap(({ character, accountId }) =>

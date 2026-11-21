@@ -1,12 +1,15 @@
+import { bossDifficultyIdOf } from '../../lib/boss/bosses'
 import { installFakePreferences } from './fake-preferences'
 import {
   getBossProfitCalculatorRecords,
   moveBossProfitCalculatorRecordsToOcid,
   setBossProfitCalculatorRecords,
   type BossProfitCalculatorRecord,
+  type StoredCalculatorRecord,
 } from '../boss-profit-calculator-records'
 
-const EVEN = { myShare: null, sharesTotal: null, splitFeePercent: null }
+/** 균등 분배. 요율이 비어 등급을 따른다. */
+const EVEN = { myShare: null, sharesTotal: null, splitFeePercent: null, splitFeeAuto: true }
 
 const 기록: BossProfitCalculatorRecord = {
   id: '6f1c2b0e-8d4a-4c1e-9b7a-2f3d4e5a6b7c',
@@ -16,7 +19,41 @@ const 기록: BossProfitCalculatorRecord = {
       ocid: 'ocid-1',
       bosses: [
         { bossKey: 'kaling', difficulty: 'normal', partySize: 3, shares: EVEN },
-        { bossKey: 'lotus', difficulty: 'hard', partySize: 2, shares: { myShare: 2, sharesTotal: 5, splitFeePercent: 3 } },
+        {
+          bossKey: 'lotus',
+          difficulty: 'hard',
+          partySize: 2,
+          shares: { myShare: 40_000, sharesTotal: 100_000, splitFeePercent: 3, splitFeeAuto: false },
+        },
+      ],
+    },
+  ],
+}
+
+/** `기록` 을 저장한 모양. */
+const 저장한기록: StoredCalculatorRecord = {
+  id: 기록.id,
+  savedAt: 기록.savedAt,
+  characters: [
+    {
+      ocid: 'ocid-1',
+      bosses: [
+        {
+          bossDifficultyId: bossDifficultyIdOf('kaling', 'normal')!,
+          splitType: 'even',
+          partySize: 3,
+          splitShareMillipercent: null,
+          splitFeePercent: null,
+          splitFeeFollowsMvpGrade: true,
+        },
+        {
+          bossDifficultyId: bossDifficultyIdOf('lotus', 'hard')!,
+          splitType: 'ratio',
+          partySize: 2,
+          splitShareMillipercent: 40_000,
+          splitFeePercent: 3,
+          splitFeeFollowsMvpGrade: false,
+        },
       ],
     },
   ],
@@ -28,8 +65,41 @@ beforeEach(() => {
   prefs = installFakePreferences()
 })
 
-it('적은 기록을 그대로 읽는다', async () => {
+// 저장은 서버 `boss_profit_calculator_record_bosses` 와 같은 칸이고, 분배는 분배 설정과 같은 규칙이다.
+it('보스를 난이도 줄 id 와 분배 칸 다섯으로 적고 계산기가 드는 모양으로 되읽는다', async () => {
   await setBossProfitCalculatorRecords([기록])
+
+  expect(JSON.parse((await prefs.get('bossProfitCalculatorRecords'))!)).toEqual([저장한기록])
+  expect(await getBossProfitCalculatorRecords()).toEqual([기록])
+})
+
+// 비율은 % 의 1000 배로 반올림하고, 계산기 화면은 수수료 자동을 저장하지 않아 요율이 있으면 손으로 고른 값이다.
+it('비율 2 : 5 는 40000 으로, 요율이 빈 균등은 등급을 따르는 것으로 적는다', async () => {
+  await setBossProfitCalculatorRecords([
+    {
+      ...기록,
+      characters: [
+        {
+          ocid: 'ocid-1',
+          bosses: [
+            { bossKey: 'kaling', difficulty: 'normal', partySize: 3, shares: { myShare: null, sharesTotal: null, splitFeePercent: null } },
+            { bossKey: 'lotus', difficulty: 'hard', partySize: 2, shares: { myShare: 2, sharesTotal: 5, splitFeePercent: 3 } },
+          ],
+        },
+      ],
+    },
+  ])
+
+  expect(JSON.parse((await prefs.get('bossProfitCalculatorRecords'))!)).toEqual([저장한기록])
+})
+
+// 게임 데이터에서 빠진 보스는 key 로 되돌릴 수 없다.
+it('게임 데이터에 없는 난이도 줄 id 의 보스는 건너뛴다', async () => {
+  const [character] = 저장한기록.characters
+  await prefs.set(
+    'bossProfitCalculatorRecords',
+    JSON.stringify([{ ...저장한기록, characters: [{ ...character, bosses: [...character!.bosses, { ...character!.bosses[0], bossDifficultyId: '없는-id' }] }] }]),
+  )
 
   expect(await getBossProfitCalculatorRecords()).toEqual([기록])
 })
@@ -42,18 +112,11 @@ it('깨진 JSON 이면 빈 목록이다', async () => {
 
 // 한 기록 때문에 목록 전체를 잃으면 사용자가 남긴 기록이 한꺼번에 사라진다.
 it('모양이 틀린 기록은 그 기록만 버린다', async () => {
-  const 시각없음 = { ...기록, id: 'r2', savedAt: undefined }
-  const 인원틀림 = {
-    ...기록,
-    id: 'r3',
-    characters: [{ ocid: 'ocid-1', bosses: [{ bossKey: 'kaling', difficulty: 'normal', partySize: 0, shares: EVEN }] }],
-  }
-  const 몫없음 = {
-    ...기록,
-    id: 'r4',
-    characters: [{ ocid: 'ocid-1', bosses: [{ bossKey: 'kaling', difficulty: 'normal', partySize: 1 }] }],
-  }
-  await prefs.set('bossProfitCalculatorRecords', JSON.stringify([기록, 시각없음, 인원틀림, 몫없음]))
+  const boss = 저장한기록.characters[0]!.bosses[0]!
+  const 시각없음 = { ...저장한기록, id: 'r2', savedAt: undefined }
+  const 인원틀림 = { ...저장한기록, id: 'r3', characters: [{ ocid: 'ocid-1', bosses: [{ ...boss, partySize: 0 }] }] }
+  const 제외 = { ...저장한기록, id: 'r4', characters: [{ ocid: 'ocid-1', bosses: [{ ...boss, splitType: 'excluded' }] }] }
+  await prefs.set('bossProfitCalculatorRecords', JSON.stringify([저장한기록, 시각없음, 인원틀림, 제외]))
 
   expect((await getBossProfitCalculatorRecords()).map((one) => one.id)).toEqual([기록.id])
 })

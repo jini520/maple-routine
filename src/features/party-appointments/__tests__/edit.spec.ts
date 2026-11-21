@@ -10,7 +10,6 @@ function appointment(overrides: Partial<PartyAppointment>): PartyAppointment {
   return {
     id: 'a1',
     bosses: [LIMBO],
-    members: [],
     timeKst: '21:00',
     durationMinutes: 30,
     leadMinutes: 10,
@@ -73,7 +72,7 @@ describe('draftFromOccurrence 의 메모', () => {
     const weekly = appointment({
       memo: '2번 방',
       exceptions: {
-        [WEEK]: { type: 'override', dateKey: WEEK, timeKst: '22:00', durationMinutes: 60, bosses: [JUPITER], leadMinutes: null },
+        [WEEK]: { dateKey: WEEK, timeKst: '22:00', durationMinutes: 60, bosses: [JUPITER], leadMinutes: null },
       },
     })
     const [overridden] = occurrencesInWeek([weekly], WEEK)
@@ -111,7 +110,6 @@ describe('applyEdit', () => {
 
     expect(result!.timeKst).toBe('21:00')
     expect(result!.exceptions[WEEK]).toEqual({
-      type: 'override',
       dateKey: '2026-10-01',
       timeKst: '22:00',
       durationMinutes: 60,
@@ -141,7 +139,6 @@ describe('applyEdit', () => {
     const weekly = appointment({
       exceptions: {
         '2026-09-24': {
-          type: 'override',
           dateKey: '2026-09-24',
           timeKst: '20:00',
           durationMinutes: 30,
@@ -171,7 +168,6 @@ describe('applyEdit', () => {
       schedule: { type: 'weekly', weekday: 4, fromWeek: WEEK, untilWeek: null },
       exceptions: {
         '2026-10-08': {
-          type: 'override',
           dateKey: '2026-10-08',
           timeKst: '20:00',
           durationMinutes: 30,
@@ -232,7 +228,6 @@ describe('repeatWeekdayOf', () => {
   const weekly = appointment({
     exceptions: {
       [WEEK]: {
-        type: 'override',
         dateKey: '2026-10-02',
         timeKst: '21:00',
         durationMinutes: 30,

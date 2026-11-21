@@ -89,7 +89,6 @@ export interface ManualTrackedContentItem {
   /** 컨텐츠 key. */
   contentKey: string
   kind: 'daily' | 'weekly'
-  maxCount?: number // 카운트형일 때만. 추가할 때 컨텐츠 표의 최대 횟수를 복사해 둔다. 읽는 곳은 없다
 }
 
 /** 보스는 이름만으로 유일하지 않아 난이도까지 든다. */

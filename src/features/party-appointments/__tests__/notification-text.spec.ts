@@ -10,7 +10,6 @@ function appointment(overrides: Partial<PartyAppointment>): PartyAppointment {
   return {
     id: 'a1',
     bosses: [LIMBO],
-    members: [],
     timeKst: '21:00',
     durationMinutes: 30,
     leadMinutes: 10,

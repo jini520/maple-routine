@@ -91,7 +91,7 @@ describe('scheduledBossKeys', () => {
     bosses: PartyAppointmentBoss[],
     exceptions: Record<string, PartyAppointmentException> = {},
   ): PartyAppointment {
-    return { id, bosses, members: [], timeKst: '21:00', durationMinutes: 60, leadMinutes: null, schedule, exceptions }
+    return { id, bosses, timeKst: '21:00', durationMinutes: 60, leadMinutes: null, schedule, exceptions }
   }
 
   function keys(set: Set<string>): string[] {
@@ -128,7 +128,6 @@ describe('scheduledBossKeys', () => {
         [boss('limbo')],
         {
           '2026-11-12': {
-            type: 'override',
             dateKey: '2026-11-14',
             timeKst: '21:00',
             durationMinutes: 60,

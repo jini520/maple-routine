@@ -9,7 +9,6 @@ function once(id: string, dateKey: string, leadMinutes: number | null, timeKst =
   return {
     id,
     bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
-    members: [],
     timeKst,
     durationMinutes: 30,
     leadMinutes,

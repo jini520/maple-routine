@@ -1,13 +1,9 @@
-/** 파티원 한 칸. 다른 사용자의 캐릭터는 앱이 모르므로 이름 글자이고, 내 캐릭터는 `ocid` 로 가리킨다. */
-export type PartyMember = { type: 'text'; name: string } | { type: 'character'; ocid: string }
-
 /**
  * 반복 약속에서 `이 주만 적용하기` 로 그 주 회차만 바꾼 것. 키는 그 주의 목요일 dateKey.
  *
  * 수정 시트에서 보스 · 알림도 고칠 수 있어 그 주의 약속 전체를 담는다.
  */
 export interface PartyAppointmentException {
-  type: 'override'
   dateKey: string
   timeKst: string
   durationMinutes: number
@@ -32,7 +28,6 @@ export interface PartyAppointment {
   id: string
   /** 1개 이상. 도는 차례대로 */
   bosses: PartyAppointmentBoss[]
-  members: PartyMember[]
   /** 시작. KST `HH:mm` */
   timeKst: string
   /** 시작부터 종료까지의 분. 1 이상이라 종료가 다음 날이어도 더하기만 하면 된다 */

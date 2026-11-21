@@ -5,7 +5,6 @@ import type { PartyAppointment } from '../../../types/party-appointment'
 const weekly: PartyAppointment = {
   id: 'w1',
   bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
-  members: [],
   timeKst: '21:00',
   durationMinutes: 30,
   leadMinutes: 10,

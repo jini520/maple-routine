@@ -10,9 +10,14 @@ beforeEach(() => {
   prefs = installFakePreferences()
 })
 
-it('캐릭터마다 고른 값을 한 칸에 적고 그대로 읽는다', async () => {
+// 저장은 서버 `representative_character_motions` 와 같은 칸 이름(`restsBetweenActions`)이고 화면은 `rest` 를 든다.
+it('캐릭터마다 고른 값을 한 칸에 서버 칸 이름으로 적고 화면이 드는 이름으로 읽는다', async () => {
   await setFigureMotions({ 'ocid-1': 걷기, 'ocid-2': 찌르기 } as never)
 
+  expect(JSON.parse((await prefs.get('figureMotions'))!)).toEqual({
+    'ocid-1': { actions: ['A03'], emotions: ['E02'], durationMs: 5000, restsBetweenActions: false },
+    'ocid-2': { actions: ['A24'], emotions: ['E00'], durationMs: 10000, restsBetweenActions: true },
+  })
   expect(await getFigureMotions()).toEqual({ 'ocid-1': 걷기, 'ocid-2': 찌르기 })
 })
 

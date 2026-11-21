@@ -66,9 +66,13 @@ jest.mock('../../../storage/shared-progress-cache', () => ({
   getAccountSharedProgress: jest.fn(),
   setWorldSharedProgressEntry: jest.fn(),
   setAccountSharedProgressEntry: jest.fn(),
+}))
+const { getWorldSharedProgress: getWorldSharedProgressMock, getAccountSharedProgress: getAccountSharedProgressMock, setWorldSharedProgressEntry: setWorldSharedProgressEntryMock, setAccountSharedProgressEntry: setAccountSharedProgressEntryMock } = jest.requireMock('../../../storage/shared-progress-cache') as Record<string, jest.Mock>
+
+jest.mock('../../../storage/preferences-conversion', () => ({
   splitWorldSharedProgress: jest.fn(),
 }))
-const { getWorldSharedProgress: getWorldSharedProgressMock, getAccountSharedProgress: getAccountSharedProgressMock, setWorldSharedProgressEntry: setWorldSharedProgressEntryMock, setAccountSharedProgressEntry: setAccountSharedProgressEntryMock, splitWorldSharedProgress: splitWorldSharedProgressMock } = jest.requireMock('../../../storage/shared-progress-cache') as Record<string, jest.Mock>
+const { splitWorldSharedProgress: splitWorldSharedProgressMock } = jest.requireMock('../../../storage/preferences-conversion') as Record<string, jest.Mock>
 
 // 모달을 안 거친 리프를 이름·직업으로 잇는 대조. 목록 응답을 받은 자리에서 불리는가만 본다.
 jest.mock('../../boss-profit/world-leap-link', () => ({

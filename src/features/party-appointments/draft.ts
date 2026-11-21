@@ -151,7 +151,6 @@ export function toAppointment(draft: AppointmentDraft, id: string): PartyAppoint
   return {
     id,
     bosses: draft.bosses,
-    members: [],
     timeKst: formatClock(draft.startMinutes),
     durationMinutes: durationOf(draft),
     leadMinutes: draft.alarmOn ? draft.leadMinutes : null,

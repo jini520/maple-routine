@@ -25,7 +25,6 @@ const NOW = new Date('2026-10-07T10:00:00Z')
 const appointment: PartyAppointment = {
   id: '3f2b6c1e-8d4a-4c2f-9b1e-5a7d0c9e2f41',
   bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
-  members: [],
   timeKst: '21:00',
   durationMinutes: 30,
   leadMinutes: 10,

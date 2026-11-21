@@ -12,7 +12,7 @@ export const STORAGE_KEYS = {
   // 오버 프레임(머리를 원 밖으로 그리는 얼굴) 켜짐. 'on' · 'off', 없으면 켜짐.
   overFrame: 'overFrame',
   textSize: 'textSize',
-  trackingMode: 'trackingMode',
+  trackingType: 'trackingType',
   dropEffect: 'dropEffect',
   // 앱 안 리뷰 요청의 기록. 첫 실행일 · 핵심 저장 횟수 · 마지막 요청일 JSON 한 칸이다.
   //
@@ -120,23 +120,23 @@ export const STORAGE_KEYS = {
   // 통계의 누적 순수익이 더하기 시작하는 날(KST `YYYY-MM-DD`). 없으면 기록이 처음 있는 날부터다.
   //
   // 데이터 삭제 그룹에 넣지 말 것. 재조회로 복구되지 않는, 사용자가 고른 값이다.
-  statsCumulativeStart: 'statsCumulativeStart',
-  // today 빠른 이동 구성(JSON `{ rows, ids }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
+  statsCumulativeStartDate: 'statsCumulativeStartDate',
+  // today 빠른 이동 구성(JSON `{ rowCount, keys }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   quickLinks: 'quickLinks',
-  // 대표 캐릭터가 할 행동 · 표정(JSON `{ [ocid]: { actions, emotions, durationMs, rest } }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
+  // 대표 캐릭터가 할 행동 · 표정(JSON `{ [ocid]: { actions, emotions, durationMs, restsBetweenActions } }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   figureMotions: 'figureMotions',
   // today 공유 컨텐츠 위젯에서 마지막에 고른 메이플 ID. 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   todaySharedMapleId: 'todaySharedMapleId',
   // 사용자가 바꾼 메이플 ID 이름(JSON `{ [메이플 ID]: 이름 }`). 사용자가 지은 것이라 데이터 삭제 그룹에 넣지 말 것.
   mapleIdNames: 'mapleIdNames',
-  // 하단바 순서(JSON `{ groups, subs }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
+  // 하단바 순서(JSON `{ groupKeys, subPageKeys }`). 사용자가 고른 것이라 데이터 삭제 그룹에 넣지 말 것.
   barOrder: 'barOrder',
   // MVP 등급 주간 확인을 끈 체크박스(`앞으로 등급은 직접 바꿀게요`). 데이터 삭제 그룹에 넣지 말 것.
-  mvpWeeklyCheckOff: 'mvpWeeklyCheckOff',
-  // 마지막으로 등급을 확인한 주의 기간 키(목요일 `YYYY-MM-DD`).
-  mvpLastCheckedWeek: 'mvpLastCheckedWeek',
+  isMvpWeeklyCheckOff: 'isMvpWeeklyCheckOff',
+  // 마지막으로 등급을 확인한 주의 주차 값(`W202647`).
+  mvpLastCheckedWeekCode: 'mvpLastCheckedWeekCode',
   // 기존 사용자의 첫 흐름을 마쳤다는 표시. 일괄 적용 체크박스를 다시 안 세운다. 데이터 삭제 그룹에 넣지 말 것.
-  mvpBulkApplyAsked: 'mvpBulkApplyAsked',
+  isMvpBulkApplyAsked: 'isMvpBulkApplyAsked',
   // 캐릭터 설정을 마치고 온보딩 MVP 등급 화면에 들어갔다는 표시. 시작하기를 마치면 지운다. 등급 이력이 없는 것만으로는
   // 온보딩 중인 사용자와 업데이트한 기존 사용자를 못 가른다.
   mvpOnboardingPending: 'mvpOnboardingPending',
@@ -152,6 +152,8 @@ export const STORAGE_KEYS = {
   enhancementTotalsMoved: 'enhancementTotalsMoved',
   // 월드로만 묶던 옛 월드 공유 원장을 메이플 ID 마다 베꼈나. 베낀 뒤 옛 원장을 지운다.
   worldSharedProgressSplit: 'worldSharedProgressSplit',
+  // 1.0.15 기기 변환이 Preferences 의 기록을 새 모양으로 바꾼 판. 지워져도 변환이 이미 바꾼 키를 건너뛰어 결과가 같다.
+  preferencesConversion: 'preferencesConversion',
   // 주간 보스 수익 계산기의 기록(JSON). 사용자가 남긴 것이라 아무도 되살려 주지 않는다. 데이터 삭제 그룹에 넣지 말 것.
   bossProfitCalculatorRecords: 'bossProfitCalculatorRecords',
   // 1.0.13 전의 게임 데이터 사본(TanStack Query 캐시). 사본은 이제 SQLite 에 있어 안 읽고 켤 때 지우기만 한다.
@@ -214,9 +216,9 @@ export function manualTrackedContentKey(ocid: string): string {
   return `manualTrackedContent:${ocid}`
 }
 
-// 월드 단위로 완료가 공유되는 콘텐츠의 진행 상태 원장 키. 같은 월드라도 메이플 ID 가 다르면 따로 센다.
-export function worldSharedProgressKey(accountId: string, worldKey: string): string {
-  return `worldSharedProgress:${accountId}:${worldKey}`
+// 월드 단위로 완료가 공유되는 콘텐츠의 진행 상태 원장 키. 같은 월드라도 메이플 ID 가 다르면 따로 센다. 월드는 월드 줄 id 다.
+export function worldSharedProgressKey(accountId: string, worldId: string): string {
+  return `worldSharedProgress:${accountId}:${worldId}`
 }
 
 // 월드로만 묶던 옛 원장의 키. 월드 부분은 월드 key 이거나, 그보다 옛 원장은 월드 이름이다. 메이플 ID 마다 베낀 뒤 지운다.

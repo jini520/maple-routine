@@ -8,7 +8,6 @@ function once(id: string, dateKey: string, timeKst: string, durationMinutes: num
   return {
     id,
     bosses: [LIMBO],
-    members: [],
     timeKst,
     durationMinutes,
     leadMinutes: null,

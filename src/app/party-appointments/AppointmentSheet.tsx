@@ -246,7 +246,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
         onPress={() => {
           if (target !== undefined && schedule?.type === 'weekly') {
             // 이 주만 고친 회차는 이 주만 적용하기를 켠 채 고친 날짜로 연다. 아니면 앞으로 모두이고 약속의 반복 요일에서 시작한다.
-            const overridden = target.occurrence.appointment.exceptions[target.weekStart]?.type === 'override'
+            const overridden = target.occurrence.appointment.exceptions[target.weekStart] !== undefined
             setThisWeekOnly(overridden)
             update({ startDateKey: overridden ? target.occurrence.dateKey : dateInWeek(target.weekStart, schedule.weekday) })
           }
