@@ -1,16 +1,18 @@
 // 크롭 표 → RN 배치 변환의 계약.
 //
-// 크롭 값이 CSS 로 흘러가면 브라우저가 해석하지만 여기서는 우리가 푼다.
+// 크롭 표의 숫자는 CSS 배경의 폭과 위치다. 브라우저라면 그대로 해석하지만 여기서는 우리가 푼다.
 // 검사할 변환이 존재하지 않았다. RN 에서는 우리가 그 해석을 대신하므로 **틀려도 에러가 안 나고
 // 그림만 이상하게 잘린다.** 정확히 그 종류의 실패라 계약을 코드로 못 박는다.
 import { imageCropStyle, resolveImageCropLayout } from '../image-crop'
 
-/** 실제 크롭 표에 있는 모양(`daily-quest-region-crops.json`) 하나. */
-const CROP = { size: '220% auto', position: '60% 40%' }
+/** 실제 크롭 표에 있는 모양 하나. */
+const CROP = { kind: 'sized', widthPercent: 220, positionXPercent: 60, positionYPercent: 40 } as const
+const sized = (widthPercent: number, positionXPercent: number, positionYPercent: number) =>
+  ({ kind: 'sized', widthPercent, positionXPercent, positionYPercent }) as const
 const NATURAL = { width: 800, height: 400 }
 
-describe('resolveImageCropLayout: CSS 배경 크롭 → RN 배치', () => {
-  it('`N% auto` 는 부모 폭 기준 폭 + 고유 종횡비가 된다', () => {
+describe('resolveImageCropLayout: 크롭 표의 숫자 → RN 배치', () => {
+  it('폭 퍼센트는 부모 폭 기준 폭 + 고유 종횡비가 된다', () => {
     const layout = resolveImageCropLayout(CROP, NATURAL)
 
     expect(layout).toEqual({
@@ -27,14 +29,14 @@ describe('resolveImageCropLayout: CSS 배경 크롭 → RN 배치', () => {
   // CSS `background-position` 의 퍼센트는 **두 기준의 뺄셈**이다(부모 − 자기). 한쪽만 옮기면
   // 그림이 통째로 밀려 나가므로, 두 값이 부호만 다른 짝이라는 것이 계약이다.
   it('position 퍼센트는 부모 기준 오프셋과 자기 기준 역이동의 짝이다', () => {
-    const layout = resolveImageCropLayout({ size: '150% auto', position: '0% 100%' }, NATURAL)
+    const layout = resolveImageCropLayout(sized(150, 0, 100), NATURAL)
 
     // `-0` 은 문자열이 되며 부호를 잃는다(`${-0}%` → `'0%'`). 0 은 뺄 것이 없어 결과가 같다.
     expect(layout).toMatchObject({ left: '0%', translateX: '0%', top: '100%', translateY: '-100%' })
   })
 
   it('100% 를 넘는 position 도 그대로 통과한다. 크롭 표에 실제로 있다', () => {
-    expect(resolveImageCropLayout({ size: '170% auto', position: '110% 100%' }, NATURAL)).toMatchObject({
+    expect(resolveImageCropLayout(sized(170, 110, 100), NATURAL)).toMatchObject({
       left: '110%',
       translateX: '-110%',
     })
@@ -58,8 +60,8 @@ describe('resolveImageCropLayout: CSS 배경 크롭 → RN 배치', () => {
     })
   })
 
-  it('`cover`/`center` 기본 크롭도 cover 다', () => {
-    expect(resolveImageCropLayout({ size: 'cover', position: 'center' }, NATURAL)).toEqual({ kind: 'cover' })
+  it('크롭 표에 없는 그림의 기본 크롭도 cover 다', () => {
+    expect(resolveImageCropLayout({ kind: 'cover' }, NATURAL)).toEqual({ kind: 'cover' })
   })
 })
 

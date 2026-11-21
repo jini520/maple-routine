@@ -472,26 +472,23 @@ export interface AssetFilesTable extends TableHead {
   files: AssetFileRow[]
 }
 
-/**
- * 크롭 표의 종류. 같은 그림도 놓이는 자리마다 잘 보이는 곳이 달라 표가 갈린다.
- *
- * `boss_portrait_modal` 은 앱이 더 읽지 않지만 서버 표에 줄이 남아 있다. 여기서 빼면 그 줄이 계약을 어겨 크롭 표
- * 전체를 버린다.
- */
-export const IMAGE_CROP_KINDS = ['boss_portrait', 'boss_portrait_icon', 'boss_portrait_modal', 'daily_quest_region'] as const
-export type ImageCropKind = (typeof IMAGE_CROP_KINDS)[number]
+/** 크롭 표의 종류. 같은 그림도 놓이는 자리마다 잘 보이는 곳이 달라 표가 갈린다. */
+export const IMAGE_CROP_TYPES = ['boss_portrait', 'boss_portrait_icon', 'daily_quest_region'] as const
+export type ImageCropType = (typeof IMAGE_CROP_TYPES)[number]
 
 export interface ImageCropRow {
-  kind: ImageCropKind
+  type: ImageCropType
   /** 자르는 그림 id. 보스 초상이나 지역 지도다 */
   assetId: string
-  /** CSS `background-size` 문법(`120% auto`) */
-  size: string
-  /** CSS `background-position` 문법(`50% 40%`) */
-  position: string
+  /** 그림 폭. 상자 폭에 대한 % */
+  widthPercent: number
+  /** CSS `background-position` 의 가로 % */
+  positionXPercent: number
+  /** CSS `background-position` 의 세로 % */
+  positionYPercent: number
 }
 export interface ImageCropsTable extends TableHead {
-  crops: ImageCropRow[]
+  imageCrops: ImageCropRow[]
 }
 
 /** FAQ 묶음. 묶음 하나가 시트 하나이고 key 는 화면이 물음표에 다는 이름이다. */

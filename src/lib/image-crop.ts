@@ -1,27 +1,31 @@
 /**
  * 크롭 표 한 줄을 RN 의 절대 배치로 푸는 계산.
  *
- * 크롭 표(`boss-portrait-crops` · `boss-portrait-icon-crops` · `daily-quest-region-crops`)는 CSS
- * `background-size`/`background-position` 문법인데, RN 에는 배경 이미지가 없어 `<Image>` 를 손으로
- * 앉혀야 한다. 그 변환이 여기 있다.
+ * 크롭 표(`imageCrops` 칸)의 숫자는 CSS `background-size` 의 폭과 `background-position` 의 두 퍼센트인데, RN 에는
+ * 배경 이미지가 없어 `<Image>` 를 손으로 앉혀야 한다. 그 변환이 여기 있다.
  *
  * 조회(`boss-icons` · `daily-quest-backgrounds`)와 그리기(`FadedIllustration` · `BossPortrait`)
  * **양쪽이 쓰기 때문에** `lib/` 에 있다. `components/` 에 두면 조회 쪽이 위 계층을 import 하게 된다.
- *
- * @see. 크롭 표를 둔 이유와 표가 둘로 갈린 이유가 거기 있다.
- * @see. 두 축을 다 이름 부른다.
  */
 import type { ImageStyle } from 'react-native'
 
 import type { ImageNaturalSize } from './image-aspect'
 
-/** 크롭 표의 한 줄. 조회 함수 셋이 이 모양을 돌려준다. */
-export interface ImageCrop {
-  size: string
-  position: string
-}
+/** 크롭 표의 한 줄. 조회 함수 셋이 이 모양을 돌려준다. 표에 없는 그림은 상자를 덮는다(`cover`). */
+export type ImageCrop =
+  | { readonly kind: 'cover' }
+  | {
+      readonly kind: 'sized'
+      /** 그림 폭. 상자 폭에 대한 % */
+      readonly widthPercent: number
+      readonly positionXPercent: number
+      readonly positionYPercent: number
+    }
 
-/** `cover` 는 크롭 표에 없는 슬러그의 기본값이자 고유 크기를 못 읽었을 때의 폴백이다. */
+/** 크롭 표에 없는 그림의 크롭. */
+export const COVER_CROP: ImageCrop = { kind: 'cover' }
+
+/** `cover` 는 크롭 표에 없는 그림의 기본값이자 고유 크기를 못 읽었을 때의 폴백이다. */
 export type ImageCropLayout =
   | { kind: 'cover' }
   | {
@@ -35,9 +39,6 @@ export type ImageCropLayout =
       translateX: `${number}%`
       translateY: `${number}%`
     }
-
-const SIZE_PATTERN = /^(\d+(?:\.\d+)?)%\s+auto$/
-const POSITION_PATTERN = /^(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%$/
 
 /**
  * 크롭 한 줄 + 고유 크기 → RN 절대 배치.
@@ -55,17 +56,11 @@ export function resolveImageCropLayout(
   crop: ImageCrop,
   natural: ImageNaturalSize | null,
 ): ImageCropLayout {
-  if (natural === null) return { kind: 'cover' }
+  if (crop.kind === 'cover' || natural === null) return { kind: 'cover' }
   if (!Number.isFinite(natural.width) || natural.width <= 0) return { kind: 'cover' }
   if (!Number.isFinite(natural.height) || natural.height <= 0) return { kind: 'cover' }
 
-  const size = SIZE_PATTERN.exec(crop.size)
-  const position = POSITION_PATTERN.exec(crop.position)
-  if (size === null || position === null) return { kind: 'cover' }
-
-  const widthPercent = Number(size[1])
-  const x = Number(position[1])
-  const y = Number(position[2])
+  const { widthPercent, positionXPercent: x, positionYPercent: y } = crop
 
   return {
     kind: 'sized',

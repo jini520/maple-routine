@@ -13,10 +13,10 @@ describe('getDailyQuestBackgroundUrl', () => {
 
 describe('getDailyQuestRegionCrop', () => {
   it('slug가 null이면 기본 폴백(cover/center)을 반환한다', () => {
-    expect(getDailyQuestRegionCrop(null)).toEqual({ size: 'cover', position: 'center' })
+    expect(getDailyQuestRegionCrop(null)).toEqual({ kind: 'cover' })
   })
 
   it('daily-quest-region-crops.json에 매핑이 없는 slug면 기본 폴백(cover/center)을 반환한다', () => {
-    expect(getDailyQuestRegionCrop('존재하지않는슬러그')).toEqual({ size: 'cover', position: 'center' })
+    expect(getDailyQuestRegionCrop('존재하지않는슬러그')).toEqual({ kind: 'cover' })
   })
 })
