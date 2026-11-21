@@ -31,7 +31,7 @@
 | `lib/crypto/nexon-id-hash.ts` | 넥슨 식별자(메이플 ID · ocid)의 SHA-256 |
 | `storage/server-accounts.ts` | 계정마다 서버가 마지막으로 돌려준 메이플 ID 목록과 등록한 부계정 키(Preferences `serverAccounts`) |
 | `storage/server-sync-queue.ts` | 보낼 것을 담는 대기 표(SQLite `server_sync_queue`) |
-| `storage/server-sync-sources.ts` | 드롭이 붙은 기간 행 id 를 읽는다. 과거 올리기가 id 차례로 나눠 읽는다 |
+| `storage/server-sync-sources.ts` | 드롭이 붙은 수익 건 id(`profit_entry_id`)를 읽는다. 과거 올리기가 id 차례로 나눠 읽는다 |
 | `storage/server-backfill.ts` | 과거 올리기를 어디까지 했는지(Preferences `serverBackfill`) |
 | `server/write.ts` | 쓰기 호출. 결과를 `sent` · `no-response` · `rejected` 로 나누고, 묶음은 건마다 결과를 돌려준다 |
 | `server/drop-price.ts` | 드롭 가격의 서버 경로 |
@@ -80,7 +80,7 @@
 | `worldKey` | 기록 시점의 월드 key. 모르면 `null` |
 | `ringLevel` | 반지 레벨. 반지가 아니면 `null` |
 | `boss` · `difficulty` | 보스 key · 난이도 key |
-| `periodRecordId` | 드롭이 붙은 기간 행 id |
+| `periodRecordId` | 드롭이 붙은 수익 건 id |
 
 드롭의 분배 인원 · 비율 · 수수료는 싣지 않는다. 내 몫을 계산하는 재료이고 시세와는 관계가 없다.
 

@@ -134,9 +134,9 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
 | 분류는 `type` 또는 `무엇_type`. `kind` 는 쓰지 않는다 | `entry_type` · `enhancement_type` |
 | 날짜는 `_date`, 시각은 `_at` | `entry_date` · `priced_at` |
 | 차례는 `sort_order` | |
-| 메소 금액은 `무엇_meso`, 비율은 `무엇_percent` | `price_meso` · `split_fee_percent` |
-| 상태는 `무엇_status` | `record_status` · `clear_status` |
-| `무엇_id` 는 다른 표를 가리키는 uuid | `party_id` · `nexon_account_id` |
+| 메소 금액은 `무엇_meso`, 비율은 `무엇_percent` | `sale_price_meso` · `split_fee_percent` |
+| 상태는 `무엇_status` | `price_status` |
+| `무엇_id` 는 다른 표를 가리키는 uuid | `profit_entry_id` · `nexon_account_id` |
 
 버전 16 에서 바꾸는 이름은 이렇다. 다섯 표의 칸은 표를 다시 쓰면서, 나머지는 `ALTER TABLE ... RENAME COLUMN` 으로
 바꾼다.
@@ -154,7 +154,9 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
 예외가 둘 있다.
 
 - **게임 데이터는 `_key` 로 가리킨다**(`boss_key` · `item_key` · `world_key`). 기기 번들에는 서버 표의 uuid 가 없고 key 만
-  있기 때문이다. 서버는 받은 key 로 줄을 찾아 `item_id` 같은 외래키로 적는다. 지금 `drop_prices` 가 이렇게 한다.
+  있기 때문이다. 서버는 받은 key 로 줄을 찾아 `item_id` 같은 외래키로 적는다. 지금 `drop_prices` 가 이렇게 한다. 보스 기록
+  표 셋은 예외다. 1.0.15 기기 변환 뒤에는 서버에서 받은 게임 데이터의 줄 id(`boss_difficulty_id` · `item_id` · `world_id`)로
+  가리킨다([[ADR-078]] 결정 1).
 - **메이플 ID 는 `account_id` 로 둔다**(사용자 선택). 넥슨 API 응답의 칸 이름과 같다. 다른 표를 가리키는 uuid 가 아니라
   넥슨이 주는 문자열이다.
 

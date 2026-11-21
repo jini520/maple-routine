@@ -1,7 +1,7 @@
 # 보스 수익
 
 처치한 보스의 결정석과 드롭 판매 수익을 캐릭터별로 보여 주는 화면이다. 수익·지출 그룹의 첫째 하위 탭이고,
-주간 · 월간으로 지난 기간을 오가며 볼 수 있다. 여기서 쓴 처치 기록(`boss_party_periods` 의 `cleared` 행,
+주간 · 월간으로 지난 기간을 오가며 볼 수 있다. 여기서 쓴 처치 기록(처치한 `boss_profit_entries` 줄,
 [[ADR-078]])은 가계부 · 통계 · today 도 읽는다. 왜 이렇게 만들었는지는 [[ADR-040]] (기록) · [[ADR-041]] (기간) · [[ADR-042]] (금액 표시) ·
 [[ADR-043]] (화면 배치) · [[ADR-092]] (리디자인과 고가 드롭 홀로그램)에 있다.
 
@@ -44,14 +44,15 @@
 | `features/boss-profit/period-window.ts` | 미리 읽을 기간 목록 |
 | `features/boss-profit/period-cache.ts` | 보스 기록 · 드롭 기록의 판 묶음(`bossRecordsStamp`). 아이템 가격 화면과 미입력 건수가 본다 |
 | `features/boss-profit/monthly-crystals.ts` | 주간 탭 칩의 그 달 월간 결정석 누적 |
-| `features/boss-profit/crystal-limit-judge.ts` | 주간 결정석 판매 한도를 넘긴 처치를 판정해 기간 행에 적는다(`judgeCrystalLimit`) |
+| `features/boss-profit/crystal-limit-judge.ts` | 주간 결정석 판매 한도를 넘긴 처치를 판정해 수익 건에 적는다(`judgeCrystalLimit`) |
 | `features/boss-profit/use-unpriced-drop-count.ts` | 버튼 배지의 미입력 건수 |
 | `features/boss-profit/use-period-error-toast.ts` | 기간 읽기 실패 토스트 |
 | `lib/boss/boss-profit-period.ts` | 기간 키 · 기간 이름 · 조회 가능 범위 · 기간 상태 판정 |
 | `lib/boss/monthly-boss-week.ts` | 월간 보스가 들어가는 주 |
 | `lib/boss/crystal-limit.ts` | 주간 결정석 판매 한도를 메이플 ID 마다 세기 시작한 주와 한도 줄 열쇠, 한도를 넘긴 처치 고르기 |
-| `storage/boss-profit.ts` | 처치 기록(SQLite `boss_party_periods` 의 `cleared` 행) 읽기 · 쓰기 · 개정 수 |
-| `storage/boss-periods.ts` | 처치 · 그 기간 값 · 드롭 · 파티 설정이 같이 쓰는 조합 행(`boss_parties`) · 기간 행 도우미 |
+| `storage/boss-profit.ts` | 처치 기록(SQLite `boss_profit_entries` 에서 `clear_recorded_by` 가 찬 줄) 읽기 · 쓰기 · 개정 수 |
+| `storage/boss-periods.ts` | 처치 · 그 기간 값 · 드롭 · 파티 설정이 같이 쓰는 도우미. 수익 건 찾기 · 만들기 · 비면 지우기, 분배 칸 다섯과 화면의 분배 사이 바꾸기, 보스 난이도 줄 id · 기간 값과 보스 key · 난이도 · 기간 key 사이 바꾸기 |
+| `lib/boss/period-code.ts` | 기간 값(`W202647` · `M202611`)과 기간 key 를 오가는 함수 |
 | `storage/character-world-leaps.ts` | 리프한 두 캐릭터의 연결(`character_world_leaps`) |
 | `navigation/bar-groups.ts` · `navigation/routes.ts` | 수익·지출 그룹의 첫 하위 탭(`Profit`, `/profit`) |
 
@@ -64,9 +65,10 @@
 | 총 수익 | 카드 금액의 합 |
 | 주차 합계(월간 탭) | 그 주의 주간 보스 결정석 + 드롭. 월간 보스 몫은 넣지 않는다 |
 
-- 결정석 몫은 기록할 때 정해 `payout_meso` 에 남고, 드롭 몫은 읽을 때 더한다.
+- 결정석 몫은 기록할 때 정해 `crystal_received_meso` 에 남는다. 드롭 몫은 드롭 줄의 받는 메소(`sale_received_meso`)를 읽을 때
+  더한다.
 - 분배 방식 `제외` 인 처치는 결정석 몫이 0 이다([[ADR-038]] 결정 12). 주간 결정석 판매 한도를 넘긴 처치는 내 몫이 낮은
-  것부터 0 으로 읽는다. 기록의 `payout_meso` 는 그대로 두고 `over_crystal_limit` 로 표시한다([[ADR-042]] 결정 15).
+  것부터 0 으로 읽는다. 기록의 `crystal_received_meso` 는 그대로 두고 `over_crystal_sale_limit` 로 표시한다([[ADR-042]] 결정 15).
 - 미완료 행의 드롭, 가격을 안 적은 드롭, `기록 안함` 드롭은 금액에 넣지 않는다.
 - 자세한 기준은 [[ADR-042]] 결정 1 에 있다.
 

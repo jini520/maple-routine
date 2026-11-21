@@ -23,9 +23,10 @@
 | `features/boss-profit/drop-price-store.ts` | 가격 입력 화면의 상태와 가격 저장. 기간별 미입력 건수 |
 | `features/boss-profit/use-unpriced-drop-count.ts` | 떠 있는 버튼 배지의 미입력 건수 |
 | `features/boss-profit/drop-history-query.ts` | 히스토리의 전 기간 쿼리 `dropHistory()`. today 위젯도 같은 열쇠를 본다. 드롭 · 보스 기록의 판이 오르면 다시 읽는다 |
-| `features/boss-profit/drop-fees.ts` | 가격 카드의 판매 · 분배 수수료 처음 값 |
+| `features/boss-profit/drop-fees.ts` | 가격 카드의 판매 · 분배 수수료 처음 값. 가격을 고치는 패치가 저장된 받는 메소를 비운다(`dropFeeFields`) |
 | `features/drop-effect/store.ts` · `storage/drop-effect.ts` | 연출 켜기 · 끄기(Preferences `dropEffect`) |
-| `storage/boss-drops.ts` | SQLite `boss_drops` 읽기 · 쓰기 |
+| `storage/boss-drops.ts` | SQLite `boss_drops` 읽기 · 쓰기. 드롭 표의 차례로 늘어놓고 받는 메소를 이어 받는다 |
+| `lib/boss/drop-item-ids.ts` | 드롭의 아이템 줄 id 와 아이템 key · 반지 레벨 · 나온 상자를 오가는 함수 |
 | `lib/boss/boss-drops.ts` | 드롭 후보 · 고정 보상 · 표시할 난이도 · 획득 가능 판정 · 상자 내용 · 이관 계획 |
 | `lib/drop/drop-items.ts` | 드롭 아이템 표 조회. 보이는 이름(`dropItemNameOf`) · 고가 판정(`isValuableDropItem`) |
 | `lib/drop/fixed-drops.ts` | 고정 보상 그림과 수량. 솔 에르다의 기운을 단위별로 나눈다 |
@@ -160,7 +161,7 @@
 
 | 저장소 | 내용 |
 |---|---|
-| SQLite `boss_drops` | 드롭 기록 한 건이 한 행. 묶음은 기간 행(`period_id`)이고 차례는 `sort_order`, 행 식별자는 uuid `id` 다. 아이템 key · 상자 key · 반지 레벨, 상태(`record_status`) · 금액 · 가격을 매긴 시각 · 분배 방식 · 인원 · 비율 · 수수료. 가격부터 수수료까지는 `completed` 일 때만 있다. 캐릭터 · 보스 · 난이도 · 기간 · 월드는 기간 행(`boss_party_periods`)과 조합 행(`boss_parties`)에서 읽는다. 이름은 저장하지 않고 key 로 찾는다 |
+| SQLite `boss_drops` | 드롭 기록 한 건이 한 행. 묶음은 수익 건(`profit_entry_id`)이고 행 식별자는 uuid `id` 다. 아이템 줄 id(`item_id`, 반지는 레벨 줄 · 상자에서 나온 연마석은 상자용 줄), 상태(`price_status`) · 판매가 · 받는 메소 · 가격을 매긴 시각 · 분배 방식 · 인원 · 내 % · 수수료. 판매가부터 분배까지는 `entered` 일 때만 있다. 캐릭터 · 보스 · 난이도 · 기간 · 월드는 수익 건(`boss_profit_entries`)에서 읽는다. 차례 · 나온 상자 · 이름은 저장하지 않고 읽을 때 드롭 표와 게임 데이터에서 찾는다 |
 | Preferences `dropEffect` | 연출 켜기(`on`) · 끄기(`off`). 없으면 켜짐 |
 
 기록이 지워지는 경우는 넷이다. 시트에서 고칠 때, 완료 행에서 처치 난이도로 못 얻는 기록을 정리할 때([[ADR-044]] 결정 8),

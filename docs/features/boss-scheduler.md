@@ -28,8 +28,8 @@
 | `lib/boss/manual-completion.ts` | 직접 완료가 그 기간에 열려 있는지, 직접 완료를 표시 목록에 더하기 |
 | `lib/boss/party-shares.ts` | 결정석 내 몫 계산, 비율 해석, 친 % 를 저장 칸으로 옮기기, 백분율 글자 |
 | `lib/boss/bosses.ts` | 보스 표 조회(이름 · 주기 · 난이도 · 인원 상한 · 유효 기간) |
-| `storage/boss-party-settings.ts` | 파티 설정(SQLite `boss_parties` 의 분배 칸) |
-| `storage/boss-party-period-overrides.ts` | 미완료 행에서 그 기간만 고친 파티 값(SQLite `boss_party_periods` 의 `open` 행 분배 칸) |
+| `storage/boss-party-settings.ts` | 파티 설정(SQLite `boss_split_settings`) |
+| `storage/boss-party-period-overrides.ts` | 미완료 행에서 그 기간만 고친 파티 값(SQLite `boss_profit_entries` 에서 처치 전 줄의 분배 칸) |
 | `storage/manual-completion-banner.ts` | 직접 완료 안내 줄을 닫은 주(Preferences `dismissedManualCompletion`) |
 | `components/organisms/PartySizeModal/` | 파티 인원 · 난이도 · 분배 모달 |
 | `components/molecules/PartyShareSummary/` | 파티 요약 배지와 `변경` |
@@ -116,7 +116,7 @@
 | `분배 방식` | `기본` · `비율` · `제외` |
 | `기본` 일 때 | `파티 인원` 스테퍼와 `최대 n명` 배지 |
 | `비율` 일 때 | `결정석` 내 몫 %(소수 셋째 자리까지, 바탕 없는 숫자)와 송금 수수료(`자동` 또는 `0%` · `3%` · `5%`) |
-| `제외` 일 때 | 아무 줄도 없다. 결정석을 팔지 않은 처치라 결정석 내 몫이 0 메소이고, 고르기 전 분배는 숨겨 둔다([[ADR-038]] 결정 12) |
+| `제외` 일 때 | 아무 줄도 없다. 결정석을 팔지 않은 처치라 결정석 내 몫이 0 메소다. 고르기 전 인원 · 비율 · 송금 수수료를 지우고 솔로로 둔다([[ADR-038]] 결정 12) |
 | `받는 금액` | 고른 분배로 센 결정석 금액. 고칠 때마다 다시 센다. 결정석 가격을 모르거나 `제외` 면 없다([[ADR-038]] 결정 13) |
 | 아래 | `적용` |
 
@@ -126,12 +126,12 @@
 
 | 연 곳 | 저장하는 곳 | 결정석 가격 |
 |---|---|---|
-| 보스 카드 · 보스 관리 | 파티 설정(`boss_parties` 의 분배 칸). 다음 기록부터 쓰인다 | 이번 기간의 결정석 가격 표 값 |
-| 보스 수익 완료 행 | 그 기록 한 건(`boss_party_periods` 의 `cleared` 행) | 그 기록의 가격 |
-| 보스 수익 미완료 행 | 그 기간만 쓰는 값(`boss_party_periods` 의 `open` 행). 처치하면 그 기록의 값이 된다 | 그 기간의 결정석 가격 표 값 |
+| 보스 카드 · 보스 관리 | 파티 설정(`boss_split_settings`). 다음 기록부터 쓰인다 | 이번 기간의 결정석 가격 표 값 |
+| 보스 수익 완료 행 | 그 기록 한 건(처치한 `boss_profit_entries` 줄) | 그 기록의 가격 |
+| 보스 수익 미완료 행 | 그 기간만 쓰는 값(처치 전 `boss_profit_entries` 줄). 처치하면 그 기록의 값이 된다 | 그 기간의 결정석 가격 표 값 |
 
-세 곳 모두 같은 분배 칸(`split_mode` · `party_size` · `my_share` · `shares_total` · `split_fee_percent` · `split_fee_auto` ·
-`crystal_excluded`)을 쓴다([[ADR-078]]). `crystal_excluded` 가 `1` 이면 `제외` 다.
+세 곳 모두 같은 분배 칸(`split_type` · `party_size` · `split_share_millipercent` · `split_fee_percent` ·
+`split_fee_follows_mvp_grade`)을 쓴다([[ADR-078]] 결정 2). `split_type` 이 `excluded` 면 `제외` 다.
 
 결정석 내 몫을 세는 식은 [[ADR-038]] 결정 7 에 있다.
 

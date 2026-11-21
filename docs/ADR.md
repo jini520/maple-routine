@@ -164,7 +164,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-035](./adr/ADR-035_content-scheduler_layout.md) | 🟢 | content-scheduler | 스케줄러 화면의 레일 아래 간격 |
 | [ADR-036](./adr/ADR-036_boss-scheduler_boss-list.md) | 🟢 | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 |
 | [ADR-037](./adr/ADR-037_boss-scheduler_completion.md) | 🟢 | boss-scheduler | 보스 완료 판정과 주간 한도 |
-| [ADR-038+220+238](./adr/ADR-038+220+238_boss-scheduler_party.md) | 🟢 | boss-scheduler | 보스 파티 인원과 결정석 분배 비율 · 결정석을 팔지 않은 처치의 `제외` · 비율 % 입력과 받는 금액 |
+| [ADR-038+220+238+288](./adr/ADR-038+220+238+288_boss-scheduler_party.md) | 🟢 | boss-scheduler | 보스 파티 인원과 결정석 분배 비율 · 결정석을 팔지 않은 처치의 `제외` · 비율 % 입력과 받는 금액 |
 | [ADR-039+242](./adr/ADR-039+242_boss-scheduler_card.md) | 🟢 | boss-scheduler | 보스 카드 |
 | [ADR-093+121](./adr/ADR-093+121_boss-scheduler_manage-redesign.md) | 🟢 | boss-scheduler | 보스 관리 화면 리디자인과 난이도 고르개 통일 |
 | [ADR-040+208](./adr/ADR-040+208_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
@@ -172,7 +172,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-042+135+178+212+221](./adr/ADR-042+135+178+212+221_boss-profit_amounts.md) | 🟢 | boss-profit | 보스 수익 금액 표시 · 결정석 판매 한도를 넘긴 처치의 0 메소 |
 | [ADR-043+270](./adr/ADR-043+270_boss-profit_layout.md) | 🟢 | boss-profit | 보스 수익 화면 배치 |
 | [ADR-092+112+153](./adr/ADR-092+112+153_boss-profit_redesign.md) | 🟢 | boss-profit | 보스 수익 리디자인과 고가 드롭 홀로그램 강조 |
-| [ADR-044+066+076+111+120+239](./adr/ADR-044+066+076+111+120+239_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
+| [ADR-044+066+076+111+120+239+289](./adr/ADR-044+066+076+111+120+239+289_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
 | [ADR-045](./adr/ADR-045_item-drop_effect.md) | 🟢 | item-drop | 고가 드롭 연출과 강조 |
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
 | [ADR-047+190+217+225+231+245](./adr/ADR-047+190+217+225+231+245_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 억 단위 판매 · 헥사와 구매 줄 합치기 · 주간 보스 수입 이전과 그 마지막 입력 기억 · 메소마켓 환전 수수료 · 펼친 강화 줄의 장비 그림 |
@@ -197,7 +197,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
 | [ADR-071+205+243+251](./adr/ADR-071+205+243+251_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
 | [ADR-074](./adr/ADR-074_utility_boss-profit-calculator.md) | 🟢 | utility | 주간 보스 수익 계산기 |
-| [ADR-078+254](./adr/ADR-078+254_persistence_boss-tables.md) | 🟢 | persistence | 보스 기록 테이블 재설계 |
+| [ADR-078+254+287](./adr/ADR-078+254+287_persistence_boss-tables.md) | 🟢 | persistence | 보스 기록 테이블 재설계 |
 | [ADR-096](./adr/ADR-096_persistence_cashbook-tables.md) | 🟢 | persistence | 가계부 기록 테이블 재설계 |
 | [ADR-098+173](./adr/ADR-098+173_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |
 | [ADR-099+143+258+279](./adr/ADR-099+143+258+279_server-sync_records.md) | ⚪ | server-sync | 사용자가 만든 기록을 서버에 두고 기기끼리 맞추기 · 과거 드롭 올리기 |
