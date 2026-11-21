@@ -69,10 +69,10 @@ describe('spendGroupsOf: 분류 → 묶음들', () => {
    * **`버프` 는 이제 메소뿐**이다. 메포짜리 보약 둘이
    * 이벤트·BM 으로 옮겨가고 영약 넷만 남았다.
    *
-   * 통화는 분류가 아니라 항목이 든다. fixture 의 버프는 메소 항목만, 이벤트·BM 은 메포 항목만
-   * 들어서 분류마다 항목의 통화를 모으면 하나씩 나온다.
+   * 통화는 분류가 아니라 항목이 든다. fixture 의 버프는 메소 항목만 들고, 이벤트·BM 은 메포 항목과 메소샵 묶음의 메소
+   * 항목을 함께 든다.
    */
-  it('통화는 항목이 든다. fixture 의 버프는 메소, 이벤트·BM 은 메포다', () => {
+  it('통화는 항목이 든다. fixture 의 버프는 메소, 이벤트·BM 은 메포와 메소샵의 메소다', () => {
     const 버프 = new Set(
       spendGroupsOf('buff', 패치후).flatMap((group) =>
         group.choices.flatMap((choice) => choice.items.map((item) => item.currency)),
@@ -85,7 +85,9 @@ describe('spendGroupsOf: 분류 → 묶음들', () => {
         group.choices.flatMap((choice) => choice.items.map((item) => item.currency)),
       ),
     )
-    expect(이벤트).toEqual(new Set(['point']))
+    expect(이벤트).toEqual(new Set(['point', 'meso']))
+    const 메소샵 = spendGroupsOf('event_bm', 패치후).find((group) => group.key === 'meso_shop')
+    expect(new Set(메소샵?.choices.flatMap((choice) => choice.items.map((item) => item.currency)))).toEqual(new Set(['meso']))
   })
 })
 

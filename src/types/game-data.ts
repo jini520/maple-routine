@@ -115,70 +115,64 @@ export interface WorldsTable extends TableHead {
   worldOpenPeriods: WorldOpenPeriodRow[]
 }
 
-export interface SpendCatalogRules {
-  tariffPercent: number
-  rewardCoinPriceMeso: number
-  /** 메소마켓에서 메소를 팔 때 받는 메포에서 떼는 수수료(%). */
-  mesoMarketFeePercent: number
-}
-export interface SpendGroupRow {
+/** 추가 리워드 종류. 앱 코드가 key 로 갈린다(`exp` · `sol_erda`). 카드에도 이 이름이 선다. */
+export interface SpendRewardTypeRow {
+  id: string
   key: string
   name: string
-  /** 지출 분류 key(`cashbookCategories` 칸). 묶음마다 분류가 하나다. */
-  category: string
+}
+export interface SpendGroupRow {
+  id: string
+  key: string
+  name: string
   /** 하루 목록 카드 첫 줄. */
   cardTitle: string
+  /** 지출 분류 줄 id(`cashbookCategories` 칸). 묶음마다 분류가 하나다. */
+  cashbookCategoryId: string
   /** 지금 고를 수 있는 묶음인가. 기간제 묶음은 날짜가 아니라 이 값으로 닫는다. 이벤트가 미뤄지면 날짜로 한 판정이 틀린다. */
-  active: boolean
+  isActive: boolean
 }
 export interface SpendTileRow {
+  id: string
   key: string
   name: string
   /** 아이템 그림이나 지역 아이콘의 그림 id. 그림이 없는 타일은 빠진다. */
   iconAssetId?: string
 }
 export interface SpendItemRow {
+  id: string
   key: string
-  group: string
-  tile: string
   /** 원본 이름. 하루 목록 카드에도 선다. */
   name: string
-  /** 좁은 자리용으로 줄인 이름. 없으면 `name` 을 쓴다. */
-  shortName?: string
+  groupId: string
+  tileId: string
   tier?: string
   currency: 'point' | 'meso'
   /** `null` 은 경매장 값이라 적을 때 친다. */
   unitPrice: number | null
   unit: string
   maxQuantity?: number
-  rewardCoins?: number
-  from?: string
-  until?: string
+  /** 추가 리워드 종류 하나를 샀을 때 받는 세라자르 주화 개수 */
+  rewardCoinQuantity?: number
+  validFrom?: string
+  validUntil?: string
 }
 export interface SpendItemOptionRow {
-  item: string
+  itemId: string
   axis: string
   value: string
 }
-export interface SpendItemFormRow {
-  item: string
-  /** 형태 key(`SpendFormRow.key`). */
-  form: string
-}
-export interface SpendFormRow {
-  /** 앱 코드가 이 값으로 갈린다(`exp` · `sol_erda`). */
-  key: string
-  /** 카드에도 이 이름이 선다. */
-  name: string
+export interface SpendItemRewardTypeRow {
+  itemId: string
+  rewardTypeId: string
 }
 export interface SpendCatalogTable extends TableHead {
-  rules: SpendCatalogRules
-  groups: SpendGroupRow[]
-  tiles: SpendTileRow[]
-  items: SpendItemRow[]
-  itemOptions: SpendItemOptionRow[]
-  itemForms: SpendItemFormRow[]
-  forms: SpendFormRow[]
+  spendRewardTypes: SpendRewardTypeRow[]
+  spendGroups: SpendGroupRow[]
+  spendTiles: SpendTileRow[]
+  spendItems: SpendItemRow[]
+  spendItemOptions: SpendItemOptionRow[]
+  spendItemRewardTypes: SpendItemRewardTypeRow[]
 }
 
 export interface CashbookCategoryRow {

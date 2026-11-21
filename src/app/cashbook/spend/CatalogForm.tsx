@@ -277,7 +277,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   /** 고른 단계가 주는 세라자르 주화. 팔면 메소가 되므로 그만큼 덜 나간 것이다. */
   const coins = choice === null ? 0 : spendRewardCoins(choice, tierByForm)
   /** 주화를 주는 대표인가. 단계를 고르기 전에도 줄을 세울지 정하므로 고른 것을 안 본다. */
-  const givesCoins = choice !== null && choice.items.some((each) => (each.rewardCoins ?? 0) > 0)
+  const givesCoins = choice !== null && choice.items.some((each) => (each.rewardCoinQuantity ?? 0) > 0)
   /*
    * 주화는 **시세를 칠 때까지 안 뺀다**. 그 전의 합계는 메포를 환산하지 않은 0 이라, 여기서
    * 주화만 빼면 아직 아무것도 안 센 줄이 음수로 선다. 저장된 기록을 읽는 `spendMesoOf` 도

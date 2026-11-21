@@ -1,1669 +1,1842 @@
 {
-  "updatedAt": "2026-10-25T07:25:28.594Z",
-  "rules": {
-    "tariffPercent": 10,
-    "rewardCoinPriceMeso": 40000000,
-    "mesoMarketFeePercent": 1
-  },
-  "groups": [
+  "updatedAt": "2026-11-20T07:23:21.111Z",
+  "spendRewardTypes": [
     {
-      "key": "epic_dungeon_bonus_reward",
-      "name": "에픽던전 추가 리워드",
-      "category": "content",
-      "cardTitle": "에픽던전",
-      "active": true
+      "id": "bae1e9fd-eff2-4cfa-808c-12ce4633416e",
+      "key": "exp",
+      "name": "경험치"
     },
     {
-      "key": "monster_park",
-      "name": "몬스터 파크",
-      "category": "content",
-      "cardTitle": "몬스터 파크",
-      "active": true
-    },
-    {
-      "key": "quick_pass",
-      "name": "퀵 패스",
-      "category": "content",
-      "cardTitle": "퀵 패스",
-      "active": true
-    },
-    {
-      "key": "maple_point_shop",
-      "name": "메이플 포인트 샵",
-      "category": "event_bm",
-      "cardTitle": "메이플 포인트 샵",
-      "active": false
-    },
-    {
-      "key": "event",
-      "name": "이벤트",
-      "category": "event_bm",
-      "cardTitle": "이벤트",
-      "active": true
-    },
-    {
-      "key": "vip_sauna",
-      "name": "VIP 사우나",
-      "category": "event_bm",
-      "cardTitle": "VIP 사우나",
-      "active": true
-    },
-    {
-      "key": "etc",
-      "name": "기타",
-      "category": "event_bm",
-      "cardTitle": "이벤트·BM",
-      "active": true
-    },
-    {
-      "key": "boss_buff",
-      "name": "보스 버프",
-      "category": "buff",
-      "cardTitle": "버프(보스)",
-      "active": true
-    },
-    {
-      "key": "hunting_buff",
-      "name": "사냥 버프",
-      "category": "buff",
-      "cardTitle": "버프(사냥)",
-      "active": true
-    },
-    {
-      "key": "scroll",
-      "name": "주문서",
-      "category": "scroll",
-      "cardTitle": "주문서",
-      "active": true
-    },
-    {
-      "key": "pet_equipment_scroll",
-      "name": "펫장비 주문서",
-      "category": "scroll",
-      "cardTitle": "펫장비 주문서",
-      "active": true
-    },
-    {
-      "key": "return_scroll",
-      "name": "리턴 스크롤",
-      "category": "scroll",
-      "cardTitle": "리턴 스크롤",
-      "active": true
+      "id": "8dbe3363-f66d-4ba7-9d14-74c11387a0aa",
+      "key": "sol_erda",
+      "name": "솔 에르다"
     }
   ],
-  "tiles": [
+  "spendGroups": [
     {
+      "id": "f8623015-60f5-4307-be32-3567ea68ad0b",
+      "key": "epic_dungeon_bonus_reward",
+      "name": "에픽던전 추가 리워드",
+      "cashbookCategoryId": "0a8fd2ac-71ab-4dc0-be6f-64c71ac47504",
+      "cardTitle": "에픽던전",
+      "isActive": true
+    },
+    {
+      "id": "e20c16f4-680e-4b21-8318-ad9a4c5b6ed7",
+      "key": "monster_park",
+      "name": "몬스터 파크",
+      "cashbookCategoryId": "0a8fd2ac-71ab-4dc0-be6f-64c71ac47504",
+      "cardTitle": "몬스터 파크",
+      "isActive": true
+    },
+    {
+      "id": "1e63f70e-57d5-44cd-8cac-a2e776de2ae4",
+      "key": "quick_pass",
+      "name": "퀵 패스",
+      "cashbookCategoryId": "0a8fd2ac-71ab-4dc0-be6f-64c71ac47504",
+      "cardTitle": "퀵 패스",
+      "isActive": true
+    },
+    {
+      "id": "c7dd3830-c385-41fa-9911-bdc1020f3f97",
+      "key": "meso_shop",
+      "name": "메소샵",
+      "cashbookCategoryId": "1b1f7c97-114a-4634-a0a6-ca901dfd7f8b",
+      "cardTitle": "메소샵",
+      "isActive": true
+    },
+    {
+      "id": "80d05a4a-3efe-466d-a542-229a697dd8f6",
+      "key": "event",
+      "name": "이벤트",
+      "cashbookCategoryId": "1b1f7c97-114a-4634-a0a6-ca901dfd7f8b",
+      "cardTitle": "이벤트",
+      "isActive": true
+    },
+    {
+      "id": "8d36c3b1-cfcf-4e8f-8c38-557a0864e5c5",
+      "key": "vip_sauna",
+      "name": "VIP 사우나",
+      "cashbookCategoryId": "1b1f7c97-114a-4634-a0a6-ca901dfd7f8b",
+      "cardTitle": "VIP 사우나",
+      "isActive": true
+    },
+    {
+      "id": "d6f22387-59e8-4c63-9c9d-775802ad3ce2",
+      "key": "etc",
+      "name": "기타",
+      "cashbookCategoryId": "1b1f7c97-114a-4634-a0a6-ca901dfd7f8b",
+      "cardTitle": "이벤트·BM",
+      "isActive": true
+    },
+    {
+      "id": "6fb8556d-f0fc-4932-8e3d-d5b710fa3f3e",
+      "key": "maple_point_shop",
+      "name": "메이플 포인트 샵",
+      "cashbookCategoryId": "1b1f7c97-114a-4634-a0a6-ca901dfd7f8b",
+      "cardTitle": "메이플 포인트 샵",
+      "isActive": false
+    },
+    {
+      "id": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "key": "boss_buff",
+      "name": "보스 버프",
+      "cashbookCategoryId": "fc772e5b-1ed8-4802-a04b-6b5f21e1db6b",
+      "cardTitle": "버프(보스)",
+      "isActive": true
+    },
+    {
+      "id": "49ac3683-450c-40db-b660-f050a4918d62",
+      "key": "hunting_buff",
+      "name": "사냥 버프",
+      "cashbookCategoryId": "fc772e5b-1ed8-4802-a04b-6b5f21e1db6b",
+      "cardTitle": "버프(사냥)",
+      "isActive": true
+    },
+    {
+      "id": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "key": "scroll",
+      "name": "주문서",
+      "cashbookCategoryId": "5162bf5e-a21e-4ae6-adce-7753e3c224ff",
+      "cardTitle": "주문서",
+      "isActive": true
+    },
+    {
+      "id": "29b57284-b0cb-4e4b-bad0-15855f36848b",
+      "key": "pet_equipment_scroll",
+      "name": "펫장비 주문서",
+      "cashbookCategoryId": "5162bf5e-a21e-4ae6-adce-7753e3c224ff",
+      "cardTitle": "펫장비 주문서",
+      "isActive": true
+    },
+    {
+      "id": "3db39203-8f6b-462d-be29-effc319032dc",
+      "key": "return_scroll",
+      "name": "리턴 스크롤",
+      "cashbookCategoryId": "5162bf5e-a21e-4ae6-adce-7753e3c224ff",
+      "cardTitle": "리턴 스크롤",
+      "isActive": true
+    }
+  ],
+  "spendTiles": [
+    {
+      "id": "f4c7e0a2-aad7-48f2-a5fa-b282611259ea",
+      "key": "advanced_bag_selection_coupon",
+      "name": "고급 가방 선택권",
+      "iconAssetId": "bd0d15a3-cf59-4c42-8647-1ac4511e94ea"
+    },
+    {
+      "id": "dc6317d4-5116-4c3d-85e0-db8bf81498e4",
       "key": "advanced_boss_killer_potion",
       "name": "고급 보스 킬러 비약",
-      "iconFile": "advanced_boss_rush_boost_potion.webp",
-      "iconMap": null,
       "iconAssetId": "1739f743-d48c-4319-87b3-aa5e3dd2dd3b"
     },
     {
+      "id": "209d0eb1-c722-4a1e-adad-f7005761e15e",
       "key": "advanced_great_blessing_potion",
       "name": "고급 대축복의 비약",
-      "iconFile": "advanced_boss_rush_boost_potion.webp",
-      "iconMap": null,
       "iconAssetId": "1739f743-d48c-4319-87b3-aa5e3dd2dd3b"
     },
     {
+      "id": "dc3f5ed6-b2f5-4c7e-942e-f5b85edc24df",
       "key": "advanced_great_hero_potion",
       "name": "고급 대영웅의 비약",
-      "iconFile": "advanced_boss_rush_boost_potion.webp",
-      "iconMap": null,
       "iconAssetId": "1739f743-d48c-4319-87b3-aa5e3dd2dd3b"
     },
     {
+      "id": "2efbace5-5b78-403b-8f04-77b0954755ee",
       "key": "alleria_elixir",
       "name": "알레리아의 영약",
-      "iconFile": "alleria_elixir.webp",
-      "iconMap": null,
       "iconAssetId": "3e3f72f8-c5b1-41f8-acf7-d5070a360214"
     },
     {
+      "id": "50313d64-c1e8-4765-8e5b-8a63cfde6391",
       "key": "amazing_positive_chaos_scroll",
       "name": "놀라운 긍정의 혼돈 주문서",
-      "iconFile": "amazing_positive_chaos_scroll.webp",
-      "iconMap": null,
       "iconAssetId": "e8b4f2ff-2a61-4ff3-871d-ed358f1b5c26"
     },
     {
+      "id": "c113f8d5-302a-4324-98b2-621d299581ed",
+      "key": "android_ear_sensor_clip",
+      "name": "안드로이드 이어센서 클립",
+      "iconAssetId": "2ed28a51-8bca-4609-84ea-6855b6f4f8bb"
+    },
+    {
+      "id": "1af07e3f-ab79-4c08-9884-7142b95c20f2",
       "key": "angler_company",
       "name": "앵글러 컴퍼니",
-      "iconFile": null,
-      "iconMap": "anglerCompany",
       "iconAssetId": "1c677695-1834-4da4-9404-ec0b002ab75e"
     },
     {
+      "id": "ed8b979e-7b5b-4e03-bf79-67e181c47742",
+      "key": "ascendant_pulse_ring",
+      "name": "어센던트 펄스 링",
+      "iconAssetId": "40a14313-2364-4437-ac05-6de9c9b1606f"
+    },
+    {
+      "id": "c0cf824c-68f3-41c8-b033-3f3f8704ba63",
       "key": "attendance_event_pass",
       "name": "출석 이벤트 패스",
-      "iconFile": null,
-      "iconMap": null,
       "iconAssetId": null
     },
     {
+      "id": "e55ecd52-c460-49fe-ae60-1c581f27a3bb",
       "key": "aurum_regis",
       "name": "아우룸 레기스",
-      "iconFile": null,
-      "iconMap": "aurumRegis",
       "iconAssetId": "a97738b6-15c2-4267-a48c-b59071e3d6af"
     },
     {
+      "id": "7ac68bfa-b1cf-436a-9ad2-5caaae45084b",
+      "key": "bag_wallet_selection_coupon",
+      "name": "가방/지갑 선택권",
+      "iconAssetId": "219dc5bd-cbf9-427c-a7ba-5b7979950568"
+    },
+    {
+      "id": "361431fd-b773-4612-b402-eb6d85c0e937",
       "key": "black_circulator",
       "name": "블랙 서큘레이터",
-      "iconFile": "black_circulator.webp",
-      "iconMap": null,
       "iconAssetId": "54f272fb-99c1-4972-8636-e39b4b712c81"
     },
     {
+      "id": "82153276-a123-4e7e-9820-e3afe8d25030",
       "key": "blueberry_farm",
       "name": "블루베리 농장",
-      "iconFile": "blueberry_farm_ticket.webp",
-      "iconMap": null,
       "iconAssetId": "058dff62-bf34-4c9b-a59c-8a1bee62a458"
     },
     {
+      "id": "382b8cbd-9a63-4cbc-a37d-c7a740e93e6e",
+      "key": "blush_petal_android_skin_coupon",
+      "name": "홍조 꽃잎 스킨 안드로이드 변경권",
+      "iconAssetId": "ddfe791e-8539-4932-b0c1-d9f72f99adb7"
+    },
+    {
+      "id": "d357d2c9-4f95-460b-9d65-0678c881d9ff",
       "key": "boss_killer_potion",
       "name": "보스 킬러 비약",
-      "iconFile": "boss_rush_boost_potion.webp",
-      "iconMap": null,
       "iconAssetId": "2471e5c9-6bfc-43f5-93e2-4871337be1c6"
     },
     {
+      "id": "c2db1a69-6708-42e1-b8d5-a92571609f9b",
       "key": "collector_elixir",
       "name": "콜렉터의 영약",
-      "iconFile": "collector_elixir.webp",
-      "iconMap": null,
       "iconAssetId": "0096587f-e69b-444b-a42d-a0f9e9800562"
     },
     {
+      "id": "03d0aff2-e4d1-4376-9450-712a3a9ce5ae",
       "key": "daily_quest_quick_pass",
       "name": "일간 퀘스트",
-      "iconFile": "grandis_spiegelmann.webp",
-      "iconMap": null,
       "iconAssetId": "b0b9e9aa-9805-4256-8c40-2b94900c6a78"
     },
     {
+      "id": "edbe9ef7-e527-4b03-b66f-aca3a09e1e72",
+      "key": "damage_skin_extraction_coupon",
+      "name": "데미지 스킨 추출권",
+      "iconAssetId": "ee0a5c20-cc68-4ccb-b4b1-f440e8a4a85b"
+    },
+    {
+      "id": "9c52bb09-dd8c-4d22-893b-b60e05e5d1dd",
       "key": "earring_scroll",
       "name": "귀 장식 주문서",
-      "iconFile": "scroll_10_percent.webp",
-      "iconMap": null,
       "iconAssetId": "ae6f6612-6e3b-4662-9b94-8970e25262ff"
     },
     {
+      "id": "284b9620-b401-4464-b3ff-b1dad57b07c3",
       "key": "enhanced_10_stat_potion",
       "name": "향상된 10단계 물약",
-      "iconFile": "advanced_strength_potion_x.webp",
-      "iconMap": null,
       "iconAssetId": "622fff23-198e-4a93-990d-04531cb1cdbe"
     },
     {
+      "id": "0db411ac-3f81-4023-98b6-d2d8f4578966",
       "key": "epic_dungeon_quick_pass",
       "name": "에픽던전",
-      "iconFile": "cerzar.webp",
-      "iconMap": null,
       "iconAssetId": "7602e5a1-9efb-492b-9cd2-7d96cef863c6"
     },
     {
+      "id": "61b39040-07d5-4d79-b274-c2d5cd288a8e",
       "key": "exp_3x_coupon",
       "name": "경험치 3배 쿠폰",
-      "iconFile": "exp_3x_coupon.webp",
-      "iconMap": null,
       "iconAssetId": "a66e36a9-94e3-4308-a2e4-23ad3dd91b33"
     },
     {
+      "id": "7d4f1dbb-83ba-41d8-bfaf-472bfd20a378",
       "key": "exp_4x_coupon",
       "name": "경험치 4배 쿠폰",
-      "iconFile": "exp_4x_coupon.webp",
-      "iconMap": null,
       "iconAssetId": "24a0fcdf-cc02-474f-b3af-900f3075bc6b"
     },
     {
+      "id": "40a3ebc2-5cb6-43e9-b65d-72ef0721ae81",
       "key": "exp_accumulation_potion",
       "name": "경험 축적의 비약",
-      "iconFile": "exp_accumulation_potion.webp",
-      "iconMap": null,
       "iconAssetId": "95388527-93c6-4827-83c3-2ce9e11d2a73"
     },
     {
+      "id": "d83d22c5-b3ec-427c-8f90-bfceed50bb26",
       "key": "extra_exp_50_coupon",
       "name": "추가 경험치 50% 쿠폰",
-      "iconFile": "extra_exp_50_coupon.webp",
-      "iconMap": null,
       "iconAssetId": "97316943-6c47-4124-8463-024f140a79bc"
     },
     {
+      "id": "527958aa-9803-47d3-8925-246779a8a468",
+      "key": "fluffy_petal_android_skin_coupon",
+      "name": "뽀송 꽃잎 스킨 안드로이드 변경권",
+      "iconAssetId": "ddfe791e-8539-4932-b0c1-d9f72f99adb7"
+    },
+    {
+      "id": "b2a3b045-31b8-4749-ba30-add272226e9b",
       "key": "great_blessing_potion",
       "name": "대축복의 비약",
-      "iconFile": "boss_rush_boost_potion.webp",
-      "iconMap": null,
       "iconAssetId": "2471e5c9-6bfc-43f5-93e2-4871337be1c6"
     },
     {
+      "id": "5b474889-7cf5-4ebb-b5a6-f8add8afdb6a",
       "key": "great_hero_potion",
       "name": "대영웅의 비약",
-      "iconFile": "boss_rush_boost_potion.webp",
-      "iconMap": null,
       "iconAssetId": "2471e5c9-6bfc-43f5-93e2-4871337be1c6"
     },
     {
+      "id": "739580e3-f4b6-4ee5-b3ba-ca40d653bf8f",
       "key": "high_mountain",
       "name": "하이마운틴",
-      "iconFile": null,
-      "iconMap": "highMountain",
       "iconAssetId": "60985ed3-67f1-4cf1-8981-78ecb2efe8fa"
     },
     {
+      "id": "35a2a061-50f5-42e2-81ce-65ea56bbd54d",
       "key": "honor_elixir",
       "name": "명예의 영약",
-      "iconFile": "honor_elixir.webp",
-      "iconMap": null,
       "iconAssetId": "8670aa54-cbe6-4d50-a5bb-5fb83aad2da9"
     },
     {
+      "id": "7dd51d3e-2b9f-47d9-8d0e-1ec0772d4134",
+      "key": "karma_amazing_positive_chaos_scroll",
+      "name": "카르마 놀라운 긍정의 혼돈 주문서 100%",
+      "iconAssetId": "ee6307c6-8e5c-4f67-8676-368dc1e58d4a"
+    },
+    {
+      "id": "0338e076-5a39-4fa1-90f5-d18f80d68ee2",
       "key": "legendary_hero_potion",
       "name": "전설의 영웅 비약",
-      "iconFile": "legendary_blessing_potion.webp",
-      "iconMap": null,
       "iconAssetId": "341d3415-4a0a-466c-9f75-5414fc41df2a"
     },
     {
+      "id": "1df99218-6c9c-476d-913c-3ad3ebb5a09d",
       "key": "magic_whetstone",
       "name": "마법의 숫돌",
-      "iconFile": "magic_whetstone.webp",
-      "iconMap": null,
       "iconAssetId": "0cabacc6-8818-4778-8da9-3b86037ec377"
     },
     {
+      "id": "4f2aea16-9ec2-431f-9c07-4890215cef92",
       "key": "magical_scroll",
       "name": "매지컬 주문서",
-      "iconFile": "magical_onehand_attack_scroll.webp",
-      "iconMap": null,
       "iconAssetId": "28521c64-bac6-4bc7-9dac-3606d37f4ef1"
     },
     {
+      "id": "0331a21c-007e-401b-9b5a-5df5620af566",
       "key": "mechaberry_farm",
       "name": "메카베리 농장",
-      "iconFile": "mechaberry_farm_ticket.webp",
-      "iconMap": null,
       "iconAssetId": "e751b5bc-7c4d-4b5e-a907-44d70bf98b35"
     },
     {
+      "id": "545dd21f-d68e-47cf-9ed4-bc81ff76523b",
       "key": "mihoroid",
       "name": "미호로이드",
-      "iconFile": "mihoroid.webp",
-      "iconMap": null,
       "iconAssetId": "47a20766-6d0b-481f-9f01-97a458410b43"
     },
     {
+      "id": "e6dc17a9-ebbb-4d80-957e-f3eaed1d044b",
       "key": "monster_park",
       "name": "몬스터 파크",
-      "iconFile": "monster_park_ticket.webp",
-      "iconMap": null,
       "iconAssetId": "a8cbdc1f-9667-46fc-aa5e-4f5fba36028f"
     },
     {
+      "id": "15880e80-f4a1-4852-a964-030f2ea270a8",
       "key": "mvp_extra_exp_70_coupon",
       "name": "MVP 추가 경험치 70% 쿠폰",
-      "iconFile": "mvp_extra_exp_70_coupon.webp",
-      "iconMap": null,
       "iconAssetId": "0a185840-5f46-4c00-97db-55d8af8acc34"
     },
     {
+      "id": "f225fc08-680b-4b91-bc46-5fd19a4cb38d",
       "key": "nickname_change",
       "name": "닉네임 변경",
-      "iconFile": "npc_mr_newname.webp",
-      "iconMap": null,
       "iconAssetId": "c4bc3925-c39a-41eb-94c6-e8c8311b0f65"
     },
     {
+      "id": "8f2cc377-1cbd-4ab7-8c65-a53ebff0f257",
       "key": "nightmare_paradise",
       "name": "악몽선경",
-      "iconFile": null,
-      "iconMap": "nightmareParadise",
       "iconAssetId": "9bb3028f-2075-4cc8-a2a3-fb67c8346798"
     },
     {
+      "id": "6bfc9efd-a08c-4584-aa59-72fe5a60eeb1",
       "key": "pet_equipment_clean_slate_scroll",
       "name": "펫장비 순백의 주문서",
-      "iconFile": "pet_equip_pure_white_scroll.webp",
-      "iconMap": null,
       "iconAssetId": "b543d006-7273-437c-9593-9ebbaedb821a"
     },
     {
+      "id": "8f5e5bf7-8e14-425c-a745-db6634d91b33",
       "key": "pet_equipment_innocent_scroll",
       "name": "펫장비 이노센트",
-      "iconFile": "pet_equip_innocent_scroll.webp",
-      "iconMap": null,
       "iconAssetId": "d284d74d-5363-411f-b7f4-d5482cb7718b"
     },
     {
+      "id": "1b8ead90-79b4-472f-ae4a-8aa6c03f0502",
       "key": "pet_equipment_return_scroll",
       "name": "펫장비 리턴 스크롤",
-      "iconFile": "pet_equip_return_scroll.webp",
-      "iconMap": null,
       "iconAssetId": "da778a49-287a-4b09-935d-e11c2a852741"
     },
     {
+      "id": "3f7edb44-26b1-4e18-9414-8b5e54bcf335",
       "key": "pet_equipment_scroll",
       "name": "펫장비 주문서",
-      "iconFile": "pet_equip_attack_scroll.webp",
-      "iconMap": null,
       "iconAssetId": "048fca5a-730d-4047-baa7-903cdfbd7922"
     },
     {
+      "id": "a8a0fbae-baa7-48fe-ace6-7a78ea81d321",
+      "key": "pet_equipment_stat_transfer_scroll",
+      "name": "펫장비 능력치 이전 주문서",
+      "iconAssetId": "d66d5d9e-60ba-4415-870f-d68330b9f21c"
+    },
+    {
+      "id": "c73a2029-74cf-438c-ba39-881241dcaa55",
+      "key": "plasma_heart",
+      "name": "플라즈마 하트",
+      "iconAssetId": "c7fd2abb-cdaf-45b0-a3c1-421994e012cc"
+    },
+    {
+      "id": "7c7a70d4-78d7-4f06-906a-0c97637a757f",
       "key": "premium_accessory_scroll",
       "name": "프악공·프악마",
-      "iconFile": "premium_accessory_attack_scroll.webp",
-      "iconMap": null,
       "iconAssetId": "9a61527f-ecc6-40ab-b27d-0388d5014015"
     },
     {
+      "id": "cbeb6262-afc5-436d-b448-e3738d8507a4",
       "key": "premium_pet_equipment_scroll",
       "name": "프펫공·프펫마",
-      "iconFile": "premium_pet_equip_attack_scroll.webp",
-      "iconMap": null,
       "iconAssetId": "b1a52afd-07cc-4000-b8b9-ad0eebcffa3a"
     },
     {
+      "id": "4bf596ea-60e9-4e79-a619-e2d3dfa6b83c",
       "key": "radiant_moonlight_potion",
       "name": "영롱한 달빛 포션",
-      "iconFile": "luminous_moonshine_potion.png",
-      "iconMap": null,
       "iconAssetId": "14b4daae-9c8c-4d5b-8de9-ee2f6bf8740c"
     },
     {
+      "id": "633c7244-0ccb-4c67-b096-d1bd7a4cdc0f",
       "key": "return_scroll",
       "name": "리턴 스크롤",
-      "iconFile": "return_scroll.webp",
-      "iconMap": null,
       "iconAssetId": "f0b1ed2b-d9d7-464a-860d-cbb20f3d5caf"
     },
     {
+      "id": "2fb6cc9a-bbdb-4ac8-b5a1-2db48f1a55fc",
       "key": "seiram_elixir",
       "name": "세이람의 영약",
-      "iconFile": "seiram_elixir.webp",
-      "iconMap": null,
       "iconAssetId": "441da1e8-8c38-4ff8-af2f-1172c58c7fbb"
     },
     {
+      "id": "444af72a-15f2-4fb1-94bf-58a8f152e406",
       "key": "shining_red_star_potion",
       "name": "반짝이는 빨간 별 물약",
-      "iconFile": "red_star_potion.webp",
-      "iconMap": null,
       "iconAssetId": "ed194446-b071-4563-8b90-cc625c70c2b7"
     },
     {
+      "id": "cb0fb2f3-177d-4b89-b820-4cfc0b71b702",
       "key": "small_concentrated_exp_accumulation_potion",
       "name": "소형 고농축 경험 축적의 비약",
-      "iconFile": "small_concentrated_exp_accumulation_potion.webp",
-      "iconMap": null,
       "iconAssetId": "f674b9f3-782f-4dbe-9dd8-f90a2045c85d"
     },
     {
+      "id": "13352b7b-3b04-40ee-80b4-5e8996e243b1",
       "key": "small_exp_accumulation_potion",
       "name": "소형 경험 축적의 비약",
-      "iconFile": "small_exp_accumulation_potion.webp",
-      "iconMap": null,
       "iconAssetId": "8567f275-e875-4963-9b8f-2c0d193c2c7f"
     },
     {
+      "id": "f2194f60-0541-40ca-89f0-0bd998065e62",
       "key": "small_wealth_acquisition_potion",
       "name": "소형 재물 획득의 비약",
-      "iconFile": "wealth_acquisition_potion_small.webp",
-      "iconMap": null,
       "iconAssetId": "3dd19744-c713-4c12-adb3-c41e0556c49b"
     },
     {
+      "id": "ca41b922-11f3-4460-a872-775aa3c82499",
       "key": "sol_erda",
       "name": "솔 에르다",
-      "iconFile": "sole_1000.webp",
-      "iconMap": null,
       "iconAssetId": "7adeb2c8-e993-4fc8-9a58-f338dc874d7a"
     },
     {
+      "id": "835f143c-31c6-42ca-a140-ce67575f1157",
       "key": "tonic_buff_extra_purchase",
       "name": "보약 버프 추가 구매",
-      "iconFile": null,
-      "iconMap": null,
       "iconAssetId": null
     },
     {
+      "id": "7ff08b0a-68ce-46c7-99c8-66603792f050",
       "key": "tonic_buff_reset",
       "name": "보약 버프 초기화",
-      "iconFile": null,
-      "iconMap": null,
       "iconAssetId": null
     },
     {
+      "id": "d15d091a-8cd5-435a-a0dd-e8a39fdfbf56",
       "key": "vip_buff_exp",
       "name": "VIP 버프 (경험치)",
-      "iconFile": "vip_buff_exp.webp",
-      "iconMap": null,
       "iconAssetId": "e440b85d-db0f-4e60-b6a6-c98e96bd00c8"
     },
     {
+      "id": "c7fa858c-2adc-450a-89e9-1f6213cd078f",
       "key": "vip_buff_stat",
       "name": "VIP 버프 (능력치)",
-      "iconFile": "vip_buff_stats.webp",
-      "iconMap": null,
       "iconAssetId": "b3bd4fe3-479a-4fb8-82ee-c6f914545f24"
     },
     {
+      "id": "fdad3bc8-3f29-43c8-8a6e-47cd1d91aad5",
       "key": "vip_sauna",
       "name": "VIP 사우나",
-      "iconFile": "vip_sauna_ticket.webp",
-      "iconMap": null,
       "iconAssetId": "04aa9191-603b-45a5-923b-4342ebbfc392"
     },
     {
+      "id": "2c181a17-efc5-4f57-b2bb-11143db96f25",
       "key": "wealth_acquisition_potion",
       "name": "재물 획득의 비약",
-      "iconFile": "wealth_acquisition_potion.webp",
-      "iconMap": null,
       "iconAssetId": "f3a258aa-b691-45b9-9664-918c3cd753e2"
     },
     {
+      "id": "ab2f6051-9513-455e-b154-7dd88e487690",
       "key": "weekly_quest_quick_pass",
       "name": "주간 퀘스트",
-      "iconFile": "arcane_river_spiegelmann.webp",
-      "iconMap": null,
       "iconAssetId": "50c82880-ddd0-4cf5-bcbf-e24ae03ab602"
     }
   ],
-  "items": [
+  "spendItems": [
     {
+      "id": "7c7c64c3-9254-4df5-a415-2ab6430fc03d",
       "key": "high_mountain_1",
-      "group": "epic_dungeon_bonus_reward",
-      "tile": "high_mountain",
+      "groupId": "f8623015-60f5-4307-be32-3567ea68ad0b",
+      "tileId": "739580e3-f4b6-4ee5-b3ba-ca40d653bf8f",
       "name": "하이마운틴 1단계",
-      "shortName": null,
       "tier": "1단계",
       "currency": "point",
       "unitPrice": 7500,
       "unit": "회",
       "maxQuantity": 1,
-      "rewardCoins": 4,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": 4,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "6966e3f2-8daa-4931-8b2b-bde5ac8e0ca7",
       "key": "high_mountain_2",
-      "group": "epic_dungeon_bonus_reward",
-      "tile": "high_mountain",
+      "groupId": "f8623015-60f5-4307-be32-3567ea68ad0b",
+      "tileId": "739580e3-f4b6-4ee5-b3ba-ca40d653bf8f",
       "name": "하이마운틴 2단계",
-      "shortName": null,
       "tier": "2단계",
       "currency": "point",
       "unitPrice": 30000,
       "unit": "회",
       "maxQuantity": 1,
-      "rewardCoins": 8,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": 8,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "5cbe1825-10ab-41a4-ae0f-a2fbf47c7e00",
       "key": "angler_company_1",
-      "group": "epic_dungeon_bonus_reward",
-      "tile": "angler_company",
+      "groupId": "f8623015-60f5-4307-be32-3567ea68ad0b",
+      "tileId": "1af07e3f-ab79-4c08-9884-7142b95c20f2",
       "name": "앵글러 컴퍼니 1단계",
-      "shortName": null,
       "tier": "1단계",
       "currency": "point",
       "unitPrice": 10000,
       "unit": "회",
       "maxQuantity": 1,
-      "rewardCoins": 4,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": 4,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "0c596621-7ac0-46f6-b430-8ae41bff6121",
       "key": "angler_company_2",
-      "group": "epic_dungeon_bonus_reward",
-      "tile": "angler_company",
+      "groupId": "f8623015-60f5-4307-be32-3567ea68ad0b",
+      "tileId": "1af07e3f-ab79-4c08-9884-7142b95c20f2",
       "name": "앵글러 컴퍼니 2단계",
-      "shortName": null,
       "tier": "2단계",
       "currency": "point",
       "unitPrice": 40000,
       "unit": "회",
       "maxQuantity": 1,
-      "rewardCoins": 8,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": 8,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "f5f44c6f-bc38-4d08-a49f-a98e4ac3d99a",
       "key": "nightmare_paradise_1",
-      "group": "epic_dungeon_bonus_reward",
-      "tile": "nightmare_paradise",
+      "groupId": "f8623015-60f5-4307-be32-3567ea68ad0b",
+      "tileId": "8f2cc377-1cbd-4ab7-8c65-a53ebff0f257",
       "name": "악몽선경 1단계",
-      "shortName": null,
       "tier": "1단계",
       "currency": "point",
       "unitPrice": 12500,
       "unit": "회",
       "maxQuantity": 1,
-      "rewardCoins": 4,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": 4,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "8778248f-dfd1-4996-a4f6-2033dd6de4dc",
       "key": "nightmare_paradise_2",
-      "group": "epic_dungeon_bonus_reward",
-      "tile": "nightmare_paradise",
+      "groupId": "f8623015-60f5-4307-be32-3567ea68ad0b",
+      "tileId": "8f2cc377-1cbd-4ab7-8c65-a53ebff0f257",
       "name": "악몽선경 2단계",
-      "shortName": null,
       "tier": "2단계",
       "currency": "point",
       "unitPrice": 50000,
       "unit": "회",
       "maxQuantity": 1,
-      "rewardCoins": 8,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": 8,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "ef9bb5b2-0590-4589-b785-f0148992c8f4",
       "key": "aurum_regis_1",
-      "group": "epic_dungeon_bonus_reward",
-      "tile": "aurum_regis",
+      "groupId": "f8623015-60f5-4307-be32-3567ea68ad0b",
+      "tileId": "e55ecd52-c460-49fe-ae60-1c581f27a3bb",
       "name": "아우룸 레기스 1단계",
-      "shortName": null,
       "tier": "1단계",
       "currency": "point",
       "unitPrice": 15000,
       "unit": "회",
       "maxQuantity": 1,
-      "rewardCoins": 4,
-      "from": "2026-09-17",
-      "until": null
+      "rewardCoinQuantity": 4,
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
+      "id": "87fcbb14-5c4b-4a93-992d-b5d165135152",
       "key": "aurum_regis_2",
-      "group": "epic_dungeon_bonus_reward",
-      "tile": "aurum_regis",
+      "groupId": "f8623015-60f5-4307-be32-3567ea68ad0b",
+      "tileId": "e55ecd52-c460-49fe-ae60-1c581f27a3bb",
       "name": "아우룸 레기스 2단계",
-      "shortName": null,
       "tier": "2단계",
       "currency": "point",
       "unitPrice": 60000,
       "unit": "회",
       "maxQuantity": 1,
-      "rewardCoins": 8,
-      "from": "2026-09-17",
-      "until": null
+      "rewardCoinQuantity": 8,
+      "validFrom": "2026-09-17",
+      "validUntil": null
     },
     {
+      "id": "3632ca22-759d-4fa5-b23d-d4093e38cbb2",
       "key": "monster_park",
-      "group": "monster_park",
-      "tile": "monster_park",
+      "groupId": "e20c16f4-680e-4b21-8318-ad9a4c5b6ed7",
+      "tileId": "e6dc17a9-ebbb-4d80-957e-f3eaed1d044b",
       "name": "몬스터 파크",
-      "shortName": null,
       "tier": null,
       "currency": "point",
       "unitPrice": 600,
       "unit": "회",
       "maxQuantity": 14,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "01ce5ec3-b826-4dfd-b934-fe3bdafa2359",
       "key": "epic_dungeon_quick_pass",
-      "group": "quick_pass",
-      "tile": "epic_dungeon_quick_pass",
+      "groupId": "1e63f70e-57d5-44cd-8cac-a2e776de2ae4",
+      "tileId": "0db411ac-3f81-4023-98b6-d2d8f4578966",
       "name": "에픽던전",
-      "shortName": null,
       "tier": null,
       "currency": "point",
       "unitPrice": 5000,
       "unit": "회",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "e0d92394-50ba-46a4-a14e-8c522b41f7d4",
       "key": "daily_quest_quick_pass",
-      "group": "quick_pass",
-      "tile": "daily_quest_quick_pass",
+      "groupId": "1e63f70e-57d5-44cd-8cac-a2e776de2ae4",
+      "tileId": "03d0aff2-e4d1-4376-9450-712a3a9ce5ae",
       "name": "일간 퀘스트",
-      "shortName": null,
       "tier": null,
       "currency": "point",
       "unitPrice": 200,
       "unit": "회",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "ca33e6f3-3e94-440f-9fb5-ce1c562f60a4",
       "key": "weekly_quest_quick_pass",
-      "group": "quick_pass",
-      "tile": "weekly_quest_quick_pass",
+      "groupId": "1e63f70e-57d5-44cd-8cac-a2e776de2ae4",
+      "tileId": "ab2f6051-9513-455e-b154-7dd88e487690",
       "name": "주간 퀘스트",
-      "shortName": null,
       "tier": null,
       "currency": "point",
       "unitPrice": 2000,
       "unit": "회",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "key": "mechaberry_farm",
-      "group": "maple_point_shop",
-      "tile": "mechaberry_farm",
-      "name": "메카베리 농장 입장권",
-      "shortName": "메카베리 농장",
+      "id": "8d7bb4a0-e270-4649-858f-75387c037c20",
+      "key": "plasma_heart",
+      "groupId": "c7dd3830-c385-41fa-9911-bdc1020f3f97",
+      "tileId": "c73a2029-74cf-438c-ba39-881241dcaa55",
+      "name": "플라즈마 하트",
       "tier": null,
-      "currency": "point",
-      "unitPrice": 10000,
-      "unit": "개",
-      "maxQuantity": 2,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
-    },
-    {
-      "key": "blueberry_farm",
-      "group": "maple_point_shop",
-      "tile": "blueberry_farm",
-      "name": "블루베리 농장 입장권",
-      "shortName": "블루베리 농장",
-      "tier": null,
-      "currency": "point",
-      "unitPrice": 7000,
-      "unit": "개",
-      "maxQuantity": 2,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
-    },
-    {
-      "key": "sol_erda",
-      "group": "maple_point_shop",
-      "tile": "sol_erda",
-      "name": "솔 에르다",
-      "shortName": null,
-      "tier": null,
-      "currency": "point",
-      "unitPrice": 2000,
+      "currency": "meso",
+      "unitPrice": 1500000000,
       "unit": "개",
       "maxQuantity": 5,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": "2026-11-19"
     },
     {
-      "key": "black_circulator",
-      "group": "maple_point_shop",
-      "tile": "black_circulator",
-      "name": "블랙 서큘레이터",
-      "shortName": null,
+      "id": "0999e372-385e-4279-90c0-6afa707ff178",
+      "key": "ascendant_pulse_ring",
+      "groupId": "c7dd3830-c385-41fa-9911-bdc1020f3f97",
+      "tileId": "ed8b979e-7b5b-4e03-bf79-67e181c47742",
+      "name": "어센던트 펄스 링",
       "tier": null,
-      "currency": "point",
-      "unitPrice": 3000,
+      "currency": "meso",
+      "unitPrice": 300000000,
       "unit": "개",
-      "maxQuantity": 30,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "maxQuantity": 5,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": "2026-11-19"
     },
     {
-      "key": "mihoroid",
-      "group": "maple_point_shop",
-      "tile": "mihoroid",
-      "name": "미호로이드",
-      "shortName": null,
+      "id": "482e2c8f-d84f-4bc2-ac3f-6d53e266ac5a",
+      "key": "karma_amazing_positive_chaos_scroll_100",
+      "groupId": "c7dd3830-c385-41fa-9911-bdc1020f3f97",
+      "tileId": "7dd51d3e-2b9f-47d9-8d0e-1ec0772d4134",
+      "name": "카르마 놀라운 긍정의 혼돈 주문서 100%",
       "tier": null,
-      "currency": "point",
-      "unitPrice": 7500,
+      "currency": "meso",
+      "unitPrice": 45000000,
+      "unit": "개",
+      "maxQuantity": 100,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "a970f9ce-31a3-4829-8b73-d49e2cd6ce1e",
+      "key": "pet_equipment_stat_transfer_scroll",
+      "groupId": "c7dd3830-c385-41fa-9911-bdc1020f3f97",
+      "tileId": "a8a0fbae-baa7-48fe-ace6-7a78ea81d321",
+      "name": "펫장비 능력치 이전 주문서",
+      "tier": null,
+      "currency": "meso",
+      "unitPrice": 100000000,
+      "unit": "개",
+      "maxQuantity": 5,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "21d9b224-8a19-4ed4-9eee-438f081ca00d",
+      "key": "damage_skin_extraction_coupon",
+      "groupId": "c7dd3830-c385-41fa-9911-bdc1020f3f97",
+      "tileId": "edbe9ef7-e527-4b03-b66f-aca3a09e1e72",
+      "name": "데미지 스킨 추출권",
+      "tier": null,
+      "currency": "meso",
+      "unitPrice": 100000000,
       "unit": "개",
       "maxQuantity": 1,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "c323042b-b6db-44fe-8445-1d54a9ad63fe",
+      "key": "android_ear_sensor_clip",
+      "groupId": "c7dd3830-c385-41fa-9911-bdc1020f3f97",
+      "tileId": "c113f8d5-302a-4324-98b2-621d299581ed",
+      "name": "안드로이드 이어센서 클립",
+      "tier": null,
+      "currency": "meso",
+      "unitPrice": 600000000,
+      "unit": "개",
+      "maxQuantity": 1,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "09134e49-8708-49c0-b1a6-d6c613d6720b",
+      "key": "fluffy_petal_android_skin_coupon",
+      "groupId": "c7dd3830-c385-41fa-9911-bdc1020f3f97",
+      "tileId": "527958aa-9803-47d3-8925-246779a8a468",
+      "name": "뽀송 꽃잎 스킨 안드로이드 변경권",
+      "tier": null,
+      "currency": "meso",
+      "unitPrice": 800000000,
+      "unit": "개",
+      "maxQuantity": 1,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "6cc18117-b777-49b2-8937-c9ec2351e178",
+      "key": "blush_petal_android_skin_coupon",
+      "groupId": "c7dd3830-c385-41fa-9911-bdc1020f3f97",
+      "tileId": "382b8cbd-9a63-4cbc-a37d-c7a740e93e6e",
+      "name": "홍조 꽃잎 스킨 안드로이드 변경권",
+      "tier": null,
+      "currency": "meso",
+      "unitPrice": 800000000,
+      "unit": "개",
+      "maxQuantity": 1,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "3273f779-2ec8-43e1-87bc-1e9cc9d7ff00",
+      "key": "bag_wallet_selection_coupon",
+      "groupId": "c7dd3830-c385-41fa-9911-bdc1020f3f97",
+      "tileId": "7ac68bfa-b1cf-436a-9ad2-5caaae45084b",
+      "name": "가방/지갑 선택권",
+      "tier": null,
+      "currency": "meso",
+      "unitPrice": 15000000,
+      "unit": "개",
+      "maxQuantity": 10,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "12bee12a-bd05-4fcb-91b9-c07532baa12a",
+      "key": "advanced_bag_selection_coupon",
+      "groupId": "c7dd3830-c385-41fa-9911-bdc1020f3f97",
+      "tileId": "f4c7e0a2-aad7-48f2-a5fa-b282611259ea",
+      "name": "고급 가방 선택권",
+      "tier": null,
+      "currency": "meso",
+      "unitPrice": 80000000,
+      "unit": "개",
+      "maxQuantity": 10,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "c16548be-fd03-4b3b-8971-8c86b1eddda6",
       "key": "attendance_event_pass",
-      "group": "event",
-      "tile": "attendance_event_pass",
+      "groupId": "80d05a4a-3efe-466d-a542-229a697dd8f6",
+      "tileId": "c0cf824c-68f3-41c8-b033-3f3f8704ba63",
       "name": "출석 이벤트 패스",
-      "shortName": null,
       "tier": null,
       "currency": "point",
       "unitPrice": 3000,
       "unit": "회",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "c5d68958-abdf-465d-93a3-8887fb168f7c",
       "key": "tonic_buff_extra_purchase",
-      "group": "event",
-      "tile": "tonic_buff_extra_purchase",
+      "groupId": "80d05a4a-3efe-466d-a542-229a697dd8f6",
+      "tileId": "835f143c-31c6-42ca-a140-ce67575f1157",
       "name": "보약 버프 추가 구매",
-      "shortName": null,
       "tier": null,
       "currency": "point",
       "unitPrice": 1000,
       "unit": "포인트",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "60119dc5-81cb-48d7-b8e8-c4096bf8dec5",
       "key": "tonic_buff_reset",
-      "group": "event",
-      "tile": "tonic_buff_reset",
+      "groupId": "80d05a4a-3efe-466d-a542-229a697dd8f6",
+      "tileId": "7ff08b0a-68ce-46c7-99c8-66603792f050",
       "name": "보약 버프 초기화",
-      "shortName": null,
       "tier": null,
       "currency": "point",
       "unitPrice": 9900,
       "unit": "회",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "eb147af6-d2e5-4273-92d8-37edf762840d",
       "key": "vip_sauna",
-      "group": "vip_sauna",
-      "tile": "vip_sauna",
+      "groupId": "8d36c3b1-cfcf-4e8f-8c38-557a0864e5c5",
+      "tileId": "fdad3bc8-3f29-43c8-8a6e-47cd1d91aad5",
       "name": "VIP 사우나 입장권",
-      "shortName": "VIP 사우나",
       "tier": null,
       "currency": "point",
       "unitPrice": 3000,
       "unit": "시간",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "be679ba1-2567-48a1-895c-09425170392c",
       "key": "nickname_change",
-      "group": "etc",
-      "tile": "nickname_change",
+      "groupId": "d6f22387-59e8-4c63-9c9d-775802ad3ce2",
+      "tileId": "f225fc08-680b-4b91-bc46-5fd19a4cb38d",
       "name": "닉네임 변경",
-      "shortName": null,
       "tier": null,
       "currency": "point",
       "unitPrice": 15000,
       "unit": "회",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "8a4206e8-fb0c-425f-8e6f-eb2d452f5dd3",
+      "key": "mechaberry_farm",
+      "groupId": "6fb8556d-f0fc-4932-8e3d-d5b710fa3f3e",
+      "tileId": "0331a21c-007e-401b-9b5a-5df5620af566",
+      "name": "메카베리 농장 입장권",
+      "tier": null,
+      "currency": "point",
+      "unitPrice": 10000,
+      "unit": "개",
+      "maxQuantity": 2,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "0f7d1dd6-24cf-41ea-9a06-81f738eeee43",
+      "key": "blueberry_farm",
+      "groupId": "6fb8556d-f0fc-4932-8e3d-d5b710fa3f3e",
+      "tileId": "82153276-a123-4e7e-9820-e3afe8d25030",
+      "name": "블루베리 농장 입장권",
+      "tier": null,
+      "currency": "point",
+      "unitPrice": 7000,
+      "unit": "개",
+      "maxQuantity": 2,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "9477ec1f-f99c-4536-8cb7-e621e22f4845",
+      "key": "sol_erda",
+      "groupId": "6fb8556d-f0fc-4932-8e3d-d5b710fa3f3e",
+      "tileId": "ca41b922-11f3-4460-a872-775aa3c82499",
+      "name": "솔 에르다",
+      "tier": null,
+      "currency": "point",
+      "unitPrice": 2000,
+      "unit": "개",
+      "maxQuantity": 5,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "821c863d-d294-4857-b774-e5a4f4dce4c8",
+      "key": "black_circulator",
+      "groupId": "6fb8556d-f0fc-4932-8e3d-d5b710fa3f3e",
+      "tileId": "361431fd-b773-4612-b402-eb6d85c0e937",
+      "name": "블랙 서큘레이터",
+      "tier": null,
+      "currency": "point",
+      "unitPrice": 3000,
+      "unit": "개",
+      "maxQuantity": 30,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "b31ce141-650b-4c2d-a040-94c4d3713ec1",
+      "key": "mihoroid",
+      "groupId": "6fb8556d-f0fc-4932-8e3d-d5b710fa3f3e",
+      "tileId": "545dd21f-d68e-47cf-9ed4-bc81ff76523b",
+      "name": "미호로이드",
+      "tier": null,
+      "currency": "point",
+      "unitPrice": 7500,
+      "unit": "개",
+      "maxQuantity": 1,
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
+    },
+    {
+      "id": "023807ad-080d-42d2-99e9-34e5019f3dfc",
       "key": "seiram_elixir",
-      "group": "boss_buff",
-      "tile": "seiram_elixir",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "2fb6cc9a-bbdb-4ac8-b5a1-2db48f1a55fc",
       "name": "세이람의 영약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 2000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "0ae4b016-1afc-4204-8b7c-dbfbc2284082",
       "key": "alleria_elixir",
-      "group": "boss_buff",
-      "tile": "alleria_elixir",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "2efbace5-5b78-403b-8f04-77b0954755ee",
       "name": "알레리아의 영약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 2000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "246c907e-4a17-473d-85f9-a5bbddc9bf07",
       "key": "collector_elixir",
-      "group": "boss_buff",
-      "tile": "collector_elixir",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "c2db1a69-6708-42e1-b8d5-a92571609f9b",
       "name": "콜렉터의 영약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 20000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "1f8ce54f-5c54-421a-928e-4154d32cf58b",
       "key": "honor_elixir",
-      "group": "boss_buff",
-      "tile": "honor_elixir",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "35a2a061-50f5-42e2-81ce-65ea56bbd54d",
       "name": "명예의 영약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 5000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "fd075b44-108d-464a-90ed-a4618821f709",
       "key": "boss_killer_potion",
-      "group": "boss_buff",
-      "tile": "boss_killer_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "d357d2c9-4f95-460b-9d65-0678c881d9ff",
       "name": "보스 킬러 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "6cc5312f-8e6d-455d-85d2-840f6922d429",
       "key": "advanced_boss_killer_potion",
-      "group": "boss_buff",
-      "tile": "advanced_boss_killer_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "dc6317d4-5116-4c3d-85e0-db8bf81498e4",
       "name": "고급 보스 킬러 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "a707a927-29be-4b33-a03a-f23db27d2a3f",
       "key": "great_hero_potion",
-      "group": "boss_buff",
-      "tile": "great_hero_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "5b474889-7cf5-4ebb-b5a6-f8add8afdb6a",
       "name": "대영웅의 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "8b22bea2-c5d4-47f1-ba43-7e9f6ba512c8",
       "key": "advanced_great_hero_potion",
-      "group": "boss_buff",
-      "tile": "advanced_great_hero_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "dc3f5ed6-b2f5-4c7e-942e-f5b85edc24df",
       "name": "고급 대영웅의 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "33880e44-28aa-4b6f-910a-568e6d72851b",
       "key": "great_blessing_potion",
-      "group": "boss_buff",
-      "tile": "great_blessing_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "b2a3b045-31b8-4749-ba30-add272226e9b",
       "name": "대축복의 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "68c2c63d-2545-45f2-9031-1ceeb9ecc0b0",
       "key": "advanced_great_blessing_potion",
-      "group": "boss_buff",
-      "tile": "advanced_great_blessing_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "209d0eb1-c722-4a1e-adad-f7005761e15e",
       "name": "고급 대축복의 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "9a626ef4-eef6-454f-95c1-4757cf5b430f",
       "key": "legendary_hero_potion",
-      "group": "boss_buff",
-      "tile": "legendary_hero_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "0338e076-5a39-4fa1-90f5-d18f80d68ee2",
       "name": "전설의 영웅 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "7d299aa5-7370-4ab8-9340-f51dbc98a3d4",
       "key": "shining_red_star_potion",
-      "group": "boss_buff",
-      "tile": "shining_red_star_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "444af72a-15f2-4fb1-94bf-58a8f152e406",
       "name": "반짝이는 빨간 별 물약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "8d750107-16cd-405b-86f3-2054b7ca4b83",
       "key": "radiant_moonlight_potion",
-      "group": "boss_buff",
-      "tile": "radiant_moonlight_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "4bf596ea-60e9-4e79-a619-e2d3dfa6b83c",
       "name": "영롱한 달빛 포션",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "1e823f1e-8630-459b-aef3-8f09f70ce39c",
       "key": "enhanced_10_str_potion",
-      "group": "boss_buff",
-      "tile": "enhanced_10_stat_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "284b9620-b401-4464-b3ff-b1dad57b07c3",
       "name": "향상된 10단계 힘의 물약",
-      "shortName": null,
       "tier": "힘",
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "835bdf7e-459f-4f2e-a43f-46436db3dfda",
       "key": "enhanced_10_dex_potion",
-      "group": "boss_buff",
-      "tile": "enhanced_10_stat_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "284b9620-b401-4464-b3ff-b1dad57b07c3",
       "name": "향상된 10단계 민첩의 물약",
-      "shortName": null,
       "tier": "민첩",
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "bf7b1539-22e9-43ff-94af-f3c526901e07",
       "key": "enhanced_10_int_potion",
-      "group": "boss_buff",
-      "tile": "enhanced_10_stat_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "284b9620-b401-4464-b3ff-b1dad57b07c3",
       "name": "향상된 10단계 지능의 물약",
-      "shortName": null,
       "tier": "지능",
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "897a38f8-d3b4-4e99-8d5e-2775d0f7c98e",
       "key": "enhanced_10_luk_potion",
-      "group": "boss_buff",
-      "tile": "enhanced_10_stat_potion",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "284b9620-b401-4464-b3ff-b1dad57b07c3",
       "name": "향상된 10단계 행운의 물약",
-      "shortName": null,
       "tier": "행운",
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "645c247c-f3b9-4fc3-8125-43e4e331461e",
       "key": "magic_whetstone",
-      "group": "boss_buff",
-      "tile": "magic_whetstone",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "1df99218-6c9c-476d-913c-3ad3ebb5a09d",
       "name": "마법의 숫돌",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "3bef471b-5cff-4d16-b04b-de314d773611",
       "key": "vip_buff_stat",
-      "group": "boss_buff",
-      "tile": "vip_buff_stat",
+      "groupId": "134cfa0a-ac94-4e81-b614-8108b656ee27",
+      "tileId": "c7fa858c-2adc-450a-89e9-1f6213cd078f",
       "name": "VIP 버프 (능력치)",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 500000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "92cb0d72-c20e-462a-b02f-1081fcb50c80",
       "key": "small_wealth_acquisition_potion",
-      "group": "hunting_buff",
-      "tile": "small_wealth_acquisition_potion",
+      "groupId": "49ac3683-450c-40db-b660-f050a4918d62",
+      "tileId": "f2194f60-0541-40ca-89f0-0bd998065e62",
       "name": "소형 재물 획득의 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "f4e93d9c-44b9-4b04-84bf-06ba6ea66286",
       "key": "wealth_acquisition_potion",
-      "group": "hunting_buff",
-      "tile": "wealth_acquisition_potion",
+      "groupId": "49ac3683-450c-40db-b660-f050a4918d62",
+      "tileId": "2c181a17-efc5-4f57-b2bb-11143db96f25",
       "name": "재물 획득의 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "4863a95f-f385-4b54-a882-d7656f07ffe5",
       "key": "small_exp_accumulation_potion",
-      "group": "hunting_buff",
-      "tile": "small_exp_accumulation_potion",
+      "groupId": "49ac3683-450c-40db-b660-f050a4918d62",
+      "tileId": "13352b7b-3b04-40ee-80b4-5e8996e243b1",
       "name": "소형 경험 축적의 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "470df22f-c73e-4455-840f-332adf937f1b",
       "key": "small_concentrated_exp_accumulation_potion",
-      "group": "hunting_buff",
-      "tile": "small_concentrated_exp_accumulation_potion",
+      "groupId": "49ac3683-450c-40db-b660-f050a4918d62",
+      "tileId": "cb0fb2f3-177d-4b89-b820-4cfc0b71b702",
       "name": "소형 고농축 경험 축적의 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "cefc6576-aeac-4b17-9239-f3bc26eac69c",
       "key": "exp_accumulation_potion",
-      "group": "hunting_buff",
-      "tile": "exp_accumulation_potion",
+      "groupId": "49ac3683-450c-40db-b660-f050a4918d62",
+      "tileId": "40a3ebc2-5cb6-43e9-b65d-72ef0721ae81",
       "name": "경험 축적의 비약",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "7bb64f5d-8372-408b-887c-253252e11de6",
       "key": "extra_exp_50_coupon",
-      "group": "hunting_buff",
-      "tile": "extra_exp_50_coupon",
+      "groupId": "49ac3683-450c-40db-b660-f050a4918d62",
+      "tileId": "d83d22c5-b3ec-427c-8f90-bfceed50bb26",
       "name": "추가 경험치 50% 쿠폰",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "084e486a-7794-42f6-8ef9-85b4c92ed6c8",
       "key": "mvp_extra_exp_70_coupon",
-      "group": "hunting_buff",
-      "tile": "mvp_extra_exp_70_coupon",
+      "groupId": "49ac3683-450c-40db-b660-f050a4918d62",
+      "tileId": "15880e80-f4a1-4852-a964-030f2ea270a8",
       "name": "MVP 추가 경험치 70% 쿠폰",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "ffb38f02-b7ec-4107-a5db-826e1edcfa1e",
       "key": "exp_3x_coupon",
-      "group": "hunting_buff",
-      "tile": "exp_3x_coupon",
+      "groupId": "49ac3683-450c-40db-b660-f050a4918d62",
+      "tileId": "61b39040-07d5-4d79-b274-c2d5cd288a8e",
       "name": "경험치 3배 쿠폰",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "ccf5031a-8da7-4366-af13-a77324bf672c",
       "key": "exp_4x_coupon",
-      "group": "hunting_buff",
-      "tile": "exp_4x_coupon",
+      "groupId": "49ac3683-450c-40db-b660-f050a4918d62",
+      "tileId": "7d4f1dbb-83ba-41d8-bfaf-472bfd20a378",
       "name": "경험치 4배 쿠폰",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": null,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "31c668fd-77cf-4310-b6a8-69d5d83c6402",
       "key": "vip_buff_exp",
-      "group": "hunting_buff",
-      "tile": "vip_buff_exp",
+      "groupId": "49ac3683-450c-40db-b660-f050a4918d62",
+      "tileId": "d15d091a-8cd5-435a-a0dd-e8a39fdfbf56",
       "name": "VIP 버프 (경험치)",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 500000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "260bc5dd-e9a9-44f6-8157-f4ae79e5f157",
       "key": "magical_one_handed_weapon_attack_scroll_100",
-      "group": "scroll",
-      "tile": "magical_scroll",
+      "groupId": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "tileId": "4f2aea16-9ec2-431f-9c07-4890215cef92",
       "name": "매지컬 한손무기 공격력 주문서 100%",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 60000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "e30db668-0b87-4883-bf3d-8f6f662c8f4f",
       "key": "magical_one_handed_weapon_magic_attack_scroll_100",
-      "group": "scroll",
-      "tile": "magical_scroll",
+      "groupId": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "tileId": "4f2aea16-9ec2-431f-9c07-4890215cef92",
       "name": "매지컬 한손무기 마력 주문서 100%",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 60000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "ad27bd12-06c5-4eb5-93df-11ab9a6cb88f",
       "key": "magical_two_handed_weapon_attack_scroll_100",
-      "group": "scroll",
-      "tile": "magical_scroll",
+      "groupId": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "tileId": "4f2aea16-9ec2-431f-9c07-4890215cef92",
       "name": "매지컬 두손무기 공격력 주문서 100%",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 60000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "aacd7aab-1340-4365-873e-473cbd90028e",
       "key": "premium_accessory_attack_scroll_100",
-      "group": "scroll",
-      "tile": "premium_accessory_scroll",
+      "groupId": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "tileId": "7c7a70d4-78d7-4f06-906a-0c97637a757f",
       "name": "프리미엄 악세서리 공격력 주문서 100%",
-      "shortName": null,
       "tier": "공격력",
       "currency": "meso",
       "unitPrice": 60000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "4e6489bb-93cf-4c65-a6e9-a444faca62f8",
       "key": "premium_accessory_magic_attack_scroll_100",
-      "group": "scroll",
-      "tile": "premium_accessory_scroll",
+      "groupId": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "tileId": "7c7a70d4-78d7-4f06-906a-0c97637a757f",
       "name": "프리미엄 악세서리 마력 주문서 100%",
-      "shortName": null,
       "tier": "마력",
       "currency": "meso",
       "unitPrice": 60000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "00232bb7-5f1d-4e6a-a8d1-d0c5560488eb",
       "key": "earring_attack_str_scroll_10",
-      "group": "scroll",
-      "tile": "earring_scroll",
+      "groupId": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "tileId": "9c52bb09-dd8c-4d22-893b-b60e05e5d1dd",
       "name": "귀 장식 공격력(힘) 주문서 10%",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 100000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "912ad8d9-2b26-48cd-8d79-2c91d8e664f4",
       "key": "earring_attack_dex_scroll_10",
-      "group": "scroll",
-      "tile": "earring_scroll",
+      "groupId": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "tileId": "9c52bb09-dd8c-4d22-893b-b60e05e5d1dd",
       "name": "귀 장식 공격력(민첩) 주문서 10%",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 100000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "9d3e016e-b1e5-477c-a6f1-4feffa3cf4f5",
       "key": "earring_attack_luk_scroll_10",
-      "group": "scroll",
-      "tile": "earring_scroll",
+      "groupId": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "tileId": "9c52bb09-dd8c-4d22-893b-b60e05e5d1dd",
       "name": "귀 장식 공격력(운) 주문서 10%",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 100000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "27a4a375-d710-4695-a56a-36f5dc0e43df",
       "key": "earring_magic_attack_scroll_10",
-      "group": "scroll",
-      "tile": "earring_scroll",
+      "groupId": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "tileId": "9c52bb09-dd8c-4d22-893b-b60e05e5d1dd",
       "name": "귀 장식 마력 주문서 10%",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 100000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "91a9e3b4-4996-420d-95b2-c241a8853d4a",
       "key": "amazing_positive_chaos_scroll_60",
-      "group": "scroll",
-      "tile": "amazing_positive_chaos_scroll",
+      "groupId": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "tileId": "50313d64-c1e8-4765-8e5b-8a63cfde6391",
       "name": "놀라운 긍정의 혼돈 주문서 60%",
-      "shortName": null,
       "tier": "60%",
       "currency": "meso",
       "unitPrice": 500000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "2fcdef1f-da7f-40a2-8993-60d30b17f3b2",
       "key": "amazing_positive_chaos_scroll_100",
-      "group": "scroll",
-      "tile": "amazing_positive_chaos_scroll",
+      "groupId": "2450710e-3ec4-4fe8-87fa-fcf5ce4e4037",
+      "tileId": "50313d64-c1e8-4765-8e5b-8a63cfde6391",
       "name": "놀라운 긍정의 혼돈 주문서 100%",
-      "shortName": null,
       "tier": "100%",
       "currency": "meso",
       "unitPrice": 300000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "93046187-5d50-4f01-bf47-bce87412b547",
       "key": "pet_equipment_attack_scroll_100",
-      "group": "pet_equipment_scroll",
-      "tile": "pet_equipment_scroll",
+      "groupId": "29b57284-b0cb-4e4b-bad0-15855f36848b",
+      "tileId": "3f7edb44-26b1-4e18-9414-8b5e54bcf335",
       "name": "펫장비 공격력 주문서 100%",
-      "shortName": null,
       "tier": "공격력",
       "currency": "meso",
       "unitPrice": 30000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "fd5ef4d8-8e16-4e51-9076-3dc86584c159",
       "key": "pet_equipment_magic_attack_scroll_100",
-      "group": "pet_equipment_scroll",
-      "tile": "pet_equipment_scroll",
+      "groupId": "29b57284-b0cb-4e4b-bad0-15855f36848b",
+      "tileId": "3f7edb44-26b1-4e18-9414-8b5e54bcf335",
       "name": "펫장비 마력 주문서 100%",
-      "shortName": null,
       "tier": "마력",
       "currency": "meso",
       "unitPrice": 30000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "cc16bff7-f273-42a6-a5d2-b155758b556a",
       "key": "premium_pet_equipment_attack_scroll_100",
-      "group": "pet_equipment_scroll",
-      "tile": "premium_pet_equipment_scroll",
+      "groupId": "29b57284-b0cb-4e4b-bad0-15855f36848b",
+      "tileId": "cbeb6262-afc5-436d-b448-e3738d8507a4",
       "name": "프리미엄 펫장비 공격력 주문서 100%",
-      "shortName": null,
       "tier": "공격력",
       "currency": "meso",
       "unitPrice": 60000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "0c3bc688-6c0f-4f66-9e9a-fb82508bd009",
       "key": "premium_pet_equipment_magic_attack_scroll_100",
-      "group": "pet_equipment_scroll",
-      "tile": "premium_pet_equipment_scroll",
+      "groupId": "29b57284-b0cb-4e4b-bad0-15855f36848b",
+      "tileId": "cbeb6262-afc5-436d-b448-e3738d8507a4",
       "name": "프리미엄 펫장비 마력 주문서 100%",
-      "shortName": null,
       "tier": "마력",
       "currency": "meso",
       "unitPrice": 60000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "67320cf4-8d58-4111-9b58-1f7d95fede3a",
       "key": "pet_equipment_innocent_scroll",
-      "group": "pet_equipment_scroll",
-      "tile": "pet_equipment_innocent_scroll",
+      "groupId": "29b57284-b0cb-4e4b-bad0-15855f36848b",
+      "tileId": "8f5e5bf7-8e14-425c-a745-db6634d91b33",
       "name": "펫장비 이노센트 주문서",
-      "shortName": "펫장비 이노센트",
       "tier": null,
       "currency": "meso",
       "unitPrice": 1000000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "bf6ea48d-a6bb-4cac-9357-be010ab16ae6",
       "key": "pet_equipment_clean_slate_scroll",
-      "group": "pet_equipment_scroll",
-      "tile": "pet_equipment_clean_slate_scroll",
+      "groupId": "29b57284-b0cb-4e4b-bad0-15855f36848b",
+      "tileId": "6bfc9efd-a08c-4584-aa59-72fe5a60eeb1",
       "name": "펫장비 순백",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 60000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "cbcfb594-e687-4dc8-bde7-49c506121154",
       "key": "return_scroll",
-      "group": "return_scroll",
-      "tile": "return_scroll",
+      "groupId": "3db39203-8f6b-462d-be29-effc319032dc",
+      "tileId": "633c7244-0ccb-4c67-b096-d1bd7a4cdc0f",
       "name": "리턴 스크롤",
-      "shortName": null,
       "tier": null,
       "currency": "meso",
       "unitPrice": 400000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "9f4ccd8d-eb16-4096-9cd6-040bb0fa2a3a",
       "key": "pet_equipment_return_scroll",
-      "group": "return_scroll",
-      "tile": "pet_equipment_return_scroll",
+      "groupId": "3db39203-8f6b-462d-be29-effc319032dc",
+      "tileId": "1b8ead90-79b4-472f-ae4a-8aa6c03f0502",
       "name": "펫장비 리턴 스크롤",
-      "shortName": "펫장비 리턴",
       "tier": null,
       "currency": "meso",
       "unitPrice": 500000000,
       "unit": "개",
       "maxQuantity": null,
-      "rewardCoins": null,
-      "from": null,
-      "until": null
+      "rewardCoinQuantity": null,
+      "validFrom": null,
+      "validUntil": null
     }
   ],
-  "itemOptions": [
+  "spendItemOptions": [
     {
-      "item": "earring_attack_dex_scroll_10",
+      "itemId": "912ad8d9-2b26-48cd-8d79-2c91d8e664f4",
       "axis": "능력치",
       "value": "공격력"
     },
     {
-      "item": "earring_attack_dex_scroll_10",
+      "itemId": "912ad8d9-2b26-48cd-8d79-2c91d8e664f4",
       "axis": "스탯",
       "value": "민첩"
     },
     {
-      "item": "earring_attack_luk_scroll_10",
+      "itemId": "9d3e016e-b1e5-477c-a6f1-4feffa3cf4f5",
       "axis": "능력치",
       "value": "공격력"
     },
     {
-      "item": "earring_attack_luk_scroll_10",
+      "itemId": "9d3e016e-b1e5-477c-a6f1-4feffa3cf4f5",
       "axis": "스탯",
       "value": "운"
     },
     {
-      "item": "earring_attack_str_scroll_10",
+      "itemId": "00232bb7-5f1d-4e6a-a8d1-d0c5560488eb",
       "axis": "능력치",
       "value": "공격력"
     },
     {
-      "item": "earring_attack_str_scroll_10",
+      "itemId": "00232bb7-5f1d-4e6a-a8d1-d0c5560488eb",
       "axis": "스탯",
       "value": "힘"
     },
     {
-      "item": "earring_magic_attack_scroll_10",
+      "itemId": "27a4a375-d710-4695-a56a-36f5dc0e43df",
       "axis": "능력치",
       "value": "마력"
     },
     {
-      "item": "magical_one_handed_weapon_attack_scroll_100",
+      "itemId": "260bc5dd-e9a9-44f6-8157-f4ae79e5f157",
       "axis": "능력치",
       "value": "공격력"
     },
     {
-      "item": "magical_one_handed_weapon_attack_scroll_100",
+      "itemId": "260bc5dd-e9a9-44f6-8157-f4ae79e5f157",
       "axis": "무기",
       "value": "한손무기"
     },
     {
-      "item": "magical_one_handed_weapon_magic_attack_scroll_100",
+      "itemId": "e30db668-0b87-4883-bf3d-8f6f662c8f4f",
       "axis": "능력치",
       "value": "마력"
     },
     {
-      "item": "magical_one_handed_weapon_magic_attack_scroll_100",
+      "itemId": "e30db668-0b87-4883-bf3d-8f6f662c8f4f",
       "axis": "무기",
       "value": "한손무기"
     },
     {
-      "item": "magical_two_handed_weapon_attack_scroll_100",
+      "itemId": "ad27bd12-06c5-4eb5-93df-11ab9a6cb88f",
       "axis": "능력치",
       "value": "공격력"
     },
     {
-      "item": "magical_two_handed_weapon_attack_scroll_100",
+      "itemId": "ad27bd12-06c5-4eb5-93df-11ab9a6cb88f",
       "axis": "무기",
       "value": "두손무기"
     }
   ],
-  "itemForms": [
+  "spendItemRewardTypes": [
     {
-      "item": "angler_company_1",
-      "form": "exp"
+      "itemId": "5cbe1825-10ab-41a4-ae0f-a2fbf47c7e00",
+      "rewardTypeId": "bae1e9fd-eff2-4cfa-808c-12ce4633416e"
     },
     {
-      "item": "angler_company_1",
-      "form": "sol_erda"
+      "itemId": "5cbe1825-10ab-41a4-ae0f-a2fbf47c7e00",
+      "rewardTypeId": "8dbe3363-f66d-4ba7-9d14-74c11387a0aa"
     },
     {
-      "item": "angler_company_2",
-      "form": "exp"
+      "itemId": "0c596621-7ac0-46f6-b430-8ae41bff6121",
+      "rewardTypeId": "bae1e9fd-eff2-4cfa-808c-12ce4633416e"
     },
     {
-      "item": "angler_company_2",
-      "form": "sol_erda"
+      "itemId": "0c596621-7ac0-46f6-b430-8ae41bff6121",
+      "rewardTypeId": "8dbe3363-f66d-4ba7-9d14-74c11387a0aa"
     },
     {
-      "item": "aurum_regis_1",
-      "form": "exp"
+      "itemId": "ef9bb5b2-0590-4589-b785-f0148992c8f4",
+      "rewardTypeId": "bae1e9fd-eff2-4cfa-808c-12ce4633416e"
     },
     {
-      "item": "aurum_regis_1",
-      "form": "sol_erda"
+      "itemId": "ef9bb5b2-0590-4589-b785-f0148992c8f4",
+      "rewardTypeId": "8dbe3363-f66d-4ba7-9d14-74c11387a0aa"
     },
     {
-      "item": "aurum_regis_2",
-      "form": "exp"
+      "itemId": "87fcbb14-5c4b-4a93-992d-b5d165135152",
+      "rewardTypeId": "bae1e9fd-eff2-4cfa-808c-12ce4633416e"
     },
     {
-      "item": "aurum_regis_2",
-      "form": "sol_erda"
+      "itemId": "87fcbb14-5c4b-4a93-992d-b5d165135152",
+      "rewardTypeId": "8dbe3363-f66d-4ba7-9d14-74c11387a0aa"
     },
     {
-      "item": "high_mountain_1",
-      "form": "exp"
+      "itemId": "7c7c64c3-9254-4df5-a415-2ab6430fc03d",
+      "rewardTypeId": "bae1e9fd-eff2-4cfa-808c-12ce4633416e"
     },
     {
-      "item": "high_mountain_1",
-      "form": "sol_erda"
+      "itemId": "7c7c64c3-9254-4df5-a415-2ab6430fc03d",
+      "rewardTypeId": "8dbe3363-f66d-4ba7-9d14-74c11387a0aa"
     },
     {
-      "item": "high_mountain_2",
-      "form": "exp"
+      "itemId": "6966e3f2-8daa-4931-8b2b-bde5ac8e0ca7",
+      "rewardTypeId": "bae1e9fd-eff2-4cfa-808c-12ce4633416e"
     },
     {
-      "item": "high_mountain_2",
-      "form": "sol_erda"
+      "itemId": "6966e3f2-8daa-4931-8b2b-bde5ac8e0ca7",
+      "rewardTypeId": "8dbe3363-f66d-4ba7-9d14-74c11387a0aa"
     },
     {
-      "item": "nightmare_paradise_1",
-      "form": "exp"
+      "itemId": "f5f44c6f-bc38-4d08-a49f-a98e4ac3d99a",
+      "rewardTypeId": "bae1e9fd-eff2-4cfa-808c-12ce4633416e"
     },
     {
-      "item": "nightmare_paradise_1",
-      "form": "sol_erda"
+      "itemId": "f5f44c6f-bc38-4d08-a49f-a98e4ac3d99a",
+      "rewardTypeId": "8dbe3363-f66d-4ba7-9d14-74c11387a0aa"
     },
     {
-      "item": "nightmare_paradise_2",
-      "form": "exp"
+      "itemId": "8778248f-dfd1-4996-a4f6-2033dd6de4dc",
+      "rewardTypeId": "bae1e9fd-eff2-4cfa-808c-12ce4633416e"
     },
     {
-      "item": "nightmare_paradise_2",
-      "form": "sol_erda"
-    }
-  ],
-  "forms": [
-    {
-      "key": "exp",
-      "name": "경험치"
-    },
-    {
-      "key": "sol_erda",
-      "name": "솔 에르다"
+      "itemId": "8778248f-dfd1-4996-a4f6-2033dd6de4dc",
+      "rewardTypeId": "8dbe3363-f66d-4ba7-9d14-74c11387a0aa"
     }
   ]
 }

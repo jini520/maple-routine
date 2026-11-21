@@ -2231,7 +2231,7 @@ function 묶음열기(groupKey: string): () => void {
   const original = spendCatalogTable.get()
   spendCatalogTable.set({
     ...original,
-    groups: original.groups.map((group) => (group.key === groupKey ? { ...group, active: true } : group)),
+    spendGroups: original.spendGroups.map((group) => (group.key === groupKey ? { ...group, isActive: true } : group)),
   })
   return () => spendCatalogTable.set(original)
 }
