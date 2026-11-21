@@ -39,6 +39,7 @@ import {
   type Row,
 } from '../game-data/contract'
 import { gameTable, derive } from '../game-data/table'
+import { gameRules } from '../game-rules'
 import { SPEND_FORM_KEYS, type SpendCategoryKey } from './categories'
 
 /** 항목 줄. `from` · `until` 은 그 항목이 서는 기간이다(KST 날짜). */
@@ -296,12 +297,12 @@ const LEGACY_FORMS = [
 
 /** 관세율(%). **화면이 `* 1.1` 을 들면 게임 수치가 코드에 박히는 자리**가 된다. */
 export function spendTariffPercent(): number {
-  return spendCatalogTable.get().rules.tariffPercent
+  return gameRules().spendTariffPercent
 }
 
 /** 세라자르 주화 1개의 상점 판매가(메소). 규칙이라 표가 든다. */
 export function rewardCoinPriceMeso(): number {
-  return spendCatalogTable.get().rules.rewardCoinPriceMeso
+  return gameRules().rewardCoinPriceMeso
 }
 
 /**
@@ -312,7 +313,7 @@ export function rewardCoinPriceMeso(): number {
  * @param stored 그 기록에 적힌 요율. 새 기록은 `undefined` 다
  */
 export function mesoMarketFeeOf(stored: number | null | undefined): number {
-  return stored ?? spendCatalogTable.get().rules.mesoMarketFeePercent
+  return stored ?? gameRules().mesoMarketFeePercent
 }
 
 /** 세라자르 주화. 에픽던전 추가 리워드가 주고 상점에 팔면 메소가 된다. 이름과 그림은 앱 상수이고 판매가는 `rewardCoinPriceMeso()` 다. */

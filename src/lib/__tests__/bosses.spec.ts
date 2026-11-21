@@ -11,6 +11,7 @@ import {
 import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../boss/boss-matching'
 import { INITIAL_BOSS_CATALOG, setBossCatalog } from '../boss/catalog'
 import type { BossCatalog } from '../../types/boss-catalog'
+import { gameRulesTable } from '../game-rules'
 
 // 보스 마스터 표 조회. 기록은 보스 key 를 들고 이름 · 주기 · 요구 레벨 · 초상은 여기서 찾는다.
 describe('bosses', () => {
@@ -111,14 +112,19 @@ describe('bosses: 표가 덮이면', () => {
     expect(bossReferenceOrder('new_boss')).toBe(2)
   })
 
-  // 상수로 import 한 자리가 아홉이다. 바인딩이 살아 있어야 그 자리들이 새 한도를 본다.
-  it('한도 둘도 새 표를 본다. boss-matching 을 거친 재수출도 같다', () => {
-    setBossCatalog(덮은표)
+  // 상수로 import 한 자리가 아홉이다. 바인딩이 살아 있어야 그 자리들이 새 한도를 본다. 한도는 규칙 칸에 있다.
+  it('한도 둘은 규칙 칸을 따라 바뀐다. boss-matching 을 거친 재수출도 같다', () => {
+    const rules = gameRulesTable.get()
+    gameRulesTable.set({
+      ...rules,
+      gameRules: { ...rules.gameRules, weeklyBossSelectionLimit: 10, weeklyCrystalSaleLimit: 80 },
+    })
 
     expect(bosses.WEEKLY_BOSS_CLEAR_LIMIT).toBe(10)
     expect(bosses.WEEKLY_CRYSTAL_SALE_LIMIT).toBe(80)
     expect(WEEKLY_BOSS_CLEAR_LIMIT).toBe(10)
     expect(WEEKLY_CRYSTAL_SALE_LIMIT).toBe(80)
+    gameRulesTable.set(rules)
   })
 
   it('번들로 되돌리면 전부 원래대로다', () => {

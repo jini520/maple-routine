@@ -9,6 +9,7 @@ import { BOSS_DIFFICULTIES, type BossCycle, type BossDifficulty } from '../../ty
 import type { BossCatalog, BossCatalogBoss, BossCatalogCycle } from '../../types/boss-catalog'
 import { type EffectivePeriod, getCurrentBossProfitPeriod, isEffectiveIn } from './boss-profit-period'
 import { getBossCatalog, subscribeBossCatalog } from './catalog'
+import { gameRules, gameRulesTable } from '../game-rules'
 
 /** 관리 화면의 묶음. 시즌 보스(eventWeekly)도 주기는 주간이다. */
 export type BossSection = 'weekly' | 'eventWeekly' | 'monthly'
@@ -22,7 +23,7 @@ export interface BossEntry {
   /** 표의 난이도 줄 차례 그대로다. */
   difficulties: BossDifficulty[]
   requiredLevels: Partial<Record<BossDifficulty, number>>
-  /** 난이도 줄이 든 파티 인원 상한. 없는 난이도는 `rules.defaultMaxPartySize` 다. */
+  /** 난이도 줄이 든 파티 인원 상한. 없는 난이도는 `gameRules` 칸의 `defaultMaxPartySize` 다. */
   maxPartySizes: Partial<Record<BossDifficulty, number>>
   portraitAssetId: string
   section: BossSection
@@ -100,15 +101,18 @@ export let BOSS_ENTRIES: readonly BossEntry[] = index.entries
 
 // 이름이 비슷하지만 단위가 다른 별개 한도라 나란히 둔다. CLEAR_LIMIT 은 캐릭터당 주간 보스 등록/처치
 // 한도(12), CRYSTAL_SALE_LIMIT 은 한도 줄마다의 주간 결정석 판매 한도(90). 한도 줄은 `crystal-limit.ts` 가 가른다.
-export let WEEKLY_BOSS_CLEAR_LIMIT: number = getBossCatalog().rules.weeklyBossSelectionLimit
-export let WEEKLY_CRYSTAL_SALE_LIMIT: number = getBossCatalog().rules.weeklyCrystalSaleLimit
+export let WEEKLY_BOSS_CLEAR_LIMIT: number = gameRules().weeklyBossSelectionLimit
+export let WEEKLY_CRYSTAL_SALE_LIMIT: number = gameRules().weeklyCrystalSaleLimit
 
 subscribeBossCatalog(() => {
   const catalog = getBossCatalog()
   index = indexOf(catalog)
   BOSS_ENTRIES = index.entries
-  WEEKLY_BOSS_CLEAR_LIMIT = catalog.rules.weeklyBossSelectionLimit
-  WEEKLY_CRYSTAL_SALE_LIMIT = catalog.rules.weeklyCrystalSaleLimit
+})
+
+gameRulesTable.subscribe(() => {
+  WEEKLY_BOSS_CLEAR_LIMIT = gameRules().weeklyBossSelectionLimit
+  WEEKLY_CRYSTAL_SALE_LIMIT = gameRules().weeklyCrystalSaleLimit
 })
 
 /** 표의 한 줄. 모르는 key 와 key 없음은 `null` 이다. */
@@ -165,7 +169,7 @@ export function bossRequiredLevel(key: string | null | undefined, difficulty: Bo
 
 /** 난이도 줄이 상한을 안 들 때의 파티 인원 상한. 게임 수치라 표가 든다. */
 export function defaultMaxPartySize(): number {
-  return getBossCatalog().rules.defaultMaxPartySize
+  return gameRules().defaultMaxPartySize
 }
 
 /** 파티 인원 상한. 난이도 줄 → 기본값 차례다. 기간을 안 탄다. 모르는 보스도 기본값이다. */

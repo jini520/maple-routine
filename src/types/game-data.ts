@@ -13,6 +13,33 @@ import type { FaqBlock } from './faq'
 import type { ForceType } from './hunting-grounds'
 import type { BossDifficulty } from './scheduler'
 
+/**
+ * 게임 규칙 아홉. 서버 `game_rules` 표의 한 줄이고 칸 이름도 그 표를 따른다. 보스 · 가계부 지출 · 강화 비용이 읽는다.
+ */
+export interface GameRules {
+  /** 캐릭터 한 명의 주간 보스 등록 · 처치 한도 */
+  weeklyBossSelectionLimit: number
+  /** 한도 줄마다의 주간 결정석 판매 한도 */
+  weeklyCrystalSaleLimit: number
+  /** 난이도 줄에 파티 인원 상한이 없을 때의 상한 */
+  defaultMaxPartySize: number
+  /** 월드 간 거래 구매에 붙는 관세(%) */
+  spendTariffPercent: number
+  /** 세라자르 주화 한 개의 메소 값 */
+  rewardCoinPriceMeso: number
+  /** 메소마켓 수수료(%)의 기본값 */
+  mesoMarketFeePercent: number
+  /** 감정비용이 없는 장비 레벨의 상한 */
+  cubeAppraisalFreeMaxLevel: number
+  /** 감정비용 = 계수 × 레벨 × 레벨 */
+  cubeAppraisalCoefficient: number
+  /** 스타포스 파괴 방지 추가분(%) */
+  starforceDestroyDefenceSurchargePercent: number
+}
+export interface GameRulesTable extends TableHead {
+  gameRules: GameRules
+}
+
 /** 칸 맨 위의 시각. `null` 은 서버에서 받은 적 없는 사본이다. */
 export interface TableHead {
   updatedAt: string | null
@@ -537,6 +564,7 @@ export interface GameData {
   faqs: FaqsTable
   appImages: AppImagesTable
   items: ItemsTable
+  gameRules: GameRulesTable
 }
 
 export type GameDataSection = keyof GameData
@@ -564,6 +592,7 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'faqs',
   'appImages',
   'items',
+  'gameRules',
 ]
 
 /** 서버 응답을 칸마다 검사한 결과. 못 받았거나 계약을 어겼거나 서버가 아직 안 넣은 칸은 `null` 이다. */

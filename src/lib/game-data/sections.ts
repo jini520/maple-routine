@@ -22,6 +22,7 @@ import { dropItemsTable, parseDropItems } from '../drop/drop-items'
 import { enhancementCostsTable, parseEnhancementCosts } from '../enhancement/cost'
 import { equipmentItemsTable, parseEquipmentItems } from '../equipment/equipment-items'
 import { faqsTable, parseFaqs } from '../faq/faqs'
+import { gameRulesTable, parseGameRules } from '../game-rules'
 import { itemsTable, parseItems } from '../item-catalog'
 import { mvpGradesTable, parseMvpGrades } from '../mvp/grades'
 import { contentsTable, parseContents } from '../scheduler/contents'
@@ -61,6 +62,7 @@ export const SECTIONS: { readonly [K in GameDataSection]: GameDataSectionEntry<G
   faqs: { table: faqsTable, parse: parseFaqs },
   appImages: { table: appImagesTable, parse: parseAppImages },
   items: { table: itemsTable, parse: parseItems },
+  gameRules: { table: gameRulesTable, parse: parseGameRules },
 }
 
 /** 지금 표 스물하나의 값. */

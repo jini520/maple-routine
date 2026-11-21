@@ -34,6 +34,7 @@ import {
   type Row,
 } from '../game-data/contract'
 import { gameTable, derive } from '../game-data/table'
+import { gameRules } from '../game-rules'
 
 /** 응답의 `potential_type` 글자 → 표의 종류 key. 이 둘 말고는 안 온다(1년치 4,507건 실측). */
 const RESET_TYPE_KEYS: Record<string, PotentialResetTypeKey | undefined> = {
@@ -166,7 +167,7 @@ export function findSuperiorItem(apiName: string): SuperiorItem | null {
  * 무료 상한 이하가 0 인 것은 통찰력 90 이상이면 무료이고 이 앱이 모든 캐릭터를 100 으로 보기 때문이다.
  */
 export function cubeAppraisalCost(itemLevel: number): number {
-  const { rules } = enhancementCostsTable.get()
+  const rules = gameRules()
   if (itemLevel <= rules.cubeAppraisalFreeMaxLevel) return 0
   return rules.cubeAppraisalCoefficient * itemLevel * itemLevel
 }
@@ -221,7 +222,7 @@ export function starforceCostParts(
 ): StarforceCostParts | null {
   const step = index().steps.get(fromStar)
   if (step === undefined) return null
-  const { rules } = enhancementCostsTable.get()
+  const rules = gameRules()
   const raw = 1000 + (itemLevel ** 3 * (fromStar + 1) ** step.exponent) / step.divisor
   const rounded = Math.round(raw / 100) * 100
   return {
