@@ -1,7 +1,7 @@
-# ADR-161+202 가계부 메이플 ID 기록
+# ADR-161+202+293 가계부 메이플 ID 기록
 
 > 🟢 유효
-> 관련 소스: `app/cashbook/character-options.ts` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/EtcForm.tsx` · `app/cashbook/spend/CatalogForm.tsx` · `app/cashbook/spend/SymbolForm.tsx` · `app/cashbook/spend/ItemBuyForm.tsx` · `app/cashbook/spend/EtcForm.tsx` · `features/cashbook/account-names.ts` · `lib/maple-id-name.ts` · `features/cashbook/legacy-entry-accounts.ts` · `features/cashbook/records.ts` · `lib/cashbook/categories.ts` · `storage/cashbook-entries.ts` · `storage/income.ts` · `storage/spend.ts` · `storage/sqlite/migrations.ts` · `features/mvp-grade/character-list.ts` · `features/stats/aggregate.ts` · `app/stats/CharacterSection.tsx` · `app/today/view-model.ts`
+> 관련 소스: `app/cashbook/character-options.ts` · `app/cashbook/sheet-fields.tsx` · `app/cashbook/income/EtcForm.tsx` · `app/cashbook/spend/CatalogForm.tsx` · `app/cashbook/spend/SymbolForm.tsx` · `app/cashbook/spend/ItemBuyForm.tsx` · `app/cashbook/spend/EtcForm.tsx` · `features/cashbook/account-names.ts` · `lib/maple-id-name.ts` · `storage/sqlite/convert-cashbook-tables.ts` · `storage/sqlite/legacy-cashbook-entries.ts` · `features/device-conversion/run.ts` · `features/cashbook/records.ts` · `lib/cashbook/categories.ts` · `storage/cashbook-entries.ts` · `storage/income.ts` · `storage/spend.ts` · `storage/sqlite/migrations.ts` · `features/mvp-grade/character-list.ts` · `features/stats/aggregate.ts` · `app/stats/CharacterSection.tsx` · `app/today/view-model.ts`
 
 ## 배경
 
@@ -75,19 +75,18 @@
   관리 화면과 캐릭터 관리 드롭다운뿐이다([[ADR-101]] 결정 8).
 - 기록에는 ID 만 저장하고 이름은 그릴 때 만든다. 이름을 저장하면 같은 ID 의 기록이 이름마다 갈린다.
 
-### 결정 4. 기록은 `ocid` 나 `account_id` 하나만 채우고, 넥슨 계정 id 는 주인을 모르는 옛 기록에만 남는다
+### 결정 4. 기록은 `ocid` 나 `account_id` 하나만 채우고, 넥슨 계정 칸은 두지 않는다
 
 - `cashbook_entries` 에 `account_id` 칸을 더한다. 캐릭터 기록은 `ocid` 만, 메이플 ID 기록은 `account_id` 만 채운다(사용자 지정
   2026-11-04). 어느 기록인지는 어느 칸이 찼는지로 가른다. 같은 사실을 한 번만 적으므로 두 칸이 어긋날 일이 없다.
 - 캐릭터 기록의 메이플 ID 가 필요하면 `character_accounts` 에서 그 캐릭터의 소속을 찾는다. 기록에 함께 적지 않는다.
 - 칸 이름은 `character_accounts` 의 메이플 ID 칸과 같은 `account_id` 다. 같은 값을 두 표가 다른 이름으로 부르면 두 표를 이어
   읽을 때 같은 값인지 알기 어렵다.
-- **새 기록에는 `nexon_account_id` 를 적지 않는다**(사용자 지정 2026-11-04). 넥슨 계정은 `ocid` 나 메이플 ID 에서
-  `character_accounts` 를 거쳐 찾는다. 메인 계정 id 를 적어 두면, 다계정이 생긴 뒤 부계정 메이플 ID 의 기록에 메인 계정이 붙어
-  틀린 값이 된다.
-- 칸은 지우지 않는다. 주인을 모르는 옛 기록(`ocid` 와 `account_id` 가 모두 `NULL`)에는 이 값 말고 단서가 없다. 옛 기록을
-  메이플 ID 로 옮기거나(결정 5) 수정해서 캐릭터 · 메이플 ID 를 고르면 이 칸을 비운다. 그래서 이 칸이 찬 행은 늘 주인을 모르는
-  옛 기록이다.
+- **기록에 넥슨 계정 id 를 적지 않는다**(사용자 지정 2026-11-04). 넥슨 계정은 `ocid` 나 메이플 ID 에서 `character_accounts` 를
+  거쳐 찾는다. 메인 계정 id 를 적어 두면, 다계정이 생긴 뒤 부계정 메이플 ID 의 기록에 메인 계정이 붙어 틀린 값이 된다.
+- 1.0.15 전의 기기 표에는 주인을 모르는 옛 기록(`ocid` 와 `account_id` 가 모두 `NULL`)의 단서로 넥슨 계정 칸
+  (`nexon_account_id`)이 있었다. 1.0.15 기기 변환이 그 기록을 결정 5 대로 붙이고 칸을 없앤다([[ADR-286]] 결정 10). 서버는 메이플
+  ID 없는 기록을 받지 않아서 변환 뒤의 기록은 둘 가운데 하나가 반드시 차 있다.
 
 ### 결정 5. 캐릭터 없이 적힌 옛 기록은 그 넥슨 계정의 메이플 ID 가 하나뿐이면 그 ID 로, 아니면 대표 캐릭터에게 붙인다
 
@@ -102,9 +101,13 @@
     메이플 ID 칸은 채우지 않는다.
   - 대표 캐릭터는 화면이 대표로 세우는 캐릭터다(`resolveDisplayRepresentative`). 대표를 고르지 않았으면 추적 목록의 첫
     캐릭터다. 대표가 없거나 그 캐릭터의 메이플 ID 를 아직 모르면 붙이지 않는다.
-- 옮기는 것은 앱을 켤 때의 부팅 단계(`assignLegacyEntryAccounts`)이고, `fillLegacyAccountIds` 뒤에 돈다. 그 단계가 끝나기 전에는
-  옛 기록의 `nexon_account_id` 가 빈 글자일 수 있어 계정을 셀 수 없다([[ADR-098]] 결정 6). 소속은 `character/list` 를 받아야
-  생기므로, 붙일 기록이 남아 있으면 켤 때마다 다시 본다.
+- 옮기는 것은 1.0.15 기기 변환의 가계부 단계이고, 표를 옮기기 전에 한 번 돈다([[ADR-286]] 결정 1 · 10). 먼저 빈 글자 계정
+  칸(버전 16 전에 메인 계정으로 받은 기록, [[ADR-098]] 결정 6)을 메인 넥슨 계정 id 로 채운다. 채우지 않으면 그 기록의 넥슨
+  계정을 몰라 메이플 ID 를 셀 수 없다.
+- 메인 넥슨 계정 id 와 대표 캐릭터는 Preferences 에 있어, 부팅(`features/device-conversion/run.ts`)이 변환 전에 읽어 넘긴다. 대표
+  캐릭터의 메이플 ID 는 그 캐릭터를 가장 늦게 본 소속이다.
+- 그래도 붙일 곳이 없는 기록은 옮기지 않고 지운다. 켤 때마다 다시 보던 부팅 단계는 걷었다. 기록 표 접근이 변환을 기다려서 그
+  단계는 늘 변환 뒤에 돌고, 변환 뒤의 표에는 넥슨 계정 칸이 없다.
 
 ### 결정 6. 메이플 ID 기록은 이름을 붙여 보여 주고, 그림이 서는 자리에는 세우지 않는다
 
@@ -115,6 +118,7 @@
 | 통계 `캐릭터별` 카드의 단상 | 서지 않는다. 메이플 ID 줄을 뺀 캐릭터 줄의 상위 셋이 선다 | 빠진다 |
 | today `이번 주 수익` 의 순위 | 서지 않는다 | 빠진다 |
 
+- 1.0.15 기기 변환 뒤에는 캐릭터도 메이플 ID 도 없는 기록이 없다(결정 4 · 5). 표의 오른쪽 칸은 변환 전 기록을 읽는 규칙이다.
 - 단상과 today 순위는 전신 그림 · 얼굴이 서는 자리다. 메이플 ID 에는 그림을 두지 않으므로(결정 2) 이 두 자리에는 세우지
   않는다(사용자 지정 2026-11-04).
 - 통계 카드 제목은 `캐릭터별` 그대로다(사용자 지정 2026-11-04). 메이플 ID 줄도 결정 3 의 이름만 쓰고, 캐릭터 줄과 가르는
@@ -128,8 +132,9 @@
 | `app/cashbook/__tests__/IncomeSheet.test.tsx` · `app/cashbook/__tests__/SpendSheet.test.tsx` | 결정 1 · 2: 결정 1 의 분류마다 목록에 `선택 안함` 이 없는지, 메이플 ID 보기가 고를 수 있는 분류(지출 컨텐츠 포함)에서만 캐릭터 뒤에 서는지, 고르기 전에는 저장이 꺼지고 메이플 ID 를 고르면 그 ID 로 저장되는지, 옛 기록이 빈 칸으로 열려 골라야 다시 저장되는지 본다 |
 | `features/cashbook/__tests__/account-names.spec.ts` | 결정 2: 추적 캐릭터가 속한 ID 만 대표 레벨 차례로 서고, 대표를 저장된 목록 · 추적 캐릭터 차례로 찾는지, 대표를 못 찾은 ID 가 맨 끝인지 본다. 결정 3: 대표를 못 찾은 ID 도 기본 이름으로 서는지 본다 |
 | `features/cashbook/__tests__/records.spec.ts` | 결정 6: 하루 목록 줄의 첫 줄에 메이플 ID 이름이 붙고, 캐릭터도 메이플 ID 도 없는 옛 기록은 제목만인지 본다 |
-| `storage/__tests__/income.spec.ts` · `storage/__tests__/spend.spec.ts` | 결정 4: `account_id` 가 저장되고 읽히는지, 새 기록과 주인을 고른 옛 기록의 `nexon_account_id` 가 비는지 본다. 결정 5: 메이플 ID 가 하나인 넥슨 계정의 옛 기록만, 메이플 ID 를 고를 수 있는 분류만 옮기는지, 남은 옛 기록을 분류에 따라 대표 캐릭터의 메이플 ID 나 그 캐릭터에 붙이는지 본다 |
-| `features/cashbook/__tests__/legacy-entry-accounts.spec.ts` | 결정 5: 메이플 ID 가 하나뿐인 옮기기 뒤에 남은 기록을 화면이 대표로 세우는 캐릭터에게 붙이는지, 대표나 그 메이플 ID 를 모르면 붙이지 않는지, 지출 컨텐츠가 메이플 ID 분류인지 본다 |
+| `storage/__tests__/income.spec.ts` · `storage/__tests__/spend.spec.ts` | 결정 4: 메이플 ID 기록이 캐릭터 없이 `account_id` 로 저장되고 그대로 읽히는지 본다 |
+| `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts` | 결정 5: 빈 글자 계정 칸을 메인 계정으로 채워 그 넥슨 계정의 하나뿐인 메이플 ID 로 옮기는지, 메이플 ID 가 여럿이면 옮기지 않고 남은 기록을 분류에 따라 대표 캐릭터의 메이플 ID 나 그 캐릭터에 붙이는지, 붙일 대표가 없으면 옮기지 않는지 본다 |
+| `features/device-conversion/__tests__/run.spec.ts` | 결정 5: 메인 넥슨 계정과 화면이 대표로 세우는 캐릭터(고르지 않았으면 첫 추적 캐릭터)를 변환에 넘기는지 본다 |
 | `features/stats/__tests__/aggregate.spec.ts` | 결정 6: 메이플 ID 기록이 ID 마다 한 줄이고, 캐릭터도 메이플 ID 도 없는 옛 기록은 빠지는지 본다 |
 | `app/stats/__tests__/CharacterSection.test.tsx` | 결정 6: 막대에는 메이플 ID 줄이 서고 단상에는 서지 않는지 본다 |
 | `app/today/__tests__/view-model.test.ts` | 결정 6: 이번 주 수익 순위에 메이플 ID 줄이 서지 않는지 본다 |
@@ -138,3 +143,5 @@
 
 - ADR-161 (2026-11-04): 캐릭터 없이 저장되던 가계부 분류에 캐릭터나 메이플 ID 를 고르게 하고, 메이플 ID 기록을 이름과 함께 보여 주는 결정을 처음 작성했다(#851)
 - ADR-202 (2026-11-11): 메이플 ID 의 이름을 `메이플 ID · 대표 캐릭터` 에서 [[ADR-101]] 결정 8 의 이름(`메이플ID-` 와 ID 앞 8자)으로 바꿨다. 대표 캐릭터는 ID 의 차례를 정하는 데만 쓴다(#928)
+- ADR-293 (2026-11-21): 결정 4 · 5 를 다시 썼다. 주인을 모르는 옛 기록은 1.0.15 기기 변환이 옮기기 전에 한 번 붙이고, 붙일 곳이
+  없으면 지우며, 넥슨 계정 칸과 켤 때마다 돌던 부팅 단계를 없앴다. 결정 6 에 변환 뒤에는 주인 없는 기록이 없다는 것을 적었다(#947)

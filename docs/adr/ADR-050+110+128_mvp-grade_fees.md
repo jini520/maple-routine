@@ -132,8 +132,9 @@ rounded   = round100(1000 + L³ × (S+1)^exp / divisor)
 - 다시 계산은 행을 다시 쓰는 방식이다. 자동 기록도 받은 금액(가계부는 품목의 `amount_meso`)과 뗀 수수료를 행에 적어 두고, 등급
   이력이 바뀌면 새 요율로 다시 적는다. 집계는 받은 금액 한 칸만 더하므로, 볼 때 계산하게 바꾸면 집계 코드를
   모두 고쳐야 하기 때문이다.
-- 자동 여부는 행마다 적는다. 가계부 품목은 `cashbook_entry_items.sale_fee_auto`(`INTEGER`, 1 이면 자동, [[ADR-096]])이고,
-  `NULL` 은 이 칸이 생기기 전의 행이라 직접 고른 것으로 읽는다. 보스 기록은 `boss_drops.sale_fee_follows_mvp_grade` ·
+- 자동 여부는 행마다 적는다. 가계부 품목은 `cashbook_entry_items.sale_fee_follows_mvp_grade`(1 이면 자동, 0 이면 직접 고른
+  요율, [[ADR-096]])이다. 이 칸이 생기기 전의 행은 1.0.15 기기 변환이 0 으로 옮겼다([[ADR-286]] 결정 4). 주간 보스 수입 이전은
+  `cashbook_entry_transfer_inputs.fee_follows_mvp_grade` 다. 보스 기록은 `boss_drops.sale_fee_follows_mvp_grade` ·
   `boss_drops.split_fee_follows_mvp_grade` · `boss_split_settings.split_fee_follows_mvp_grade` ·
   `boss_profit_entries.split_fee_follows_mvp_grade` 이고, 비울 수 없는 1 · 0 이다([[ADR-078]] 결정 2).
 - 결정석 기록은 비율로 나눈 처치만 다시 계산한다(`getAutoFeeProfitRecords`). 결정석의 송금 수수료는 비율로 나눌 때만 금액에

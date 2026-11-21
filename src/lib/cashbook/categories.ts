@@ -48,8 +48,8 @@ export type IncomeCategoryKey = (typeof INCOME_CATEGORY_KEYS)[number]
 /**
  * 캐릭터 칸에 메이플 ID 보기가 서는 분류. 나머지 분류는 캐릭터만 고른다.
  *
- * 시트의 보기와 옛 기록을 메이플 ID 로 옮기는 부팅 단계가 같은 목록을 본다. 둘이 갈리면 메이플 ID 를 고를 수 없는 분류에
- * 메이플 ID 기록이 생긴다.
+ * 시트의 보기와 주인을 모르는 옛 기록을 메이플 ID 로 옮기는 1.0.15 기기 변환이 같은 목록을 본다. 둘이 갈리면 메이플 ID 를 고를
+ * 수 없는 분류에 메이플 ID 기록이 생긴다.
  */
 export const ACCOUNT_INCOME_CATEGORY_KEYS: readonly IncomeCategoryKey[] = ['etc']
 export const ACCOUNT_SPEND_CATEGORY_KEYS: readonly SpendCategoryKey[] = ['event_bm', 'etc', 'content']

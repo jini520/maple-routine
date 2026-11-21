@@ -26,7 +26,7 @@
 |---|---|---|---|---|
 | `manual` | 수동 선택 항목 | `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` · `hexaStorageChecks` · `lastBossIncomeTransfers` · `lastEpicDungeonRewards` | 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값) | 사용자가 다시 고른다 |
 | `boss` | 보스 처치 · 드롭 | 없음 | 보스 기록 표 셋의 처치 · 드롭 행 | 넥슨 API 가 최근 2주치 처치만 다시 준다. 드롭은 되살릴 수 없다 |
-| `cashbook` | 가계부 | 없음 | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` | 손으로 적은 기록이라 되살릴 수 없다 |
+| `cashbook` | 가계부 | 없음 | 가계부 기록 표 여섯(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs`) · `inventory_items` · `remembered_levels` | 손으로 적은 기록이라 되살릴 수 없다. 인벤토리와 강화 레벨 기억은 가계부 기록에서 세거나 나온 값이라 함께 지운다([[ADR-209]] 결정 14 · [[ADR-137]] 결정 12) |
 | `enhancement` | 강화 | 없음 | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` · `enhancement_refetches` · `character_dated_names` · `character_first_days` | 가계부 · 통계에서 그 달을 볼 때 넥슨 API 에서 다시 받는다. 조회 한도(약 18개월, `HISTORY_MONTHS_BACK`)보다 이른 날은 다시 받을 수 없다 |
 | `cache` | 캐시 | `schedulerCache:*` · `characterBasicCache:*` · `mesoRateCache:*` · `eventWorldNames` | `query_cache` | 다시 띄운 앱이 평소 켤 때처럼 회차와 공지를 받는다. 메소 획득량의 마지막 성공값은 다음 조회가 채울 때까지 빈다 |
 
@@ -98,7 +98,7 @@ https://claude.ai/artifact/2gPc1rSReFaUKiCj1YV7Zo 의 `E2 문구 수정` 판이�
 |---|---|
 | `manual` | 수동 추적 항목(`manualTrackedContent:*`)이 있는 캐릭터 수 |
 | `boss` | 처치한 수익 건 수와 드롭 행 수 |
-| `cashbook` | `cashbook_entries` 행 수 |
+| `cashbook` | `cashbook_entries` 행 수와 `inventory_items` 행 수의 합 |
 | `enhancement` | `enhancement_totals` 의 날짜(`history_date`) 수 |
 | `cache` | 저장된 쿼리 수와 이 그룹의 Preferences 키 수의 합. 저장된 쿼리는 `query_cache` 의 한 행에 JSON 으로 들어 있어 표로 셀 수 없으므로, 복원된 메모리 캐시에서 `shouldPersistQuery` 로 센다 |
 

@@ -27,7 +27,7 @@ import { inTransaction } from './sqlite/transaction'
 
 export interface IncomeRecord {
   id: string
-  /** 기록이 붙은 캐릭터. 메이플 ID 기록과 주인을 모르는 옛 기록은 `null` 이다. */
+  /** 기록이 붙은 캐릭터. 메이플 ID 기록은 `null` 이다. 저장한 기록은 이것과 `accountId` 가운데 하나가 반드시 있다. */
   ocid: string | null
   /** 기록이 붙은 메이플 ID. 메이플 ID 기록에만 있다. */
   accountId?: string

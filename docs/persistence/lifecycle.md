@@ -52,7 +52,7 @@
 |---|---|
 | `manual`(수동 선택 항목) | Preferences 의 `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` · `hexaStorageChecks` · `lastBossIncomeTransfers` · `lastEpicDungeonRewards` + 보스 분배 설정 표(`boss_split_settings`)와 처치 전 수익 건의 분배 칸(그 기간만 고친 값, 줄 단위) |
 | `boss`(보스 처치 · 드롭) | 보스 드롭과 처치한 수익 건(줄 단위) |
-| `cashbook`(가계부) | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` · `remembered_levels` |
+| `cashbook`(가계부) | 가계부 기록 표 여섯(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs`) · `inventory_items` · `remembered_levels` |
 | `enhancement`(강화) | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` · `enhancement_refetches` · `character_dated_names` · `character_first_days` |
 | `cache`(캐시) | `query_cache` · `schedulerCache:*` · `characterBasicCache:*` · `mesoRateCache:*` · `eventWorldNames`. `characterBasicCache:*` 의 프로필 중 표에 없는 것은 `character_profiles` 에 심은 뒤 지운다 |
 

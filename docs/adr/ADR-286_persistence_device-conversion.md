@@ -213,6 +213,9 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
   인덱스(`inventory_items_owner_item`)는 변환 전 DB 에만 만든다.
 - 기억한 레벨이 같은 캐릭터 · 종류 · 대상으로 모이면 늦게 고친 줄을 남긴다. 코어 이름의 앞뒤 공백만 다른 줄이 그렇다.
 - 넥슨에서 받은 레벨 가운데 표에 없는 심볼 · 코어는 적지 않는다. 대상 칸을 비울 수 없고, 폼은 표에 있는 대상만 보인다.
+- 2026-11-20 기기 백업 사본으로 가계부 단계(결정 4 · 5)를 돌려 확인했다. 가계부 기록 209건 · 품목 209 · 사냥 입력 97 · 조각 사용 2 ·
+  인벤토리 7 · 기억한 레벨 86줄이 그대로 옮겨지고, 저장소로 되읽은 분류 · 품목 key · 금액 · 레벨이 변환 전과 같았다. 헥사 코어 기록
+  5건은 모두 그 직업의 코어를 찾았다. 사본은 개인 기록이라 저장소의 테스트로 두지 않는다.
 
 ### 결정 6. 강화 합계 · 월드 리프 · MVP 등급
 
@@ -284,7 +287,7 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 | `enhancement_totals.nexon_account_id` | 다시 받은 날의 줄을 갈아 끼울 때 지울 범위(`storage/enhancement-totals.ts` 의 `replaceEnhancementTotals`). 계정의 지금 캐릭터에 없는 옛 ocid 의 줄까지 지우려고 쓴다 | `character_accounts` 에서 그 넥슨 계정의 ocid. 이 표는 목록에서 사라진 캐릭터와 옛 ocid 도 지우지 않고 둔다 |
 | `enhancement_totals.account_id` | 스타포스 MVP 할인을 구할 메이플 ID(`features/cashbook/records.ts`) | `character_accounts` 에서 그 강화 날짜에 그 캐릭터가 속한 메이플 ID(`first_seen_date` ~ `last_seen_date`) |
 | `enhancement_totals.character_name` | 가계부 강화 줄의 이름을 못 찾을 때 대신 쓰는 이름(`features/cashbook/records.ts`) | `character_dated_names` 에서 그 날짜의 이름 |
-| `cashbook_entries.nexon_account_id` | 주인을 모르는 옛 손입력을 붙이는 켜기 단계(`features/cashbook/legacy-entry-accounts.ts`) | 가계부 단계가 옮기기 전에 같은 붙이기를 한 번 더 돌고, 켜기 단계는 걷는다(결정 1). 그래도 붙일 곳이 없는 기록은 지운다. 서버는 메이플 ID 없는 기록을 받지 않는다([[ADR-099]] 결정 49) |
+| `cashbook_entries.nexon_account_id` | 주인을 모르는 옛 손입력을 붙이던 켜기 단계 | 가계부 단계가 옮기기 전에 같은 붙이기를 한 번 더 돌고, 켜기 단계는 걷었다(결정 1). 그래도 붙일 곳이 없는 기록은 지운다. 서버는 메이플 ID 없는 기록을 받지 않는다([[ADR-099]] 결정 49) |
 
 - 백업의 강화 970줄은 세 칸의 값을 모두 두 표에서 찾는다. 가계부 기록 209건에는 `nexon_account_id` 가 찬 줄이 없다.
 - 강화 합계를 적는 코드도 세 칸을 쓰지 않게 바꾼다.
