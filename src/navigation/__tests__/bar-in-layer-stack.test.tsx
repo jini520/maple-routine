@@ -6,7 +6,7 @@
 // 통째로 지웠다. **목을 두고 안 불린다 를 물어 봐야 헛것이다**:
 // 모듈을 아무도 import 하지 않으므로 그 단언은 배선이 되살아나도 초록이다. 지금 그 자리를 지키는
 // 것은 소스를 훑는 `src/__tests__/interstitial-policy.test.ts` 다.
-import { act, fireEvent, render, screen, within } from '@testing-library/react-native'
+import { act, fireEvent, render as renderNow, screen, within } from '@testing-library/react-native'
 import { Dimensions, StyleSheet } from 'react-native'
 import { isLiquidGlassAvailable } from 'expo-glass-effect'
 import { useAppEntryStore } from '../../features/app-entry/store'
@@ -60,10 +60,31 @@ afterEach(() => {
   setSystemBarsPort(noopSystemBarsPort)
 })
 
+/**
+ * 탭 전환이 끝나기를 `act` 안에서 기다리는 함수. 탭 화면(`BottomTabView`)은 전환 애니메이션이 끝난 뒤 32ms 타이머로 상태를
+ * 바꾼다. 기다리지 않으면 부하가 걸렸을 때 그 갱신이 검사가 끝난 뒤에 와서 `act()` 경고로 케이스가 실패한다.
+ */
+async function settle(): Promise<void> {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, TAB_TRANSITION_SETTLE_MS))
+  })
+}
+
+/** 탭 화면의 32ms 타이머에 애니메이션 한 프레임을 더한 시간. */
+const TAB_TRANSITION_SETTLE_MS = 60
+
+/** 그린 뒤 남은 틱을 흘려보낸다. */
+async function render(element: React.ReactElement): Promise<ReturnType<typeof renderNow>> {
+  const view = await renderNow(element)
+  await settle()
+  return view
+}
+
 async function press(testID: string): Promise<void> {
   await act(async () => {
     fireEvent.press(screen.getByTestId(testID))
   })
+  await settle()
 }
 
 // 유리는 OS 외형이 아니라 앱 테마를 따라야 한다.
