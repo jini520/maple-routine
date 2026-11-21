@@ -59,7 +59,7 @@
 | 캐릭터 이력(`character_profiles` · `character_accounts` · `character_world_leaps` · `mvp_grade_history`) | 기록을 화면에 그리는 데 쓰인다. 지우면 남은 기록이 이름 없이 화면에서 사라지거나, 월드 이전 기간이 두 번 세어진다. 등급 이력은 사용자가 적은 값이다([[ADR-050]]) |
 | 옛 강화 원본(`enhancement_history`) | 합계로 옮기기 전의 기기에만 있고, 옮긴 뒤 코드가 지운다([[ADR-101]] 결정 27). 옛 보스 · 가계부 표 여섯은 DB 버전 23 이 지운다([[ADR-078]] 결정 9) |
 | 추적 캐릭터 · 대표 캐릭터(`trackedCharacters` · `representativeCharacter`) | 추적 캐릭터가 없으면 앱을 쓸 수 없어 캐릭터 고르기부터 다시 한다. 대표 캐릭터는 사용자가 고른 값이다 |
-| 인증 · 사용자 설정 · 표시 키(`authMethods` · `theme` · `trackingMode` · 알림 구독 · `partyAppointments` · `pendingTasks` · `enhancementTotalsMoved` · `legacyCleanupDone` 등) | 지우면 로그인 화면으로 돌아가거나, 끈 알림이 다시 오거나, 반쯤 고친 작업이 굳는다. `enhancementTotalsMoved` 가 지워지면 옛 원본을 합계로 다시 옮겨 새로 받은 날의 합계를 옛 값으로 덮는다 |
+| 인증 · 사용자 설정 · 표시 키(`authMethods` · `theme` · `trackingType` · 알림 구독 · `partyAppointments` · `pendingTasks` · `enhancementTotalsMoved` · `legacyCleanupDone` 등) | 지우면 로그인 화면으로 돌아가거나, 끈 알림이 다시 오거나, 반쯤 고친 작업이 굳는다. `enhancementTotalsMoved` 가 지워지면 옛 원본을 합계로 다시 옮겨 새로 받은 날의 합계를 옛 값으로 덮는다 |
 
 ### 결정 3. 확인 창에서 그룹을 골라 지운다. 처음에는 아무것도 고르지 않은 상태다 (사용자 확정)
 

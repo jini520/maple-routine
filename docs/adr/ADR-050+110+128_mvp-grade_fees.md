@@ -219,7 +219,7 @@ rounded   = round100(1000 + L³ × (S+1)^exp / divisor)
   기록에도 수수료가 붙는다. 이 점은 받아들였고, 사용자가 `없음` 으로 고친다.
 - 결정석의 송금 수수료는 대상이 아니다. `NULL` 인 행은 균등 분배이고, 균등 분배에는 차액을 보내는 일이 없어
   수수료가 계산에 들어가지 않는다.
-- 물었다는 표시 `mvpBulkApplyAsked` 는 데이터 삭제에서도 남긴다. 지워져서 다시 물으면, 체크박스를 끄고 넘겨
+- 물었다는 표시 `isMvpBulkApplyAsked` 는 데이터 삭제에서도 남긴다. 지워져서 다시 물으면, 체크박스를 끄고 넘겨
   수수료 없음으로 남긴 행이 다시 대상이 된다.
 
 일괄 적용(`mvpBulkFeeTask`)과 자동 수수료 다시 계산(`mvpRecalcFeeTask`)은 이어서 하는 작업이다([[ADR-023]]).
@@ -267,10 +267,12 @@ Preferences 키는 셋이다.
 
 | 키 | 뜻 | 데이터 삭제 |
 |---|---|---|
-| `mvpWeeklyCheckOff` | `앞으로 등급은 직접 바꿀게요` | 남긴다. 사용자가 고른 값이다 |
-| `mvpLastCheckedWeek` | 마지막으로 확인한 주의 목요일 | 남긴다 |
-| (1.0.15 에서 바뀐다) | 세 키의 이름이 `isMvpWeeklyCheckOff` · `mvpLastCheckedWeekCode` · `isMvpBulkApplyAsked` 가 되고, 확인한 주는 주차 값으로 적는다([[ADR-099]] 결정 57) | |
-| `mvpBulkApplyAsked` | 일괄 적용을 물었는지 | 남긴다(결정 10) |
+| `isMvpWeeklyCheckOff` | `앞으로 등급은 직접 바꿀게요` | 남긴다. 사용자가 고른 값이다 |
+| `mvpLastCheckedWeekCode` | 마지막으로 확인한 주의 주차 값(`W202647`). 흐름은 그 주의 목요일로 견준다 | 남긴다 |
+| `isMvpBulkApplyAsked` | 일괄 적용을 물었는지 | 남긴다(결정 10) |
+
+키 이름은 서버 칸 이름과 같다([[ADR-099]] 결정 57). 1.0.15 전의 키(`mvpWeeklyCheckOff` · `mvpLastCheckedWeek` ·
+`mvpBulkApplyAsked`)는 기기 변환이 옮겼다([[ADR-286]] 결정 7).
 
 ### 결정 13. 모달은 고르기와 확인 두 화면을 오간다 (사용자 지정)
 
@@ -321,7 +323,7 @@ ID 표시(닉네임 · 초상)는 넥슨 `character/list` 에서 오지만, 물�
 설정의 `MVP 등급` 행이 목록 페이지(`SettingsMvpGradeScreen`)를 연다.
 
 - 목록 페이지에는 메이플 ID 마다 카드가 하나씩 있다. 카드에는 ID 표시 · `변경` · 지금 등급 한 줄(시작 날짜 ·
-  `지금` · 명패) · `이력 N건 보기` 가 있다. 맨 아래는 `매주 등급 확인` 스위치이고, `mvpWeeklyCheckOff` 의 반대 값이다.
+  `지금` · 명패) · `이력 N건 보기` 가 있다. 맨 아래는 `매주 등급 확인` 스위치이고, `isMvpWeeklyCheckOff` 의 반대 값이다.
   스위치 아래에 설명 글은 두지 않는다(사용자 지정 2026-10-30).
 - ID 는 추적 캐릭터의 ID 가 먼저, 이력만 남은 ID 가 뒤에 온다. 추적에서 빠진 ID 의 이력도 고칠 수 있어야 하기 때문이다.
 - 목록을 읽지 못하면 빈 목록이 아니라 실패 화면과 `다시 시도` 를 보여 준다. 읽지 못했다면 ID 가 있는지조차 모른다.

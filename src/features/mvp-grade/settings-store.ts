@@ -29,7 +29,7 @@ interface MvpGradeSettingsState {
   load: () => Promise<void>
   /** 한 ID 의 이력을 통째로 바꿔 적고, 자동 수수료를 다시 계산한다. 못 적으면 토스트로 알린다. */
   saveHistory: (accountId: string, history: MvpGradeEntry[], now: Date) => Promise<void>
-  /** `매주 등급 확인` 스위치. 저장값(`mvpWeeklyCheckOff`)의 반대다. */
+  /** `매주 등급 확인` 스위치. 저장값(`isMvpWeeklyCheckOff`)의 반대다. */
   setWeeklyCheck: (on: boolean) => Promise<void>
 }
 

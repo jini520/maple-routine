@@ -51,8 +51,8 @@ export function useDeviceConversionStatus(): DeviceConversionPhase {
 }
 
 /**
- * 단계가 쓰는 Preferences 의 값. 메인 넥슨 계정과 화면이 대표로 세우는 캐릭터다. Preferences 는 기록 표 막기와 상관없이 읽힌다.
- * 기록 표를 거치는 조회(`getBossProfitDb()`)는 변환이 끝나기를 기다려 여기서 부르면 멈춘다.
+ * 단계가 쓰는 Preferences 의 값. 메인 넥슨 계정과 화면이 대표로 세우는 캐릭터다. 이 값이 든 키는 변환이 바꾸지 않아 기록 막기와
+ * 상관없이 읽힌다. 기록을 거치는 조회(`getBossProfitDb()` · 변환한 키의 저장소)는 변환이 끝나기를 기다려 여기서 부르면 멈춘다.
  */
 async function conversionContextOf(): Promise<DeviceConversionContext> {
   const [config, stored, tracked] = await Promise.all([

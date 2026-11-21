@@ -1,8 +1,8 @@
-# ADR-034+175 자동 · 수동 추적 모드와 컨텐츠 관리
+# ADR-034+175+298 자동 · 수동 추적 모드와 컨텐츠 관리
 
 > 🟢 유효
 > 옛 번호: ADR-035 · ADR-096 · ADR-086 결정 2 · ADR-140 결정 5 정정
-> 관련 소스: `features/tracking-mode/` · `storage/tracking-mode.ts` · `storage/manual-tracked-content.ts` · `lib/scheduler/manual-content-merge.ts` · `features/content-scheduler/displayed-contents.ts` · `features/content-scheduler/store.ts` · `app/content-scheduler/ContentManageScreen.tsx` · `app/settings/TrackingModeModal.tsx` · `app/settings/TrackingModeSelector.tsx`
+> 관련 소스: `features/tracking-mode/` · `storage/tracking-mode.ts` · `storage/manual-tracked-content.ts` · `lib/scheduler/manual-content-merge.ts` · `features/content-scheduler/displayed-contents.ts` · `features/content-scheduler/store.ts` · `app/content-scheduler/ContentManageScreen.tsx` · `app/settings/TrackingModeModal.tsx` · `app/settings/TrackingModeSelector.tsx` · `storage/preferences-conversion.ts`
 
 ## 배경
 
@@ -17,7 +17,7 @@
 `trackingMode` 는 `'auto'` 또는 `'manual'` 이고, 컨텐츠 스케줄러와 보스 스케줄러에 똑같이 적용된다. 화면마다,
 캐릭터마다 따로 정하지 않는다.
 
-- Preferences 키 `trackingMode` 에 저장한다(1.0.15 에서 키 이름이 `trackingType` 으로 바뀐다. [[ADR-099]] 결정 57). 값이 없거나 알 수 없는 값이면 `getTrackingMode` 는 `'auto'` 가 아니라
+- Preferences 키 `trackingType` 에 저장한다. 서버 칸 이름과 같다([[ADR-099]] 결정 57). 값이 없거나 알 수 없는 값이면 `getTrackingMode` 는 `'auto'` 가 아니라
   `null` 을 돌려준다. 고르지 않은 것과 자동을 고른 것을 같은 값으로 두면, 사용자가 고르지도 않은 자동이 선택된
   것처럼 보이기 때문이다. 동작은 자동이 기본이라 읽는 두 곳(`features/tracking-mode/store` ·
   `features/boss-profit/store`)이 `?? 'auto'` 로 받는다.
@@ -42,20 +42,23 @@
 
 `manualTrackedContent:{ocid}` 에 캐릭터마다 배열 하나를 저장한다.
 
-- 컨텐츠 항목은 `{ contentKey, kind, maxCount? }` 이고 `kind` 는 `'daily'` 또는 `'weekly'` 다. 보스 항목은
-  `{ kind: 'boss', bossKey, difficulty }` 다.
+- 저장하는 항목은 서버 `manual_tracked_items` 와 같은 `{ type, targetId }` 다([[ADR-099]] 결정 47). `type` 은 `'daily'` ·
+  `'weekly'` · `'boss'` 이고, `targetId` 는 일간 · 주간이면 컨텐츠 줄 id, 보스면 난이도 줄 id 다.
+- 화면과 병합이 드는 항목은 컨텐츠면 `{ contentKey, kind }`, 보스면 `{ kind: 'boss', bossKey, difficulty }` 다. 저장소
+  (`storage/manual-tracked-content.ts`)가 줄 id 와 key 를 오간다. 게임 데이터에 없는 줄 id 의 항목은 읽을 때 건너뛰고, 표에 없는
+  key 를 적으려 하면 던진다.
 - `kind` 는 저장할 때 정한다. 시드는 응답의 일간 · 주간 배열로, 관리 화면은 지금 보는 탭으로 정한다. 보여 줄 때
   추측하면 같은 항목이 일간 · 주간 탭 양쪽에 나온다.
 - `nowCount` · `questState` · `isRegistered` 같은 값은 저장하지 않는다. 화면에 그릴 때 그 캐릭터의 동기화 결과에서
   컨텐츠 key 로 찾고(`mergeManualContentList`), 한 번도 동기화된 적 없는 항목은 컨텐츠 표의 기본값을 쓴다. 값을 두
   곳에 두면 모드를 바꿀 때 방금 완료로 보이던 항목이 미완료로 바뀌는 일이 생긴다. 한 곳에서만 읽으면 두 모드가
   언제나 같은 값을 본다.
-- `maxCount` 는 사용자가 입력하지 않는다. 추가할 때 컨텐츠 표의 `max_count` 를 복사한다.
 - 이 키는 사용자가 추가 · 삭제할 때와 시드할 때만 쓰고, 동기화는 쓰지 않는다. 동시에 쓸 일이 없어서 잠금 없이
   Preferences 로 충분하다.
-- 옛 형식(일간 · 주간 구분 없는 `kind: 'content'`, key 대신 이름이 들어 있는 항목)은 읽을 때 컨텐츠 표 · 보스 표로 key 를
-  찾아 옮긴다. 찾지 못한 항목은 버린다. 관리 화면은 표에 있는 항목만 보여 주므로, 표에 없는 항목을 남기면 편집할 수
-  없는 항목이 된다.
+- 최대 횟수는 저장하지 않는다. 카드는 넥슨이 준 값이나 컨텐츠 표의 값을 써서 읽는 곳이 없다([[ADR-099]] 결정 52).
+- 1.0.15 전의 형식(일간 · 주간 구분 없는 `kind: 'content'`, key 대신 이름이 들어 있는 항목, key 로 적은 항목)은 기기 변환이 한 번
+  컨텐츠 표 · 보스 표로 줄 id 를 찾아 옮겼다([[ADR-286]] 결정 7). 찾지 못한 항목은 버렸다. 관리 화면은 표에 있는 항목만 보여
+  주므로, 표에 없는 항목을 남기면 편집할 수 없는 항목이 된다.
 
 ### 결정 4. 추적할 수 있는 컨텐츠는 컨텐츠 표에 있는 것뿐이다
 
@@ -187,10 +190,11 @@
 | `features/tracking-mode/__tests__/store.spec.ts` | 결정 5: 자동에서 수동으로 바꿀 때만 추적 캐릭터 전원을 한 번에 시드하는지 본다 |
 | `features/tracking-mode/__tests__/seed.spec.ts` | 결정 5: 등록된 항목만 일간 · 주간을 정해 넣는지, 표에 없는 컨텐츠 · 보스를 빼는지, 결과가 없으면 저장하지 않고 실패하는지, 여러 캐릭터를 한 번에 동기화하고 ocid 로 찾는지 본다. 전환 시드가 조회 불가 캐릭터를 건너뛰는지, 다른 이유로 못 채운 캐릭터가 있어도 나머지를 채운 뒤 실패하는지 본다 |
 | `features/tracking-mode/__tests__/seed-round-isolation.spec.ts` | 결정 5: 전환 시드에서 캐릭터마다 자기 스케줄로 채워지는지 본다 |
-| `storage/__tests__/manual-tracked-content.spec.ts` | 결정 3: 옛 `content` 항목과 이름 항목을 key 로 옮기고 못 찾으면 버리는지, 저장 실패를 그대로 전하는지 본다 |
+| `storage/__tests__/manual-tracked-content.spec.ts` | 결정 3: 종류와 줄 id 로 적어 key 모양으로 되읽는지, 게임 데이터에 없는 줄 id 를 건너뛰고 없는 key 를 적으면 던지는지, 저장 실패를 그대로 전하는지 본다 |
+| `storage/__tests__/preferences-conversion.spec.ts` | 결정 3: 옛 `content` 항목과 이름 항목을 줄 id 로 옮기고 못 찾거나 겹치면 버리는지 본다 |
 | `lib/__tests__/manual-content-merge.spec.ts` | 결정 3 · 6: 수동 항목 값을 동기화 결과에서, 없으면 표 기본값에서 찾는지, 순서가 표 순서인지, 표에 없는 추적 항목도 버리지 않는지 본다 |
 | `features/content-scheduler/__tests__/displayed-contents.spec.ts` | 결정 2 · 6: 자동은 등록된 것만, 수동은 추적 목록대로 보여 주는지, 일간 · 주간이 섞이지 않는지, 표에 없는 컨텐츠의 처리, 수동 모드에서 시작 기간 전인 항목을 그리지만 않는지 본다 |
-| `features/content-scheduler/__tests__/store.spec.ts` | 결정 3: 추가할 때 `kind` 와 표의 `max_count` 를 저장하고 중복을 막는지, 삭제가 그 항목만 지우는지 본다. 결정 5: 수동 모드에서 새로 더한 캐릭터만 시드하는지 본다. 결정 8: 탭을 바꿔도 조회하지 않는지 본다 |
+| `features/content-scheduler/__tests__/store.spec.ts` | 결정 3: 추가할 때 `kind` 만 저장하고 중복을 막는지, 삭제가 그 항목만 지우는지 본다. 결정 5: 수동 모드에서 새로 더한 캐릭터만 시드하는지 본다. 결정 8: 탭을 바꿔도 조회하지 않는지 본다 |
 | `app/content-scheduler/__tests__/ContentManageScreen.test.tsx` | 결정 7: 자동 모드면 뒤로 가는지, 표 전체를 보여 주고 추적 항목만 선택 상태인지, 누르면 지금 탭의 `kind` 로 추가 · 삭제하는지, 저장 실패 토스트, 시작 기간 전 컨텐츠를 빼는지 본다 |
 | `app/content-scheduler/__tests__/ContentScreen.test.tsx` | 결정 2 · 7: 수동 모드는 등록과 관계없이 추적 항목을 보여 주는지, 머리의 `관리`(스크린 리더 이름 `컨텐츠 관리`)와 빈 상태 버튼이 관리 화면을 열고 자동 모드에는 없는지 본다 |
 | `lib/__tests__/content-category.spec.ts` | 결정 7: 카테고리 key 로 묶는지, 순서 목록에 있는 카테고리를 앞세우는지, 참고 배지의 우선순위를 본다 |
@@ -200,3 +204,5 @@
 
 - ADR-034 (2026-10-19): 옛 ADR-035 · 096 과 옛 ADR-086 결정 2 · ADR-140 결정 5 정정을 합쳐 처음 작성
 - ADR-175 (2026-11-05): 결정 5 에 전환 시드가 조회 불가 캐릭터를 건너뛰고 못 채운 캐릭터가 있어도 나머지를 채우는 것을, 결정 9 에 적용이 실패하면 모달을 닫고 토스트를 띄우는 것을 더했다(#877)
+- ADR-298 (2026-11-22): 결정 1 의 키를 `trackingType` 으로, 결정 3 의 추적 항목을 종류와 줄 id 로 바꾸고 최대 횟수를 걷었다. 옛 형식은
+  기기 변환이 옮긴다(#947)

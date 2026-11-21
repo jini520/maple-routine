@@ -1,8 +1,8 @@
-# ADR-032+204 스케줄러 응답 병합과 캐시
+# ADR-032+204+299 스케줄러 응답 병합과 캐시
 
 > 🟢 유효
 > 옛 번호: ADR-030 · ADR-034 · ADR-270 · ADR-271 결정 6
-> 관련 소스: `lib/scheduler/scheduler-merge.ts` · `features/schedule-sync/use-schedule-queries.ts` · `features/schedule-sync/read-schedule.ts` · `lib/scheduler/scheduler-content-scope.ts` · `lib/scheduler/scheduler-activity.ts` · `lib/scheduler/reset-clock.ts` · `features/schedule-sync/schedule-sync.ts` · `storage/scheduler-cache.ts` · `storage/shared-progress-cache.ts`
+> 관련 소스: `lib/scheduler/scheduler-merge.ts` · `features/schedule-sync/use-schedule-queries.ts` · `features/schedule-sync/read-schedule.ts` · `lib/scheduler/scheduler-content-scope.ts` · `lib/scheduler/scheduler-activity.ts` · `lib/scheduler/reset-clock.ts` · `features/schedule-sync/schedule-sync.ts` · `storage/scheduler-cache.ts` · `storage/shared-progress-cache.ts` · `storage/preferences-conversion.ts`
 
 ## 배경
 
@@ -61,8 +61,8 @@
 
 ### 결정 4. 공유 항목은 응답의 등록 여부를 믿지 않고 원장에 쌓는다
 
-공유 항목은 섹션이 비지 않은 응답에서만 원장에 쓴다. 원장 한 칸에는 `active` · 진행값 · `lastUpdatedBucket` 이
-들어간다.
+공유 항목은 섹션이 비지 않은 응답에서만 원장에 쓴다. 원장 한 칸에는 등록 여부(`active`) · 진행값 · 값이 속한 기간
+(`lastUpdatedBucket`)이 들어간다. 저장하는 칸 이름은 결정 9 에 있다.
 
 - `active` 는 한 번 참이 되면 계속 참이다. 어느 캐릭터든 그 항목을 등록했다고 보고하면 참이 되고, 그 뒤로는 모든
   캐릭터가 이 원장 값을 쓴다. 다른 캐릭터의 상태가 섞여 들어온 응답 때문에 항목이 사라지거나 생기는 일을 막기
@@ -71,14 +71,16 @@
 - 진행값은 등록 여부와 관계없이 원장과 병합 결과에 담는다. 몬스터파크는 등록하지 않아도 월드 합계 횟수가 오는데,
   이 값을 버리면 수동 모드에서 실제 횟수 대신 0 이 보인다. 자동 모드는 등록 여부로 걸러서 보여 준다.
 
-원장 키는 `worldSharedProgress:{accountId}:{worldKey}` 와 `accountSharedProgress:{accountId}` 다. 계정은 지금 고른 계정이
+원장 키는 `worldSharedProgress:{accountId}:{월드 줄 id}` 와 `accountSharedProgress:{accountId}` 다. 계정은 지금 고른 계정이
 아니라 그 캐릭터가 속한 메이플 ID 다([[ADR-030]]). 그래야 계정이 다른 캐릭터를 함께 추적해도 에픽 던전 완료가 다른 계정으로
 번지지 않는다. 월드 원장도 같은 월드라도 메이플 ID 가 다르면 따로 센다([[ADR-101]] 결정 23). 월드 key 를 모르는 응답은 월드
 원장을 읽지도 쓰지도 않는다.
 
 월드로만 묶던 옛 원장(`worldSharedProgress:{worldKey}`, 그보다 옛 원장은 월드 이름)은 그 월드에 추적 캐릭터가 있는 메이플 ID
-마다 한 번 베끼고 지운다(`splitWorldSharedProgress`). 이 원장은 넥슨에서 다시 받을 수 없어 버리지 않는다. 모든 넥슨 계정의
-목록을 받은 회차에서만 한다. 목록을 못 받은 계정의 메이플 ID 는 옛 원장을 받지 못하고, 나누기는 한 번만 돌기 때문이다.
+마다 한 번 새 모양으로 베끼고 지운다(`splitWorldSharedProgress`). 이 원장은 넥슨에서 다시 받을 수 없어 버리지 않는다. 1.0.15 기기
+변환이 기기의 소속 기록으로 추적 캐릭터의 메이플 ID 와 월드를 다 찾으면 변환 안에서 나눈다([[ADR-286]] 결정 1). 못 찾으면 모든
+넥슨 계정의 목록을 받은 스케줄 회차가 나눈다. 목록을 못 받은 계정의 메이플 ID 는 옛 원장을 받지 못하고, 나누기는 한 번만 돌기
+때문이다.
 
 몬스터파크의 월드 간 섞임은 어느 쪽 값이 맞는지 응답만으로 가릴 방법이 없어서 막지 않는다. 월드 원장에는 마지막으로
 쓴 캐릭터의 값이 그대로 남는다.
@@ -147,8 +149,12 @@ today 의 공유 컨텐츠 위젯에 그리지 않는다([[ADR-058]]).
   ([[ADR-142]] 결정 1 · 7). 1.0.12 까지는 Preferences `schedulerCache:{ocid}` 에 두었다. 업데이트 뒤 첫 실행이 그 키를
   쿼리 캐시로 옮긴 뒤 지운다(`storage/scheduler-cache.ts` 는 읽기와 지우기만 남았다). 형식 번호(`CACHE_VERSION`)가
   다른 옛 캐시는 옮기지 않는다. 다음 동기화가 다시 받아 오는 값이다.
-- 원장은 API 에서 다시 받을 수 없는 값이라 옛 형식을 읽을 때 새 형식으로 옮긴다. 컨텐츠 이름을 키로 쓰던 칸은 컨텐츠 key 로,
-  월드 이름을 넣은 원장 키는 월드 key 로 옮긴다. 컨텐츠 표에 없는 이름은 버린다.
+- 원장은 서버 `shared_content_progress` 와 같은 칸으로 적는다([[ADR-099]] 결정 56). 열쇠는 컨텐츠 줄 id 이고, 칸은
+  `isRegistered` · `nowCount` · `maxCount` · `questState` · `periodCode` 다. 기간 값은 그 컨텐츠의 주기로 일간은 `D20261119`,
+  주간은 `W202647` 이다. 넥슨이 주는 종류는 컨텐츠 줄의 `type` 에 있어 적지 않는다. 병합은 컨텐츠 key · 종류 · 기간 key 를 들고,
+  저장소(`storage/shared-progress-cache.ts`)가 그 사이를 바꾼다. 게임 데이터에 없는 컨텐츠 줄 id 는 읽을 때 버린다.
+- 원장은 API 에서 다시 받을 수 없는 값이라 옛 형식을 버리지 않는다. 1.0.15 전의 형식(컨텐츠 key 나 이름을 열쇠로, 월드 key
+  를 키 글자로 쓰던 원장)은 기기 변환이 한 번 새 형식으로 옮겼다([[ADR-286]] 결정 7). 컨텐츠 표에 없는 이름은 버렸다.
 - 원장 칸 하나를 쓸 때 표 전체를 읽고 고쳐 다시 쓴다. 추적 캐릭터들은 동시에 동기화되므로, 같은 원장에 쓰기가
   겹치면 먼저 끝난 쓰기가 덮일 수 있다. 메이플 유니온의 `active: false` 쓰기가 덮이면 미접속 캐릭터가 원장의 옛
   `true` 를 읽는다. 이번 응답을 받은 캐릭터의 화면은 응답 값을 바로 쓰므로 영향이 없다.
@@ -195,10 +201,13 @@ today 의 공유 컨텐츠 위젯에 그리지 않는다([[ADR-058]]).
 | `lib/__tests__/reset-clock.spec.ts` | 결정 6 · 8: KST 날짜와 주간 리셋을 기기 시간대와 관계없이 내는지, 지난 날짜 목록이 00:10 전후로 시작일을 바꾸는지 본다 |
 | `features/schedule-sync/__tests__/schedule-sync.spec.ts` | 결정 4: 원장을 각 캐릭터가 속한 계정 키로 읽고 쓰는지, 월드 key 가 없으면 월드 원장을 건드리지 않는지 본다 |
 | | 결정 8: 날짜를 한꺼번에 조회하는지, 채워진 날짜에서 멈추는지, 실패한 날짜를 건너뛰는지, 일찍 멈춰도 받은 날짜를 모두 기록하는지, 공유 항목만 남은 일간 섹션에도 조회하는지 본다 |
-| `storage/__tests__/shared-progress-cache.spec.ts` | 결정 9: 같은 원장에 칸을 더해도 기존 칸이 남는지, 옛 이름 키와 옛 월드 키를 옮기는지 본다 |
+| `storage/__tests__/shared-progress-cache.spec.ts` | 결정 9: 같은 원장에 칸을 더해도 기존 칸이 남는지, 월드 줄 id 키 · 컨텐츠 줄 id 열쇠 · 컨텐츠 주기의 기간 값으로 적는지, 게임 데이터에 없는 줄 id 를 버리는지 본다 |
+| `storage/__tests__/preferences-conversion.spec.ts` | 결정 4: 옛 월드 원장을 메이플 ID 마다 새 모양으로 베끼고, 메이플 ID 를 다 못 찾으면 스케줄 회차에 남기는지 본다. 결정 9: 옛 형식의 원장을 새 형식으로 옮기는지 본다 |
 | `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 9: 1.0.12 까지의 Preferences 캐시를 쿼리에 없는 캐릭터만 옮기고, 옮긴 뒤 그 키를 지우는지 본다 |
 
 ## 번호 기록
 
 - ADR-032 (2026-10-19): 옛 ADR-030 · 034 · 270 과 옛 ADR-271 결정 6 을 합쳐 처음 작성
 - ADR-204 (2026-11-12): 결정 10 을 더했다. 캐시를 받은 뒤 초기화 시각을 넘긴 주기는 진행을 비워서 그린다(#967)
+- ADR-299 (2026-11-22): 결정 4 · 9 의 원장을 서버 칸과 같은 모양(월드 줄 id 키 · 컨텐츠 줄 id 열쇠 · 기간 값)으로 바꾸고, 옛 원장
+  나누기를 기기 변환 안에서도 돌게 했다(#947)

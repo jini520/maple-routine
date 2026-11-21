@@ -18,7 +18,7 @@
 | `features/stats/load.ts` | 캐릭터 그림 주소 · 누적 시작 날짜 · 조각 장부 |
 | `features/stats/fragment-query.ts` | 사냥 수입 카드의 보유 조각을 세는 조각 장부 쿼리 `useFragmentMoves`. 수입 · 지출 표의 판이 오르면 다시 읽는다 |
 | `features/cashbook/ledger-query.ts` | 날짜별 줄 쿼리 `ledgerDays(from, to)`. 기록 표의 판이 오르면 다시 읽는다([[ADR-142]] 결정 6) |
-| `storage/stats-cumulative-start.ts` | 누적 시작 날짜(Preferences `statsCumulativeStart`) |
+| `storage/stats-cumulative-start.ts` | 누적 시작 날짜(Preferences `statsCumulativeStartDate`) |
 | `theme/theme-vars.ts` 의 `resolveStatsSection` | 카드 바탕색 |
 | `navigation/bar-groups.ts` · `navigation/routes.ts` | 수익·지출 그룹의 세 번째 하위 탭(`Stats`, `/stats`) |
 

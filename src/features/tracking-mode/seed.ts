@@ -6,11 +6,11 @@ import { isChallengersWorld } from '../../lib/world/worlds'
 import type { SchedulerCharacterState } from '../../types'
 import { syncSchedules } from '../schedule-sync/schedule-sync'
 
-// 컨텐츠는 일간·주간 소스 배열로 kind 를 확정해 컨텐츠 key 로 저장하고, 템플릿에 없는 컨텐츠(key 가 없거나 그
+// 컨텐츠는 일간·주간 소스 배열로 kind 를 확정해 컨텐츠 key 로 담고, 템플릿에 없는 컨텐츠(key 가 없거나 그
 // 섹션 key 가 아니다)는 제외한다(멤버십 ⊆ 템플릿. 관리 페이지 체크리스트에서 편집 불가능한 고아 방지). 보스는
-// `mergeManualBossList` 의 매칭 기준과 같게 보스 key 로 저장하고, 보스 표에 없는 보스(key 가 없다)는 뺀다.
+// `mergeManualBossList` 의 매칭 기준과 같게 보스 key 로 담고, 보스 표에 없는 보스(key 가 없다)는 뺀다. 저장소가 줄 id 로 적는다.
 // 저장하는 것은 멤버십(+보스 난이도)뿐이다. nowCount·isComplete 같은 값은 표시 시점에
-// schedulerCache 에서 조회한다.
+// 스케줄 쿼리 캐시에서 조회한다.
 function toTrackedItems(state: SchedulerCharacterState, now: Date = new Date()): ManualTrackedItem[] {
   const { dailyContents, weeklyContents, bossContents } = state
 

@@ -1395,8 +1395,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 일간인지 주간인지는 컨텐츠 줄에서도 알 수 있지만 `type` 의 값을 줄이지 않는다. 일간 · 주간 탭의 구분을 저장할 때 굳히는 것이
   지금의 규칙이다(`types/scheduler.ts`).
 - 기기의 목록(Preferences `manualTrackedContent:{ocid}`)도 1.0.15 의 기기 변환(결정 19)에서 항목마다 종류와 대상의 줄 id 를 적게
-  바꾼다. 변환에서 줄을 찾지 못한 항목은 뺀다(결정 19). 지금 앱은 이름으로 적힌 옛 항목 가운데 표에서 찾지 못한 것만 읽을 때
-  빼고(`storage/manual-tracked-content.ts`), key 로 적힌 항목은 표에 없어도 남긴다(`lib/scheduler/manual-content-merge.ts`).
+  바꾼다. 변환에서 줄을 찾지 못한 항목은 뺀다(결정 19). 변환 뒤의 앱은 게임 데이터에 없는 줄 id 의 항목을 읽을 때 건너뛴다
+  (`storage/manual-tracked-content.ts`).
 
 ### 결정 48. 메이플 ID 는 `maple_ids` 표의 줄 id 로 가리킨다 (사용자 선택 2026-11-19)
 
@@ -1711,7 +1711,8 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   비율 · 수수료를 저장하는데(`lib/boss/party-shares.ts` 의 `PartyShares`) 앞의 표에는 수수료와 분배 방식이 빠져 있었다.
   - `split_type` 은 `even` · `ratio` 만 받는다. 계산기 화면은 `제외` 를 받지 않는다(`app/utility/BossProfitCalculatorScreen.tsx`).
   - 수수료 칸의 규칙은 분배 설정(`boss_split_settings`)과 같다(결정 25). 2026-11-17 기기 백업의 계산기 보스 60줄은 모두 균등이고
-    수수료가 비어 있다. 계산기 화면이 수수료 자동을 어떻게 저장하는지는 구현할 때 [[ADR-074]] 와 함께 고친다(결정 21).
+    수수료가 비어 있다. 계산기 화면은 수수료 자동을 따로 저장하지 않아서, 요율이 비었으면 자동이고 요율이 있으면 수동이다
+    ([[ADR-074]] 결정 13).
   - 차례 칸(`sort_order`)을 없앤다(사용자 선택 2026-11-20). 계산기의 보스는 늘 보스 표의 기준 순서로 놓인다(`sortByReferenceOrder`). 한 줄의 기준은
     `record_character_id` · `boss_difficulty_id` 다.
 - 차례 칸을 두는 줄은 둘이다. 약속의 보스 줄은 같은 캐릭터 묶음 안에서 사용자가 순서를 바꾼다([[ADR-051]] 결정 3). 계산기
