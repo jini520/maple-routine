@@ -33,7 +33,7 @@
 
 | 칸 | 담는 것 | 조회 모듈 | 관리 화면 |
 |---|---|---|---|
-| `bosses` | 보스 26개와 난이도 줄(요구 레벨 · 파티 인원 상한 · 유효 기간), 규칙(주간 보스 선택 한도 · 주간 결정석 판매 한도 · 기본 파티 인원 상한). 보스 key 마스터 표다. 1.0.15 에서 난이도 줄을 배열 `bossDifficulties` 로 따로 내고, 규칙은 `gameRules` 칸으로 옮긴다([[ADR-099]] 결정 65) | `lib/boss/bosses` · `lib/boss/catalog` | `/admin/bosses` |
+| `bosses` | 보스 26개(key · 이름 · 짧은 이름 `shortName` · 시즌 보스 여부 `isSeasonBoss` · 초상 · 유효 기간)와 난이도 줄 58개(`bossDifficulties`. 주기 · 요구 레벨 · 파티 인원 상한 · 유효 기간). 보스 key 마스터 표다. 보스마다 난이도를 묶고 주기 하나를 정하는 일은 `lib/boss/bosses` 가 한다. 다른 칸은 난이도를 난이도 줄 id 로 가리킨다(`bossDifficultyIdOf` · `bossDifficultyOfId`) | `lib/boss/bosses` · `lib/boss/catalog` | `/admin/bosses` |
 | `bossDrops` | 보스 · 난이도마다의 보상 줄 408개(고정 보상 · 장비 · 소비, 고정 보상 수량, 유효 기간). 1.0.15 에서 배열 `bossDifficultyRewards` 로 내고 수량을 정수로 바꾼다([[ADR-099]] 결정 65) | `lib/boss/boss-drops` | `/admin/boss-drops` |
 | `dropBoxes` | 개봉 결과를 직접 고르는 상자 7개(반지 상자 5 · 장신구 상자 2)의 레벨 범위와 후보. 1.0.15 에서 배열 `dropBoxes` · `dropBoxContents` 로 낸다([[ADR-099]] 결정 65) | `lib/boss/boss-drops` | `/admin/drop-boxes` |
 | `crystalPrices` | 보스 · 난이도마다 결정석 가격 줄 106개. 한 조합에 기간 줄이 여럿일 수 있다. 1.0.15 에서 배열 `bossCrystalPrices` 로 낸다([[ADR-099]] 결정 65) | `lib/boss/boss-crystal-prices` | `/admin/crystal-prices` |

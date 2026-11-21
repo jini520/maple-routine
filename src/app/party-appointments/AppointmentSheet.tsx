@@ -42,7 +42,7 @@ import { orderByCharacter } from '../../features/party-appointments/boss-groups'
 import { checkAlarmGate, ensureNotificationPermission, type AlarmGateResult } from '../../features/party-appointments/alarm-gate'
 import { usePartyAlarmSettingsStore } from '../../features/party-appointments/alarm-settings'
 import { savePartyAppointments, usePartyAppointments } from '../../features/party-appointments/query'
-import { bossAliasOf } from '../../lib/boss/bosses'
+import { bossShortNameOf } from '../../lib/boss/bosses'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import type { PartyAppointmentOccurrence } from '../../types/party-appointment'
@@ -312,7 +312,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
 
   function editMemo(): void {
     const [first] = draft.bosses
-    const boss = first === undefined ? '' : ` · ${bossAliasOf(first.bossKey, first.bossKey)}`
+    const boss = first === undefined ? '' : ` · ${bossShortNameOf(first.bossKey, first.bossKey)}`
     const more = draft.bosses.length > 1 ? ` 외 ${draft.bosses.length - 1}마리` : ''
     openInputCard({
       label: '메모',

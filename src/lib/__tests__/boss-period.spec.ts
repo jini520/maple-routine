@@ -1,19 +1,34 @@
 // 보스의 유효 기간. 시즌이 끝난 시즌 보스가 다음 챌린저스 월드에 서지 않게 하는 판정이다.
 import { activeBossesInSection, activeDifficultiesOf, isBossActiveIn, withOwnDifficulty } from '../boss/bosses'
 import { INITIAL_BOSS_CATALOG, parseBossCatalog, setBossCatalog } from '../boss/catalog'
-import type { BossCatalog } from '../../types/boss-catalog'
+import type { BossCatalog, BossDifficultyRow, BossRow } from '../../types/boss-catalog'
 
-/** 메이린의 기간을 넘긴 값으로 바꾼 표. 번들은 서버가 적은 시즌 끝(2026-09-16)을 들어 먼저 비운다. */
-function withMeirinUntil(until: string | undefined, from?: string): BossCatalog {
+/** 그 보스 줄을 고친 표. */
+function withBoss(key: string, patch: (boss: BossRow) => BossRow): BossCatalog {
   return {
     ...INITIAL_BOSS_CATALOG,
     updatedAt: '2026-10-16T00:00:00.000Z',
-    bosses: INITIAL_BOSS_CATALOG.bosses.map((boss) =>
-      boss.key === 'meirin'
-        ? { ...boss, from: undefined, until: undefined, ...(from === undefined ? {} : { from }), ...(until === undefined ? {} : { until }) }
-        : boss,
-    ),
+    bosses: INITIAL_BOSS_CATALOG.bosses.map((boss) => (boss.key === key ? patch(boss) : boss)),
   }
+}
+
+/** 그 보스의 난이도 줄을 고친 표. */
+function withDifficulties(
+  table: BossCatalog,
+  key: string,
+  patch: (row: BossDifficultyRow) => BossDifficultyRow,
+): BossCatalog {
+  const bossId = table.bosses.find((boss) => boss.key === key)?.id
+  return { ...table, bossDifficulties: table.bossDifficulties.map((row) => (row.bossId === bossId ? patch(row) : row)) }
+}
+
+/** 메이린의 기간을 넘긴 값으로 바꾼 표. fixture 는 서버가 적은 시즌 끝(2026-09-16)을 들어 먼저 비운다. */
+function withMeirinUntil(validUntil: string | undefined, validFrom?: string): BossCatalog {
+  return withBoss('meirin', ({ validFrom: _from, validUntil: _until, ...boss }) => ({
+    ...boss,
+    ...(validFrom === undefined ? {} : { validFrom }),
+    ...(validUntil === undefined ? {} : { validUntil }),
+  }))
 }
 
 afterEach(() => {
@@ -65,16 +80,16 @@ describe('activeBossesInSection', () => {
 })
 
 describe('parseBossCatalog: 유효 기간', () => {
-  it('from · until 을 받고 null 은 없는 것으로 읽는다', () => {
+  it('validFrom · validUntil 을 받고 null 은 없는 것으로 읽는다', () => {
     const parsed = parseBossCatalog(withMeirinUntil('2026-10-22T10:00', '2026-07-03'))
     const meirin = parsed?.bosses.find((b) => b.key === 'meirin')
-    expect(meirin).toMatchObject({ from: '2026-07-03', until: '2026-10-22T10:00' })
+    expect(meirin).toMatchObject({ validFrom: '2026-07-03', validUntil: '2026-10-22T10:00' })
 
     const nulled = parseBossCatalog({
       ...withMeirinUntil(undefined),
-      bosses: withMeirinUntil(undefined).bosses.map((b) => ({ ...b, from: null, until: null })),
+      bosses: withMeirinUntil(undefined).bosses.map((b) => ({ ...b, validFrom: null, validUntil: null })),
     })
-    expect(nulled?.bosses.find((b) => b.key === 'meirin')).not.toHaveProperty('until')
+    expect(nulled?.bosses.find((b) => b.key === 'meirin')).not.toHaveProperty('validUntil')
   })
 
   it('모양이 틀린 기간은 표 전체를 거절한다', () => {
@@ -84,16 +99,8 @@ describe('parseBossCatalog: 유효 기간', () => {
 })
 
 /** 스우 익스트림이 시작을 들게 바꾼 표. */
-function withLotusExtremeFrom(from: string): BossCatalog {
-  return {
-    ...INITIAL_BOSS_CATALOG,
-    updatedAt: '2026-10-16T00:00:00.000Z',
-    bosses: INITIAL_BOSS_CATALOG.bosses.map((boss) =>
-      boss.key === 'lotus'
-        ? { ...boss, difficulties: boss.difficulties.map((d) => (d.difficulty === 'extreme' ? { ...d, from } : d)) }
-        : boss,
-    ),
-  }
+function withLotusExtremeFrom(validFrom: string): BossCatalog {
+  return withDifficulties(INITIAL_BOSS_CATALOG, 'lotus', (row) => (row.difficulty === 'extreme' ? { ...row, validFrom } : row))
 }
 
 describe('난이도의 유효 기간', () => {
@@ -108,22 +115,16 @@ describe('난이도의 유효 기간', () => {
 
   // 보스 10-11 ~ 10-23 에 하드만 10-12 ~ 10-21 이면 하드는 후자, 나머지는 전자다. 겹치는 범위가 아니라 덮어쓰기다.
   it('난이도의 기간이 보스의 기간을 칸마다 덮는다. 난이도의 끝이 보스의 끝보다 뒤면 그 난이도만 더 산다', () => {
-    const table: BossCatalog = {
-      ...INITIAL_BOSS_CATALOG,
-      updatedAt: 'x',
-      bosses: INITIAL_BOSS_CATALOG.bosses.map((boss) =>
-        boss.key === 'lotus'
-          ? {
-              ...boss,
-              from: '2026-10-08',
-              until: '2026-10-22',
-              difficulties: boss.difficulties.map((d) =>
-                d.difficulty === 'hard' ? { ...d, from: '2026-10-15', until: '2026-10-29' } : d.difficulty === 'extreme' ? { ...d, from: '2026-10-15' } : d,
-              ),
-            }
-          : boss,
-      ),
-    }
+    const table = withDifficulties(
+      withBoss('lotus', (boss) => ({ ...boss, validFrom: '2026-10-08', validUntil: '2026-10-22' })),
+      'lotus',
+      (row) =>
+        row.difficulty === 'hard'
+          ? { ...row, validFrom: '2026-10-15', validUntil: '2026-10-29' }
+          : row.difficulty === 'extreme'
+            ? { ...row, validFrom: '2026-10-15' }
+            : row,
+    )
     setBossCatalog(table)
 
     // normal: 보스 기간 그대로 10-08 ~ 10-22
@@ -159,9 +160,12 @@ describe('난이도의 유효 기간', () => {
     expect(withOwnDifficulty(['hard'], 'normal')).toEqual(['normal', 'hard'])
   })
 
-  it('난이도 줄의 from · until 도 파싱하고 모양이 틀리면 표를 거절한다', () => {
+  it('난이도 줄의 validFrom · validUntil 도 파싱하고 모양이 틀리면 표를 거절한다', () => {
     const parsed = parseBossCatalog(withLotusExtremeFrom('2026-10-22T10:00'))
-    expect(parsed?.bosses.find((b) => b.key === 'lotus')?.difficulties.find((d) => d.difficulty === 'extreme')).toMatchObject({ from: '2026-10-22T10:00' })
+    const lotusId = parsed?.bosses.find((b) => b.key === 'lotus')?.id
+    expect(
+      parsed?.bossDifficulties.find((d) => d.bossId === lotusId && d.difficulty === 'extreme'),
+    ).toMatchObject({ validFrom: '2026-10-22T10:00' })
     expect(parseBossCatalog(withLotusExtremeFrom('2026-10-22T10'))).toBeNull()
   })
 })

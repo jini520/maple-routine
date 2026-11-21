@@ -20,7 +20,7 @@ function withMeirinOpen(): BossCatalog {
   return {
     ...INITIAL_BOSS_CATALOG,
     bosses: INITIAL_BOSS_CATALOG.bosses.map((boss) =>
-      boss.key === 'meirin' ? { ...boss, from: undefined, until: undefined } : boss,
+      boss.key === 'meirin' ? { ...boss, validFrom: undefined, validUntil: undefined } : boss,
     ),
   }
 }
@@ -516,7 +516,7 @@ describe('유효 기간이 끝난 보스', () => {
     setBossCatalog({
       ...INITIAL_BOSS_CATALOG,
       updatedAt: 'x',
-      bosses: INITIAL_BOSS_CATALOG.bosses.map((b) => (b.key === 'meirin' ? { ...b, until: '2026-10-22' } : b)),
+      bosses: INITIAL_BOSS_CATALOG.bosses.map((b) => (b.key === 'meirin' ? { ...b, validUntil: '2026-10-22' } : b)),
     })
 
     expect(displayedBosses(view, 'weekly', 'auto', null, null, before)).toEqual([shown(meirin)])

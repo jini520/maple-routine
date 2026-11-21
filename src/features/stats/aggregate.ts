@@ -14,7 +14,7 @@ import { findSymbol } from '../../lib/cashbook/symbol-costs'
 import type { IncomeRecord } from '../../storage/income'
 import type { SpendRecord } from '../../storage/spend'
 import { enhancementCategoryNameOf } from '../../lib/enhancement/categories'
-import { bossAliasOf } from '../../lib/boss/bosses'
+import { bossShortNameOf } from '../../lib/boss/bosses'
 import type { BossDifficulty } from '../../types'
 
 export type DaysByDate = Readonly<Record<string, readonly DayRecord[]>>
@@ -439,7 +439,7 @@ export function bossTotalsBetween(byDate: DaysByDate, range: StatsRange, mode: '
       const total = totals.get(key) ?? {
         key,
         bossKey: boss.bossKey,
-        name: bossAliasOf(boss.bossKey, boss.bossName),
+        name: bossShortNameOf(boss.bossKey, boss.bossName),
         difficulty: mode === 'boss' ? null : boss.difficulty,
         meso: 0,
         count: 0,

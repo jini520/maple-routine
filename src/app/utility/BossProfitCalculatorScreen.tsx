@@ -37,7 +37,7 @@ import { bossPayoutMeso, totalPayoutMeso, type CalculatorBoss } from '../../lib/
 import { currentCrystalPriceMeso } from '../../lib/boss/boss-crystal-prices'
 import {
   activeDifficultiesNow,
-  bossAliasOf,
+  bossShortNameOf,
   bossNameOf,
   bossPortraitAssetIdOf,
   getMaxPartySize,
@@ -306,7 +306,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
 
       {partyBoss !== null && selected !== null && (
         <PartySizeModal
-          bossName={bossAliasOf(partyBoss.bossKey, bossNameOf(partyBoss.bossKey, partyBoss.bossKey))}
+          bossName={bossShortNameOf(partyBoss.bossKey, bossNameOf(partyBoss.bossKey, partyBoss.bossKey))}
           portraitAssetId={bossPortraitAssetIdOf(partyBoss.bossKey)}
           difficulties={activeDifficultiesNow(partyBoss.bossKey)}
           difficulty={partyBoss.difficulty}

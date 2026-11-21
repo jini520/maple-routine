@@ -27,7 +27,7 @@ function withMeirinOpen(): BossCatalog {
   return {
     ...INITIAL_BOSS_CATALOG,
     bosses: INITIAL_BOSS_CATALOG.bosses.map((boss) =>
-      boss.key === 'meirin' ? { ...boss, from: undefined, until: undefined } : boss,
+      boss.key === 'meirin' ? { ...boss, validFrom: undefined, validUntil: undefined } : boss,
     ),
   }
 }

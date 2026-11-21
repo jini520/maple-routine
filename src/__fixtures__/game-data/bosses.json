@@ -1,728 +1,847 @@
 {
-  "updatedAt": "2026-10-16T14:55:54.701Z",
-  "rules": {
-    "weeklyBossSelectionLimit": 12,
-    "weeklyCrystalSaleLimit": 90,
-    "defaultMaxPartySize": 6
-  },
+  "updatedAt": "2026-10-20T14:20:50.283Z",
   "bosses": [
     {
+      "id": "b78e9051-dda6-435d-8e0d-4d63a9122106",
       "key": "zakum",
       "name": "자쿰",
-      "alias": "자쿰",
-      "cycle": "weekly",
-      "portraitSlug": "zakum",
+      "shortName": "자쿰",
+      "isSeasonBoss": false,
       "portraitAssetId": "f7aee7b7-473e-44d8-bc03-ce024e688a27",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "chaos",
-          "requiredLevel": 90,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "4ef8a7c4-d5b7-4386-b2a5-24db39ea0264",
       "key": "magnus",
       "name": "매그너스",
-      "alias": "매그너스",
-      "cycle": "weekly",
-      "portraitSlug": "magnus",
+      "shortName": "매그너스",
+      "isSeasonBoss": false,
       "portraitAssetId": "6f401e48-bb27-4fcf-bbe2-0751bfa49899",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "hard",
-          "requiredLevel": 175,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "cea0ab69-a085-4b1a-bf63-891ea4b4f6da",
       "key": "papulatus",
       "name": "파풀라투스",
-      "alias": "파풀라투스",
-      "cycle": "weekly",
-      "portraitSlug": "papulatus",
+      "shortName": "파풀라투스",
+      "isSeasonBoss": false,
       "portraitAssetId": "c5a9135e-595e-463b-9494-ee217ec3ee78",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "chaos",
-          "requiredLevel": 190,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "0c00e65a-fadb-4059-871a-0e7813fbcca9",
       "key": "von_bon",
       "name": "반반",
-      "alias": "반반",
-      "cycle": "weekly",
-      "portraitSlug": "vonBon",
+      "shortName": "반반",
+      "isSeasonBoss": false,
       "portraitAssetId": "31c0f940-2a00-44b4-a241-af86e43620c6",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "chaos",
-          "requiredLevel": 180,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "c528e68a-39b3-4900-a539-59b464cb8a89",
       "key": "pierre",
       "name": "피에르",
-      "alias": "피에르",
-      "cycle": "weekly",
-      "portraitSlug": "pierre",
+      "shortName": "피에르",
+      "isSeasonBoss": false,
       "portraitAssetId": "8efc3289-813a-412a-a8b1-d8ab1d63a5d9",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "chaos",
-          "requiredLevel": 180,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "06745708-f9d7-417f-aefa-3e7cddff0ef8",
       "key": "crimson_queen",
       "name": "블러디퀸",
-      "alias": "블러디퀸",
-      "cycle": "weekly",
-      "portraitSlug": "crimsonQueen",
+      "shortName": "블러디퀸",
+      "isSeasonBoss": false,
       "portraitAssetId": "77e49946-6a40-4084-acd3-e2edee53d946",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "chaos",
-          "requiredLevel": 180,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "7a997fd8-2aa2-40d3-a3ca-8faad02ca4c9",
       "key": "vellum",
       "name": "벨룸",
-      "alias": "벨룸",
-      "cycle": "weekly",
-      "portraitSlug": "vellum",
+      "shortName": "벨룸",
+      "isSeasonBoss": false,
       "portraitAssetId": "1e0afb70-384d-4498-aa7f-f099c763df8f",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "chaos",
-          "requiredLevel": 180,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "09051191-c6d0-4e06-9745-802746e1bf13",
       "key": "lotus",
       "name": "스우",
-      "alias": "스우",
-      "cycle": "weekly",
-      "portraitSlug": "lotus",
+      "shortName": "스우",
+      "isSeasonBoss": false,
       "portraitAssetId": "9bddfe69-679e-4cd1-bfe6-ced7ab0bfe7a",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 190,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 190,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "extreme",
-          "requiredLevel": 190,
-          "maxPartySize": 2,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "dbf3b0b7-bc9c-4ec1-9a1b-de40eb437cf6",
       "key": "damien",
       "name": "데미안",
-      "alias": "데미안",
-      "cycle": "weekly",
-      "portraitSlug": "damien",
+      "shortName": "데미안",
+      "isSeasonBoss": false,
       "portraitAssetId": "1edbfb3f-733f-4a01-aab5-7aa4f7f38306",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 190,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 190,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "acddc790-31d9-43f4-99b5-fe34076f08e3",
       "key": "guardian_angel_slime",
       "name": "가디언 엔젤 슬라임",
-      "alias": "가엔슬",
-      "cycle": "weekly",
-      "portraitSlug": "slime",
+      "shortName": "가엔슬",
+      "isSeasonBoss": false,
       "portraitAssetId": "253e5c1b-2acc-4695-ad2b-387f1c165e92",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 210,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "chaos",
-          "requiredLevel": 210,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "8c65a52a-d093-4e0c-b4d0-12155da57149",
       "key": "lucid",
       "name": "루시드",
-      "alias": "루시드",
-      "cycle": "weekly",
-      "portraitSlug": "lucid",
+      "shortName": "루시드",
+      "isSeasonBoss": false,
       "portraitAssetId": "2d450c29-8d0b-450c-84e1-990b63305c48",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "easy",
-          "requiredLevel": 220,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "normal",
-          "requiredLevel": 220,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 220,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "7b776f8d-ad6f-411d-b0fd-e665855f44ce",
       "key": "will",
       "name": "윌",
-      "alias": "윌",
-      "cycle": "weekly",
-      "portraitSlug": "will",
+      "shortName": "윌",
+      "isSeasonBoss": false,
       "portraitAssetId": "e97ab26e-7e53-4666-bed4-2d66c094acbb",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "easy",
-          "requiredLevel": 235,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "normal",
-          "requiredLevel": 235,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 235,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "094826f5-f9af-4dd5-af6f-548cedb3f740",
       "key": "gloom",
       "name": "더스크",
-      "alias": "더스크",
-      "cycle": "weekly",
-      "portraitSlug": "gloom",
+      "shortName": "더스크",
+      "isSeasonBoss": false,
       "portraitAssetId": "ff43b179-4499-4de8-8ecb-c22c77298bb7",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 245,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "chaos",
-          "requiredLevel": 245,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "b2c2bdd4-f04d-4555-955f-f6a28d5fa5ce",
       "key": "verus_hilla",
       "name": "진 힐라",
-      "alias": "진 힐라",
-      "cycle": "weekly",
-      "portraitSlug": "verusHilla",
+      "shortName": "진 힐라",
+      "isSeasonBoss": false,
       "portraitAssetId": "072b2c33-8d66-4dc9-90ce-15e11ab374b7",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 250,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 250,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "74e1fcbf-5d27-4ca0-a102-f948f7304c99",
       "key": "darknell",
       "name": "듄켈",
-      "alias": "듄켈",
-      "cycle": "weekly",
-      "portraitSlug": "darknell",
+      "shortName": "듄켈",
+      "isSeasonBoss": false,
       "portraitAssetId": "4fd3ae23-376f-4ef9-a2fd-6310cc24eeba",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 255,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 255,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "71a2010e-55ad-4982-853b-d19efe0050ee",
       "key": "chosen_seren",
       "name": "선택받은 세렌",
-      "alias": "세렌",
-      "cycle": "weekly",
-      "portraitSlug": "seren",
+      "shortName": "세렌",
+      "isSeasonBoss": false,
       "portraitAssetId": "392a43bf-8e49-4095-82dd-2d4fe350a25a",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 260,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 260,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "extreme",
-          "requiredLevel": 260,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "48eb8e76-3bb2-4e95-934c-3163710ac8bf",
       "key": "guardian_kalos",
       "name": "감시자 칼로스",
-      "alias": "칼로스",
-      "cycle": "weekly",
-      "portraitSlug": "kalos",
+      "shortName": "칼로스",
+      "isSeasonBoss": false,
       "portraitAssetId": "eafa411b-740b-4b03-8a61-d4e55c2ff24b",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "easy",
-          "requiredLevel": 265,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "normal",
-          "requiredLevel": 265,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "chaos",
-          "requiredLevel": 265,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "extreme",
-          "requiredLevel": 265,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "d41558b8-1fd9-46a7-ba09-47b686352543",
       "key": "first_adversary",
       "name": "최초의 대적자",
-      "alias": "최초의 대적자",
-      "cycle": "weekly",
-      "portraitSlug": "adversary",
+      "shortName": "대적자",
+      "isSeasonBoss": false,
       "portraitAssetId": "8a4ed1b9-a83c-4474-b2f8-eff42bd4fa37",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "easy",
-          "requiredLevel": 270,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "normal",
-          "requiredLevel": 270,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 270,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "extreme",
-          "requiredLevel": 270,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "78155f8e-729c-4e05-bf72-5d6ebcdbbace",
       "key": "kaling",
       "name": "카링",
-      "alias": "카링",
-      "cycle": "weekly",
-      "portraitSlug": "kaling",
+      "shortName": "카링",
+      "isSeasonBoss": false,
       "portraitAssetId": "3e189e06-11f9-41c8-a02f-c06d683320de",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "easy",
-          "requiredLevel": 275,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "normal",
-          "requiredLevel": 275,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 275,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "extreme",
-          "requiredLevel": 275,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "ed2bf7d6-af91-42c9-a404-472e2511557f",
       "key": "radiant_malefic_star",
       "name": "찬란한 흉성",
-      "alias": "찬란한 흉성",
-      "cycle": "weekly",
-      "portraitSlug": "maleficStar",
+      "shortName": "찬란한 흉성",
+      "isSeasonBoss": false,
       "portraitAssetId": "d3f9bd41-c5fc-4820-b454-f536100bc2c2",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 280,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 280,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "d083d1a2-6837-411e-8d7d-7d776581d2cb",
       "key": "bellona",
       "name": "벨로나",
-      "alias": "벨로나",
-      "cycle": "weekly",
-      "portraitSlug": "bellona",
+      "shortName": "벨로나",
+      "isSeasonBoss": false,
       "portraitAssetId": "9826b964-a4fc-437e-ba64-370959bd8dac",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "easy",
-          "requiredLevel": 280,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "normal",
-          "requiredLevel": 280,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 280,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "be903c62-24ee-4fe4-bf04-eb4834a0f156",
       "key": "limbo",
       "name": "림보",
-      "alias": "림보",
-      "cycle": "weekly",
-      "portraitSlug": "limbo",
+      "shortName": "림보",
+      "isSeasonBoss": false,
       "portraitAssetId": "6a64c46b-92be-49d4-880f-b4698514404e",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 285,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 285,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "extreme",
-          "requiredLevel": 285,
-          "maxPartySize": 3,
-          "from": "2026-10-22T10:00",
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "fb597db7-590f-4c89-9247-f8a74373149f",
       "key": "bardrix",
       "name": "발드릭스",
-      "alias": "발드릭스",
-      "cycle": "weekly",
-      "portraitSlug": "bardrix",
+      "shortName": "발드릭스",
+      "isSeasonBoss": false,
       "portraitAssetId": "3ecc62cc-9468-4065-b738-4f7d9de7d8d4",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 290,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 290,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "extreme",
-          "requiredLevel": 290,
-          "maxPartySize": 3,
-          "from": "2026-10-22T10:00",
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "fa8a1e6d-25cf-4ce7-bc79-d94012940824",
       "key": "jupiter",
       "name": "유피테르",
-      "alias": "유피테르",
-      "cycle": "weekly",
-      "portraitSlug": "jupiter",
+      "shortName": "유피테르",
+      "isSeasonBoss": false,
       "portraitAssetId": "a33b871a-0c1d-4028-959d-bd03cc63b7e0",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 295,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 295,
-          "maxPartySize": 3,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
     },
     {
+      "id": "b85d0acf-0b9e-414b-8fbf-364e7efa07fd",
       "key": "meirin",
       "name": "시즌 보스 메이린",
-      "alias": "메이린",
-      "cycle": "event_weekly",
-      "portraitSlug": "maerin",
+      "shortName": "메이린",
+      "isSeasonBoss": true,
       "portraitAssetId": "7f30e1aa-4be5-4e83-9cb2-02e27753c5f1",
-      "from": "2026-06-18T10:00",
-      "until": "2026-09-16T23:59",
-      "difficulties": [
-        {
-          "difficulty": "normal",
-          "requiredLevel": 270,
-          "maxPartySize": 1,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "hard",
-          "requiredLevel": 280,
-          "maxPartySize": 1,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": "2026-06-18T10:00",
+      "validUntil": "2026-09-16T23:59"
     },
     {
+      "id": "e4858a7a-df0e-4f55-9a7a-f23804d0f11d",
       "key": "black_mage",
       "name": "검은 마법사",
-      "alias": "검은 마법사",
-      "cycle": "monthly",
-      "portraitSlug": "blackMage",
+      "shortName": "검은 마법사",
+      "isSeasonBoss": false,
       "portraitAssetId": "b32e077a-c476-4795-9622-64804ce59cfb",
-      "from": null,
-      "until": null,
-      "difficulties": [
-        {
-          "difficulty": "hard",
-          "requiredLevel": 255,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        },
-        {
-          "difficulty": "extreme",
-          "requiredLevel": 255,
-          "maxPartySize": null,
-          "from": null,
-          "until": null
-        }
-      ]
+      "validFrom": null,
+      "validUntil": null
+    }
+  ],
+  "bossDifficulties": [
+    {
+      "id": "c56d4ed2-302e-404b-8154-ff91e0d5ad70",
+      "difficulty": "chaos",
+      "cycle": "weekly",
+      "requiredLevel": 90,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "b78e9051-dda6-435d-8e0d-4d63a9122106"
+    },
+    {
+      "id": "dce1f82c-e219-47d3-ab98-1ad06766542d",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 175,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "4ef8a7c4-d5b7-4386-b2a5-24db39ea0264"
+    },
+    {
+      "id": "38637d3d-9ca0-47bb-8af9-4c4a33f4239c",
+      "difficulty": "chaos",
+      "cycle": "weekly",
+      "requiredLevel": 190,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "cea0ab69-a085-4b1a-bf63-891ea4b4f6da"
+    },
+    {
+      "id": "fd52ba48-664c-4ca9-a857-bf4d979b3b9b",
+      "difficulty": "chaos",
+      "cycle": "weekly",
+      "requiredLevel": 180,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "0c00e65a-fadb-4059-871a-0e7813fbcca9"
+    },
+    {
+      "id": "eab29a23-de49-4b96-b195-6a46933f9f26",
+      "difficulty": "chaos",
+      "cycle": "weekly",
+      "requiredLevel": 180,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "c528e68a-39b3-4900-a539-59b464cb8a89"
+    },
+    {
+      "id": "f3bb6d13-59e9-46de-8391-e82793fc1616",
+      "difficulty": "chaos",
+      "cycle": "weekly",
+      "requiredLevel": 180,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "06745708-f9d7-417f-aefa-3e7cddff0ef8"
+    },
+    {
+      "id": "ff059dbc-0df8-4c11-9f27-8e7116f3b885",
+      "difficulty": "chaos",
+      "cycle": "weekly",
+      "requiredLevel": 180,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "7a997fd8-2aa2-40d3-a3ca-8faad02ca4c9"
+    },
+    {
+      "id": "72f53ef9-57c6-4ad1-956f-00a6bd82e820",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 190,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "09051191-c6d0-4e06-9745-802746e1bf13"
+    },
+    {
+      "id": "b4b8af7b-2270-42d0-af5c-8d098063dd61",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 190,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "09051191-c6d0-4e06-9745-802746e1bf13"
+    },
+    {
+      "id": "46ada821-9f12-4b24-8873-322d8463ddff",
+      "difficulty": "extreme",
+      "cycle": "weekly",
+      "requiredLevel": 190,
+      "maxPartySize": 2,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "09051191-c6d0-4e06-9745-802746e1bf13"
+    },
+    {
+      "id": "1d25ff2d-0faa-42a9-81fc-c258e977e3b0",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 190,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "dbf3b0b7-bc9c-4ec1-9a1b-de40eb437cf6"
+    },
+    {
+      "id": "fbe415a2-fd28-42f2-b879-ed752451f68b",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 190,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "dbf3b0b7-bc9c-4ec1-9a1b-de40eb437cf6"
+    },
+    {
+      "id": "0a6f3ead-cef7-4811-91a8-83ad2c9de884",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 210,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "acddc790-31d9-43f4-99b5-fe34076f08e3"
+    },
+    {
+      "id": "2556fcf3-35b5-4ada-ba37-dd76ac8b964c",
+      "difficulty": "chaos",
+      "cycle": "weekly",
+      "requiredLevel": 210,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "acddc790-31d9-43f4-99b5-fe34076f08e3"
+    },
+    {
+      "id": "5af8922b-edb7-4ad8-a76c-902348e1430d",
+      "difficulty": "easy",
+      "cycle": "weekly",
+      "requiredLevel": 220,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "8c65a52a-d093-4e0c-b4d0-12155da57149"
+    },
+    {
+      "id": "c6dde4a6-34c1-4ba2-a9a5-6ad710684ea7",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 220,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "8c65a52a-d093-4e0c-b4d0-12155da57149"
+    },
+    {
+      "id": "58cf059b-5f70-4c3f-a1ca-021104a8a4d5",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 220,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "8c65a52a-d093-4e0c-b4d0-12155da57149"
+    },
+    {
+      "id": "e93b940c-09ad-47cd-a428-292c1a527a83",
+      "difficulty": "easy",
+      "cycle": "weekly",
+      "requiredLevel": 235,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "7b776f8d-ad6f-411d-b0fd-e665855f44ce"
+    },
+    {
+      "id": "5d71bc4b-ab49-4557-b414-afa22234b097",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 235,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "7b776f8d-ad6f-411d-b0fd-e665855f44ce"
+    },
+    {
+      "id": "62a5d683-bf63-4ef5-8dfa-430cee1eb246",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 235,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "7b776f8d-ad6f-411d-b0fd-e665855f44ce"
+    },
+    {
+      "id": "a2f51f89-f7c5-44b7-a86b-2ac9e7681110",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 245,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "094826f5-f9af-4dd5-af6f-548cedb3f740"
+    },
+    {
+      "id": "8dd2a3e1-ced5-4ed1-8583-04751bef9eed",
+      "difficulty": "chaos",
+      "cycle": "weekly",
+      "requiredLevel": 245,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "094826f5-f9af-4dd5-af6f-548cedb3f740"
+    },
+    {
+      "id": "c589b96f-34eb-44e3-b781-89f0a70997d0",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 250,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "b2c2bdd4-f04d-4555-955f-f6a28d5fa5ce"
+    },
+    {
+      "id": "26f8360f-628f-4da8-9db2-5fee679d6179",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 250,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "b2c2bdd4-f04d-4555-955f-f6a28d5fa5ce"
+    },
+    {
+      "id": "c35e8989-8947-4003-b1ee-6b7565e85714",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 255,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "74e1fcbf-5d27-4ca0-a102-f948f7304c99"
+    },
+    {
+      "id": "baffeaa5-60cb-4d65-a9a7-202928d306f9",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 255,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "74e1fcbf-5d27-4ca0-a102-f948f7304c99"
+    },
+    {
+      "id": "b0dcb5bf-681d-4138-9df2-16090a1d43d7",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 260,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "71a2010e-55ad-4982-853b-d19efe0050ee"
+    },
+    {
+      "id": "5785e277-70d7-4222-9cef-adc73618006f",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 260,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "71a2010e-55ad-4982-853b-d19efe0050ee"
+    },
+    {
+      "id": "5b61fad6-2563-4100-9ba6-6b2bd6b18526",
+      "difficulty": "extreme",
+      "cycle": "weekly",
+      "requiredLevel": 260,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "71a2010e-55ad-4982-853b-d19efe0050ee"
+    },
+    {
+      "id": "a1d6ed0f-2272-4711-bf04-7e6c19856679",
+      "difficulty": "easy",
+      "cycle": "weekly",
+      "requiredLevel": 265,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "48eb8e76-3bb2-4e95-934c-3163710ac8bf"
+    },
+    {
+      "id": "e1187d20-5af3-42e8-9e62-ac2846018057",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 265,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "48eb8e76-3bb2-4e95-934c-3163710ac8bf"
+    },
+    {
+      "id": "0ab15430-acab-439a-b1cf-e08a3cb567aa",
+      "difficulty": "chaos",
+      "cycle": "weekly",
+      "requiredLevel": 265,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "48eb8e76-3bb2-4e95-934c-3163710ac8bf"
+    },
+    {
+      "id": "d64bffc8-5db8-49ef-95f6-7c648693b3f7",
+      "difficulty": "extreme",
+      "cycle": "weekly",
+      "requiredLevel": 265,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "48eb8e76-3bb2-4e95-934c-3163710ac8bf"
+    },
+    {
+      "id": "8a2d72c7-bca2-459b-b645-f8ccd9e3f407",
+      "difficulty": "easy",
+      "cycle": "weekly",
+      "requiredLevel": 270,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "d41558b8-1fd9-46a7-ba09-47b686352543"
+    },
+    {
+      "id": "8c5fbca4-2e81-4791-8159-87327fb18ac6",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 270,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "d41558b8-1fd9-46a7-ba09-47b686352543"
+    },
+    {
+      "id": "67439f22-b5d0-4962-b317-7c0f70245fa0",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 270,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "d41558b8-1fd9-46a7-ba09-47b686352543"
+    },
+    {
+      "id": "89bb1ed7-64b0-40b0-be73-8c57c76f5cd4",
+      "difficulty": "extreme",
+      "cycle": "weekly",
+      "requiredLevel": 270,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "d41558b8-1fd9-46a7-ba09-47b686352543"
+    },
+    {
+      "id": "3bb7bbd3-357f-4295-92bb-4447a014c0a9",
+      "difficulty": "easy",
+      "cycle": "weekly",
+      "requiredLevel": 275,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "78155f8e-729c-4e05-bf72-5d6ebcdbbace"
+    },
+    {
+      "id": "ccdf4f6d-4539-483c-828a-ad2db0bee420",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 275,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "78155f8e-729c-4e05-bf72-5d6ebcdbbace"
+    },
+    {
+      "id": "ea7676f1-e89b-448c-9ad3-5b34b364a931",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 275,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "78155f8e-729c-4e05-bf72-5d6ebcdbbace"
+    },
+    {
+      "id": "57c1eaf1-dcc4-454a-a9bd-c10fdd7ceef0",
+      "difficulty": "extreme",
+      "cycle": "weekly",
+      "requiredLevel": 275,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "78155f8e-729c-4e05-bf72-5d6ebcdbbace"
+    },
+    {
+      "id": "e51450f2-5a41-4046-945e-b2e5ffa19ae7",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 280,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "ed2bf7d6-af91-42c9-a404-472e2511557f"
+    },
+    {
+      "id": "f7bb2041-1e59-4d3e-a8d4-b5dc04f9721e",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 280,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "ed2bf7d6-af91-42c9-a404-472e2511557f"
+    },
+    {
+      "id": "1b7882d4-7c8f-4d33-8801-48da06b0f69b",
+      "difficulty": "easy",
+      "cycle": "weekly",
+      "requiredLevel": 280,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "d083d1a2-6837-411e-8d7d-7d776581d2cb"
+    },
+    {
+      "id": "4e67b253-bfc8-4543-a860-1f865a2f6f44",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 280,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "d083d1a2-6837-411e-8d7d-7d776581d2cb"
+    },
+    {
+      "id": "de9a6906-7ccf-4e0b-876e-e68de34679f0",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 280,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "d083d1a2-6837-411e-8d7d-7d776581d2cb"
+    },
+    {
+      "id": "d7617385-25c0-4166-a6ba-5fe5b47790fb",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 285,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "be903c62-24ee-4fe4-bf04-eb4834a0f156"
+    },
+    {
+      "id": "c974b48b-5c0f-4182-b927-18d44101b8a6",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 285,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "be903c62-24ee-4fe4-bf04-eb4834a0f156"
+    },
+    {
+      "id": "3002e496-cf6a-429d-b28f-a3de40d80907",
+      "difficulty": "extreme",
+      "cycle": "weekly",
+      "requiredLevel": 285,
+      "maxPartySize": 3,
+      "validFrom": "2026-10-22T10:00",
+      "validUntil": null,
+      "bossId": "be903c62-24ee-4fe4-bf04-eb4834a0f156"
+    },
+    {
+      "id": "3df9d6aa-c379-433c-a7f7-cd38f783e507",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 290,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "fb597db7-590f-4c89-9247-f8a74373149f"
+    },
+    {
+      "id": "9cdd5a55-38b0-4bae-8b02-2ff2c1ed9d37",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 290,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "fb597db7-590f-4c89-9247-f8a74373149f"
+    },
+    {
+      "id": "ed217d26-4cfe-4ebd-864b-b9551eddd773",
+      "difficulty": "extreme",
+      "cycle": "weekly",
+      "requiredLevel": 290,
+      "maxPartySize": 3,
+      "validFrom": "2026-10-22T10:00",
+      "validUntil": null,
+      "bossId": "fb597db7-590f-4c89-9247-f8a74373149f"
+    },
+    {
+      "id": "eaaed6f0-a273-4f12-9e4a-0cb099485b28",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 295,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "fa8a1e6d-25cf-4ce7-bc79-d94012940824"
+    },
+    {
+      "id": "e2d57301-6cf3-4ebe-a8c1-3968e5ef086e",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 295,
+      "maxPartySize": 3,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "fa8a1e6d-25cf-4ce7-bc79-d94012940824"
+    },
+    {
+      "id": "033b123e-f5f1-4209-8c4d-4b67949fda4e",
+      "difficulty": "normal",
+      "cycle": "weekly",
+      "requiredLevel": 270,
+      "maxPartySize": 1,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "b85d0acf-0b9e-414b-8fbf-364e7efa07fd"
+    },
+    {
+      "id": "cf77cce3-4e23-4d72-84f1-c672d766b8f0",
+      "difficulty": "hard",
+      "cycle": "weekly",
+      "requiredLevel": 280,
+      "maxPartySize": 1,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "b85d0acf-0b9e-414b-8fbf-364e7efa07fd"
+    },
+    {
+      "id": "061b1c0f-fc32-409c-86fb-0cf2ba766cbc",
+      "difficulty": "hard",
+      "cycle": "monthly",
+      "requiredLevel": 255,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "e4858a7a-df0e-4f55-9a7a-f23804d0f11d"
+    },
+    {
+      "id": "e3bbb24b-b954-4bc9-8f7e-7f82c4eb98c7",
+      "difficulty": "extreme",
+      "cycle": "monthly",
+      "requiredLevel": 255,
+      "maxPartySize": null,
+      "validFrom": null,
+      "validUntil": null,
+      "bossId": "e4858a7a-df0e-4f55-9a7a-f23804d0f11d"
     }
   ]
 }

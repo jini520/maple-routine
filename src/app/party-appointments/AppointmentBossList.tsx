@@ -13,7 +13,7 @@ import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortra
 import { DragHandle } from '../../components/organisms/CharacterRow/DragHandle'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { groupBossesByCharacter, moveWithinGroup } from '../../features/party-appointments/boss-groups'
-import { bossAliasOf, bossPortraitAssetIdOf } from '../../lib/boss/bosses'
+import { bossShortNameOf, bossPortraitAssetIdOf } from '../../lib/boss/bosses'
 import { selectionFeedback } from '../../native/haptics'
 import type { BossDifficulty } from '../../types'
 import type { PartyAppointmentBoss } from '../../types/party-appointment'
@@ -39,7 +39,7 @@ function rowKey(boss: PartyAppointmentBoss): string {
 /** 줄 하나의 가운데(초상 · 이름 · 난이도). 손잡이와 `✕` 는 부르는 쪽이 앞뒤에 붙인다 */
 function RowBody(props: { boss: PartyAppointmentBoss }): React.JSX.Element {
   const { boss } = props
-  const name = bossAliasOf(boss.bossKey, boss.bossKey)
+  const name = bossShortNameOf(boss.bossKey, boss.bossKey)
   return (
     <>
       <BossPortrait portraitAssetId={bossPortraitAssetIdOf(boss.bossKey)} label={name} size={24} />
@@ -95,7 +95,7 @@ export function AppointmentBossList(props: AppointmentBossListProps): React.JSX.
               }}
               onDragEnd={({ fromIndex, toIndex }) => props.onChange(moveWithinGroup(bosses, group.ocid, fromIndex, toIndex))}
               renderItem={({ item }) => {
-                const name = bossAliasOf(item.bossKey, item.bossKey)
+                const name = bossShortNameOf(item.bossKey, item.bossKey)
                 const characterName = props.names.get(item.ocid) ?? ''
                 return (
                   <View className={ROW_CLASS}>

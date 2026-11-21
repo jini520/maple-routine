@@ -47,35 +47,16 @@ describe('bosses', () => {
 describe('bosses: 표가 덮이면', () => {
   const 덮은표: BossCatalog = {
     updatedAt: '2026-10-15T01:00:00.000Z',
-    rules: { weeklyBossSelectionLimit: 10, weeklyCrystalSaleLimit: 80, defaultMaxPartySize: 6 },
     bosses: [
-      {
-        key: 'black_mage',
-        name: '검은 마법사',
-        alias: '검은 마법사',
-        cycle: 'monthly',
-        portraitAssetId: 'blackMage',
-        difficulties: [{ difficulty: 'hard', requiredLevel: 255 }],
-      },
-      {
-        key: 'meirin',
-        name: '시즌 보스 메이린',
-        alias: '메이린',
-        cycle: 'event_weekly',
-        portraitAssetId: 'maerin',
-        difficulties: [
-          { difficulty: 'normal', requiredLevel: 270 },
-          { difficulty: 'hard', requiredLevel: 280 },
-        ],
-      },
-      {
-        key: 'new_boss',
-        name: '새 보스',
-        alias: '새 보스',
-        cycle: 'weekly',
-        portraitAssetId: 'newBoss',
-        difficulties: [{ difficulty: 'extreme', requiredLevel: 300 }],
-      },
+      { id: 'b1', key: 'black_mage', name: '검은 마법사', shortName: '검은 마법사', isSeasonBoss: false, portraitAssetId: 'blackMage' },
+      { id: 'b2', key: 'meirin', name: '시즌 보스 메이린', shortName: '메이린', isSeasonBoss: true, portraitAssetId: 'maerin' },
+      { id: 'b3', key: 'new_boss', name: '새 보스', shortName: '새 보스', isSeasonBoss: false, portraitAssetId: 'newBoss' },
+    ],
+    bossDifficulties: [
+      { id: 'd1', bossId: 'b1', difficulty: 'hard', cycle: 'monthly', requiredLevel: 255 },
+      { id: 'd2', bossId: 'b2', difficulty: 'normal', cycle: 'weekly', requiredLevel: 270 },
+      { id: 'd3', bossId: 'b2', difficulty: 'hard', cycle: 'weekly', requiredLevel: 280 },
+      { id: 'd4', bossId: 'b3', difficulty: 'extreme', cycle: 'weekly', requiredLevel: 300 },
     ],
   }
 

@@ -6,7 +6,7 @@
  * 찾는다. API 이름에서 key 를 얻는 규칙도 여기 하나다(`bossKeyOfApiName`).
  */
 import { BOSS_DIFFICULTIES, type BossCycle, type BossDifficulty } from '../../types'
-import type { BossCatalog, BossCatalogBoss, BossCatalogCycle } from '../../types/boss-catalog'
+import type { BossCatalog, BossDifficultyRow, BossRow } from '../../types/boss-catalog'
 import { type EffectivePeriod, getCurrentBossProfitPeriod, isEffectiveIn } from './boss-profit-period'
 import { getBossCatalog, subscribeBossCatalog } from './catalog'
 import { gameRules, gameRulesTable } from '../game-rules'
@@ -15,16 +15,20 @@ import { gameRules, gameRulesTable } from '../game-rules'
 export type BossSection = 'weekly' | 'eventWeekly' | 'monthly'
 
 export interface BossEntry {
+  /** 보스 줄 id */
+  id: string
   key: string
   /** Nexon API `content_name` 표기. 화면에 보이는 이름이다. */
   name: string
   /** 좁은 자리의 이름. 길어서 줄인 넷 말고는 `name` 과 같다. */
-  alias: string
+  shortName: string
   /** 표의 난이도 줄 차례 그대로다. */
   difficulties: BossDifficulty[]
   requiredLevels: Partial<Record<BossDifficulty, number>>
   /** 난이도 줄이 든 파티 인원 상한. 없는 난이도는 `gameRules` 칸의 `defaultMaxPartySize` 다. */
   maxPartySizes: Partial<Record<BossDifficulty, number>>
+  /** 난이도 줄 id. 다른 칸(드롭 · 결정석 가격)이 난이도를 이 id 로 가리킨다. */
+  difficultyIds: Partial<Record<BossDifficulty, string>>
   portraitAssetId: string
   section: BossSection
   cycle: BossCycle
@@ -37,39 +41,39 @@ export interface BossEntry {
   difficultyPeriods?: Partial<Record<BossDifficulty, EffectivePeriod>>
 }
 
-const SECTION_OF_CYCLE: Record<BossCatalogCycle, BossSection> = {
-  weekly: 'weekly',
-  event_weekly: 'eventWeekly',
-  monthly: 'monthly',
-}
-
-function toEntry(boss: BossCatalogBoss): BossEntry {
+function toEntry(boss: BossRow, rows: readonly BossDifficultyRow[]): BossEntry {
   const requiredLevels: Partial<Record<BossDifficulty, number>> = {}
   const maxPartySizes: Partial<Record<BossDifficulty, number>> = {}
+  const difficultyIds: Partial<Record<BossDifficulty, string>> = {}
   const difficultyPeriods: Partial<Record<BossDifficulty, EffectivePeriod>> = {}
-  for (const row of boss.difficulties) {
+  for (const row of rows) {
     requiredLevels[row.difficulty] = row.requiredLevel
+    difficultyIds[row.difficulty] = row.id
     if (row.maxPartySize !== undefined) maxPartySizes[row.difficulty] = row.maxPartySize
-    if (row.from !== undefined || row.until !== undefined) {
+    if (row.validFrom !== undefined || row.validUntil !== undefined) {
       difficultyPeriods[row.difficulty] = {
-        ...(row.from === undefined ? {} : { from: row.from }),
-        ...(row.until === undefined ? {} : { until: row.until }),
+        ...(row.validFrom === undefined ? {} : { from: row.validFrom }),
+        ...(row.validUntil === undefined ? {} : { until: row.validUntil }),
       }
     }
   }
+  // 한 보스의 난이도는 주기가 같다(계약 검사가 지킨다).
+  const cycle: BossCycle = rows[0]?.cycle === 'monthly' ? 'monthly' : 'weekly'
   return {
+    id: boss.id,
     key: boss.key,
     name: boss.name,
-    alias: boss.alias,
-    difficulties: boss.difficulties.map((row) => row.difficulty),
+    shortName: boss.shortName,
+    difficulties: rows.map((row) => row.difficulty),
     requiredLevels,
     maxPartySizes,
+    difficultyIds,
     portraitAssetId: boss.portraitAssetId,
-    section: SECTION_OF_CYCLE[boss.cycle],
-    cycle: boss.cycle === 'monthly' ? 'monthly' : 'weekly',
-    isSeasonBoss: boss.cycle === 'event_weekly',
-    ...(boss.from === undefined ? {} : { from: boss.from }),
-    ...(boss.until === undefined ? {} : { until: boss.until }),
+    section: boss.isSeasonBoss ? 'eventWeekly' : cycle,
+    cycle,
+    isSeasonBoss: boss.isSeasonBoss,
+    ...(boss.validFrom === undefined ? {} : { from: boss.validFrom }),
+    ...(boss.validUntil === undefined ? {} : { until: boss.validUntil }),
     ...(Object.keys(difficultyPeriods).length === 0 ? {} : { difficultyPeriods }),
   }
 }
@@ -83,14 +87,25 @@ interface CatalogIndex {
   entries: readonly BossEntry[]
   byKey: Map<string, { entry: BossEntry; index: number }>
   keyByComparableName: Map<string, string>
+  /** 난이도 줄 id → 보스 key · 난이도 */
+  difficultyById: Map<string, { bossKey: string; difficulty: BossDifficulty }>
 }
 
 function indexOf(catalog: BossCatalog): CatalogIndex {
-  const entries = catalog.bosses.map(toEntry)
+  const rowsByBoss = new Map<string, BossDifficultyRow[]>()
+  for (const row of catalog.bossDifficulties) rowsByBoss.set(row.bossId, [...(rowsByBoss.get(row.bossId) ?? []), row])
+  const entries = catalog.bosses.map((boss) => toEntry(boss, rowsByBoss.get(boss.id) ?? []))
+  const keyById = new Map(catalog.bosses.map((boss) => [boss.id, boss.key]))
   return {
     entries,
     byKey: new Map(entries.map((entry, index) => [entry.key, { entry, index }])),
     keyByComparableName: new Map(entries.map((entry) => [comparableName(entry.name), entry.key])),
+    difficultyById: new Map(
+      catalog.bossDifficulties.flatMap((row) => {
+        const bossKey = keyById.get(row.bossId)
+        return bossKey === undefined ? [] : [[row.id, { bossKey, difficulty: row.difficulty }] as const]
+      }),
+    ),
   }
 }
 
@@ -130,12 +145,22 @@ export function bossNameOf(key: string | null | undefined, fallbackName: string)
 }
 
 /**
- * 좁은 자리의 보스 이름. 표의 `alias` 이고, 모르는 key 면 넘긴 이름이다.
+ * 좁은 자리의 보스 이름. 표의 `shortName` 이고, 모르는 key 면 넘긴 이름이다.
  *
- * @example bossAliasOf(boss.bossKey, boss.bossName)
+ * @example bossShortNameOf(boss.bossKey, boss.bossName)
  */
-export function bossAliasOf(key: string | null | undefined, fallbackName: string): string {
-  return findBoss(key)?.alias ?? fallbackName
+export function bossShortNameOf(key: string | null | undefined, fallbackName: string): string {
+  return findBoss(key)?.shortName ?? fallbackName
+}
+
+/** 보스 key · 난이도의 난이도 줄 id. 표에 없으면 `null` 이다. */
+export function bossDifficultyIdOf(key: string | null | undefined, difficulty: BossDifficulty | string): string | null {
+  return findBoss(key)?.difficultyIds[difficulty as BossDifficulty] ?? null
+}
+
+/** 난이도 줄 id 의 보스 key · 난이도. 다른 칸이 난이도를 줄 id 로 가리킬 때 쓴다. 모르는 id 는 `null` 이다. */
+export function bossDifficultyOfId(id: string): { bossKey: string; difficulty: BossDifficulty } | null {
+  return index.difficultyById.get(id) ?? null
 }
 
 /** API 이름(또는 옛 기록의 보스 이름)에서 key. 표에 없으면 `null` 이다. */

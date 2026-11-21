@@ -6,50 +6,45 @@
  */
 import type { BossDifficulty } from './scheduler'
 
-/** 보스의 주기. `event_weekly` 는 시즌 보스라 주간 12마리 한도에서 빠진다. */
-export const BOSS_CATALOG_CYCLES = ['weekly', 'event_weekly', 'monthly'] as const
+/** 난이도 줄의 주기. 시즌 보스도 주간이고, 시즌 여부는 보스 줄의 `isSeasonBoss` 가 든다. */
+export const BOSS_CATALOG_CYCLES = ['weekly', 'monthly'] as const
 export type BossCatalogCycle = (typeof BOSS_CATALOG_CYCLES)[number]
 
-export interface BossCatalogDifficulty {
-  difficulty: BossDifficulty
-  requiredLevel: number
-  /** 파티 인원 상한. 없으면 `rules.defaultMaxPartySize` 다. 스우 익스트림 2 · 메이린 1 같은 예외만 든다. */
-  maxPartySize?: number
-  /** 난이도의 유효 기간. 없으면 보스의 기간 그대로. 새로 생긴 난이도가 시작을 든다. */
-  from?: string
-  until?: string
-}
-
-export interface BossCatalogBoss {
+export interface BossRow {
+  id: string
   /** 보스 key. 기기 기록이 이 값을 든다. */
   key: string
   /** Nexon API `content_name` 표기. 화면에 보이는 이름이다. */
   name: string
   /** 좁은 자리의 이름. */
-  alias: string
-  cycle: BossCatalogCycle
+  shortName: string
+  /** 시즌 보스는 주간 12마리 한도와 결정석 판매 수에서 빠진다. */
+  isSeasonBoss: boolean
   /** 초상 그림 id(`assets` 칸). 크롭도 이 id 로 찾는다. */
   portraitAssetId: string
-  /** 줄의 차례가 곧 난이도 정렬 순서다. */
-  difficulties: BossCatalogDifficulty[]
   /** 유효 기간. KST `YYYY-MM-DD` 또는 `YYYY-MM-DDTHH:mm`. 없으면 처음부터 · 끝없이. 시즌 보스가 끝을 든다. */
-  from?: string
-  until?: string
+  validFrom?: string
+  validUntil?: string
 }
 
-export interface BossCatalogRules {
-  /** 캐릭터당 주간 보스 등록 · 처치 한도. */
-  weeklyBossSelectionLimit: number
-  /** 한도 줄(메이플 ID 마다, 챌린저스 월드는 따로)마다의 주간 결정석 판매 한도. */
-  weeklyCrystalSaleLimit: number
-  /** 난이도 줄이 상한을 안 들 때의 파티 인원 상한. 게임 수치라 코드에 박지 않는다. */
-  defaultMaxPartySize: number
+/** 보스 난이도 한 줄. 한 보스의 줄 차례가 곧 난이도 정렬 순서다. */
+export interface BossDifficultyRow {
+  id: string
+  bossId: string
+  difficulty: BossDifficulty
+  cycle: BossCatalogCycle
+  requiredLevel: number
+  /** 파티 인원 상한. 없으면 `gameRules` 칸의 `defaultMaxPartySize` 다. 스우 익스트림 2 · 메이린 1 같은 예외만 든다. */
+  maxPartySize?: number
+  /** 난이도의 유효 기간. 없으면 보스의 기간 그대로. 새로 생긴 난이도가 시작을 든다. */
+  validFrom?: string
+  validUntil?: string
 }
 
 export interface BossCatalog {
   /** 서버가 가장 최근에 넣은 시각. `null` 은 서버에서 받은 적이 없는 사본이다. */
   updatedAt: string | null
-  rules: BossCatalogRules
   /** 배열의 차례가 곧 앱 전체의 보스 순서다. */
-  bosses: BossCatalogBoss[]
+  bosses: BossRow[]
+  bossDifficulties: BossDifficultyRow[]
 }

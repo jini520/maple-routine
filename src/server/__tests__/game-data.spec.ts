@@ -8,17 +8,8 @@ import { fetchGameData, parseGameDataResponse } from '../game-data'
 
 const 보스표: BossCatalog = {
   updatedAt: '2026-10-15T01:00:00.000Z',
-  rules: { weeklyBossSelectionLimit: 12, weeklyCrystalSaleLimit: 90, defaultMaxPartySize: 6 },
-  bosses: [
-    {
-      key: 'lotus',
-      name: '스우',
-      alias: '스우',
-      cycle: 'weekly',
-      portraitAssetId: 'lotus',
-      difficulties: [{ difficulty: 'normal', requiredLevel: 190 }],
-    },
-  ],
+  bosses: [{ id: 'b-lotus', key: 'lotus', name: '스우', shortName: '스우', isSeasonBoss: false, portraitAssetId: 'lotus' }],
+  bossDifficulties: [{ id: 'd-normal', bossId: 'b-lotus', difficulty: 'normal', cycle: 'weekly', requiredLevel: 190 }],
 }
 const 월드표: WorldsTable = {
   updatedAt: '2026-10-16T15:07:54.435Z',
