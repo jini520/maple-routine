@@ -1,147 +1,181 @@
 {
-  "updatedAt": "2026-10-25T07:25:28.594Z",
-  "categories": [
+  "updatedAt": "2026-11-14T04:44:37.594Z",
+  "cashbookCategories": [
     {
+      "id": "1e9f3cae-18cf-4843-8286-0b1f88a197a2",
       "entryType": "income",
       "key": "hunting",
       "name": "사냥",
       "cardTitle": "사냥",
-      "iconFile": "wealth_acquisition_potion_small.webp",
       "iconAssetId": "3dd19744-c713-4c12-adb3-c41e0556c49b",
       "description": "메소 · 조각 수익 기록",
       "unit": "소재"
     },
     {
+      "id": "d88b1aae-d6ec-45be-a7a1-9a7b293c7e1e",
       "entryType": "income",
       "key": "sol_erda_fragment",
       "name": "솔 에르다 조각",
       "cardTitle": "사냥",
-      "iconFile": "sol_erda_fragment.webp",
       "iconAssetId": "ee64d8fa-0fce-41d3-aee9-abf058a3cab3",
       "description": "사냥 수익 조각 정산",
       "unit": "개"
     },
     {
+      "id": "7015a28a-e615-4ab7-ab9e-589cf090fc41",
+      "entryType": "income",
+      "key": "hunt_loot_sale",
+      "name": "사냥 전리품 판매",
+      "cardTitle": "사냥",
+      "iconAssetId": "ee64d8fa-0fce-41d3-aee9-abf058a3cab3",
+      "description": "조각 · 소비 · 이벤트 판매",
+      "unit": null
+    },
+    {
+      "id": "7dabf4b8-7ce9-44ef-8306-fbeb26078aa7",
       "entryType": "income",
       "key": "item_sale",
       "name": "아이템 판매",
       "cardTitle": "아이템 판매",
-      "iconFile": "dark_boss_pendant.png",
       "iconAssetId": "fb62fe61-afdc-4f51-ac8a-0410ca2d635f",
       "description": "판매 아이템 수익",
       "unit": null
     },
     {
+      "id": "31b4bb2a-22c9-4d08-8180-bd0baa6a10c6",
       "entryType": "income",
       "key": "etc",
       "name": "기타",
       "cardTitle": "기타",
-      "iconFile": "meso.webp",
       "iconAssetId": "a55fc203-f6f1-40eb-a7ca-0198586eaafa",
       "description": "이벤트 등 기타 수익",
       "unit": "개"
     },
     {
+      "id": "0a8fd2ac-71ab-4dc0-be6f-64c71ac47504",
       "entryType": "spend",
       "key": "content",
       "name": "컨텐츠",
       "cardTitle": "컨텐츠",
-      "iconFile": "monster_park_ticket.webp",
       "iconAssetId": "a8cbdc1f-9667-46fc-aa5e-4f5fba36028f",
       "description": "몬파·에픽던전·퀵패스",
       "unit": null
     },
     {
+      "id": "1b1f7c97-114a-4634-a0a6-ca901dfd7f8b",
       "entryType": "spend",
       "key": "event_bm",
       "name": "이벤트·BM",
       "cardTitle": "이벤트·BM",
-      "iconFile": "vip_sauna_ticket.webp",
       "iconAssetId": "04aa9191-603b-45a5-923b-4342ebbfc392",
       "description": "메포샵·보약 버프 등",
       "unit": null
     },
     {
+      "id": "fc772e5b-1ed8-4802-a04b-6b5f21e1db6b",
       "entryType": "spend",
       "key": "buff",
       "name": "버프",
       "cardTitle": "버프",
-      "iconFile": "seiram_elixir.webp",
       "iconAssetId": "441da1e8-8c38-4ff8-af2f-1172c58c7fbb",
       "description": "메소 구입 버프 아이템",
       "unit": null
     },
     {
-      "entryType": "spend",
-      "key": "scroll",
-      "name": "주문서",
-      "cardTitle": "주문서",
-      "iconFile": "amazing_positive_chaos_scroll.webp",
-      "iconAssetId": "e8b4f2ff-2a61-4ff3-871d-ed358f1b5c26",
-      "description": "장비·악세·펫장비",
-      "unit": null
-    },
-    {
-      "entryType": "spend",
-      "key": "symbol",
-      "name": "심볼 강화",
-      "cardTitle": "심볼강화",
-      "iconFile": "authentic_symbol_selection_coupon.webp",
-      "iconAssetId": "c8d8b178-d2a7-4769-a386-6131f6a26b5e",
-      "description": "심볼 강화 비용",
-      "unit": null
-    },
-    {
-      "entryType": "spend",
-      "key": "hexa_matrix",
-      "name": "헥사 매트릭스",
-      "cardTitle": "헥사 매트릭스",
-      "iconFile": "hexa_matrix.webp",
-      "iconAssetId": "9f5dfc83-e5de-49c1-9b77-54625396e332",
-      "description": "헥사 스킬 · 헥사 스탯 강화",
-      "unit": null
-    },
-    {
+      "id": "11cdd6ce-e7ad-49f0-916c-38e381c3c501",
       "entryType": "spend",
       "key": "item_purchase",
       "name": "아이템 구매",
       "cardTitle": "아이템 구매",
-      "iconFile": "dark_boss_pendant.png",
       "iconAssetId": "fb62fe61-afdc-4f51-ac8a-0410ca2d635f",
       "description": "구매 아이템 지출",
       "unit": null
     },
     {
+      "id": "25421c2f-b1b3-4f00-8fcc-b486ce20e034",
+      "entryType": "spend",
+      "key": "symbol",
+      "name": "심볼 강화",
+      "cardTitle": "심볼강화",
+      "iconAssetId": "c8d8b178-d2a7-4769-a386-6131f6a26b5e",
+      "description": "심볼 강화 비용",
+      "unit": null
+    },
+    {
+      "id": "414ce45d-c5dc-4233-8306-413eaaef9344",
+      "entryType": "spend",
+      "key": "hexa_matrix",
+      "name": "헥사 매트릭스",
+      "cardTitle": "헥사 매트릭스",
+      "iconAssetId": "9f5dfc83-e5de-49c1-9b77-54625396e332",
+      "description": "헥사 스킬 · 헥사 스탯 강화",
+      "unit": null
+    },
+    {
+      "id": "5162bf5e-a21e-4ae6-adce-7753e3c224ff",
+      "entryType": "spend",
+      "key": "scroll",
+      "name": "주문서",
+      "cardTitle": "주문서",
+      "iconAssetId": "e8b4f2ff-2a61-4ff3-871d-ed358f1b5c26",
+      "description": "장비·악세·펫장비",
+      "unit": null
+    },
+    {
+      "id": "bf495b17-9d74-49f2-8209-c3de1d78f0b4",
       "entryType": "spend",
       "key": "etc",
       "name": "기타",
       "cardTitle": "기타",
-      "iconFile": "meso.webp",
       "iconAssetId": "a55fc203-f6f1-40eb-a7ca-0198586eaafa",
       "description": "각종 패스 등 기타 지출",
       "unit": "개"
+    },
+    {
+      "id": "3bd628cd-4cd3-439c-9e7c-382f468b62cd",
+      "entryType": "spend",
+      "key": "boss_income_transfer",
+      "name": "주간 보스 수입 이전",
+      "cardTitle": "주간 보스 수입 이전",
+      "iconAssetId": "d40acbe2-18d7-4d05-b9e3-9a16c60b17cf",
+      "description": "부계정 메소 송금 수수료",
+      "unit": null
+    },
+    {
+      "id": "c738bd25-b7b7-47bc-ac19-4d79a2aee35b",
+      "entryType": "spend",
+      "key": "meso_market_exchange",
+      "name": "메소마켓 환전 수수료",
+      "cardTitle": "메소마켓 환전 수수료",
+      "iconAssetId": "47859166-011c-4b84-b7d1-404edb6ff1a5",
+      "description": "월드 간 메소 이동 비용",
+      "unit": null
     }
   ],
-  "itemKinds": [
+  "cashbookItemTypes": [
     {
+      "id": "d33bab37-a83e-4b09-b0ea-54fb169ab8d0",
       "key": "equipment",
       "name": "장비",
       "unit": null,
       "hasTariff": true
     },
     {
+      "id": "621a5842-d912-48a9-8f29-07d5570aac9c",
       "key": "consumable",
       "name": "소비",
       "unit": "개",
       "hasTariff": false
     },
     {
+      "id": "cfa2ec5b-7da4-4dea-86e3-12c8f35d5748",
       "key": "etc",
       "name": "기타",
       "unit": "개",
       "hasTariff": false
     },
     {
+      "id": "42cae30e-9557-4334-b88d-cbcbc5d4055b",
       "key": "cash",
       "name": "캐시",
       "unit": "개",

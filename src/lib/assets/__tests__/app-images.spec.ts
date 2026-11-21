@@ -5,7 +5,7 @@ import { assetFilesTable } from '../asset-files'
 const SHA: Record<string, string> = { m: 'a', f0: 'b', f2: 'c', f10: 'd', x: 'e' }
 const file = (id: string) => {
   const sha = (SHA[id] ?? 'f').repeat(64)
-  return { id, path: `p/${id}.webp`, file: `${sha}.webp`, sha256: sha, size: 1, width: 3, height: 3 }
+  return { id, file: `${sha}.webp`, sha256: sha, sizeBytes: 1, width: 3, height: 3 }
 }
 const uriOf = (id: string) => file(id).file
 

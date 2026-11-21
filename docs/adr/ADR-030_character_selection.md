@@ -65,9 +65,9 @@
 카드와 같은 것을 세야 링과 카드가 서로 다른 값을 보이지 않는다.
 
 - 컨텐츠의 완료 판정은 `content-completion.ts` 한 곳에 모았다. 카드마다 흩어져 있던 판정을 링이 따로
-  만들면 두 판정이 언젠가 어긋나기 때문이다. 다 했다는 상태가 없는 무릉도장은 `unmeasurable` 로
-  분모에서 뺀다. 영원히 차지 않는 칸이 있으면 링이 늘 미완료로 보인다. 길드 지하 수로는 점수가 0 이
-  아니면 완료로 센다. 링은 얼마나 했는지가 아니라 그 주에 했는지를 보여 주기 때문이다.
+  만들면 두 판정이 언젠가 어긋나기 때문이다. 무엇으로 완료를 가르는지는 컨텐츠 표의 `checkType` 이 정한다([[ADR-033]] 결정 5).
+  점수 컨텐츠(길드 지하 수로 · 길드 플래그 레이스 · 무릉도장)는 점수가 0 보다 크면 완료로 센다. 링은 얼마나 했는지가 아니라
+  그 주에 했는지를 보여 주기 때문이다.
 - 보스는 요구 레벨이 모자라 잡을 수 없는 보스를 분모에서 뺀다. 그 캐릭터가 할 일이 아니기 때문이다.
   처치 한도가 차서 마감된 보스는 다 한 것으로 센다. 솔로 · 파티 필터는 세는 데 쓰지 않는다. 필터는 지금
   무엇을 볼지 고르는 것이지 진행과는 관계가 없다.
@@ -142,7 +142,7 @@ today 다. 결정 8 의 첫 번째 캐릭터도 이렇게 정렬한 목록에서
 | `features/character-selection/__tests__/selected-character.spec.ts` | 결정 8: 고른 캐릭터가 목록에 있을 때, 없을 때, 고른 적이 없을 때, 목록이 비었을 때 무엇을 돌려주는지 본다 |
 | `lib/__tests__/tracked-order.test.ts` | 결정 9: 저장 순서가 스토어 순서보다 우선하는지, 저장 목록에 없는 항목이 뒤에 남는지, 저장 목록에만 있는 ocid 가 칸을 만들지 않는지, 겹친 ocid 가 개수를 줄이지 않는지, 원본 배열과 항목 객체를 그대로 두는지 본다 |
 | `components/organisms/CharacterRail/__tests__/CharacterRail.test.tsx` | 결정 1 · 2: 칸을 누르면 그 ocid 로 `onSelect` 를 부르는지, 고른 칸만 또렷한지, 다른 캐릭터를 누를 때만 햅틱이 나는지 본다 |
-| `features/content-scheduler/__tests__/content-completion.test.ts` | 결정 4: 항목마다 완료 판정과 무릉도장을 분모에서 빼는 규칙을 본다 |
+| `features/content-scheduler/__tests__/content-completion.test.ts` | 결정 4: `checkType` 마다 완료 판정과 점수 컨텐츠가 분모에 드는지 본다 |
 | `app/content-scheduler/__tests__/ContentScreen.test.tsx` | 결정 1 · 4 · 9: 레일에서 누르면 고른 캐릭터가 바뀌는지, 링이 표시 목록과 같은 것을 세는지, 레일이 저장 순서대로 보이고 저장 목록에 없는 캐릭터가 사라지지 않는지 본다 |
 | `app/boss-scheduler/__tests__/BossScreen.test.tsx` | 결정 4: 처치 한도로 마감된 보스를 다 한 것으로 세는지 본다. 결정 9: 레일 순서를 본다 |
 | `app/boss-scheduler/__tests__/BossManageScreen.test.tsx` | 결정 8 · 9: 고른 적이 없으면 저장 순서의 첫 캐릭터가 열리는지, 레일 순서를 본다 |

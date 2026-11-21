@@ -1,747 +1,641 @@
 {
   "updatedAt": "2026-10-16T14:40:05.992Z",
-  "prices": [
+  "bossCrystalPrices": [
     {
-      "boss": "zakum",
-      "difficulty": "chaos",
+      "bossDifficultyId": "c56d4ed2-302e-404b-8154-ff91e0d5ad70",
       "priceMeso": 8080000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "zakum",
-      "difficulty": "chaos",
+      "bossDifficultyId": "c56d4ed2-302e-404b-8154-ff91e0d5ad70",
       "priceMeso": 4040000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "magnus",
-      "difficulty": "hard",
+      "bossDifficultyId": "dce1f82c-e219-47d3-ab98-1ad06766542d",
       "priceMeso": 8560000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "magnus",
-      "difficulty": "hard",
+      "bossDifficultyId": "dce1f82c-e219-47d3-ab98-1ad06766542d",
       "priceMeso": 4280000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "papulatus",
-      "difficulty": "chaos",
+      "bossDifficultyId": "38637d3d-9ca0-47bb-8af9-4c4a33f4239c",
       "priceMeso": 13100000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "papulatus",
-      "difficulty": "chaos",
+      "bossDifficultyId": "38637d3d-9ca0-47bb-8af9-4c4a33f4239c",
       "priceMeso": 6550000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "von_bon",
-      "difficulty": "chaos",
+      "bossDifficultyId": "fd52ba48-664c-4ca9-a857-bf4d979b3b9b",
       "priceMeso": 8150000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "von_bon",
-      "difficulty": "chaos",
+      "bossDifficultyId": "fd52ba48-664c-4ca9-a857-bf4d979b3b9b",
       "priceMeso": 4070000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "pierre",
-      "difficulty": "chaos",
+      "bossDifficultyId": "eab29a23-de49-4b96-b195-6a46933f9f26",
       "priceMeso": 8170000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "pierre",
-      "difficulty": "chaos",
+      "bossDifficultyId": "eab29a23-de49-4b96-b195-6a46933f9f26",
       "priceMeso": 4080000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "crimson_queen",
-      "difficulty": "chaos",
+      "bossDifficultyId": "f3bb6d13-59e9-46de-8391-e82793fc1616",
       "priceMeso": 8140000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "crimson_queen",
-      "difficulty": "chaos",
+      "bossDifficultyId": "f3bb6d13-59e9-46de-8391-e82793fc1616",
       "priceMeso": 4070000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "vellum",
-      "difficulty": "chaos",
+      "bossDifficultyId": "ff059dbc-0df8-4c11-9f27-8e7116f3b885",
       "priceMeso": 9280000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "vellum",
-      "difficulty": "chaos",
+      "bossDifficultyId": "ff059dbc-0df8-4c11-9f27-8e7116f3b885",
       "priceMeso": 4640000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "lotus",
-      "difficulty": "normal",
+      "bossDifficultyId": "72f53ef9-57c6-4ad1-956f-00a6bd82e820",
       "priceMeso": 16700000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "lotus",
-      "difficulty": "normal",
+      "bossDifficultyId": "72f53ef9-57c6-4ad1-956f-00a6bd82e820",
       "priceMeso": 8350000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "lotus",
-      "difficulty": "hard",
+      "bossDifficultyId": "b4b8af7b-2270-42d0-af5c-8d098063dd61",
       "priceMeso": 51500000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "lotus",
-      "difficulty": "hard",
+      "bossDifficultyId": "b4b8af7b-2270-42d0-af5c-8d098063dd61",
       "priceMeso": 48900000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "lotus",
-      "difficulty": "extreme",
+      "bossDifficultyId": "46ada821-9f12-4b24-8873-322d8463ddff",
       "priceMeso": 574000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "lotus",
-      "difficulty": "extreme",
+      "bossDifficultyId": "46ada821-9f12-4b24-8873-322d8463ddff",
       "priceMeso": 545000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "damien",
-      "difficulty": "normal",
+      "bossDifficultyId": "1d25ff2d-0faa-42a9-81fc-c258e977e3b0",
       "priceMeso": 17500000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "damien",
-      "difficulty": "normal",
+      "bossDifficultyId": "1d25ff2d-0faa-42a9-81fc-c258e977e3b0",
       "priceMeso": 8750000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "damien",
-      "difficulty": "hard",
+      "bossDifficultyId": "fbe415a2-fd28-42f2-b879-ed752451f68b",
       "priceMeso": 48900000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "damien",
-      "difficulty": "hard",
+      "bossDifficultyId": "fbe415a2-fd28-42f2-b879-ed752451f68b",
       "priceMeso": 46400000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "guardian_angel_slime",
-      "difficulty": "normal",
+      "bossDifficultyId": "0a6f3ead-cef7-4811-91a8-83ad2c9de884",
       "priceMeso": 25500000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "guardian_angel_slime",
-      "difficulty": "normal",
+      "bossDifficultyId": "0a6f3ead-cef7-4811-91a8-83ad2c9de884",
       "priceMeso": 12700000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "guardian_angel_slime",
-      "difficulty": "chaos",
+      "bossDifficultyId": "2556fcf3-35b5-4ada-ba37-dd76ac8b964c",
       "priceMeso": 75100000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "guardian_angel_slime",
-      "difficulty": "chaos",
+      "bossDifficultyId": "2556fcf3-35b5-4ada-ba37-dd76ac8b964c",
       "priceMeso": 71300000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "lucid",
-      "difficulty": "easy",
+      "bossDifficultyId": "5af8922b-edb7-4ad8-a76c-902348e1430d",
       "priceMeso": 29800000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "lucid",
-      "difficulty": "easy",
+      "bossDifficultyId": "5af8922b-edb7-4ad8-a76c-902348e1430d",
       "priceMeso": 14900000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "lucid",
-      "difficulty": "normal",
+      "bossDifficultyId": "c6dde4a6-34c1-4ba2-a9a5-6ad710684ea7",
       "priceMeso": 35600000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "lucid",
-      "difficulty": "normal",
+      "bossDifficultyId": "c6dde4a6-34c1-4ba2-a9a5-6ad710684ea7",
       "priceMeso": 17800000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "lucid",
-      "difficulty": "hard",
+      "bossDifficultyId": "58cf059b-5f70-4c3f-a1ca-021104a8a4d5",
       "priceMeso": 62900000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "lucid",
-      "difficulty": "hard",
+      "bossDifficultyId": "58cf059b-5f70-4c3f-a1ca-021104a8a4d5",
       "priceMeso": 59700000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "will",
-      "difficulty": "easy",
+      "bossDifficultyId": "e93b940c-09ad-47cd-a428-292c1a527a83",
       "priceMeso": 32300000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "will",
-      "difficulty": "easy",
+      "bossDifficultyId": "e93b940c-09ad-47cd-a428-292c1a527a83",
       "priceMeso": 16100000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "will",
-      "difficulty": "normal",
+      "bossDifficultyId": "5d71bc4b-ab49-4557-b414-afa22234b097",
       "priceMeso": 41100000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "will",
-      "difficulty": "normal",
+      "bossDifficultyId": "5d71bc4b-ab49-4557-b414-afa22234b097",
       "priceMeso": 20500000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "will",
-      "difficulty": "hard",
+      "bossDifficultyId": "62a5d683-bf63-4ef5-8dfa-430cee1eb246",
       "priceMeso": 77100000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "will",
-      "difficulty": "hard",
+      "bossDifficultyId": "62a5d683-bf63-4ef5-8dfa-430cee1eb246",
       "priceMeso": 73200000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "gloom",
-      "difficulty": "normal",
+      "bossDifficultyId": "a2f51f89-f7c5-44b7-a86b-2ac9e7681110",
       "priceMeso": 44000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "gloom",
-      "difficulty": "normal",
+      "bossDifficultyId": "a2f51f89-f7c5-44b7-a86b-2ac9e7681110",
       "priceMeso": 22000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "gloom",
-      "difficulty": "chaos",
+      "bossDifficultyId": "8dd2a3e1-ced5-4ed1-8583-04751bef9eed",
       "priceMeso": 69800000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "gloom",
-      "difficulty": "chaos",
+      "bossDifficultyId": "8dd2a3e1-ced5-4ed1-8583-04751bef9eed",
       "priceMeso": 66300000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "verus_hilla",
-      "difficulty": "normal",
+      "bossDifficultyId": "c589b96f-34eb-44e3-b781-89f0a70997d0",
       "priceMeso": 71200000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "verus_hilla",
-      "difficulty": "normal",
+      "bossDifficultyId": "c589b96f-34eb-44e3-b781-89f0a70997d0",
       "priceMeso": 67600000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "verus_hilla",
-      "difficulty": "hard",
+      "bossDifficultyId": "26f8360f-628f-4da8-9db2-5fee679d6179",
       "priceMeso": 106000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "verus_hilla",
-      "difficulty": "hard",
+      "bossDifficultyId": "26f8360f-628f-4da8-9db2-5fee679d6179",
       "priceMeso": 100000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "darknell",
-      "difficulty": "normal",
+      "bossDifficultyId": "c35e8989-8947-4003-b1ee-6b7565e85714",
       "priceMeso": 47500000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "darknell",
-      "difficulty": "normal",
+      "bossDifficultyId": "c35e8989-8947-4003-b1ee-6b7565e85714",
       "priceMeso": 23700000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "darknell",
-      "difficulty": "hard",
+      "bossDifficultyId": "baffeaa5-60cb-4d65-a9a7-202928d306f9",
       "priceMeso": 94400000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "darknell",
-      "difficulty": "hard",
+      "bossDifficultyId": "baffeaa5-60cb-4d65-a9a7-202928d306f9",
       "priceMeso": 89600000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "chosen_seren",
-      "difficulty": "normal",
+      "bossDifficultyId": "b0dcb5bf-681d-4138-9df2-16090a1d43d7",
       "priceMeso": 239000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "chosen_seren",
-      "difficulty": "normal",
+      "bossDifficultyId": "b0dcb5bf-681d-4138-9df2-16090a1d43d7",
       "priceMeso": 167000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "chosen_seren",
-      "difficulty": "hard",
+      "bossDifficultyId": "5785e277-70d7-4222-9cef-adc73618006f",
       "priceMeso": 356000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "chosen_seren",
-      "difficulty": "hard",
+      "bossDifficultyId": "5785e277-70d7-4222-9cef-adc73618006f",
       "priceMeso": 302000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "chosen_seren",
-      "difficulty": "extreme",
+      "bossDifficultyId": "5b61fad6-2563-4100-9ba6-6b2bd6b18526",
       "priceMeso": 2835000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "chosen_seren",
-      "difficulty": "extreme",
+      "bossDifficultyId": "5b61fad6-2563-4100-9ba6-6b2bd6b18526",
       "priceMeso": 1840000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "guardian_kalos",
-      "difficulty": "easy",
+      "bossDifficultyId": "a1d6ed0f-2272-4711-bf04-7e6c19856679",
       "priceMeso": 280000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "guardian_kalos",
-      "difficulty": "easy",
+      "bossDifficultyId": "a1d6ed0f-2272-4711-bf04-7e6c19856679",
       "priceMeso": 238000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "guardian_kalos",
-      "difficulty": "normal",
+      "bossDifficultyId": "e1187d20-5af3-42e8-9e62-ac2846018057",
       "priceMeso": 505000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "guardian_kalos",
-      "difficulty": "normal",
+      "bossDifficultyId": "e1187d20-5af3-42e8-9e62-ac2846018057",
       "priceMeso": 479000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "guardian_kalos",
-      "difficulty": "chaos",
+      "bossDifficultyId": "0ab15430-acab-439a-b1cf-e08a3cb567aa",
       "priceMeso": 1273000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "guardian_kalos",
-      "difficulty": "chaos",
+      "bossDifficultyId": "0ab15430-acab-439a-b1cf-e08a3cb567aa",
       "priceMeso": 1230000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "guardian_kalos",
-      "difficulty": "extreme",
+      "bossDifficultyId": "d64bffc8-5db8-49ef-95f6-7c648693b3f7",
       "priceMeso": 4104000000,
-      "from": null,
-      "until": null
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "boss": "first_adversary",
-      "difficulty": "easy",
+      "bossDifficultyId": "8a2d72c7-bca2-459b-b645-f8ccd9e3f407",
       "priceMeso": 308000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "first_adversary",
-      "difficulty": "easy",
+      "bossDifficultyId": "8a2d72c7-bca2-459b-b645-f8ccd9e3f407",
       "priceMeso": 261000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "first_adversary",
-      "difficulty": "normal",
+      "bossDifficultyId": "8c5fbca4-2e81-4791-8159-87327fb18ac6",
       "priceMeso": 560000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "first_adversary",
-      "difficulty": "normal",
+      "bossDifficultyId": "8c5fbca4-2e81-4791-8159-87327fb18ac6",
       "priceMeso": 532000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "first_adversary",
-      "difficulty": "hard",
+      "bossDifficultyId": "67439f22-b5d0-4962-b317-7c0f70245fa0",
       "priceMeso": 1435000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "first_adversary",
-      "difficulty": "hard",
+      "bossDifficultyId": "67439f22-b5d0-4962-b317-7c0f70245fa0",
       "priceMeso": 1390000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "first_adversary",
-      "difficulty": "extreme",
+      "bossDifficultyId": "89bb1ed7-64b0-40b0-be73-8c57c76f5cd4",
       "priceMeso": 4712000000,
-      "from": null,
-      "until": null
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "boss": "kaling",
-      "difficulty": "easy",
+      "bossDifficultyId": "3bb7bbd3-357f-4295-92bb-4447a014c0a9",
       "priceMeso": 377000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "kaling",
-      "difficulty": "easy",
+      "bossDifficultyId": "3bb7bbd3-357f-4295-92bb-4447a014c0a9",
       "priceMeso": 320000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "kaling",
-      "difficulty": "normal",
+      "bossDifficultyId": "ccdf4f6d-4539-483c-828a-ad2db0bee420",
       "priceMeso": 678000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "kaling",
-      "difficulty": "normal",
+      "bossDifficultyId": "ccdf4f6d-4539-483c-828a-ad2db0bee420",
       "priceMeso": 593000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "kaling",
-      "difficulty": "hard",
+      "bossDifficultyId": "ea7676f1-e89b-448c-9ad3-5b34b364a931",
       "priceMeso": 1739000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "kaling",
-      "difficulty": "hard",
+      "bossDifficultyId": "ea7676f1-e89b-448c-9ad3-5b34b364a931",
       "priceMeso": 1560000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "kaling",
-      "difficulty": "extreme",
+      "bossDifficultyId": "57c1eaf1-dcc4-454a-a9bd-c10fdd7ceef0",
       "priceMeso": 5387000000,
-      "from": null,
-      "until": "2026-10-22T04:00"
+      "validFrom": null,
+      "validUntil": "2026-10-22T04:00"
     },
     {
-      "boss": "kaling",
-      "difficulty": "extreme",
+      "bossDifficultyId": "57c1eaf1-dcc4-454a-a9bd-c10fdd7ceef0",
       "priceMeso": 4845000000,
-      "from": "2026-10-22T04:00",
-      "until": null
+      "validFrom": "2026-10-22T04:00",
+      "validUntil": null
     },
     {
-      "boss": "radiant_malefic_star",
-      "difficulty": "normal",
+      "bossDifficultyId": "e51450f2-5a41-4046-945e-b2e5ffa19ae7",
       "priceMeso": 625000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "radiant_malefic_star",
-      "difficulty": "normal",
+      "bossDifficultyId": "e51450f2-5a41-4046-945e-b2e5ffa19ae7",
       "priceMeso": 576000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "radiant_malefic_star",
-      "difficulty": "hard",
+      "bossDifficultyId": "f7bb2041-1e59-4d3e-a8d4-b5dc04f9721e",
       "priceMeso": 2678000000,
-      "from": null,
-      "until": null
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "boss": "bellona",
-      "difficulty": "easy",
+      "bossDifficultyId": "1b7882d4-7c8f-4d33-8801-48da06b0f69b",
       "priceMeso": 440000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "bellona",
-      "difficulty": "easy",
+      "bossDifficultyId": "1b7882d4-7c8f-4d33-8801-48da06b0f69b",
       "priceMeso": 396000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "bellona",
-      "difficulty": "normal",
+      "bossDifficultyId": "4e67b253-bfc8-4543-a860-1f865a2f6f44",
       "priceMeso": 850000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "bellona",
-      "difficulty": "normal",
+      "bossDifficultyId": "4e67b253-bfc8-4543-a860-1f865a2f6f44",
       "priceMeso": 824000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "bellona",
-      "difficulty": "hard",
+      "bossDifficultyId": "de9a6906-7ccf-4e0b-876e-e68de34679f0",
       "priceMeso": 2950000000,
-      "from": null,
-      "until": null
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "boss": "limbo",
-      "difficulty": "normal",
+      "bossDifficultyId": "d7617385-25c0-4166-a6ba-5fe5b47790fb",
       "priceMeso": 1026000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "limbo",
-      "difficulty": "normal",
+      "bossDifficultyId": "d7617385-25c0-4166-a6ba-5fe5b47790fb",
       "priceMeso": 995000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "limbo",
-      "difficulty": "hard",
+      "bossDifficultyId": "c974b48b-5c0f-4182-b927-18d44101b8a6",
       "priceMeso": 2385000000,
-      "from": null,
-      "until": null
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "boss": "limbo",
-      "difficulty": "extreme",
+      "bossDifficultyId": "3002e496-cf6a-429d-b28f-a3de40d80907",
       "priceMeso": 7500000000,
-      "from": "2026-10-22T10:00",
-      "until": null
+      "validFrom": "2026-10-22T10:00",
+      "validUntil": null
     },
     {
-      "boss": "bardrix",
-      "difficulty": "normal",
+      "bossDifficultyId": "3df9d6aa-c379-433c-a7f7-cd38f783e507",
       "priceMeso": 1368000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "bardrix",
-      "difficulty": "normal",
+      "bossDifficultyId": "3df9d6aa-c379-433c-a7f7-cd38f783e507",
       "priceMeso": 1320000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "bardrix",
-      "difficulty": "hard",
+      "bossDifficultyId": "9cdd5a55-38b0-4bae-8b02-2ff2c1ed9d37",
       "priceMeso": 3078000000,
-      "from": null,
-      "until": null
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "boss": "bardrix",
-      "difficulty": "extreme",
+      "bossDifficultyId": "ed217d26-4cfe-4ebd-864b-b9551eddd773",
       "priceMeso": 9600000000,
-      "from": "2026-10-22T10:00",
-      "until": null
+      "validFrom": "2026-10-22T10:00",
+      "validUntil": null
     },
     {
-      "boss": "jupiter",
-      "difficulty": "normal",
+      "bossDifficultyId": "eaaed6f0-a273-4f12-9e4a-0cb099485b28",
       "priceMeso": 1615000000,
-      "from": null,
-      "until": "2026-09-17T10:00"
+      "validFrom": null,
+      "validUntil": "2026-09-17T10:00"
     },
     {
-      "boss": "jupiter",
-      "difficulty": "normal",
+      "bossDifficultyId": "eaaed6f0-a273-4f12-9e4a-0cb099485b28",
       "priceMeso": 1560000000,
-      "from": "2026-09-17T10:00",
-      "until": null
+      "validFrom": "2026-09-17T10:00",
+      "validUntil": null
     },
     {
-      "boss": "jupiter",
-      "difficulty": "hard",
+      "bossDifficultyId": "e2d57301-6cf3-4ebe-a8c1-3968e5ef086e",
       "priceMeso": 4845000000,
-      "from": null,
-      "until": "2026-10-22T04:00"
+      "validFrom": null,
+      "validUntil": "2026-10-22T04:00"
     },
     {
-      "boss": "jupiter",
-      "difficulty": "hard",
+      "bossDifficultyId": "e2d57301-6cf3-4ebe-a8c1-3968e5ef086e",
       "priceMeso": 5387000000,
-      "from": "2026-10-22T04:00",
-      "until": null
+      "validFrom": "2026-10-22T04:00",
+      "validUntil": null
     },
     {
-      "boss": "meirin",
-      "difficulty": "normal",
+      "bossDifficultyId": "033b123e-f5f1-4209-8c4d-4b67949fda4e",
       "priceMeso": 300000000,
-      "from": null,
-      "until": null
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "boss": "meirin",
-      "difficulty": "hard",
+      "bossDifficultyId": "cf77cce3-4e23-4d72-84f1-c672d766b8f0",
       "priceMeso": 600000000,
-      "from": null,
-      "until": null
+      "validFrom": null,
+      "validUntil": null
     },
     {
-      "boss": "black_mage",
-      "difficulty": "hard",
+      "bossDifficultyId": "061b1c0f-fc32-409c-86fb-0cf2ba766cbc",
       "priceMeso": 665000000,
-      "from": null,
-      "until": "2026-10-01"
+      "validFrom": null,
+      "validUntil": "2026-10-01"
     },
     {
-      "boss": "black_mage",
-      "difficulty": "hard",
+      "bossDifficultyId": "061b1c0f-fc32-409c-86fb-0cf2ba766cbc",
       "priceMeso": 465000000,
-      "from": "2026-10-01",
-      "until": null
+      "validFrom": "2026-10-01",
+      "validUntil": null
     },
     {
-      "boss": "black_mage",
-      "difficulty": "extreme",
+      "bossDifficultyId": "e3bbb24b-b954-4bc9-8f7e-7f82c4eb98c7",
       "priceMeso": 8740000000,
-      "from": null,
-      "until": "2026-10-01"
+      "validFrom": null,
+      "validUntil": "2026-10-01"
     },
     {
-      "boss": "black_mage",
-      "difficulty": "extreme",
+      "bossDifficultyId": "e3bbb24b-b954-4bc9-8f7e-7f82c4eb98c7",
       "priceMeso": 5680000000,
-      "from": "2026-10-01",
-      "until": null
+      "validFrom": "2026-10-01",
+      "validUntil": null
     }
   ]
 }

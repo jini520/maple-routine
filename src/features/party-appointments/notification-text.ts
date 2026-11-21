@@ -5,7 +5,7 @@
  * 나머지는 `외 n마리` 로 접는다(알림 한 줄에 다 안 들어간다).
  */
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
-import { bossAliasOf } from '../../lib/boss/bosses'
+import { bossShortNameOf } from '../../lib/boss/bosses'
 import type { BossDifficulty } from '../../types'
 import type { PartyAppointmentOccurrence } from '../../types/party-appointment'
 import { formatLead } from './draft'
@@ -30,7 +30,7 @@ export function notificationText(
   const boss =
     first === undefined
       ? ''
-      : `${names.get(first.ocid) ?? ''} ${DIFFICULTY_NAME[first.difficulty as BossDifficulty] ?? first.difficulty} ${bossAliasOf(first.bossKey, first.bossKey)}`
+      : `${names.get(first.ocid) ?? ''} ${DIFFICULTY_NAME[first.difficulty as BossDifficulty] ?? first.difficulty} ${bossShortNameOf(first.bossKey, first.bossKey)}`
   const more = rest.length > 0 ? ` 외 ${rest.length}마리` : ''
   const lead = occurrence.leadMinutes ?? 0
   const when = lead === 0 ? '파티가 지금 시작해요' : `파티 ${formatLead(lead)}이에요`

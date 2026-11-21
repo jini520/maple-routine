@@ -1,6 +1,6 @@
 import { dropItemKeyOfName, dropItemNameOf, isValuableDropItem } from '../drop/drop-items'
 
-// 드롭 아이템 마스터 표 조회. 기록은 key 를 들고 이름은 여기서 찾는다.
+// 드롭 아이템 조회. 기록은 key 를 들고 이름은 아이템 표에서 찾는다.
 describe('drop-items', () => {
   // 이름을 바꿔도 옛 기록이 따라오게 표 이름이 이긴다. 표에 없으면 적어 둔 이름이다.
   it('보이는 이름은 표 이름이고, 못 찾으면 적어 둔 이름이다', () => {
@@ -13,12 +13,11 @@ describe('drop-items', () => {
   it('이름에서 key 를 찾는다. NFC 로 맞추고 모르는 이름은 null 이다', () => {
     expect(dropItemKeyOfName('리스트레인트 링')).toBe('restraint_ring')
     expect(dropItemKeyOfName('고통의 근원'.normalize('NFD'))).toBe('source_of_suffering')
-    expect(dropItemKeyOfName('기타')).toBe('other_ring')
     expect(dropItemKeyOfName('익셉셔널 해머')).toBeNull()
   })
 })
 
-// 고가 판정은 표의 valuable 한 칸이다. 세트 소속으로 추정하지 않는다.
+// 고가 판정은 아이템 표의 isValuable 한 칸이다. 세트 소속으로 추정하지 않는다.
 describe('isValuableDropItem', () => {
   // 이관이 이름을 못 찾은 옛 기록이다. 무엇인지 모르는 것을 고가로 그리지 않는다.
   it('key 가 없거나 모르는 key 는 고가가 아니다', () => {

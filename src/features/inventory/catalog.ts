@@ -6,7 +6,7 @@ import { ITEM_KIND_KEYS, type ItemKindKey } from '../../lib/cashbook/categories'
 import { compact, isOneOf } from '../../lib/game-data/contract'
 import { derive } from '../../lib/game-data/table'
 import { getAssetImage } from '../../lib/assets/asset-lookup'
-import { findItem, itemsTable, withRingLevel } from '../../lib/item-catalog'
+import { findItem, itemGroupOf, itemsTable, originalItemOf, ringLevelOf, withRingLevel } from '../../lib/item-catalog'
 import { searchItems } from '../../lib/item-search'
 import type { ItemRow } from '../../types/game-data'
 import type { ImageAssetRef } from '../../types/image-asset'
@@ -34,21 +34,29 @@ export interface CatalogMatch extends CatalogItem {
   icon: ImageAssetRef | null
 }
 
-/** 서버 종류를 가계부 아이템 종류로. 장신구는 게임에서도 장비 탭에 들어 장비다. 옮길 수 없는 종류는 `null` 이다. */
-function itemKindOf(kind: string): ItemKindKey | null {
-  if (kind === 'accessory') return 'equipment'
-  return isOneOf(kind, ITEM_KIND_KEYS) ? kind : null
+/** 묶음 종류를 가계부 아이템 종류로. 장신구는 게임에서도 장비 탭에 들어 장비다. 묶음이 없거나 옮길 수 없는 종류는 `null` 이다. */
+function itemKindOf(item: ItemRow): ItemKindKey | null {
+  const type = itemGroupOf(item)?.type
+  if (type === 'accessory') return 'equipment'
+  return isOneOf(type, ITEM_KIND_KEYS) ? type : null
 }
 
-/** 고르기 목록에서 빼는 아이템. 아스트라 보조무기는 묶음이 따로 없어 보조무기 가운데 key 로 가른다. */
+/**
+ * 고르기 목록에서 빼는 아이템. 아스트라 보조무기는 묶음이 따로 없어 보조무기 가운데 key 로 가른다.
+ *
+ * 특수스킬 반지의 레벨 줄과 상자에서 나온 연마석 같은 같은 물건의 다른 줄도 뺀다. 기록은 원래 반지 · 원래 아이템의 key 를 적어
+ * 두 줄이 함께 서면 같은 물건이 둘로 보인다.
+ */
 function excluded(item: ItemRow): boolean {
-  if (item.category === 'box' || item.category === 'destiny_weapon' || item.category === 'genesis_weapon') return true
-  return item.category === 'secondary_weapon' && item.key.startsWith('astra_')
+  if (ringLevelOf(item) !== null || originalItemOf(item) !== item) return true
+  const group = itemGroupOf(item)?.key
+  if (group === 'box' || group === 'destiny_weapon' || group === 'genesis_weapon') return true
+  return group === 'secondary_weapon' && item.key.startsWith('astra_')
 }
 
 const catalog = derive(itemsTable, (table): readonly CatalogItem[] =>
   table.items.flatMap((item) => {
-    const kind = itemKindOf(item.kind)
+    const kind = itemKindOf(item)
     if (kind === null || excluded(item)) return []
     const entry = (ringLevel: number | null): CatalogItem =>
       compact({
@@ -59,7 +67,7 @@ const catalog = derive(itemsTable, (table): readonly CatalogItem[] =>
         ringLevel,
         iconAssetId: item.iconAssetId,
       })
-    return item.category === SPECIAL_SKILL_RING ? RING_LEVELS.map(entry) : [entry(null)]
+    return itemGroupOf(item)?.key === SPECIAL_SKILL_RING ? RING_LEVELS.map(entry) : [entry(null)]
   }),
 )
 
@@ -75,7 +83,7 @@ export function catalogEntryOf(itemKey: string, ringLevel: number | null | undef
 /** 아이템 표에서 그 아이템의 가계부 아이템 종류. 표에 없거나 옮길 수 없는 종류면 `null` 이다. */
 export function catalogKindOf(itemKey: string): ItemKindKey | null {
   const item = findItem(itemKey)
-  return item === null ? null : itemKindOf(item.kind)
+  return item === null ? null : itemKindOf(item)
 }
 
 /** 친 글자로 찾은 아이템. 종류를 가리지 않는다. 찾는 규칙은 가계부의 아이템 고르기와 같은 `searchItems` 다. */

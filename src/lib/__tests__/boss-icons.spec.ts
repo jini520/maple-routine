@@ -13,10 +13,10 @@ describe('getBossPortraitUrl', () => {
 
 describe('getBossPortraitCrop', () => {
   it('portraitAssetId가 null이면 기본 폴백(cover/center)을 반환한다', () => {
-    expect(getBossPortraitCrop(null)).toEqual({ size: 'cover', position: 'center' })
+    expect(getBossPortraitCrop(null)).toEqual({ kind: 'cover' })
   })
 
   it('boss-portrait-crops.json에 매핑이 없는 slug면 기본 폴백(cover/center)을 반환한다', () => {
-    expect(getBossPortraitCrop('존재하지않는슬러그')).toEqual({ size: 'cover', position: 'center' })
+    expect(getBossPortraitCrop('존재하지않는슬러그')).toEqual({ kind: 'cover' })
   })
 })

@@ -23,7 +23,7 @@ describe('startNexonLogin', () => {
     await expect(startNexonLogin('android')).resolves.toEqual({ authorizeUrl: 'https://n/x', redeemKey: 'RK' })
 
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
-    expect(url).toBe('https://mapleroutine.store/v1/auth/nexon/login')
+    expect(url).toBe('https://api.mapleroutine.store/v1/auth/nexon/login')
     expect(JSON.parse(init.body as string)).toEqual({ platform: 'android' })
   })
 
@@ -51,7 +51,7 @@ describe('redeemNexonSession', () => {
     await expect(redeemNexonSession(열쇠)).resolves.toEqual({ status: 'gone' })
 
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
-    expect(url).toBe('https://mapleroutine.store/v1/auth/nexon/session')
+    expect(url).toBe('https://api.mapleroutine.store/v1/auth/nexon/session')
     expect(JSON.parse(init.body as string)).toEqual(열쇠)
   })
 
@@ -70,7 +70,7 @@ describe('revokeNexonSession', () => {
     await revokeNexonSession('S')
 
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit]
-    expect(url).toBe('https://mapleroutine.store/v1/auth/nexon/session')
+    expect(url).toBe('https://api.mapleroutine.store/v1/auth/nexon/session')
     expect(init.method).toBe('DELETE')
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer S')
 

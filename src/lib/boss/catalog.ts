@@ -7,13 +7,13 @@
 import {
   BOSS_CATALOG_CYCLES,
   type BossCatalog,
-  type BossCatalogBoss,
-  type BossCatalogDifficulty,
-  type BossCatalogRules,
+  type BossDifficultyRow,
+  type BossRow,
 } from '../../types/boss-catalog'
 import { BOSS_DIFFICULTIES } from '../../types/scheduler'
 import {
   compact,
+  isBoolean,
   isNonEmptyString,
   isOneOf,
   isPeriodText,
@@ -27,61 +27,79 @@ import {
 } from '../game-data/contract'
 import { gameTable } from '../game-data/table'
 
-function toDifficulty(row: Row): BossCatalogDifficulty | null {
-  if (!isOneOf(row.difficulty, BOSS_DIFFICULTIES) || !isPositiveInteger(row.requiredLevel)) return null
-  const maxPartySize = optional(row.maxPartySize, isPositiveInteger)
-  const from = optional(row.from, isPeriodText)
-  const until = optional(row.until, isPeriodText)
-  if (maxPartySize === false || from === false || until === false) return null
-  return compact({ difficulty: row.difficulty, requiredLevel: row.requiredLevel, maxPartySize, from, until })
-}
-
-function toBoss(row: Row): BossCatalogBoss | null {
-  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isNonEmptyString(row.alias)) return null
-  if (!isNonEmptyString(row.portraitAssetId) || !isOneOf(row.cycle, BOSS_CATALOG_CYCLES)) return null
-  const difficulties = rowsOf(row.difficulties, toDifficulty)
-  if (difficulties === null || !uniqueBy(difficulties, (each) => each.difficulty)) return null
-  const from = optional(row.from, isPeriodText)
-  const until = optional(row.until, isPeriodText)
-  if (from === false || until === false) return null
+function toBoss(row: Row): BossRow | null {
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
+  if (!isNonEmptyString(row.shortName) || !isNonEmptyString(row.portraitAssetId) || !isBoolean(row.isSeasonBoss)) {
+    return null
+  }
+  const validFrom = optional(row.validFrom, isPeriodText)
+  const validUntil = optional(row.validUntil, isPeriodText)
+  if (validFrom === false || validUntil === false) return null
   return compact({
+    id: row.id,
     key: row.key,
     name: row.name,
-    alias: row.alias,
-    cycle: row.cycle,
+    shortName: row.shortName,
+    isSeasonBoss: row.isSeasonBoss,
     portraitAssetId: row.portraitAssetId,
-    difficulties,
-    from,
-    until,
+    validFrom,
+    validUntil,
   })
 }
 
-function toRules(value: unknown): BossCatalogRules | null {
-  if (!isRow(value)) return null
-  const { weeklyBossSelectionLimit, weeklyCrystalSaleLimit, defaultMaxPartySize } = value
-  if (!isPositiveInteger(weeklyBossSelectionLimit) || !isPositiveInteger(weeklyCrystalSaleLimit)) return null
-  if (!isPositiveInteger(defaultMaxPartySize)) return null
-  return { weeklyBossSelectionLimit, weeklyCrystalSaleLimit, defaultMaxPartySize }
+function toDifficulty(row: Row): BossDifficultyRow | null {
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.bossId)) return null
+  if (!isOneOf(row.difficulty, BOSS_DIFFICULTIES) || !isOneOf(row.cycle, BOSS_CATALOG_CYCLES)) return null
+  if (!isPositiveInteger(row.requiredLevel)) return null
+  const maxPartySize = optional(row.maxPartySize, isPositiveInteger)
+  const validFrom = optional(row.validFrom, isPeriodText)
+  const validUntil = optional(row.validUntil, isPeriodText)
+  if (maxPartySize === false || validFrom === false || validUntil === false) return null
+  return compact({
+    id: row.id,
+    bossId: row.bossId,
+    difficulty: row.difficulty,
+    cycle: row.cycle,
+    requiredLevel: row.requiredLevel,
+    maxPartySize,
+    validFrom,
+    validUntil,
+  })
 }
 
 /**
  * 계약을 지킨 값만 통과시킨다. 어긴 값은 줄 하나가 아니라 **표 전체**가 `null` 이다.
  *
  * 줄 하나만 버리면 그 보스가 화면에서 조용히 사라지고 기록이 설 자리를 잃는다. 표 전체를 버리면
- * 들고 있던 사본이 그대로 선다.
+ * 들고 있던 사본이 그대로 선다. 보스마다 난이도 줄이 하나 이상이고 난이도가 겹치지 않으며, 한 보스의 난이도는 주기가 같다.
+ * 앱은 보스마다 주기 하나로 기간을 잡는다.
  */
 export function parseBossCatalog(value: unknown): BossCatalog | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const rules = toRules(value.rules)
-  if (rules === null) return null
   const bosses = rowsOf(value.bosses, toBoss)
-  if (bosses === null || !uniqueBy(bosses, (boss) => boss.key)) return null
-  return { updatedAt, rules, bosses }
+  const bossDifficulties = rowsOf(value.bossDifficulties, toDifficulty)
+  if (bosses === null || bossDifficulties === null) return null
+  if (!uniqueBy(bosses, (boss) => boss.key) || !uniqueBy(bosses, (boss) => boss.id)) return null
+  if (!uniqueBy(bossDifficulties, (row) => row.id)) return null
+  if (!uniqueBy(bossDifficulties, (row) => `${row.bossId}:${row.difficulty}`)) return null
+  const cycleOf = new Map<string, string>()
+  for (const row of bossDifficulties) {
+    if ((cycleOf.get(row.bossId) ?? row.cycle) !== row.cycle) return null
+    cycleOf.set(row.bossId, row.cycle)
+  }
+  const ids = new Set(bosses.map((boss) => boss.id))
+  if (bossDifficulties.some((row) => !ids.has(row.bossId))) return null
+  if (bosses.some((boss) => !cycleOf.has(boss.id))) return null
+  return { updatedAt, bosses, bossDifficulties }
 }
 
-export const bossCatalogTable = gameTable('bosses', { updatedAt: null, rules: { weeklyBossSelectionLimit: 0, weeklyCrystalSaleLimit: 0, defaultMaxPartySize: 0 }, bosses: [] }, parseBossCatalog)
+export const bossCatalogTable = gameTable<BossCatalog>(
+  'bosses',
+  { updatedAt: null, bosses: [], bossDifficulties: [] },
+  parseBossCatalog,
+)
 
 /** 표의 첫 값. 앱에서는 빈 표이고 jest 에서는 fixture 다. 테스트가 표를 되돌릴 때 쓴다. */
 export const INITIAL_BOSS_CATALOG: BossCatalog = bossCatalogTable.get()

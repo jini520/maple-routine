@@ -363,13 +363,14 @@ describe('ContentScreen: 목록', () => {
 
 // 에픽 던전 주 3회 한도. 카드와 링이 같은 판정을 본다. 원천은 표시 목록이 아니라 병합된 목록 전체다.
 describe('ContentScreen: 에픽 던전 주간 한도', () => {
+  /** 다 깬 던전은 5, 안 깬 던전은 0 이다. 최대 횟수는 병합이 덮은 표의 5 다. */
   const epic = (key: string, name: string, nowCount: number, isRegistered = true) => ({
     contentKey: `epic_dungeon_${key}`,
     apiName: `에픽 던전 : ${name}`,
     kind: 'contents' as const,
     isRegistered,
     nowCount,
-    maxCount: 0,
+    maxCount: 5,
     questState: null,
   })
 
@@ -384,10 +385,10 @@ describe('ContentScreen: 에픽 던전 주간 한도', () => {
 
   it('3종을 완료하면 남은 1종의 카드가 마감이고 링은 가득 찬다', async () => {
     withEpics([
-      epic('high_mountain', '하이마운틴', 1),
-      epic('angler_company', '앵글러 컴퍼니', 1),
+      epic('high_mountain', '하이마운틴', 5),
+      epic('angler_company', '앵글러 컴퍼니', 5),
       epic('nightmare_paradise', '악몽선경', 0),
-      epic('aurum_regis', '아우룸 레기스', 1),
+      epic('aurum_regis', '아우룸 레기스', 5),
     ])
 
     await renderScreen()
@@ -399,9 +400,9 @@ describe('ContentScreen: 에픽 던전 주간 한도', () => {
   // 자동 모드에서 등록 안 한 던전은 카드가 없지만 그 완료는 한도를 채운다.
   it('등록 안 한 던전의 완료도 한도에 든다', async () => {
     withEpics([
-      epic('high_mountain', '하이마운틴', 1),
-      epic('angler_company', '앵글러 컴퍼니', 1),
-      epic('nightmare_paradise', '악몽선경', 1, false),
+      epic('high_mountain', '하이마운틴', 5),
+      epic('angler_company', '앵글러 컴퍼니', 5),
+      epic('nightmare_paradise', '악몽선경', 5, false),
       epic('aurum_regis', '아우룸 레기스', 0),
     ])
 

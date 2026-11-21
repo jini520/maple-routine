@@ -9,8 +9,7 @@
  * 세는 쪽이 5회가 되면 그 건을 버린다. 안 세면 비행기 모드로 앱을 다섯 번 켠 사용자가 그동안 쌓인 것을 전부 잃는다.
  */
 import type { BatchItemResult } from '../types/server-records'
-
-export const BASE_URL = 'https://mapleroutine.store/v1'
+import { API_BASE_URL } from './base-url'
 
 /**
  * 얼마나 기다리나. 조회(4~8초)보다 길다. 기기 저장이 끝난 뒤 배경으로 나가는 요청이라 사용자를 기다리게 하지 않는다.
@@ -37,7 +36,7 @@ async function request(path: string, init: RequestInit): Promise<Response | null
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
   try {
-    return await fetch(`${BASE_URL}${path}`, { ...init, signal: controller.signal })
+    return await fetch(`${API_BASE_URL}${path}`, { ...init, signal: controller.signal })
   } catch {
     // 연결이 안 됐거나 상한에 걸려 끊겼다. 서버가 답한 적이 없으므로 요청을 탓할 근거가 없다.
     return null

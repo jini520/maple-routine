@@ -9,8 +9,7 @@
  */
 import { SECTIONS } from '../lib/game-data/sections'
 import { GAME_DATA_SECTIONS, type GameData, type GameDataResponse, type GameDataSection } from '../types/game-data'
-
-const BASE_URL = 'https://mapleroutine.store/v1'
+import { API_BASE_URL, SERVER_ORIGIN } from './base-url'
 
 /**
  * 얼마나 기다리나. 처음 켤 때는 이 응답을 받아야 잠금 화면이 풀리므로, 느린 망에서 수백 KB 를 받을 시간을 준다.
@@ -56,7 +55,7 @@ export async function fetchGameData(etag: string | null): Promise<GameDataFetch 
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
   try {
-    const response = await fetch(`${BASE_URL}/game-data`, {
+    const response = await fetch(`${API_BASE_URL}/game-data`, {
       signal: controller.signal,
       ...(etag === null ? {} : { headers: { 'If-None-Match': etag } }),
     })
@@ -82,5 +81,5 @@ export async function fetchGameData(etag: string | null): Promise<GameDataFetch 
 
 /** 그림 파일의 주소. 파일 이름은 그림 목록의 `file` 이다. */
 export function assetFileUrl(file: string): string {
-  return `https://mapleroutine.store/assets/${file}`
+  return `${SERVER_ORIGIN}/assets/${file}`
 }

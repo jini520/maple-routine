@@ -1,162 +1,321 @@
 {
-  "updatedAt": "2026-10-16T14:40:59.103Z",
-  "boxes": [
+  "updatedAt": "2026-10-19T01:21:38.678Z",
+  "dropBoxes": [
     {
-      "item": "black_boss_ring_box",
-      "levelMin": 1,
-      "levelMax": 4,
-      "contents": [
-        "restraint_ring",
-        "continuous_ring",
-        "weapon_puff_s_ring",
-        "weapon_puff_i_ring",
-        "weapon_puff_l_ring",
-        "weapon_puff_d_ring",
-        "ultimatum_ring",
-        "risk_taker_ring",
-        "ring_of_sum",
-        "critical_damage_ring",
-        "crisis_hm_ring"
-      ]
+      "id": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "8351d01b-7710-4c70-81d0-91302b28ee26",
+      "ringLevelMin": 1,
+      "ringLevelMax": 4
     },
     {
-      "item": "chaos_pitch_black_accessory_box",
-      "levelMin": null,
-      "levelMax": null,
-      "contents": [
-        "loose_control_machine_mark",
-        "magic_eyepatch",
-        "dreamy_belt",
-        "cursed_spellbook_selection_box",
-        "giant_terror",
-        "commander_force_earring",
-        "source_of_suffering"
-      ]
+      "id": "07dd0d8c-f6c9-4c8d-9fb8-84a02beb0310",
+      "itemId": "a0daa15d-553d-4d66-b764-e78e357fc05a",
+      "ringLevelMin": null,
+      "ringLevelMax": null
     },
     {
-      "item": "green_boss_ring_box",
-      "levelMin": 1,
-      "levelMax": 3,
-      "contents": [
-        "restraint_ring",
-        "continuous_ring",
-        "weapon_puff_s_ring",
-        "weapon_puff_i_ring",
-        "weapon_puff_l_ring",
-        "weapon_puff_d_ring",
-        "ultimatum_ring",
-        "risk_taker_ring",
-        "ring_of_sum",
-        "critical_damage_ring",
-        "crisis_hm_ring",
-        "burden_lift_ring",
-        "overpass_ring",
-        "level_puff_s_ring",
-        "level_puff_i_ring",
-        "level_puff_l_ring",
-        "level_puff_d_ring",
-        "health_cut_ring",
-        "critical_defense_ring",
-        "limit_ring",
-        "durability_ring",
-        "recover_defense_ring",
-        "shield_swap_ring",
-        "mana_cut_ring",
-        "crisis_h_ring",
-        "crisis_m_ring",
-        "critical_shift_ring",
-        "stance_shift_ring",
-        "recover_stance_ring",
-        "swift_ring",
-        "reflective_ring"
-      ]
+      "id": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "c334fa1d-2c4e-453c-8919-81d182d96156",
+      "ringLevelMin": 1,
+      "ringLevelMax": 3
     },
     {
-      "item": "life_boss_ring_box",
-      "levelMin": 3,
-      "levelMax": 4,
-      "contents": [
-        "restraint_ring",
-        "continuous_ring",
-        "life_whetstone",
-        "weapon_puff_s_ring",
-        "weapon_puff_i_ring",
-        "weapon_puff_l_ring",
-        "weapon_puff_d_ring",
-        "risk_taker_ring",
-        "ring_of_sum",
-        "critical_damage_ring"
-      ]
+      "id": "08f06426-3663-4078-af59-d3b90600dd03",
+      "itemId": "7352dfe4-30ad-43bf-801c-366109307a1f",
+      "ringLevelMin": 3,
+      "ringLevelMax": 4
     },
     {
-      "item": "meirin_pitch_black_accessory_box",
-      "levelMin": null,
-      "levelMax": null,
-      "contents": [
-        "loose_control_machine_mark",
-        "magic_eyepatch",
-        "dreamy_belt",
-        "cursed_spellbook_selection_box",
-        "giant_terror",
-        "commander_force_earring",
-        "source_of_suffering"
-      ]
+      "id": "e62cc116-fe1e-4673-8600-f4f499be3889",
+      "itemId": "413adac6-5792-433b-b9a5-95517892c170",
+      "ringLevelMin": null,
+      "ringLevelMax": null
     },
     {
-      "item": "red_boss_ring_box",
-      "levelMin": 1,
-      "levelMax": 4,
-      "contents": [
-        "restraint_ring",
-        "continuous_ring",
-        "weapon_puff_s_ring",
-        "weapon_puff_i_ring",
-        "weapon_puff_l_ring",
-        "weapon_puff_d_ring",
-        "ultimatum_ring",
-        "risk_taker_ring",
-        "ring_of_sum",
-        "critical_damage_ring",
-        "crisis_hm_ring",
-        "burden_lift_ring",
-        "overpass_ring",
-        "level_puff_s_ring",
-        "level_puff_i_ring",
-        "level_puff_l_ring",
-        "level_puff_d_ring",
-        "health_cut_ring",
-        "critical_defense_ring",
-        "limit_ring",
-        "durability_ring",
-        "recover_defense_ring",
-        "shield_swap_ring",
-        "mana_cut_ring",
-        "crisis_h_ring",
-        "crisis_m_ring",
-        "critical_shift_ring",
-        "stance_shift_ring",
-        "recover_stance_ring",
-        "swift_ring",
-        "reflective_ring"
-      ]
+      "id": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "4cffe0be-9234-4220-9fd0-bd2488fd8669",
+      "ringLevelMin": 1,
+      "ringLevelMax": 4
     },
     {
-      "item": "white_boss_ring_box",
-      "levelMin": 3,
-      "levelMax": 4,
-      "contents": [
-        "restraint_ring",
-        "continuous_ring",
-        "weapon_puff_s_ring",
-        "weapon_puff_i_ring",
-        "weapon_puff_l_ring",
-        "weapon_puff_d_ring",
-        "ultimatum_ring",
-        "risk_taker_ring",
-        "ring_of_sum",
-        "critical_damage_ring",
-        "crisis_hm_ring"
-      ]
+      "id": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "4c21dd47-ac9e-421e-a544-1bdd4510ed85",
+      "ringLevelMin": 3,
+      "ringLevelMax": 4
+    }
+  ],
+  "dropBoxContents": [
+    {
+      "boxId": "07dd0d8c-f6c9-4c8d-9fb8-84a02beb0310",
+      "itemId": "ffa32fd6-6e0f-4f34-824b-44c80f0ca9ae"
+    },
+    {
+      "boxId": "07dd0d8c-f6c9-4c8d-9fb8-84a02beb0310",
+      "itemId": "918ef661-89c6-4fdd-a07a-02e305ad1b0c"
+    },
+    {
+      "boxId": "07dd0d8c-f6c9-4c8d-9fb8-84a02beb0310",
+      "itemId": "1975d79b-55e3-4dfb-86fe-117f8a5818aa"
+    },
+    {
+      "boxId": "07dd0d8c-f6c9-4c8d-9fb8-84a02beb0310",
+      "itemId": "b2ae456a-4f06-4398-99b8-453746a35628"
+    },
+    {
+      "boxId": "07dd0d8c-f6c9-4c8d-9fb8-84a02beb0310",
+      "itemId": "d2899dcf-a958-4ab8-8375-14a051562042"
+    },
+    {
+      "boxId": "07dd0d8c-f6c9-4c8d-9fb8-84a02beb0310",
+      "itemId": "34cd9606-ce67-42af-8280-d85930d5bf89"
+    },
+    {
+      "boxId": "07dd0d8c-f6c9-4c8d-9fb8-84a02beb0310",
+      "itemId": "b27eecf1-5750-454e-b21a-14527c52c1df"
+    },
+    {
+      "boxId": "08f06426-3663-4078-af59-d3b90600dd03",
+      "itemId": "50d332a0-777c-410e-9ced-38bb99d0716f"
+    },
+    {
+      "boxId": "08f06426-3663-4078-af59-d3b90600dd03",
+      "itemId": "996dc55d-2be1-4152-b309-96e5a6896413"
+    },
+    {
+      "boxId": "08f06426-3663-4078-af59-d3b90600dd03",
+      "itemId": "4d9e1757-af69-4877-8070-96e16b3d6ccf"
+    },
+    {
+      "boxId": "08f06426-3663-4078-af59-d3b90600dd03",
+      "itemId": "eed7fcc0-4448-4dc1-848c-467b1671c412"
+    },
+    {
+      "boxId": "08f06426-3663-4078-af59-d3b90600dd03",
+      "itemId": "0f9d88d7-63d1-465c-9ca9-ab85e1c6a025"
+    },
+    {
+      "boxId": "08f06426-3663-4078-af59-d3b90600dd03",
+      "itemId": "cbc10398-89ff-4d0c-8aa2-968cffa47f06"
+    },
+    {
+      "boxId": "08f06426-3663-4078-af59-d3b90600dd03",
+      "itemId": "409bc9e4-fd0a-4bfa-a78f-81192faaf3a0"
+    },
+    {
+      "boxId": "08f06426-3663-4078-af59-d3b90600dd03",
+      "itemId": "aad9fe2c-483f-4444-a8b2-5d1cc31405fc"
+    },
+    {
+      "boxId": "08f06426-3663-4078-af59-d3b90600dd03",
+      "itemId": "014243e7-4f31-48c4-9be8-e74aad3b0f9f"
+    },
+    {
+      "boxId": "08f06426-3663-4078-af59-d3b90600dd03",
+      "itemId": "c94e8bab-3284-4d28-8af1-38406556ae30"
+    },
+    {
+      "boxId": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "50d332a0-777c-410e-9ced-38bb99d0716f"
+    },
+    {
+      "boxId": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "996dc55d-2be1-4152-b309-96e5a6896413"
+    },
+    {
+      "boxId": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "eed7fcc0-4448-4dc1-848c-467b1671c412"
+    },
+    {
+      "boxId": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "0f9d88d7-63d1-465c-9ca9-ab85e1c6a025"
+    },
+    {
+      "boxId": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "cbc10398-89ff-4d0c-8aa2-968cffa47f06"
+    },
+    {
+      "boxId": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "409bc9e4-fd0a-4bfa-a78f-81192faaf3a0"
+    },
+    {
+      "boxId": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "bb1ae3c4-408c-4f0d-9ea8-e53385d90a49"
+    },
+    {
+      "boxId": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "aad9fe2c-483f-4444-a8b2-5d1cc31405fc"
+    },
+    {
+      "boxId": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "014243e7-4f31-48c4-9be8-e74aad3b0f9f"
+    },
+    {
+      "boxId": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "c94e8bab-3284-4d28-8af1-38406556ae30"
+    },
+    {
+      "boxId": "29601118-dd64-4ea4-9d6c-5995e765eddd",
+      "itemId": "569acd0b-c6b6-4799-8257-823123cd34e8"
+    },
+    {
+      "boxId": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "50d332a0-777c-410e-9ced-38bb99d0716f"
+    },
+    {
+      "boxId": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "996dc55d-2be1-4152-b309-96e5a6896413"
+    },
+    {
+      "boxId": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "eed7fcc0-4448-4dc1-848c-467b1671c412"
+    },
+    {
+      "boxId": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "0f9d88d7-63d1-465c-9ca9-ab85e1c6a025"
+    },
+    {
+      "boxId": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "cbc10398-89ff-4d0c-8aa2-968cffa47f06"
+    },
+    {
+      "boxId": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "409bc9e4-fd0a-4bfa-a78f-81192faaf3a0"
+    },
+    {
+      "boxId": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "bb1ae3c4-408c-4f0d-9ea8-e53385d90a49"
+    },
+    {
+      "boxId": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "aad9fe2c-483f-4444-a8b2-5d1cc31405fc"
+    },
+    {
+      "boxId": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "014243e7-4f31-48c4-9be8-e74aad3b0f9f"
+    },
+    {
+      "boxId": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "c94e8bab-3284-4d28-8af1-38406556ae30"
+    },
+    {
+      "boxId": "2ed5793c-7a36-44ac-b8b2-26f211edf0df",
+      "itemId": "569acd0b-c6b6-4799-8257-823123cd34e8"
+    },
+    {
+      "boxId": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "50d332a0-777c-410e-9ced-38bb99d0716f"
+    },
+    {
+      "boxId": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "996dc55d-2be1-4152-b309-96e5a6896413"
+    },
+    {
+      "boxId": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "eed7fcc0-4448-4dc1-848c-467b1671c412"
+    },
+    {
+      "boxId": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "0f9d88d7-63d1-465c-9ca9-ab85e1c6a025"
+    },
+    {
+      "boxId": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "cbc10398-89ff-4d0c-8aa2-968cffa47f06"
+    },
+    {
+      "boxId": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "409bc9e4-fd0a-4bfa-a78f-81192faaf3a0"
+    },
+    {
+      "boxId": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "bb1ae3c4-408c-4f0d-9ea8-e53385d90a49"
+    },
+    {
+      "boxId": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "aad9fe2c-483f-4444-a8b2-5d1cc31405fc"
+    },
+    {
+      "boxId": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "014243e7-4f31-48c4-9be8-e74aad3b0f9f"
+    },
+    {
+      "boxId": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "c94e8bab-3284-4d28-8af1-38406556ae30"
+    },
+    {
+      "boxId": "52f6763a-90b9-4b1d-97d2-a7e9399e127c",
+      "itemId": "569acd0b-c6b6-4799-8257-823123cd34e8"
+    },
+    {
+      "boxId": "e62cc116-fe1e-4673-8600-f4f499be3889",
+      "itemId": "ffa32fd6-6e0f-4f34-824b-44c80f0ca9ae"
+    },
+    {
+      "boxId": "e62cc116-fe1e-4673-8600-f4f499be3889",
+      "itemId": "918ef661-89c6-4fdd-a07a-02e305ad1b0c"
+    },
+    {
+      "boxId": "e62cc116-fe1e-4673-8600-f4f499be3889",
+      "itemId": "1975d79b-55e3-4dfb-86fe-117f8a5818aa"
+    },
+    {
+      "boxId": "e62cc116-fe1e-4673-8600-f4f499be3889",
+      "itemId": "b2ae456a-4f06-4398-99b8-453746a35628"
+    },
+    {
+      "boxId": "e62cc116-fe1e-4673-8600-f4f499be3889",
+      "itemId": "d2899dcf-a958-4ab8-8375-14a051562042"
+    },
+    {
+      "boxId": "e62cc116-fe1e-4673-8600-f4f499be3889",
+      "itemId": "34cd9606-ce67-42af-8280-d85930d5bf89"
+    },
+    {
+      "boxId": "e62cc116-fe1e-4673-8600-f4f499be3889",
+      "itemId": "b27eecf1-5750-454e-b21a-14527c52c1df"
+    },
+    {
+      "boxId": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "50d332a0-777c-410e-9ced-38bb99d0716f"
+    },
+    {
+      "boxId": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "996dc55d-2be1-4152-b309-96e5a6896413"
+    },
+    {
+      "boxId": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "eed7fcc0-4448-4dc1-848c-467b1671c412"
+    },
+    {
+      "boxId": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "0f9d88d7-63d1-465c-9ca9-ab85e1c6a025"
+    },
+    {
+      "boxId": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "cbc10398-89ff-4d0c-8aa2-968cffa47f06"
+    },
+    {
+      "boxId": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "409bc9e4-fd0a-4bfa-a78f-81192faaf3a0"
+    },
+    {
+      "boxId": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "bb1ae3c4-408c-4f0d-9ea8-e53385d90a49"
+    },
+    {
+      "boxId": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "aad9fe2c-483f-4444-a8b2-5d1cc31405fc"
+    },
+    {
+      "boxId": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "014243e7-4f31-48c4-9be8-e74aad3b0f9f"
+    },
+    {
+      "boxId": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "c94e8bab-3284-4d28-8af1-38406556ae30"
+    },
+    {
+      "boxId": "fd739657-8d4b-43c7-9f8c-0d7f604319db",
+      "itemId": "569acd0b-c6b6-4799-8257-823123cd34e8"
     }
   ]
 }

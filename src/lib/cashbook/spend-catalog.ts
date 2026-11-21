@@ -1,8 +1,9 @@
 /**
  * 지출 참조표(`spendCatalog` 칸)를 읽는 자리. 화면이 표를 직접 안 뒤지게 하는 조회 함수들.
  *
- * 응답은 묶음 · 타일 · 항목 · 축 값 · 형태가 납작한 줄 표다. 여기서 항목 줄에 축 값(`options`)과 형태(`forms`)를
- * 붙여 `SpendCatalogItem` 을 만들고, 그것을 분류 → 묶음 → 항목으로 집어 주며 환산 둘(메포→메소 · 관세)을 든다.
+ * 응답은 추가 리워드 종류 · 묶음 · 타일 · 항목 · 축 값이 줄 id 로 서로 가리키는 납작한 줄 표다. 여기서 항목 줄에 묶음 ·
+ * 타일 · 분류의 key 와 축 값(`options`) · 추가 리워드 종류 key(`forms`)를 붙여 `SpendCatalogItem` 을 만들고, 그것을 분류 →
+ * 묶음 → 항목으로 집어 주며 환산 둘(메포→메소 · 관세)을 든다.
  * 값은 사용자가 준 것이고 관리 화면이 고친다.
  *
  * **묶음을 앱이 다시 묶지 않는다.** `category` 는 앱이 정한 축이고 `group` 은 사용자가 적어 준 이름
@@ -12,16 +13,15 @@
  * 나눗셈은 둘 다 버린다. 이 저장소의 돈 계산이 그렇다.
  */
 import type {
-  SpendCatalogRules,
   SpendCatalogTable,
-  SpendFormRow,
   SpendGroupRow,
-  SpendItemFormRow,
   SpendItemOptionRow,
+  SpendItemRewardTypeRow,
   SpendItemRow,
+  SpendRewardTypeRow,
   SpendTileRow,
 } from '../../types/game-data'
-import { isEffectiveIn, type EffectivePeriod } from '../boss/boss-profit-period'
+import { isEffectiveIn, periodOf, type EffectivePeriod } from '../boss/boss-profit-period'
 import { resetWeekStartOf } from '../calendar'
 import {
   compact,
@@ -38,8 +38,9 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { gameTable, derive } from '../game-data/table'
-import { SPEND_FORM_KEYS, type SpendCategoryKey } from './categories'
+import { deriveAll, gameTable, type GameTable } from '../game-data/table'
+import { gameRules } from '../game-rules'
+import { cashbookCategoriesTable, findCashbookCategoryById, SPEND_FORM_KEYS, type SpendCategoryKey } from './categories'
 
 /** 항목 줄. `from` · `until` 은 그 항목이 서는 기간이다(KST 날짜). */
 export interface SpendCatalogItem extends EffectivePeriod {
@@ -53,8 +54,6 @@ export interface SpendCatalogItem extends EffectivePeriod {
   readonly tile: string
   /** 원본 이름. 하루 목록 카드에도 선다. */
   readonly name: string
-  /** 좁은 자리용으로 줄인 이름. 없으면 `name` 을 쓴다. */
-  readonly shortName?: string
   readonly currency: 'meso' | 'point'
   /** `null` 은 경매장 값이라 매번 다른 항목이고, 적을 때 개당 가격을 친다. */
   readonly unitPrice: number | null
@@ -72,7 +71,7 @@ export interface SpendCatalogItem extends EffectivePeriod {
    */
   readonly options?: Readonly<Record<string, string>>
   /**
-   * 값을 받는 형태 key 들(`exp` · `sol_erda`). **가격을 안 바꾼다.**
+   * 값을 받는 형태(추가 리워드 종류) key 들(`exp` · `sol_erda`). **가격을 안 바꾼다.**
    *
    * 형태마다 단계를 따로 고르고 금액은 그 값들의 합이다. 하나를 고르는 축이 아니다.
    */
@@ -83,7 +82,7 @@ export interface SpendCatalogItem extends EffectivePeriod {
    * 형태 둘을 다 사면 두 값을 더한다. 주화는 상점에 팔면 메소가 되므로 이 개수 × 판매가가
    * 지출에서 빠진다.
    */
-  readonly rewardCoins?: number
+  readonly rewardCoinQuantity?: number
   /**
    * 기록 한 건의 수량 상한. 사용자가 한도 문장에서 고른 숫자다.
    *
@@ -123,156 +122,192 @@ export interface SpendCatalogGroup {
 
 const CURRENCIES = ['point', 'meso'] as const
 
-function toRules(value: unknown): SpendCatalogRules | null {
-  if (!isRow(value) || !isNonNegativeInteger(value.tariffPercent) || !isNonNegativeInteger(value.rewardCoinPriceMeso)) {
-    return null
-  }
-  if (!isNonNegativeInteger(value.mesoMarketFeePercent)) return null
-  return {
-    tariffPercent: value.tariffPercent,
-    rewardCoinPriceMeso: value.rewardCoinPriceMeso,
-    mesoMarketFeePercent: value.mesoMarketFeePercent,
-  }
+function toRewardType(row: Row): SpendRewardTypeRow | null {
+  if (!isNonEmptyString(row.id) || !isOneOf(row.key, SPEND_FORM_KEYS) || !isNonEmptyString(row.name)) return null
+  return { id: row.id, key: row.key, name: row.name }
 }
 
 // 분류는 앱이 폼을 모르는 key 도 온다. 그 분류는 시트에서 못 골라 묶음도 안 선다.
 function toGroup(row: Row): SpendGroupRow | null {
-  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isBoolean(row.active)) return null
-  if (!isNonEmptyString(row.category) || !isNonEmptyString(row.cardTitle)) return null
-  return { key: row.key, name: row.name, category: row.category, cardTitle: row.cardTitle, active: row.active }
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
+  if (!isNonEmptyString(row.cardTitle) || !isNonEmptyString(row.cashbookCategoryId) || !isBoolean(row.isActive)) return null
+  return {
+    id: row.id,
+    key: row.key,
+    name: row.name,
+    cardTitle: row.cardTitle,
+    cashbookCategoryId: row.cashbookCategoryId,
+    isActive: row.isActive,
+  }
 }
 
 function toTile(row: Row): SpendTileRow | null {
-  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
   const iconAssetId = optional(row.iconAssetId, isNonEmptyString)
   if (iconAssetId === false) return null
-  return compact({ key: row.key, name: row.name, iconAssetId })
+  return compact({ id: row.id, key: row.key, name: row.name, iconAssetId })
 }
 
 function toItem(row: Row): SpendItemRow | null {
-  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.group) || !isNonEmptyString(row.tile)) return null
-  if (!isNonEmptyString(row.name) || !isNonEmptyString(row.unit) || !isOneOf(row.currency, CURRENCIES)) return null
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
+  if (!isNonEmptyString(row.groupId) || !isNonEmptyString(row.tileId)) return null
+  if (!isNonEmptyString(row.unit) || !isOneOf(row.currency, CURRENCIES)) return null
   // null 은 경매장 값이라 매번 다른 항목이다. 빠진 칸이 아니라 값이라 그대로 둔다.
   if (row.unitPrice !== null && !isNonNegativeInteger(row.unitPrice)) return null
-  const shortName = optional(row.shortName, isNonEmptyString)
   const tier = optional(row.tier, isNonEmptyString)
   const maxQuantity = optional(row.maxQuantity, isPositiveInteger)
-  const rewardCoins = optional(row.rewardCoins, isPositiveInteger)
-  const from = optional(row.from, isPeriodText)
-  const until = optional(row.until, isPeriodText)
-  if (shortName === false || tier === false || maxQuantity === false || rewardCoins === false || from === false || until === false) return null
+  const rewardCoinQuantity = optional(row.rewardCoinQuantity, isPositiveInteger)
+  const validFrom = optional(row.validFrom, isPeriodText)
+  const validUntil = optional(row.validUntil, isPeriodText)
+  if (tier === false || maxQuantity === false || rewardCoinQuantity === false || validFrom === false || validUntil === false) {
+    return null
+  }
   return compact({
+    id: row.id,
     key: row.key,
-    group: row.group,
-    tile: row.tile,
     name: row.name,
-    shortName,
+    groupId: row.groupId,
+    tileId: row.tileId,
     tier,
     currency: row.currency,
     unitPrice: row.unitPrice,
     unit: row.unit,
     maxQuantity,
-    rewardCoins,
-    from,
-    until,
+    rewardCoinQuantity,
+    validFrom,
+    validUntil,
   })
 }
 
 function toOption(row: Row): SpendItemOptionRow | null {
-  if (!isNonEmptyString(row.item) || !isNonEmptyString(row.axis) || !isNonEmptyString(row.value)) return null
-  return { item: row.item, axis: row.axis, value: row.value }
+  if (!isNonEmptyString(row.itemId) || !isNonEmptyString(row.axis) || !isNonEmptyString(row.value)) return null
+  return { itemId: row.itemId, axis: row.axis, value: row.value }
 }
 
-function toItemForm(row: Row): SpendItemFormRow | null {
-  if (!isNonEmptyString(row.item) || !isOneOf(row.form, SPEND_FORM_KEYS)) return null
-  return { item: row.item, form: row.form }
+function toItemRewardType(row: Row): SpendItemRewardTypeRow | null {
+  if (!isNonEmptyString(row.itemId) || !isNonEmptyString(row.rewardTypeId)) return null
+  return { itemId: row.itemId, rewardTypeId: row.rewardTypeId }
 }
 
-function toForm(row: Row): SpendFormRow | null {
-  if (!isOneOf(row.key, SPEND_FORM_KEYS) || !isNonEmptyString(row.name)) return null
-  return { key: row.key, name: row.name }
-}
-
-/** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
+/**
+ * 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다.
+ *
+ * 줄 id 로 가리키는 칸은 이 칸 안의 줄을 가리켜야 한다. 없는 묶음 · 타일을 가리키는 항목은 목록 어디에도 설 자리가 없다.
+ */
 export function parseSpendCatalog(value: unknown): SpendCatalogTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const rules = toRules(value.rules)
-  const groups = rowsOf(value.groups, toGroup)
-  const tiles = rowsOf(value.tiles, toTile)
-  const items = rowsOf(value.items, toItem)
-  const itemOptions = rowsOf(value.itemOptions, toOption, { allowEmpty: true })
-  const itemForms = rowsOf(value.itemForms, toItemForm, { allowEmpty: true })
-  const forms = rowsOf(value.forms, toForm)
+  const spendRewardTypes = rowsOf(value.spendRewardTypes, toRewardType)
+  const spendGroups = rowsOf(value.spendGroups, toGroup)
+  const spendTiles = rowsOf(value.spendTiles, toTile)
+  const spendItems = rowsOf(value.spendItems, toItem)
+  const spendItemOptions = rowsOf(value.spendItemOptions, toOption, { allowEmpty: true })
+  const spendItemRewardTypes = rowsOf(value.spendItemRewardTypes, toItemRewardType, { allowEmpty: true })
   if (
-    rules === null ||
-    groups === null ||
-    tiles === null ||
-    items === null ||
-    itemOptions === null ||
-    itemForms === null ||
-    forms === null
+    spendRewardTypes === null ||
+    spendGroups === null ||
+    spendTiles === null ||
+    spendItems === null ||
+    spendItemOptions === null ||
+    spendItemRewardTypes === null
   ) {
     return null
   }
-  if (!uniqueBy(groups, (group) => group.key) || !uniqueBy(tiles, (tile) => tile.key) || !uniqueBy(items, (item) => item.key)) {
-    return null
-  }
-  if (!uniqueBy(forms, (form) => form.key)) return null
-  return { updatedAt, rules, groups, tiles, items, itemOptions, itemForms, forms }
+  const keyed: readonly (readonly { id: string; key: string }[])[] = [spendRewardTypes, spendGroups, spendTiles, spendItems]
+  if (keyed.some((rows) => !uniqueBy(rows, (row) => row.id) || !uniqueBy(rows, (row) => row.key))) return null
+  const idsOf = (rows: readonly { id: string }[]) => new Set(rows.map((row) => row.id))
+  const groupIds = idsOf(spendGroups)
+  const tileIds = idsOf(spendTiles)
+  const itemIds = idsOf(spendItems)
+  const rewardTypeIds = idsOf(spendRewardTypes)
+  if (spendItems.some((item) => !groupIds.has(item.groupId) || !tileIds.has(item.tileId))) return null
+  if (spendItemOptions.some((option) => !itemIds.has(option.itemId))) return null
+  if (spendItemRewardTypes.some((row) => !itemIds.has(row.itemId) || !rewardTypeIds.has(row.rewardTypeId))) return null
+  return { updatedAt, spendRewardTypes, spendGroups, spendTiles, spendItems, spendItemOptions, spendItemRewardTypes }
 }
 
-export const spendCatalogTable = gameTable('spendCatalog', { updatedAt: null, rules: { tariffPercent: 0, rewardCoinPriceMeso: 0, mesoMarketFeePercent: 0 }, groups: [], tiles: [], items: [], itemOptions: [], itemForms: [], forms: [] }, parseSpendCatalog)
+export const spendCatalogTable = gameTable<SpendCatalogTable>(
+  'spendCatalog',
+  {
+    updatedAt: null,
+    spendRewardTypes: [],
+    spendGroups: [],
+    spendTiles: [],
+    spendItems: [],
+    spendItemOptions: [],
+    spendItemRewardTypes: [],
+  },
+  parseSpendCatalog,
+)
+
+/** 묶음 줄을 key 로 찾은 모양. 분류는 key 로 바꿔 든다. */
+interface GroupEntry {
+  readonly name: string
+  readonly cardTitle: string
+  /** 분류 key. 모르는 분류 줄이면 빈 글자다. */
+  readonly category: string
+  readonly isActive: boolean
+}
 
 interface CatalogIndex {
-  /** 항목 줄에 축 값과 형태를 붙인 것. 차례는 표의 차례다. */
+  /** 항목 줄에 묶음 · 타일 · 분류 key 와 축 값 · 형태를 붙인 것. 차례는 표의 차례다. */
   readonly items: readonly SpendCatalogItem[]
-  readonly groups: ReadonlyMap<string, SpendGroupRow>
+  readonly groups: ReadonlyMap<string, GroupEntry>
   readonly tiles: ReadonlyMap<string, { readonly name: string; readonly iconAssetId?: string }>
+  readonly formNames: ReadonlyMap<string, string>
 }
 
-const catalog = derive(spendCatalogTable, (table): CatalogIndex => {
-  const groups = new Map(table.groups.map((group) => [group.key, group]))
-  const tiles = new Map(
-    table.tiles.map((tile) => [
-      tile.key,
-      compact({ name: tile.name, iconAssetId: tile.iconAssetId }),
+const catalog = deriveAll([spendCatalogTable, cashbookCategoriesTable] as GameTable<unknown>[], (): CatalogIndex => {
+  const table = spendCatalogTable.get()
+  const groupById = new Map(table.spendGroups.map((group) => [group.id, group]))
+  const tileById = new Map(table.spendTiles.map((tile) => [tile.id, tile]))
+  const rewardTypeById = new Map(table.spendRewardTypes.map((type) => [type.id, type]))
+  const groups = new Map(
+    table.spendGroups.map((group): [string, GroupEntry] => [
+      group.key,
+      {
+        name: group.name,
+        cardTitle: group.cardTitle,
+        category: findCashbookCategoryById(group.cashbookCategoryId)?.key ?? '',
+        isActive: group.isActive,
+      },
     ]),
   )
+  const tiles = new Map(table.spendTiles.map((tile) => [tile.key, compact({ name: tile.name, iconAssetId: tile.iconAssetId })]))
   const optionsByItem = new Map<string, Record<string, string>>()
-  for (const option of table.itemOptions) {
-    const options = optionsByItem.get(option.item) ?? {}
+  for (const option of table.spendItemOptions) {
+    const options = optionsByItem.get(option.itemId) ?? {}
     options[option.axis] = option.value
-    optionsByItem.set(option.item, options)
+    optionsByItem.set(option.itemId, options)
   }
   const formsByItem = new Map<string, string[]>()
-  for (const form of table.itemForms) {
-    const forms = formsByItem.get(form.item)
-    if (forms === undefined) formsByItem.set(form.item, [form.form])
-    else forms.push(form.form)
+  for (const row of table.spendItemRewardTypes) {
+    const form = rewardTypeById.get(row.rewardTypeId)?.key
+    if (form === undefined) continue
+    formsByItem.set(row.itemId, [...(formsByItem.get(row.itemId) ?? []), form])
   }
-  const items = table.items.map((row): SpendCatalogItem =>
-    compact({
+  const items = table.spendItems.map((row): SpendCatalogItem => {
+    const group = groupById.get(row.groupId)
+    return compact({
       key: row.key,
-      category: groups.get(row.group)?.category ?? row.group,
-      group: row.group,
-      tile: row.tile,
+      category: group === undefined ? '' : (groups.get(group.key)?.category ?? ''),
+      group: group?.key ?? '',
+      tile: tileById.get(row.tileId)?.key ?? '',
       name: row.name,
-      shortName: row.shortName,
       currency: row.currency,
       unitPrice: row.unitPrice,
       unit: row.unit,
       tier: row.tier,
-      options: optionsByItem.get(row.key),
-      forms: formsByItem.get(row.key),
-      rewardCoins: row.rewardCoins,
+      options: optionsByItem.get(row.id),
+      forms: formsByItem.get(row.id),
+      rewardCoinQuantity: row.rewardCoinQuantity,
       maxQuantity: row.maxQuantity,
-      from: row.from,
-      until: row.until,
-    }),
-  )
-  return { items, groups, tiles }
+      ...periodOf(row),
+    })
+  })
+  const formNames = new Map(table.spendRewardTypes.map((type) => [type.key, type.name]))
+  return { items, groups, tiles, formNames }
 })
 
 /** key 로 찾은 항목. 기간을 안 본다. 기록이 가리키는 항목은 지우지 않으니 옛 기록도 찾는다. */
@@ -280,9 +315,10 @@ export function spendItemOf(key: string): SpendCatalogItem | null {
   return catalog().items.find((item) => item.key === key) ?? null
 }
 
-/** 형태 하나. 모르는 key 는 `null` 이다. 카탈로그가 적은 형태가 이름 표에 없을 수 있다. */
-export function spendFormOf(key: string): SpendFormRow | null {
-  return spendCatalogTable.get().forms.find((each) => each.key === key) ?? null
+/** 형태(추가 리워드 종류) 하나의 key 와 이름. 모르는 key 는 `null` 이다. 카탈로그가 적은 형태가 이름 표에 없을 수 있다. */
+export function spendFormOf(key: string): { key: string; name: string } | null {
+  const name = catalog().formNames.get(key)
+  return name === undefined ? null : { key, name }
 }
 
 /**
@@ -296,12 +332,12 @@ const LEGACY_FORMS = [
 
 /** 관세율(%). **화면이 `* 1.1` 을 들면 게임 수치가 코드에 박히는 자리**가 된다. */
 export function spendTariffPercent(): number {
-  return spendCatalogTable.get().rules.tariffPercent
+  return gameRules().spendTariffPercent
 }
 
 /** 세라자르 주화 1개의 상점 판매가(메소). 규칙이라 표가 든다. */
 export function rewardCoinPriceMeso(): number {
-  return spendCatalogTable.get().rules.rewardCoinPriceMeso
+  return gameRules().rewardCoinPriceMeso
 }
 
 /**
@@ -312,7 +348,7 @@ export function rewardCoinPriceMeso(): number {
  * @param stored 그 기록에 적힌 요율. 새 기록은 `undefined` 다
  */
 export function mesoMarketFeeOf(stored: number | null | undefined): number {
-  return stored ?? spendCatalogTable.get().rules.mesoMarketFeePercent
+  return stored ?? gameRules().mesoMarketFeePercent
 }
 
 /** 세라자르 주화. 에픽던전 추가 리워드가 주고 상점에 팔면 메소가 된다. 이름과 그림은 앱 상수이고 판매가는 `rewardCoinPriceMeso()` 다. */
@@ -329,7 +365,7 @@ const MESO_PER_RATE_UNIT = 100_000_000
  * 기간 밖의 항목은 뺀다. 기준은 오늘이 아니라 **적는 날짜**가 든 주간 기간이다. 항목이 하나도 안
  * 남은 묶음은 안 선다.
  *
- * 닫힌 묶음(`active: false`)도 안 선다. 지금 고를 수 있는 묶음만 남는다. 표에 없는 묶음은 열린 것이다.
+ * 닫힌 묶음(`isActive: false`)도 안 선다. 지금 고를 수 있는 묶음만 남는다. 표에 없는 묶음은 열린 것이다.
  *
  * @param dateKey 적는 날짜(KST `YYYY-MM-DD`)
  */
@@ -340,7 +376,7 @@ export function spendGroupsOf(category: SpendCategoryKey, dateKey: string): Spen
       (item) =>
         item.category === category &&
         isEffectiveIn(item, periodKey) &&
-        (catalog().groups.get(item.group)?.active ?? true),
+        (catalog().groups.get(item.group)?.isActive ?? true),
     ),
   )
 }
@@ -471,7 +507,7 @@ export function spendRewardCoins(
 ): number {
   return formsOf(choice).reduce((sum, form) => {
     const tier = tierByForm[form]
-    return sum + (tier === undefined ? 0 : (itemOfTier(choice, tier)?.rewardCoins ?? 0))
+    return sum + (tier === undefined ? 0 : (itemOfTier(choice, tier)?.rewardCoinQuantity ?? 0))
   }, 0)
 }
 
@@ -576,7 +612,7 @@ export function legacySpendKeysOf(
   for (const group of allSpendGroupsOf(category)) {
     for (const choice of group.choices) {
       // 옛 기록은 그때 앱에 서 있던 이름이라, 원본 이름으로 바뀐 항목은 줄인 이름으로 남아 있다.
-      const item = choice.items.find((each) => each.name === itemName || each.shortName === itemName)
+      const item = choice.items.find((each) => each.name === itemName)
       if (item !== undefined) {
         const form = LEGACY_FORMS.find((each) => each.name === formName)
         if (formName === null || form === undefined || !formsOf(choice).includes(form.key)) {

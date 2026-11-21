@@ -293,6 +293,21 @@ async function 치기(view: Rendered, text: string): Promise<void> {
   await 칸에치기(view, 'income-sheet-unit-price', text)
 }
 
+/**
+ * `사냥 전리품 판매` 줄을 아직 더하지 않은 서버 표로 여는 묶음. 그 줄이 있으면 고르는 시트가 솔 에르다 조각 카드를 빼서, 조각
+ * 정산 폼은 이 표에서만 열린다.
+ */
+function 전리품판매가없는표로연다(): void {
+  const 표 = cashbookCategoriesTable.get()
+  beforeEach(() => {
+    cashbookCategoriesTable.set({
+      ...표,
+      cashbookCategories: 표.cashbookCategories.filter((each) => each.key !== 'hunt_loot_sale'),
+    })
+  })
+  afterEach(() => cashbookCategoriesTable.set(표))
+}
+
 describe('분류', () => {
   /**
    * 그림은 파일명으로 찾는다. 목록(`assets/generated/items`)은 커밋 시점에 생성되므로, 파일을
@@ -304,7 +319,7 @@ describe('분류', () => {
     // 그림은 `aria-hidden` 이라 기본 조회에서 빠진다. 낭독기는 타일 이름만 읽으면 된다.
     const 숨은것 = { includeHiddenElements: true }
     expect(view.getByTestId('income-sheet-category-icon-hunting', 숨은것)).toBeTruthy()
-    expect(view.getByTestId('income-sheet-category-icon-sol_erda_fragment', 숨은것)).toBeTruthy()
+    expect(view.getByTestId('income-sheet-category-icon-hunt_loot_sale', 숨은것)).toBeTruthy()
     expect(view.getByTestId('income-sheet-category-icon-item_sale', 숨은것)).toBeTruthy()
     expect(view.getByTestId('income-sheet-category-icon-etc', 숨은것)).toBeTruthy()
   })
@@ -1608,7 +1623,7 @@ describe('사냥 계산기', () => {
     beforeEach(() => {
       huntingGroundsTable.set({
         ...원래표,
-        grounds: 원래표.grounds.map((each) => (each.key === 인기 ? { ...each, popular: true } : each)),
+        huntingGrounds: 원래표.huntingGrounds.map((each) => (each.key === 인기 ? { ...each, isPopular: true } : each)),
       })
     })
     afterEach(() => huntingGroundsTable.set(원래표))
@@ -2315,6 +2330,8 @@ describe('사냥 수동 입력', () => {
  * 빈 칸과 0 은 다르다. 빈 칸은 가격을 안 적은 것이라 `null` 로 저장되고, 0 은 0 메소에 판 기록이다.
  */
 describe('조각 가격을 비우면 보관', () => {
+  전리품판매가없는표로연다()
+
   async function 밤의길3(view: Rendered): Promise<void> {
     await 사슬고르기(view, 'ocid-1')
     await 사슬고르기(view, 'tallahart')
@@ -2592,6 +2609,8 @@ describe('사냥 기록의 캐릭터', () => {
  * 보관은 캐릭터별이고 고른 날까지 쌓인 것만 센다. 시트는 저장소를 모르므로 화면이 넘긴 함수로 읽는다.
  */
 describe('솔 에르다 조각 정산', () => {
+  전리품판매가없는표로연다()
+
   function 정산시트(overrides: Partial<React.ComponentProps<typeof IncomeSheet>> = {}): Promise<Rendered> {
     return 그리기(overrides, 'sol_erda_fragment')
   }
@@ -2898,6 +2917,8 @@ describe('솔 에르다 조각 정산', () => {
 })
 
 describe('드롭다운의 아이콘 · 레벨 · 보유', () => {
+  전리품판매가없는표로연다()
+
   it('사냥 캐릭터 목록은 줄마다 레벨이 서고, 닫힌 줄도 같다', async () => {
     const view = await 그리기()
     await 사슬고르기(view, 'ocid-1')
@@ -2939,20 +2960,8 @@ describe('드롭다운의 아이콘 · 레벨 · 보유', () => {
 
 /**
  * 사냥 전리품 판매(이슈 #747). 조각 정산을 조각 칸으로 합치고, 소비 · 이벤트 아이템을 한 번에 여럿 적는다.
- *
- * 분류 줄은 fixture 를 뜬 뒤에 서버 표에 더하므로 fixture 에 없다. 그래서 솔 에르다 조각 줄을 본떠 더한 표로 연다.
  */
 describe('사냥 전리품 판매', () => {
-  const 원래표 = cashbookCategoriesTable.get()
-  beforeEach(() => {
-    const 조각 = 원래표.categories.find((each) => each.key === 'sol_erda_fragment')!
-    cashbookCategoriesTable.set({
-      ...원래표,
-      categories: [...원래표.categories, { ...조각, key: 'hunt_loot_sale', name: '사냥 전리품 판매' }],
-    })
-  })
-  afterEach(() => cashbookCategoriesTable.set(원래표))
-
   /** 이벤트 돋보기 둘은 2026-10-22 부터 11-18 까지다. 그 안의 날로 연다. */
   const 이벤트날 = { dateKey: '2026-10-29', todayDateKey: '2026-10-29' }
 

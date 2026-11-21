@@ -11,6 +11,7 @@ import {
 import { WEEKLY_BOSS_CLEAR_LIMIT, WEEKLY_CRYSTAL_SALE_LIMIT } from '../boss/boss-matching'
 import { INITIAL_BOSS_CATALOG, setBossCatalog } from '../boss/catalog'
 import type { BossCatalog } from '../../types/boss-catalog'
+import { gameRulesTable } from '../game-rules'
 
 // 보스 마스터 표 조회. 기록은 보스 key 를 들고 이름 · 주기 · 요구 레벨 · 초상은 여기서 찾는다.
 describe('bosses', () => {
@@ -46,35 +47,16 @@ describe('bosses', () => {
 describe('bosses: 표가 덮이면', () => {
   const 덮은표: BossCatalog = {
     updatedAt: '2026-10-15T01:00:00.000Z',
-    rules: { weeklyBossSelectionLimit: 10, weeklyCrystalSaleLimit: 80, defaultMaxPartySize: 6 },
     bosses: [
-      {
-        key: 'black_mage',
-        name: '검은 마법사',
-        alias: '검은 마법사',
-        cycle: 'monthly',
-        portraitAssetId: 'blackMage',
-        difficulties: [{ difficulty: 'hard', requiredLevel: 255 }],
-      },
-      {
-        key: 'meirin',
-        name: '시즌 보스 메이린',
-        alias: '메이린',
-        cycle: 'event_weekly',
-        portraitAssetId: 'maerin',
-        difficulties: [
-          { difficulty: 'normal', requiredLevel: 270 },
-          { difficulty: 'hard', requiredLevel: 280 },
-        ],
-      },
-      {
-        key: 'new_boss',
-        name: '새 보스',
-        alias: '새 보스',
-        cycle: 'weekly',
-        portraitAssetId: 'newBoss',
-        difficulties: [{ difficulty: 'extreme', requiredLevel: 300 }],
-      },
+      { id: 'b1', key: 'black_mage', name: '검은 마법사', shortName: '검은 마법사', isSeasonBoss: false, portraitAssetId: 'blackMage' },
+      { id: 'b2', key: 'meirin', name: '시즌 보스 메이린', shortName: '메이린', isSeasonBoss: true, portraitAssetId: 'maerin' },
+      { id: 'b3', key: 'new_boss', name: '새 보스', shortName: '새 보스', isSeasonBoss: false, portraitAssetId: 'newBoss' },
+    ],
+    bossDifficulties: [
+      { id: 'd1', bossId: 'b1', difficulty: 'hard', cycle: 'monthly', requiredLevel: 255 },
+      { id: 'd2', bossId: 'b2', difficulty: 'normal', cycle: 'weekly', requiredLevel: 270 },
+      { id: 'd3', bossId: 'b2', difficulty: 'hard', cycle: 'weekly', requiredLevel: 280 },
+      { id: 'd4', bossId: 'b3', difficulty: 'extreme', cycle: 'weekly', requiredLevel: 300 },
     ],
   }
 
@@ -111,14 +93,19 @@ describe('bosses: 표가 덮이면', () => {
     expect(bossReferenceOrder('new_boss')).toBe(2)
   })
 
-  // 상수로 import 한 자리가 아홉이다. 바인딩이 살아 있어야 그 자리들이 새 한도를 본다.
-  it('한도 둘도 새 표를 본다. boss-matching 을 거친 재수출도 같다', () => {
-    setBossCatalog(덮은표)
+  // 상수로 import 한 자리가 아홉이다. 바인딩이 살아 있어야 그 자리들이 새 한도를 본다. 한도는 규칙 칸에 있다.
+  it('한도 둘은 규칙 칸을 따라 바뀐다. boss-matching 을 거친 재수출도 같다', () => {
+    const rules = gameRulesTable.get()
+    gameRulesTable.set({
+      ...rules,
+      gameRules: { ...rules.gameRules, weeklyBossSelectionLimit: 10, weeklyCrystalSaleLimit: 80 },
+    })
 
     expect(bosses.WEEKLY_BOSS_CLEAR_LIMIT).toBe(10)
     expect(bosses.WEEKLY_CRYSTAL_SALE_LIMIT).toBe(80)
     expect(WEEKLY_BOSS_CLEAR_LIMIT).toBe(10)
     expect(WEEKLY_CRYSTAL_SALE_LIMIT).toBe(80)
+    gameRulesTable.set(rules)
   })
 
   it('번들로 되돌리면 전부 원래대로다', () => {

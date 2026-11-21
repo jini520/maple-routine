@@ -22,9 +22,9 @@ import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import { cashbookCategoryOf } from '../../../lib/cashbook/categories'
-import { findHuntLoot, huntLootOn, type HuntLoot, type HuntLootKind } from '../../../lib/cashbook/hunt-loot'
+import { findHuntLoot, huntLootOn, type HuntLoot, type HuntLootType } from '../../../lib/cashbook/hunt-loot'
 import { netProceedsMeso } from '../../../lib/cashbook/item-split'
-import { HUNT_LOOT_KINDS } from '../../../types/game-data'
+import { HUNT_LOOT_TYPES } from '../../../types/game-data'
 import { useSheetSubmit } from '../../../hooks/useSheetSubmit'
 import { characterDecorOf, requiredCharacterOptions } from '../character-options'
 import { AmountInput, FieldCard, FieldRow, SelectRow } from '../sheet-fields'
@@ -34,7 +34,7 @@ import { useSaveSlot } from './form-slots'
 import { LootBlock, LootLine, NpcLootRow } from './loot-block'
 import { useSaleFeeChoice } from './sale-fee'
 
-const KIND_NAMES: Record<HuntLootKind, string> = { fragment: '조각', consumable: '소비', event: '이벤트' }
+const KIND_NAMES: Record<HuntLootType, string> = { fragment: '조각', consumable: '소비', event: '이벤트' }
 
 export function HuntLootSaleForm(
   props: IncomeFormProps & {
@@ -45,15 +45,15 @@ export function HuntLootSaleForm(
   },
 ): React.JSX.Element {
   const [ocid, setOcid] = useState<string | null>(props.editing?.ocid ?? null)
-  const [chosen, setChosen] = useState<HuntLootKind | null>(null)
+  const [chosen, setChosen] = useState<HuntLootType | null>(null)
 
   const editingLoot = props.editing?.category === 'hunt_loot_sale' ? findHuntLoot(props.editing.itemKey) : null
   /** 이 폼에 서는 아이템. 수정은 그 줄의 아이템 하나, 새로 적을 때는 그 날 팔 수 있는 것 전부다. */
   const items: readonly HuntLoot[] = editingLoot !== null ? [editingLoot] : huntLootOn(props.dateKey)
-  const kinds: readonly HuntLootKind[] =
+  const kinds: readonly HuntLootType[] =
     props.category === 'sol_erda_fragment'
       ? ['fragment']
-      : HUNT_LOOT_KINDS.filter((kind) => items.some((item) => item.kind === kind))
+      : HUNT_LOOT_TYPES.filter((kind) => items.some((item) => item.type === kind))
   /** 날짜를 바꿔 이벤트가 닫히면 고른 칸이 사라진다. 그때는 첫 칸이다. */
   const kind = chosen !== null && kinds.includes(chosen) ? chosen : (kinds[0] ?? 'fragment')
   const heldNotes = useHeldNotes(kind === 'fragment', props)
@@ -95,7 +95,7 @@ export function HuntLootSaleForm(
 
   if (kind === 'fragment') {
     // 표에 조각 줄이 없으면 분류 줄의 이름 · 그림을 쓴다. 옛 조각 정산 카드가 그 분류다.
-    const fragment = items.find((item) => item.kind === 'fragment')
+    const fragment = items.find((item) => item.type === 'fragment')
     const category = cashbookCategoryOf('income', 'sol_erda_fragment')
     return (
       <FragmentSettleForm
@@ -114,7 +114,7 @@ export function HuntLootSaleForm(
       // 조각 칸에서 고른 모든 캐릭터는 이 칸에 없는 보기라 안 고른 것이다.
       ocid={ocid === ALL_CHARACTERS ? null : ocid}
       head={head}
-      items={items.filter((item) => item.kind === kind)}
+      items={items.filter((item) => item.type === kind)}
       auction={kind === 'event'}
     />
   )

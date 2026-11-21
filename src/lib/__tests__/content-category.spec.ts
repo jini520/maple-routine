@@ -11,9 +11,10 @@ function entry(key: string, category: ContentCategoryKey, overrides: Partial<Con
     key,
     content_name: key,
     category,
-    displayName: `${key} 표시`,
+    name: `${key} 표시`,
     shortName: key,
     type: 'contents',
+    checkType: 'count_only',
     registration_flag: 'false',
     now_count: 0,
     max_count: 0,
@@ -31,8 +32,8 @@ function templateEntry(key: string): ContentEntry {
 describe('categorizeContentEntries', () => {
   it('분류 key 로 묶고, 라벨은 분류 표의 이름 · 표시명은 줄의 displayName 이다', () => {
     const groups = categorizeContentEntries([
-      entry('daily_quest_road_of_vanishing', 'daily_quest', { displayName: '소멸의 여로 조사' }),
-      entry('daily_quest_chew_chew', 'daily_quest', { displayName: '츄츄 아일랜드 최고의 요리' }),
+      entry('daily_quest_road_of_vanishing', 'daily_quest', { name: '소멸의 여로 조사' }),
+      entry('daily_quest_chew_chew', 'daily_quest', { name: '츄츄 아일랜드 최고의 요리' }),
     ])
 
     expect(groups).toHaveLength(1)
@@ -53,9 +54,9 @@ describe('categorizeContentEntries', () => {
 
   it('분류 첫 등장 순서를 보존하고, 떨어져 있어도 같은 분류는 한 그룹으로 묶는다', () => {
     const groups = categorizeContentEntries([
-      entry('guild_weekly_mission_points', 'guild', { displayName: '주간 미션 포인트' }),
+      entry('guild_weekly_mission_points', 'guild', { name: '주간 미션 포인트' }),
       entry('daily_quest_road_of_vanishing', 'daily_quest'),
-      entry('guild_underground_waterway', 'guild', { displayName: '지하 수로' }),
+      entry('guild_underground_waterway', 'guild', { name: '지하 수로' }),
     ])
 
     expect(groups.map((g) => g.label)).toEqual(['길드', '일일 퀘스트'])

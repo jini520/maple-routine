@@ -54,7 +54,7 @@ export function categorizeContentEntries(
       groups.set(entry.category, group)
       order.push(entry.category)
     }
-    group.items.push({ entry, displayName: entry.displayName })
+    group.items.push({ entry, displayName: entry.name })
   }
 
   const result = order.map((key) => groups.get(key)!)

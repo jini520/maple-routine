@@ -8,8 +8,7 @@
  * `낟낟` 캐릭터를 조회해 들고 있다.
  */
 import type { Settlement } from '../types/settlement'
-
-const BASE_URL = 'https://mapleroutine.store/v1'
+import { API_BASE_URL } from './base-url'
 
 /**
  * 얼마나 기다리나. 공지 조회(8초)보다 짧다.
@@ -38,7 +37,7 @@ export async function fetchSettlement(): Promise<Settlement | null> {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
   try {
-    const response = await fetch(`${BASE_URL}/settlement`, { signal: controller.signal })
+    const response = await fetch(`${API_BASE_URL}/settlement`, { signal: controller.signal })
     if (response.status !== 200) return null
     return toSettlement((await response.json()) as unknown)
   } catch {

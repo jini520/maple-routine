@@ -12,7 +12,7 @@ import { DifficultyExpander } from '../../../components/molecules/DifficultyExpa
 import { Stepper } from '../../../components/molecules/Stepper/Stepper'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { CalculatorBoss } from '../../../lib/boss/boss-profit-calculator'
-import { activeDifficultiesNow, bossAliasOf, bossNameOf, bossPortraitAssetIdOf, getMaxPartySize } from '../../../lib/boss/bosses'
+import { activeDifficultiesNow, bossShortNameOf, bossNameOf, bossPortraitAssetIdOf, getMaxPartySize } from '../../../lib/boss/bosses'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { formatShareRatio } from '../../../lib/boss/party-shares'
 import type { BossDifficulty } from '../../../types'
@@ -26,7 +26,7 @@ export function BossRow(props: {
   onOpenParty: () => void
 }): React.JSX.Element {
   const { boss } = props
-  const name = bossAliasOf(boss.bossKey, bossNameOf(boss.bossKey, boss.bossKey))
+  const name = bossShortNameOf(boss.bossKey, bossNameOf(boss.bossKey, boss.bossKey))
   const ratio = formatShareRatio(boss.shares)
 
   return (

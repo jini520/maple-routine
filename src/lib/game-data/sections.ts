@@ -18,10 +18,9 @@ import { huntLootTable, parseHuntLoot } from '../cashbook/hunt-loot'
 import { parseSpendCatalog, spendCatalogTable } from '../cashbook/spend-catalog'
 import { hexaMatrixTable, parseHexaMatrix } from '../cashbook/hexa-matrix'
 import { parseSymbolCosts, symbolCostsTable } from '../cashbook/symbol-costs'
-import { dropItemsTable, parseDropItems } from '../drop/drop-items'
 import { enhancementCostsTable, parseEnhancementCosts } from '../enhancement/cost'
-import { equipmentItemsTable, parseEquipmentItems } from '../equipment/equipment-items'
 import { faqsTable, parseFaqs } from '../faq/faqs'
+import { gameRulesTable, parseGameRules } from '../game-rules'
 import { itemsTable, parseItems } from '../item-catalog'
 import { mvpGradesTable, parseMvpGrades } from '../mvp/grades'
 import { contentsTable, parseContents } from '../scheduler/contents'
@@ -32,7 +31,7 @@ import type { GameTable } from './table'
  * 기기 사본의 계약 판. 칸의 계약(`parse`)이 바뀌어 옛 사본이 못 읽히게 되면 이 글자를 올린다.
  * 그러면 켤 때 옛 사본을 통째로 버리고 잠금 화면이 처음부터 받는다.
  */
-export const GAME_DATA_CONTRACT = '2026-11-13'
+export const GAME_DATA_CONTRACT = '2026-11-21'
 
 export interface GameDataSectionEntry<T> {
   table: GameTable<T>
@@ -41,7 +40,6 @@ export interface GameDataSectionEntry<T> {
 
 export const SECTIONS: { readonly [K in GameDataSection]: GameDataSectionEntry<GameData[K]> } = {
   bosses: { table: bossCatalogTable, parse: parseBossCatalog },
-  dropItems: { table: dropItemsTable, parse: parseDropItems },
   bossDrops: { table: bossDropsTable, parse: parseBossDrops },
   dropBoxes: { table: dropBoxesTable, parse: parseDropBoxes },
   crystalPrices: { table: crystalPricesTable, parse: parseCrystalPrices },
@@ -51,7 +49,6 @@ export const SECTIONS: { readonly [K in GameDataSection]: GameDataSectionEntry<G
   symbolCosts: { table: symbolCostsTable, parse: parseSymbolCosts },
   hexaMatrix: { table: hexaMatrixTable, parse: parseHexaMatrix },
   contents: { table: contentsTable, parse: parseContents },
-  equipmentItems: { table: equipmentItemsTable, parse: parseEquipmentItems },
   enhancementCosts: { table: enhancementCostsTable, parse: parseEnhancementCosts },
   mvpGrades: { table: mvpGradesTable, parse: parseMvpGrades },
   huntingGrounds: { table: huntingGroundsTable, parse: parseHuntingGrounds },
@@ -61,6 +58,7 @@ export const SECTIONS: { readonly [K in GameDataSection]: GameDataSectionEntry<G
   faqs: { table: faqsTable, parse: parseFaqs },
   appImages: { table: appImagesTable, parse: parseAppImages },
   items: { table: itemsTable, parse: parseItems },
+  gameRules: { table: gameRulesTable, parse: parseGameRules },
 }
 
 /** 지금 표 스물하나의 값. */

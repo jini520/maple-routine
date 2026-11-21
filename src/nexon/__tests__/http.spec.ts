@@ -704,7 +704,9 @@ describe('requestJson: 프렌즈 조회 묶기', () => {
     await Promise.all([줄(0), 줄(10), 줄(20)])
 
     const gaps = sentAt.slice(1).map((at, i) => at - (sentAt[i] ?? at))
-    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(150)
+    // 시각은 보낸 뒤 대역이 불릴 때 잰다. 보낸 시각과 그 사이에 비동기 한 번이 끼어, 부하가 큰 전체 실행에서는 앞 요청만 1~2ms
+    // 늦게 재여 간격이 149 로 보인다. 지키려는 것은 간격이 서버 회차(20~50ms)로 줄지 않는 것이라 몇 ms 의 여유를 둔다.
+    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(145)
   })
 })
 

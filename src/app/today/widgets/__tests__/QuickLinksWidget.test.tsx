@@ -101,14 +101,13 @@ describe('누르기', () => {
 })
 
 describe('가계부 분류 칸', () => {
-  // 앱에 든 테스트 데이터는 옛 표라 `사냥 전리품 판매` 줄이 없다.
-  const 옛표 = cashbookCategoriesTable.get()
+  const 표 = cashbookCategoriesTable.get()
   // 위젯이 아직 마운트돼 있어 표를 되돌리면 다시 그린다. 그 갱신도 `act` 안에서 끝낸다.
-  afterEach(() => act(() => cashbookCategoriesTable.set(옛표)))
+  afterEach(() => act(() => cashbookCategoriesTable.set(표)))
 
-  function 전리품판매를더한표(): typeof 옛표 {
-    const 조각 = 옛표.categories.find((each) => each.key === 'sol_erda_fragment')!
-    return { ...옛표, categories: [...옛표.categories, { ...조각, key: 'hunt_loot_sale', name: '사냥 전리품 판매' }] }
+  /** `사냥 전리품 판매` 줄을 아직 더하지 않은 서버 표. */
+  function 전리품판매가없는표(): typeof 표 {
+    return { ...표, cashbookCategories: 표.cashbookCategories.filter((each) => each.key !== 'hunt_loot_sale') }
   }
 
   it('누르면 그 분류를 넘겨 가계부 탭을 연다', async () => {
@@ -120,10 +119,11 @@ describe('가계부 분류 칸', () => {
   })
 
   it('서버 분류 표에 없는 분류의 칸은 그리지 않고, 표에 줄이 들어오면 그 자리에 다시 선다', async () => {
+    cashbookCategoriesTable.set(전리품판매가없는표())
     const view = await 위젯({ rows: 1, ids: ['profit', 'income-hunt-loot-sale', 'stats'] })
     expect(view.getByTestId('quick-links-row-0')).toHaveTextContent(/^보스 수입통계$/)
 
-    await act(async () => cashbookCategoriesTable.set(전리품판매를더한표()))
+    await act(async () => cashbookCategoriesTable.set(표))
 
     expect(view.getByTestId('quick-links-row-0')).toHaveTextContent(/^보스 수입전리품 판매통계$/)
   })

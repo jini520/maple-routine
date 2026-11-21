@@ -1,5 +1,5 @@
 /**
- * 우리 서버 `GET /v1/game-data` 의 칸 스물하나. 칸 하나가 표 하나이고 기기 사본과 테스트 fixture(`src/__fixtures__/game-data/`)도
+ * 우리 서버 `GET /v1/game-data` 의 칸 스물. 칸 하나가 표 하나이고 기기 사본과 테스트 fixture(`src/__fixtures__/game-data/`)도
  * 같은 모양이다.
  *
  * 응답은 전부 납작한 줄 표다. 보스 · 난이도 · 분류로 묶거나 지역 안에 사냥터를 품는 것은 조회 모듈이 한다. 선택 칸은
@@ -9,153 +9,173 @@
  */
 import type { BossCatalog } from './boss-catalog'
 import type { DropCategory } from './drops'
-import type { FaqBlock } from './faq'
 import type { ForceType } from './hunting-grounds'
-import type { BossDifficulty } from './scheduler'
+
+/**
+ * 게임 규칙 아홉. 서버 `game_rules` 표의 한 줄이고 칸 이름도 그 표를 따른다. 보스 · 가계부 지출 · 강화 비용이 읽는다.
+ */
+export interface GameRules {
+  /** 캐릭터 한 명의 주간 보스 등록 · 처치 한도 */
+  weeklyBossSelectionLimit: number
+  /** 한도 줄마다의 주간 결정석 판매 한도 */
+  weeklyCrystalSaleLimit: number
+  /** 난이도 줄에 파티 인원 상한이 없을 때의 상한 */
+  defaultMaxPartySize: number
+  /** 월드 간 거래 구매에 붙는 관세(%) */
+  spendTariffPercent: number
+  /** 세라자르 주화 한 개의 메소 값 */
+  rewardCoinPriceMeso: number
+  /** 메소마켓 수수료(%)의 기본값 */
+  mesoMarketFeePercent: number
+  /** 감정비용이 없는 장비 레벨의 상한 */
+  cubeAppraisalFreeMaxLevel: number
+  /** 감정비용 = 계수 × 레벨 × 레벨 */
+  cubeAppraisalCoefficient: number
+  /** 스타포스 파괴 방지 추가분(%) */
+  starforceDestroyDefenceSurchargePercent: number
+}
+export interface GameRulesTable extends TableHead {
+  gameRules: GameRules
+}
 
 /** 칸 맨 위의 시각. `null` 은 서버에서 받은 적 없는 사본이다. */
 export interface TableHead {
   updatedAt: string | null
 }
 
-export interface DropItemRow {
-  key: string
-  name: string
-  /** 그림 id(`assets` 칸). 그림이 없는 아이템은 빠진다. */
-  iconAssetId?: string
-  /** 고가 드롭. 세트 소속이 아니라 이 칸 하나로 판정한다. */
-  valuable: boolean
-}
-export interface DropItemsTable extends TableHead {
-  items: DropItemRow[]
-}
-
-export interface BossDropRow {
-  boss: string
-  difficulty: BossDifficulty
+/** 보스 난이도의 보상 한 줄. */
+export interface BossDifficultyRewardRow {
+  /** 난이도 줄 id(`bosses` 칸의 `bossDifficulties`) */
+  bossDifficultyId: string
   category: DropCategory
-  /** 아이템 key. */
-  item: string
-  /** 고정 보상의 수량 글자. `160개`. */
-  amount?: string
-  from?: string
-  until?: string
+  /** 아이템 줄 id(`items` 칸) */
+  itemId: string
+  /** 고정 보상의 수량. 장비 · 소비 보상은 빠진다. */
+  quantity?: number
+  validFrom?: string
+  validUntil?: string
 }
 export interface BossDropsTable extends TableHead {
-  rewards: BossDropRow[]
+  bossDifficultyRewards: BossDifficultyRewardRow[]
 }
 
+/** 개봉 결과를 직접 고르는 상자 한 줄. */
 export interface DropBoxRow {
-  /** 상자의 아이템 key. */
-  item: string
+  id: string
+  /** 상자의 아이템 줄 id */
+  itemId: string
   /** 반지 상자만 든다. 장신구 상자는 둘 다 빠진다. */
-  levelMin?: number
-  levelMax?: number
-  /** 개봉 후보의 아이템 key. 차례가 화면 차례다. */
-  contents: string[]
+  ringLevelMin?: number
+  ringLevelMax?: number
+}
+/** 상자의 개봉 후보 한 줄. 한 상자의 줄 차례가 화면 차례다. */
+export interface DropBoxContentRow {
+  boxId: string
+  itemId: string
 }
 export interface DropBoxesTable extends TableHead {
-  boxes: DropBoxRow[]
+  dropBoxes: DropBoxRow[]
+  dropBoxContents: DropBoxContentRow[]
 }
 
-export interface CrystalPriceRow {
-  boss: string
-  difficulty: BossDifficulty
+export interface BossCrystalPriceRow {
+  /** 난이도 줄 id(`bosses` 칸의 `bossDifficulties`) */
+  bossDifficultyId: string
   priceMeso: number
-  from?: string
-  until?: string
+  validFrom?: string
+  validUntil?: string
 }
 export interface CrystalPricesTable extends TableHead {
-  prices: CrystalPriceRow[]
+  bossCrystalPrices: BossCrystalPriceRow[]
 }
 
 export interface WorldRow {
+  id: string
   key: string
   /** API `world_name` 표기. 보이는 이름이다. */
   name: string
   /** 엠블럼 그림 id. 스페셜은 빠진다. */
   emblemAssetId?: string
-  challengers: boolean
-  event: boolean
-  /** 열린 기간. 이벤트 · 챌린저스 월드는 같은 이름으로 다시 열려 여러 줄이다. `from` 차례 */
-  periods: WorldPeriod[]
+  isChallengers: boolean
+  isEvent: boolean
 }
-/** KST `YYYY-MM-DD`. `from` 은 연 날, `until` 은 닫힌 다음 날이라 기간에 안 든다. */
-export interface WorldPeriod {
-  from: string
-  until: string
+/**
+ * 월드가 열린 기간 한 줄. 이벤트 · 챌린저스 월드는 같은 이름으로 다시 열려 한 월드에 여러 줄이다.
+ *
+ * KST `YYYY-MM-DD`. `validFrom` 은 연 날, `validUntil` 은 닫힌 다음 날이라 기간에 안 든다.
+ */
+export interface WorldOpenPeriodRow {
+  worldId: string
+  validFrom: string
+  validUntil: string
 }
 export interface WorldsTable extends TableHead {
   worlds: WorldRow[]
+  worldOpenPeriods: WorldOpenPeriodRow[]
 }
 
-export interface SpendCatalogRules {
-  tariffPercent: number
-  rewardCoinPriceMeso: number
-  /** 메소마켓에서 메소를 팔 때 받는 메포에서 떼는 수수료(%). */
-  mesoMarketFeePercent: number
-}
-export interface SpendGroupRow {
+/** 추가 리워드 종류. 앱 코드가 key 로 갈린다(`exp` · `sol_erda`). 카드에도 이 이름이 선다. */
+export interface SpendRewardTypeRow {
+  id: string
   key: string
   name: string
-  /** 지출 분류 key(`cashbookCategories` 칸). 묶음마다 분류가 하나다. */
-  category: string
+}
+export interface SpendGroupRow {
+  id: string
+  key: string
+  name: string
   /** 하루 목록 카드 첫 줄. */
   cardTitle: string
+  /** 지출 분류 줄 id(`cashbookCategories` 칸). 묶음마다 분류가 하나다. */
+  cashbookCategoryId: string
   /** 지금 고를 수 있는 묶음인가. 기간제 묶음은 날짜가 아니라 이 값으로 닫는다. 이벤트가 미뤄지면 날짜로 한 판정이 틀린다. */
-  active: boolean
+  isActive: boolean
 }
 export interface SpendTileRow {
+  id: string
   key: string
   name: string
   /** 아이템 그림이나 지역 아이콘의 그림 id. 그림이 없는 타일은 빠진다. */
   iconAssetId?: string
 }
 export interface SpendItemRow {
+  id: string
   key: string
-  group: string
-  tile: string
   /** 원본 이름. 하루 목록 카드에도 선다. */
   name: string
-  /** 좁은 자리용으로 줄인 이름. 없으면 `name` 을 쓴다. */
-  shortName?: string
+  groupId: string
+  tileId: string
   tier?: string
   currency: 'point' | 'meso'
   /** `null` 은 경매장 값이라 적을 때 친다. */
   unitPrice: number | null
   unit: string
   maxQuantity?: number
-  rewardCoins?: number
-  from?: string
-  until?: string
+  /** 추가 리워드 종류 하나를 샀을 때 받는 세라자르 주화 개수 */
+  rewardCoinQuantity?: number
+  validFrom?: string
+  validUntil?: string
 }
 export interface SpendItemOptionRow {
-  item: string
+  itemId: string
   axis: string
   value: string
 }
-export interface SpendItemFormRow {
-  item: string
-  /** 형태 key(`SpendFormRow.key`). */
-  form: string
-}
-export interface SpendFormRow {
-  /** 앱 코드가 이 값으로 갈린다(`exp` · `sol_erda`). */
-  key: string
-  /** 카드에도 이 이름이 선다. */
-  name: string
+export interface SpendItemRewardTypeRow {
+  itemId: string
+  rewardTypeId: string
 }
 export interface SpendCatalogTable extends TableHead {
-  rules: SpendCatalogRules
-  groups: SpendGroupRow[]
-  tiles: SpendTileRow[]
-  items: SpendItemRow[]
-  itemOptions: SpendItemOptionRow[]
-  itemForms: SpendItemFormRow[]
-  forms: SpendFormRow[]
+  spendRewardTypes: SpendRewardTypeRow[]
+  spendGroups: SpendGroupRow[]
+  spendTiles: SpendTileRow[]
+  spendItems: SpendItemRow[]
+  spendItemOptions: SpendItemOptionRow[]
+  spendItemRewardTypes: SpendItemRewardTypeRow[]
 }
 
 export interface CashbookCategoryRow {
+  id: string
   entryType: 'income' | 'spend'
   /** 기록이 든다. 앱이 입력 폼을 모르는 key 도 온다. */
   key: string
@@ -168,7 +188,8 @@ export interface CashbookCategoryRow {
   /** 묶음이 없는 분류의 수량 단위. */
   unit?: string
 }
-export interface CashbookItemKindRow {
+export interface CashbookItemTypeRow {
+  id: string
   key: string
   name: string
   /** 수량 단위. 없으면 수량이 없다(장비). */
@@ -177,40 +198,51 @@ export interface CashbookItemKindRow {
 }
 /** 분류는 수입 · 지출 순서이고 그 안은 차례대로다. */
 export interface CashbookCategoriesTable extends TableHead {
-  categories: CashbookCategoryRow[]
-  itemKinds: CashbookItemKindRow[]
+  cashbookCategories: CashbookCategoryRow[]
+  cashbookItemTypes: CashbookItemTypeRow[]
 }
 
 export interface SymbolGroupRow {
+  id: string
   key: string
   name: string
   maxLevel: number
-  defaultFrom: number
-  defaultTo: number
+  /** 심볼을 고르는 순간 서는 강화 전 레벨 */
+  defaultFromLevel: number
+  /** 심볼을 고르는 순간 서는 강화 후 레벨 */
+  defaultToLevel: number
 }
 export interface SymbolRow {
+  id: string
   key: string
-  group: string
+  groupId: string
   name: string
   requiredLevel: number
   iconAssetId: string
 }
 export interface SymbolLevelCostRow {
-  symbol: string
-  /** 강화 전 레벨. Lv.level → level+1 의 값이다. */
-  level: number
+  symbolId: string
+  /** 강화 전 레벨. Lv.fromLevel → fromLevel+1 의 값이다. */
+  fromLevel: number
   costMeso: number
-  from?: string
-  until?: string
+  validFrom?: string
+  validUntil?: string
 }
 export interface SymbolCostsTable extends TableHead {
-  groups: SymbolGroupRow[]
+  symbolGroups: SymbolGroupRow[]
   symbols: SymbolRow[]
-  levelCosts: SymbolLevelCostRow[]
+  symbolLevelCosts: SymbolLevelCostRow[]
 }
 
 /** 헥사 코어 종류. API 타입마다 기본 종류가 하나이고, 나머지 종류는 이름 표가 코어를 가리킨다. */
-export interface HexaCoreKindRow {
+/** 직업 하나. 넥슨 `character_class` 의 이름이고, 모든 직업이 함께 쓰는 코어는 `전직업` 줄(`isAllJobs`)을 가리킨다. */
+export interface JobRow {
+  id: string
+  name: string
+  isAllJobs: boolean
+}
+export interface HexaCoreTypeRow {
+  id: string
   key: string
   name: string
   /** 넥슨 `hexa_core_type` 의 글자. */
@@ -218,38 +250,39 @@ export interface HexaCoreKindRow {
   isDefault: boolean
   maxLevel: number
   iconAssetId: string
+  /** 한 직업의 코어 목록에서 종류의 차례 */
+  sortOrder: number
+}
+export interface HexaCoreRow {
+  id: string
+  jobId: string
+  /** 넥슨이 주는 코어 이름. 같은 이름도 직업마다 다른 줄이다. */
+  name: string
+  typeId: string
+  iconAssetId: string
+  /** 한 직업의 같은 종류 안에서의 차례 */
+  sortOrder: number
 }
 export interface HexaCoreLevelCostRow {
-  kind: string
-  /** 강화 전 레벨. Lv.level → level+1 의 값이다. */
-  level: number
-  fragments: number
-  solErda: number
-}
-/** 기본 종류가 아닌 코어 하나. */
-export interface HexaCoreNameKindRow {
-  name: string
-  kind: string
-}
-export interface HexaJobCoreRow {
-  /** 넥슨 `character_class` 의 글자. */
-  job: string
-  name: string
-  apiType: string
-  iconAssetId: string
+  typeId: string
+  /** 강화 전 레벨. Lv.fromLevel → fromLevel+1 의 값이다. */
+  fromLevel: number
+  fragmentQuantity: number
+  solErdaQuantity: number
 }
 export interface HexaStatRow {
+  id: string
   key: string
   name: string
   /** 모르면 없다. 그때 활성화 체크를 막는다. */
-  activationFragments?: number
+  activationFragmentQuantity?: number
 }
 export interface HexaMatrixTable extends TableHead {
-  kinds: HexaCoreKindRow[]
-  levelCosts: HexaCoreLevelCostRow[]
-  nameKinds: HexaCoreNameKindRow[]
-  jobCores: HexaJobCoreRow[]
-  stats: HexaStatRow[]
+  jobs: JobRow[]
+  hexaCoreTypes: HexaCoreTypeRow[]
+  hexaCores: HexaCoreRow[]
+  hexaCoreLevelCosts: HexaCoreLevelCostRow[]
+  hexaStats: HexaStatRow[]
 }
 
 /** 컨텐츠 분류 key. 카드 모양 · 길드 판정 · 계열 한도가 이 값으로 갈려 코드가 집합을 든다. 글자는 표가 든다. */
@@ -265,29 +298,45 @@ export const CONTENT_CATEGORY_KEYS = [
 ] as const
 export type ContentCategoryKey = (typeof CONTENT_CATEGORY_KEYS)[number]
 
+/** 컨텐츠의 주기. 서버 칸 이름은 `cycle` 이다. */
 export type ContentSection = 'daily' | 'weekly'
 export type ShareScope = 'character' | 'world' | 'account'
 
+/**
+ * 넥슨 응답의 무엇으로 완료를 가르는가. 카드 · 완료 판정 · 진행 링 · 남은 스케줄 · 미완료 스케줄 알림이 같은 칸을 읽는다.
+ *
+ * - `state_only`: 퀘스트 상태만 본다. 2 면 완료다
+ * - `count_only`: 횟수만 본다. 지금 횟수가 `maxCount` 에 닿으면 완료다
+ * - `both`: 퀘스트 상태가 2 면 완료다. 1 이면 진행 중이고 횟수를 보인다
+ * - `score`: 점수가 0 보다 크면 완료다. 화면에는 점수를 보인다
+ */
+export const CONTENT_CHECK_TYPES = ['state_only', 'count_only', 'both', 'score'] as const
+export type ContentCheckType = (typeof CONTENT_CHECK_TYPES)[number]
+
 export interface ContentCategoryRow {
+  id: string
   key: ContentCategoryKey
   /** 카드 라벨 · today 공유 위젯 머리글. */
   name: string
   /** 분류의 참고 태그. 에픽 던전 `ID당 1회`. */
   countTag?: string
   /** 참이면 그 분류의 태그를 숨긴다. 아케인리버 지역 퀘스트. */
-  hideCountTag: boolean
-  /** 분류의 주간 진행 한도. 에픽 던전 3. */
-  weeklyLimit?: number
-  /** today 공유 위젯의 계열 차례. 없으면 뒤에 선다. */
-  sharedOrder?: number
+  hidesCountTag: boolean
+  /** 그 분류에서 한 주에 완료할 수 있는 횟수. 에픽 던전 3. */
+  weeklyMaxCount?: number
+  /** today 공유 위젯의 분류 차례. 없으면 뒤에 선다. */
+  sharedSortOrder?: number
 }
 export interface ContentRow {
+  id: string
   key: string
-  section: ContentSection
+  cycle: ContentSection
   /** 넥슨 응답의 `content_name`. */
   apiName: string
-  category: ContentCategoryKey
-  displayName: string
+  categoryId: string
+  /** 카드 · 관리 화면의 이름. */
+  name: string
+  /** 좁은 자리의 이름. 공유 컨텐츠는 today 공유 위젯의 글자다. */
   shortName: string
   /** 카드 그림 id. 지도 배경과 보스 초상 중 하나다. 둘 다 없으면 카드가 그림 없이 선다. */
   backgroundMapAssetId?: string
@@ -296,35 +345,20 @@ export interface ContentRow {
   regionIconAssetId?: string
   /** 컨텐츠가 참고 태그를 덮는 글자. */
   countTag?: string
+  /** 넥슨이 주는 `type`. 완료 판정에는 쓰지 않는다. */
   type: 'contents' | 'quest'
-  /** 수동 모드의 기본 상한. */
-  maxCount: number
+  checkType: ContentCheckType
+  /** 한 기간에 할 수 있는 횟수. `count_only` 에만 있고, 있으면 넥슨이 준 최대 횟수 대신 쓴다. */
+  maxCount?: number
   requiredLevel?: number
-  from?: string
-  until?: string
+  validFrom?: string
+  validUntil?: string
   shareScope: ShareScope
-  /** today 공유 위젯의 글자. 공유 줄만 든다. */
-  sharedShortName?: string
-  onlyWhenScheduled: boolean
-  trustRegistrationFlag: boolean
-  cumulativeScore: boolean
-  maxCountOverride?: number
 }
 export interface ContentsTable extends TableHead {
-  categories: ContentCategoryRow[]
-  /** 일간 뒤 주간. 섹션 안의 차례가 관리 화면의 차례다. */
+  contentCategories: ContentCategoryRow[]
+  /** 일간 뒤 주간. 주기 안의 차례가 관리 화면의 차례다. */
   contents: ContentRow[]
-}
-
-export interface EquipmentItemRow {
-  key: string
-  /** 붙여 쓴 이름. */
-  name: string
-  /** 착용 레벨. `null` 은 모른다는 뜻이고 0 이 아니다. */
-  level: number | null
-}
-export interface EquipmentItemsTable extends TableHead {
-  items: EquipmentItemRow[]
 }
 
 export const POTENTIAL_RESET_TYPES = ['potential', 'additional'] as const
@@ -332,15 +366,10 @@ export type PotentialResetTypeKey = (typeof POTENTIAL_RESET_TYPES)[number]
 export const POTENTIAL_GRADES = ['rare', 'epic', 'unique', 'legendary'] as const
 export type PotentialGradeKey = (typeof POTENTIAL_GRADES)[number]
 
-export interface EnhancementRules {
-  cubeAppraisalFreeMaxLevel: number
-  cubeAppraisalCoefficient: number
-  starforceDestroyDefenceSurchargePercent: number
-}
 export interface PotentialResetCostRow {
   type: PotentialResetTypeKey
   /** 레벨 구간의 시작. 장비 레벨 이하인 줄 중 가장 큰 것이 그 레벨의 줄이다. */
-  minLevel: number
+  minRequiredLevel: number
   grade: PotentialGradeKey
   costMeso: number
 }
@@ -348,7 +377,7 @@ export interface SoulPotentialResetCostRow {
   grade: PotentialGradeKey
   costMeso: number
 }
-export interface StarforceStepRow {
+export interface StarforceCostStepRow {
   /** 시도 전 성수. */
   fromStar: number
   exponent: number
@@ -356,21 +385,22 @@ export interface StarforceStepRow {
 }
 /** 슈페리얼 장비의 계열. 스타포스 1회 비용이 계열마다 하나이고, 성수 · 할인과 상관없다. */
 export interface SuperiorSeriesRow {
+  id: string
   key: string
+  name: string
   starforceCostMeso: number
 }
 /** 슈페리얼 장비 하나. 넥슨 응답의 장비 이름과 공백을 지운 뒤 통째로 맞춘다. */
 export interface SuperiorItemRow {
   name: string
-  seriesKey: string
-  /** 펼친 강화 줄의 장비 그림. 아이템 표에 없는 슈페리얼 장비도 그림이 서게 둔다 */
-  iconAssetId: string | null
+  seriesId: string
+  /** 펼친 강화 줄의 장비 그림. 아이템 표에 없는 슈페리얼 장비도 그림이 서게 둔다. 없으면 빠진다 */
+  iconAssetId?: string
 }
 export interface EnhancementCostsTable extends TableHead {
-  rules: EnhancementRules
   potentialResetCosts: PotentialResetCostRow[]
   soulPotentialResetCosts: SoulPotentialResetCostRow[]
-  starforceSteps: StarforceStepRow[]
+  starforceCostSteps: StarforceCostStepRow[]
   superiorSeries: SuperiorSeriesRow[]
   superiorItems: SuperiorItemRow[]
 }
@@ -379,6 +409,7 @@ export const MVP_GRADE_KEYS = ['normal', 'bronze', 'silver', 'gold', 'diamond', 
 export type MvpGradeKey = (typeof MVP_GRADE_KEYS)[number]
 
 export interface MvpGradeRow {
+  id: string
   key: MvpGradeKey
   name: string
   auctionFeePercent: number
@@ -388,63 +419,63 @@ export interface MvpGradeRow {
 }
 export interface MvpGradesTable extends TableHead {
   /** 낮은 등급부터. 이 차례가 높낮이다. */
-  grades: MvpGradeRow[]
+  mvpGrades: MvpGradeRow[]
 }
 
-export const HUNT_LOOT_KINDS = ['fragment', 'consumable', 'event'] as const
-export type HuntLootKind = (typeof HUNT_LOOT_KINDS)[number]
+export const HUNT_LOOT_TYPES = ['fragment', 'consumable', 'event'] as const
+export type HuntLootType = (typeof HUNT_LOOT_TYPES)[number]
 
-/** 사냥 전리품 판매의 아이템. `from` · `until` 은 이벤트 아이템이 서는 기간이다(KST 날짜). */
-export interface HuntLootRow {
-  key: string
-  kind: HuntLootKind
-  name: string
-  iconAssetId: string
+/** 사냥 전리품 판매의 아이템. 기간은 이벤트 아이템이 서는 기간이다(KST 날짜). */
+export interface HuntLootItemRow {
+  /** 아이템 줄 id(`items` 칸). 이름 · 그림은 아이템 표에서 읽는다. */
+  itemId: string
+  type: HuntLootType
   /** 소비 아이템의 NPC 개당 가격. 소비에만 있고 소비에는 반드시 있다. */
   npcPriceMeso: number | null
-  from?: string
-  until?: string
+  validFrom?: string
+  validUntil?: string
 }
 export interface HuntLootTable extends TableHead {
   /** 이 차례가 폼의 차례다. */
-  items: HuntLootRow[]
+  huntLootItems: HuntLootItemRow[]
 }
 
 export interface HuntingRegionRow {
+  id: string
   key: string
   name: string
   forceType: ForceType
-  /** 지역 아이콘 그림 id. 없으면 `null` 이다. */
-  iconAssetId: string | null
+  /** 지역 아이콘 그림 id. 없으면 빠진다. */
+  iconAssetId?: string
 }
 export interface HuntingGroundRow {
+  id: string
   key: string
-  region: string
+  regionId: string
   name: string
-  force: number
-  mobs: number
-  popular: boolean
+  /** 아케인/어센틱 포스 요구치 */
+  requiredForce: number
+  /** 맵에 한 번에 뜨는 몬스터 마릿수 */
+  mobQuantity: number
+  isPopular: boolean
 }
 export interface HuntingGroundLevelRow {
-  ground: string
-  level: number
+  groundId: string
+  mobLevel: number
 }
 export interface HuntingGroundsTable extends TableHead {
-  regions: HuntingRegionRow[]
-  grounds: HuntingGroundRow[]
-  groundLevels: HuntingGroundLevelRow[]
+  huntingRegions: HuntingRegionRow[]
+  huntingGrounds: HuntingGroundRow[]
+  huntingGroundLevels: HuntingGroundLevelRow[]
 }
 
 /** 서버 그림 한 장. 앱은 게임 데이터 표의 그림 칸이 든 `id` 로 찾고 기기에는 `file`(내용 해시 이름)로 둔다. */
 export interface AssetFileRow {
   id: string
-  /** 서버 경로. `bosses/bellona.webp` 처럼 디렉터리와 파일 이름이다 */
-  path: string
   /** `<sha256>.<확장자>`. 서버 `/assets/` 아래와 기기 디렉터리의 이름이다 */
   file: string
   sha256: string
-  /** 바이트 */
-  size: number
+  sizeBytes: number
   width: number
   height: number
 }
@@ -452,44 +483,42 @@ export interface AssetFilesTable extends TableHead {
   files: AssetFileRow[]
 }
 
-/**
- * 크롭 표의 종류. 같은 그림도 놓이는 자리마다 잘 보이는 곳이 달라 표가 갈린다.
- *
- * `boss_portrait_modal` 은 앱이 더 읽지 않지만 서버 표에 줄이 남아 있다. 여기서 빼면 그 줄이 계약을 어겨 크롭 표
- * 전체를 버린다.
- */
-export const IMAGE_CROP_KINDS = ['boss_portrait', 'boss_portrait_icon', 'boss_portrait_modal', 'daily_quest_region'] as const
-export type ImageCropKind = (typeof IMAGE_CROP_KINDS)[number]
+/** 크롭 표의 종류. 같은 그림도 놓이는 자리마다 잘 보이는 곳이 달라 표가 갈린다. */
+export const IMAGE_CROP_TYPES = ['boss_portrait', 'boss_portrait_icon', 'daily_quest_region'] as const
+export type ImageCropType = (typeof IMAGE_CROP_TYPES)[number]
 
 export interface ImageCropRow {
-  kind: ImageCropKind
+  type: ImageCropType
   /** 자르는 그림 id. 보스 초상이나 지역 지도다 */
   assetId: string
-  /** CSS `background-size` 문법(`120% auto`) */
-  size: string
-  /** CSS `background-position` 문법(`50% 40%`) */
-  position: string
+  /** 그림 폭. 상자 폭에 대한 % */
+  widthPercent: number
+  /** CSS `background-position` 의 가로 % */
+  positionXPercent: number
+  /** CSS `background-position` 의 세로 % */
+  positionYPercent: number
 }
 export interface ImageCropsTable extends TableHead {
-  crops: ImageCropRow[]
+  imageCrops: ImageCropRow[]
 }
 
 /** FAQ 묶음. 묶음 하나가 시트 하나이고 key 는 화면이 물음표에 다는 이름이다. */
 export interface FaqSheetRow {
+  id: string
   key: string
   title: string
 }
 export interface FaqItemRow {
-  /** 묶음 key */
-  sheet: string
+  /** 묶음 줄 id */
+  sheetId: string
   question: string
-  /** 앱이 아는 종류의 블록만 남긴 것. 하나 이상이다 */
-  answer: FaqBlock[]
+  /** 답 글. 빈 줄이 문단을 나눈다 */
+  answer: string
 }
-/** 한 묶음의 문항 차례는 `items` 의 차례다. */
+/** 한 묶음의 문항 차례는 `faqItems` 의 차례다. */
 export interface FaqsTable extends TableHead {
-  sheets: FaqSheetRow[]
-  items: FaqItemRow[]
+  faqSheets: FaqSheetRow[]
+  faqItems: FaqItemRow[]
 }
 
 /** 붙일 게임 데이터 표가 없는 앱 그림. key 는 앱 코드가 그림을 찾는 이름이다. */
@@ -501,23 +530,53 @@ export interface AppImagesTable extends TableHead {
   images: AppImageRow[]
 }
 
-/** 고르기 목록이 쓰는 아이템 표 한 줄. 종류는 서버 분류 트리의 첫 단(장비 · 장신구 · 소비 · 기타 · 캐시)이고 묶음은 둘째 단이다. */
+/** 아이템 표 한 줄. 드롭 · 강화 장비 · 고르기 목록이 모두 이 표에서 아이템을 찾는다. */
 export interface ItemRow {
+  id: string
   key: string
   name: string
-  kind: string
-  category: string
+  /** 묶음 줄 id(`itemGroups`). 묶음이 없는 아이템은 빠진다. */
+  groupId?: string
   /** 그림 id(`assets` 칸). 그림이 없는 아이템은 빠진다. */
   iconAssetId?: string
+  /** 보스 드롭으로 적을 수 있는 아이템 */
+  isDrop: boolean
+  /** 고가 드롭. 화면의 고가 배지와 연출이 이 칸 하나로 가른다. */
+  isValuable: boolean
+  /** 강화 기록이 가리키는 장비 */
+  isEquipment: boolean
+  /** 착용 레벨. 모르면 빠지고 0 이 아니다. */
+  requiredLevel?: number
+}
+/** 아이템 묶음. `type` 은 서버 분류 트리의 첫 단(장비 · 장신구 · 소비 · 기타 · 캐시)이고 묶음은 둘째 단이다. */
+export interface ItemGroupRow {
+  id: string
+  key: string
+  name: string
+  type: string
+  sortOrder: number
+}
+/** 특수스킬 반지의 레벨 줄. 레벨마다 다른 아이템 줄이고 원래 반지를 가리킨다. */
+export interface RingLevelItemRow {
+  itemId: string
+  ringItemId: string
+  ringLevel: number
+}
+/** 다른 줄로 둔 같은 물건. 상자에서 나온 연마석처럼 따로 적어야 하는 아이템이 원래 아이템을 가리킨다. */
+export interface SameItemLinkRow {
+  itemId: string
+  originalItemId: string
 }
 export interface ItemsTable extends TableHead {
   items: ItemRow[]
+  itemGroups: ItemGroupRow[]
+  ringLevelItems: RingLevelItemRow[]
+  sameItemLinks: SameItemLinkRow[]
 }
 
-/** 계약을 통과한 칸 스물하나. */
+/** 계약을 통과한 칸 스물. */
 export interface GameData {
   bosses: BossCatalog
-  dropItems: DropItemsTable
   bossDrops: BossDropsTable
   dropBoxes: DropBoxesTable
   crystalPrices: CrystalPricesTable
@@ -527,7 +586,6 @@ export interface GameData {
   symbolCosts: SymbolCostsTable
   hexaMatrix: HexaMatrixTable
   contents: ContentsTable
-  equipmentItems: EquipmentItemsTable
   enhancementCosts: EnhancementCostsTable
   mvpGrades: MvpGradesTable
   huntingGrounds: HuntingGroundsTable
@@ -537,14 +595,14 @@ export interface GameData {
   faqs: FaqsTable
   appImages: AppImagesTable
   items: ItemsTable
+  gameRules: GameRulesTable
 }
 
 export type GameDataSection = keyof GameData
 
-/** 칸 이름 스물하나. 응답과 기기 사본이 같은 차례로 든다. */
+/** 칸 이름 스물. 응답과 기기 사본이 같은 차례로 든다. */
 export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'bosses',
-  'dropItems',
   'bossDrops',
   'dropBoxes',
   'crystalPrices',
@@ -554,7 +612,6 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'symbolCosts',
   'hexaMatrix',
   'contents',
-  'equipmentItems',
   'enhancementCosts',
   'mvpGrades',
   'huntingGrounds',
@@ -564,6 +621,7 @@ export const GAME_DATA_SECTIONS: readonly GameDataSection[] = [
   'faqs',
   'appImages',
   'items',
+  'gameRules',
 ]
 
 /** 서버 응답을 칸마다 검사한 결과. 못 받았거나 계약을 어겼거나 서버가 아직 안 넣은 칸은 `null` 이다. */

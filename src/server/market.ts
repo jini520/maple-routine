@@ -6,7 +6,7 @@
  *
  * 계약은 서버 저장소의 `modules/drop-market/market-publish.service.ts` 와 나눠 갖는다. 칸을 더할 때 양쪽을 함께 볼 것.
  */
-const BASE_URL = 'https://mapleroutine.store/v1'
+import { API_BASE_URL } from './base-url'
 
 /** 얼마나 기다리나. 화면은 기기에 남긴 응답을 이미 그리고 있어 늦게 실패하는 것보다 빨리 실패하는 편이 낫다. */
 const TIMEOUT_MS = 8_000
@@ -165,7 +165,7 @@ async function fetchStored<T>(path: string, etag: string | null, parse: (value: 
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
   try {
-    const response = await fetch(`${BASE_URL}${path}`, {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
       signal: controller.signal,
       ...(etag === null ? {} : { headers: { 'If-None-Match': etag } }),
     })

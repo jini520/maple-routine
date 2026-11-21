@@ -18,9 +18,9 @@ import {
 const original = cashbookCategoriesTable.get()
 afterEach(() => cashbookCategoriesTable.set(original))
 
-/** 번들에서 분류 하나를 바꾼 표. */
-function withCategories(categories: unknown[]): void {
-  const parsed = parseCashbookCategories({ ...bundled, categories })
+/** fixture 에서 분류 줄을 바꾼 표. */
+function withCategories(cashbookCategories: unknown[]): void {
+  const parsed = parseCashbookCategories({ ...bundled, cashbookCategories })
   if (parsed === null) throw new Error('계약을 어겼다')
   cashbookCategoriesTable.set(parsed)
 }
@@ -34,20 +34,20 @@ describe('가계부 분류 표', () => {
   })
 
   it('수입 · 지출 구분이 틀리거나 같은 쪽에 같은 key 가 둘이면 표 전체를 버린다', () => {
-    const spend = bundled.categories.find((each) => each.entryType === 'spend')!
-    expect(parseCashbookCategories({ ...bundled, categories: [{ ...spend, entryType: 'transfer' }] })).toBeNull()
-    expect(parseCashbookCategories({ ...bundled, categories: [spend, spend] })).toBeNull()
+    const spend = bundled.cashbookCategories.find((each) => each.entryType === 'spend')!
+    expect(parseCashbookCategories({ ...bundled, cashbookCategories: [{ ...spend, entryType: 'transfer' }] })).toBeNull()
+    expect(parseCashbookCategories({ ...bundled, cashbookCategories: [spend, { ...spend, id: 'c-other' }] })).toBeNull()
     // 수입과 지출의 기타는 key 가 같아도 따로다.
     expect(parseCashbookCategories(bundled)).not.toBeNull()
   })
 
   it('서버가 더한 분류는 차례대로 서지만 앱이 폼을 모르면 못 고른다', () => {
-    const spend = bundled.categories.filter((each) => each.entryType === 'spend')
+    const spend = bundled.cashbookCategories.filter((each) => each.entryType === 'spend')
     withCategories([
       ...spend.slice(0, 1),
-      { ...spend[0], key: 'hexa_skill', name: '헥사 스킬 강화' },
+      { ...spend[0], id: 'c-hexa-skill', key: 'hexa_skill', name: '헥사 스킬 강화' },
       ...spend.slice(1),
-      ...bundled.categories.filter((each) => each.entryType === 'income'),
+      ...bundled.cashbookCategories.filter((each) => each.entryType === 'income'),
     ])
 
     const list = spendCategories()
@@ -60,7 +60,7 @@ describe('가계부 분류 표', () => {
 
   it('이름은 서버 값을 따르고, 옛 기록의 이름에서 key 를 찾는 이관은 그때의 이름을 쓴다', () => {
     withCategories(
-      bundled.categories.map((each) =>
+      bundled.cashbookCategories.map((each) =>
         each.entryType === 'spend' && each.key === 'symbol' ? { ...each, name: '심볼' } : each,
       ),
     )
@@ -80,7 +80,7 @@ describe('가계부 분류 표', () => {
 
     const parsed = parseCashbookCategories({
       ...bundled,
-      itemKinds: bundled.itemKinds.map((each) =>
+      cashbookItemTypes: bundled.cashbookItemTypes.map((each) =>
         each.key === 'consumable' ? { ...each, name: '소모품', unit: null, hasTariff: true } : each,
       ),
     })
@@ -95,13 +95,10 @@ describe('가계부 분류 표', () => {
    * 숨기면 조각 정산을 적을 곳이 사라진다.
    */
   it('사냥 전리품 판매 분류가 서버 표에 있을 때만 고르는 시트에서 솔 에르다 조각 카드를 뺀다', () => {
+    withCategories(bundled.cashbookCategories.filter((each) => each.key !== 'hunt_loot_sale'))
     expect(incomePickerCategories().map((each) => each.key)).toContain('sol_erda_fragment')
 
-    const fragment = bundled.categories.find((each) => each.key === 'sol_erda_fragment')!
-    withCategories([
-      ...bundled.categories,
-      { ...fragment, key: 'hunt_loot_sale', name: '사냥 전리품 판매', cardTitle: '사냥 전리품 판매' },
-    ])
+    withCategories(bundled.cashbookCategories)
 
     const keys = incomePickerCategories().map((each) => each.key)
     expect(keys).toContain('hunt_loot_sale')

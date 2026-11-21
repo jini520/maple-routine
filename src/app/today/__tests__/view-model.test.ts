@@ -208,20 +208,18 @@ describe('남은 스케줄. 분류 넷', () => {
     expect(model.schedule[0].weeklyNames).toHaveLength(1)
   })
 
-  // 무릉도장은 **다 했다** 가 정의되지 않는다. 세면 링도 위젯도 영원히 안 찬다.
-  it('끝이 없는 항목(무릉도장)은 남은 개수에 들지 않는다', () => {
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a'],
-        contentCharacters: [
-          contentView('a', {
-            weeklyContents: [weekly({ ...content('mu_lung_dojo'), nowCount: 0, maxCount: 0 })],
-          }),
-        ],
-      }),
-    )
+  // 무릉도장은 점수로 가른다. 층수가 0 이면 아직 안 한 것이라 남은 개수에 든다(사용자 지정 2026-11-19).
+  it('무릉도장은 층수가 0 이면 남은 개수에 들고, 층수가 있으면 빠진다', () => {
+    const 무릉 = (nowCount: number) =>
+      buildTodayViewModel(
+        input({
+          orderedOcids: ['a'],
+          contentCharacters: [contentView('a', { weeklyContents: [weekly({ ...content('mu_lung_dojo'), nowCount, maxCount: 0 })] })],
+        }),
+      ).schedule[0].weeklyNames
 
-    expect(model.schedule[0].weeklyNames).toHaveLength(0)
+    expect(무릉(0)).toHaveLength(1)
+    expect(무릉(50)).toHaveLength(0)
   })
 
   // 좁은 자리라 표의 짧은 이름을 쓴다. 표에 없는 컨텐츠는 짧은 이름이 없어 API 이름 그대로다.
@@ -1130,16 +1128,12 @@ function sharedRows(model: ReturnType<typeof buildTodayViewModel>) {
 }
 
 describe('공유 컨텐츠. 계열로 묶는다', () => {
-  it('계열 셋을 카탈로그 순서로 낸다. 월드/계정은 그리지 않는다', () => {
+  it('계열을 분류 줄의 순서로 낸다. 월드/계정은 그리지 않는다', () => {
     const model = buildTodayViewModel(
       input({ orderedOcids: ['a'], contentCharacters: [sharedView('a')] }),
     )
 
-    expect(model.sharedContents.map((group) => group.label)).toEqual([
-      '몬스터파크',
-      '메이플 유니온',
-      '에픽 던전',
-    ])
+    expect(model.sharedContents.map((group) => group.label)).toEqual(['몬스터파크', '에픽 던전'])
   })
 
   it('짧은 이름을 쓴다. 계열명은 위에 있으므로 항목에서 뺀다', () => {
@@ -1166,7 +1160,7 @@ describe('공유 컨텐츠. 계열로 묶는다', () => {
       }),
     )
 
-    expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(8)
+    expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(6)
   })
 
   it('`남은 스케줄`에서는 여덟이 빠진다', () => {
@@ -1213,15 +1207,16 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
     })
   })
 
-  it('에픽 던전은 maxCount 가 0이라 카운트를 안 그린다. 참여 여부만 안다', () => {
+  // 넥슨은 에픽 던전을 다 깨면 `5/0` 으로 주고, 병합이 최대 횟수를 표의 5 로 덮는다.
+  it('에픽 던전은 다 깨면 완료이고 카운트를 안 그린다. 안 깬 던전은 0/5 다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
         contentCharacters: [
           sharedView('a', {
             weeklyContents: [
-              weekly({ ...content(EPIC_HIGH), kind: 'contents', nowCount: 1, maxCount: 0, questState: null }),
-              weekly({ ...content(EPIC_ANGLER), kind: 'contents', maxCount: 0, questState: null }),
+              weekly({ ...content(EPIC_HIGH), kind: 'contents', nowCount: 5, maxCount: 5, questState: null }),
+              weekly({ ...content(EPIC_ANGLER), kind: 'contents', maxCount: 5, questState: null }),
             ],
           }),
         ],
@@ -1230,7 +1225,7 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
     const epic = model.sharedContents.find((group) => group.category === 'epic_dungeon')
 
     expect(epic?.items[0]).toMatchObject({ shortName: '하이마운틴', count: null, isComplete: true })
-    expect(epic?.items[1]).toMatchObject({ shortName: '앵글러컴퍼니', count: null, isComplete: false })
+    expect(epic?.items[1]).toMatchObject({ shortName: '앵글러컴퍼니', count: { now: 0, max: 5 }, isComplete: false })
   })
 
   it('완료하면 카운트를 안 준다. 화면이 CLEAR 를 그린다', () => {
@@ -1394,7 +1389,8 @@ describe('공유 컨텐츠. 시작 기간 전인 줄은 안 그린다', () => {
 // 에픽 던전은 4종이지만 주 3회가 한도다. 계열 제목에 n/3 이 서고, 한도가 차면 네 줄 모두 취소선을 긋는다.
 // 체크는 실제로 진행한 줄만 채운다.
 describe('공유 컨텐츠. 에픽 던전 주간 한도', () => {
-  const epicView = (nowCounts: [number, number, number, number], maxCount = 0) =>
+  /** 다 깬 던전은 5, 안 깬 던전은 0 이다. 최대 횟수는 병합이 덮은 표의 5 다. */
+  const epicView = (nowCounts: [number, number, number, number], maxCount = 5) =>
     sharedView('a', {
       weeklyContents: [EPIC_HIGH, EPIC_ANGLER, EPIC_NIGHTMARE, EPIC_AURUM].map((key, index) =>
         weekly({ ...content(key), kind: 'contents', nowCount: nowCounts[index], maxCount, questState: null }),
@@ -1405,7 +1401,7 @@ describe('공유 컨텐츠. 에픽 던전 주간 한도', () => {
       .sharedContents.find((group) => group.category === 'epic_dungeon')
 
   it('계열 제목의 수는 완료한 에픽 던전 수와 한도 3 이다', () => {
-    expect(epicOf(epicView([1, 1, 0, 0]))?.weeklyLimit).toEqual({ now: 2, max: 3 })
+    expect(epicOf(epicView([5, 5, 0, 0]))?.weeklyLimit).toEqual({ now: 2, max: 3 })
   })
 
   it('한도가 없는 계열은 수가 없다', () => {
@@ -1417,7 +1413,7 @@ describe('공유 컨텐츠. 에픽 던전 주간 한도', () => {
   })
 
   it('3종을 완료하면 남은 1줄이 막힌다. 체크는 완료한 3줄만이다', () => {
-    const epic = epicOf(epicView([1, 1, 0, 1]))
+    const epic = epicOf(epicView([5, 5, 0, 5]))
 
     expect(epic?.weeklyLimit).toEqual({ now: 3, max: 3 })
     expect(epic?.items.map((item) => [item.shortName, item.isComplete, item.isWeeklyLimitClosed])).toEqual([
@@ -1428,27 +1424,27 @@ describe('공유 컨텐츠. 에픽 던전 주간 한도', () => {
     ])
   })
 
-  // 더 진행할 수 없는 줄의 진행 칸이다. 응답의 max_count 가 0 이 아니어도 안 그린다.
+  // 더 진행할 수 없는 줄의 진행 칸이다. 최대 횟수가 있어도 안 그린다.
   it('막힌 줄은 카운트를 안 그린다', () => {
-    const epic = epicOf(epicView([1, 1, 0, 1], 5))
+    const epic = epicOf(epicView([5, 5, 0, 5]))
 
     expect(epic?.items.find((item) => item.shortName === '악몽선경')?.count).toBeNull()
   })
 
   it('2종이면 아무 줄도 안 막힌다', () => {
-    const epic = epicOf(epicView([1, 1, 0, 0]))
+    const epic = epicOf(epicView([5, 5, 0, 0]))
 
     expect(epic?.items.some((item) => item.isWeeklyLimitClosed)).toBe(false)
   })
 
   // 한도는 분류로 센다. 표에 없는 컨텐츠는 분류가 없어 이름이 에픽 던전처럼 보여도 세지 않는다.
   it('표에 없는 컨텐츠는 완료해도 한도에 안 든다', () => {
-    const view = epicView([1, 1, 0, 0])
+    const view = epicView([5, 5, 0, 0])
     const epic = epicOf({
       ...view,
       weeklyContents: [
         ...view.weeklyContents,
-        weekly({ contentKey: null, apiName: '에픽 던전 : 새 던전', kind: 'contents', nowCount: 1, questState: null }),
+        weekly({ contentKey: null, apiName: '에픽 던전 : 새 던전', kind: 'contents', nowCount: 5, maxCount: 5, questState: null }),
       ],
     })
 
@@ -1457,39 +1453,21 @@ describe('공유 컨텐츠. 에픽 던전 주간 한도', () => {
   })
 })
 
-describe('공유 컨텐츠. 유니온만 조건부다', () => {
-  it('아무 캐릭터의 스케줄러에도 없으면 유니온 계열이 통째로 빠진다', () => {
+// 위젯은 횟수를 확인하는 공유 컨텐츠만 그린다. 퀘스트 상태만 확인하는 유니온 드래곤 퇴치 둘은 등록돼 있어도 그리지 않는다.
+describe('공유 컨텐츠. 유니온은 그리지 않는다', () => {
+  it('스케줄러에 유니온 둘이 있어도 유니온 계열이 서지 않는다', () => {
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
         contentCharacters: [
           sharedView('a', {
-            weeklyContents: [
-              weekly({ ...content(EPIC_HIGH), kind: 'contents', maxCount: 0, questState: null }),
-              weekly({ ...content(EXTREME), maxCount: 2 }),
-            ],
+            weeklyContents: [weekly({ ...content(UNION_PC) }), weekly({ ...content(EPIC_HIGH), kind: 'contents', maxCount: 5, questState: null })],
           }),
         ],
       }),
     )
 
     expect(model.sharedContents.map((group) => group.category)).toEqual(['monster_park', 'epic_dungeon'])
-  })
-
-  it('둘 중 하나만 있으면 그 한 줄만 남는다. 계열이 아니라 항목 단위다', () => {
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a'],
-        contentCharacters: [
-          sharedView('a', {
-            weeklyContents: [weekly({ ...content(UNION_PC) })],
-          }),
-        ],
-      }),
-    )
-    const union = model.sharedContents.find((group) => group.category === 'maple_union')
-
-    expect(union?.items.map((item) => item.shortName)).toEqual(['PC방 주간 드래곤 퇴치'])
   })
 
   it('에픽 던전·몬스터파크는 아무도 등록 안 해도 그린다', () => {
@@ -1517,19 +1495,6 @@ describe('공유 컨텐츠. 유니온만 조건부다', () => {
     expect(model.sharedContents.flatMap((group) => group.items)).toHaveLength(6)
   })
 
-  it('수동 모드에서는 추적 목록 멤버십이 **스케줄러에 있는가** 다', () => {
-    const model = buildTodayViewModel(
-      input({
-        orderedOcids: ['a'],
-        trackingMode: 'manual',
-        manualContentByOcid: { a: [{ contentKey: UNION_PC, kind: 'weekly' }] },
-        contentCharacters: [sharedView('a')],
-      }),
-    )
-    const union = model.sharedContents.find((group) => group.category === 'maple_union')
-
-    expect(union?.items.map((item) => item.shortName)).toEqual(['PC방 주간 드래곤 퇴치'])
-  })
 })
 
 // 요구 레벨에 못 미치는 항목은 **남은 것** 이 아니다. 게임이 등록을 허용해도

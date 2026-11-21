@@ -1,20 +1,22 @@
 /**
  * 헥사 매트릭스 표(`hexaMatrix` 칸)를 읽는 자리. 비용 값은 사용자가 준 표 그대로다.
  *
- * 코어의 종류는 이름 표가 먼저 정하고, 없으면 그 API 타입의 기본 종류다. 넥슨 `hexa_core_type` 이 3rd 스킬 코어와
- * 직업 공용 코어를 가르지 않기 때문이다. 새 종류가 나와도 서버 표에 줄을 더하면 되도록 종류 글자를 코드에 적지 않는다.
+ * 코어 줄이 직업과 종류를 줄 id 로 가리킨다. 한 직업의 코어 목록은 그 직업의 코어와 `전직업` 줄의 코어(솔 야누스 · 솔 헤카테)를
+ * 함께 읽어 종류의 차례, 같은 종류 안에서는 코어의 차례로 세운다. 새 종류가 나와도 서버 표에 줄을 더하면 되도록 종류 글자를
+ * 코드에 적지 않는다.
  */
 import type {
-  HexaCoreKindRow,
   HexaCoreLevelCostRow,
-  HexaCoreNameKindRow,
-  HexaJobCoreRow,
+  HexaCoreRow,
+  HexaCoreTypeRow,
   HexaMatrixTable,
   HexaStatRow,
+  JobRow,
 } from '../../types/game-data'
 import {
   compact,
   isBoolean,
+  isInteger,
   isNonEmptyString,
   isNonNegativeInteger,
   isPositiveInteger,
@@ -38,123 +40,139 @@ export interface HexaCoreKind {
 export interface HexaCore {
   /** 기록의 `item_key`. 넥슨이 준 이름에서 앞뒤 공백을 걷은 글자다. */
   readonly name: string
-  readonly apiType: string
   /** 코어 스킬 그림의 id. */
   readonly iconAssetId: string
-  /** 종류 표에 없는 API 타입이면 `null` 이고 그 코어는 비용을 낼 수 없다. */
-  readonly kind: HexaCoreKind | null
+  readonly kind: HexaCoreKind
 }
 
-export interface HexaStat {
-  readonly key: string
-  readonly name: string
-  readonly activationFragments?: number
-}
+export type HexaStat = HexaStatRow
 
 const trimmed = (name: string): string => name.normalize('NFC').trim()
 
-function toKind(row: Row): HexaCoreKindRow | null {
-  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isNonEmptyString(row.apiType)) return null
-  if (!isBoolean(row.isDefault) || !isPositiveInteger(row.maxLevel) || !isNonEmptyString(row.iconAssetId)) return null
+function toJob(row: Row): JobRow | null {
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.name) || !isBoolean(row.isAllJobs)) return null
+  return { id: row.id, name: row.name, isAllJobs: row.isAllJobs }
+}
+
+function toType(row: Row): HexaCoreTypeRow | null {
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
+  if (!isNonEmptyString(row.apiType) || !isBoolean(row.isDefault) || !isPositiveInteger(row.maxLevel)) return null
+  if (!isNonEmptyString(row.iconAssetId) || !isInteger(row.sortOrder)) return null
   return {
+    id: row.id,
     key: row.key,
     name: row.name,
     apiType: row.apiType,
     isDefault: row.isDefault,
     maxLevel: row.maxLevel,
     iconAssetId: row.iconAssetId,
+    sortOrder: row.sortOrder,
+  }
+}
+
+function toCore(row: Row): HexaCoreRow | null {
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.jobId) || !isNonEmptyString(row.name)) return null
+  if (!isNonEmptyString(row.typeId) || !isNonEmptyString(row.iconAssetId) || !isInteger(row.sortOrder)) return null
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    name: trimmed(row.name),
+    typeId: row.typeId,
+    iconAssetId: row.iconAssetId,
+    sortOrder: row.sortOrder,
   }
 }
 
 function toLevelCost(row: Row): HexaCoreLevelCostRow | null {
-  if (!isNonEmptyString(row.kind) || !isNonNegativeInteger(row.level)) return null
-  if (!isNonNegativeInteger(row.fragments) || !isNonNegativeInteger(row.solErda)) return null
-  return { kind: row.kind, level: row.level, fragments: row.fragments, solErda: row.solErda }
-}
-
-function toNameKind(row: Row): HexaCoreNameKindRow | null {
-  if (!isNonEmptyString(row.name) || !isNonEmptyString(row.kind)) return null
-  return { name: trimmed(row.name), kind: row.kind }
-}
-
-function toJobCore(row: Row): HexaJobCoreRow | null {
-  if (!isNonEmptyString(row.job) || !isNonEmptyString(row.name)) return null
-  if (!isNonEmptyString(row.apiType) || !isNonEmptyString(row.iconAssetId)) return null
-  return { job: row.job, name: trimmed(row.name), apiType: row.apiType, iconAssetId: row.iconAssetId }
+  if (!isNonEmptyString(row.typeId) || !isNonNegativeInteger(row.fromLevel)) return null
+  if (!isNonNegativeInteger(row.fragmentQuantity) || !isNonNegativeInteger(row.solErdaQuantity)) return null
+  return {
+    typeId: row.typeId,
+    fromLevel: row.fromLevel,
+    fragmentQuantity: row.fragmentQuantity,
+    solErdaQuantity: row.solErdaQuantity,
+  }
 }
 
 function toStat(row: Row): HexaStatRow | null {
-  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
-  const activationFragments = optional(row.activationFragments, isNonNegativeInteger)
-  if (activationFragments === false) return null
-  return compact({ key: row.key, name: row.name, activationFragments })
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
+  const activationFragmentQuantity = optional(row.activationFragmentQuantity, isNonNegativeInteger)
+  if (activationFragmentQuantity === false) return null
+  return compact({ id: row.id, key: row.key, name: row.name, activationFragmentQuantity })
 }
 
-/** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
+/**
+ * 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다.
+ *
+ * 코어와 비용 줄은 이 칸의 직업 · 종류를 가리켜야 한다. 없는 종류를 가리키는 코어는 비용을 낼 수 없다.
+ */
 export function parseHexaMatrix(value: unknown): HexaMatrixTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const kinds = rowsOf(value.kinds, toKind)
-  const levelCosts = rowsOf(value.levelCosts, toLevelCost)
-  const nameKinds = rowsOf(value.nameKinds, toNameKind)
-  const jobCores = rowsOf(value.jobCores, toJobCore)
-  const stats = rowsOf(value.stats, toStat)
-  if (kinds === null || levelCosts === null || nameKinds === null || jobCores === null || stats === null) return null
-  if (!uniqueBy(kinds, (kind) => kind.key) || !uniqueBy(stats, (stat) => stat.key)) return null
-  // 기본 종류가 둘이면 이름 표에 없는 코어가 어느 쪽인지 못 정한다.
-  if (!uniqueBy(kinds.filter((kind) => kind.isDefault), (kind) => kind.apiType)) return null
-  if (!uniqueBy(nameKinds, (row) => row.name) || !uniqueBy(jobCores, (row) => `${row.job}|${row.name}`)) return null
-  if (!uniqueBy(levelCosts, (row) => `${row.kind}|${row.level}`)) return null
-  const known = new Set(kinds.map((kind) => kind.key))
-  if (!levelCosts.every((row) => known.has(row.kind)) || !nameKinds.every((row) => known.has(row.kind))) return null
-  return { updatedAt, kinds, levelCosts, nameKinds, jobCores, stats }
+  const jobs = rowsOf(value.jobs, toJob)
+  const hexaCoreTypes = rowsOf(value.hexaCoreTypes, toType)
+  const hexaCores = rowsOf(value.hexaCores, toCore)
+  const hexaCoreLevelCosts = rowsOf(value.hexaCoreLevelCosts, toLevelCost)
+  const hexaStats = rowsOf(value.hexaStats, toStat)
+  if (jobs === null || hexaCoreTypes === null || hexaCores === null || hexaCoreLevelCosts === null || hexaStats === null) {
+    return null
+  }
+  if (!uniqueBy(jobs, (job) => job.id) || !uniqueBy(jobs, (job) => job.name)) return null
+  if (!uniqueBy(hexaCoreTypes, (type) => type.id) || !uniqueBy(hexaCoreTypes, (type) => type.key)) return null
+  if (!uniqueBy(hexaCores, (core) => `${core.jobId}|${core.name}`) || !uniqueBy(hexaStats, (stat) => stat.key)) return null
+  if (!uniqueBy(hexaCoreLevelCosts, (row) => `${row.typeId}|${row.fromLevel}`)) return null
+  const jobIds = new Set(jobs.map((job) => job.id))
+  const typeIds = new Set(hexaCoreTypes.map((type) => type.id))
+  if (hexaCores.some((core) => !jobIds.has(core.jobId) || !typeIds.has(core.typeId))) return null
+  if (hexaCoreLevelCosts.some((row) => !typeIds.has(row.typeId))) return null
+  return { updatedAt, jobs, hexaCoreTypes, hexaCores, hexaCoreLevelCosts, hexaStats }
 }
 
-export const hexaMatrixTable = gameTable(
+export const hexaMatrixTable = gameTable<HexaMatrixTable>(
   'hexaMatrix',
-  { updatedAt: null, kinds: [], levelCosts: [], nameKinds: [], jobCores: [], stats: [] },
+  { updatedAt: null, jobs: [], hexaCoreTypes: [], hexaCores: [], hexaCoreLevelCosts: [], hexaStats: [] },
   parseHexaMatrix,
 )
 
 const index = derive(hexaMatrixTable, (table) => {
+  const typeById = new Map(table.hexaCoreTypes.map((type) => [type.id, type]))
   const kinds = new Map<string, HexaCoreKind>(
-    table.kinds.map((row) => [row.key, { key: row.key, name: row.name, maxLevel: row.maxLevel, iconAssetId: row.iconAssetId }]),
+    table.hexaCoreTypes.map((type) => [
+      type.key,
+      { key: type.key, name: type.name, maxLevel: type.maxLevel, iconAssetId: type.iconAssetId },
+    ]),
   )
-  const defaults = new Map<string, HexaCoreKind>()
-  for (const row of table.kinds) {
-    const kind = kinds.get(row.key)
-    if (row.isDefault && kind !== undefined) defaults.set(row.apiType, kind)
+  const coreOf = (row: HexaCoreRow): HexaCore | null => {
+    const kind = kinds.get(typeById.get(row.typeId)?.key ?? '')
+    return kind === undefined ? null : { name: row.name, iconAssetId: row.iconAssetId, kind }
   }
-  const named = new Map<string, HexaCoreKind>()
-  for (const row of table.nameKinds) {
-    const kind = kinds.get(row.kind)
-    if (kind !== undefined) named.set(row.name, kind)
-  }
-  const kindOf = (core: { name: string; apiType: string }): HexaCoreKind | null =>
-    named.get(trimmed(core.name)) ?? defaults.get(core.apiType) ?? null
-
+  const order = (row: HexaCoreRow): [number, number] => [typeById.get(row.typeId)?.sortOrder ?? 0, row.sortOrder]
+  const allJobIds = new Set(table.jobs.filter((job) => job.isAllJobs).map((job) => job.id))
+  const shared = table.hexaCores.filter((core) => allJobIds.has(core.jobId))
   const coresByJob = new Map<string, HexaCore[]>()
-  const coresByName = new Map<string, HexaCore>()
-  for (const row of table.jobCores) {
-    const core: HexaCore = { name: row.name, apiType: row.apiType, iconAssetId: row.iconAssetId, kind: kindOf(row) }
-    const list = coresByJob.get(row.job)
-    if (list === undefined) coresByJob.set(row.job, [core])
-    else list.push(core)
-    // 공용 코어(솔 야누스 등)는 직업마다 같은 이름 · 그림이라 먼저 선 것으로 충분하다.
-    if (!coresByName.has(row.name)) coresByName.set(row.name, core)
+  for (const job of table.jobs) {
+    if (job.isAllJobs) continue
+    const rows = [...table.hexaCores.filter((core) => core.jobId === job.id), ...shared].sort((a, b) => {
+      const [typeA, coreA] = order(a)
+      const [typeB, coreB] = order(b)
+      return typeA - typeB || coreA - coreB
+    })
+    coresByJob.set(job.name, rows.flatMap((row) => coreOf(row) ?? []))
   }
-  const costs = new Map<string, HexaCoreLevelCostRow>(table.levelCosts.map((row) => [`${row.kind}|${row.level}`, row]))
-  const stats: HexaStat[] = table.stats
-  return { kinds, kindOf, coresByJob, coresByName, costs, stats }
+  const coresByName = new Map<string, HexaCore>()
+  for (const row of table.hexaCores) {
+    const core = coreOf(row)
+    // 여러 직업이 가진 같은 이름의 코어는 그림이 다를 수 있다. 직업을 모를 때는 먼저 선 줄로 충분하다.
+    if (core !== null && !coresByName.has(row.name)) coresByName.set(row.name, core)
+  }
+  const costs = new Map<string, HexaCoreLevelCostRow>(
+    table.hexaCoreLevelCosts.map((row) => [`${typeById.get(row.typeId)?.key}|${row.fromLevel}`, row]),
+  )
+  return { kinds, coresByJob, coresByName, costs, stats: table.hexaStats }
 })
 
-/** 코어의 종류. 이름 표가 먼저이고 없으면 API 타입의 기본 종류다. 둘 다 없으면 `null`. */
-export function hexaKindOf(core: { name: string; apiType: string }): HexaCoreKind | null {
-  return index().kindOf(core)
-}
-
-/** 그 직업의 코어 전부. 넥슨 hexamatrix 의 차례 그대로다. 활성화하지 않은 코어는 넥슨이 안 주므로 이 표가 목록이다. */
+/** 그 직업의 코어 전부. 종류의 차례, 같은 종류 안에서는 코어의 차례다. 활성화하지 않은 코어는 넥슨이 안 주므로 이 표가 목록이다. */
 export function hexaJobCores(job: string): readonly HexaCore[] {
   return index().coresByJob.get(job) ?? []
 }
@@ -184,8 +202,8 @@ export function hexaFragmentsBetween(kindKey: string, from: number, to: number):
   for (let level = from; level < to; level += 1) {
     const row = index().costs.get(`${kindKey}|${level}`)
     if (row === undefined) return null
-    fragments += row.fragments
-    solErda += row.solErda
+    fragments += row.fragmentQuantity
+    solErda += row.solErdaQuantity
   }
   return { fragments, solErda }
 }

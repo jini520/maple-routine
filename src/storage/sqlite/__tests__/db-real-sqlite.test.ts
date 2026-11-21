@@ -563,7 +563,7 @@ describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
       )
       drop.run(0, '몽환의 벨트', '벨트', null, null)
       drop.run(1, '리스트레인트 링', null, '녹옥의 보스 반지 상자', 2)
-      drop.run(2, '기타', null, '녹옥의 보스 반지 상자', 3)
+      drop.run(2, '컨티뉴어스 링', null, '녹옥의 보스 반지 상자', 3)
       // 파일시스템에서 온 NFD 글자도 같은 이름이다.
       drop.run(3, '고통의 근원'.normalize('NFD'), null, '혼돈의 칠흑 장신구 상자', null)
       // 슬롯이 나뉘기 전의 옛 이름. 표에 없다.
@@ -582,7 +582,7 @@ describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
     expect(rows.map((row) => [row.item_key, row.box_origin_key])).toEqual([
       ['dreamy_belt', null],
       ['restraint_ring', 'green_boss_ring_box'],
-      ['other_ring', 'green_boss_ring_box'],
+      ['continuous_ring', 'green_boss_ring_box'],
       ['source_of_suffering', 'chaos_pitch_black_accessory_box'],
       [null, null],
     ])

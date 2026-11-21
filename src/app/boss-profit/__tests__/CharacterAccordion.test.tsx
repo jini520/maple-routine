@@ -13,7 +13,7 @@ import { act, fireEvent, within } from '@testing-library/react-native'
 
 import { bossesInSection } from '../../../lib/boss/bosses'
 import { clearCountUpMemory } from '../../../hooks/useCountUp'
-import dropItemsData from '../../../__fixtures__/game-data/drop-items.json'
+import itemsData from '../../../__fixtures__/game-data/items.json'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
 import { AURORA_TEXT } from '../../../constants/style/aurora'
 import { 기본테마 } from '../../../components/__tests__/render-atom'
@@ -33,7 +33,7 @@ jest.mock('react-native-reanimated', () =>
 )
 import { mockReducedMotion } from '../../../components/__tests__/reduced-motion'
 
-const 고가아이템 = dropItemsData.items.filter((item) => item.valuable)[0].key
+const 고가아이템 = itemsData.items.filter((item) => item.isDrop && item.isValuable)[0].key
 
 function 드롭(overrides: Partial<RecordedDrop> = {}): RecordedDrop {
   return { itemKey: 'other_ring', itemName: '기타', ...overrides } as RecordedDrop

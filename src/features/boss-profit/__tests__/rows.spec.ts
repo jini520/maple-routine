@@ -624,7 +624,7 @@ describe('selectProfitDisplayBosses: 유효 기간', () => {
     setBossCatalog({
       ...INITIAL_BOSS_CATALOG,
       updatedAt: 'x',
-      bosses: INITIAL_BOSS_CATALOG.bosses.map((b) => (b.key === SEASON_KEY ? { ...b, until: '2026-10-22' } : b)),
+      bosses: INITIAL_BOSS_CATALOG.bosses.map((b) => (b.key === SEASON_KEY ? { ...b, validUntil: '2026-10-22' } : b)),
     })
     const killed = {
       bossKey: SEASON_KEY,

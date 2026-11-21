@@ -27,7 +27,7 @@ import { BossPortrait } from '../../molecules/BossPortrait/BossPortrait'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { groupBossesByCharacter, moveWithinGroup } from '../../../features/party-appointments/boss-groups'
-import { bossAliasOf, bossPortraitAssetIdOf } from '../../../lib/boss/bosses'
+import { bossShortNameOf, bossPortraitAssetIdOf } from '../../../lib/boss/bosses'
 import { selectionFeedback } from '../../../native/haptics'
 import { PORTRAIT_SHADOW, boxShadowOf, type ShadowLayer } from '../../../lib/shadow'
 import { useThemeAppearance } from '../../../theme/context'
@@ -161,7 +161,7 @@ function FlyingPortrait(props: {
         <Animated.View style={style}>
           <BossPortrait
             portraitAssetId={bossPortraitAssetIdOf(flight.boss.bossKey)}
-            label={bossAliasOf(flight.boss.bossKey, flight.boss.bossKey)}
+            label={bossShortNameOf(flight.boss.bossKey, flight.boss.bossKey)}
             size={TILE_PORTRAIT}
           />
           <View style={{ position: 'absolute', bottom: -6, left: 0, right: 0, alignItems: 'center' }}>
@@ -185,7 +185,7 @@ function TrayItem(props: {
   onPress: BossPickerTrayProps['onPressItem']
 }): React.JSX.Element {
   const { boss, index, hidden } = props
-  const name = bossAliasOf(boss.bossKey, boss.bossKey)
+  const name = bossShortNameOf(boss.bossKey, boss.bossKey)
   // 팝오버가 이 초상 위에 선다. 누름 좌표는 안쪽 그림 기준이라 쓰지 않고 직접 잰다.
   const itemRef = useRef<View>(null)
   const scale = useSharedValue(hidden ? 0.4 : 1)

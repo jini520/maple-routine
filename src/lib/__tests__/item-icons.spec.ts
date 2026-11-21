@@ -1,9 +1,21 @@
 
 import { cashbookRowIconOf, dropItemIconOf } from '../assets/asset-lookup'
+import { itemsTable } from '../item-catalog'
 
 describe('dropItemIconOf', () => {
+  const 원래 = itemsTable.get()
+  afterEach(() => itemsTable.set(원래))
+
   // 그림 없는 줄 · 모르는 key · key 없는 옛 기록은 비운다. 비슷한 그림을 붙이면 틀린 것을 그린다.
   it('그림이 없거나 모르는 key 이거나 key 가 없으면 null 이다', () => {
+    itemsTable.set({
+      ...원래,
+      items: 원래.items.map((item) => {
+        if (item.key !== 'sol_erda_energy') return item
+        const { iconAssetId: _dropped, ...withoutIcon } = item
+        return withoutIcon
+      }),
+    })
     expect(dropItemIconOf('sol_erda_energy')).toBeNull()
     expect(dropItemIconOf('nope')).toBeNull()
     expect(dropItemIconOf(null)).toBeNull()

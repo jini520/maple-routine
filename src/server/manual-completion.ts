@@ -8,8 +8,7 @@
  * 계약은 서버 저장소와 나눠 갖는다. 필드를 더할 때 양쪽을 함께 본다.
  */
 import type { ManualCompletionBoss } from '../types/manual-completion'
-
-const BASE_URL = 'https://mapleroutine.store/v1'
+import { API_BASE_URL } from './base-url'
 
 /**
  * 얼마나 기다리나. 결산 조회와 같은 값이다.
@@ -34,7 +33,7 @@ export async function fetchManualCompletionBosses(): Promise<ManualCompletionBos
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
   try {
-    const response = await fetch(`${BASE_URL}/manual-completion`, { signal: controller.signal })
+    const response = await fetch(`${API_BASE_URL}/manual-completion`, { signal: controller.signal })
     if (response.status !== 200) return null
 
     const body = (await response.json()) as unknown

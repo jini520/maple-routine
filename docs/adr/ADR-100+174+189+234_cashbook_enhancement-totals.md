@@ -182,9 +182,10 @@ OTA 를 낸다. 순서가 바뀌면 다시 받은 날이 다시 모름으로 남
 
 - `from` 은 연 날이고 `until` 은 닫힌 다음 날이다. 보스 기간과 같은 KST 글자(`YYYY-MM-DD`)이고 경계의 뜻도 같다([[ADR-020]]
   결정 10). 스페셜은 2025-12-18 03시에 닫혀 그 날의 기록이 있으므로 `until` 이 `2025-12-19` 다.
-- 앱이 받는 `worlds` 칸의 월드마다 `periods: [{ from, until }]` 를 `from` 차례로 싣는다. 기간이 없는 월드는 빈 배열이다.
-  옛 앱은 모르는 칸을 버리므로([[ADR-020]] 결정 7) 계약 판(`GAME_DATA_CONTRACT`)을 올리지 않는다.
-- 관리 화면 `/admin/worlds` 에서 월드마다 기간을 더하고 고치고 지운다. `until` 이 `from` 보다 뒤가 아니거나 같은 월드의
+- 앱이 받는 `worlds` 칸은 월드 줄과 따로 기간 줄 배열 `worldOpenPeriods`(`worldId` · `validFrom` · `validUntil`)를 싣는다
+  ([[ADR-099]] 결정 65). 기간이 없는 월드는 기간 줄이 없다. 월드마다 기간을 묶는 일은 `lib/world/worlds.ts` 의
+  `openPeriodsOf` 가 한다.
+- 관리 화면 `/admin/worlds` 에서 월드마다 기간을 더하고 고치고 지운다. 끝 날이 시작 날보다 뒤가 아니거나 같은 월드의
   기간끼리 겹치면 400 이고 아무것도 안 바뀐다.
 - 앱은 지금 결정 5 의 이벤트 월드 판정에만 기간을 쓴다. 챌린저스 월드의 기간은 쓰는 기능이 생길 때 넣는다.
 - 처음 넣는 값(사용자 확인 2026-11-09)은 다음과 같다. 스페셜2 월드 줄은 key `special_2`, 이름 `스페셜2`, 이벤트 월드이고,
@@ -230,8 +231,8 @@ today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어
   은 올리지 않는다([[ADR-007]] 결정 4).
 - 강화권을 쓴 줄이 0 메소이고 `펄스 인핸서` 줄을 합계에서 빼는 것은 슈페리얼 장비도 같다.
 - **두 표는 서버 게임 데이터의 `enhancementCosts` 칸에 둔다.** 게임 수치는 앱 번들에 넣지 않는다([[ADR-019]] 결정 1). 칸은 계열
-  표 `superior_series` 와 슈페리얼 장비 표 `superior_items` 의 줄을 그대로 싣는다. `superiorSeries: [{ key, name, starforceCostMeso }]`
-  와 `superiorItems: [{ name, seriesKey, iconAssetId }]` 다. 금액이 바뀌면 계열 한 줄만 고친다(사용자 선택 2026-11-15). 표를 만드는
+  표 `superior_series` 와 슈페리얼 장비 표 `superior_items` 의 줄을 그대로 싣는다. `superiorSeries: [{ id, key, name, starforceCostMeso }]`
+  와 `superiorItems: [{ name, seriesId, iconAssetId }]` 다. 장비는 계열을 줄 id 로 가리킨다([[ADR-099]] 결정 65). 금액이 바뀌면 계열 한 줄만 고친다(사용자 선택 2026-11-15). 표를 만드는
   마이그레이션이 계열 셋과 장비 50개를 함께 넣는다. 계열 key 는 `helisium_elite` · `nova` · `tyrant` 다.
 
 ```

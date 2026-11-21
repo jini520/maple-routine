@@ -5,7 +5,7 @@
  * 가격처럼 레벨마다 기간 줄이고, 적는 날짜가 든 주간 기간이 줄을 고른다.
  */
 import type { SymbolCostsTable, SymbolGroupRow, SymbolLevelCostRow, SymbolRow } from '../../types/game-data'
-import { isEffectiveIn } from '../boss/boss-profit-period'
+import { isEffectiveIn, periodOf } from '../boss/boss-profit-period'
 import { resetWeekStartOf } from '../calendar'
 import {
   compact,
@@ -49,61 +49,83 @@ export interface SymbolMenuSection {
 }
 
 function toGroup(row: Row): SymbolGroupRow | null {
-  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
-  if (!isPositiveInteger(row.maxLevel) || !isPositiveInteger(row.defaultFrom) || !isPositiveInteger(row.defaultTo)) return null
-  if (row.defaultFrom >= row.defaultTo || row.defaultTo > row.maxLevel) return null
-  return { key: row.key, name: row.name, maxLevel: row.maxLevel, defaultFrom: row.defaultFrom, defaultTo: row.defaultTo }
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
+  const { maxLevel, defaultFromLevel, defaultToLevel } = row
+  if (!isPositiveInteger(maxLevel) || !isPositiveInteger(defaultFromLevel) || !isPositiveInteger(defaultToLevel)) return null
+  if (defaultFromLevel >= defaultToLevel || defaultToLevel > maxLevel) return null
+  return { id: row.id, key: row.key, name: row.name, maxLevel, defaultFromLevel, defaultToLevel }
 }
 
 function toSymbol(row: Row): SymbolRow | null {
-  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.group) || !isNonEmptyString(row.name)) return null
-  if (!isPositiveInteger(row.requiredLevel) || !isNonEmptyString(row.iconAssetId)) return null
-  return { key: row.key, group: row.group, name: row.name, requiredLevel: row.requiredLevel, iconAssetId: row.iconAssetId }
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.groupId)) return null
+  if (!isNonEmptyString(row.name) || !isPositiveInteger(row.requiredLevel) || !isNonEmptyString(row.iconAssetId)) return null
+  return {
+    id: row.id,
+    key: row.key,
+    groupId: row.groupId,
+    name: row.name,
+    requiredLevel: row.requiredLevel,
+    iconAssetId: row.iconAssetId,
+  }
 }
 
 function toLevelCost(row: Row): SymbolLevelCostRow | null {
-  if (!isNonEmptyString(row.symbol) || !isPositiveInteger(row.level) || !isNonNegativeInteger(row.costMeso)) return null
-  const from = optional(row.from, isPeriodText)
-  const until = optional(row.until, isPeriodText)
-  if (from === false || until === false) return null
-  return compact({ symbol: row.symbol, level: row.level, costMeso: row.costMeso, from, until })
+  if (!isNonEmptyString(row.symbolId) || !isPositiveInteger(row.fromLevel) || !isNonNegativeInteger(row.costMeso)) return null
+  const validFrom = optional(row.validFrom, isPeriodText)
+  const validUntil = optional(row.validUntil, isPeriodText)
+  if (validFrom === false || validUntil === false) return null
+  return compact({ symbolId: row.symbolId, fromLevel: row.fromLevel, costMeso: row.costMeso, validFrom, validUntil })
 }
 
-/** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
+/**
+ * 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다.
+ *
+ * 심볼은 이 칸의 묶음을, 비용 줄은 이 칸의 심볼을 가리켜야 한다. 없는 줄을 가리키면 그 심볼이 목록에서 조용히 빠진다.
+ */
 export function parseSymbolCosts(value: unknown): SymbolCostsTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const groups = rowsOf(value.groups, toGroup)
+  const symbolGroups = rowsOf(value.symbolGroups, toGroup)
   const symbols = rowsOf(value.symbols, toSymbol)
-  const levelCosts = rowsOf(value.levelCosts, toLevelCost)
-  if (groups === null || symbols === null || levelCosts === null) return null
-  if (!uniqueBy(groups, (group) => group.key) || !uniqueBy(symbols, (symbol) => symbol.key)) return null
-  return { updatedAt, groups, symbols, levelCosts }
+  const symbolLevelCosts = rowsOf(value.symbolLevelCosts, toLevelCost)
+  if (symbolGroups === null || symbols === null || symbolLevelCosts === null) return null
+  if (!uniqueBy(symbolGroups, (group) => group.key) || !uniqueBy(symbolGroups, (group) => group.id)) return null
+  if (!uniqueBy(symbols, (symbol) => symbol.key) || !uniqueBy(symbols, (symbol) => symbol.id)) return null
+  const groupIds = new Set(symbolGroups.map((group) => group.id))
+  const symbolIds = new Set(symbols.map((symbol) => symbol.id))
+  if (symbols.some((symbol) => !groupIds.has(symbol.groupId))) return null
+  if (symbolLevelCosts.some((row) => !symbolIds.has(row.symbolId))) return null
+  return { updatedAt, symbolGroups, symbols, symbolLevelCosts }
 }
 
-export const symbolCostsTable = gameTable('symbolCosts', { updatedAt: null, groups: [], symbols: [], levelCosts: [] }, parseSymbolCosts)
+export const symbolCostsTable = gameTable<SymbolCostsTable>(
+  'symbolCosts',
+  { updatedAt: null, symbolGroups: [], symbols: [], symbolLevelCosts: [] },
+  parseSymbolCosts,
+)
 
 const index = derive(symbolCostsTable, (table) => {
-  const groups: SymbolCostGroup[] = table.groups.map((group) => ({
+  const groups: SymbolCostGroup[] = table.symbolGroups.map((group) => ({
     key: group.key,
     name: group.name,
     maxLevel: group.maxLevel,
-    defaultRange: [group.defaultFrom, group.defaultTo] as const,
+    defaultRange: [group.defaultFromLevel, group.defaultToLevel] as const,
     symbols: table.symbols
-      .filter((symbol) => symbol.group === group.key)
+      .filter((symbol) => symbol.groupId === group.id)
       .map((symbol) => ({ key: symbol.key, name: symbol.name, requiredLevel: symbol.requiredLevel, iconAssetId: symbol.iconAssetId })),
   }))
+  const keyById = new Map(table.symbols.map((symbol) => [symbol.id, symbol.key]))
   const costsBySymbolLevel = new Map<string, SymbolLevelCostRow[]>()
-  for (const row of table.levelCosts) {
-    const key = `${row.symbol}|${row.level}`
+  for (const row of table.symbolLevelCosts) {
+    const key = `${keyById.get(row.symbolId)}|${row.fromLevel}`
     const rows = costsBySymbolLevel.get(key)
     if (rows === undefined) costsBySymbolLevel.set(key, [row])
     else rows.push(row)
   }
   let earliestFrom: string | null = null
-  for (const row of table.levelCosts) {
-    if (row.from !== undefined && (earliestFrom === null || row.from < earliestFrom)) earliestFrom = row.from
+  for (const row of table.symbolLevelCosts) {
+    if (row.validFrom !== undefined && (earliestFrom === null || row.validFrom < earliestFrom)) earliestFrom = row.validFrom
   }
   return { groups, costsBySymbolLevel, earliestFrom }
 })
@@ -113,7 +135,7 @@ export function symbolGroups(): readonly SymbolCostGroup[] {
   return index().groups
 }
 
-/** 표가 서는 첫날(KST). 비용 줄 중 가장 이른 `from` 이고 이 분류의 날짜 고르개는 그 전 날짜를 못 고른다. 줄이 전부 처음부터면 `null`. */
+/** 표가 서는 첫날(KST). 비용 줄 중 가장 이른 `validFrom` 이고 이 분류의 날짜 고르개는 그 전 날짜를 못 고른다. 줄이 전부 처음부터면 `null`. */
 export function symbolCostsFrom(): string | null {
   return index().earliestFrom
 }
@@ -188,7 +210,7 @@ export function symbolUpgradeCost(symbol: SymbolCost, from: number, to: number, 
   const costs = index().costsBySymbolLevel
   let sum = 0
   for (let level = from; level < to; level += 1) {
-    const row = costs.get(`${symbol.key}|${level}`)?.find((each) => isEffectiveIn(each, periodKey))
+    const row = costs.get(`${symbol.key}|${level}`)?.find((each) => isEffectiveIn(periodOf(each), periodKey))
     if (row === undefined) return null
     sum += row.costMeso
   }

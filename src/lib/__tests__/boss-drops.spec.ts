@@ -11,7 +11,9 @@ import {
   getRingBoxContents,
   planConfirmedDifficultyDropMigration,
   pruneUnobtainableDrops,
+  bossDropsTable,
 } from '../boss/boss-drops'
+import { bossDifficultyIdOf } from '../boss/bosses'
 
 // 2026-09-17 패치 앞뒤의 주. 기존 케이스는 패치 전 주로 본다.
 const 패치전 = '2026-09-10'
@@ -83,11 +85,11 @@ describe('getBossFixedDrops', () => {
     // 같은 아이템도 난이도마다 값이 다름. 그룹별 값을 그대로 유지한다
     const hard = groups.find((group) => group.difficulty === 'hard')
     expect(hard?.items).toContainEqual(
-      expect.objectContaining({ name: '솔 에르다의 기운', amount: '50' }),
+      expect.objectContaining({ name: '솔 에르다의 기운', quantity: 50 }),
     )
     const extreme = groups.find((group) => group.difficulty === 'extreme')
     expect(extreme?.items).toContainEqual(
-      expect.objectContaining({ name: '솔 에르다의 기운', amount: '280' }),
+      expect.objectContaining({ name: '솔 에르다의 기운', quantity: 280 }),
     )
   })
 })
@@ -177,20 +179,17 @@ describe('getRingBoxContents (백옥 기준 그룹핑)', () => {
     expect(c?.rings.every((r) => r.hasLevel)).toBe(true)
   })
 
-  it('홍옥은 백옥 밖 반지를 맨 뒤 단일 "기타"(레벨 있음)로 묶는다', () => {
+  // 서버 아이템 표에 백옥 밖 반지를 묶는 줄이 없다. 묶을 줄 없이 고르게 하면 서버가 받지 못하는 기록이 생긴다.
+  it('홍옥은 백옥 반지만 세우고, 백옥 밖 반지와 기타는 세우지 않는다', () => {
     const c = getRingBoxContents('red_boss_ring_box')
 
     expect(c?.levels).toEqual([1, 2, 3, 4])
     const names = c!.rings.map((r) => r.name)
-    // 명명 11 + 기타 1 = 12
-    expect(c?.rings.length).toBe(12)
+    expect(c?.rings.length).toBe(11)
     expect(names).toContain('리스트레인트 링')
-    // 백옥 밖 반지는 개별 노출되지 않는다
     expect(names).not.toContain('레벨퍼프 - S링')
     expect(names).not.toContain('버든리프트 링')
-    // 기타는 맨 뒤, 레벨 있음
-    expect(names[names.length - 1]).toBe('기타')
-    expect(c?.rings.find((r) => r.name === '기타')?.hasLevel).toBe(true)
+    expect(names).not.toContain('기타')
   })
 
   it('생명은 명명 반지 + 생명의 연마석(레벨 없음)이고 기타는 없다', () => {
@@ -209,6 +208,34 @@ describe('getRingBoxContents (백옥 기준 그룹핑)', () => {
 
   it('반지 상자가 아니면 null', () => {
     expect(getRingBoxContents('chaos_pitch_black_accessory_box')).toBeNull()
+  })
+})
+
+// 칸마다 따로 받아 드롭 표가 보스 표보다 앞설 수 있다. 모르는 줄을 가리키는 보상은 보일 이름이 없어 뺀다.
+describe('다른 칸을 가리키는 줄', () => {
+  const 원래 = bossDropsTable.get()
+  afterEach(() => bossDropsTable.set(원래))
+
+  it('보스 표에 없는 난이도 줄 · 아이템 표에 없는 아이템 줄을 가리키는 보상은 후보에 세우지 않는다', () => {
+    const 스우노말 = getBossDropCandidates('lotus', 패치전, null).map((candidate) => candidate.key)
+    bossDropsTable.set({
+      ...원래,
+      bossDifficultyRewards: [
+        ...원래.bossDifficultyRewards,
+        { bossDifficultyId: 'nope', category: 'equipment', itemId: 원래.bossDifficultyRewards[0].itemId },
+        { bossDifficultyId: bossDifficultyIdOf('lotus', 'normal') ?? '', category: 'equipment', itemId: 'nope' },
+      ],
+    })
+
+    expect(getBossDropCandidates('lotus', 패치전, null).map((candidate) => candidate.key)).toEqual(스우노말)
+  })
+
+  // 상자 내용물은 상자 연마석 줄을 가리킨다. 기록은 아직 원래 연마석의 key 를 적어 같은 key 로 세워야 한다.
+  it('상자 후보는 같은 물건의 원래 아이템 key 로 선다', () => {
+    expect(getRingBoxContents('life_boss_ring_box')?.rings.map((ring) => ring.key)).toContain('life_whetstone')
+    expect(getRingBoxContents('life_boss_ring_box')?.rings.map((ring) => ring.key)).not.toContain(
+      'life_whetstone_from_box',
+    )
   })
 })
 
@@ -444,7 +471,7 @@ describe('2026-09-17 패치: 아이템이 기간을 든다', () => {
 
   it('고정 보상도 그 주의 것을 준다 (데미안 하드 실버 1 → 0)', () => {
     expect(fixedOf('damien', 'hard', 패치전)).toContainEqual(
-      expect.objectContaining({ name: '메멘토 실버 큐브', amount: '1개' }),
+      expect.objectContaining({ name: '메멘토 실버 큐브', quantity: 1 }),
     )
     expect(fixedOf('damien', 'hard', 패치후).map((item) => item.name)).not.toContain('메멘토 실버 큐브')
   })
@@ -453,8 +480,8 @@ describe('2026-09-17 패치: 아이템이 기간을 든다', () => {
     const 실버 = (periodKey: string) =>
       fixedOf('gloom', 'chaos', periodKey).filter((item) => item.name === '메멘토 실버 큐브')
 
-    expect(실버(패치전)).toEqual([expect.objectContaining({ amount: '2개' })])
-    expect(실버(패치후)).toEqual([expect.objectContaining({ amount: '1개' })])
+    expect(실버(패치전)).toEqual([expect.objectContaining({ quantity: 2 })])
+    expect(실버(패치후)).toEqual([expect.objectContaining({ quantity: 1 })])
   })
 
   it('검은마법사 하드는 10월 기간부터 골드 8 이 실버 8 로 바뀐다', () => {

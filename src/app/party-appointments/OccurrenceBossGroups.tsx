@@ -7,14 +7,14 @@ import { Badge, BellIcon, RepeatIcon, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
 import { formatLead } from '../../features/party-appointments/draft'
-import { bossAliasOf, bossPortraitAssetIdOf } from '../../lib/boss/bosses'
+import { bossShortNameOf, bossPortraitAssetIdOf } from '../../lib/boss/bosses'
 import type { BossDifficulty } from '../../types'
 import type { PartyAppointmentBoss } from '../../types/party-appointment'
 
 /** 보스 한 줄. 초상화 · 이름 · 난이도 배지 */
 export function OccurrenceBossLine(props: { boss: PartyAppointmentBoss }): React.JSX.Element {
   const { boss } = props
-  const name = bossAliasOf(boss.bossKey, boss.bossKey)
+  const name = bossShortNameOf(boss.bossKey, boss.bossKey)
   return (
     <View className="min-h-[34px] flex-row items-center gap-2">
       <BossPortrait portraitAssetId={bossPortraitAssetIdOf(boss.bossKey)} label={name} size={28} />

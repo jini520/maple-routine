@@ -14,10 +14,9 @@ import cashbookCategories from './cashbook-categories.json'
 import contents from './contents.json'
 import crystalPrices from './crystal-prices.json'
 import dropBoxes from './drop-boxes.json'
-import dropItems from './drop-items.json'
 import enhancementCosts from './enhancement-costs.json'
-import equipmentItems from './equipment-items.json'
 import faqs from './faqs.json'
+import gameRules from './game-rules.json'
 import hexaMatrix from './hexa-matrix.json'
 import huntingGrounds from './hunting-grounds.json'
 import huntLoot from './hunt-loot.json'
@@ -30,7 +29,6 @@ import worlds from './worlds.json'
 
 const FIXTURES: Record<GameDataSection, unknown> = {
   bosses,
-  dropItems,
   bossDrops,
   dropBoxes,
   crystalPrices,
@@ -40,7 +38,6 @@ const FIXTURES: Record<GameDataSection, unknown> = {
   symbolCosts,
   hexaMatrix,
   contents,
-  equipmentItems,
   enhancementCosts,
   mvpGrades,
   huntingGrounds,
@@ -50,6 +47,7 @@ const FIXTURES: Record<GameDataSection, unknown> = {
   faqs,
   appImages,
   items,
+  gameRules,
 }
 
 export function initialTable<T>(name: GameDataSection, _empty: T, parse: (value: unknown) => T | null): T {

@@ -14,13 +14,6 @@ export const SOL_ERDA_DENOMINATIONS: ReadonlyArray<{ value: number; imageKey: Ap
   { value: 10, imageKey: 'sol_erda_energy_10' },
 ]
 
-// "6개" → 6, "550" → 550, undefined → 1. 앞쪽 정수만 읽으므로 '개' 접미사는 무시된다.
-export function parseFixedAmount(amount?: string): number {
-  if (amount === undefined) return 1
-  const n = Number.parseInt(amount, 10)
-  return Number.isNaN(n) ? 1 : n
-}
-
 // 기운량을 단위별 (아이콘, 개수)로 분해. 예: 850 → 500×1, 200×1, 10×15.
 export function decomposeSolErda(energy: number): Array<{ imageKey: AppImageKey; count: number }> {
   const result: Array<{ imageKey: AppImageKey; count: number }> = []
@@ -46,11 +39,11 @@ export interface FixedDropIconSpec {
 // 일반 항목은 아이콘 1개. 수량은 1개여도 항상 표시한다(뱃지).
 export function getFixedDropIcons(item: FixedDropItem): FixedDropIconSpec[] {
   if (item.key === SOL_ERDA_ENERGY_KEY) {
-    return decomposeSolErda(parseFixedAmount(item.amount)).map((denom) => ({
+    return decomposeSolErda(item.quantity ?? 1).map((denom) => ({
       imageKey: denom.imageKey,
       itemKey: SOL_ERDA_ENERGY_KEY,
       count: denom.count,
     }))
   }
-  return [{ imageKey: null, itemKey: item.key, count: parseFixedAmount(item.amount) }]
+  return [{ imageKey: null, itemKey: item.key, count: item.quantity ?? 1 }]
 }

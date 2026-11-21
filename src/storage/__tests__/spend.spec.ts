@@ -4,7 +4,7 @@
  * (`SpendRecord`)으로 넣은 것이 같은 모양으로 되읽히는지, 품목 행이 어떻게 갈리는지 본다.
  */
 import spendCatalog from '../../__fixtures__/game-data/spend-catalog.json'
-import { spendCategories } from '../../lib/cashbook/categories'
+import { findCashbookCategoryById, spendCategories } from '../../lib/cashbook/categories'
 import { __resetStoragePortsForTest, setSqlitePort } from '../ports'
 import type { MapleAccount } from '../../types'
 import { recordCharacterAccounts } from '../character-accounts'
@@ -367,15 +367,17 @@ describe('splitAmount', () => {
 })
 
 describe('지출 분류 표와 카탈로그', () => {
-  // 분류 key 가 **두 칸**에 산다. 목록을 갖는 묶음은 카탈로그에 있고 분류는 `cashbookCategories` 칸에 있다. 어긋나면 그 묶음이
-  // 어느 시트에도 안 선다.
-  it('번들 카탈로그의 묶음은 모두 앱이 폼을 아는 지출 분류를 가리킨다', () => {
-    const keys = spendCategories()
-      .filter((each) => each.known)
-      .map((each) => each.key)
+  // 묶음은 분류를 다른 칸(`cashbookCategories`)의 줄 id 로 가리킨다. 어긋나면 그 묶음이 어느 시트에도 안 선다.
+  it('fixture 카탈로그의 묶음은 모두 앱이 폼을 아는 지출 분류를 가리킨다', () => {
+    const known = new Set(
+      spendCategories()
+        .filter((each) => each.known)
+        .map((each) => each.key),
+    )
 
-    for (const category of new Set(spendCatalog.groups.map((group) => group.category))) {
-      expect(keys).toContain(category)
-    }
+    const unknown = spendCatalog.spendGroups.filter(
+      (group) => !known.has(findCashbookCategoryById(group.cashbookCategoryId)?.key ?? ''),
+    )
+    expect(unknown.map((group) => group.key)).toEqual([])
   })
 })

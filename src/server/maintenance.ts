@@ -4,8 +4,7 @@
  * 답은 셋이다. 모름을 따로 두는 것은 응답이 없는 것만으로는 점검과 장애를 가릴 수 없어서다. 모름을 점검 중으로 읽으면
  * 오프라인에서 앱이 잠기고, 점검 아님으로 읽으면 점검 중에 네트워크가 끊긴 기기가 열린다.
  */
-
-const BASE_URL = 'https://mapleroutine.store/v1'
+import { API_BASE_URL } from './base-url'
 
 /** 얼마나 기다리나. 부팅과 복귀마다 묻는 값이라 결산 조회와 같이 짧게 둔다. */
 const TIMEOUT_MS = 4_000
@@ -29,7 +28,7 @@ export async function fetchServerMaintenance(): Promise<ServerMaintenance> {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
   try {
-    const response = await fetch(`${BASE_URL}/maintenance`, {
+    const response = await fetch(`${API_BASE_URL}/maintenance`, {
       headers: { 'cache-control': 'no-cache' },
       signal: controller.signal,
     })

@@ -1,8 +1,8 @@
 /**
  * 드롭 표(`bossDrops` 칸)와 상자 표(`dropBoxes` 칸) 조회. 게임 수치는 여기서 읽기만 하고 추정하지 않는다.
  *
- * 응답은 보스 · 난이도 · 분류 · 아이템이 한 줄인 납작한 표다. 여기서 보스마다 난이도 정규 차례의 보상 묶음으로
- * 묶어 지금 코드가 읽던 모양을 만든다. 함수가 받는 `boss` 는 보스 key 이고 난이도는 난이도 key 다.
+ * 응답은 난이도 줄 id · 분류 · 아이템 줄 id 가 한 줄인 납작한 표다. 여기서 보스 key 마다 난이도 정규 차례의 보상 묶음으로
+ * 묶고 아이템을 key 로 바꿔 지금 코드가 읽던 모양을 만든다. 함수가 받는 `boss` 는 보스 key 이고 난이도는 난이도 key 다.
  */
 import {
   DROP_CATEGORIES,
@@ -12,7 +12,7 @@ import {
   type FixedDropGroup,
   type RecordedDrop,
 } from '../../types/drops'
-import type { BossDropRow, BossDropsTable, DropBoxRow, DropBoxesTable } from '../../types/game-data'
+import type { BossDifficultyRewardRow, BossDropsTable, DropBoxContentRow, DropBoxRow, DropBoxesTable } from '../../types/game-data'
 import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
 import { dropItemNameOf } from '../drop/drop-items'
 import {
@@ -28,24 +28,26 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { gameTable, derive } from '../game-data/table'
-import { isEffectiveAnytimeIn, isEffectiveIn } from './boss-profit-period'
+import { deriveAll, gameTable, type GameTable } from '../game-data/table'
+import { findItemById, itemsTable, originalItemOf } from '../item-catalog'
+import { type EffectivePeriod, isEffectiveAnytimeIn, isEffectiveIn, periodOf } from './boss-profit-period'
+import { bossDifficultyOfId } from './bosses'
+import { bossCatalogTable } from './catalog'
 
-function toReward(row: Row): BossDropRow | null {
-  if (!isNonEmptyString(row.boss) || !isOneOf(row.difficulty, BOSS_DIFFICULTIES)) return null
-  if (!isOneOf(row.category, DROP_CATEGORIES) || !isNonEmptyString(row.item)) return null
-  const amount = optional(row.amount, isNonEmptyString)
-  const from = optional(row.from, isPeriodText)
-  const until = optional(row.until, isPeriodText)
-  if (amount === false || from === false || until === false) return null
+function toReward(row: Row): BossDifficultyRewardRow | null {
+  if (!isNonEmptyString(row.bossDifficultyId) || !isOneOf(row.category, DROP_CATEGORIES)) return null
+  if (!isNonEmptyString(row.itemId)) return null
+  const quantity = optional(row.quantity, isPositiveInteger)
+  const validFrom = optional(row.validFrom, isPeriodText)
+  const validUntil = optional(row.validUntil, isPeriodText)
+  if (quantity === false || validFrom === false || validUntil === false) return null
   return compact({
-    boss: row.boss,
-    difficulty: row.difficulty,
+    bossDifficultyId: row.bossDifficultyId,
     category: row.category,
-    item: row.item,
-    amount,
-    from,
-    until,
+    itemId: row.itemId,
+    quantity,
+    validFrom,
+    validUntil,
   })
 }
 
@@ -54,33 +56,48 @@ export function parseBossDrops(value: unknown): BossDropsTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const rewards = rowsOf(value.rewards, toReward)
-  if (rewards === null) return null
-  return { updatedAt, rewards }
+  const bossDifficultyRewards = rowsOf(value.bossDifficultyRewards, toReward)
+  if (bossDifficultyRewards === null) return null
+  return { updatedAt, bossDifficultyRewards }
 }
 
 function toBox(row: Row): DropBoxRow | null {
-  if (!isNonEmptyString(row.item)) return null
-  const levelMin = optional(row.levelMin, isPositiveInteger)
-  const levelMax = optional(row.levelMax, isPositiveInteger)
-  if (levelMin === false || levelMax === false || (levelMin === undefined) !== (levelMax === undefined)) return null
-  if (levelMin !== undefined && levelMax !== undefined && levelMin > levelMax) return null
-  if (!Array.isArray(row.contents) || row.contents.length === 0 || !row.contents.every(isNonEmptyString)) return null
-  return compact({ item: row.item, levelMin, levelMax, contents: [...row.contents] })
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.itemId)) return null
+  const ringLevelMin = optional(row.ringLevelMin, isPositiveInteger)
+  const ringLevelMax = optional(row.ringLevelMax, isPositiveInteger)
+  if (ringLevelMin === false || ringLevelMax === false) return null
+  if ((ringLevelMin === undefined) !== (ringLevelMax === undefined)) return null
+  if (ringLevelMin !== undefined && ringLevelMax !== undefined && ringLevelMin > ringLevelMax) return null
+  return compact({ id: row.id, itemId: row.itemId, ringLevelMin, ringLevelMax })
 }
 
-/** 계약을 지킨 값만 통과시킨다. 반지 상자는 레벨 범위 둘을 다 들고 장신구 상자는 둘 다 없다. */
+function toContent(row: Row): DropBoxContentRow | null {
+  if (!isNonEmptyString(row.boxId) || !isNonEmptyString(row.itemId)) return null
+  return { boxId: row.boxId, itemId: row.itemId }
+}
+
+/**
+ * 계약을 지킨 값만 통과시킨다. 반지 상자는 레벨 범위 둘을 다 들고 장신구 상자는 둘 다 없다.
+ *
+ * 상자마다 개봉 후보가 하나 이상이어야 하고, 후보는 이 칸의 상자를 가리켜야 한다. 후보가 없는 상자를 열면 고를 것이 없다.
+ */
 export function parseDropBoxes(value: unknown): DropBoxesTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const boxes = rowsOf(value.boxes, toBox)
-  if (boxes === null || !uniqueBy(boxes, (box) => box.item)) return null
-  return { updatedAt, boxes }
+  const dropBoxes = rowsOf(value.dropBoxes, toBox)
+  const dropBoxContents = rowsOf(value.dropBoxContents, toContent)
+  if (dropBoxes === null || dropBoxContents === null) return null
+  if (!uniqueBy(dropBoxes, (box) => box.id) || !uniqueBy(dropBoxes, (box) => box.itemId)) return null
+  const ids = new Set(dropBoxes.map((box) => box.id))
+  if (dropBoxContents.some((content) => !ids.has(content.boxId))) return null
+  const filled = new Set(dropBoxContents.map((content) => content.boxId))
+  if (dropBoxes.some((box) => !filled.has(box.id))) return null
+  return { updatedAt, dropBoxes, dropBoxContents }
 }
 
-export const bossDropsTable = gameTable('bossDrops', { updatedAt: null, rewards: [] }, parseBossDrops)
-export const dropBoxesTable = gameTable('dropBoxes', { updatedAt: null, boxes: [] }, parseDropBoxes)
+export const bossDropsTable = gameTable('bossDrops', { updatedAt: null, bossDifficultyRewards: [] }, parseBossDrops)
+export const dropBoxesTable = gameTable('dropBoxes', { updatedAt: null, dropBoxes: [], dropBoxContents: [] }, parseDropBoxes)
 
 // BOSS_DIFFICULTIES 정규 순서 인덱스(미상 난이도는 뒤로).
 function difficultyOrder(difficulty: string): number {
@@ -88,27 +105,41 @@ function difficultyOrder(difficulty: string): number {
   return index === -1 ? BOSS_DIFFICULTIES.length : index
 }
 
+/** 보상 한 줄을 아이템 key 로 바꾼 모양. */
+interface RewardItem {
+  item: string
+  quantity?: number
+  period: EffectivePeriod
+}
+
 /** 보스 한 난이도의 보상 묶음. 분류마다 줄이 표의 차례다. */
 interface RewardEntry {
   difficulty: BossDifficulty
-  rewards: Partial<Record<DropCategory, BossDropRow[]>>
+  rewards: Partial<Record<DropCategory, RewardItem[]>>
 }
 
-/** 보스마다 난이도 정규 차례의 보상 묶음. 줄 표를 지금 코드가 읽는 모양으로 묶는다. */
-const rewardsByBoss = derive(bossDropsTable, (table) => {
+/**
+ * 보스 key 마다 난이도 정규 차례의 보상 묶음. 줄 표를 지금 코드가 읽는 모양으로 묶는다.
+ *
+ * 모르는 난이도 줄 · 아이템 줄을 가리키는 보상은 뺀다. 칸마다 따로 받아 잠깐 어긋날 수 있고, 어긋난 줄은 보일 이름이 없다.
+ */
+const rewardsByBoss = deriveAll([bossDropsTable, bossCatalogTable, itemsTable] as GameTable<unknown>[], () => {
   const byBoss = new Map<string, Map<BossDifficulty, RewardEntry>>()
-  for (const row of table.rewards) {
-    let entries = byBoss.get(row.boss)
+  for (const row of bossDropsTable.get().bossDifficultyRewards) {
+    const owner = bossDifficultyOfId(row.bossDifficultyId)
+    const item = findItemById(row.itemId)
+    if (owner === null || item === null) continue
+    let entries = byBoss.get(owner.bossKey)
     if (entries === undefined) {
       entries = new Map()
-      byBoss.set(row.boss, entries)
+      byBoss.set(owner.bossKey, entries)
     }
-    let entry = entries.get(row.difficulty)
+    let entry = entries.get(owner.difficulty)
     if (entry === undefined) {
-      entry = { difficulty: row.difficulty, rewards: {} }
-      entries.set(row.difficulty, entry)
+      entry = { difficulty: owner.difficulty, rewards: {} }
+      entries.set(owner.difficulty, entry)
     }
-    ;(entry.rewards[row.category] ??= []).push(row)
+    ;(entry.rewards[row.category] ??= []).push(compact({ item: item.key, quantity: row.quantity, period: periodOf(row) }))
   }
   const result = new Map<string, RewardEntry[]>()
   for (const [boss, entries] of byBoss) {
@@ -126,8 +157,8 @@ function entriesForBoss(bossKey: string): readonly RewardEntry[] {
 }
 
 /** 그 줄이 이 기간에 든가. `now` 가 있으면 시계로 가르고, `null` 이면 기간 전체를 본다. */
-function effectiveNow(item: BossDropRow, periodKey: string, now: Date | null): boolean {
-  return now === null ? isEffectiveAnytimeIn(item, periodKey) : isEffectiveIn(item, periodKey, now)
+function effectiveNow(item: RewardItem, periodKey: string, now: Date | null): boolean {
+  return now === null ? isEffectiveAnytimeIn(item.period, periodKey) : isEffectiveIn(item.period, periodKey, now)
 }
 
 // 보스의 선택 가능한 드롭 후보(장비·소비)를 난이도 무관하게 통합해 반환한다.
@@ -167,8 +198,8 @@ export function getBossFixedDrops(boss: string, periodKey: string, now: Date): F
   const groups: FixedDropGroup[] = []
   for (const entry of entriesForBoss(boss)) {
     const items = (entry.rewards.fixed ?? [])
-      .filter((item) => isEffectiveIn(item, periodKey, now))
-      .map((item) => compact({ key: item.item, name: dropItemNameOf(item.item, item.item), amount: item.amount }))
+      .filter((item) => isEffectiveIn(item.period, periodKey, now))
+      .map((item) => compact({ key: item.item, name: dropItemNameOf(item.item, item.item), quantity: item.quantity }))
     if (items.length > 0) {
       groups.push({ difficulty: entry.difficulty, items })
     }
@@ -199,7 +230,7 @@ export function getObtainableTileKeys(boss: string, difficulty: BossDifficulty, 
 
 // 드롭 히스토리는 이 판정을 기록 한 건마다 한다. getObtainableTileKeys는 매
 // 호출마다 그 보스의 전 난이도 후보를 다시 순회하므로 난이도별 결과를 캐시한다. 표가 덮이면 캐시도 새것이다.
-const obtainableTileKeysCache = derive(bossDropsTable, () => new Map<string, Set<string>>())
+const obtainableTileKeysCache = deriveAll([bossDropsTable, bossCatalogTable, itemsTable] as GameTable<unknown>[], () => new Map<string, Set<string>>())
 
 function obtainableTileKeys(boss: string, difficulty: BossDifficulty, periodKey: string): Set<string> {
   const cache = obtainableTileKeysCache()
@@ -364,22 +395,41 @@ export function planConfirmedDifficultyDropMigration(
   }
 }
 
-// '기타': 백옥 반지 상자 목록 밖의 저가치 반지들을 한 칸으로 묶는 UI 전용 항목. 그림은 마스터 표가 든다.
-export const OTHER_RING_KEY = 'other_ring'
-
 // 명명 반지 기준(baseline) = 백옥 상자 반지 집합. 데이터에서 동적 산출(하드코딩·추정 없음).
 const BASELINE_RING_BOX_KEY = 'white_boss_ring_box'
 
 // 연마석은 반지가 아니라 등급(레벨) 개념이 없다.
 const WHETSTONE_KEYS: ReadonlySet<string> = new Set(['life_whetstone', 'faith_whetstone'])
 
-const boxIndex = derive(dropBoxesTable, (table) => ({
-  byItem: new Map(table.boxes.map((box) => [box.item, box])),
-  baselineRingKeys: new Set(table.boxes.find((box) => box.item === BASELINE_RING_BOX_KEY)?.contents ?? []),
-}))
+/** 상자 하나를 아이템 key 로 바꾼 모양. 후보는 원래 아이템의 key 다. 기록은 원래 아이템의 key 를 적어서다. */
+interface BoxEntry {
+  item: string
+  levelMin?: number
+  levelMax?: number
+  /** 개봉 후보의 아이템 key. 차례가 화면 차례다. */
+  contents: string[]
+}
+
+const boxIndex = deriveAll([dropBoxesTable, itemsTable] as GameTable<unknown>[], () => {
+  const table = dropBoxesTable.get()
+  const keyOf = (itemId: string): string | null => {
+    const item = findItemById(itemId)
+    return item === null ? null : originalItemOf(item).key
+  }
+  const byItem = new Map<string, BoxEntry>()
+  for (const box of table.dropBoxes) {
+    const item = findItemById(box.itemId)?.key
+    if (item === undefined) continue
+    const contents = table.dropBoxContents
+      .filter((content) => content.boxId === box.id)
+      .flatMap((content) => keyOf(content.itemId) ?? [])
+    byItem.set(item, compact({ item, levelMin: box.ringLevelMin, levelMax: box.ringLevelMax, contents }))
+  }
+  return { byItem, baselineRingKeys: new Set(byItem.get(BASELINE_RING_BOX_KEY)?.contents ?? []) }
+})
 
 /** 반지 상자인가. 레벨 범위를 든 상자다. 장신구 상자는 레벨이 없다. */
-function isRingBox(box: DropBoxRow): box is DropBoxRow & { levelMin: number; levelMax: number } {
+function isRingBox(box: BoxEntry): box is BoxEntry & { levelMin: number; levelMax: number } {
   return box.levelMin !== undefined && box.levelMax !== undefined
 }
 
@@ -403,30 +453,26 @@ function optionOf(key: string, hasLevel: boolean): RingOption {
   return { key, name: dropItemNameOf(key, key), hasLevel }
 }
 
-// 반지 상자의 등급 후보와 반지 후보. 백옥 목록을 기준으로 명명 반지만 개별 노출하고, 그 밖 반지는
-// 단일 '기타'로 묶는다. 연마석은 별도(레벨 없음). 정렬: 명명 → 연마석 → 기타. 아니면 null.
+/**
+ * 반지 상자의 등급 후보와 반지 후보. 백옥 상자에 든 반지와 연마석(레벨 없음)이고, 그 밖의 반지는 고를 수 없다. 서버 아이템 표에
+ * 그 반지들을 묶을 줄이 없어서다. 차례는 반지 다음 연마석이다. 반지 상자가 아니면 `null`.
+ */
 export function getRingBoxContents(boxKey: string): RingBoxContents | null {
   const box = boxIndex().byItem.get(boxKey)
   if (box === undefined || !isRingBox(box)) return null
 
   const named: RingOption[] = []
   const whetstones: RingOption[] = []
-  let hasOther = false
 
   for (const item of box.contents) {
     if (WHETSTONE_KEYS.has(item)) {
       whetstones.push(optionOf(item, false))
     } else if (boxIndex().baselineRingKeys.has(item)) {
       named.push(optionOf(item, true))
-    } else {
-      hasOther = true
     }
   }
 
   const rings: RingOption[] = [...named, ...whetstones]
-  if (hasOther) {
-    rings.push(optionOf(OTHER_RING_KEY, true))
-  }
 
   const levels: number[] = []
   for (let level = box.levelMin; level <= box.levelMax; level += 1) levels.push(level)

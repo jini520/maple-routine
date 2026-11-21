@@ -1,200 +1,195 @@
 {
-  "updatedAt": "2026-10-17T07:21:02.493Z",
-  "rules": {
-    "cubeAppraisalFreeMaxLevel": 120,
-    "cubeAppraisalCoefficient": 20,
-    "starforceDestroyDefenceSurchargePercent": 200
-  },
+  "updatedAt": "2026-11-15T18:02:56.802Z",
   "potentialResetCosts": [
     {
       "type": "potential",
-      "minLevel": 1,
+      "minRequiredLevel": 1,
       "grade": "rare",
       "costMeso": 4000000
     },
     {
       "type": "potential",
-      "minLevel": 1,
+      "minRequiredLevel": 1,
       "grade": "epic",
       "costMeso": 16000000
     },
     {
       "type": "potential",
-      "minLevel": 1,
+      "minRequiredLevel": 1,
       "grade": "unique",
       "costMeso": 34000000
     },
     {
       "type": "potential",
-      "minLevel": 1,
+      "minRequiredLevel": 1,
       "grade": "legendary",
       "costMeso": 40000000
     },
     {
       "type": "potential",
-      "minLevel": 160,
+      "minRequiredLevel": 160,
       "grade": "rare",
       "costMeso": 4250000
     },
     {
       "type": "potential",
-      "minLevel": 160,
+      "minRequiredLevel": 160,
       "grade": "epic",
       "costMeso": 17000000
     },
     {
       "type": "potential",
-      "minLevel": 160,
+      "minRequiredLevel": 160,
       "grade": "unique",
       "costMeso": 36125000
     },
     {
       "type": "potential",
-      "minLevel": 160,
+      "minRequiredLevel": 160,
       "grade": "legendary",
       "costMeso": 42500000
     },
     {
       "type": "potential",
-      "minLevel": 200,
+      "minRequiredLevel": 200,
       "grade": "rare",
       "costMeso": 4500000
     },
     {
       "type": "potential",
-      "minLevel": 200,
+      "minRequiredLevel": 200,
       "grade": "epic",
       "costMeso": 18000000
     },
     {
       "type": "potential",
-      "minLevel": 200,
+      "minRequiredLevel": 200,
       "grade": "unique",
       "costMeso": 38250000
     },
     {
       "type": "potential",
-      "minLevel": 200,
+      "minRequiredLevel": 200,
       "grade": "legendary",
       "costMeso": 45000000
     },
     {
       "type": "potential",
-      "minLevel": 250,
+      "minRequiredLevel": 250,
       "grade": "rare",
       "costMeso": 5000000
     },
     {
       "type": "potential",
-      "minLevel": 250,
+      "minRequiredLevel": 250,
       "grade": "epic",
       "costMeso": 20000000
     },
     {
       "type": "potential",
-      "minLevel": 250,
+      "minRequiredLevel": 250,
       "grade": "unique",
       "costMeso": 42500000
     },
     {
       "type": "potential",
-      "minLevel": 250,
+      "minRequiredLevel": 250,
       "grade": "legendary",
       "costMeso": 50000000
     },
     {
       "type": "additional",
-      "minLevel": 1,
+      "minRequiredLevel": 1,
       "grade": "rare",
       "costMeso": 9750000
     },
     {
       "type": "additional",
-      "minLevel": 1,
+      "minRequiredLevel": 1,
       "grade": "epic",
       "costMeso": 27300000
     },
     {
       "type": "additional",
-      "minLevel": 1,
+      "minRequiredLevel": 1,
       "grade": "unique",
       "costMeso": 66300000
     },
     {
       "type": "additional",
-      "minLevel": 1,
+      "minRequiredLevel": 1,
       "grade": "legendary",
       "costMeso": 78000000
     },
     {
       "type": "additional",
-      "minLevel": 160,
+      "minRequiredLevel": 160,
       "grade": "rare",
       "costMeso": 10375000
     },
     {
       "type": "additional",
-      "minLevel": 160,
+      "minRequiredLevel": 160,
       "grade": "epic",
       "costMeso": 29050000
     },
     {
       "type": "additional",
-      "minLevel": 160,
+      "minRequiredLevel": 160,
       "grade": "unique",
       "costMeso": 70550000
     },
     {
       "type": "additional",
-      "minLevel": 160,
+      "minRequiredLevel": 160,
       "grade": "legendary",
       "costMeso": 83000000
     },
     {
       "type": "additional",
-      "minLevel": 200,
+      "minRequiredLevel": 200,
       "grade": "rare",
       "costMeso": 11000000
     },
     {
       "type": "additional",
-      "minLevel": 200,
+      "minRequiredLevel": 200,
       "grade": "epic",
       "costMeso": 30800000
     },
     {
       "type": "additional",
-      "minLevel": 200,
+      "minRequiredLevel": 200,
       "grade": "unique",
       "costMeso": 74800000
     },
     {
       "type": "additional",
-      "minLevel": 200,
+      "minRequiredLevel": 200,
       "grade": "legendary",
       "costMeso": 88000000
     },
     {
       "type": "additional",
-      "minLevel": 250,
+      "minRequiredLevel": 250,
       "grade": "rare",
       "costMeso": 12250000
     },
     {
       "type": "additional",
-      "minLevel": 250,
+      "minRequiredLevel": 250,
       "grade": "epic",
       "costMeso": 34300000
     },
     {
       "type": "additional",
-      "minLevel": 250,
+      "minRequiredLevel": 250,
       "grade": "unique",
       "costMeso": 83300000
     },
     {
       "type": "additional",
-      "minLevel": 250,
+      "minRequiredLevel": 250,
       "grade": "legendary",
       "costMeso": 98000000
     }
@@ -217,7 +212,7 @@
       "costMeso": 88000000
     }
   ],
-  "starforceSteps": [
+  "starforceCostSteps": [
     {
       "fromStar": 0,
       "exponent": 1,
@@ -371,16 +366,19 @@
   ],
   "superiorSeries": [
     {
+      "id": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "key": "helisium_elite",
       "name": "헬리시움 정예",
       "starforceCostMeso": 5956000
     },
     {
+      "id": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "key": "nova",
       "name": "노바",
       "starforceCostMeso": 18507900
     },
     {
+      "id": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "key": "tyrant",
       "name": "타일런트",
       "starforceCostMeso": 55382200
@@ -388,254 +386,254 @@
   ],
   "superiorItems": [
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 궁수 망토",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "d1e74a1b-a7d0-4086-ba26-6e5b862f892e"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 궁수 벨트",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "0235710f-fd39-47ff-a617-3bce907c363e"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 궁수 부츠",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "b77dea45-8c8c-4119-9326-b6e0d129ce35"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 도적 망토",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "8d39b55a-c74a-4ee4-a844-3bded155fdb0"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 도적 벨트",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "e269ce4a-0831-4be1-bebb-bcfab3a1a538"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 도적 부츠",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "cea57e79-3451-4637-8134-541228848b3a"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 법사 망토",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "4baeef5b-e26e-4eb1-8222-7605608ffd5a"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 법사 벨트",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "bafba916-c1ec-49d5-844f-61a8c58e3701"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 법사 부츠",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "6122f7c6-a634-4cdc-bed4-c9280faa99cf"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 전사 망토",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "45d05a4f-37bc-4f54-abe1-0ffc53a0bdbb"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 전사 벨트",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "52def666-b18d-4ee5-b4dd-a3720a849b64"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 전사 부츠",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "2b02782f-9f5c-47ed-a776-b5a1a525bdfc"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 해적 망토",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "04e07575-14e9-4002-9fbc-870d3f45da4d"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 해적 벨트",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "2d367160-9ea6-48d9-b382-dab1766dc769"
     },
     {
+      "seriesId": "ac978c00-f8e7-43c9-b36d-2081694f5df2",
       "name": "헬리시움 정예 해적 부츠",
-      "seriesKey": "helisium_elite",
-      "iconAssetId": null
+      "iconAssetId": "eecbc7d5-af47-431e-94b6-b66b2ff7e51a"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 리카온 벨트",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "0ee071ff-3a49-4d3d-9fb8-c2b4260d2b41"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 리카온 부츠",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "fb50c9b9-81b0-4ca1-99a8-6b99bfc75cad"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 리카온 클록",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "2a9abf43-5142-42c6-81fa-477869a37581"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 알테어 벨트",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "e9b3fb1c-ed24-4dee-a7fa-6b799f6c2953"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 알테어 부츠",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "3e4547bb-1ddb-4163-b492-6c3f8dfe7063"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 알테어 클록",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "062902ab-134d-45b0-9443-6659357648ac"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 케이론 벨트",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "79e6b157-3cd0-45de-86b4-3137e81b684f"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 케이론 부츠",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "55cc646f-a4ff-40e1-b0e8-cc8cf1f01f26"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 케이론 클록",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "e5e16eac-55d5-4f97-88a3-5b178c76c181"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 헤르메스 벨트",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "964c9ad4-4f19-4a2f-9589-286e1caedb09"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 헤르메스 부츠",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "c7c25437-835a-4f18-869d-36fb7e337394"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 헤르메스 클록",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "764334be-c045-43bf-a4b8-b566f2e4c1b2"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 히아데스 벨트",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "193d0fc8-5ea9-476c-b8a6-50c8f8fa4c6e"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 히아데스 부츠",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "4c30a4f1-2202-4b6c-933e-456156ea9ad6"
     },
     {
+      "seriesId": "62af5b27-43ab-4300-a96c-173d5ada46c7",
       "name": "노바 히아데스 클록",
-      "seriesKey": "nova",
-      "iconAssetId": null
+      "iconAssetId": "2c6efdbe-d2ff-4838-ac2f-0a11e971cba3"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 리카온 글러브",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "f61f4560-9e29-454a-9eff-228d782ed815"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 리카온 벨트",
-      "seriesKey": "tyrant",
       "iconAssetId": "49d165ed-66b2-40f0-9013-753e2d94d3bb"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 리카온 부츠",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "8bde56b2-fa35-4954-8ef4-5e9726b9b1f5"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 리카온 클록",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "1a91dd9a-3e36-47c3-85f6-e91aea1cedf0"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 알테어 글러브",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "6fe421b2-e12e-4697-9184-156579e27fbc"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 알테어 벨트",
-      "seriesKey": "tyrant",
       "iconAssetId": "9ba2ed2d-b39f-495a-8918-9e43c427a211"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 알테어 부츠",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "8e2e22cd-8fe5-42b7-8d38-77de6482dddc"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 알테어 클록",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "bbb1c7e8-f1b8-466e-b002-837a4f243fcd"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 케이론 글러브",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "7a113f25-968c-4fde-baac-f871bbfad6e6"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 케이론 벨트",
-      "seriesKey": "tyrant",
       "iconAssetId": "5541566f-a836-4277-8e69-23a4034c648b"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 케이론 부츠",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "4a437414-d4dd-4eed-b147-840572e4ed45"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 케이론 클록",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "42146954-ae67-4a5b-8a68-f8f7d125e543"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 헤르메스 글러브",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "84a5a0dc-c27e-42d0-9e2e-db8c534e0897"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 헤르메스 벨트",
-      "seriesKey": "tyrant",
       "iconAssetId": "a9af9811-c8ab-4399-a8a4-e082a397f916"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 헤르메스 부츠",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "a187ebd2-dd04-41e6-bd61-74f1180851c6"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 헤르메스 클록",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "b35c23e3-b5be-4582-8814-de9f5a699869"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 히아데스 글러브",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "9910f785-6fa8-4117-8773-61adeab3816e"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 히아데스 벨트",
-      "seriesKey": "tyrant",
       "iconAssetId": "edb5c0db-175a-460d-936e-8101a64774a3"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 히아데스 부츠",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "d4778f76-faf9-426b-a1d7-1174eb9aa421"
     },
     {
+      "seriesId": "9e1210bb-5067-4ab1-ba27-5fc5009d1e24",
       "name": "타일런트 히아데스 클록",
-      "seriesKey": "tyrant",
-      "iconAssetId": null
+      "iconAssetId": "c07e8bad-2ce6-4c0f-b09e-66ebed1a22fa"
     }
   ]
 }

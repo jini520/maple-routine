@@ -3,13 +3,12 @@
  *
  * 파티 인원 상한은 여기 없다. 보스 표의 난이도 줄이 들고 `lib/boss/bosses` 의 `getMaxPartySize` 가 읽는다.
  */
-import type { CrystalPriceRow, CrystalPricesTable } from '../../types/game-data'
-import { BOSS_DIFFICULTIES, type BossDifficulty } from '../../types/scheduler'
+import type { BossCrystalPriceRow, CrystalPricesTable } from '../../types/game-data'
+import type { BossDifficulty } from '../../types/scheduler'
 import {
   compact,
   isNonEmptyString,
   isNonNegativeInteger,
-  isOneOf,
   isPeriodText,
   isRow,
   optional,
@@ -17,19 +16,24 @@ import {
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
-import { gameTable, derive } from '../game-data/table'
-import { getCurrentBossProfitPeriod, isEffectiveAnytimeIn, isEffectiveIn } from './boss-profit-period'
+import { deriveAll, gameTable, type GameTable } from '../game-data/table'
+import { type EffectivePeriod, getCurrentBossProfitPeriod, isEffectiveAnytimeIn, isEffectiveIn, periodOf } from './boss-profit-period'
+import { bossDifficultyOfId } from './bosses'
+import { bossCatalogTable } from './catalog'
 import type { BossCycle } from '../../types'
 
-export type CrystalPriceEntry = CrystalPriceRow
+/** 가격 한 줄. 판정이 읽는 기간과 함께 든다. */
+export interface CrystalPriceEntry {
+  priceMeso: number
+  period: EffectivePeriod
+}
 
-function toPrice(row: Row): CrystalPriceRow | null {
-  if (!isNonEmptyString(row.boss) || !isOneOf(row.difficulty, BOSS_DIFFICULTIES)) return null
-  if (!isNonNegativeInteger(row.priceMeso)) return null
-  const from = optional(row.from, isPeriodText)
-  const until = optional(row.until, isPeriodText)
-  if (from === false || until === false) return null
-  return compact({ boss: row.boss, difficulty: row.difficulty, priceMeso: row.priceMeso, from, until })
+function toPrice(row: Row): BossCrystalPriceRow | null {
+  if (!isNonEmptyString(row.bossDifficultyId) || !isNonNegativeInteger(row.priceMeso)) return null
+  const validFrom = optional(row.validFrom, isPeriodText)
+  const validUntil = optional(row.validUntil, isPeriodText)
+  if (validFrom === false || validUntil === false) return null
+  return compact({ bossDifficultyId: row.bossDifficultyId, priceMeso: row.priceMeso, validFrom, validUntil })
 }
 
 /** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
@@ -37,30 +41,33 @@ export function parseCrystalPrices(value: unknown): CrystalPricesTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const prices = rowsOf(value.prices, toPrice)
-  if (prices === null) return null
-  return { updatedAt, prices }
+  const bossCrystalPrices = rowsOf(value.bossCrystalPrices, toPrice)
+  if (bossCrystalPrices === null) return null
+  return { updatedAt, bossCrystalPrices }
 }
 
-export const crystalPricesTable = gameTable('crystalPrices', { updatedAt: null, prices: [] }, parseCrystalPrices)
+export const crystalPricesTable = gameTable('crystalPrices', { updatedAt: null, bossCrystalPrices: [] }, parseCrystalPrices)
 
 function pairKey(bossKey: string, difficulty: string): string {
   return `${bossKey}|${difficulty}`
 }
 
-/** 보스 · 난이도마다 가격 줄들. 패치로 값이 바뀐 조합은 줄이 여럿이다. */
-const pricesByPair = derive(crystalPricesTable, (table) => {
-  const byPair = new Map<string, CrystalPriceRow[]>()
-  for (const row of table.prices) {
-    const key = pairKey(row.boss, row.difficulty)
+/** 보스 key · 난이도마다 가격 줄들. 패치로 값이 바뀐 조합은 줄이 여럿이다. 모르는 난이도 줄의 가격은 뺀다. */
+const pricesByPair = deriveAll([crystalPricesTable, bossCatalogTable] as GameTable<unknown>[], () => {
+  const byPair = new Map<string, CrystalPriceEntry[]>()
+  for (const row of crystalPricesTable.get().bossCrystalPrices) {
+    const owner = bossDifficultyOfId(row.bossDifficultyId)
+    if (owner === null) continue
+    const key = pairKey(owner.bossKey, owner.difficulty)
+    const entry = { priceMeso: row.priceMeso, period: periodOf(row) }
     const rows = byPair.get(key)
-    if (rows === undefined) byPair.set(key, [row])
-    else rows.push(row)
+    if (rows === undefined) byPair.set(key, [entry])
+    else rows.push(entry)
   }
   return byPair
 })
 
-function pricesOf(bossKey: string, difficulty: BossDifficulty): readonly CrystalPriceRow[] {
+function pricesOf(bossKey: string, difficulty: BossDifficulty): readonly CrystalPriceEntry[] {
   return pricesByPair().get(pairKey(bossKey, difficulty)) ?? []
 }
 
@@ -78,7 +85,7 @@ export function findPriceEntry(
   periodKey: string,
   now: Date,
 ): CrystalPriceEntry | undefined {
-  return pricesOf(bossKey, difficulty).find((entry) => isEffectiveIn(entry, periodKey, now))
+  return pricesOf(bossKey, difficulty).find((entry) => isEffectiveIn(entry.period, periodKey, now))
 }
 
 /**
@@ -98,5 +105,5 @@ export function currentCrystalPriceMeso(
 
 /** 그 기간에 가격을 아는 조합인가. 시계를 안 본다. 기록을 지우는 판정이 쓴다. */
 export function hasPriceEntry(bossKey: string, difficulty: BossDifficulty, periodKey: string): boolean {
-  return pricesOf(bossKey, difficulty).some((entry) => isEffectiveAnytimeIn(entry, periodKey))
+  return pricesOf(bossKey, difficulty).some((entry) => isEffectiveAnytimeIn(entry.period, periodKey))
 }

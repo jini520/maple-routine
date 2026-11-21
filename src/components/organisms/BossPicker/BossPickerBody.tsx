@@ -11,7 +11,7 @@ import { Pressable, View } from 'react-native'
 import { Badge, CheckIcon, Switch, Text } from '../../atoms'
 import { BossPortrait } from '../../molecules/BossPortrait/BossPortrait'
 import type { PickerTile } from '../../../features/party-appointments/boss-picker'
-import { bossAliasOf, bossPortraitAssetIdOf } from '../../../lib/boss/bosses'
+import { bossShortNameOf, bossPortraitAssetIdOf } from '../../../lib/boss/bosses'
 import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
 import { useThemeAppearance } from '../../../theme/context'
 import type { Flight } from './BossPickerTray'
@@ -65,7 +65,7 @@ function Tile(props: {
   onPress: (from: PopoverAnchorRect, measureFrom: Flight['measureFrom']) => void
 }): React.JSX.Element {
   const { tile, selected, locked, registered } = props
-  const name = bossAliasOf(tile.bossKey, tile.bossKey)
+  const name = bossShortNameOf(tile.bossKey, tile.bossKey)
   const { definition } = useThemeAppearance()
   // 누른 좌표로 되짚지 않고 초상을 직접 잰다. 누름의 locationX 는 손가락이 닿은 안쪽 그림 기준이라 어긋난다.
   const portraitRef = useRef<View>(null)

@@ -58,66 +58,52 @@ export type FaqSheetKey = (typeof FAQ_SHEET_KEYS)[number]
 const SHEET_KEY = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
 function toSheet(row: Row): FaqSheetRow | null {
-  if (!isNonEmptyString(row.key) || !SHEET_KEY.test(row.key) || !isNonEmptyString(row.title)) return null
-  return { key: row.key, title: row.title }
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !SHEET_KEY.test(row.key)) return null
+  if (!isNonEmptyString(row.title)) return null
+  return { id: row.id, key: row.key, title: row.title }
 }
 
-/** 아는 종류는 블록, 모르는 종류는 `undefined`(버린다), 형식 위반은 `null`. */
-function toBlock(value: unknown): FaqBlock | undefined | null {
-  if (!isRow(value) || !isNonEmptyString(value.kind)) return null
-  if (value.kind !== 'paragraph') return undefined
-  return isNonEmptyString(value.text) ? { kind: 'paragraph', text: value.text } : null
-}
-
-/** 남는 블록이 없는 문항은 `undefined`(뺀다), 형식 위반은 `null`. */
-function toItem(row: Row): FaqItemRow | undefined | null {
-  if (!isNonEmptyString(row.sheet) || !isNonEmptyString(row.question) || !Array.isArray(row.answer)) return null
-  const answer: FaqBlock[] = []
-  for (const value of row.answer) {
-    const block = toBlock(value)
-    if (block === null) return null
-    if (block !== undefined) answer.push(block)
-  }
-  return answer.length === 0 ? undefined : { sheet: row.sheet, question: row.question, answer }
-}
-
-function itemsOf(value: unknown): FaqItemRow[] | null {
-  if (!Array.isArray(value)) return null
-  const items: FaqItemRow[] = []
-  for (const raw of value) {
-    if (!isRow(raw)) return null
-    const item = toItem(raw)
-    if (item === null) return null
-    if (item !== undefined) items.push(item)
-  }
-  return items
+function toItem(row: Row): FaqItemRow | null {
+  if (!isNonEmptyString(row.sheetId) || !isNonEmptyString(row.question)) return null
+  if (!isNonEmptyString(row.answer) || row.answer.trim() === '') return null
+  return { sheetId: row.sheetId, question: row.question, answer: row.answer }
 }
 
 /**
  * 계약을 지킨 값만 통과시킨다. 어긴 값은 표 전체가 `null` 이다.
  *
- * 모르는 종류의 블록과 그 때문에 빈 문항은 계약 위반이 아니라 버린다. 서버가 새 종류를 쓰기 시작해도 옛 앱이 칸 전체를
- * 버리지 않게 하려는 것이다. 묶음도 문항도 비어도 된다.
+ * 묶음도 문항도 비어도 된다. 문항은 이 칸의 묶음을 가리켜야 한다.
  */
 export function parseFaqs(value: unknown): FaqsTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const sheets = rowsOf(value.sheets, toSheet, { allowEmpty: true })
-  if (sheets === null || !uniqueBy(sheets, (sheet) => sheet.key)) return null
-  const items = itemsOf(value.items)
-  if (items === null) return null
-  return { updatedAt, sheets, items }
+  const faqSheets = rowsOf(value.faqSheets, toSheet, { allowEmpty: true })
+  const faqItems = rowsOf(value.faqItems, toItem, { allowEmpty: true })
+  if (faqSheets === null || faqItems === null) return null
+  if (!uniqueBy(faqSheets, (sheet) => sheet.key) || !uniqueBy(faqSheets, (sheet) => sheet.id)) return null
+  const sheetIds = new Set(faqSheets.map((sheet) => sheet.id))
+  if (faqItems.some((item) => !sheetIds.has(item.sheetId))) return null
+  return { updatedAt, faqSheets, faqItems }
 }
 
-export const faqsTable = gameTable('faqs', { updatedAt: null, sheets: [], items: [] }, parseFaqs)
+export const faqsTable = gameTable<FaqsTable>('faqs', { updatedAt: null, faqSheets: [], faqItems: [] }, parseFaqs)
+
+/** 답 글을 문단으로. 빈 줄(공백만 있는 줄 포함)이 문단을 나누고, 빈 문단은 버린다. */
+function paragraphsOf(answer: string): FaqBlock[] {
+  return answer
+    .split(/\n[ \t]*\n/)
+    .map((text) => text.trim())
+    .filter((text) => text !== '')
+    .map((text) => ({ kind: 'paragraph', text }))
+}
 
 /** 묶음 하나의 시트. 묶음이 없거나 문항이 하나도 없으면 `null` 이다. */
 export function faqSheetOf(table: FaqsTable, key: string): FaqSheetContent | null {
-  const sheet = table.sheets.find((row) => row.key === key)
+  const sheet = table.faqSheets.find((row) => row.key === key)
   if (sheet === undefined) return null
-  const items = table.items
-    .filter((item) => item.sheet === key)
-    .map((item) => ({ question: item.question, answer: item.answer }))
+  const items = table.faqItems
+    .filter((item) => item.sheetId === sheet.id)
+    .map((item) => ({ question: item.question, answer: paragraphsOf(item.answer) }))
   return items.length === 0 ? null : { title: sheet.title, items }
 }

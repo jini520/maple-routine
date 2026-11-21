@@ -1,7 +1,7 @@
 // 완료 판정의 **출처**를 고정한다.
 //
-// 케이스를 카드 렌더러의 분기마다 하나씩 둔다. 이 표가 카드와 갈라지는 순간이 곧 링이 거짓말을
-// 시작하는 순간이라, 여기 없는 분기는 **아직 안 본 분기** 가 아니라 **빠뜨린 분기**다.
+// 무엇으로 완료를 가르는지는 컨텐츠 표의 `checkType` 이 정한다. 케이스를 그 값마다 하나 이상 둔다. 카드 · 링 · 남은 스케줄이
+// 모두 이 판정을 읽어서, 여기 없는 값은 **아직 안 본 값** 이 아니라 **빠뜨린 값**이다.
 import type { DailyContent, WeeklyContent } from '../../../types'
 
 import {
@@ -58,10 +58,11 @@ describe('일간 완료 판정', () => {
 })
 
 describe('주간 완료 판정', () => {
-  it('에픽 던전은 한 번이라도 돌면 완료다', () => {
-    const epic = { contentKey: 'epic_dungeon_high_mountain', apiName: '에픽 던전 : 하이마운틴' }
-    expect(weeklyContentCompletion(weekly({ ...epic, nowCount: 1 }))).toBe('complete')
-    expect(weeklyContentCompletion(weekly({ ...epic, nowCount: 0 }))).toBe('incomplete')
+  // 넥슨은 에픽 던전의 진행 중 횟수를 주지 않고 다 깨면 `5/0` 으로 준다. 최대 횟수는 병합이 표의 5 로 덮는다.
+  it('에픽 던전은 횟수로 센다. 표의 최대 횟수 5 에 닿아야 완료다', () => {
+    const epic = { contentKey: 'epic_dungeon_high_mountain', apiName: '에픽 던전 : 하이마운틴', kind: 'contents' as const }
+    expect(weeklyContentCompletion(weekly({ ...epic, nowCount: 5, maxCount: 5, questState: null }))).toBe('complete')
+    expect(weeklyContentCompletion(weekly({ ...epic, nowCount: 1, maxCount: 5, questState: null }))).toBe('incomplete')
   })
 
   it('길드 플래그 레이스도 참여 여부다', () => {
@@ -119,26 +120,24 @@ describe('주간 완료 판정', () => {
     expect(weeklyContentCompletion(weekly({ ...critias, questState: 0 }))).toBe('incomplete')
   })
 
-  // 끝이 없는 항목은 미완료가 아니라 세지 않음이다. 이 자리에 남은 것은 무릉도장 하나다.
-  // 층수는 참여 여부로도 못 접는다. 1층도 했다 인지는 답이 없다.
-  it('무릉도장은 판정하지 않는다', () => {
+  // 무릉도장은 점수로 가른다. 층수가 0 보다 크면 그 주에 참여한 것이라 완료다(사용자 지정 2026-11-19).
+  it('무릉도장은 층수가 있으면 완료다', () => {
     const muLungDojo = { contentKey: 'mu_lung_dojo', apiName: '무릉도장' }
-    expect(weeklyContentCompletion(weekly({ ...muLungDojo, nowCount: 50, maxCount: 0 }))).toBe('unmeasurable')
-    expect(weeklyContentCompletion(weekly({ ...muLungDojo, nowCount: 0, maxCount: 0 }))).toBe('unmeasurable')
+    expect(weeklyContentCompletion(weekly({ ...muLungDojo, nowCount: 50, maxCount: 0 }))).toBe('complete')
+    expect(weeklyContentCompletion(weekly({ ...muLungDojo, nowCount: 0, maxCount: 0 }))).toBe('incomplete')
   })
 })
 
 describe('진행 합계', () => {
-  // 끝이 없는 항목이 분모에 들어가면 링이 100%에 절대 도달하지 못한다.
-  it('끝이 없는 항목은 분모에서 빠진다', () => {
+  // 점수 컨텐츠도 분모에 들고, 점수가 있으면 완료로 센다.
+  it('무릉도장과 지하 수로도 분모에 들고, 점수가 있으면 분자에도 든다', () => {
     const contents = [
       weekly({ contentKey: 'mu_lung_dojo', apiName: '무릉도장', nowCount: 90 }),
-      // 지하 수로는 분모에 든다. 점수가 있으니 완료로도 센다.
-      weekly({ contentKey: 'guild_underground_waterway', apiName: '[길드] 지하 수로', nowCount: 1200 }),
+      weekly({ contentKey: 'guild_underground_waterway', apiName: '[길드] 지하 수로', nowCount: 0 }),
       weekly({ contentKey: 'weekly_quest_critias', apiName: '[주간 퀘스트] 크리티아스 주간 임무', questState: 2 }),
     ]
 
-    expect(weeklyContentProgress(contents, 300, new Set())).toEqual({ completed: 2, total: 2 })
+    expect(weeklyContentProgress(contents, 300, new Set())).toEqual({ completed: 2, total: 3 })
   })
 
   // 요구 레벨에 못 미치는 항목은 **분모에서도 빠진다.** 남겨 두면 그 캐릭터의
@@ -164,20 +163,22 @@ describe('진행 합계', () => {
 
 // 에픽 던전은 4종이지만 주 3회가 한도다. 3종을 끝낸 뒤 남은 1종은 할 일이 아니라 `마감` 이다.
 describe('에픽 던전 주간 한도', () => {
+  /** 다 깬 던전은 5, 안 깬 던전은 0 이다. 넥슨은 진행 중 횟수를 주지 않는다. 최대 횟수는 병합이 덮은 표의 5 다. */
   const epic = (key: string, name: string, nowCount: number, isRegistered = true): WeeklyContent =>
     weekly({
       contentKey: `epic_dungeon_${key}`,
       apiName: `에픽 던전 : ${name}`,
       kind: 'contents',
       nowCount,
+      maxCount: 5,
       questState: null,
       isRegistered,
     })
   const 넷 = [
-    epic('high_mountain', '하이마운틴', 1),
-    epic('angler_company', '앵글러 컴퍼니', 2),
+    epic('high_mountain', '하이마운틴', 5),
+    epic('angler_company', '앵글러 컴퍼니', 5),
     epic('nightmare_paradise', '악몽선경', 0),
-    epic('aurum_regis', '아우룸 레기스', 1),
+    epic('aurum_regis', '아우룸 레기스', 5),
   ]
 
   it('3종을 완료하면 남은 1종이 막힌다', () => {
@@ -187,8 +188,8 @@ describe('에픽 던전 주간 한도', () => {
   it('2종이면 아무것도 안 막힌다', () => {
     expect(
       weeklyLimitClosedKeys([
-        epic('high_mountain', '하이마운틴', 1),
-        epic('angler_company', '앵글러 컴퍼니', 1),
+        epic('high_mountain', '하이마운틴', 5),
+        epic('angler_company', '앵글러 컴퍼니', 5),
         epic('nightmare_paradise', '악몽선경', 0),
       ]).size,
     ).toBe(0)
@@ -197,9 +198,9 @@ describe('에픽 던전 주간 한도', () => {
   // 한도는 등록이 아니라 진행 횟수를 막는다. 원천은 표시 목록이 아니라 병합된 목록 전체다.
   it('등록 안 한 던전의 완료도 센다', () => {
     const 섞임 = [
-      epic('high_mountain', '하이마운틴', 1),
-      epic('angler_company', '앵글러 컴퍼니', 1),
-      epic('nightmare_paradise', '악몽선경', 1, false),
+      epic('high_mountain', '하이마운틴', 5),
+      epic('angler_company', '앵글러 컴퍼니', 5),
+      epic('nightmare_paradise', '악몽선경', 5, false),
       epic('aurum_regis', '아우룸 레기스', 0),
     ]
 
@@ -214,9 +215,9 @@ describe('에픽 던전 주간 한도', () => {
   it('요구 레벨 미달은 막혀도 분모에서 빠진다', () => {
     // 아우룸 레기스의 요구 레벨은 290 이다. 285 캐릭터에게는 그 한 줄이 이 캐릭터의 일이 아니다.
     const 셋완료 = [
-      epic('high_mountain', '하이마운틴', 1),
-      epic('angler_company', '앵글러 컴퍼니', 1),
-      epic('nightmare_paradise', '악몽선경', 1),
+      epic('high_mountain', '하이마운틴', 5),
+      epic('angler_company', '앵글러 컴퍼니', 5),
+      epic('nightmare_paradise', '악몽선경', 5),
       epic('aurum_regis', '아우룸 레기스', 0),
     ]
 

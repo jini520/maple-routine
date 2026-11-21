@@ -115,6 +115,6 @@ it('상세는 아이템 key 와 반지 레벨 · 월드로 부르고, 날마다 
 
   const result = await fetchMarketItem({ itemKey: 'magic_eyepatch', ringLevel: null, world: 'scania' }, null)
 
-  expect(fetchSpy.mock.calls[0]?.[0]).toBe('https://mapleroutine.store/v1/market/items/magic_eyepatch?ring=&world=scania')
+  expect(fetchSpy.mock.calls[0]?.[0]).toBe('https://api.mapleroutine.store/v1/market/items/magic_eyepatch?ring=&world=scania')
   expect(result).toMatchObject({ kind: 'ok', body: { grade: 'normal', series: [{ date: '2026-11-15', price: 2_600_000_000 }] } })
 })

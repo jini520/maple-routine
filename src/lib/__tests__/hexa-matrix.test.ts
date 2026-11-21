@@ -1,4 +1,4 @@
-// 헥사 매트릭스 표를 읽는 쪽. 값은 fixture(사용자가 준 비용 표와 2026-10-30 에 조회한 직업 48 개의 코어)다.
+// 헥사 매트릭스 표를 읽는 쪽. 값은 fixture(사용자가 준 비용 표와 직업 48 개 · 전직업의 코어)다.
 import {
   allocateHexaStorage,
   findHexaCore,
@@ -6,43 +6,18 @@ import {
   hexaFragmentsBetween,
   hexaFragmentsLeft,
   hexaJobCores,
-  hexaKindOf,
   hexaSpendMeso,
   hexaStorageCandidates,
   parseHexaMatrix,
 } from '../cashbook/hexa-matrix'
 import hexaMatrix from '../../__fixtures__/game-data/hexa-matrix.json'
 
-describe('hexaKindOf: 코어 이름과 API 타입으로 종류를 가른다', () => {
-  it('이름 표에 있으면 그 종류다. 3rd 스킬 코어와 솔 야누스 · 솔 헤카테가 그렇다', () => {
-    expect(hexaKindOf({ name: '창룡파천검 : 만참', apiType: '스킬 코어' })?.key).toBe('skill_3rd')
-    expect(hexaKindOf({ name: '솔 야누스', apiType: '공용 코어' })?.key).toBe('common')
-    expect(hexaKindOf({ name: '솔 헤카테', apiType: '공용 코어' })?.key).toBe('common')
-  })
-
-  it('이름 표에 없으면 그 API 타입의 기본 종류다. 공용 코어의 나머지 하나가 직업 공용 코어가 된다', () => {
-    expect(hexaKindOf({ name: '창룡파천검 : 승천', apiType: '스킬 코어' })?.key).toBe('skill')
-    expect(hexaKindOf({ name: '화중군자 VI', apiType: '공용 코어' })?.key).toBe('job_common')
-    expect(hexaKindOf({ name: '매화검 본초 : 선참 VI', apiType: '마스터리 코어' })?.key).toBe('mastery')
-  })
-
-  // 소울마스터의 3rd 코어는 API 가 이름 끝에 공백을 붙여 준다. 그대로 비교하면 기본 종류로 잘못 간다.
-  it('이름의 앞뒤 공백을 걷고 비교한다', () => {
-    expect(hexaKindOf({ name: '셀레스티얼 클리브 ', apiType: '스킬 코어' })?.key).toBe('skill_3rd')
-  })
-
-  // 새 타입이 나왔는데 종류 표에 없으면 비용을 낼 수 없다. 아무 종류나 붙이면 틀린 금액이 저장된다.
-  it('종류 표에 없는 API 타입은 null 이다', () => {
-    expect(hexaKindOf({ name: '어떤 코어', apiType: '새 코어' })).toBeNull()
-  })
-})
-
 describe('hexaJobCores: 직업의 코어 목록', () => {
-  it('렌은 코어 열넷이 API 차례(스킬 → 마스터리 → 강화 → 공용)로 서고 코어마다 종류가 붙는다', () => {
+  it('렌은 코어 열넷이 종류의 차례(스킬 → 3rd → 마스터리 → 강화 → 공용 → 직업 공용)로 서고 코어마다 종류가 붙는다', () => {
     const cores = hexaJobCores('렌')
 
     expect(cores).toHaveLength(14)
-    expect(cores.map((core) => core.kind?.key)).toEqual([
+    expect(cores.map((core) => core.kind.key)).toEqual([
       'skill', 'skill', 'skill_3rd',
       'mastery', 'mastery', 'mastery', 'mastery',
       'enhance', 'enhance', 'enhance', 'enhance',
@@ -50,12 +25,26 @@ describe('hexaJobCores: 직업의 코어 목록', () => {
     ])
   })
 
-  it('모르는 직업은 빈 목록이다', () => {
+  // 모든 직업이 함께 쓰는 코어는 `전직업` 줄 하나에만 있다. 직업마다 목록에 섞어야 솔 야누스 · 솔 헤카테를 고를 수 있다.
+  it('전직업 줄의 코어가 직업마다 공용 코어 자리에 선다', () => {
+    expect(hexaJobCores('히어로').filter((core) => core.kind.key === 'common').map((core) => core.name)).toEqual([
+      '솔 야누스',
+      '솔 헤카테',
+    ])
+  })
+
+  // 호영만 3rd 스킬 코어가 스킬 코어 둘보다 앞에 저장돼 있었다. 1.0.15 부터 종류의 차례로 맞춘다(사용자 선택 2026-11-20).
+  it('호영도 스킬 코어 둘 다음에 3rd 스킬 코어가 선다', () => {
+    expect(hexaJobCores('호영').slice(0, 3).map((core) => core.kind.key)).toEqual(['skill', 'skill', 'skill_3rd'])
+  })
+
+  it('모르는 직업과 전직업은 빈 목록이다', () => {
     expect(hexaJobCores('없는 직업')).toEqual([])
+    expect(hexaJobCores('전직업')).toEqual([])
   })
 
   it('기록의 key(코어 이름)로 직업을 몰라도 코어를 되짚는다', () => {
-    expect(findHexaCore('매화검 본초 : 선참 VI')?.kind?.key).toBe('mastery')
+    expect(findHexaCore('매화검 본초 : 선참 VI')?.kind.key).toBe('mastery')
     expect(findHexaCore('없는 코어')).toBeNull()
   })
 })
@@ -204,7 +193,7 @@ describe('allocateHexaStorage: 보관에서 가져오는 배분', () => {
 
 describe('findHexaStat: 헥사 스탯과 활성화 조각', () => {
   it('헥사 스탯 Ⅱ 의 활성화는 조각 200 개다', () => {
-    expect(findHexaStat('hexa_stat_2')).toEqual({ key: 'hexa_stat_2', name: '헥사 스탯 Ⅱ', activationFragments: 200 })
+    expect(findHexaStat('hexa_stat_2')).toMatchObject({ key: 'hexa_stat_2', name: '헥사 스탯 Ⅱ', activationFragmentQuantity: 200 })
   })
 })
 
@@ -215,19 +204,16 @@ describe('parseHexaMatrix: 계약을 어긴 표는 통째로 버린다', () => {
     expect(parseHexaMatrix(hexaMatrix)).not.toBeNull()
   })
 
-  // 기본 종류가 둘이면 이름 표에 없는 코어가 어느 쪽인지 못 정한다.
-  it('한 API 타입에 기본 종류가 둘이면 버린다', () => {
-    const kinds = hexaMatrix.kinds.map((kind) => (kind.key === 'skill_3rd' ? { ...kind, isDefault: true } : kind))
-    expect(parseHexaMatrix(표({ kinds }))).toBeNull()
-  })
-
-  it('이름 표나 비용 줄이 없는 종류를 가리키면 버린다', () => {
-    expect(parseHexaMatrix(표({ nameKinds: [{ name: '솔 야누스', kind: '없는 종류' }] }))).toBeNull()
-    expect(parseHexaMatrix(표({ levelCosts: [{ kind: '없는 종류', level: 0, fragments: 1, solErda: 0 }] }))).toBeNull()
+  it('코어나 비용 줄이 이 칸에 없는 직업 · 종류를 가리키면 버린다', () => {
+    const [core] = hexaMatrix.hexaCores
+    const [cost] = hexaMatrix.hexaCoreLevelCosts
+    expect(parseHexaMatrix(표({ hexaCores: [{ ...core, typeId: '없는 종류' }] }))).toBeNull()
+    expect(parseHexaMatrix(표({ hexaCores: [{ ...core, jobId: '없는 직업' }] }))).toBeNull()
+    expect(parseHexaMatrix(표({ hexaCoreLevelCosts: [{ ...cost, typeId: '없는 종류' }] }))).toBeNull()
   })
 
   it('활성화 비용을 모르는 스탯은 비용 없이 받는다', () => {
-    const stats = [...hexaMatrix.stats, { key: 'hexa_stat_4', name: '헥사 스탯 Ⅳ', activationFragments: null }]
-    expect(parseHexaMatrix(표({ stats }))?.stats.at(-1)).toEqual({ key: 'hexa_stat_4', name: '헥사 스탯 Ⅳ' })
+    const hexaStats = [...hexaMatrix.hexaStats, { id: 's4', key: 'hexa_stat_4', name: '헥사 스탯 Ⅳ', activationFragmentQuantity: null }]
+    expect(parseHexaMatrix(표({ hexaStats }))?.hexaStats.at(-1)).toEqual({ id: 's4', key: 'hexa_stat_4', name: '헥사 스탯 Ⅳ' })
   })
 })

@@ -10,6 +10,7 @@ import {
   huntingRegionsForLevel,
   levelGapOf,
   monsterLevelRangeOf,
+  huntingGroundsTable,
   parseHuntingGrounds,
 } from '../cashbook/hunting-grounds'
 
@@ -257,35 +258,45 @@ describe('findHuntingGroundByName', () => {
 describe('지역 아이콘', () => {
   it('지역은 서버가 정한 아이콘 그림 id 를 들고, 아이콘이 없는 지역은 null 이다', () => {
     expect(getHuntingRegionIconUrl(findHuntingRegion('arcs')?.iconAssetId ?? null)).toBe(imageOfPath('maps/icons/Arcs.webp'))
+
+    const 표 = huntingGroundsTable.get()
+    huntingGroundsTable.set({
+      ...표,
+      huntingRegions: 표.huntingRegions.map(({ iconAssetId, ...region }) =>
+        region.key === 'burning_cernium' ? region : { ...region, iconAssetId },
+      ),
+    })
     expect(findHuntingRegion('burning_cernium')?.iconAssetId).toBeNull()
+    huntingGroundsTable.set(표)
   })
 
-  it('아이콘이 없는 지역도 지역으로 읽고, 아이콘은 `null` 이다', () => {
+  it('아이콘이 없는 지역도 지역으로 읽는다', () => {
     const table = parseHuntingGrounds({
       updatedAt: null,
-      regions: [{ key: 'arcs', name: '호텔 아르크스', forceType: 'authentic' }],
-      grounds: [{ key: 'arcs_lobby', region: 'arcs', name: '로비', force: 30, mobs: 30 }],
-      groundLevels: [{ ground: 'arcs_lobby', level: 265 }],
+      huntingRegions: [{ id: 'r1', key: 'arcs', name: '호텔 아르크스', forceType: 'authentic', iconAssetId: null }],
+      huntingGrounds: [
+        { id: 'g1', key: 'arcs_lobby', regionId: 'r1', name: '로비', requiredForce: 30, mobQuantity: 30, isPopular: false },
+      ],
+      huntingGroundLevels: [{ groundId: 'g1', mobLevel: 265 }],
     })
-    expect(table?.regions).toEqual([{ key: 'arcs', name: '호텔 아르크스', forceType: 'authentic', iconAssetId: null }])
+    expect(table?.huntingRegions).toEqual([{ id: 'r1', key: 'arcs', name: '호텔 아르크스', forceType: 'authentic' }])
   })
 })
 
-describe('인기 여부', () => {
-  /** 서버 배포 전 응답과 옛 기기 사본에는 이 칸이 없다. 그 응답도 읽혀야 사냥 계산기가 선다. */
-  it('`popular` 가 없는 사냥터는 인기 아님으로 읽고, 있으면 그 값을 읽는다', () => {
-    const table = parseHuntingGrounds({
-      updatedAt: null,
-      regions: [{ key: 'arcs', name: '호텔 아르크스', forceType: 'authentic' }],
-      grounds: [
-        { key: 'arcs_lobby', region: 'arcs', name: '로비', force: 30, mobs: 30 },
-        { key: 'arcs_hall', region: 'arcs', name: '홀', force: 30, mobs: 30, popular: true },
-      ],
-      groundLevels: [
-        { ground: 'arcs_lobby', level: 265 },
-        { ground: 'arcs_hall', level: 265 },
-      ],
-    })
-    expect(table?.grounds.map((each) => each.popular)).toEqual([false, true])
+// 사냥터가 없는 지역을, 레벨 줄이 없는 사냥터를 가리키면 그 사냥터는 목록 어디에도 설 자리가 없다.
+describe('다른 줄을 가리키는 칸', () => {
+  const 표 = {
+    updatedAt: null,
+    huntingRegions: [{ id: 'r1', key: 'arcs', name: '호텔 아르크스', forceType: 'authentic' }],
+    huntingGrounds: [
+      { id: 'g1', key: 'arcs_lobby', regionId: 'r1', name: '로비', requiredForce: 30, mobQuantity: 30, isPopular: false },
+    ],
+    huntingGroundLevels: [{ groundId: 'g1', mobLevel: 265 }],
+  }
+
+  it('이 칸에 없는 지역 · 사냥터를 가리키면 표 전체를 버린다', () => {
+    expect(parseHuntingGrounds(표)).not.toBeNull()
+    expect(parseHuntingGrounds({ ...표, huntingGrounds: [{ ...표.huntingGrounds[0], regionId: 'nope' }] })).toBeNull()
+    expect(parseHuntingGrounds({ ...표, huntingGroundLevels: [{ groundId: 'nope', mobLevel: 265 }] })).toBeNull()
   })
 })

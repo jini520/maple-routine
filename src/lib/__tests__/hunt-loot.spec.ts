@@ -1,30 +1,16 @@
+import fixture from '../../__fixtures__/game-data/hunt-loot.json'
 import { findHuntLoot, huntLootOn, parseHuntLoot } from '../cashbook/hunt-loot'
 
-const 우유 = {
-  key: 'reindeer_milk',
-  kind: 'consumable',
-  name: '순록의 우유',
-  iconAssetId: 'reindeer_milk.webp',
-  npcPriceMeso: 2750,
-  from: null,
-  until: null,
-}
-const 돋보기 = {
-  key: 'suspicious_magnifier',
-  kind: 'event',
-  name: '수상한 돋보기',
-  iconAssetId: 'suspicious_magnifier.webp',
-  npcPriceMeso: null,
-  from: '2026-10-22',
-  until: '2026-11-19',
-}
+const 우유 = { itemId: 'i-milk', type: 'consumable', npcPriceMeso: 2750, validFrom: null, validUntil: null }
+const 돋보기 = { itemId: 'i-magnifier', type: 'event', npcPriceMeso: null, validFrom: '2026-10-22', validUntil: '2026-11-19' }
 
 describe('parseHuntLoot', () => {
   /** 앱이 소비 아이템의 단가를 이 값으로 채운다. 없는 줄을 받으면 금액이 0 으로 적힌다. */
   it('NPC 가격이 소비에만 있고 소비에는 반드시 있어야 표를 받는다', () => {
-    expect(parseHuntLoot({ updatedAt: null, items: [우유, 돋보기] })).not.toBeNull()
-    expect(parseHuntLoot({ updatedAt: null, items: [{ ...우유, npcPriceMeso: null }] })).toBeNull()
-    expect(parseHuntLoot({ updatedAt: null, items: [{ ...돋보기, npcPriceMeso: 100 }] })).toBeNull()
+    expect(parseHuntLoot({ updatedAt: null, huntLootItems: [우유, 돋보기] })).not.toBeNull()
+    expect(parseHuntLoot({ updatedAt: null, huntLootItems: [{ ...우유, npcPriceMeso: null }] })).toBeNull()
+    expect(parseHuntLoot({ updatedAt: null, huntLootItems: [{ ...돋보기, npcPriceMeso: 100 }] })).toBeNull()
+    expect(parseHuntLoot(fixture)).not.toBeNull()
   })
 })
 

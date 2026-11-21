@@ -1,0 +1,14 @@
+{
+  "updatedAt": "2026-11-10T06:19:41.996Z",
+  "gameRules": {
+    "weeklyBossSelectionLimit": 12,
+    "weeklyCrystalSaleLimit": 90,
+    "defaultMaxPartySize": 6,
+    "spendTariffPercent": 10,
+    "rewardCoinPriceMeso": 40000000,
+    "mesoMarketFeePercent": 1,
+    "cubeAppraisalFreeMaxLevel": 120,
+    "cubeAppraisalCoefficient": 20,
+    "starforceDestroyDefenceSurchargePercent": 200
+  }
+}

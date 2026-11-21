@@ -11,8 +11,7 @@
  * 필드를 더할 때 양쪽을 함께 볼 것.
  */
 import { isNoticeKind, type Notice, type NoticeBlock, type NoticeKind, type NoticeLookup } from '../types/notice'
-
-const BASE_URL = 'https://mapleroutine.store/v1'
+import { API_BASE_URL } from './base-url'
 
 /**
  * 얼마나 기다리나. **짧게 잡는다.**
@@ -89,7 +88,7 @@ async function getJson(path: string): Promise<JsonResponse | null> {
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
   try {
-    const response = await fetch(`${BASE_URL}${path}`, { signal: controller.signal })
+    const response = await fetch(`${API_BASE_URL}${path}`, { signal: controller.signal })
     if (response.status !== 200) return { status: response.status }
     return { status: 200, body: (await response.json()) as unknown }
   } catch {

@@ -18,6 +18,7 @@ import type {
 } from '../../types/game-data'
 import type { HuntingGround, HuntingRegion } from '../../types/hunting-grounds'
 import {
+  compact,
   isBoolean,
   isNonEmptyString,
   isNonNegativeInteger,
@@ -36,75 +37,92 @@ import { LEVEL_PENALTY_PATCHED_ON } from './hunting-meso'
 const FORCE_TYPES = ['arcane', 'authentic'] as const
 
 function toRegion(row: Row): HuntingRegionRow | null {
-  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.name) || !isOneOf(row.forceType, FORCE_TYPES)) return null
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
+  if (!isOneOf(row.forceType, FORCE_TYPES)) return null
   const iconAssetId = optional(row.iconAssetId, isNonEmptyString)
   if (iconAssetId === false) return null
-  return { key: row.key, name: row.name, forceType: row.forceType, iconAssetId: iconAssetId ?? null }
+  return compact({ id: row.id, key: row.key, name: row.name, forceType: row.forceType, iconAssetId })
 }
 
 function toGround(row: Row): HuntingGroundRow | null {
-  if (!isNonEmptyString(row.key) || !isNonEmptyString(row.region) || !isNonEmptyString(row.name)) return null
-  if (!isNonNegativeInteger(row.force) || !isPositiveInteger(row.mobs)) return null
-  // 서버 배포 전 응답과 옛 기기 사본에는 이 칸이 없다. 그 응답도 읽어야 계산기가 선다.
-  const popular = row.popular ?? false
-  if (!isBoolean(popular)) return null
-  return { key: row.key, region: row.region, name: row.name, force: row.force, mobs: row.mobs, popular }
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.regionId)) return null
+  if (!isNonEmptyString(row.name) || !isNonNegativeInteger(row.requiredForce) || !isPositiveInteger(row.mobQuantity)) return null
+  if (!isBoolean(row.isPopular)) return null
+  return {
+    id: row.id,
+    key: row.key,
+    regionId: row.regionId,
+    name: row.name,
+    requiredForce: row.requiredForce,
+    mobQuantity: row.mobQuantity,
+    isPopular: row.isPopular,
+  }
 }
 
 function toLevel(row: Row): HuntingGroundLevelRow | null {
-  if (!isNonEmptyString(row.ground) || !isPositiveInteger(row.level)) return null
-  return { ground: row.ground, level: row.level }
+  if (!isNonEmptyString(row.groundId) || !isPositiveInteger(row.mobLevel)) return null
+  return { groundId: row.groundId, mobLevel: row.mobLevel }
 }
 
 /**
  * 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다.
  *
- * 레벨이 없는 사냥터도 어긴 것이다. 몬스터 레벨 범위를 빈 목록에서 재면 `Infinity` 가 되어 지역 목록이 깨진다.
+ * 레벨이 없는 사냥터도 어긴 것이다. 몬스터 레벨 범위를 빈 목록에서 재면 `Infinity` 가 되어 지역 목록이 깨진다. 사냥터와 레벨
+ * 줄은 이 칸의 지역 · 사냥터를 가리켜야 한다.
  */
 export function parseHuntingGrounds(value: unknown): HuntingGroundsTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const regions = rowsOf(value.regions, toRegion)
-  const grounds = rowsOf(value.grounds, toGround)
-  const groundLevels = rowsOf(value.groundLevels, toLevel)
-  if (regions === null || grounds === null || groundLevels === null) return null
-  if (!uniqueBy(regions, (region) => region.key) || !uniqueBy(grounds, (ground) => ground.key)) return null
-  const leveled = new Set(groundLevels.map((row) => row.ground))
-  if (grounds.some((ground) => !leveled.has(ground.key))) return null
-  return { updatedAt, regions, grounds, groundLevels }
+  const huntingRegions = rowsOf(value.huntingRegions, toRegion)
+  const huntingGrounds = rowsOf(value.huntingGrounds, toGround)
+  const huntingGroundLevels = rowsOf(value.huntingGroundLevels, toLevel)
+  if (huntingRegions === null || huntingGrounds === null || huntingGroundLevels === null) return null
+  if (!uniqueBy(huntingRegions, (region) => region.key) || !uniqueBy(huntingRegions, (region) => region.id)) return null
+  if (!uniqueBy(huntingGrounds, (ground) => ground.key) || !uniqueBy(huntingGrounds, (ground) => ground.id)) return null
+  const regionIds = new Set(huntingRegions.map((region) => region.id))
+  const groundIds = new Set(huntingGrounds.map((ground) => ground.id))
+  if (huntingGrounds.some((ground) => !regionIds.has(ground.regionId))) return null
+  if (huntingGroundLevels.some((row) => !groundIds.has(row.groundId))) return null
+  const leveled = new Set(huntingGroundLevels.map((row) => row.groundId))
+  if (huntingGrounds.some((ground) => !leveled.has(ground.id))) return null
+  return { updatedAt, huntingRegions, huntingGrounds, huntingGroundLevels }
 }
 
-export const huntingGroundsTable = gameTable('huntingGrounds', { updatedAt: null, regions: [], grounds: [], groundLevels: [] }, parseHuntingGrounds)
+export const huntingGroundsTable = gameTable<HuntingGroundsTable>(
+  'huntingGrounds',
+  { updatedAt: null, huntingRegions: [], huntingGrounds: [], huntingGroundLevels: [] },
+  parseHuntingGrounds,
+)
 
 /** 줄 표를 지역 → 사냥터 → 레벨로 묶은 것. 차례는 표에 적힌 그대로다(사용자가 매긴 순서라 정렬하지 않는다). */
 const regions = derive(huntingGroundsTable, (table): readonly HuntingRegion[] => {
   const levelsByGround = new Map<string, number[]>()
-  for (const row of table.groundLevels) {
-    const levels = levelsByGround.get(row.ground)
-    if (levels === undefined) levelsByGround.set(row.ground, [row.level])
-    else levels.push(row.level)
+  for (const row of table.huntingGroundLevels) {
+    const levels = levelsByGround.get(row.groundId)
+    if (levels === undefined) levelsByGround.set(row.groundId, [row.mobLevel])
+    else levels.push(row.mobLevel)
   }
   const groundsByRegion = new Map<string, HuntingGround[]>()
-  for (const row of table.grounds) {
+  for (const row of table.huntingGrounds) {
     const ground: HuntingGround = {
       key: row.key,
       name: row.name,
-      force: row.force,
-      mobs: row.mobs,
-      levels: [...(levelsByGround.get(row.key) ?? [])].sort((a, b) => a - b),
-      popular: row.popular,
+      force: row.requiredForce,
+      mobs: row.mobQuantity,
+      levels: [...(levelsByGround.get(row.id) ?? [])].sort((a, b) => a - b),
+      popular: row.isPopular,
     }
-    const grounds = groundsByRegion.get(row.region)
-    if (grounds === undefined) groundsByRegion.set(row.region, [ground])
+    const grounds = groundsByRegion.get(row.regionId)
+    if (grounds === undefined) groundsByRegion.set(row.regionId, [ground])
     else grounds.push(ground)
   }
-  return table.regions.map((row) => ({
+  return table.huntingRegions.map((row) => ({
     key: row.key,
     name: row.name,
     forceType: row.forceType,
-    iconAssetId: row.iconAssetId,
-    grounds: groundsByRegion.get(row.key) ?? [],
+    iconAssetId: row.iconAssetId ?? null,
+    grounds: groundsByRegion.get(row.id) ?? [],
   }))
 })
 
