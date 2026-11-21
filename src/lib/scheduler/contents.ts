@@ -8,13 +8,15 @@
  */
 import {
   CONTENT_CATEGORY_KEYS,
+  CONTENT_CHECK_TYPES,
   type ContentCategoryKey,
   type ContentCategoryRow,
+  type ContentCheckType,
   type ContentRow,
   type ContentSection,
   type ContentsTable,
 } from '../../types/game-data'
-import type { EffectivePeriod } from '../boss/boss-profit-period'
+import { periodOf, type EffectivePeriod } from '../boss/boss-profit-period'
 import {
   compact,
   isBoolean,
@@ -32,7 +34,7 @@ import {
 } from '../game-data/contract'
 import { gameTable, derive } from '../game-data/table'
 
-export type { ContentSection }
+export type { ContentCheckType, ContentSection }
 
 /** 카드 그림의 id 셋. 배경은 지도와 보스 초상 중 하나이고, 지역 아이콘은 지도 배경 카드 옆에 선다. */
 export interface ContentBackground {
@@ -48,104 +50,118 @@ export interface ContentEntry extends EffectivePeriod {
   content_name: string
   category: ContentCategoryKey
   /** 카드 · 관리 화면의 이름. */
-  displayName: string
-  /** today 남은 스케줄처럼 좁은 자리의 이름. */
+  name: string
+  /** today 남은 스케줄처럼 좁은 자리의 이름. 공유 컨텐츠는 today 공유 위젯의 글자다. */
   shortName: string
   background?: ContentBackground
   /** 관리 화면 참고 태그를 컨텐츠 단위로 덮는 글자. `null` 은 숨긴다. */
   countTag?: string | null
   type: 'contents' | 'quest'
+  checkType: ContentCheckType
   registration_flag: 'true' | 'false'
   now_count: number
+  /** 표의 최대 횟수. 횟수로 완료를 세지 않는 컨텐츠는 0 이다. */
   max_count: number
   quest_state: '0' | '1' | '2' | null
   requiredLevel?: number
 }
 
-const SECTIONS = ['daily', 'weekly'] as const
+const CYCLES = ['daily', 'weekly'] as const
 const TYPES = ['contents', 'quest'] as const
 const SHARE_SCOPES = ['character', 'world', 'account'] as const
 
 function toCategory(row: Row): ContentCategoryRow | null {
-  if (!isOneOf(row.key, CONTENT_CATEGORY_KEYS) || !isNonEmptyString(row.name) || !isBoolean(row.hideCountTag)) return null
+  if (!isNonEmptyString(row.id) || !isOneOf(row.key, CONTENT_CATEGORY_KEYS) || !isNonEmptyString(row.name)) return null
+  if (!isBoolean(row.hidesCountTag)) return null
   const countTag = optional(row.countTag, isNonEmptyString)
-  const weeklyLimit = optional(row.weeklyLimit, isPositiveInteger)
-  const sharedOrder = optional(row.sharedOrder, isNonNegativeInteger)
-  if (countTag === false || weeklyLimit === false || sharedOrder === false) return null
-  return compact({ key: row.key, name: row.name, countTag, hideCountTag: row.hideCountTag, weeklyLimit, sharedOrder })
+  const weeklyMaxCount = optional(row.weeklyMaxCount, isPositiveInteger)
+  const sharedSortOrder = optional(row.sharedSortOrder, isNonNegativeInteger)
+  if (countTag === false || weeklyMaxCount === false || sharedSortOrder === false) return null
+  return compact({
+    id: row.id,
+    key: row.key,
+    name: row.name,
+    countTag,
+    hidesCountTag: row.hidesCountTag,
+    weeklyMaxCount,
+    sharedSortOrder,
+  })
 }
 
 function toContent(row: Row): ContentRow | null {
-  if (!isNonEmptyString(row.key) || !isOneOf(row.section, SECTIONS) || !isNonEmptyString(row.apiName)) return null
-  if (!isOneOf(row.category, CONTENT_CATEGORY_KEYS) || !isNonEmptyString(row.displayName)) return null
-  if (!isNonEmptyString(row.shortName) || !isOneOf(row.type, TYPES) || !isNonNegativeInteger(row.maxCount)) return null
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isOneOf(row.cycle, CYCLES)) return null
+  if (!isNonEmptyString(row.apiName) || !isNonEmptyString(row.categoryId) || !isNonEmptyString(row.name)) return null
+  if (!isNonEmptyString(row.shortName) || !isOneOf(row.type, TYPES) || !isOneOf(row.checkType, CONTENT_CHECK_TYPES)) return null
   if (!isOneOf(row.shareScope, SHARE_SCOPES)) return null
-  if (!isBoolean(row.onlyWhenScheduled) || !isBoolean(row.trustRegistrationFlag) || !isBoolean(row.cumulativeScore)) {
-    return null
-  }
   const backgroundMapAssetId = optional(row.backgroundMapAssetId, isNonEmptyString)
   const backgroundPortraitAssetId = optional(row.backgroundPortraitAssetId, isNonEmptyString)
   const regionIconAssetId = optional(row.regionIconAssetId, isNonEmptyString)
   const countTag = optional(row.countTag, isNonEmptyString)
+  const maxCount = optional(row.maxCount, isPositiveInteger)
   const requiredLevel = optional(row.requiredLevel, isPositiveInteger)
-  const from = optional(row.from, isPeriodText)
-  const until = optional(row.until, isPeriodText)
-  const sharedShortName = optional(row.sharedShortName, isNonEmptyString)
-  const maxCountOverride = optional(row.maxCountOverride, isPositiveInteger)
+  const validFrom = optional(row.validFrom, isPeriodText)
+  const validUntil = optional(row.validUntil, isPeriodText)
   if (
     backgroundMapAssetId === false ||
     backgroundPortraitAssetId === false ||
     regionIconAssetId === false ||
     countTag === false ||
+    maxCount === false ||
     requiredLevel === false ||
-    from === false ||
-    until === false ||
-    sharedShortName === false ||
-    maxCountOverride === false
+    validFrom === false ||
+    validUntil === false
   ) {
     return null
   }
+  // 횟수로 완료를 세는 컨텐츠만 최대 횟수를 든다. 없으면 완료로 셀 횟수가 없고, 다른 컨텐츠가 들면 넥슨 값을 잘못 덮는다.
+  if ((row.checkType === 'count_only') !== (maxCount !== undefined)) return null
   return compact({
+    id: row.id,
     key: row.key,
-    section: row.section,
+    cycle: row.cycle,
     apiName: row.apiName,
-    category: row.category,
-    displayName: row.displayName,
+    categoryId: row.categoryId,
+    name: row.name,
     shortName: row.shortName,
     backgroundMapAssetId,
     backgroundPortraitAssetId,
     regionIconAssetId,
     countTag,
     type: row.type,
-    maxCount: row.maxCount,
+    checkType: row.checkType,
+    maxCount,
     requiredLevel,
-    from,
-    until,
+    validFrom,
+    validUntil,
     shareScope: row.shareScope,
-    sharedShortName,
-    onlyWhenScheduled: row.onlyWhenScheduled,
-    trustRegistrationFlag: row.trustRegistrationFlag,
-    cumulativeScore: row.cumulativeScore,
-    maxCountOverride,
   })
 }
 
-/** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. */
+/** 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다. 컨텐츠는 이 칸의 분류를 가리켜야 한다. */
 export function parseContents(value: unknown): ContentsTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const categories = rowsOf(value.categories, toCategory)
+  const contentCategories = rowsOf(value.contentCategories, toCategory)
   const contents = rowsOf(value.contents, toContent)
-  if (categories === null || contents === null) return null
-  if (!uniqueBy(categories, (category) => category.key) || !uniqueBy(contents, (content) => content.key)) return null
-  return { updatedAt, categories, contents }
+  if (contentCategories === null || contents === null) return null
+  if (!uniqueBy(contentCategories, (category) => category.key) || !uniqueBy(contentCategories, (category) => category.id)) {
+    return null
+  }
+  if (!uniqueBy(contents, (content) => content.key) || !uniqueBy(contents, (content) => content.id)) return null
+  const categoryIds = new Set(contentCategories.map((category) => category.id))
+  if (contents.some((content) => !categoryIds.has(content.categoryId))) return null
+  return { updatedAt, contentCategories, contents }
 }
 
-export const contentsTable = gameTable('contents', { updatedAt: null, categories: [], contents: [] }, parseContents)
+export const contentsTable = gameTable<ContentsTable>(
+  'contents',
+  { updatedAt: null, contentCategories: [], contents: [] },
+  parseContents,
+)
 
 /** 줄 하나를 지금 코드가 읽는 모양으로. 수동 모드 기본값 셋은 표에 없고 `type` 이 정한다. */
-function toEntry(row: ContentRow): ContentEntry {
+function toEntry(row: ContentRow, category: ContentCategoryKey): ContentEntry {
   const background =
     row.backgroundMapAssetId === undefined && row.backgroundPortraitAssetId === undefined
       ? undefined
@@ -157,19 +173,19 @@ function toEntry(row: ContentRow): ContentEntry {
   return compact({
     key: row.key,
     content_name: row.apiName,
-    category: row.category,
-    displayName: row.displayName,
+    category,
+    name: row.name,
     shortName: row.shortName,
     background,
     countTag: row.countTag,
     type: row.type,
+    checkType: row.checkType,
     registration_flag: 'false' as const,
     now_count: 0,
-    max_count: row.maxCount,
+    max_count: row.maxCount ?? 0,
     quest_state: row.type === 'quest' ? ('0' as const) : null,
     requiredLevel: row.requiredLevel,
-    from: row.from,
-    until: row.until,
+    ...periodOf(row),
   })
 }
 
@@ -179,14 +195,20 @@ function comparableName(name: string): string {
 }
 
 const index = derive(contentsTable, (table) => {
+  const categoryKeyById = new Map(table.contentCategories.map((category) => [category.id, category.key]))
   const daily: ContentEntry[] = []
   const weekly: ContentEntry[] = []
-  for (const row of table.contents) (row.section === 'daily' ? daily : weekly).push(toEntry(row))
+  for (const row of table.contents) {
+    const category = categoryKeyById.get(row.categoryId)
+    // 계약 검사가 분류 줄이 있는지 지킨다. 그래도 없으면 줄을 세울 분류가 없다.
+    if (category === undefined) continue
+    ;(row.cycle === 'daily' ? daily : weekly).push(toEntry(row, category))
+  }
   const all = [...daily, ...weekly]
   return {
     template: { daily, weekly } as Readonly<Record<ContentSection, readonly ContentEntry[]>>,
     entryByKey: new Map(all.map((entry) => [entry.key, entry])),
-    sectionByKey: new Map<string, ContentSection>(table.contents.map((row) => [row.key, row.section])),
+    sectionByKey: new Map<string, ContentSection>(table.contents.map((row) => [row.key, row.cycle])),
     keyByComparableName: new Map(all.map((entry) => [comparableName(entry.content_name), entry.key])),
     keysBySection: {
       daily: new Set(daily.map((entry) => entry.key)) as ReadonlySet<string>,
@@ -231,7 +253,12 @@ export function contentCategoryOf(key: string | null | undefined): ContentCatego
  * @example contentDisplayNameOf(content.contentKey, content.apiName)
  */
 export function contentDisplayNameOf(key: string | null | undefined, fallbackName: string): string {
-  return findContent(key)?.displayName ?? fallbackName
+  return findContent(key)?.name ?? fallbackName
+}
+
+/** 완료를 가르는 방법. 표에 없는 key 는 `null` 이다. */
+export function contentCheckTypeOf(key: string | null | undefined): ContentCheckType | null {
+  return findContent(key)?.checkType ?? null
 }
 
 /** 좁은 자리의 이름. 표 이름이고, 모르는 key 면 넘긴 이름이다. */

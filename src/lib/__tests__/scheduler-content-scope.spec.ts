@@ -1,14 +1,14 @@
 import {
-  getMaxCountOverride,
+  contentMaxCountOf,
   getShareScope,
   getSharedContentGroups,
-  isCumulativeScore,
+  isScoreContent,
   trustsRegistrationFlag,
 } from '../scheduler/scheduler-content-scope'
 
 // 이 모듈은 컨텐츠 key 만 받는다. API 이름의 공백 차이는 key 를 얻는 자리(`contentKeyOfApiName`)가 흡수한다.
 describe('getShareScope', () => {
-  it('카탈로그에 없는 항목은 character(기본값)를 반환한다', () => {
+  it('공유 범위가 캐릭터인 항목과 표에 없는 항목은 character 다', () => {
     expect(getShareScope('guild_weekly_mission_points')).toBe('character')
     expect(getShareScope('mu_lung_dojo')).toBe('character')
     expect(getShareScope('unknown_content')).toBe('character')
@@ -19,57 +19,47 @@ describe('getShareScope', () => {
     expect(getShareScope(null)).toBe('character')
   })
 
-  // 같은 분류라도 공유 단위가 다르다. 줄마다 key 가 달라 따로 적는다.
-  describe('같은 분류의 다른 컨텐츠', () => {
-    // 같은 계열이라도 공유 단위가 다르다(사용자 확인). 이름으로 유추하면 틀린다.
-    it('PC방 주간 드래곤 퇴치는 account다. PC방이 아닌 쪽(world)과 공유 단위가 다르다', () => {
-      expect(getShareScope('maple_union_weekly_dragon')).toBe('world')
-      expect(getShareScope('maple_union_pc_cafe_weekly_dragon')).toBe('account')
-    })
+  // 같은 계열이라도 공유 단위가 다르다(사용자 확인). 이름으로 유추하면 틀린다.
+  it('PC방 주간 드래곤 퇴치는 account다. PC방이 아닌 쪽(world)과 공유 단위가 다르다', () => {
+    expect(getShareScope('maple_union_weekly_dragon')).toBe('world')
+    expect(getShareScope('maple_union_pc_cafe_weekly_dragon')).toBe('account')
   })
 })
 
-// 공유 여부와는 다른 축. 개인 기록이지만 리셋 없이 누적되는 항목.
-describe('isCumulativeScore', () => {
-  it('카탈로그에 등록된 누적 점수 항목은 true다', () => {
-    expect(isCumulativeScore('guild_underground_waterway')).toBe(true)
-  })
-
-  it('주기마다 리셋되는 항목과 key 가 없는 항목은 false다. 같은 길드 컨텐츠여도 축이 다르다', () => {
-    expect(isCumulativeScore('guild_weekly_mission_points')).toBe(false)
-    expect(isCumulativeScore('guild_flag_race')).toBe(false)
-    expect(isCumulativeScore('monster_park')).toBe(false)
-    expect(isCumulativeScore(null)).toBe(false)
-  })
-
-  it('누적 점수 항목도 공유가 아니라 캐릭터 범위다. 두 축은 독립이다', () => {
-    expect(getShareScope('guild_underground_waterway')).toBe('character')
+// 최근 활동 판정이 점수 컨텐츠를 빼는 근거다. 점수가 리셋 뒤에도 줄지 않는 컨텐츠가 있다.
+describe('isScoreContent', () => {
+  it('점수로 완료를 가르는 셋은 참이고, 횟수 · 퀘스트 상태로 가르는 항목과 key 가 없는 항목은 거짓이다', () => {
+    expect(['guild_underground_waterway', 'guild_flag_race', 'mu_lung_dojo'].map(isScoreContent)).toEqual([true, true, true])
+    expect(isScoreContent('guild_weekly_mission_points')).toBe(false)
+    expect(isScoreContent('monster_park')).toBe(false)
+    expect(isScoreContent(null)).toBe(false)
   })
 })
 
-describe('getMaxCountOverride', () => {
-  it('오버라이드가 등록된 항목은 그 값을 반환한다', () => {
-    expect(getMaxCountOverride('guild_weekly_mission_points')).toBe(10)
-  })
-
-  it('오버라이드가 없는 항목과 key 가 없는 항목은 null을 반환한다', () => {
-    expect(getMaxCountOverride('monster_park')).toBeNull()
-    expect(getMaxCountOverride(null)).toBeNull()
+// 넥슨은 길드 주간 미션 포인트의 최대 횟수를 가끔 0 으로 준다. 표의 값이 있으면 그것을 쓴다.
+describe('contentMaxCountOf', () => {
+  it('횟수로 완료를 세는 항목은 표의 최대 횟수이고, 그 밖의 항목과 key 가 없는 항목은 null 이다', () => {
+    expect(contentMaxCountOf('guild_weekly_mission_points')).toBe(10)
+    expect(contentMaxCountOf('epic_dungeon_aurum_regis')).toBe(5)
+    // 익스트림 몬스터파커는 퀘스트 상태로 완료를 가리고, 진행 중의 최대 횟수는 넥슨이 준다.
+    expect(contentMaxCountOf('monster_park_extreme')).toBeNull()
+    expect(contentMaxCountOf(null)).toBeNull()
   })
 })
 
 describe('getSharedContentGroups', () => {
-  it('분류는 카탈로그가 적어 둔 순서다. 배열을 읽은 첫 등장 순서가 아니다', () => {
-    // 지금은 두 순서가 같다. 그래도 배열에 맡기지 않는 것은, 배열이 순서가 아니라 공유 단위로
-    // 갈려 있어 계정 공유 컨텐츠 하나가 붙는 날 화면 순서가 조용히 바뀌기 때문이다.
-    expect(getSharedContentGroups().map((group) => group.category)).toEqual([
-      'monster_park',
-      'maple_union',
-      'epic_dungeon',
-    ])
+  it('분류는 분류 줄이 적어 둔 순서다. 배열을 읽은 첫 등장 순서가 아니다', () => {
+    expect(getSharedContentGroups().map((group) => group.category)).toEqual(['monster_park', 'epic_dungeon'])
   })
 
-  it('분류 안의 항목 순서는 worldShared → accountShared 를 이어 읽은 순서다', () => {
+  // 위젯은 횟수를 확인하는 공유 컨텐츠만 그린다. 퀘스트 상태만 확인하는 드래곤 퇴치 둘은 등록돼 있어도 그리지 않는다.
+  it('퀘스트 상태만 확인하는 메이플 유니온 드래곤 퇴치 둘은 들지 않는다', () => {
+    const keys = getSharedContentGroups().flatMap((group) => group.entries.map((entry) => entry.contentKey))
+    expect(keys).not.toContain('maple_union_weekly_dragon')
+    expect(keys).not.toContain('maple_union_pc_cafe_weekly_dragon')
+  })
+
+  it('분류 안의 항목 순서는 컨텐츠 표의 차례다', () => {
     const byCategory = new Map(getSharedContentGroups().map((group) => [group.category, group]))
 
     expect(byCategory.get('epic_dungeon')?.entries.map((entry) => entry.shortName)).toEqual([
@@ -78,19 +68,13 @@ describe('getSharedContentGroups', () => {
       '악몽선경',
       '아우룸레기스',
     ])
-    // 월드 것(몬스터파크)이 계정 것보다 앞이고, 사이에 낀 유니온 항목은 이 분류에 안 든다.
     expect(byCategory.get('monster_park')?.entries.map((entry) => entry.shortName)).toEqual([
       '일간',
       '익스트림 몬스터파커',
     ])
-    // 월드 하나 + 계정 하나가 한 분류로 묶이는 유일한 경우다.
-    expect(byCategory.get('maple_union')?.entries.map((entry) => entry.shortName)).toEqual([
-      '주간 드래곤 퇴치',
-      'PC방 주간 드래곤 퇴치',
-    ])
   })
 
-  it('컨텐츠 key · 분류 · section · scope 를 함께 나른다. 호출부가 응답에서 항목을 key 로 다시 찾는다', () => {
+  it('컨텐츠 key · 분류 · 주기 · scope 를 함께 나른다. 호출부가 응답에서 항목을 key 로 다시 찾는다', () => {
     const epic = getSharedContentGroups().find((group) => group.category === 'epic_dungeon')
 
     expect(epic?.entries[0]).toEqual({
@@ -99,14 +83,11 @@ describe('getSharedContentGroups', () => {
       category: 'epic_dungeon',
       section: 'weekly',
       scope: 'account',
-      onlyWhenScheduled: false,
-      from: undefined,
-      until: undefined,
     })
   })
 
-  // 기간은 템플릿 줄 한 곳에만 적는다. 카탈로그에 같은 값을 두면 두 곳이 어긋날 수 있다.
-  it('기간(from)은 템플릿 줄에서 읽는다. 아우룸 레기스만 2026-09-17 부터다', () => {
+  // 기간은 컨텐츠 줄 한 곳에만 적는다.
+  it('기간(from)은 컨텐츠 줄에서 읽는다. 아우룸 레기스만 2026-09-17 부터다', () => {
     const periods = getSharedContentGroups()
       .flatMap((group) => group.entries)
       .filter((entry) => entry.from !== undefined)
@@ -115,30 +96,24 @@ describe('getSharedContentGroups', () => {
     expect(periods).toEqual([['epic_dungeon_aurum_regis', '2026-09-17']])
   })
 
-  it('여덟을 하나도 빠뜨리거나 더하지 않는다', () => {
+  it('여섯을 하나도 빠뜨리거나 더하지 않고, 모두 공유 컨텐츠다', () => {
     const keys = getSharedContentGroups().flatMap((group) => group.entries.map((entry) => entry.contentKey))
 
-    expect(keys).toHaveLength(8)
-    expect(new Set(keys).size).toBe(8)
-    // 카탈로그가 **공유** 라고 적은 것과 정확히 같은 집합이어야 한다. 여기서 갈리면 `남은 스케줄`이
-    // 빼는 것과 이 위젯이 그리는 것이 어긋나 항목이 통째로 사라지거나 두 곳에 겹쳐 나온다.
+    expect(keys).toHaveLength(6)
+    expect(new Set(keys).size).toBe(6)
     for (const key of keys) {
       expect(getShareScope(key)).not.toBe('character')
     }
   })
 })
 
-describe('getMaxCountOverride: 익스트림 몬스터파커', () => {
-  // 이 분모는 한 번 뒤집혔다. 2026-08-18 에 템플릿의 5 를 2 로 덮었다가 2026-09-05 에 되돌렸다.
-  // 완료 조건이 일간 몬스터파크 5회라 API 의 5 가 맞고, 주 2회는 수행 제한이라 다른 축이다.
-  // 그 축은 `contentCountTag` 의 참고 태그(`월드 당 2회`)가 말한다.
-  it('오버라이드가 없다. API 와 템플릿의 5 가 그대로 흐른다', () => {
-    expect(getMaxCountOverride('monster_park_extreme')).toBeNull()
-  })
-})
-
-// 어느 항목이 응답의 등록 값을 믿는지는 카탈로그의 칸이 말한다. 이름으로 추론하지 않는다.
+// 등록을 이번 응답의 값으로 정하는 항목은 칸 없이 공유 범위와 완료 방법으로 가른다.
 describe('trustsRegistrationFlag', () => {
+  it('공유 범위가 캐릭터가 아니고 퀘스트 상태만 확인하는 드래곤 퇴치 둘만 참이다', () => {
+    expect(trustsRegistrationFlag('maple_union_weekly_dragon')).toBe(true)
+    expect(trustsRegistrationFlag('maple_union_pc_cafe_weekly_dragon')).toBe(true)
+  })
+
   it('나머지 공유 항목 · 캐릭터 항목 · key 가 없는 항목은 거짓이다', () => {
     expect(trustsRegistrationFlag('monster_park')).toBe(false)
     expect(trustsRegistrationFlag('monster_park_extreme')).toBe(false)

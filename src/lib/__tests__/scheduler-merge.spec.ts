@@ -404,7 +404,8 @@ describe('mergeSchedulerState: 원장 복원은 active 와 무관하게 칸을 �
       kind: 'contents',
       isRegistered: false,
       nowCount: 1,
-      maxCount: 0,
+      // 원장에서 되살린 칸도 표의 최대 횟수(에픽 던전 5)를 얹는다.
+      maxCount: 5,
       questState: null,
     })
   })
@@ -557,8 +558,9 @@ describe('mergeSchedulerState: 컨텐츠 key', () => {
   })
 })
 
-describe('mergeSchedulerState: maxCountOverride', () => {
-  it('오버라이드가 등록된 항목은 API 응답의 max_count 대신 오버라이드 값을 쓴다', () => {
+// 넥슨은 길드 주간 미션 포인트의 최대 횟수를 가끔 0 으로 준다. 표의 최대 횟수가 있으면 그것을 쓴다.
+describe('mergeSchedulerState: 표의 최대 횟수', () => {
+  it('표에 최대 횟수가 있는 항목은 API 응답의 max_count 대신 표의 값을 쓴다', () => {
     const fresh = baseState({
       weeklyContents: [
         { contentKey: 'guild_weekly_mission_points', apiName: '[길드] 주간 미션 포인트', kind: 'contents', isRegistered: true, nowCount: 3, maxCount: 0, questState: null },
@@ -570,7 +572,7 @@ describe('mergeSchedulerState: maxCountOverride', () => {
     expect(result.characterState.weeklyContents[0].maxCount).toBe(10)
   })
 
-  it('stale 폴백 경로에서도 오버라이드가 적용된다', () => {
+  it('stale 폴백 경로에서도 표의 최대 횟수를 쓴다', () => {
     const previous = baseState({
       weeklyContents: [
         { contentKey: 'guild_weekly_mission_points', apiName: '[길드] 주간 미션 포인트', kind: 'contents', isRegistered: true, nowCount: 3, maxCount: 0, questState: null },

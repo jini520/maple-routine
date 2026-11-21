@@ -1,6 +1,6 @@
 import type { DailyContent, SchedulerCharacterState, WeeklyContent } from '../../types'
 import { matchBossContent, selectBossProfitBosses } from '../boss/boss-matching'
-import { getShareScope, isCumulativeScore } from './scheduler-content-scope'
+import { getShareScope, isScoreContent } from './scheduler-content-scope'
 
 // 추가 정정(2026-07-25): daily/weekly 섹션이 "완전히 비었는지(isXStale = length 0)"만으로는
 // 부족하다. 콜드 스타트에서 당일 응답이 월드공유 항목(몬스터파크)만 남기고 character 범위 항목을
@@ -44,11 +44,11 @@ export function getSectionPresence(state: SchedulerCharacterState): SchedulerSec
 // 완료 는 진행형 콘텐츠의 카운트가 올랐거나(nowCount > 0) 퀘스트가 완료(questState === 2)다.
 // 등록만 하고 완료 안 함 은 활동 증거가 아니다.
 //
-// 누적 점수 항목은 제외한다. 그 항목의 now_count 는 리셋을 넘어서도 줄지 않아 한 번이라도
+// 점수로 완료를 가르는 항목은 제외한다. 지하 수로의 now_count 는 리셋을 넘어서도 줄지 않아 한 번이라도
 // 해본 적 있음 이 영원히 최근 14일에 했음 으로 읽힌다. `[길드] 지하 수로`(79579) 하나 때문에
 // 그 콘텐츠를 해본 캐릭터 전원이 자격을 얻고 있었다.
 function isCompletedContent(item: DailyContent | WeeklyContent): boolean {
-  if (isCumulativeScore(item.contentKey)) {
+  if (isScoreContent(item.contentKey)) {
     return false
   }
   return item.nowCount > 0 || item.questState === 2

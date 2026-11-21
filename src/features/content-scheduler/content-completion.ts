@@ -4,99 +4,68 @@
  * 카드는 진행 중 · N층 · N점 · N회 완료 같은 상태를 스스로 그리고, 완료인지만 여기에 묻는다. 카드가 완료를
  * 따로 계산하면 같은 응답을 카드와 링이 다르게 읽는다.
  *
- * 무릉도장처럼 `다 했다` 가 정의되지 않는 항목은 `unmeasurable` 이고 링의 분모에서 빠진다.
- * 영원히 안 차는 칸을 넣으면 링이 항상 미완료를 말한다.
+ * 무엇으로 완료를 가르는지는 컨텐츠 표의 `checkType` 이 정한다. 컨텐츠 key 로 가르지 않는다. 표에 없는 컨텐츠(넥슨이 새로 냈고
+ * 관리 화면에 줄을 더하기 전)는 넥슨의 `type` 으로 가른다.
  */
 import { isClosedByWeeklyLimit } from '../../lib/scheduler/group-weekly-limit'
 import { isContentBlocked } from '../../lib/scheduler/required-level'
-import { findContent } from '../../lib/scheduler/contents'
+import { contentCheckTypeOf } from '../../lib/scheduler/contents'
 import type { DailyContent, WeeklyContent } from '../../types'
 
-import {
-  GUILD_FLAG_RACE_KEY,
-  GUILD_MISSION_POINTS_KEY,
-  GUILD_UNDERGROUND_WATERWAY_KEY,
-  MONSTER_PARK_EXTREME_KEY,
-  MU_LUNG_DOJO_KEY,
-  isWeeklyQuestContent,
-  isWeeklyRegionalContent,
-} from '../../lib/scheduler/content-kinds'
+export type ContentCompletion = 'complete' | 'incomplete'
 
-/** `'unmeasurable'` = 끝이 없는 항목. 완료도 미완료도 아니라 세지 않는다. */
-export type ContentCompletion = 'complete' | 'incomplete' | 'unmeasurable'
-
-/** 카운트형. `maxCount` 가 0이면 채울 것이 없다 라 완료로 치지 않는다(0/0을 100%로 읽지 않는다). */
+/**
+ * 횟수. 지금 횟수가 최대 횟수에 닿으면 완료다. 최대 횟수는 표에 있으면 표의 값이고(병합이 덮는다), 없으면 넥슨 값이다.
+ * `maxCount` 가 0이면 채울 것이 없다 라 완료로 치지 않는다(0/0을 100%로 읽지 않는다).
+ */
 function byCount(content: { nowCount: number; maxCount: number }): ContentCompletion {
   if (content.maxCount <= 0) return 'incomplete'
   return content.nowCount >= content.maxCount ? 'complete' : 'incomplete'
 }
 
+/** 퀘스트 상태. 2 면 완료다. 횟수와 상태를 함께 주는 컨텐츠도 완료는 상태로 가린다. 퀘스트를 끝내면 횟수가 0/0 으로 돌아간다. */
 function byQuestState(content: { questState: 0 | 1 | 2 | null }): ContentCompletion {
   return content.questState === 2 ? 'complete' : 'incomplete'
 }
 
-/**
- * 한 번이라도 했으면 완료인 항목. 카드가 `nowCount > 0` 을 완료 배지로 그린다.
- *
- * 에픽 던전은 `maxCount` 가 총 스테이지 수(5)이고 `nowCount` 가 깬 스테이지 수라 한 스테이지라도
- * 깨면 완료로 친다. 플래그 레이스는 참여 여부만 안다.
- */
-function byParticipation(content: { nowCount: number }): ContentCompletion {
+/** 점수. 0 보다 크면 그 주에 참여한 것이라 완료다. 무릉도장은 층수, 지하 수로와 플래그 레이스는 점수가 `nowCount` 에 온다. */
+function byScore(content: { nowCount: number }): ContentCompletion {
   return content.nowCount > 0 ? 'complete' : 'incomplete'
 }
 
-/**
- * 일간 항목. `DailyContentCard` 의 분기와 같다.
- *
- * `kind: 'quest'` → 일일 퀘스트 카드가 `questState` 배지를 그린다.
- * 그 밖(몬스터파크·폴백) → 진행률 바라 카운트가 답이다.
- */
-export function dailyContentCompletion(content: DailyContent): ContentCompletion {
-  return content.kind === 'quest' ? byQuestState(content) : byCount(content)
+function completionOf(content: DailyContent | WeeklyContent): ContentCompletion {
+  switch (contentCheckTypeOf(content.contentKey)) {
+    case 'state_only':
+    case 'both':
+      return byQuestState(content)
+    case 'count_only':
+      return byCount(content)
+    case 'score':
+      return byScore(content)
+    case null:
+      return content.kind === 'quest' ? byQuestState(content) : byCount(content)
+  }
 }
 
-/**
- * 주간 항목. `WeeklyContentCard` 의 **분기를 같은 순서로** 따른다. 표에 없는 항목은 폴백 카드다.
- */
+export function dailyContentCompletion(content: DailyContent): ContentCompletion {
+  return completionOf(content)
+}
+
 export function weeklyContentCompletion(content: WeeklyContent): ContentCompletion {
-  // 점수가 0 이 아니면 완료다. 점수에 상한이 없어 다 했다 를 카운트로는 못 재지만 그 주에
-  // 참여했는가 는 잴 수 있고, 그것이 링이 물어야 할 것이다. 카드는 그대로 `n점` 배지다.
-  if (content.contentKey === GUILD_UNDERGROUND_WATERWAY_KEY) return byParticipation(content)
-  if (content.contentKey === GUILD_MISSION_POINTS_KEY) return byCount(content)
-  if (content.contentKey === GUILD_FLAG_RACE_KEY) return byParticipation(content)
-
-  const entry = findContent(content.contentKey)
-  if (entry?.category === 'epic_dungeon') return byParticipation(content)
-
-  if (isWeeklyRegionalContent(entry)) {
-    // 익스트림 몬스터파커만 실제 `quest_state` 를 준다(`WeeklyRegionalContentCard` 의 같은 분기).
-    return content.contentKey === MONSTER_PARK_EXTREME_KEY ? byQuestState(content) : byCount(content)
-  }
-
-  if (entry?.category === 'maple_union') return byQuestState(content)
-
-  if (isWeeklyQuestContent(entry)) {
-    if (content.contentKey === MU_LUNG_DOJO_KEY) return 'unmeasurable'
-    // 성실한 조사에 대한 보답도 상태로 판정한다. 퀘스트를 끝내면 횟수가 0/0 으로 돌아가 횟수로는 못 가린다.
-    return byQuestState(content)
-  }
-
-  // 폴백 카드는 진행률 바다.
-  return byCount(content)
+  return completionOf(content)
 }
 
 export interface ContentProgress {
   /** 완료한 항목 수. */
   completed: number
-  /** 셀 수 있는 항목 수(= `unmeasurable` 을 뺀 나머지). 0이면 링은 트랙만 그린다. */
+  /** 센 항목 수. 0이면 링은 트랙만 그린다. */
   total: number
 }
 
 function tally(completions: ContentCompletion[]): ContentProgress {
-  const measurable = completions.filter((completion) => completion !== 'unmeasurable')
   return {
-    completed: measurable.filter((completion) => completion === 'complete').length,
-    total: measurable.length,
+    completed: completions.filter((completion) => completion === 'complete').length,
+    total: completions.length,
   }
 }
 

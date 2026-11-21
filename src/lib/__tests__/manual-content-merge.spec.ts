@@ -23,9 +23,10 @@ function synced(
 function templateEntry(overrides: Partial<ContentEntry> & { key: string; content_name: string }): ContentEntry {
   return {
     category: 'daily_quest',
-    displayName: overrides.content_name,
+    name: overrides.content_name,
     shortName: overrides.content_name,
     type: 'contents',
+    checkType: 'count_only',
     registration_flag: 'false',
     now_count: 0,
     max_count: 0,

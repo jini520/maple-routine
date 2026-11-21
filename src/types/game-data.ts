@@ -298,29 +298,45 @@ export const CONTENT_CATEGORY_KEYS = [
 ] as const
 export type ContentCategoryKey = (typeof CONTENT_CATEGORY_KEYS)[number]
 
+/** 컨텐츠의 주기. 서버 칸 이름은 `cycle` 이다. */
 export type ContentSection = 'daily' | 'weekly'
 export type ShareScope = 'character' | 'world' | 'account'
 
+/**
+ * 넥슨 응답의 무엇으로 완료를 가르는가. 카드 · 완료 판정 · 진행 링 · 남은 스케줄 · 미완료 스케줄 알림이 같은 칸을 읽는다.
+ *
+ * - `state_only`: 퀘스트 상태만 본다. 2 면 완료다
+ * - `count_only`: 횟수만 본다. 지금 횟수가 `maxCount` 에 닿으면 완료다
+ * - `both`: 퀘스트 상태가 2 면 완료다. 1 이면 진행 중이고 횟수를 보인다
+ * - `score`: 점수가 0 보다 크면 완료다. 화면에는 점수를 보인다
+ */
+export const CONTENT_CHECK_TYPES = ['state_only', 'count_only', 'both', 'score'] as const
+export type ContentCheckType = (typeof CONTENT_CHECK_TYPES)[number]
+
 export interface ContentCategoryRow {
+  id: string
   key: ContentCategoryKey
   /** 카드 라벨 · today 공유 위젯 머리글. */
   name: string
   /** 분류의 참고 태그. 에픽 던전 `ID당 1회`. */
   countTag?: string
   /** 참이면 그 분류의 태그를 숨긴다. 아케인리버 지역 퀘스트. */
-  hideCountTag: boolean
-  /** 분류의 주간 진행 한도. 에픽 던전 3. */
-  weeklyLimit?: number
-  /** today 공유 위젯의 계열 차례. 없으면 뒤에 선다. */
-  sharedOrder?: number
+  hidesCountTag: boolean
+  /** 그 분류에서 한 주에 완료할 수 있는 횟수. 에픽 던전 3. */
+  weeklyMaxCount?: number
+  /** today 공유 위젯의 분류 차례. 없으면 뒤에 선다. */
+  sharedSortOrder?: number
 }
 export interface ContentRow {
+  id: string
   key: string
-  section: ContentSection
+  cycle: ContentSection
   /** 넥슨 응답의 `content_name`. */
   apiName: string
-  category: ContentCategoryKey
-  displayName: string
+  categoryId: string
+  /** 카드 · 관리 화면의 이름. */
+  name: string
+  /** 좁은 자리의 이름. 공유 컨텐츠는 today 공유 위젯의 글자다. */
   shortName: string
   /** 카드 그림 id. 지도 배경과 보스 초상 중 하나다. 둘 다 없으면 카드가 그림 없이 선다. */
   backgroundMapAssetId?: string
@@ -329,23 +345,19 @@ export interface ContentRow {
   regionIconAssetId?: string
   /** 컨텐츠가 참고 태그를 덮는 글자. */
   countTag?: string
+  /** 넥슨이 주는 `type`. 완료 판정에는 쓰지 않는다. */
   type: 'contents' | 'quest'
-  /** 수동 모드의 기본 상한. */
-  maxCount: number
+  checkType: ContentCheckType
+  /** 한 기간에 할 수 있는 횟수. `count_only` 에만 있고, 있으면 넥슨이 준 최대 횟수 대신 쓴다. */
+  maxCount?: number
   requiredLevel?: number
-  from?: string
-  until?: string
+  validFrom?: string
+  validUntil?: string
   shareScope: ShareScope
-  /** today 공유 위젯의 글자. 공유 줄만 든다. */
-  sharedShortName?: string
-  onlyWhenScheduled: boolean
-  trustRegistrationFlag: boolean
-  cumulativeScore: boolean
-  maxCountOverride?: number
 }
 export interface ContentsTable extends TableHead {
-  categories: ContentCategoryRow[]
-  /** 일간 뒤 주간. 섹션 안의 차례가 관리 화면의 차례다. */
+  contentCategories: ContentCategoryRow[]
+  /** 일간 뒤 주간. 주기 안의 차례가 관리 화면의 차례다. */
   contents: ContentRow[]
 }
 

@@ -45,11 +45,6 @@ const RESPONSES: Record<GameDataSection, unknown> = {
   gameRules,
 }
 
-/** 1.0.15 계약으로 아직 옮기지 않은 칸. 칸을 옮길 때마다 하나씩 지우고, 비면 이 목록째 지운다. */
-const NOT_YET_MOVED: readonly GameDataSection[] = [
-  'contents',
-]
-
 /**
  * `null` 이 빠진 칸이 아니라 값인 칸. 지출 항목의 `unitPrice` 는 `null` 이 경매장 값이라 적을 때 친다는 뜻이고, 사냥 전리품의
  * `npcPriceMeso` 는 `null` 이 NPC 에 팔지 않는 분류라는 뜻이다.
@@ -80,8 +75,8 @@ describe('SECTIONS', () => {
   })
 
   // 앱 안의 값이 응답과 다른 모양이면 앱 안의 이름과 서버 · 관리 화면의 이름이 다시 갈린다.
-  it('옮긴 칸은 계약을 통과한 값이 서버 응답과 같다. 다른 것은 null 인 선택 칸이 빠진 것뿐이다', () => {
-    for (const section of GAME_DATA_SECTIONS.filter((name) => !NOT_YET_MOVED.includes(name))) {
+  it('칸마다 계약을 통과한 값이 서버 응답과 같다. 다른 것은 null 인 선택 칸이 빠진 것뿐이다', () => {
+    for (const section of GAME_DATA_SECTIONS) {
       expect({ section, value: SECTIONS[section].parse(RESPONSES[section]) }).toEqual({
         section,
         value: withoutNulls(RESPONSES[section]),

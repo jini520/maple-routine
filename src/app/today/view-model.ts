@@ -70,10 +70,6 @@ import {
   type StatsTotals,
 } from '../../features/stats/aggregate'
 import { statsRanges } from '../../features/stats/periods'
-import {
-  displayedDailyContents,
-  displayedWeeklyContents,
-} from '../../features/content-scheduler/displayed-contents'
 
 import { dailyContentCompletion, weeklyContentCompletion } from '../../features/content-scheduler/content-completion'
 
@@ -494,18 +490,6 @@ function buildRepresentative(input: TodayViewModelInput): RepresentativeView | n
   }
 }
 
-/** 한 캐릭터의 컨텐츠 입력. 남은 스케줄과 공유 위젯이 같은 모양으로 읽는다. */
-function contentsInputOf(
-  input: TodayViewModelInput,
-  content: ContentCharacterView | undefined,
-): { dailyContents: DailyContent[]; weeklyContents: WeeklyContent[]; manualItems: ManualTrackedItem[] } {
-  return {
-    dailyContents: content?.dailyContents ?? [],
-    weeklyContents: content?.weeklyContents ?? [],
-    manualItems: (content === undefined ? undefined : input.manualContentByOcid?.[content.ocid]) ?? [],
-  }
-}
-
 /**
  * 공유 컨텐츠를 계열별로 묶는 조립.
  *
@@ -513,14 +497,9 @@ function contentsInputOf(
  * 동기화 시각이 달라 뒤처진 캐릭터가 낮은 값을 들고 있을 수 있다. 주기 안에서 진행은 줄지
  * 않으므로 최댓값이 곧 최신값이고, 완료는 하나라도 완료면 완료다.
  *
- * **값** 과 **스케줄러에 있는가** 는 다른 목록에서 온다.
- *
- * - 값: 캐릭터의 원본 목록(`dailyContents`/`weeklyContents`). API 는 등록 여부와 무관하게
- *   진행을 준다. 그래서 아무도 등록 안 한 에픽 던전도 값이 있으면 `CLEAR` 로 그려진다.
- * - 있는가: `displayed*Contents`(자동 모드 = `registration_flag`, 수동 모드 = 추적 목록
- *   멤버십). `onlyWhenScheduled` 인 항목만 이 판정을 탄다.
- *
- * 둘을 한 목록으로 합치면 등록 안 했지만 진행은 있다 를 표현할 방법이 사라진다.
+ * 값은 캐릭터의 원본 목록(`dailyContents`/`weeklyContents`)이다. API 는 등록 여부와 무관하게 진행을 준다. 그래서 아무도
+ * 등록 안 한 에픽 던전도 값이 있으면 `CLEAR` 로 그려진다. 그리는 줄은 횟수를 확인하는 공유 컨텐츠뿐이다
+ * (`getSharedContentGroups`).
  *
  * 줄은 카탈로그에서 만들므로 게임에 아직 없는 컨텐츠도 카탈로그에 있으면 선다. 그래서 줄의 시작
  * 기간을 **지금 주간 기간**으로 거른다.
@@ -545,7 +524,6 @@ function buildSharedContents(
 ): SharedContentGroupView[] {
   const daily: DailyContent[] = []
   const weekly: WeeklyContent[] = []
-  const scheduled = new Set<string>()
   // 에픽 던전 · 메이플 유니온의 한도는 메이플 ID 마다 따로라, 다른 메이플 ID 의 진행이 섞이면 틀린다.
   const characters =
     mapleId === null || input.mapleIds === null
@@ -555,21 +533,12 @@ function buildSharedContents(
   for (const content of characters) {
     daily.push(...content.dailyContents)
     weekly.push(...content.weeklyContents)
-
-    const contentsInput = contentsInputOf(input, content)
-    for (const item of displayedDailyContents(contentsInput, input.trackingMode, weeklyPeriodKey)) {
-      if (item.contentKey !== null) scheduled.add(item.contentKey)
-    }
-    for (const item of displayedWeeklyContents(contentsInput, input.trackingMode, weeklyPeriodKey)) {
-      if (item.contentKey !== null) scheduled.add(item.contentKey)
-    }
   }
 
   return getSharedContentGroups()
     .map((group): SharedContentGroupView => {
       const items = group.entries
         .filter((entry) => isEffectiveIn(entry, weeklyPeriodKey))
-        .filter((entry) => !entry.onlyWhenScheduled || scheduled.has(entry.contentKey))
         .map((entry): SharedContentItemView => {
           const matches = (entry.section === 'daily' ? daily : weekly).filter(
             (item) => item.contentKey === entry.contentKey,
@@ -580,8 +549,8 @@ function buildSharedContents(
                 ? dailyContentCompletion(item as DailyContent)
                 : weeklyContentCompletion(item as WeeklyContent)) === 'complete',
           )
-          // `maxCount` 는 스토어가 이미 `maxCountOverride` 를 얹은 값이다(`scheduler-merge`).
-          // 여기서 다시 얹으면 오버라이드의 출처가 둘이 된다.
+          // `maxCount` 는 스토어가 이미 표의 최대 횟수를 얹은 값이다(`scheduler-merge`).
+          // 여기서 다시 얹으면 최대 횟수의 출처가 둘이 된다.
           const max = Math.max(0, ...matches.map((item) => item.maxCount))
           const now = Math.max(0, ...matches.map((item) => item.nowCount))
 

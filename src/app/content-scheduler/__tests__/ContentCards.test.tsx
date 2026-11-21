@@ -111,9 +111,10 @@ describe('일간 카드', () => {
 })
 
 describe('주간 카드', () => {
-  it('에픽 던전은 카테고리 배지 + 접두어 뗀 이름이고 now_count 로 완료를 가른다', async () => {
+  // 넥슨은 다 깨면 `5/0` 으로 주고, 병합이 최대 횟수를 표의 5 로 덮는다.
+  it('에픽 던전은 카테고리 배지 + 접두어 뗀 이름이고 횟수가 최대 횟수에 닿으면 완료다', async () => {
     const done = await renderAtom(
-      <WeeklyContentCard content={weekly({ contentKey: 'epic_dungeon_angler_company', apiName: '에픽 던전 : 앵글러 컴퍼니', nowCount: 5 })} characterLevel={300} isWeeklyLimitClosed={false} />,
+      <WeeklyContentCard content={weekly({ contentKey: 'epic_dungeon_angler_company', apiName: '에픽 던전 : 앵글러 컴퍼니', nowCount: 5, maxCount: 5 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
     expect(done.getByText('에픽 던전')).toBeTruthy()
     expect(done.getByText('앵글러 컴퍼니')).toBeTruthy()
@@ -121,7 +122,7 @@ describe('주간 카드', () => {
     expect(artUri(done)).toContain('senya')
 
     const todo = await renderAtom(
-      <WeeklyContentCard content={weekly({ contentKey: 'epic_dungeon_high_mountain', apiName: '에픽 던전 : 하이마운틴', nowCount: 0 })} characterLevel={300} isWeeklyLimitClosed={false} />,
+      <WeeklyContentCard content={weekly({ contentKey: 'epic_dungeon_high_mountain', apiName: '에픽 던전 : 하이마운틴', nowCount: 0, maxCount: 5 })} characterLevel={300} isWeeklyLimitClosed={false} />,
     )
     expect(todo.getByText('시작 안함')).toBeTruthy()
   })
@@ -275,15 +276,16 @@ describe('진행 불가 배지', () => {
 // 우선순위도 보스와 같다. `진행 불가` → `마감` → `완료`. 카드에 넘기는 값은 화면처럼
 // `weeklyLimitClosedKeys` 로 판정한다.
 describe('마감 배지', () => {
+  /** 다 깬 던전은 5, 안 깬 던전은 0 이다. 최대 횟수는 병합이 덮은 표의 5 다. */
   const epic = (key: string, name: string, nowCount: number): WeeklyContent =>
-    weekly({ contentKey: `epic_dungeon_${key}`, apiName: `에픽 던전 : ${name}`, nowCount })
+    weekly({ contentKey: `epic_dungeon_${key}`, apiName: `에픽 던전 : ${name}`, nowCount, maxCount: 5 })
   const isClosed = (closed: ReadonlySet<string>, content: WeeklyContent): boolean =>
     content.contentKey !== null && closed.has(content.contentKey)
   const 넷 = [
-    epic('high_mountain', '하이마운틴', 1),
-    epic('angler_company', '앵글러 컴퍼니', 1),
+    epic('high_mountain', '하이마운틴', 5),
+    epic('angler_company', '앵글러 컴퍼니', 5),
     epic('nightmare_paradise', '악몽선경', 0),
-    epic('aurum_regis', '아우룸 레기스', 1),
+    epic('aurum_regis', '아우룸 레기스', 5),
   ]
   const closed = weeklyLimitClosedKeys(넷)
   const 카드 = (index: number, level: number) =>
@@ -304,7 +306,7 @@ describe('마감 배지', () => {
   })
 
   it('요구 레벨 미달이면 한도가 차도 진행 불가다', async () => {
-    const 셋완료 = [...넷.slice(0, 2), epic('nightmare_paradise', '악몽선경', 1), epic('aurum_regis', '아우룸 레기스', 0)]
+    const 셋완료 = [...넷.slice(0, 2), epic('nightmare_paradise', '악몽선경', 5), epic('aurum_regis', '아우룸 레기스', 0)]
     const aurum = 셋완료[3]
     const view = await renderAtom(<WeeklyContentCard content={aurum} characterLevel={285} isWeeklyLimitClosed={isClosed(weeklyLimitClosedKeys(셋완료), aurum)} />)
 

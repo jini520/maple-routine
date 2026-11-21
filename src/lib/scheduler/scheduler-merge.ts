@@ -10,8 +10,8 @@ import { getCurrentBossProfitPeriod } from '../boss/boss-profit-period'
 import { findContent } from './contents'
 import { getCurrentKstDateKey } from './reset-clock'
 import {
+  contentMaxCountOf,
   getContentCatalogEntries,
-  getMaxCountOverride,
   getShareScope,
   trustsRegistrationFlag,
 } from './scheduler-content-scope'
@@ -32,9 +32,10 @@ export interface MergeOutput {
 
 type ContentItem = DailyContent | WeeklyContent
 
-function withMaxCountOverride<T extends ContentItem>(item: T): T {
-  const override = getMaxCountOverride(item.contentKey)
-  return override === null ? item : { ...item, maxCount: override }
+/** 표의 최대 횟수가 있으면 넥슨이 준 값 대신 쓴다. 넥슨은 길드 주간 미션 포인트의 최대 횟수를 가끔 0 으로 준다. */
+function withTableMaxCount<T extends ContentItem>(item: T): T {
+  const maxCount = contentMaxCountOf(item.contentKey)
+  return maxCount === null ? item : { ...item, maxCount }
 }
 
 /** 병합의 항목 신원. 컨텐츠 key 이고, 컨텐츠 표에 없는 항목은 API 원문이다. 두 모양이 겹치지 않게 앞에 표지를 붙인다. */
@@ -87,7 +88,7 @@ function mergeSection(
   // (2026-07-23), "섹션이 stale이 아니면 fresh만 신뢰"하던 이전 방식으로는 그 누락을 못 잡았다.
   for (const item of freshItems) {
     if (getShareScope(item.contentKey) === 'character') {
-      items.push(withMaxCountOverride(item))
+      items.push(withTableMaxCount(item))
       seen.add(contentMergeKey(item))
     }
   }
@@ -95,7 +96,7 @@ function mergeSection(
     if (getShareScope(item.contentKey) !== 'character' || seen.has(contentMergeKey(item))) {
       continue
     }
-    items.push(withMaxCountOverride(resetProgress(item)))
+    items.push(withTableMaxCount(resetProgress(item)))
     seen.add(contentMergeKey(item))
   }
 
@@ -132,7 +133,7 @@ function mergeSection(
       // 수동 모드는 isRegistered를 무시하므로 API가 준 값을 그대로 표시한다. 몬스터파크처럼 now_count가
       // 월드 총합이라 registration_flag가 false여도 값이 오는 경우, 값을 버리지 않아야 수동 모드가
       // 0 대신 실값을 보여줄 수 있다.
-      items.push(withMaxCountOverride({ ...item, isRegistered: active }))
+      items.push(withTableMaxCount({ ...item, isRegistered: active }))
       seen.add(contentMergeKey(item))
     }
   }
@@ -150,7 +151,7 @@ function mergeSection(
 
     const isLedgerStale = ledgerEntry.lastUpdatedBucket !== bucket
     items.push(
-      withMaxCountOverride({
+      withTableMaxCount({
         contentKey: catalogEntry.contentKey,
         apiName: contentApiNameOf(catalogEntry.contentKey),
         kind: ledgerEntry.kind,
