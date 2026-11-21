@@ -21,7 +21,6 @@ const entry = (over: Partial<EnhancementSource> = {}): EnhancementSource => ({
 /** 이름마다 그날 그 이름이었던 캐릭터. 이름이 곧 ocid 인 일반 월드 캐릭터로 붙인다. */
 const NO_EVENT = (source: EnhancementSource): EntryOwner => ({
   ocid: `ocid-${source.characterName}`,
-  accountId: 'maple-1',
   worldName: '엘리시움',
   worldKey: 'elysium',
   preLeap: false,
@@ -316,7 +315,7 @@ describe('슈페리얼 장비의 스타포스', () => {
 
     expect(rows).toEqual([
       expect.objectContaining({
-        itemGroup: 'name:노바리카온클록',
+        itemName: '노바 리카온 클록',
         attempts: 2,
         attemptCostMeso: 0,
         destroyDefenceCostMeso: 0,
@@ -331,7 +330,7 @@ describe('묶기', () => {
     const rows = summarizeEnhancement([entry({ itemLevel: 150 }), entry({ itemLevel: 150 })], NO_EVENT)
 
     expect(rows).toEqual([
-      expect.objectContaining({ itemGroup: 'key:arcane_umbra_knuckle', attempts: 2, attemptCostMeso: 900_000 }),
+      expect.objectContaining({ itemName: '아케인셰이드 클로', attempts: 2, attemptCostMeso: 900_000 }),
     ])
   })
 
@@ -349,17 +348,21 @@ describe('묶기', () => {
     expect(rows).toHaveLength(4)
   })
 
-  // 장비 표에 없는 장비는 이름으로 묶는다. 같은 장비가 띄어쓰기 · 정규화만 달라 두 줄로 갈라지면 안 된다.
-  it('key 가 없는 장비는 NFC 뒤 공백을 지운 이름으로 묶는다', () => {
+  // 서버 표가 한 줄을 넥슨이 준 이름 글자로 가린다. 묶는 열쇠가 다르면 기기의 합계 줄과 서버 줄이 같은 장비를 다르게 가른다.
+  it('장비는 넥슨이 준 이름 글자 그대로 묶고, 띄어쓰기만 달라도 다른 줄이다', () => {
     const rows = summarizeEnhancement(
       [
         entry({ itemKey: null, targetItem: '블랙 마법깃펜' }),
-        entry({ itemKey: null, targetItem: '블랙마법깃펜'.normalize('NFD') }),
+        entry({ itemKey: null, targetItem: '블랙 마법깃펜' }),
+        entry({ itemKey: null, targetItem: '블랙마법깃펜' }),
       ],
       NO_EVENT,
     )
 
-    expect(rows).toEqual([expect.objectContaining({ itemGroup: 'name:블랙마법깃펜', itemKey: null, attempts: 2 })])
+    expect(rows.map((row) => [row.itemName, row.attempts])).toEqual([
+      ['블랙 마법깃펜', 2],
+      ['블랙마법깃펜', 1],
+    ])
   })
 
   // 모르는 값을 0 원으로 세우면 건수만 늘고 합계가 조용히 틀린다.
@@ -408,9 +411,9 @@ describe('이벤트 월드', () => {
       owners({ 머리맨들맨둘: { worldName: '스페셜', worldKey: 'special' }, 낟낟: {} }),
     )
 
-    expect(rows.map((row) => [row.characterName, row.eventWorld, row.worldKey])).toEqual([
-      ['머리맨들맨둘', true, 'special'],
-      ['낟낟', false, 'elysium'],
+    expect(rows.map((row) => [row.ocid, row.eventWorld, row.worldKey])).toEqual([
+      ['ocid-머리맨들맨둘', true, 'special'],
+      ['ocid-낟낟', false, 'elysium'],
     ])
   })
 
@@ -423,9 +426,9 @@ describe('이벤트 월드', () => {
       owners({ 낟낟: {}, 둘째: { worldName: '스페셜' } }),
     )
 
-    expect(rows.map((row) => [row.characterName, row.eventWorld, row.worldKey])).toEqual([
-      ['낟낟', true, 'special'],
-      ['둘째', false, 'challengers_2'],
+    expect(rows.map((row) => [row.ocid, row.eventWorld, row.worldKey])).toEqual([
+      ['ocid-낟낟', true, 'special'],
+      ['ocid-둘째', false, 'challengers_2'],
     ])
   })
 
@@ -448,14 +451,14 @@ describe('캐릭터에 붙이기', () => {
       owners({ 살름: { ocid: 'o-1' }, 낟낟: { ocid: 'o-1' } }),
     )
 
-    expect(rows).toEqual([expect.objectContaining({ ocid: 'o-1', accountId: 'maple-1', attempts: 2 })])
+    expect(rows).toEqual([expect.objectContaining({ ocid: 'o-1', attempts: 2 })])
   })
 
   // 어느 캐릭터의 기록인지 모르는 줄은 남기지 않는다.
   it('캐릭터에 붙이지 못한 줄은 합계에 넣지 않는다', () => {
     const rows = summarizeEnhancement([entry({ characterName: '지운캐릭' }), entry()], owners({ 낟낟: {} }))
 
-    expect(rows.map((row) => row.characterName)).toEqual(['낟낟'])
+    expect(rows.map((row) => row.ocid)).toEqual(['ocid-낟낟'])
   })
 })
 

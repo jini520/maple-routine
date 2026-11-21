@@ -102,7 +102,6 @@ describe('차례 1: 앱이 직접 본 기간', () => {
 
     await expect(ownerOf('살름', '2026-01-05')).resolves.toEqual({
       ocid: 'o-1',
-      accountId: 'maple-1',
       worldName: null,
       worldKey: 'scania',
       preLeap: false,
@@ -117,7 +116,7 @@ describe('차례 2: 그날 이름', () => {
     그날({ 'o-1': { '2026-10-01': '루디' }, 'o-2': { '2026-10-01': '부캐' } })
     const ownerOf = resolver({ accounts: 목록(캐릭터('o-2', '부캐'), 캐릭터('o-1', '루디')) })
 
-    await expect(ownerOf('루디', '2026-10-01')).resolves.toMatchObject({ ocid: 'o-1', accountId: 'maple-1', preLeap: false })
+    await expect(ownerOf('루디', '2026-10-01')).resolves.toMatchObject({ ocid: 'o-1', preLeap: false })
     expect(fetchCharacterBasicOn).toHaveBeenCalledTimes(1)
   })
 
@@ -248,7 +247,6 @@ describe('차례 4: 리프 전 기간', () => {
 
     await expect(ownerOf('지내우시', '2026-08-01')).resolves.toEqual({
       ocid: 'o-새',
-      accountId: 'maple-1',
       worldName: null,
       worldKey: null,
       preLeap: true,

@@ -1,9 +1,9 @@
 /**
- * 메이플 ID 마다의 MVP 등급 이력(`mvp_grade_history`).
+ * 메이플 ID 마다의 MVP 등급 이력(`mvp_grade_history`). 표는 등급을 등급 줄 id 로 들고, 읽을 때 key 로 되돌린다.
  *
  * @see docs/persistence/sqlite.md `mvp_grade_history`
  */
-import type { MvpGradeKey } from '../lib/mvp/grades'
+import { findMvpGrade, findMvpGradeById } from '../lib/mvp/grades'
 import type { MvpGradeEntry } from '../lib/mvp/history'
 import { getBossProfitDb } from './sqlite/db'
 
@@ -11,21 +11,22 @@ import { getBossProfitDb } from './sqlite/db'
 export async function getMvpGradeHistories(): Promise<Map<string, MvpGradeEntry[]>> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT account_id, from_date, grade FROM mvp_grade_history ORDER BY account_id, from_date`,
+    `SELECT account_id, from_date, grade_id FROM mvp_grade_history ORDER BY account_id, from_date`,
   )
   const histories = new Map<string, MvpGradeEntry[]>()
   for (const row of values ?? []) {
-    // 옛 판이 남긴 등급 빈 줄. 앱을 켤 때 지우지만 그보다 먼저 읽는 화면이 있다.
-    if (row.grade === null) continue
+    // 등급이 빈 줄은 앱을 켤 때 지우지만 그보다 먼저 읽는 화면이 있다. 표에 없는 등급은 수수료와 할인을 구할 수 없다.
+    const grade = findMvpGradeById(row.grade_id as string | null)
+    if (grade === null) continue
     const accountId = row.account_id as string
     const entries = histories.get(accountId) ?? []
-    entries.push({ startDate: row.from_date as string, grade: row.grade as MvpGradeKey })
+    entries.push({ startDate: row.from_date as string, grade: grade.key })
     histories.set(accountId, entries)
   }
   return histories
 }
 
-/** 그 ID 의 이력을 통째로 바꾼다. `lib/mvp/history` 의 함수가 고친 이력 전체를 넘긴다. */
+/** 그 ID 의 이력을 통째로 바꾼다. `lib/mvp/history` 의 함수가 고친 이력 전체를 넘긴다. 표에 없는 등급이 있으면 던진다. */
 export async function replaceMvpGradeHistory(
   accountId: string,
   entries: readonly MvpGradeEntry[],
@@ -36,9 +37,11 @@ export async function replaceMvpGradeHistory(
   try {
     await db.run(`DELETE FROM mvp_grade_history WHERE account_id = ?`, [accountId])
     for (const entry of entries) {
+      const grade = findMvpGrade(entry.grade)
+      if (grade === null) throw new Error(`MVP 등급 표에 없는 등급이다: ${entry.grade}`)
       await db.run(
-        `INSERT INTO mvp_grade_history (account_id, from_date, grade, updated_at) VALUES (?, ?, ?, ?)`,
-        [accountId, entry.startDate, entry.grade, updatedAt],
+        `INSERT INTO mvp_grade_history (account_id, from_date, grade_id, updated_at) VALUES (?, ?, ?, ?)`,
+        [accountId, entry.startDate, grade.id, updatedAt],
       )
     }
     await db.execute('COMMIT')
@@ -48,11 +51,11 @@ export async function replaceMvpGradeHistory(
   }
 }
 
-/** 옛 판이 첫 기록 앞에 기간을 끼워 넣으며 남긴 등급 빈 줄을 지운다. 지운 수를 돌려준다. */
+/** 등급이 빈 줄을 지운다. 지운 수를 돌려준다. 앱은 빈 줄을 적지 않지만 칸은 서버처럼 비울 수 있다. */
 export async function deleteEmptyMvpGradeRows(): Promise<number> {
   const db = await getBossProfitDb()
-  const { values } = await db.query(`SELECT count(*) AS n FROM mvp_grade_history WHERE grade IS NULL`)
+  const { values } = await db.query(`SELECT count(*) AS n FROM mvp_grade_history WHERE grade_id IS NULL`)
   const count = Number(values?.[0]?.n ?? 0)
-  if (count > 0) await db.run(`DELETE FROM mvp_grade_history WHERE grade IS NULL`)
+  if (count > 0) await db.run(`DELETE FROM mvp_grade_history WHERE grade_id IS NULL`)
   return count
 }

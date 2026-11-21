@@ -7,6 +7,7 @@
 import type { SqliteDbConnection } from '../ports'
 import { convertBossTables } from './convert-boss-tables'
 import { convertCashbookTables } from './convert-cashbook-tables'
+import { convertEnhancementTables } from './convert-enhancement-tables'
 import { inTransaction } from './transaction'
 
 /**
@@ -45,13 +46,21 @@ async function dropLeftoverBossProfitPeriodChecks(db: SqliteDbConnection): Promi
 }
 
 /** 단계는 뒤에만 더한다. 차례를 바꾸거나 빼면 이미 그 번호까지 돈 기기가 다른 단계를 건너뛴다. */
-const STEPS: readonly DeviceConversionStep[] = [dropLeftoverBossProfitPeriodChecks, convertBossTables, convertCashbookTables]
+const STEPS: readonly DeviceConversionStep[] = [
+  dropLeftoverBossProfitPeriodChecks,
+  convertBossTables,
+  convertCashbookTables,
+  convertEnhancementTables,
+]
 
 /** 보스 기록 표 셋을 새 모양으로 바꾸는 단계의 번호. 이 번호까지 돈 DB 는 DB 를 열 때 새 표를 만든다. */
 export const BOSS_TABLES_CONVERTED_AT = STEPS.indexOf(convertBossTables) + 1
 
 /** 가계부 기록 표 · 인벤토리 · 기억한 레벨을 새 모양으로 바꾸는 단계의 번호. 이 번호까지 돈 DB 는 DB 를 열 때 새 표를 만든다. */
 export const CASHBOOK_TABLES_CONVERTED_AT = STEPS.indexOf(convertCashbookTables) + 1
+
+/** 강화 합계 · 월드 리프 · MVP 등급 표를 새 모양으로 바꾸는 단계의 번호. 이 번호까지 돈 DB 는 DB 를 열 때 새 표를 만든다. */
+export const ENHANCEMENT_TABLES_CONVERTED_AT = STEPS.indexOf(convertEnhancementTables) + 1
 
 /** 마지막 단계의 번호. */
 export const DEVICE_CONVERSION_VERSION = STEPS.length

@@ -175,7 +175,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-044+066+076+111+120+239+289](./adr/ADR-044+066+076+111+120+239+289_item-drop_records.md) | 🟢 | item-drop | 드롭 기록 · 가격 · 히스토리 |
 | [ADR-045](./adr/ADR-045_item-drop_effect.md) | 🟢 | item-drop | 고가 드롭 연출과 강조 |
 | [ADR-046](./adr/ADR-046_cashbook_calendar.md) | 🟢 | cashbook | 가계부 캘린더 |
-| [ADR-047+190+217+225+231+245](./adr/ADR-047+190+217+225+231+245_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 억 단위 판매 · 헥사와 구매 줄 합치기 · 주간 보스 수입 이전과 그 마지막 입력 기억 · 메소마켓 환전 수수료 · 펼친 강화 줄의 장비 그림 |
+| [ADR-047+190+217+225+231+245+296](./adr/ADR-047+190+217+225+231+245+296_cashbook_entries.md) | 🟢 | cashbook | 가계부 기록과 금액 · 메포 지출의 억 단위 판매 · 헥사와 구매 줄 합치기 · 주간 보스 수입 이전과 그 마지막 입력 기억 · 메소마켓 환전 수수료 · 펼친 강화 줄의 장비 그림 |
 | [ADR-048+070+118+126+214+226+246+256](./adr/ADR-048+070+118+126+214+226+246+256_cashbook_entry-sheet.md) | 🟢 | cashbook | 가계부 입력 시트 · 아이템 구매 · 판매 메모 · 에픽던전 리워드의 마지막 입력 기억 · 닫힌 묶음 숨기기 |
 | [ADR-049+127+157+199+206+211+215+253](./adr/ADR-049+127+157+199+206+211+215+253_cashbook_hunting.md) | 🟢 | cashbook | 사냥 수입 |
 | [ADR-095](./adr/ADR-095_cashbook_redesign.md) | 🟢 | cashbook | 가계부 고른 날 목록과 기간 이동 줄 리디자인 |
@@ -201,8 +201,8 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-096+290](./adr/ADR-096+290_persistence_cashbook-tables.md) | 🟢 | persistence | 가계부 기록 테이블 재설계 |
 | [ADR-098+173](./adr/ADR-098+173_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |
 | [ADR-099+143+258+279](./adr/ADR-099+143+258+279_server-sync_records.md) | ⚪ | server-sync | 사용자가 만든 기록을 서버에 두고 기기끼리 맞추기 · 과거 드롭 올리기 |
-| [ADR-100+174+189+234](./adr/ADR-100+174+189+234_cashbook_enhancement-totals.md) | 🟢 | cashbook | 강화 합계 저장과 재계산 요청 · 스타포스 첫 성과 끝 성 · 이벤트 월드 판정과 월드 기간 · 슈페리얼 장비 스타포스 비용 |
-| [ADR-101+186+193+201+259+277+285+294](./adr/ADR-101+186+193+201+259+277+285+294_auth_multi-account.md) | ⚪ | auth | 다계정 |
+| [ADR-100+174+189+234+295](./adr/ADR-100+174+189+234+295_cashbook_enhancement-totals.md) | 🟢 | cashbook | 강화 합계 저장과 재계산 요청 · 스타포스 첫 성과 끝 성 · 이벤트 월드 판정과 월드 기간 · 슈페리얼 장비 스타포스 비용 |
+| [ADR-101+186+193+201+259+277+285+294+297](./adr/ADR-101+186+193+201+259+277+285+294+297_auth_multi-account.md) | ⚪ | auth | 다계정 |
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
 | [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |

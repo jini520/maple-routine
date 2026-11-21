@@ -60,12 +60,18 @@ export function mvpGrades(): readonly MvpGrade[] {
 
 const index = derive(mvpGradesTable, (table) => ({
   byKey: new Map<string, MvpGrade>(table.mvpGrades.map((grade) => [grade.key, grade])),
+  byId: new Map<string, MvpGrade>(table.mvpGrades.map((grade) => [grade.id, grade])),
   rankByKey: new Map<string, number>(table.mvpGrades.map((grade, rank) => [grade.key, rank])),
 }))
 
 /** 표의 한 줄. 모르는 key 는 `null`. */
 export function findMvpGrade(key: string | null | undefined): MvpGrade | null {
   return key == null ? null : (index().byKey.get(key) ?? null)
+}
+
+/** 줄 id 로 찾은 표의 한 줄. 기록은 등급을 줄 id 로 든다. 모르는 id 는 `null`. */
+export function findMvpGradeById(id: string | null | undefined): MvpGrade | null {
+  return id == null ? null : (index().byId.get(id) ?? null)
 }
 
 /** 경매장 수수료(%). 등급이 없으면 일반 요율. */

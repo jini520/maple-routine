@@ -1,15 +1,18 @@
 /**
- * 강화 합계 표. 응답 원본(`enhancement_history`) 대신 이것을 읽는다. 비용은 MVP 할인 전 세 몫이다.
+ * 강화 합계 표와 강화 내역을 받는 데 딸린 표. 합계는 응답 원본(`enhancement_history`) 대신 읽는 값이고, 비용은 MVP 할인 전 세 몫이다.
+ *
+ * 합계 표의 정의는 둘이다. 1.0.15 기기 변환 전의 표(`UNCONVERTED_ENHANCEMENT_TOTALS_BODY`)는 버전 18 이 다시 쓴 모양이고 변환 전
+ * DB 와 앞 버전 이관이 쓴다. 변환이 지금 표(`ENHANCEMENT_TOTALS_BODY`)로 옮긴 뒤 지운다.
  */
 import { NEW_UUID_SQL } from './uuid'
 
 /**
- * 날짜 · 캐릭터(ocid) · 분류 · 장비 하나가 한 줄이다. 같은 열쇠를 다시 받으면 id 를 지키고 값만 갈아 끼운다.
+ * 변환 전 표. 날짜 · 캐릭터(ocid) · 분류 · 장비 묶음(`item_group`) 하나가 한 줄이다.
  *
  * 판정 열쇠에 넥슨 계정 id 를 넣지 않는다. 기기가 만든 값이라 같은 넥슨 계정이 번호를 새로 받으면 같은 줄이 두 번 들어간다.
  * ocid 는 넥슨이 주는 값이고 이름을 바꿔도 그대로다.
  */
-export const ENHANCEMENT_TOTALS_BODY = `(
+export const UNCONVERTED_ENHANCEMENT_TOTALS_BODY = `(
     id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
     -- 받은 자격의 넥슨 계정. 그 계정의 날을 갈아 끼우고 다시 받는 단위다.
     nexon_account_id TEXT NOT NULL,
@@ -47,7 +50,41 @@ export const ENHANCEMENT_TOTALS_BODY = `(
     UNIQUE (ocid, history_date, enhancement_category, item_group)
   )`
 
-/** 날짜 범위로 읽는다. */
+/**
+ * 날짜 · 캐릭터(ocid) · 분류 · 장비 이름 하나가 한 줄이다. 같은 열쇠를 다시 받으면 id 를 지키고 값만 갈아 끼운다. 칸 이름은 서버
+ * 표와 같고, 서버의 캐릭터 줄 id 자리에 ocid 를 든다.
+ *
+ * 장비는 넥슨이 준 이름 글자로 가린다. 넥슨 강화 내역은 장비를 이름으로만 주고, 장비 key 는 읽을 때 이름으로 장비 표에서 찾는다.
+ */
+export const ENHANCEMENT_TOTALS_BODY = `(
+    id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
+    -- 그날 그 이름이었던 캐릭터. 리프 전 기간의 줄은 리프 뒤의 ocid 다.
+    ocid TEXT NOT NULL,
+    -- KST YYYY-MM-DD.
+    history_date TEXT NOT NULL,
+    -- 화면의 분류 다섯. 잠재를 본 · 에디셔널로 나눈다. 받은 API 종류는 이 값이 정한다.
+    category TEXT NOT NULL,
+    -- 넥슨이 준 장비 이름 원문. 띄어쓰기만 달라도 다른 줄이다.
+    item_name TEXT NOT NULL,
+    attempt_count INTEGER NOT NULL,
+    -- MVP 할인 전 시도 비용. 할인은 화면에 보일 때 붙인다.
+    attempt_cost_meso INTEGER NOT NULL,
+    -- 파괴 방지 추가분. 어떤 할인도 받지 않는다.
+    destroy_defence_cost_meso INTEGER NOT NULL,
+    -- 그 줄의 월드 줄 id. 리프 전 기간이라 모르면 NULL.
+    world_id TEXT,
+    -- 슈페리얼 장비의 스타포스 비용. 어떤 할인도 받지 않는다.
+    superior_cost_meso INTEGER NOT NULL DEFAULT 0,
+    -- 스타포스의 가장 이른 시도의 강화 전 성과 가장 늦은 시도의 강화 후 성. 다른 분류는 NULL.
+    from_star INTEGER,
+    to_star INTEGER,
+    -- 1 이벤트 월드 · 0 아님 · NULL 판정 못 함. 이벤트 월드와 모름은 지출에서 뺀다. 월드를 모르는 줄도 이 판정은 든다.
+    is_event_world INTEGER,
+    updated_at TEXT NOT NULL,
+    UNIQUE (ocid, history_date, category, item_name)
+  )`
+
+/** 날짜 범위로 읽는다. 변환 전 표와 지금 표 모두 이 칸으로 건다. */
 export const ENHANCEMENT_TOTALS_DATE_INDEX =
   'CREATE INDEX IF NOT EXISTS enhancement_totals_date ON enhancement_totals (history_date)'
 

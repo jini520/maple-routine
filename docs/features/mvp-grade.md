@@ -16,7 +16,7 @@
 | `lib/mvp/membership.ts` | 이름이나 ocid 로 메이플 ID 소속 찾기 |
 | `lib/mvp/fees.ts` · `lib/mvp/starforce.ts` | 기록의 자동 요율 · 스타포스 줄의 MVP 할인 |
 | `lib/enhancement/cost.ts` | 스타포스 시도 비용에 붙이는 MVP 할인(`withMvpDiscount`) |
-| `storage/mvp-grades.ts` | `mvp_grade_history` 읽기 · 쓰기 · 옛 등급 빈 줄 지우기 |
+| `storage/mvp-grades.ts` | `mvp_grade_history` 읽기 · 쓰기 · 등급 빈 줄 지우기. 등급은 등급 표의 줄 id 로 적고 key 로 되읽는다 |
 | `storage/character-accounts.ts` | `character_accounts` 읽기 · 쓰기. 소속을 어느 넥슨 계정의 목록에서 봤는지도 적는다 |
 | `storage/mvp-grade-prefs.ts` | `mvpWeeklyCheckOff` · `mvpLastCheckedWeek` · `mvpBulkApplyAsked` · `mvpOnboardingPending` |
 | `features/mvp-grade/character-list.ts` | `character/list` 를 받고 소속을 기록한다(`fetchAndRecordCharacterList`). 목록을 받는 곳은 모두 이것을 거친다. 화면이 그리는 목록은 `fetchCharacterListCached` 가 쿼리 `characterList(credentialKey)` 로 5분 안에 같은 응답을 나눠 쓰고, 그 안에서도 이 함수를 부른다. 로그인 · 키 검증처럼 지금 답이 필요한 자리만 매번 받는다 |
@@ -25,7 +25,7 @@
 | `features/mvp-grade/store.ts` · `fee-context.ts` · `auto-fee.ts` | 화면이 읽는 등급 정보 · 폼마다의 자동 요율 |
 | `features/mvp-grade/bulk-apply.ts` · `recalculate-fees.ts` · `tasks.ts` | 일괄 적용과 다시 계산의 대상 목록, 이어서 하는 작업 둘 |
 | `features/mvp-grade/after-change.ts` | 등급 이력을 바꾼 뒤 등급 정보를 다시 읽고 다시 계산을 돌린다 |
-| `features/mvp-grade/empty-rows.ts` | 앱을 켤 때 옛 판이 남긴 등급 빈 줄을 지우고, 지웠으면 다시 계산을 돌린다 |
+| `features/mvp-grade/empty-rows.ts` | 앱을 켤 때 등급이 빈 줄을 지우고, 지웠으면 다시 계산을 돌린다 |
 | `features/mvp-grade/settings-store.ts` | 설정 목록과 ID 이력 페이지가 함께 읽는 상태 |
 | `features/mvp-grade/onboarding.ts` · `onboarding-draft.ts` | 온보딩에서 MVP 화면으로 갈지 · 두 화면이 함께 쓰는 고르던 값 |
 | `app/mvp-grade/MvpGradeHost.tsx` · `MvpGradeModal.tsx` · `MvpGradeCards.tsx` | `AppShell` 의 모달과 고르기 · 확인 카드 |

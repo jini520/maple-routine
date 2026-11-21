@@ -226,7 +226,7 @@
 
 ### 결정 14. 두 캐릭터는 리프 안내가 남긴 연결로 잇는다
 
-옛 ocid 와 새 ocid 의 연결은 SQLite 표 `character_world_leaps`(`from_ocid` · `to_ocid` · `linked_at`)에
+옛 ocid 와 새 ocid 의 연결은 SQLite 표 `character_world_leaps`(`previous_ocid` · `ocid`)에
 남긴다. 이 표는 데이터 삭제가 지우지 않는다. 지우면 되살릴 방법이 없고, 남은 기록에서 월드 이전 기간이 두 번
 세어지기 때문이다([[ADR-053]] 결정 2).
 

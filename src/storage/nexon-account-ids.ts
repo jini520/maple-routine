@@ -4,7 +4,6 @@
  *
  * 계정 id 는 Preferences 의 인증 수단에 있어 SQLite 이관에서는 못 읽는다. 그래서 이관은 표시만 하고 여기서 채운다.
  */
-import { notifyEnhancementTotalsChanged } from './enhancement-totals'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 
@@ -36,8 +35,8 @@ export async function fillLegacyNexonAccountIds(mainAccountId: string): Promise<
 /**
  * 옛 넥슨 계정 id 들의 줄을 `toId` 로 옮긴다. 로그인이 메이플 ID 가 같은 키의 id 를 이어받을 때 쓴다.
  *
- * 옛 id 에 줄이 남으면 강화 수집기가 새 id 로 같은 날을 다시 받고, 계정을 가리지 않고 더하는 강화 합계가 두 번 세어진다.
- * 계정 칸이 `UNIQUE` 에 든 표에서 같은 줄이 겹치면 나중에 적힌 줄이 남는다. 같은 넥슨 계정의 같은 날을 두 번 받은 것이라
+ * 옛 id 에 조회 기록이 남으면 강화 수집기가 새 id 로 이미 굳은 날을 다시 받는다. 소속 기록의 계정 칸이 남으면 다시 받은 날을
+ * 갈아 끼울 때 지우는 범위에서 그 계정의 옛 ocid 가 빠진다. 계정 칸이 `UNIQUE` 에 든 표에서 같은 줄이 겹치면 나중에 적힌 줄이 남는다. 같은 넥슨 계정의 같은 날을 두 번 받은 것이라
  * 나중 줄이 그 날을 더 많이 담는다.
  */
 export async function moveNexonAccountRows(fromIds: readonly string[], toId: string): Promise<void> {
@@ -61,10 +60,8 @@ export async function moveNexonAccountRows(fromIds: readonly string[], toId: str
         )
         await db.run(`UPDATE ${table} SET nexon_account_id = ? WHERE nexon_account_id = ?`, [toId, fromId])
       }
-      // 합계는 ocid 로 가려 계정 칸이 판정 열쇠에 없다. 그 계정의 날을 갈아 끼우는 단위라 칸만 옮긴다.
-      await db.run(`UPDATE enhancement_totals SET nexon_account_id = ? WHERE nexon_account_id = ?`, [toId, fromId])
+      // 강화 합계는 계정 칸이 없다. 그 계정의 날을 갈아 끼울 때 지우는 범위를 이 표에서 찾아, 이 표의 칸만 옮기면 된다.
       await db.run(`UPDATE character_accounts SET nexon_account_id = ? WHERE nexon_account_id = ?`, [toId, fromId])
     }
   })
-  notifyEnhancementTotalsChanged()
 }

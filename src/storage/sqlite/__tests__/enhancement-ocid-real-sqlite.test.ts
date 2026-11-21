@@ -101,13 +101,14 @@ async function seedVersion17(): Promise<void> {
 }
 
 describe('버전 18: 강화 합계 줄에 ocid 를 붙인다', () => {
+  // 새 DB 는 처음 열 때 기기 변환까지 돌아 변환한 표의 칸이다.
   it('새 DB 는 처음부터 ocid 판정 열쇠이고 이름 판정 표가 없다', async () => {
     await getBossProfitDb()
 
     expect(real.inspect((db) => (db.prepare('PRAGMA user_version').get() as Row).user_version)).toBe(DB_VERSION)
     expect(all("SELECT name FROM sqlite_master WHERE name = 'event_world_characters'")).toEqual([])
     expect(all('PRAGMA table_info(enhancement_totals)').map((row) => row.name)).toEqual(
-      expect.arrayContaining(['ocid', 'account_id', 'world_key']),
+      expect.arrayContaining(['ocid', 'world_id']),
     )
   })
 

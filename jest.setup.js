@@ -24,6 +24,7 @@ if (typeof globalThis.TextEncoder === 'undefined') {
 const { registerCSS, setupAllComponents } = require('react-native-css-interop/test')
 
 const { readFileSync } = require('node:fs')
+const { format } = require('node:util')
 
 const { COMPILED_CSS_PATH, INLINE_REM } = require('./nativewind.config')
 
@@ -137,7 +138,8 @@ const actWarnings = []
 const baseError = console.error
 
 console.error = (...args) => {
-  const text = args.map((arg) => String(arg)).join(' ')
+  // React 는 컴포넌트 이름을 `%s` 의 인자로 넘긴다. 채워 두지 않으면 어느 컴포넌트가 늦게 바뀌었는지 실패에 남지 않는다.
+  const text = typeof args[0] === 'string' ? format(...args) : args.map((arg) => String(arg)).join(' ')
   if (ACT_WARNING.test(text)) actWarnings.push(text.split('\n')[0])
   baseError(...args)
 }
