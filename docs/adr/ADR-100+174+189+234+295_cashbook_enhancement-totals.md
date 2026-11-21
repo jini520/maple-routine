@@ -1,7 +1,7 @@
-# ADR-100+174+189+234 강화 내역을 계산한 합계로 저장하고, 다시 매길 기간은 환경 변수로 건다
+# ADR-100+174+189+234+295 강화 내역을 계산한 합계로 저장하고, 다시 매길 기간은 환경 변수로 건다
 
 > 🟢 유효
-> 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/recompute.ts` · `features/enhancement-history/anomalies.ts` · `features/enhancement-history/owners.ts` · `features/enhancement-history/legacy-totals.ts` · `lib/enhancement/world.ts` · `lib/enhancement/sighted-owner.ts` · `lib/world/worlds.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts` · `app/cashbook/CashbookScreen.tsx` · 서버 `database/schema.ts`(`world_periods` · `superior_series` · `superior_items`) · 서버 `modules/worlds/worlds.repository.ts` · 서버 `modules/enhancement-costs/` · 서버 `modules/admin/`
+> 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/recompute.ts` · `features/enhancement-history/anomalies.ts` · `features/enhancement-history/owners.ts` · `features/enhancement-history/legacy-totals.ts` · `lib/enhancement/world.ts` · `lib/enhancement/sighted-owner.ts` · `lib/world/worlds.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/enhancement-tables.ts` · `storage/sqlite/convert-enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts` · `app/cashbook/CashbookScreen.tsx` · 서버 `database/schema.ts`(`world_periods` · `superior_series` · `superior_items`) · 서버 `modules/worlds/worlds.repository.ts` · 서버 `modules/enhancement-costs/` · 서버 `modules/admin/`
 
 ## 배경
 
@@ -38,9 +38,10 @@ MVP 등급 기간을 고쳐도 강화 내역을 다시 받지 않기 위해서�
 ### 결정 3. 기존 기기는 부팅 단계가 원본으로 합계를 만들고, 원본 표는 v1.0.14 에서 지운다
 
 SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensureEnhancementTotals`)가 옮긴다. 이벤트 월드를 가리는 캐릭터 이름
-목록과 메인 넥슨 계정 id 가 Preferences 에 있어, DB 를 여는 자리에서는 읽을 수 없기 때문이다.
+목록은 쿼리 캐시에, 메인 넥슨 계정 id 는 Preferences 에 있어, DB 를 여는 자리에서는 읽을 수 없기 때문이다.
 
-- 옛 원본은 메인 계정의 자격으로 받은 것이라 메인 계정 id 로 적는다.
+- 1.0.15 기기 변환 뒤에 돌고, 합계 저장소로 적어 변환한 표의 모양으로 들어간다([[ADR-286]] 결정 1).
+- 옛 원본은 메인 계정의 자격으로 받은 것이라 메인 계정의 날로 갈아 끼운다.
 - 수집기와 가계부가 합계를 읽기 전에 이 단계를 기다린다. 다 옮기면 Preferences `enhancementTotalsMoved` 에 적고 다시 돌지 않는다.
 - 메인 계정이나 이름 목록이 아직 없으면 옮기지 않고 다음 호출이 다시 본다. 이름 목록 없이 옮기면 판정이 빈 줄이 남는데, 옛
   날짜는 굳어 있어 다시 받지 않으므로 그 지출이 영영 안 보이기 때문이다.
@@ -77,7 +78,7 @@ SQLite 버전 이관이 아니라 앱이 켜진 뒤 한 번 도는 단계(`ensur
 ### 결정 5. 이벤트 월드인지는 저장할 때 판정해 합계 줄에 적는다
 
 이벤트 월드(스페셜 · 스페셜2) 캐릭터의 강화는 지출에서 뺀다([[ADR-047]] 결정 11). 원본을 버리면 읽을 때 응답을 다시 볼 수
-없어, 받는 회차가 판정해 합계 줄의 `event_world` 칸에 적는다(사용자 선택 2026-10-26). 칸의 값은 셋이다. 이벤트 월드는 `1`,
+없어, 받는 회차가 판정해 합계 줄의 `is_event_world` 칸에 적는다(사용자 선택 2026-10-26). 칸의 값은 셋이다. 이벤트 월드는 `1`,
 일반 월드는 `0`, 모름은 `NULL` 이다. 화면은 `0` 인 줄만 지출로 센다.
 
 **스타포스는 그 줄의 `world_name` 으로 판정한다.** 그 시도를 한 때의 월드라 지금 캐릭터 목록보다 정확하다. 캐릭터를 지워도
@@ -116,33 +117,33 @@ OTA 를 낸다. 순서가 바뀌면 다시 받은 날이 다시 모름으로 남
 늘지 않는다. 결정 4 의 다시 매기기도 같은 방법으로 갈아 끼운다.
 
 - 갈아 끼울 때 같은 열쇠의 줄은 값을 고쳐 적고, 다시 만든 합계에 없는 줄은 지운다.
-- 지우는 범위는 그 넥슨 계정 id 로 적힌 줄과 그 넥슨 계정 캐릭터의 그날 줄이다([[ADR-101]] 결정 18). 한 번 받으면 그 넥슨 계정의
-  그날 줄이 모두 온다. 계정 id 만 보면 옛 번호로 적힌 같은 캐릭터의 줄이 남는다.
+- 지우는 범위는 그날 · 받은 API 종류가 정하는 분류의 줄 가운데 그 넥슨 계정 캐릭터의 줄이다([[ADR-101]] 결정 18). 한 번 받으면 그
+  넥슨 계정의 그날 줄이 모두 온다. 캐릭터는 `character_accounts` 에서 그 넥슨 계정으로 본 ocid 와 수집기가 넘긴 그 계정의 목록,
+  새 합계의 ocid 다. 소속 기록은 목록에서 사라진 캐릭터와 리프 전 ocid 도 지우지 않고 둬서 그 ocid 의 줄도 든다([[ADR-286]] 결정 10).
+- 분류는 큐브가 큐브 재설정, 스타포스가 스타포스, 잠재능력이 잠재능력과 에디셔널 잠재능력, 소울 잠재능력이 소울 잠재능력이다.
+  합계 줄에는 받은 API 종류를 적지 않고 분류가 그것을 정한다([[ADR-099]] 결정 55).
 - 그날 이름을 묻다 실패한 이름이 있으면 그 날을 갈아 끼우지도 굳히지도 않는다. 갈아 끼우면 그 이름의 줄이 지워진 채 굳는다.
 - 굳은 날은 지금처럼 다시 받지 않는다.
 
 ### 결정 7. 표
 
 ```
-기기 enhancement_totals   id · nexon_account_id · history_date · character_name · ocid · account_id · world_key
-                          · enhancement_type · enhancement_category · item_group · item_key · item_name · attempts
-                          · attempt_cost_meso · destroy_defence_cost_meso · superior_cost_meso · from_star · to_star
-                          · event_world · updated_at
-                          UNIQUE(ocid, history_date, enhancement_category, item_group)
+기기 enhancement_totals   id · ocid · history_date · category · item_name · attempt_count · attempt_cost_meso
+                          · destroy_defence_cost_meso · world_id · superior_cost_meso · from_star · to_star
+                          · is_event_world · updated_at
+                          UNIQUE(ocid, history_date, category, item_name)
 ```
 
-- `ocid` 는 그날 그 이름이었던 캐릭터이고 `account_id` 는 그 메이플 ID 다([[ADR-101]] 결정 18). 판정 열쇠에 넥슨 계정 id 를
-  넣지 않는다. 기기가 만든 값이라 같은 넥슨 계정이 번호를 새로 받으면 같은 줄이 두 번 들어갔다. `character_name` 은 응답이 준
-  그날의 이름으로 남긴다.
-- `world_key` 는 그 줄의 월드다([[ADR-101]] 결정 22). (1.0.15 에서 줄 id 칸 `world_id` 로 바뀐다. [[ADR-099]] 결정 39) 스타포스는 줄의 월드, 아니면 그 캐릭터의 월드이고, 리프 전 줄은 같은 기간
-  스타포스 줄의 월드다. 모르면 비어 있다.
+칸 이름은 서버 표와 같고, 서버의 캐릭터 줄 id 자리에 `ocid` 를 둔다. 1.0.15 기기 변환이 이 모양으로 옮겼다([[ADR-286]] 결정 6).
 
-- `enhancement_type` 은 받은 API 종류(큐브 · 스타포스 · 잠재 · 소울)이고 갈아 끼우는 단위다. `enhancement_category` 는 화면의
-  분류 다섯(잠재를 본 · 에디셔널로 나눈다)이다.
-- `item_group` 은 장비 key, 없으면 NFC 정규화 뒤 공백을 지운 이름이다. 화면이 장비별로 펼치는 열쇠와 같다([[ADR-047]] 결정 12).
-  (1.0.15 에서 바뀐다. `item_group` 과 `item_key` 를 없애고 장비를 넥슨이 준 이름 `item_name` 으로 가린다. [[ADR-099]] 결정 37)
-- 합계 표는 처음부터 계정 칸을 든다. 옛 원본에서 옮긴 줄도 결정 3 의 단계가 메인 계정 id 를 바로 적어, 빈 글자 표시를 거치지
-  않는다.
+- `ocid` 는 그날 그 이름이었던 캐릭터다([[ADR-101]] 결정 18). 판정 열쇠에 넥슨 계정 id 를 넣지 않는다. 기기가 만든 값이라 같은
+  넥슨 계정이 번호를 새로 받으면 같은 줄이 두 번 들어갔다. 그 캐릭터의 메이플 ID 와 그날 이름은 칸에 두지 않고, 읽을 때
+  `character_accounts` · `character_dated_names` 에서 찾는다([[ADR-286]] 결정 10).
+- `world_id` 는 그 줄의 월드 줄 id 다([[ADR-101]] 결정 22 · [[ADR-099]] 결정 39). 스타포스는 줄의 월드, 아니면 그 캐릭터의 월드이고,
+  리프 전 줄은 같은 기간 스타포스 줄의 월드다. 모르면 비어 있다. 저장소가 월드 key 로 되돌려 읽는다.
+- `category` 는 화면의 분류 다섯(잠재를 본 · 에디셔널로 나눈다)이다. 받은 API 종류는 이 칸이 정한다(결정 6).
+- `item_name` 은 넥슨이 준 장비 이름 원문이고, 한 줄을 이 이름 글자로 가린다([[ADR-099]] 결정 37). 띄어쓰기만 달라도 다른 줄이다.
+  화면이 장비별로 펼치는 열쇠와 같다([[ADR-047]] 결정 12). 장비 key 는 읽을 때 이름으로 장비 표에서 찾아 그림과 레벨에 쓴다.
 - `from_star` · `to_star` 는 결정 8 의 스타포스 첫 성과 끝 성이다. 다른 분류의 줄은 `NULL` 이다.
 - `superior_cost_meso` 는 결정 10 의 슈페리얼 비용이다. 기본값이 0 이고, 칸이 생기기 전 줄과 슈페리얼이 아닌 줄은 0 이다.
 
@@ -155,7 +156,7 @@ OTA 를 낸다. 순서가 바뀌면 다시 받은 날이 다시 모름으로 남
 - `from_star` 는 그 합계 줄에 든 시도 중 가장 이른 시도(`date_create`)의 강화 전 성이고, `to_star` 는 가장 늦은 시도의 강화
   후 성이다. 응답은 최신 줄부터 오므로 받은 차례가 아니라 시각으로 고른다.
 - 두 끝만 잇는다. 그 사이에 성이 내려가거나 파괴되어도 끝 성은 마지막 시도의 강화 후 성이다. 같은 이름의 장비를 한 날에 둘
-  강화하면 둘이 한 줄로 묶여(결정 7 의 `item_group`) 다른 장비의 성끼리 이어질 수 있다. 사용자가 받아들인 모양이다(사용자
+  강화하면 둘이 한 줄로 묶여(결정 7 의 `item_name`) 다른 장비의 성끼리 이어질 수 있다. 사용자가 받아들인 모양이다(사용자
   선택 2026-11-05).
 - 성은 횟수와 같은 시도에서 잰다. 전용 재화 줄과 값을 못 매긴 줄은 합계에 들지 않으므로(결정 5) 성에도 들지 않는다.
 - 펼친 스타포스 장비 줄은 두 줄이다. 첫 줄에 장비 이름(좁은 행 이름 `text-xs font-semibold`)과 금액이 선다. 둘째 줄에
@@ -277,26 +278,25 @@ today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어
 
 | 테스트 | 확인하는 것 |
 |---|---|
-| `features/enhancement-history/__tests__/spending.spec.ts` | 줄마다 비용 두 몫을 매기는 규칙(큐브 레벨 · 잠재와 소울은 사용 전 등급 · 스타포스 할인과 파괴 방지 · 표에 없는 장비는 값 없음), 날짜 · 캐릭터 · 분류 · 장비별로 묶기, 값 없는 줄과 전용 재화 줄 빼기, 이벤트 월드 판정 세 값(결정 1 · 2 · 5) |
-| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 갈아 끼울 때 같은 열쇠의 줄은 값을 고치고 사라진 줄은 지우는지, 비울 때 그 계정 · 종류 · 날짜만 지우는지, 옛 원본을 메인 계정 합계로 옮기고 이름 목록이 없으면 미루는지(결정 3 · 6) |
+| `features/enhancement-history/__tests__/spending.spec.ts` | 줄마다 비용 두 몫을 매기는 규칙(큐브 레벨 · 잠재와 소울은 사용 전 등급 · 스타포스 할인과 파괴 방지 · 표에 없는 장비는 값 없음), 날짜 · 캐릭터 · 분류 · 넥슨이 준 장비 이름별로 묶기, 값 없는 줄과 전용 재화 줄 빼기, 이벤트 월드 판정 세 값(결정 1 · 2 · 5 · 7) |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 갈아 끼울 때 같은 열쇠의 줄은 값을 고치고 사라진 줄은 지우는지, 비울 때 그 계정 캐릭터 · 받은 API 종류의 분류 · 날짜만 지우는지, 옛 원본을 합계로 옮기고 이름 목록이 없으면 미루는지(결정 3 · 6) |
 | `features/enhancement-history/__tests__/collect.spec.ts` | 모든 쪽을 받아 한 합계로 갈아 끼우는지, 목록을 못 받으면 판정을 비우고 굳히지 않는지(결정 5 · 6) |
 | `features/cashbook/__tests__/records.spec.ts` | 이벤트 월드 · 모름 줄을 지출에서 빼는지, MVP 할인을 스타포스 시도 비용에만 붙이는지, 옮기는 단계 뒤에 읽는지, 칸 금액과 상세 합계가 같은지(결정 2 · 3 · 5) |
 | `lib/enhancement/__tests__/cost.spec.ts` | 스타포스 비용을 두 몫으로 나누고 MVP 할인을 시도 비용에만 붙이는 계산(결정 2) |
 | `features/enhancement-history/__tests__/recompute.spec.ts` | 틀린 요청만 버리는지, 기간을 하한 · 오늘로 자르고 진행 뒤부터 고르는지, 한도가 있으면 그 날 수만 고르는지(결정 4) |
 | `features/enhancement-history/__tests__/collect.spec.ts` (다시 매기기) | 굳은 날도 요청이면 다시 받고 분모에 드는지, 모두 받으면 진행 · 완료를 적고 실패하면 안 적는지, 완료된 요청은 안 도는지, 넥슨 로그인 계정만 한 회차에 60일로 자르는지, 다시 매기기의 날만 남으면 분모에는 들고 모달 판정에는 안 드는지(결정 4) |
 | `features/enhancement-history/__tests__/spending.spec.ts` (성) | 최신 줄부터 받아도 가장 이른 시도의 강화 전 성과 가장 늦은 시도의 강화 후 성을 드는지, 중간에 성이 오르내려도 두 끝만 잇는지, 합계에 안 드는 줄은 성에도 안 드는지(결정 8) |
-| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (성) | 갈아 끼울 때 성 칸도 고쳐 적는지, 성 칸이 없던 옛 기기의 표에도 적히고 옛 줄은 비어 있는지(결정 8) |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (성) | 갈아 끼울 때 성 칸과 슈페리얼 비용도 고쳐 적는지(결정 8 · 10) |
 | `app/cashbook/__tests__/CashbookScreen.test.tsx` (성) | 펼친 스타포스 장비 줄이 이름 아래 줄에 `17성 → 21성` 과 횟수를 따로 세우고 성이 빈 줄은 횟수만 세우는지, 다른 분류의 줄은 한 줄인지(결정 8) |
 | `lib/enhancement/__tests__/world.spec.ts` | 스타포스는 줄의 월드가 이기는지, 큐브 · 잠재 · 소울은 붙인 캐릭터의 월드로 판정하는지, 표에 없는 월드는 모름인지, 리프 전 줄과 월드를 모르는 캐릭터는 일반 월드인지, 캐시의 `worldKey` 가 비어도 월드 이름으로 다시 찾는지(결정 5) |
 | `features/enhancement-history/__tests__/collect.spec.ts` (이벤트 월드) | 모름 줄이 있는 날을 굳히지 않고 월드 이름을 이상 보고에 싣는지, 그날 이름을 묻다 실패한 날을 갈아 끼우지도 굳히지도 않는지, 그 넥슨 계정의 캐릭터를 갈아 끼우는 범위로 넘기는지(결정 5 · 6) |
-| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (계정 범위) | 그 넥슨 계정 캐릭터의 그날 줄은 다른 계정 id 로 적혔어도 갈아 끼우는지(결정 6 · 7) |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (계정 범위) | 그 넥슨 계정으로 본 캐릭터의 그날 줄은 지금 목록에 없는 옛 ocid 의 줄이어도 갈아 끼우는지(결정 6 · 7) |
 | `lib/world/__tests__/worlds.spec.ts` | 월드마다 기간 배열을 읽고 없으면 빈 배열인지, 기간 글자가 틀리거나 `until` 이 `from` 보다 뒤가 아니면 표 전체가 `null` 인지, 날짜가 그 월드의 기간 안인지 `until` 을 빼고 가르는지(결정 9) |
 | 서버 `modules/worlds/worlds.repository.spec.ts` (기간) | 게임 데이터 칸의 월드마다 기간을 `from` 차례로 싣고 없으면 빈 배열인지, 기간을 더하고 고치고 지우면 칸의 `updatedAt` 이 바뀌는지, 겹치거나 `until` 이 `from` 보다 뒤가 아니면 400 인지(결정 9) |
 | `lib/enhancement/__tests__/cost.spec.ts` (슈페리얼) | 슈페리얼 장비를 공백과 상관없이 이름 전체로 찾아 그 계열의 금액과 그림 id 를 내고 이름 일부만 같으면 `null` 인지, `superiorSeries` · `superiorItems` 가 빠지거나 금액이 양의 정수가 아니면 표 전체가 `null` 인지(결정 10) |
 | `features/enhancement-history/__tests__/spending.spec.ts` (슈페리얼) | 표의 장비면 성 · 이벤트 할인 · 파괴 방지와 상관없이 계열 금액을 슈페리얼 몫에 드는지, `노바 두건` 처럼 계열 이름만 든 장비는 일반 식인지, 표에 없는데 `superior_item_flag` 가 `슈페리얼 장비 미해당` 도 빈 글자도 아니면 `no_cost` 인지(결정 10) |
 | `features/enhancement-history/__tests__/anomalies.spec.ts` (슈페리얼) | 표에 없는 슈페리얼 줄을 성수와 상관없이 `no_cost` 로 세는지(결정 10) |
 | `features/cashbook/__tests__/records.spec.ts` (슈페리얼) | 슈페리얼 비용에는 MVP 할인을 붙이지 않는지(결정 2 · 10) |
-| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (슈페리얼) | 슈페리얼 비용 칸을 적고 읽는지, 칸이 없던 옛 기기의 표에도 더해지고 옛 줄은 0 인지(결정 7 · 10) |
 | `features/enhancement-history/__tests__/recompute.spec.ts` (슈페리얼) | `superiorOnly` 를 읽고, 참 · 거짓이 아니면 그 요청을 버리는지(결정 4 · 10) |
 | `features/enhancement-history/__tests__/collect.spec.ts` (슈페리얼) | `superiorOnly` 요청의 날은 슈페리얼 장비의 줄이 있을 때만 갈아 끼우고, 없으면 합계 · 굳음 원장 · 이상 보고를 그대로 두되 진행은 적는지, 같은 날을 통째로 받는 일이 함께 있으면 통째로 갈아 끼우는지(결정 10) |
 | 서버 `modules/enhancement-costs/enhancement-costs.repository.spec.ts` (슈페리얼) | 칸에 계열과 슈페리얼 장비 줄(그림 id 포함)을 싣는지, 계열을 더하거나 금액을 고치거나 장비를 더하고 지우거나 그림을 바꾸면 칸의 `updatedAt` 이 바뀌는지, 그림 표에 없는 그림은 막는지, 빈 · 겹친 계열 key, 1 보다 작은 금액, 빈 장비 이름, 공백을 지운 뒤 같은 장비 이름은 400 이고 아무것도 안 바뀌는지(결정 10) |
@@ -318,3 +318,6 @@ today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어
   넣기 전에 굳은 날을 다시 받는 요청을 더했다. 월드마다 기간을 여러 줄 두는 결정 9 와 결정 7 의 기기 표를 더했다
 - ADR-234 (2026-11-15): 슈페리얼 장비의 스타포스를 계열마다 정한 1회 금액으로 매기는 결정 10 을 더했다(#1029). 결정 2 와
   결정 7 에 할인을 받지 않는 슈페리얼 비용 칸을, 결정 4 에 슈페리얼 줄이 있는 날만 갈아 끼우는 요청 칸 `superiorOnly` 를 더했다
+- ADR-295 (2026-11-21): 1.0.15 기기 변환이 합계 표를 서버 표와 같은 칸으로 옮겨 결정 7 을 다시 썼다([[ADR-286]] 결정 6 · 10, #947).
+  넥슨 계정 · 이름 · 메이플 ID · API 종류 · 장비 묶음 칸을 없애고 장비를 넥슨이 준 이름으로 가린다. 결정 6 에서 갈아 끼울 때 지우는
+  범위를 소속 기록의 그 넥슨 계정 ocid 와 받은 API 종류의 분류로 고쳤고, 결정 3 에 옮기기가 변환 뒤에 돈다는 것을 더했다

@@ -36,7 +36,8 @@ character_accounts          id · (ocid, name, account_id) UNIQUE · nexon_accou
 옛 기본키가 막던 중복은 `UNIQUE` 가 그대로 막는다. 다섯 표 모두 옛 기본키 조합이 곧 같은 값의 행이 둘 있으면 안 되는
 조합이라, 일반 인덱스로 둘 칸이 없다.
 
-칸 이름은 결정 7 의 규칙으로 바꾼 뒤의 이름이다.
+칸 이름은 결정 7 의 규칙으로 바꾼 뒤의 이름이다. 월드 리프와 MVP 등급은 1.0.15 기기 변환이 칸을 서버 표와 같게 다시 바꿨다.
+리프는 `previous_ocid`(UNIQUE) · `ocid` 이고 `linked_at` 이 없으며, 등급은 등급 표의 줄 id 를 적는 `grade_id` 다([[ADR-286]] 결정 6).
 
 ### 결정 2. `id` 칸은 SQLite 가 기본값으로 채운다
 
@@ -85,19 +86,19 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
   `id` 를 잇는다(`reusableNexonAccountId`, 로그인은 [[ADR-101]] 결정 16). 메이플 ID 는 넥슨 계정 하나에만 속하기 때문이다.
   그 계정이 다른 수단으로 살아 있으면 잇지 않는다. 같은 계정 id 를 두 수단이 가지면 안 된다.
   - 로그아웃하거나 로그인이 만료되면 로그인이 지워지면서 그 `id` 도 사라진다. 그래서 같은 넥슨 ID 로 다시 로그인할 때 이것이
-    없으면 새 `id` 를 받고, 강화 수집기가 이미 받은 날짜를 새 `id` 로 다시 받아 같은 강화를 한 줄 더 적는다.
+    없으면 새 `id` 를 받고, 조회 기록이 넥슨 계정마다 있어 강화 수집기가 이미 받은 날짜를 새 `id` 로 모두 다시 받는다.
   - 옛 `id` 는 로그인을 저장하기 **전에** 찾는다. 그래서 로그인의 `character/list` 는 소속을 적지 않고 받는다
     (`fetchUnsavedCharacterList`). 먼저 적으면 `character_accounts` 의 계정 칸이 새 `id` 로 덮여 옛 `id` 를 찾을 수 없다.
 - 같은 키를 다시 넣어도 그 수단의 `id` 는 그대로다. 바뀌는 때는 아래 하나뿐이다.
 - 넥슨 로그인이 메이플 ID 가 같은 키를 거두면 로그인은 **그 키의 `id` 를 이어받는다**([[ADR-025]] 결정 4). 로그인과 그 키는
   같은 넥슨 계정이라 기록이 이어져야 한다. 새 `id` 를 받으면 키 시절 기록이 주인 없는 `id` 에 남고, 강화 수집기가 새 `id` 로
-  키 시절 날짜를 모두 다시 받는다. 강화 합계는 계정을 가리지 않고 더하므로(`loadEnhancementTotals`) 같은 지출이 두 번 세어진다.
+  키 시절 날짜를 모두 다시 받는다.
   - 거둔 키가 여럿이면 첫 키의 `id` 를 잇는다. 로그인이 이미 다른 `id` 를 갖고 있었거나 둘째 이후 키가 있으면, 그 `id` 들의 기기
     기록을 이어받은 `id` 로 옮긴다(`moveNexonAccountRows`).
   - 계정 칸이 `UNIQUE` 에 든 표(`enhancement_history_checks` · `enhancement_recomputes` · `enhancement_refetches`)에서 같은 줄이
     겹치면 나중에 적힌 줄(`checked_at` · `updated_at` · `created_at`)을 남긴다. 두 줄은 같은 넥슨 계정의 같은 날을 두 번 받은 것이라,
-    나중 줄이 그 날을 더 많이 담는다. `enhancement_totals` 는 ocid 로 가려 계정 칸이 `UNIQUE` 에 없다([[ADR-101]] 결정 18).
-    `enhancement_totals` · `character_accounts` 는 그대로 옮긴다.
+    나중 줄이 그 날을 더 많이 담는다. `character_accounts` 는 계정 칸만 옮긴다. `enhancement_totals` 에는 계정 칸이 없고, 다시 받은
+    날을 갈아 끼울 때 지우는 범위를 `character_accounts` 에서 찾는다([[ADR-286]] 결정 10).
   - 기록을 먼저 옮기고 인증 수단을 저장한다. 저장이 실패해도 기록은 아직 살아 있는 키의 `id` 아래에 있다.
 - 넥슨 자격(`NexonCredential`)도 `accountId` 를 든다. 저장 전에 검증하는 키는 아직 계정이 없어 `null` 이다.
 - 메인 계정은 로그인이 있으면 로그인, 없으면 로그인 없이 쓰는 메인 키다([[ADR-101]] 결정 5). 메인 계정의 자격(`credentialOf`)과 같다.
@@ -155,8 +156,9 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
 
 - **게임 데이터는 `_key` 로 가리킨다**(`boss_key` · `item_key` · `world_key`). 기기 번들에는 서버 표의 uuid 가 없고 key 만
   있기 때문이다. 서버는 받은 key 로 줄을 찾아 `item_id` 같은 외래키로 적는다. 지금 `drop_prices` 가 이렇게 한다. 보스 기록
-  표 셋 · 가계부 기록 표 · 인벤토리 · 강화 레벨 기억은 예외다. 1.0.15 기기 변환 뒤에는 서버에서 받은 게임 데이터의 줄 id
-  (`boss_difficulty_id` · `item_id` · `category_id` · `target_id` · `world_id` 등)로 가리킨다([[ADR-078]] 결정 1 · [[ADR-096]] 결정 1).
+  표 셋 · 가계부 기록 표 · 인벤토리 · 강화 레벨 기억 · 강화 합계 · MVP 등급은 예외다. 1.0.15 기기 변환 뒤에는 서버에서 받은 게임
+  데이터의 줄 id(`boss_difficulty_id` · `item_id` · `category_id` · `target_id` · `world_id` · `grade_id` 등)로 가리킨다([[ADR-078]]
+  결정 1 · [[ADR-096]] 결정 1 · [[ADR-286]] 결정 6).
 - **메이플 ID 는 `account_id` 로 둔다**(사용자 선택). 넥슨 API 응답의 칸 이름과 같다. 다른 표를 가리키는 uuid 가 아니라
   넥슨이 주는 문자열이다.
 
