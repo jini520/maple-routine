@@ -1,7 +1,7 @@
 # ADR-286 1.0.15 기기 변환: 기기의 기록을 서버 표와 같은 모양으로 한 번 바꾼다
 
 > ⚪ 미구현
-> 관련 소스: `storage/sqlite/device-conversion.ts` · `features/device-conversion/run.ts` · `app/device-conversion/DeviceConversionFailed.tsx` · `app/AppShell.tsx` · `boot.ts` · `storage/sqlite/db.ts` · `storage/sqlite/convert-boss-tables.ts` · `storage/sqlite/convert-cashbook-tables.ts` · `storage/sqlite/legacy-cashbook-entries.ts` · `storage/sqlite/boss-tables.ts` · `storage/sqlite/cashbook-tables.ts` · `storage/sqlite/record-key-tables.ts` · `storage/sqlite/enhancement-tables.ts` · `storage/sqlite/remembered-level-tables.ts` · `storage/sqlite/migrations.ts` · `storage/keys.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `lib/cashbook/entry-ids.ts` · `storage/cashbook-entries.ts` · `storage/inventory.ts` · `storage/remembered-levels.ts` · `app/inventory/InventorySaleSheet.tsx`
+> 관련 소스: `storage/sqlite/device-conversion.ts` · `features/device-conversion/run.ts` · `app/device-conversion/DeviceConversionFailed.tsx` · `app/AppShell.tsx` · `boot.ts` · `storage/sqlite/db.ts` · `storage/sqlite/convert-boss-tables.ts` · `storage/sqlite/convert-cashbook-tables.ts` · `storage/sqlite/legacy-cashbook-entries.ts` · `storage/sqlite/boss-tables.ts` · `storage/sqlite/cashbook-tables.ts` · `storage/sqlite/record-key-tables.ts` · `storage/sqlite/enhancement-tables.ts` · `storage/sqlite/remembered-level-tables.ts` · `storage/sqlite/migrations.ts` · `storage/keys.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `lib/cashbook/entry-ids.ts` · `storage/cashbook-entries.ts` · `storage/inventory.ts` · `storage/remembered-levels.ts` · `app/inventory/InventorySaleSheet.tsx` · `storage/sqlite/convert-enhancement-tables.ts` · `storage/enhancement-totals.ts` · `storage/character-world-leaps.ts` · `storage/mvp-grades.ts` · `features/enhancement-history/legacy-totals.ts` · `features/enhancement-history/spending.ts` · `features/cashbook/records.ts` · `features/boss-profit/world-leap-moves.ts` · `features/mvp-grade/empty-rows.ts`
 
 ## 배경
 
@@ -58,10 +58,16 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 - DB 를 열 때마다 도는 칸 보강(`ensureColumn`)과 인덱스 만들기는 옛 표 · 옛 칸 이름을 쓴다. 변환 뒤에는 그 표와 칸이 없어 DB 열기가
   실패하므로, 변환 표식에 따라 옛 쪽과 새 쪽 가운데 하나만 돌린다. 옛 DB 버전 이관(버전 4 · 12 · 14 · 16)이 읽는 옛 표 정의는 이관
   전용으로 묶어 두고, 새 표 정의는 변환에서만 만든다.
-- 켤 때 돌던 옛 이관 셋은 옛 모양의 칸을 써서 변환 뒤에는 돌 수 없다. 옛 강화 원본을 합계로 옮기기
-  (`features/enhancement-history/legacy-totals.ts`)와 옛 월드 공유 진행 나누기(`splitWorldSharedProgress`)는 변환보다 먼저 끝낸다.
+- 켤 때 돌던 옛 이관 가운데 옛 월드 공유 진행 나누기(`splitWorldSharedProgress`)는 옛 모양의 칸을 써서 변환보다 먼저 끝낸다.
   주인을 모르는 옛 손입력 붙이기는 가계부 단계가 옮기기 전에 변환 안에서 한다(결정 10). 켜기 단계로 두면 기록 표 접근이 변환을
   기다려서 늘 변환 뒤에 돈다.
+- 옛 강화 원본을 합계로 옮기기(`features/enhancement-history/legacy-totals.ts`)는 변환 뒤에 지금처럼 수집기와 가계부가 부를 때
+  돈다. 합계를 저장소(`storage/enhancement-totals.ts`)로 적어서 변환한 표의 모양으로 들어간다. 원본 표(`enhancement_history`)는
+  변환이 건드리지 않는다. 1.0.12 까지 쓰다가 1.0.15 로 바로 올린 기기와, 아래 값이 없어 아직 옮기지 못한 기기에 원본이 남아 있다.
+  - 변환 전에 옮기지 않는 이유는 옮기기에 쓰는 값 둘이 변환 때 없을 수 있어서다. 메인 넥슨 계정은 로그인하지 않은 기기에 없고,
+    이벤트 월드 이름 목록은 화면 트리(`QueryCacheProvider`)가 올리는 쿼리 캐시에 있다. 지금도 둘 가운데 하나가 없으면 옮기지 않고
+    다음 호출이 다시 본다. 변환 전에만 옮기게 하면 그런 기기의 원본은 변환 뒤에 옮길 곳이 없어, 지우거나 영영 남겨야 한다.
+  - 옮긴 표식은 지금처럼 Preferences `enhancementTotalsMoved` 다. 표식이 있으면 남은 원본을 지우기만 한다.
 
 ### 결정 2. 표와 칸의 이름은 서버와 같다. 캐릭터와 메이플 ID 를 가리키는 칸만 다르다
 
@@ -230,6 +236,21 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 | `mvp_grade_history` | `grade` | `grade_id` | 등급 줄 id. 등급이 빈 줄은 켤 때 이미 지워져 없다 |
 
 - `superior_cost_meso` 는 0 그대로 둔다. 서버는 0 을 받는다.
+- 강화 합계의 한 줄은 캐릭터 · 날짜 · 분류 · 넥슨이 준 장비 이름이다([[ADR-099]] 결정 37). 합계를 묶는 코드(`summarizeEnhancement`)와
+  가계부의 펼친 장비 칸(`features/cashbook/records.ts`)도 이름 글자 그대로 묶는다. 띄어쓰기만 다른 이름은 다른 줄이다.
+- 변환 전 표에서 새 유일 기준이 겹치는 줄(같은 캐릭터 · 날짜 · 분류 · 이름)은 횟수와 비용 셋을 더해 한 줄로 합치고, 먼저 적은 줄의
+  id 와 나머지 칸을 남긴다. 옛 기준은 장비 key 나 공백을 지운 이름이라 이름이 같은 줄이 둘일 수 있다. 둘 다 그날 쓴 메소라 하나만
+  남기면 지출이 빠진다. 백업에는 없다.
+- 저장소(`storage/enhancement-totals.ts`)는 월드 줄 id 를 월드 key 로 되돌려 읽는다. 장비 key 는 읽을 때 이름으로 장비 표에서
+  찾는다(`equipmentItemKeyOfApiName`). 펼친 장비 칸의 그림이 그 key 를 쓴다. 하루치를 갈아 끼울 때 지우는 범위는 받은 API 종류가
+  정하는 분류다. 큐브는 큐브 재설정, 스타포스는 스타포스, 잠재능력은 잠재능력과 에디셔널 잠재능력, 소울 잠재능력은 소울 잠재능력이다.
+- 이어진 리프는 줄마다 `to_ocid` 를 더 갈 곳이 없을 때까지 따라가 그 ocid 를 적는다. 고리가 있으면 이미 지난 ocid 에서 멈춘다. 변환
+  뒤에 다시 리프하면 옛 ocid 의 기록을 옮기는 회차(`features/boss-profit/world-leap-moves.ts`)가 연결마다 앞 줄의 `ocid` 도 새
+  ocid 로 옮긴다([[ADR-099]] 결정 56). 자기 자신을 가리키는 줄은 만들지 않는다. 저장소(`storage/character-world-leaps.ts`)는 두 칸을
+  옛 ocid · 새 ocid(`fromOcid` · `toOcid`)로 읽는다.
+- MVP 등급이 비었거나 등급 표에 없는 key 인 줄은 지운다. 저장소(`storage/mvp-grades.ts`)는 등급 줄 id 를 key 로 되돌려 읽고, 표에
+  없는 등급을 적으려 하면 던진다. 칸은 서버처럼 비울 수 있어서, 켤 때 빈 줄을 지우는 단계(`features/mvp-grade/empty-rows.ts`)는
+  `grade_id` 가 빈 줄을 본다.
 
 ### 결정 7. Preferences 에 든 기록
 
@@ -289,8 +310,18 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 | `enhancement_totals.character_name` | 가계부 강화 줄의 이름을 못 찾을 때 대신 쓰는 이름(`features/cashbook/records.ts`) | `character_dated_names` 에서 그 날짜의 이름 |
 | `cashbook_entries.nexon_account_id` | 주인을 모르는 옛 손입력을 붙이던 켜기 단계 | 가계부 단계가 옮기기 전에 같은 붙이기를 한 번 더 돌고, 켜기 단계는 걷었다(결정 1). 그래도 붙일 곳이 없는 기록은 지운다. 서버는 메이플 ID 없는 기록을 받지 않는다([[ADR-099]] 결정 49) |
 
-- 백업의 강화 970줄은 세 칸의 값을 모두 두 표에서 찾는다. 가계부 기록 209건에는 `nexon_account_id` 가 찬 줄이 없다.
-- 강화 합계를 적는 코드도 세 칸을 쓰지 않게 바꾼다.
+- 백업의 강화 970줄은 모두 `character_accounts` 에 그 ocid 의 줄이 있고, ocid 마다 메이플 ID 가 하나라 메이플 ID 를 모두 찾는다.
+  그 날짜를 덮는 소속 기록이 있는 줄은 95줄뿐이다. 그날 이름은 677줄이 `character_dated_names` 에 있다. 가계부 기록 209건에는
+  `nexon_account_id` 가 찬 줄이 없다.
+- MVP 할인의 메이플 ID 는 그 날짜를 덮는 소속 기록의 ID 이고, 없으면 그 캐릭터를 가장 늦게 본 소속 기록의 ID 다. 수집기는 앱이 그
+  캐릭터를 처음 보기 전의 날도 받아서, 날짜로만 찾으면 백업의 875줄이 할인을 잃는다. 소속 기록이 하나도 없으면 할인이 없다.
+- 대신 쓰는 이름은 그날 이름이고, 없으면(받지 않은 날 · 리프 전 날) 위에서 고른 소속 기록의 이름이다. 화면은 지금 이름
+  (`character_profiles`)을 먼저 쓰고, 이 이름은 지금 이름을 모를 때만 보인다.
+- 갈아 끼울 때 지우는 범위는 그 날짜 · 그 API 종류의 분류 가운데, `character_accounts` 에서 그 넥슨 계정으로 본 ocid · 수집기가 넘긴
+  그 계정의 캐릭터 · 새 합계의 ocid 의 줄이다.
+- 넥슨 계정 id 를 옮기는 일(`storage/nexon-account-ids.ts` 의 `moveNexonAccountRows`)은 강화 합계를 건드리지 않는다. 지울 범위를
+  `character_accounts` 에서 찾으므로 그 표의 계정 칸만 옮기면 된다.
+- 강화 합계를 적는 코드(`summarizeEnhancement` · `storage/enhancement-totals.ts`)는 세 칸을 쓰지 않는다.
 - 가계부 단계의 붙이기는 켜기 단계와 같은 차례다(`storage/sqlite/legacy-cashbook-entries.ts`). 먼저 빈 글자 계정 칸(버전 16 전에
   메인 계정으로 받은 기록)을 메인 넥슨 계정 id 로 채운다. 그 넥슨 계정의 메이플 ID 가 하나뿐이면 메이플 ID 를 고를 수 있는 분류의
   기록을 그 ID 로 옮기고, 남은 기록은 대표 캐릭터에게 붙인다.
@@ -304,7 +335,7 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `storage/sqlite/__tests__/device-conversion-real-sqlite.test.ts` | 결정 1: 한 트랜잭션이고 단계가 던지면 앞 단계의 변경과 번호가 함께 되돌아가며 다시 돌면 끝까지 가는지, 번호가 끝이면 다시 돌지 않는지, 사본 파일을 한 번만 뜨는지, 던진 단계의 번호를 알리는지 본다. 결정 8: 남은 빈 표 `boss_profit_period_checks` 를 지우는지 본다. 결정 6(이후 단계): 표마다 바꾸는 규칙(이어진 리프)과 지우는 경우를 진짜 SQLite 로 본다 |
+| `storage/sqlite/__tests__/device-conversion-real-sqlite.test.ts` | 결정 1: 한 트랜잭션이고 단계가 던지면 앞 단계의 변경과 번호가 함께 되돌아가며 다시 돌면 끝까지 가는지, 번호가 끝이면 다시 돌지 않는지, 사본 파일을 한 번만 뜨는지, 던진 단계의 번호를 알리는지 본다. 결정 8: 남은 빈 표 `boss_profit_period_checks` 를 지우는지 본다 |
 | `storage/sqlite/__tests__/convert-boss-tables-real-sqlite.test.ts` | 결정 3: 분배 설정은 분배를 정한 줄만 옮기는지, 비율을 % 의 1000 배로 반올림하고 `제외` 의 숨긴 분배를 버리는지, 수익 건을 기간 값 · 월드 줄 id · 바뀐 처치 칸으로 옮기는지, 처치한 비율 분배의 빈 요율을 그 날 등급 요율로 채우고 받은 메소를 다시 세는지 본다. 반지는 레벨 줄로, 상자 연마석과 상자로만 주는 난이도의 상자 칸 빈 연마석은 상자용 줄로 옮기는지, 가격을 적은 드롭의 받는 메소를 적는지, 모르는 보스 · 아이템의 기록과 빈 처치 전 줄을 지우는지, 같은 아이템 줄이 둘이면 먼저 적은 줄만 남기는지 본다 |
 | `lib/__tests__/drop-item-ids.spec.ts` | 결정 3: 아이템 key · 반지 레벨 · 나온 상자 칸 셋과 아이템 줄 id 가 서로 오가는지 본다 |
 | `lib/__tests__/period-code.spec.ts` | 결정 3: 기간 key 와 기간 값(`W202647` · `M202611`)이 서로 오가는지 본다 |
@@ -317,7 +348,12 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 | `features/device-conversion/__tests__/preferences.spec.ts` | 결정 7: 키마다 새 모양으로 바뀌는지, 두 번 돌려도 같은지, 못 찾은 항목만 빠지는지 본다 |
 | `storage/sqlite/__tests__/convert-boss-tables-real-sqlite.test.ts` | 결정 1: 변환 뒤 DB 를 다시 열어도 옛 표 · 옛 인덱스를 다시 만들지 않고 열리는지 본다 |
 | `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` | 결정 5: 장비가 아닌 아이템을 다시 넣으면 같은 줄의 개수를 더하는지 본다. 결정 9: 기록의 메이플 ID · 월드로 기타 조각의 남은 수를 월드마다 세는지, 캐릭터 기록은 그 캐릭터의 메이플 ID 로 세는지 본다 |
-| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 결정 10: 다시 받은 날의 줄을 갈아 끼울 때 그 넥슨 계정의 옛 ocid 줄도 지우는지, MVP 할인 메이플 ID 와 대신 쓰는 이름을 그 날짜로 찾는지 본다 |
+| `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` | 결정 10: 다시 받은 날의 줄을 갈아 끼울 때 그 넥슨 계정의 옛 ocid 줄도 지우는지, MVP 할인 메이플 ID 와 대신 쓰는 이름을 그 날짜로 찾고 없으면 가장 늦게 본 소속 기록에서 찾는지 본다. 결정 6: 같은 이름의 줄을 고쳐 적고, 받은 종류의 분류만 지우는지 본다. 결정 1: 변환한 표에 옛 원본을 합계로 옮기는지 본다 |
+| `storage/sqlite/__tests__/convert-enhancement-tables-real-sqlite.test.ts` | 결정 6: 강화 합계를 바뀐 칸으로 옮기고 월드를 줄 id 로 적되 못 찾으면 비우는지, 이름이 겹치는 줄을 더해 한 줄로 합치는지, 이어진 리프를 끝 ocid 로 모으는지, MVP 등급을 줄 id 로 옮기고 빈 등급 · 모르는 등급 줄을 지우는지 본다. 결정 1: 변환 뒤 DB 를 다시 열어도 옛 칸을 더하지 않고 열리는지 본다 |
+| `storage/sqlite/__tests__/world-leap-real-sqlite.test.ts` | 결정 6: 다시 리프하면 앞 줄의 `ocid` 를 새 ocid 로 옮기고 자기 자신을 가리키는 줄은 만들지 않는지 본다 |
+| `storage/sqlite/__tests__/mvp-real-sqlite.test.ts` | 결정 6: 등급을 줄 id 로 적어 key 로 되읽는지, 표에 없는 등급을 적으면 던지는지 본다 |
+| `features/enhancement-history/__tests__/spending.spec.ts` | 결정 6: 장비를 넥슨이 준 이름 글자 그대로 묶는지 본다 |
+| `features/cashbook/__tests__/records.spec.ts` | 결정 6: 펼친 장비 칸을 이름으로 묶는지 본다. 결정 10: 소속을 모르는 스타포스 줄은 할인 없이 세는지 본다 |
 
 ## 번호 기록
 
