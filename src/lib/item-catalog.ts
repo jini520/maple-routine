@@ -105,6 +105,7 @@ const index = derive(itemsTable, (table) => ({
   byComparableName: new Map(table.items.map((item) => [comparableEquipmentName(item.name), item])),
   ringLevelById: new Map(table.ringLevelItems.map((ring) => [ring.itemId, ring])),
   originalIdById: new Map(table.sameItemLinks.map((link) => [link.itemId, link.originalItemId])),
+  levelItemIdByRing: new Map(table.ringLevelItems.map((ring) => [`${ring.ringItemId}|${ring.ringLevel}`, ring.itemId])),
 }))
 
 /** 표의 한 줄. 모르는 key 는 `null` 이다. */
@@ -125,12 +126,17 @@ export function itemGroupOf(item: ItemRow | null): ItemGroupRow | null {
 /**
  * 특수스킬 반지의 레벨 줄이면 원래 반지와 레벨. 다른 아이템은 `null` 이다.
  *
- * 기록은 아직 원래 반지의 key 와 레벨을 따로 적는다. 레벨 줄은 기록을 아이템 줄 id 로 옮기는 기기 변환에서 쓴다.
+ * 기록 표는 레벨 줄의 id 를 적고, 화면과 계산은 원래 반지의 key 와 레벨을 따로 든다.
  */
 export function ringLevelOf(item: ItemRow): { ring: ItemRow; ringLevel: number } | null {
   const row = index().ringLevelById.get(item.id)
   const ring = row === undefined ? null : findItemById(row.ringItemId)
   return row === undefined || ring === null ? null : { ring, ringLevel: row.ringLevel }
+}
+
+/** 원래 반지의 그 레벨 줄. 레벨 줄이 없는 반지와 레벨은 `null` 이다. */
+export function ringLevelItemOf(ring: ItemRow, ringLevel: number): ItemRow | null {
+  return findItemById(index().levelItemIdByRing.get(`${ring.id}|${ringLevel}`))
 }
 
 /** 같은 물건의 원래 아이템. 상자에서 나온 연마석이면 연마석이고, 링크가 없으면 그 아이템 자신이다. */
