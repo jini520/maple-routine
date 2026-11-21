@@ -51,7 +51,6 @@ const NOT_YET_MOVED: readonly GameDataSection[] = [
   'bossDrops',
   'dropBoxes',
   'crystalPrices',
-  'worlds',
   'spendCatalog',
   'cashbookCategories',
   'symbolCosts',

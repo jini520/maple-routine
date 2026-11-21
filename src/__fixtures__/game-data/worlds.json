@@ -1,195 +1,177 @@
 {
-  "updatedAt": "2026-10-19T04:31:51.170Z",
+  "updatedAt": "2026-11-09T18:05:50.211Z",
   "worlds": [
     {
+      "id": "f014101f-9305-49fc-9984-88134ff93f2c",
       "key": "scania",
       "name": "스카니아",
-      "emblem": "scania",
       "emblemAssetId": "ecab282f-8d5f-43ba-8afc-c7fdc91364d9",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "4437afb7-070c-43d7-a6de-652d19883e92",
       "key": "bera",
       "name": "베라",
-      "emblem": "bera",
       "emblemAssetId": "6f685cc3-7b10-480e-8458-42b15537fda6",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "86d84ed5-004a-4c4b-92ce-c041f036dbfd",
       "key": "luna",
       "name": "루나",
-      "emblem": "luna",
       "emblemAssetId": "35067314-b7c4-401d-a5d5-d827aaa21501",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "bdaf4f87-7162-42c7-bd2c-57abaa49010a",
       "key": "zenith",
       "name": "제니스",
-      "emblem": "zenith",
       "emblemAssetId": "f9aa8986-69cd-4394-ace0-71afd85af4ba",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "a73c700d-f10e-452a-835e-038be96a6922",
       "key": "croa",
       "name": "크로아",
-      "emblem": "croa",
       "emblemAssetId": "802c57d6-c3c4-4ff0-839b-366209435f4c",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "17d4f73b-f2dc-4c38-abc3-571f4e6e336f",
       "key": "union",
       "name": "유니온",
-      "emblem": "union",
       "emblemAssetId": "1cd8b897-ccc1-47fa-88ce-94816c4391e3",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "767f9df0-c236-41c8-95cd-bbbb215faf00",
       "key": "elysium",
       "name": "엘리시움",
-      "emblem": "elysium",
       "emblemAssetId": "0bb2a7b0-20ee-43ed-8a82-8b8f95b8b286",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "aa9aa077-9fb8-4734-b7b5-9ce5bc2228e5",
       "key": "enosis",
       "name": "이노시스",
-      "emblem": "enosis",
       "emblemAssetId": "c828c9f8-10af-443b-ae80-a582118b812b",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "6cda35cc-26bc-4a1b-8e44-63bb426ecba6",
       "key": "red",
       "name": "레드",
-      "emblem": "red",
       "emblemAssetId": "bd4f0c68-225a-4b0e-b556-172737af7c11",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "4d3969e3-be01-4f09-a2ef-64df1746d1c8",
       "key": "aurora",
       "name": "오로라",
-      "emblem": "aurora",
       "emblemAssetId": "8f015e69-cd7a-479f-9571-3974246c02ac",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "0b327227-86e9-46e0-85a6-84b17fb15ad3",
       "key": "arcane",
       "name": "아케인",
-      "emblem": "arcane",
       "emblemAssetId": "dd4d7417-4bc9-4379-b769-e3f3ef701c02",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "de4c8bb4-0bc5-471b-99c7-b2a17e9e333b",
       "key": "nova",
       "name": "노바",
-      "emblem": "nova",
       "emblemAssetId": "f88dc86d-d9d6-4ae2-822d-ed90a61b45a4",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "78ccc405-ba72-4dd8-9934-a009144c1a65",
       "key": "eos",
       "name": "에오스",
-      "emblem": "eos",
       "emblemAssetId": "d6d98cf8-34c8-447f-9a12-c231105c4ad2",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "a87f5c96-ef16-4862-b666-1cb9896a1a2c",
       "key": "helios",
       "name": "핼리오스",
-      "emblem": "helios",
       "emblemAssetId": "7a31c2e7-fdeb-43f1-ab62-2b21f356bfbd",
-      "challengers": false,
-      "event": false,
-      "periods": []
+      "isChallengers": false,
+      "isEvent": false
     },
     {
+      "id": "a8a1922a-faf8-4eda-b424-7109561a7918",
       "key": "challengers",
       "name": "챌린저스",
-      "emblem": "challengers",
       "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
-      "challengers": true,
-      "event": false,
-      "periods": []
+      "isChallengers": true,
+      "isEvent": false
     },
     {
+      "id": "02a799ee-6328-469b-8201-46f8bdbc3834",
       "key": "challengers_2",
       "name": "챌린저스2",
-      "emblem": "challengers",
       "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
-      "challengers": true,
-      "event": false,
-      "periods": []
+      "isChallengers": true,
+      "isEvent": false
     },
     {
+      "id": "07a8f743-22d7-4b51-b119-ebd14e34df53",
       "key": "challengers_3",
       "name": "챌린저스3",
-      "emblem": "challengers",
       "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
-      "challengers": true,
-      "event": false,
-      "periods": []
+      "isChallengers": true,
+      "isEvent": false
     },
     {
+      "id": "e357050f-a2af-4392-9b92-b6ea517764cd",
       "key": "challengers_4",
       "name": "챌린저스4",
-      "emblem": "challengers",
       "emblemAssetId": "026acfb7-66e5-46b3-9cb9-4ab687106ac5",
-      "challengers": true,
-      "event": false,
-      "periods": []
+      "isChallengers": true,
+      "isEvent": false
     },
     {
+      "id": "a7c78afd-0c9c-4d4d-ad70-441bc9736bf8",
       "key": "special",
       "name": "스페셜",
-      "emblem": null,
       "emblemAssetId": null,
-      "challengers": false,
-      "event": true,
-      "periods": [
-        {
-          "from": "2025-11-20",
-          "until": "2025-12-19"
-        }
-      ]
+      "isChallengers": false,
+      "isEvent": true
     },
     {
+      "id": "3c6f6892-9ca9-41a5-a9fd-f705851be681",
       "key": "special_2",
       "name": "스페셜2",
-      "emblem": null,
       "emblemAssetId": null,
-      "challengers": false,
-      "event": true,
-      "periods": [
-        {
-          "from": "2025-11-20",
-          "until": "2025-12-19"
-        }
-      ]
+      "isChallengers": false,
+      "isEvent": true
+    }
+  ],
+  "worldOpenPeriods": [
+    {
+      "worldId": "a7c78afd-0c9c-4d4d-ad70-441bc9736bf8",
+      "validFrom": "2025-11-20",
+      "validUntil": "2025-12-19"
+    },
+    {
+      "worldId": "3c6f6892-9ca9-41a5-a9fd-f705851be681",
+      "validFrom": "2025-11-20",
+      "validUntil": "2025-12-19"
     }
   ]
 }

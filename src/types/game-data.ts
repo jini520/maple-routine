@@ -85,23 +85,28 @@ export interface CrystalPricesTable extends TableHead {
 }
 
 export interface WorldRow {
+  id: string
   key: string
   /** API `world_name` 표기. 보이는 이름이다. */
   name: string
   /** 엠블럼 그림 id. 스페셜은 빠진다. */
   emblemAssetId?: string
-  challengers: boolean
-  event: boolean
-  /** 열린 기간. 이벤트 · 챌린저스 월드는 같은 이름으로 다시 열려 여러 줄이다. `from` 차례 */
-  periods: WorldPeriod[]
+  isChallengers: boolean
+  isEvent: boolean
 }
-/** KST `YYYY-MM-DD`. `from` 은 연 날, `until` 은 닫힌 다음 날이라 기간에 안 든다. */
-export interface WorldPeriod {
-  from: string
-  until: string
+/**
+ * 월드가 열린 기간 한 줄. 이벤트 · 챌린저스 월드는 같은 이름으로 다시 열려 한 월드에 여러 줄이다.
+ *
+ * KST `YYYY-MM-DD`. `validFrom` 은 연 날, `validUntil` 은 닫힌 다음 날이라 기간에 안 든다.
+ */
+export interface WorldOpenPeriodRow {
+  worldId: string
+  validFrom: string
+  validUntil: string
 }
 export interface WorldsTable extends TableHead {
   worlds: WorldRow[]
+  worldOpenPeriods: WorldOpenPeriodRow[]
 }
 
 export interface SpendCatalogRules {

@@ -2,7 +2,7 @@
  * 시세 응답을 게임 데이터와 잇는 곳. 서버는 아이템을 key 로만 주고, 이름과 그림은 앱이 가진 게임 데이터에서 찾는다.
  */
 import { findItem } from '../../lib/item-catalog'
-import { isInWorldPeriod, worlds, type WorldEntry } from '../../lib/world/worlds'
+import { isInWorldPeriod, openPeriodsOf, worlds, type WorldEntry } from '../../lib/world/worlds'
 
 export interface MarketItemFace {
   name: string
@@ -40,7 +40,7 @@ export function byPriceDesc(
  * @param todayKey KST `YYYY-MM-DD`
  */
 export function openWorlds(todayKey: string): WorldEntry[] {
-  return worlds().filter((world) => world.periods.length === 0 || isInWorldPeriod(world.key, todayKey))
+  return worlds().filter((world) => openPeriodsOf(world.key).length === 0 || isInWorldPeriod(world.key, todayKey))
 }
 
 /** 고르개의 처음 값. 대표 캐릭터의 월드가 고르개에 있으면 그 월드이고, 아니면 첫 월드다. */

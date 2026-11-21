@@ -2,31 +2,41 @@
 import { worldEmblemUrl } from '../../assets/asset-lookup'
 import { findWorld, isInWorldPeriod, parseWorlds, worldKeyOfApiName, worldNameOf } from '../worlds'
 
-const world = (over: Record<string, unknown> = {}) => ({ key: 'special', name: '스페셜', challengers: false, event: true, ...over })
+const world = (over: Record<string, unknown> = {}) => ({
+  id: 'w-special',
+  key: 'special',
+  name: '스페셜',
+  isChallengers: false,
+  isEvent: true,
+  ...over,
+})
+const period = (validFrom: string, validUntil: string) => ({ worldId: 'w-special', validFrom, validUntil })
 
 // 이벤트 · 챌린저스 월드는 닫혔다가 같은 이름으로 다시 열린다. 그래서 기간이 여러 줄이다.
 describe('월드 기간', () => {
-  it('기간 배열을 읽고, 칸이 없는 옛 응답은 빈 배열이다', () => {
-    const periods = [
-      { from: '2025-11-20', until: '2025-12-19' },
-      { from: '2026-11-19', until: '2026-12-17' },
-    ]
-    const table = parseWorlds({ updatedAt: null, worlds: [world({ periods }), world({ key: 'scania', name: '스카니아' })] })
+  it('한 월드의 기간 여러 줄을 받고, 기간이 없는 월드도 받는다', () => {
+    const worldOpenPeriods = [period('2025-11-20', '2025-12-19'), period('2026-11-19', '2026-12-17')]
+    const table = parseWorlds({
+      updatedAt: null,
+      worlds: [world(), world({ id: 'w-scania', key: 'scania', name: '스카니아', isEvent: false })],
+      worldOpenPeriods,
+    })
 
-    expect(table?.worlds.map((row) => row.periods)).toEqual([periods, []])
+    expect(table?.worldOpenPeriods).toEqual(worldOpenPeriods)
   })
 
   // 계약을 어긴 값은 줄이 아니라 표 전체를 버린다. 반쯤 맞는 기간으로 판정하면 지출이 조용히 샌다.
   it.each([
-    ['날짜 글자가 아니다', [{ from: '2025-11-20T10:00', until: '2025-12-19' }]],
-    ['until 이 from 보다 뒤가 아니다', [{ from: '2025-12-19', until: '2025-12-19' }]],
-    ['배열이 아니다', { from: '2025-11-20', until: '2025-12-19' }],
-  ])('%s 면 표 전체가 null 이다', (_, periods) => {
-    expect(parseWorlds({ updatedAt: null, worlds: [world({ periods })] })).toBeNull()
+    ['날짜 글자가 아니다', [period('2025-11-20T10:00', '2025-12-19')]],
+    ['끝이 시작보다 뒤가 아니다', [period('2025-12-19', '2025-12-19')]],
+    ['이 칸에 없는 월드를 가리킨다', [{ ...period('2025-11-20', '2025-12-19'), worldId: 'nope' }]],
+    ['배열이 아니다', period('2025-11-20', '2025-12-19')],
+  ])('%s 면 표 전체가 null 이다', (_, worldOpenPeriods) => {
+    expect(parseWorlds({ updatedAt: null, worlds: [world()], worldOpenPeriods })).toBeNull()
   })
 
-  // until 은 닫힌 다음 날이다. 보스 기간과 같다. 스페셜은 12-18 03시에 닫혀 그 날 기록이 있다.
-  it('from 은 들고 until 은 뺀다', () => {
+  // validUntil 은 닫힌 다음 날이다. 보스 기간과 같다. 스페셜은 12-18 03시에 닫혀 그 날 기록이 있다.
+  it('시작 날은 들고 끝 날은 뺀다', () => {
     expect(isInWorldPeriod('special', '2025-11-19')).toBe(false)
     expect(isInWorldPeriod('special', '2025-11-20')).toBe(true)
     expect(isInWorldPeriod('special_2', '2025-12-18')).toBe(true)
