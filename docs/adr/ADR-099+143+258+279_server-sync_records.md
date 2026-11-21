@@ -1573,7 +1573,10 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   - 한 줄은 기록 · 가져온 곳 · 캐릭터(`entry_id` · `fragment_source` · `character_id`)로 가린다. `character_id` 는 사냥 조각을 가져온
     캐릭터이고 기타 조각 줄은 비어 있다. 사냥 조각은 기록의 캐릭터와 다른 캐릭터에서 가져올 수 있어서 이 칸은 둔다.
   - 가져온 줄의 차례는 적지 않는다. 조각을 옮기는 코드는 캐릭터로 줄을 찾는다(`storage/fragment-moves.ts`).
-  - 기기는 기타 조각의 남은 개수를 세는 조회 다섯 곳(`storage/inventory.ts`)에서 기록의 캐릭터로 메이플 ID 를 찾는다.
+  - 기기는 기타 조각의 남은 개수를 세는 조회 다섯 곳(`storage/inventory.ts`)에서 기록의 메이플 ID · 월드로 센다. 캐릭터 기록은
+    캐릭터로 메이플 ID 를 찾는다.
+  - 인벤토리에서 기타 조각을 판 기록은 캐릭터가 없는 메이플 ID 기록이라, 판 조각의 월드를 기록의 `world_id` 에 적는다([[ADR-286]]
+    결정 9).
 - enum `fragment_source` 의 값 `other` 를 `inventory` 로 바꾼다. 인벤토리에 넣은 기타 조각이다. 값은 `hunt` · `inventory` 다.
 - `cashbook_entry_hunt_inputs.boosts` 를 없애고 참 · 거짓 칸 둘로 나눈다. `uses_wealth_potion` 은 소형 재물 획득의 비약을 켰는지,
   `uses_union_wealth` 는 유니온의 부를 켰는지다(결정 40).
