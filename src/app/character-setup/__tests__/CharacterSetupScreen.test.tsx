@@ -231,9 +231,13 @@ describe('CharacterSetupScreen: FAQ', () => {
     const before = faqsTable.get()
     faqsTable.set({
       ...before,
-      items: [
-        ...before.items,
-        { sheet: 'settings-characters', question: '캐릭터가 목록에 없어요.', answer: [{ kind: 'paragraph', text: '답' }] },
+      faqItems: [
+        ...before.faqItems,
+        {
+          sheetId: before.faqSheets.find((sheet) => sheet.key === 'settings-characters')!.id,
+          question: '캐릭터가 목록에 없어요.',
+          answer: '답',
+        },
       ],
     })
     try {

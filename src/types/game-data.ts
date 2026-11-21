@@ -9,7 +9,6 @@
  */
 import type { BossCatalog } from './boss-catalog'
 import type { DropCategory } from './drops'
-import type { FaqBlock } from './faq'
 import type { ForceType } from './hunting-grounds'
 
 /**
@@ -493,20 +492,21 @@ export interface ImageCropsTable extends TableHead {
 
 /** FAQ 묶음. 묶음 하나가 시트 하나이고 key 는 화면이 물음표에 다는 이름이다. */
 export interface FaqSheetRow {
+  id: string
   key: string
   title: string
 }
 export interface FaqItemRow {
-  /** 묶음 key */
-  sheet: string
+  /** 묶음 줄 id */
+  sheetId: string
   question: string
-  /** 앱이 아는 종류의 블록만 남긴 것. 하나 이상이다 */
-  answer: FaqBlock[]
+  /** 답 글. 빈 줄이 문단을 나눈다 */
+  answer: string
 }
-/** 한 묶음의 문항 차례는 `items` 의 차례다. */
+/** 한 묶음의 문항 차례는 `faqItems` 의 차례다. */
 export interface FaqsTable extends TableHead {
-  sheets: FaqSheetRow[]
-  items: FaqItemRow[]
+  faqSheets: FaqSheetRow[]
+  faqItems: FaqItemRow[]
 }
 
 /** 붙일 게임 데이터 표가 없는 앱 그림. key 는 앱 코드가 그림을 찾는 이름이다. */

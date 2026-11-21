@@ -92,7 +92,8 @@ it('줄을 탭하면 FAQ 시트가 열린다. 가계부 · 통계 문답도 든�
 it('FAQ 묶음에 문항이 없으면 줄을 탭해도 시트가 열리지 않는다', async () => {
   세우기()
   const before = faqsTable.get()
-  faqsTable.set({ ...before, items: before.items.filter((item) => item.sheet !== 'settlement') })
+  const settlement = before.faqSheets.find((sheet) => sheet.key === 'settlement')?.id
+  faqsTable.set({ ...before, faqItems: before.faqItems.filter((item) => item.sheetId !== settlement) })
   try {
     await renderOverlay(<SettlementBanner testID="today-settlement-banner" detail="일부 데이터가 갱신되지 않을 수 있습니다." />)
 
