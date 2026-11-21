@@ -1,6 +1,6 @@
 /**
- * 가계부 기록 표 넷(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` ·
- * `cashbook_entry_fragment_uses`)을 읽고 쓰는 자리.
+ * 가계부 기록 표 여섯(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` ·
+ * `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs` · `cashbook_entry_fragment_uses`)을 읽고 쓰는 자리.
  *
  * 수입(`income.ts`)과 지출(`spend.ts`)이 이것을 함께 쓴다. 두 어댑터는 화면이 쓰는 기록 모양(`IncomeRecord` ·
  * `SpendRecord`)을 그대로 두고 이 모양과 서로 옮긴다. 그래서 표가 바뀌어도 화면 코드는 그대로다.

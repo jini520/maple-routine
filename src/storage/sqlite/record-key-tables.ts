@@ -60,9 +60,9 @@ export const ENHANCEMENT_HISTORY_CHECKS_BODY = `(
 export const MVP_GRADE_HISTORY_BODY = `(
     ${ID_COLUMN},
     account_id TEXT NOT NULL,
-    -- 그 주의 목요일 YYYY-MM-DD. MVP 등급이 매주 목요일에 바뀐다.
+    -- 그 등급을 달성한 날 YYYY-MM-DD. 아무 요일이나 된다.
     from_date TEXT NOT NULL,
-    -- 등급 key. NULL 은 등급 없음이고 첫 기록 앞에 끼워 넣은 기간을 닫는 줄이다.
+    -- 등급 key. NULL 은 옛 판이 첫 기록 앞에 기간을 끼울 때 남긴 빈 줄이고 켤 때 지운다(features/mvp-grade/empty-rows.ts).
     grade TEXT,
     updated_at TEXT NOT NULL,
     UNIQUE (account_id, from_date)

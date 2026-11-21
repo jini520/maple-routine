@@ -142,8 +142,6 @@ const TABLE_DEFINITIONS = [
     name: 'mvp_grade_history',
     createSql: `CREATE TABLE IF NOT EXISTS mvp_grade_history ${MVP_GRADE_HISTORY_BODY}`,
   },
-  // 캐릭터의 메이플 ID 소속. 스타포스 줄은 이름만 들어 옛 이름을 지우면 안 된다.
-  // 옛 이름과 지운 캐릭터는 다시 받을 수 없어 데이터 삭제가 지우지 않는다.
   // 서버로 보낼 사용 로그. 백그라운드로 갈 때와 다음 실행 때 통째로 꺼내 보낸다. 신원이 없는 기기에서 끝없이 자라지 않게
   // 줄 수에 상한이 있다(`storage/usage-events.ts`). 데이터 삭제와는 상관없다.
   {
@@ -177,6 +175,8 @@ const TABLE_DEFINITIONS = [
     PRIMARY KEY (id)
 )`,
   },
+  // 캐릭터의 메이플 ID 소속. 스타포스 줄은 이름만 들어 옛 이름을 지우면 안 된다.
+  // 옛 이름과 지운 캐릭터는 다시 받을 수 없어 데이터 삭제가 지우지 않는다.
   {
     name: 'character_accounts',
     createSql: `CREATE TABLE IF NOT EXISTS character_accounts ${CHARACTER_ACCOUNTS_BODY}`,
