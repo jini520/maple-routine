@@ -1,7 +1,8 @@
 {
-  "updatedAt": "2026-10-17T07:21:02.500Z",
-  "grades": [
+  "updatedAt": "2026-11-09T02:56:09.824Z",
+  "mvpGrades": [
     {
+      "id": "ccc4e649-8c44-4cf6-8488-5c6d7fa90f90",
       "key": "normal",
       "name": "일반",
       "auctionFeePercent": 5,
@@ -9,6 +10,7 @@
       "plateAssetId": null
     },
     {
+      "id": "8c072bc6-db68-4818-a7a5-4c223b07d3f0",
       "key": "bronze",
       "name": "브론즈",
       "auctionFeePercent": 5,
@@ -16,6 +18,7 @@
       "plateAssetId": "f22bfbe0-d06a-47f3-907b-87ac245fa212"
     },
     {
+      "id": "598b0608-6f90-4135-9023-f55b6b1315ba",
       "key": "silver",
       "name": "실버",
       "auctionFeePercent": 3,
@@ -23,6 +26,7 @@
       "plateAssetId": "2d4dd5ab-ddc8-4fd7-b2bf-391f38f0949c"
     },
     {
+      "id": "3e30ec26-3608-4ab1-8c55-4cd00be5e3c6",
       "key": "gold",
       "name": "골드",
       "auctionFeePercent": 3,
@@ -30,6 +34,7 @@
       "plateAssetId": "c5be56c7-19f2-435b-988e-0af167d283e4"
     },
     {
+      "id": "ee7a42d3-0a04-44a2-ba25-d479fff13aef",
       "key": "diamond",
       "name": "다이아",
       "auctionFeePercent": 3,
@@ -37,6 +42,7 @@
       "plateAssetId": "96080adc-4136-4285-a06d-c18412904c8d"
     },
     {
+      "id": "f735a563-c43b-4570-ae68-8e5ceaea0771",
       "key": "red",
       "name": "레드",
       "auctionFeePercent": 3,
@@ -44,6 +50,7 @@
       "plateAssetId": "4c50ed22-88fb-4152-9118-61dd56e43f42"
     },
     {
+      "id": "462e93b3-8604-4a46-aa6f-0121c7f51b7e",
       "key": "black",
       "name": "블랙",
       "auctionFeePercent": 3,

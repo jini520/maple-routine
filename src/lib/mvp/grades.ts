@@ -22,11 +22,12 @@ function isPercent(value: unknown): value is number {
 }
 
 function toGrade(row: Row): MvpGradeRow | null {
-  if (!isOneOf(row.key, MVP_GRADE_KEYS) || !isNonEmptyString(row.name)) return null
+  if (!isNonEmptyString(row.id) || !isOneOf(row.key, MVP_GRADE_KEYS) || !isNonEmptyString(row.name)) return null
   if (!isPercent(row.auctionFeePercent) || !isPercent(row.starforceDiscountPercent)) return null
   const plateAssetId = optional(row.plateAssetId, isNonEmptyString)
   if (plateAssetId === false) return null
   return compact({
+    id: row.id,
     key: row.key,
     name: row.name,
     auctionFeePercent: row.auctionFeePercent,
@@ -44,22 +45,22 @@ export function parseMvpGrades(value: unknown): MvpGradesTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const grades = rowsOf(value.grades, toGrade)
-  if (grades === null || !uniqueBy(grades, (grade) => grade.key)) return null
-  if (!grades.some((grade) => grade.key === 'normal')) return null
-  return { updatedAt, grades }
+  const mvpGrades = rowsOf(value.mvpGrades, toGrade)
+  if (mvpGrades === null || !uniqueBy(mvpGrades, (grade) => grade.key) || !uniqueBy(mvpGrades, (grade) => grade.id)) return null
+  if (!mvpGrades.some((grade) => grade.key === 'normal')) return null
+  return { updatedAt, mvpGrades }
 }
 
-export const mvpGradesTable = gameTable('mvpGrades', { updatedAt: null, grades: [] }, parseMvpGrades)
+export const mvpGradesTable = gameTable<MvpGradesTable>('mvpGrades', { updatedAt: null, mvpGrades: [] }, parseMvpGrades)
 
 /** 등급 전부. 낮은 등급부터이고 이 차례가 높낮이다. */
 export function mvpGrades(): readonly MvpGrade[] {
-  return mvpGradesTable.get().grades
+  return mvpGradesTable.get().mvpGrades
 }
 
 const index = derive(mvpGradesTable, (table) => ({
-  byKey: new Map<string, MvpGrade>(table.grades.map((grade) => [grade.key, grade])),
-  rankByKey: new Map<string, number>(table.grades.map((grade, rank) => [grade.key, rank])),
+  byKey: new Map<string, MvpGrade>(table.mvpGrades.map((grade) => [grade.key, grade])),
+  rankByKey: new Map<string, number>(table.mvpGrades.map((grade, rank) => [grade.key, rank])),
 }))
 
 /** 표의 한 줄. 모르는 key 는 `null`. */

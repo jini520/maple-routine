@@ -231,8 +231,8 @@ today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어
   은 올리지 않는다([[ADR-007]] 결정 4).
 - 강화권을 쓴 줄이 0 메소이고 `펄스 인핸서` 줄을 합계에서 빼는 것은 슈페리얼 장비도 같다.
 - **두 표는 서버 게임 데이터의 `enhancementCosts` 칸에 둔다.** 게임 수치는 앱 번들에 넣지 않는다([[ADR-019]] 결정 1). 칸은 계열
-  표 `superior_series` 와 슈페리얼 장비 표 `superior_items` 의 줄을 그대로 싣는다. `superiorSeries: [{ key, name, starforceCostMeso }]`
-  와 `superiorItems: [{ name, seriesKey, iconAssetId }]` 다. 금액이 바뀌면 계열 한 줄만 고친다(사용자 선택 2026-11-15). 표를 만드는
+  표 `superior_series` 와 슈페리얼 장비 표 `superior_items` 의 줄을 그대로 싣는다. `superiorSeries: [{ id, key, name, starforceCostMeso }]`
+  와 `superiorItems: [{ name, seriesId, iconAssetId }]` 다. 장비는 계열을 줄 id 로 가리킨다([[ADR-099]] 결정 65). 금액이 바뀌면 계열 한 줄만 고친다(사용자 선택 2026-11-15). 표를 만드는
   마이그레이션이 계열 셋과 장비 50개를 함께 넣는다. 계열 key 는 `helisium_elite` · `nova` · `tyrant` 다.
 
 ```

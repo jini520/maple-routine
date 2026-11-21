@@ -355,15 +355,10 @@ export type PotentialResetTypeKey = (typeof POTENTIAL_RESET_TYPES)[number]
 export const POTENTIAL_GRADES = ['rare', 'epic', 'unique', 'legendary'] as const
 export type PotentialGradeKey = (typeof POTENTIAL_GRADES)[number]
 
-export interface EnhancementRules {
-  cubeAppraisalFreeMaxLevel: number
-  cubeAppraisalCoefficient: number
-  starforceDestroyDefenceSurchargePercent: number
-}
 export interface PotentialResetCostRow {
   type: PotentialResetTypeKey
   /** 레벨 구간의 시작. 장비 레벨 이하인 줄 중 가장 큰 것이 그 레벨의 줄이다. */
-  minLevel: number
+  minRequiredLevel: number
   grade: PotentialGradeKey
   costMeso: number
 }
@@ -371,7 +366,7 @@ export interface SoulPotentialResetCostRow {
   grade: PotentialGradeKey
   costMeso: number
 }
-export interface StarforceStepRow {
+export interface StarforceCostStepRow {
   /** 시도 전 성수. */
   fromStar: number
   exponent: number
@@ -379,21 +374,22 @@ export interface StarforceStepRow {
 }
 /** 슈페리얼 장비의 계열. 스타포스 1회 비용이 계열마다 하나이고, 성수 · 할인과 상관없다. */
 export interface SuperiorSeriesRow {
+  id: string
   key: string
+  name: string
   starforceCostMeso: number
 }
 /** 슈페리얼 장비 하나. 넥슨 응답의 장비 이름과 공백을 지운 뒤 통째로 맞춘다. */
 export interface SuperiorItemRow {
   name: string
-  seriesKey: string
-  /** 펼친 강화 줄의 장비 그림. 아이템 표에 없는 슈페리얼 장비도 그림이 서게 둔다 */
-  iconAssetId: string | null
+  seriesId: string
+  /** 펼친 강화 줄의 장비 그림. 아이템 표에 없는 슈페리얼 장비도 그림이 서게 둔다. 없으면 빠진다 */
+  iconAssetId?: string
 }
 export interface EnhancementCostsTable extends TableHead {
-  rules: EnhancementRules
   potentialResetCosts: PotentialResetCostRow[]
   soulPotentialResetCosts: SoulPotentialResetCostRow[]
-  starforceSteps: StarforceStepRow[]
+  starforceCostSteps: StarforceCostStepRow[]
   superiorSeries: SuperiorSeriesRow[]
   superiorItems: SuperiorItemRow[]
 }
@@ -402,6 +398,7 @@ export const MVP_GRADE_KEYS = ['normal', 'bronze', 'silver', 'gold', 'diamond', 
 export type MvpGradeKey = (typeof MVP_GRADE_KEYS)[number]
 
 export interface MvpGradeRow {
+  id: string
   key: MvpGradeKey
   name: string
   auctionFeePercent: number
@@ -411,7 +408,7 @@ export interface MvpGradeRow {
 }
 export interface MvpGradesTable extends TableHead {
   /** 낮은 등급부터. 이 차례가 높낮이다. */
-  grades: MvpGradeRow[]
+  mvpGrades: MvpGradeRow[]
 }
 
 export const HUNT_LOOT_TYPES = ['fragment', 'consumable', 'event'] as const

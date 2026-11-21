@@ -11,17 +11,17 @@ import {
   POTENTIAL_GRADES,
   POTENTIAL_RESET_TYPES,
   type EnhancementCostsTable,
-  type EnhancementRules,
   type PotentialGradeKey,
   type PotentialResetCostRow,
   type PotentialResetTypeKey,
   type SoulPotentialResetCostRow,
-  type StarforceStepRow,
+  type StarforceCostStepRow,
   type SuperiorItemRow,
   type SuperiorSeriesRow,
 } from '../../types/game-data'
 import { comparableEquipmentName } from '../equipment/equipment-items'
 import {
+  compact,
   isFiniteNumber,
   isNonEmptyString,
   isNonNegativeInteger,
@@ -30,6 +30,7 @@ import {
   isRow,
   optional,
   rowsOf,
+  uniqueBy,
   updatedAtOf,
   type Row,
 } from '../game-data/contract'
@@ -54,18 +55,10 @@ const GRADE_KEYS: Record<string, PotentialGradeKey | undefined> = {
 /** 소울 잠재능력이 생긴 날(KST `YYYY-MM-DD`). 그 전 날짜는 소울 사용 내역이 있을 수 없다. */
 export const SOUL_POTENTIAL_FROM = '2026-09-17'
 
-function toRules(value: unknown): EnhancementRules | null {
-  if (!isRow(value)) return null
-  const { cubeAppraisalFreeMaxLevel, cubeAppraisalCoefficient, starforceDestroyDefenceSurchargePercent } = value
-  if (!isNonNegativeInteger(cubeAppraisalFreeMaxLevel) || !isPositiveInteger(cubeAppraisalCoefficient)) return null
-  if (!isNonNegativeInteger(starforceDestroyDefenceSurchargePercent)) return null
-  return { cubeAppraisalFreeMaxLevel, cubeAppraisalCoefficient, starforceDestroyDefenceSurchargePercent }
-}
-
 function toResetCost(row: Row): PotentialResetCostRow | null {
   if (!isOneOf(row.type, POTENTIAL_RESET_TYPES) || !isOneOf(row.grade, POTENTIAL_GRADES)) return null
-  if (!isPositiveInteger(row.minLevel) || !isNonNegativeInteger(row.costMeso)) return null
-  return { type: row.type, minLevel: row.minLevel, grade: row.grade, costMeso: row.costMeso }
+  if (!isPositiveInteger(row.minRequiredLevel) || !isNonNegativeInteger(row.costMeso)) return null
+  return { type: row.type, minRequiredLevel: row.minRequiredLevel, grade: row.grade, costMeso: row.costMeso }
 }
 
 function toSoulResetCost(row: Row): SoulPotentialResetCostRow | null {
@@ -73,55 +66,69 @@ function toSoulResetCost(row: Row): SoulPotentialResetCostRow | null {
   return { grade: row.grade, costMeso: row.costMeso }
 }
 
-function toStep(row: Row): StarforceStepRow | null {
+function toStep(row: Row): StarforceCostStepRow | null {
   if (!isNonNegativeInteger(row.fromStar) || !isFiniteNumber(row.exponent) || !isPositiveInteger(row.divisor)) return null
   return { fromStar: row.fromStar, exponent: row.exponent, divisor: row.divisor }
 }
 
 function toSuperiorSeries(row: Row): SuperiorSeriesRow | null {
-  if (!isNonEmptyString(row.key) || !isPositiveInteger(row.starforceCostMeso)) return null
-  return { key: row.key, starforceCostMeso: row.starforceCostMeso }
+  if (!isNonEmptyString(row.id) || !isNonEmptyString(row.key) || !isNonEmptyString(row.name)) return null
+  if (!isPositiveInteger(row.starforceCostMeso)) return null
+  return { id: row.id, key: row.key, name: row.name, starforceCostMeso: row.starforceCostMeso }
 }
 
 function toSuperiorItem(row: Row): SuperiorItemRow | null {
-  if (!isNonEmptyString(row.name) || !isNonEmptyString(row.seriesKey)) return null
+  if (!isNonEmptyString(row.name) || !isNonEmptyString(row.seriesId)) return null
   const iconAssetId = optional(row.iconAssetId, isNonEmptyString)
   if (iconAssetId === false) return null
-  return { name: row.name, seriesKey: row.seriesKey, iconAssetId: iconAssetId ?? null }
+  return compact({ name: row.name, seriesId: row.seriesId, iconAssetId })
 }
 
 /**
  * 계약을 지킨 값만 통과시킨다. 어긴 값은 줄이 아니라 표 전체가 `null` 이다.
  *
- * 슈페리얼 칸 둘이 빠져도 `null` 이다. 빈 칸으로 받으면 그 사이 받은 날의 슈페리얼 줄이 값 없이 굳는다.
+ * 슈페리얼 칸 둘이 빠져도 `null` 이다. 빈 칸으로 받으면 그 사이 받은 날의 슈페리얼 줄이 값 없이 굳는다. 슈페리얼 장비는 이
+ * 칸의 계열을 가리켜야 한다.
  */
 export function parseEnhancementCosts(value: unknown): EnhancementCostsTable | null {
   if (!isRow(value)) return null
   const updatedAt = updatedAtOf(value)
   if (updatedAt === false) return null
-  const rules = toRules(value.rules)
   const potentialResetCosts = rowsOf(value.potentialResetCosts, toResetCost)
   const soulPotentialResetCosts = rowsOf(value.soulPotentialResetCosts, toSoulResetCost)
-  const starforceSteps = rowsOf(value.starforceSteps, toStep)
+  const starforceCostSteps = rowsOf(value.starforceCostSteps, toStep)
   const superiorSeries = rowsOf(value.superiorSeries, toSuperiorSeries)
   const superiorItems = rowsOf(value.superiorItems, toSuperiorItem)
   if (
-    rules === null ||
     potentialResetCosts === null ||
     soulPotentialResetCosts === null ||
-    starforceSteps === null ||
+    starforceCostSteps === null ||
     superiorSeries === null ||
     superiorItems === null
   ) {
     return null
   }
-  return { updatedAt, rules, potentialResetCosts, soulPotentialResetCosts, starforceSteps, superiorSeries, superiorItems }
+  if (!uniqueBy(superiorSeries, (series) => series.id)) return null
+  const seriesIds = new Set(superiorSeries.map((series) => series.id))
+  if (superiorItems.some((item) => !seriesIds.has(item.seriesId))) return null
+  return { updatedAt, potentialResetCosts, soulPotentialResetCosts, starforceCostSteps, superiorSeries, superiorItems }
 }
 
-export const enhancementCostsTable = gameTable('enhancementCosts', { updatedAt: null, rules: { cubeAppraisalFreeMaxLevel: 0, cubeAppraisalCoefficient: 0, starforceDestroyDefenceSurchargePercent: 0 }, potentialResetCosts: [], soulPotentialResetCosts: [], starforceSteps: [], superiorSeries: [], superiorItems: [] }, parseEnhancementCosts)
+export const enhancementCostsTable = gameTable<EnhancementCostsTable>(
+  'enhancementCosts',
+  {
+    updatedAt: null,
+    potentialResetCosts: [],
+    soulPotentialResetCosts: [],
+    starforceCostSteps: [],
+    superiorSeries: [],
+    superiorItems: [],
+  },
+  parseEnhancementCosts,
+)
 
 const index = derive(enhancementCostsTable, (table) => {
-  // 종류 · 등급마다 레벨 구간 줄을 minLevel 내림차순으로. 처음 걸리는 줄이 그 레벨의 줄이다.
+  // 종류 · 등급마다 레벨 구간 줄을 minRequiredLevel 내림차순으로. 처음 걸리는 줄이 그 레벨의 줄이다.
   const resetRows = new Map<string, PotentialResetCostRow[]>()
   for (const row of table.potentialResetCosts) {
     const key = `${row.type}|${row.grade}`
@@ -129,25 +136,31 @@ const index = derive(enhancementCostsTable, (table) => {
     if (rows === undefined) resetRows.set(key, [row])
     else rows.push(row)
   }
-  for (const rows of resetRows.values()) rows.sort((a, b) => b.minLevel - a.minLevel)
-  const costBySeries = new Map(table.superiorSeries.map((series) => [series.key, series.starforceCostMeso]))
+  for (const rows of resetRows.values()) rows.sort((a, b) => b.minRequiredLevel - a.minRequiredLevel)
+  const seriesById = new Map(table.superiorSeries.map((series) => [series.id, series]))
   const superiorByName = new Map<string, SuperiorItem>()
   for (const item of table.superiorItems) {
-    const starforceCostMeso = costBySeries.get(item.seriesKey)
-    if (starforceCostMeso !== undefined) {
-      superiorByName.set(comparableEquipmentName(item.name), { ...item, starforceCostMeso })
+    const series = seriesById.get(item.seriesId)
+    if (series !== undefined) {
+      superiorByName.set(
+        comparableEquipmentName(item.name),
+        compact({ name: item.name, seriesKey: series.key, iconAssetId: item.iconAssetId, starforceCostMeso: series.starforceCostMeso }),
+      )
     }
   }
   return {
     resetRows,
     soulByGrade: new Map(table.soulPotentialResetCosts.map((row) => [row.grade, row.costMeso])),
-    steps: new Map(table.starforceSteps.map((step) => [step.fromStar, step])),
+    steps: new Map(table.starforceCostSteps.map((step) => [step.fromStar, step])),
     superiorByName,
   }
 })
 
-/** 슈페리얼 장비 하나와 그 계열의 스타포스 1회 비용. */
-export interface SuperiorItem extends SuperiorItemRow {
+/** 슈페리얼 장비 하나와 그 계열의 key · 스타포스 1회 비용. */
+export interface SuperiorItem {
+  name: string
+  seriesKey: string
+  iconAssetId?: string
   starforceCostMeso: number
 }
 
@@ -184,7 +197,7 @@ export function potentialResetCost(type: PotentialResetType, itemLevel: number, 
   if (typeKey === undefined || gradeKey === undefined) return null
   const row = index()
     .resetRows.get(`${typeKey}|${gradeKey}`)
-    ?.find((candidate) => itemLevel >= candidate.minLevel)
+    ?.find((candidate) => itemLevel >= candidate.minRequiredLevel)
   return row?.costMeso ?? null
 }
 

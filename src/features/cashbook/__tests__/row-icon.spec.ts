@@ -185,7 +185,9 @@ describe('enhancedItemIconOf', () => {
       expect(icon).toBeDefined()
       enhancementCostsTable.set({
         ...fixture,
-        superiorItems: [{ name: '노바 리카온 벨트', seriesKey: 'nova', iconAssetId: icon ?? null }],
+        superiorItems: [
+          { name: '노바 리카온 벨트', seriesId: fixture.superiorSeries.find((series) => series.key === 'nova')!.id, iconAssetId: icon },
+        ],
       })
 
       expect(enhancedItemIconOf(장비(null, '노바 리카온벨트'))).toBe(imageOfPath('items/dark_boss_belt.png'))

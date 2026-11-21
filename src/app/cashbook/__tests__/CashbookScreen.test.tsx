@@ -2173,7 +2173,7 @@ describe('강화 줄', () => {
         ...줄,
         items: [
           { itemKey: 'giant_terror', targetItem: '거대한 공포', count: 3, costMeso: 500_000_000, fromStar: null, toStar: null },
-          { itemKey: null, targetItem: '타일런트 헤르메스 부츠', count: 2, costMeso: 240_000_000, fromStar: null, toStar: null },
+          { itemKey: null, targetItem: '타일런트 카롤 벨트', count: 2, costMeso: 240_000_000, fromStar: null, toStar: null },
         ],
       },
     ])
@@ -2183,8 +2183,8 @@ describe('강화 줄', () => {
     expect(view.getByTestId('cashbook-item-image-giant_terror', 숨은것까지)).toBeTruthy()
     const 첫칸 = view.getByTestId('cashbook-item-row-giant_terror', 숨은것까지).children[0] as { props: { testID?: string } }
     expect(첫칸.props.testID).toBe('cashbook-item-image-giant_terror')
-    expect(view.queryByTestId('cashbook-item-image-타일런트 헤르메스 부츠', 숨은것까지)).toBeNull()
-    expect(view.getByTestId('cashbook-item-row-타일런트 헤르메스 부츠')).toHaveTextContent('타일런트 헤르메스 부츠2회−2.4억')
+    expect(view.queryByTestId('cashbook-item-image-타일런트 카롤 벨트', 숨은것까지)).toBeNull()
+    expect(view.getByTestId('cashbook-item-row-타일런트 카롤 벨트')).toHaveTextContent('타일런트 카롤 벨트2회−2.4억')
   })
 
   // 한 번에 하나만 펼친다. 둘이 같은 장비를 만졌으면 판이 둘 서서 신원이 겹친다.

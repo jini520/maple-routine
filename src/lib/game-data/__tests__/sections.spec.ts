@@ -48,8 +48,6 @@ const RESPONSES: Record<GameDataSection, unknown> = {
 /** 1.0.15 계약으로 아직 옮기지 않은 칸. 칸을 옮길 때마다 하나씩 지우고, 비면 이 목록째 지운다. */
 const NOT_YET_MOVED: readonly GameDataSection[] = [
   'contents',
-  'enhancementCosts',
-  'mvpGrades',
   'imageCrops',
   'faqs',
 ]
