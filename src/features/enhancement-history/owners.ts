@@ -32,8 +32,6 @@ import type { NexonCredential } from '../../types/auth'
 /** 줄을 붙인 캐릭터. */
 export interface LineOwner {
   ocid: string
-  /** 그 캐릭터의 메이플 ID */
-  accountId: string
   /** 그 캐릭터의 월드 이름 원문. 모르면 `null` */
   worldName: string | null
   /** 그 캐릭터의 월드 key. 모르면 `null` */
@@ -66,7 +64,6 @@ const DATED_CALL_LIMIT = 2
 
 interface Candidate {
   character: MapleCharacter
-  accountId: string
 }
 
 type Dated = DatedName | 'failed'
@@ -74,8 +71,7 @@ type Dated = DatedName | 'failed'
 /** 한 회차 · 한 넥슨 계정의 판정기. 같은 이름 · 날짜와 같은 ocid · 날짜는 한 번만 본다. */
 export function createOwnerResolver(context: OwnerContext): OwnerOf {
   const candidates: Candidate[] | null =
-    context.accounts?.flatMap((account) => account.characters.map((character) => ({ character, accountId: account.accountId }))) ??
-    null
+    context.accounts?.flatMap((account) => account.characters.map((character) => ({ character }))) ?? null
   const listed = new Map((candidates ?? []).map((candidate) => [candidate.character.ocid, candidate]))
   const yesterday = shiftDateKey(context.todayDateKey, -1)
 
@@ -209,22 +205,22 @@ export function createOwnerResolver(context: OwnerContext): OwnerOf {
   }
 
   /** 그 ocid 의 월드. 목록에 있으면 목록의 월드이고, 없으면 소속 기록에 적힌 월드다. 리프 전 줄은 그 ocid 의 월드가 아니다. */
-  function ownerOf(ocid: string, accountId: string, leapDate: string | null = null): LineOwner {
-    if (leapDate !== null) return { ocid, accountId, worldName: null, worldKey: null, preLeap: true, leapDate }
+  function ownerOf(ocid: string, leapDate: string | null = null): LineOwner {
+    if (leapDate !== null) return { ocid, worldName: null, worldKey: null, preLeap: true, leapDate }
     const candidate = listed.get(ocid)
     if (candidate !== undefined) {
       const { world, worldKey } = candidate.character
-      return { ocid, accountId, worldName: world, worldKey: worldKey ?? worldKeyOfApiName(world), preLeap: false, leapDate: null }
+      return { ocid, worldName: world, worldKey: worldKey ?? worldKeyOfApiName(world), preLeap: false, leapDate: null }
     }
     const worldKey = context.sightings.find((sighting) => sighting.ocid === ocid && sighting.worldKey !== null)?.worldKey ?? null
-    return { ocid, accountId, worldName: null, worldKey, preLeap: false, leapDate: null }
+    return { ocid, worldName: null, worldKey, preLeap: false, leapDate: null }
   }
 
   async function resolve(name: string, dateKey: string): Promise<OwnerResult> {
     // 응답 이름이 빈 글자인 줄은 붙일 곳이 없다. 캐릭터마다 그날 이름을 묻지 않는다.
     if (name === '') return 'none'
     const sighted = sightedOwnerOf(context.sightings, name, dateKey, context.nexonAccountId)
-    if (sighted !== null) return ownerOf(sighted.ocid, sighted.accountId)
+    if (sighted !== null) return ownerOf(sighted.ocid)
     if (candidates === null) return 'retry'
 
     // 그 이름을 쓴 적이 있는 캐릭터부터 차례 2 ~ 4 를 다 보고, 나머지로 간다. 이름은 한때 한 캐릭터만 쓰므로 붙는 캐릭터는 같고
@@ -271,7 +267,7 @@ export function createOwnerResolver(context: OwnerContext): OwnerOf {
         continue
       }
       onDate.set(candidate.character.ocid, value)
-      if (value.name === name) return { owner: ownerOf(candidate.character.ocid, candidate.accountId), failed }
+      if (value.name === name) return { owner: ownerOf(candidate.character.ocid), failed }
     }
 
     for (const candidate of group) {
@@ -279,7 +275,7 @@ export function createOwnerResolver(context: OwnerContext): OwnerOf {
       for (const neighbor of [shiftDateKey(dateKey, -1), shiftDateKey(dateKey, 1)]) {
         const value = await datedOf(candidate.character.ocid, neighbor)
         if (value === 'failed') failed = true
-        else if (value.name === name) return { owner: ownerOf(candidate.character.ocid, candidate.accountId), failed }
+        else if (value.name === name) return { owner: ownerOf(candidate.character.ocid), failed }
       }
     }
 
@@ -289,7 +285,7 @@ export function createOwnerResolver(context: OwnerContext): OwnerOf {
       const day = await firstDayOf(candidate.character.ocid, dateKey)
       if (day === 'failed') failed = true
       else if (day !== null && dateKey < day.firstDate && day.firstName === name) {
-        return { owner: ownerOf(candidate.character.ocid, candidate.accountId, day.firstDate), failed }
+        return { owner: ownerOf(candidate.character.ocid, day.firstDate), failed }
       }
     }
     return { owner: null, failed }

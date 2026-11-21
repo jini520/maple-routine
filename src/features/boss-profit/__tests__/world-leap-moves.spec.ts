@@ -1,7 +1,7 @@
 // 월드 리프로 이어진 옛 ocid 의 기록을 새 ocid 로 옮기는 회차. 기록마다 옮기는 규칙은 저장소 테스트가 보고, 여기서는 연결마다
-// 열한 기록을 다 부르는지와 실패가 서로를 막지 않는지를 본다.
+// 열한 기록과 앞 연결을 다 부르는지와 실패가 서로를 막지 않는지를 본다.
 
-jest.mock('../../../storage/character-world-leaps', () => ({ getCharacterWorldLeaps: jest.fn() }))
+jest.mock('../../../storage/character-world-leaps', () => ({ getCharacterWorldLeaps: jest.fn(), moveWorldLeapsToOcid: jest.fn() }))
 jest.mock('../../../storage/boss-profit', () => ({ moveBossRecordsToOcid: jest.fn() }))
 jest.mock('../../../storage/income', () => ({ moveIncomeRecordsToOcid: jest.fn() }))
 jest.mock('../../../storage/spend', () => ({ moveSpendRecordsToOcid: jest.fn() }))
@@ -26,6 +26,7 @@ function mockOf(path: string, name: string): jest.Mock {
 }
 
 const leaps = mockOf('../../../storage/character-world-leaps', 'getCharacterWorldLeaps')
+const leapLinks = mockOf('../../../storage/character-world-leaps', 'moveWorldLeapsToOcid')
 const boss = mockOf('../../../storage/boss-profit', 'moveBossRecordsToOcid')
 const party = mockOf('../../../storage/party-appointments', 'movePartyAppointmentsToOcid')
 const calculator = mockOf('../../../storage/boss-profit-calculator-records', 'moveBossProfitCalculatorRecordsToOcid')
@@ -47,9 +48,10 @@ const PREFERENCE_AND_CASHBOOK_MOVES: ReadonlyArray<readonly [string, string]> = 
 beforeEach(() => {
   jest.clearAllMocks()
   leaps.mockResolvedValue([
-    { fromOcid: 'old-1', toOcid: 'new-1', linkedAt: '2026-09-14T00:00:00.000Z' },
-    { fromOcid: 'old-2', toOcid: 'new-2', linkedAt: '2026-10-01T00:00:00.000Z' },
+    { fromOcid: 'old-1', toOcid: 'new-1' },
+    { fromOcid: 'old-2', toOcid: 'new-2' },
   ])
+  leapLinks.mockResolvedValue(undefined)
   boss.mockResolvedValue(0)
   party.mockResolvedValue(false)
   calculator.mockResolvedValue(undefined)
@@ -63,12 +65,12 @@ function keepsBoss(call: number, bossKey: string): boolean {
   return keepBoss({ bossKey })
 }
 
-it('연결마다 열한 기록을 옛 ocid 에서 새 ocid 로 옮기고, 옮긴 보스 기간 수를 돌려준다', async () => {
+it('연결마다 열한 기록과 앞 연결을 옛 ocid 에서 새 ocid 로 옮기고, 옮긴 보스 기간 수를 돌려준다', async () => {
   boss.mockResolvedValueOnce(2).mockResolvedValueOnce(1)
 
   await expect(moveWorldLeapRecords()).resolves.toBe(3)
 
-  for (const move of [boss, party, ...PREFERENCE_AND_CASHBOOK_MOVES.map(([path, name]) => mockOf(path, name))]) {
+  for (const move of [boss, party, leapLinks, ...PREFERENCE_AND_CASHBOOK_MOVES.map(([path, name]) => mockOf(path, name))]) {
     expect(move.mock.calls).toEqual([
       ['old-1', 'new-1'],
       ['old-2', 'new-2'],

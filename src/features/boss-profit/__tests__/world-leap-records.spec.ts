@@ -244,7 +244,7 @@ describe('cleanUpWorldLeapDuplicates', () => {
   }
 
   beforeEach(() => {
-    linksMock.mockReset().mockResolvedValue([{ fromOcid: 'old', toOcid: 'new', linkedAt: '2026-09-13T00:00:00.000Z' }])
+    linksMock.mockReset().mockResolvedValue([{ fromOcid: 'old', toOcid: 'new' }])
     earliestMock.mockReset().mockResolvedValue({ weekly: '2026-09-10', monthly: '2026-09' })
     recordsMock.mockReset().mockResolvedValue([stale, kept])
     dropsMock.mockReset().mockResolvedValue([])
@@ -332,8 +332,8 @@ describe('cleanUpWorldLeapDuplicates', () => {
   // 한 연결의 실패가 다른 연결의 정리를 막으면 안 된다. 다음 회차가 다시 온다.
   it('한 연결이 던져도 다음 연결은 정리한다', async () => {
     linksMock.mockResolvedValue([
-      { fromOcid: 'broken', toOcid: 'x', linkedAt: '2026-09-13T00:00:00.000Z' },
-      { fromOcid: 'old', toOcid: 'new', linkedAt: '2026-09-13T00:00:00.000Z' },
+      { fromOcid: 'broken', toOcid: 'x' },
+      { fromOcid: 'old', toOcid: 'new' },
     ])
     earliestMock.mockImplementation(async (ocid: string) => {
       if (ocid === 'x') throw new Error('sqlite')

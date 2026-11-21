@@ -32,7 +32,7 @@ beforeEach(() => {
 it('연결을 남기고 옛 캐릭터 설정을 새 캐릭터로 복사한다', async () => {
   await linkWorldLeap('old', 'new', NOW)
 
-  expect(linkMock).toHaveBeenCalledWith('old', 'new', NOW.toISOString())
+  expect(linkMock).toHaveBeenCalledWith('old', 'new')
   expect(copyMock).toHaveBeenCalledWith('old', 'new', NOW.toISOString())
 })
 
@@ -71,7 +71,7 @@ describe('linkWorldLeapsByNameAndJob', () => {
 
     expect(profilesByNamesMock).toHaveBeenCalledWith(['지내우시', '루디'])
     expect(linkMock).toHaveBeenCalledTimes(1)
-    expect(linkMock).toHaveBeenCalledWith('old', 'new', NOW.toISOString())
+    expect(linkMock).toHaveBeenCalledWith('old', 'new')
     expect(copyMock).toHaveBeenCalledWith('old', 'new', NOW.toISOString())
   })
 
@@ -120,7 +120,7 @@ describe('linkWorldLeapsByNameAndJob', () => {
 
     await linkWorldLeapsByNameAndJob([새캐릭터], NOW)
 
-    expect(linkMock).toHaveBeenCalledWith('old', 'new', NOW.toISOString())
+    expect(linkMock).toHaveBeenCalledWith('old', 'new')
   })
 
   // 이 기능 전에 리프한 옛 캐릭터는 다시 부를 수 없어 만든 날을 영영 모른다. 모름을 다름으로 읽으면 그 리프를 못 잇는다.

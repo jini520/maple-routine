@@ -14,9 +14,8 @@ import type { MapleCharacter } from '../../types'
 
 /** 옛 ocid 를 새 ocid 에 잇고, 처음 이을 때만 옛 캐릭터 설정을 새 캐릭터로 복사한다. */
 export async function linkWorldLeap(fromOcid: string, toOcid: string, now: Date): Promise<void> {
-  const linkedAt = now.toISOString()
-  if (await linkCharacterWorldLeap(fromOcid, toOcid, linkedAt)) {
-    await copyMissingBossPartySettings(fromOcid, toOcid, linkedAt)
+  if (await linkCharacterWorldLeap(fromOcid, toOcid)) {
+    await copyMissingBossPartySettings(fromOcid, toOcid, now.toISOString())
   }
 }
 

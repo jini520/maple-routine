@@ -1,9 +1,10 @@
 /**
  * 옛 강화 원본 표(`enhancement_history`)를 합계로 한 번 옮기는 부팅 단계. 수집기와 가계부가 합계를 읽기 전에 기다린다.
  *
- * SQLite 버전 이관에서 못 하는 이유는 이벤트 월드를 가리는 캐릭터 이름 목록과 계정 id 가 Preferences 에 있어서다.
- * 옛 원본은 메인 계정의 자격으로 받은 것이라 메인 계정으로 옮긴다. 넥슨을 부르지 않으므로 줄은 앱이 그 이름으로 본 기간으로만
- * 캐릭터에 붙인다. 붙이지 못한 줄의 날은 다시 받을 날로 적어 수집기가 넥슨에서 그날 이름을 찾게 한다.
+ * SQLite 버전 이관에서 못 하는 이유는 이벤트 월드를 가리는 캐릭터 이름 목록이 쿼리 캐시에, 계정 id 가 Preferences 에 있어서다.
+ * 1.0.15 기기 변환 뒤에 돌고 합계 저장소로 적어 변환한 표의 모양으로 들어간다. 옛 원본은 메인 계정의 자격으로 받은 것이라 메인
+ * 계정의 날로 갈아 끼운다. 넥슨을 부르지 않으므로 줄은 앱이 그 이름으로 본 기간으로만 캐릭터에 붙인다. 붙이지 못한 줄의 날은 다시
+ * 받을 날로 적어 수집기가 넥슨에서 그날 이름을 찾게 한다.
  */
 import type { EventWorldJudgment } from '../../lib/enhancement/world'
 import { sightedOwnerOf } from '../../lib/enhancement/sighted-owner'
@@ -30,7 +31,7 @@ function legacyOwnerOf(
   const sighted = sightedOwnerOf(sightings, entry.characterName, entry.dateKey, nexonAccountId)
   if (sighted === null) return null
   const worldKey = sightings.find((sighting) => sighting.ocid === sighted.ocid && sighting.worldKey !== null)?.worldKey ?? null
-  return { ocid: sighted.ocid, accountId: sighted.accountId, worldName: null, worldKey, preLeap: false }
+  return { ocid: sighted.ocid, worldName: null, worldKey, preLeap: false }
 }
 
 let moving: Promise<void> | null = null

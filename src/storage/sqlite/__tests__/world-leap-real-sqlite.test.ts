@@ -17,7 +17,7 @@ import {
   upsertBossProfitRecord,
   type BossProfitRecord,
 } from '../../boss-profit'
-import { getCharacterWorldLeaps, linkCharacterWorldLeap } from '../../character-world-leaps'
+import { getCharacterWorldLeaps, linkCharacterWorldLeap, moveWorldLeapsToOcid } from '../../character-world-leaps'
 import { getCharacterProfilesByNames, saveCharacterProfile } from '../../character-profiles'
 import { getFragmentStorage, getIncomeRecordsBetween, insertIncomeRecord, moveIncomeRecordsToOcid } from '../../income'
 import { getRememberedLevels, moveRememberedLevelsToOcid, rememberLevels } from '../../remembered-levels'
@@ -60,20 +60,31 @@ function record(overrides: Partial<BossProfitRecord>): BossProfitRecord {
 
 describe('character_world_leaps', () => {
   it('처음 잇는 옛 ocid 면 참을 돌려주고 행을 남긴다', async () => {
-    await expect(linkCharacterWorldLeap('old', 'new', '2026-09-14T00:00:00.000Z')).resolves.toBe(true)
+    await expect(linkCharacterWorldLeap('old', 'new')).resolves.toBe(true)
 
-    await expect(getCharacterWorldLeaps()).resolves.toEqual([
-      { fromOcid: 'old', toOcid: 'new', linkedAt: '2026-09-14T00:00:00.000Z' },
-    ])
+    await expect(getCharacterWorldLeaps()).resolves.toEqual([{ fromOcid: 'old', toOcid: 'new' }])
   })
 
   // 설정 복사를 한 번만 하는 근거가 이 거짓이다.
   it('이미 이어진 옛 ocid 면 거짓이고 행을 안 바꾼다', async () => {
-    await linkCharacterWorldLeap('old', 'new', '2026-09-14T00:00:00.000Z')
+    await linkCharacterWorldLeap('old', 'new')
 
-    await expect(linkCharacterWorldLeap('old', 'new', '2026-09-15T00:00:00.000Z')).resolves.toBe(false)
-    await expect(getCharacterWorldLeaps()).resolves.toEqual([
-      { fromOcid: 'old', toOcid: 'new', linkedAt: '2026-09-14T00:00:00.000Z' },
+    await expect(linkCharacterWorldLeap('old', 'other')).resolves.toBe(false)
+    await expect(getCharacterWorldLeaps()).resolves.toEqual([{ fromOcid: 'old', toOcid: 'new' }])
+  })
+
+  // 서버 표는 리프 줄이 캐릭터 줄을 가리킨다. 기기도 한 캐릭터의 연결이 모두 그 캐릭터의 지금 ocid 를 가리켜야 같은 모양이다.
+  it('다시 리프하면 앞 연결의 지금 ocid 를 새 ocid 로 옮기고, 자기 자신을 가리키게 되는 줄은 그대로 둔다', async () => {
+    await linkCharacterWorldLeap('a', 'b')
+    await linkCharacterWorldLeap('c', 'b')
+    await linkCharacterWorldLeap('b', 'c')
+
+    await moveWorldLeapsToOcid('b', 'c')
+
+    expect((await getCharacterWorldLeaps()).sort((x, y) => x.fromOcid.localeCompare(y.fromOcid))).toEqual([
+      { fromOcid: 'a', toOcid: 'c' },
+      { fromOcid: 'b', toOcid: 'c' },
+      { fromOcid: 'c', toOcid: 'b' },
     ])
   })
 })

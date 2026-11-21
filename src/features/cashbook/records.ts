@@ -526,12 +526,11 @@ interface EnhancementSpending {
   dateKey: string
   /** 그 줄을 붙인 캐릭터. 이름을 바꿔도 같은 값이라 이것으로 묶는다 */
   ocid: string
-  /** 응답이 준 그날의 이름. 지금 이름을 모를 때 보인다 */
-  characterName: string
+  /** 그날의 이름. 지금 이름을 모를 때 보인다. 그것도 모르면 `null` */
+  characterName: string | null
   category: EnhancementCategory
-  /** 장비 칸을 묶는 열쇠. 합계 표의 `item_group` 이다 */
-  itemGroup: string
   itemKey: string | null
+  /** 넥슨이 준 장비 이름. 장비 칸을 이 글자로 묶는다 */
   targetItem: string
   attempts: number
   costMeso: number
@@ -557,21 +556,21 @@ async function loadEnhancementSpending(fromDateKey: string, toDateKey: string): 
       ocid: total.ocid,
       characterName: total.characterName,
       category: total.enhancementCategory,
-      itemGroup: total.itemGroup,
       itemKey: total.itemKey,
       targetItem: total.itemName,
       attempts: total.attempts,
       fromStar: total.fromStar,
       toStar: total.toStar,
       costMeso:
-        total.enhancementType === 'starforce'
+        total.enhancementCategory === 'starforce'
           ? withMvpDiscount(
               {
                 attemptMeso: total.attemptCostMeso,
                 destroyDefenceMeso: total.destroyDefenceCostMeso,
                 superiorMeso: total.superiorCostMeso,
               },
-              starforceMvpDiscountOf(histories, total.accountId, total.historyDate),
+              // 소속 기록이 하나도 없는 캐릭터는 메이플 ID 를 몰라 등급을 못 찾는다. 할인 없이 센다.
+              total.accountId === null ? 0 : starforceMvpDiscountOf(histories, total.accountId, total.historyDate),
             )
           : total.attemptCostMeso + total.destroyDefenceCostMeso,
     }))
@@ -580,8 +579,7 @@ async function loadEnhancementSpending(fromDateKey: string, toDateKey: string): 
 /**
  * 날짜 범위의 **그날 줄들**. 두 끝을 포함하고 날짜를 키로 접는다.
  *
- * 접는 원천이 넷이다. 손입력 둘(`income_records`·`spend_records`)과 보스 둘(결정석 · 아이템
- * 판매). 넷이 전부다.
+ * 접는 원천은 손입력 둘(수입 · 지출, `cashbook_entries`), 보스 둘(결정석 · 아이템 판매), 강화 합계(`enhancement_totals`)다.
  *
  * **격자와 상세가 이 한 읽기에서 함께 나온다.** 전에는 칸 금액과 그날 목록이 조회를 따로
  * 가졌는데, 같은 네 원천을 같은 범위로 읽고 한쪽은 합계만 남기고 행을 버렸다. 그래서 날을
@@ -589,7 +587,7 @@ async function loadEnhancementSpending(fromDateKey: string, toDateKey: string): 
  * 이제 칸 금액은 `amountsOfDays` 가 이 결과를 접어 낸다.
  *
  * 날짜를 모르는 보스 기록은 안 든다. 어느 칸에 얹으면 그것이 거짓 날짜가 된다. 그런 기록은
- * 주간 보기에서 `period_key` 로 제자리에 서므로 잃는 것은 월간 칸뿐이다.
+ * 주간 보기에서 기간 값(`period_code`)으로 제자리에 서므로 잃는 것은 월간 칸뿐이다.
  *
  * 읽기 실패는 **빈 값으로 진행한다**. 한쪽만 실패하면 다른 쪽은 보인다.
  */
@@ -861,9 +859,9 @@ export interface EnhancementDayRecord {
 
 /** 펼친 강화 줄의 한 칸. 장비 하나가 그날 먹은 메소다. */
 export interface EnhancedItem {
-  /** 장비 key. 장비 표에 없는 장비면 `null` 이고 그때는 이름으로 묶였다 */
+  /** 이름으로 장비 표에서 찾은 장비 key. 표에 없는 장비면 `null` 이다 */
   itemKey: string | null
-  /** 이 칸에 처음 든 기록의 API 이름. 띄어쓰기가 살아 있다. 장비 표 이름은 붙여 써서 이 글자를 보인다 */
+  /** 넥슨이 준 장비 이름. 띄어쓰기가 살아 있다. 장비 표 이름은 붙여 써서 이 글자를 보인다. 칸을 이 글자로 묶는다 */
   targetItem: string
   count: number
   costMeso: number
@@ -875,14 +873,14 @@ export interface EnhancedItem {
 /**
  * 그날 목록의 자동 줄. 원천이 밖에 있어 여기서 못 고친다.
  *
- * 갈라 두는 것은 출처가 다르기 때문이고(`boss_profit_records` · `boss_drop_records` ·
- * `enhancement_history`) 합치면 미입력 n 을 걸 자리가 없어진다. 갈라 둔 덕에 누르면 하는 일도
+ * 갈라 두는 것은 출처가 다르기 때문이고(`boss_profit_entries` · `boss_drops` ·
+ * `enhancement_totals`) 합치면 미입력 n 을 걸 자리가 없어진다. 갈라 둔 덕에 누르면 하는 일도
  * 갈린다. 결정석은 펼치고 판매는 저쪽으로 가고 강화는 아무 데도 안 간다.
  */
 export type AutoDayRecord = BossCrystalDayRecord | DropSaleDayRecord | EnhancementDayRecord
 
 /**
- * 그날 목록의 한 줄. 갈리는 기준은 테이블이다. `income_records`·`spend_records` 에서 온 줄이면
+ * 그날 목록의 한 줄. 갈리는 기준은 테이블이다. `cashbook_entries` 에서 온 줄이면
  * 손입력이고, 그것이 곧 여기서 고칠 수 있는가 의 답이다.
  */
 export type DayRecord = ManualDayRecord | AutoDayRecord
@@ -925,7 +923,7 @@ function isEmptySpend(entry: DayRecord): boolean {
 /**
  * 강화 합계를 **캐릭터(ocid) · 분류마다 한 줄**로 접는다. 하루 수백 건이라 안 접으면 목록이 그것만으로 찬다.
  *
- * 펼친 장비 칸은 합계 표의 `item_group` 으로 묶는다. 이름은 처음 든 합계의 API 이름이다.
+ * 펼친 장비 칸은 넥슨이 준 장비 이름으로 묶는다. 합계 표가 한 줄을 이 이름으로 가린다.
  */
 function toEnhancementRecords(
   rows: readonly EnhancementSpending[],
@@ -941,7 +939,7 @@ function toEnhancementRecords(
           kind: 'enhancement',
           category: row.category,
           ocid: row.ocid,
-          characterName: names.get(row.ocid) ?? row.characterName,
+          characterName: names.get(row.ocid) ?? row.characterName ?? '',
           payoutMeso: 0,
           count: 0,
           items: [],
@@ -953,7 +951,7 @@ function toEnhancementRecords(
     group.record.count += row.attempts
     group.record.payoutMeso += row.costMeso
 
-    const item = group.items.get(row.itemGroup) ?? {
+    const item = group.items.get(row.targetItem) ?? {
       itemKey: row.itemKey,
       targetItem: row.targetItem,
       count: 0,
@@ -963,7 +961,7 @@ function toEnhancementRecords(
     }
     item.count += row.attempts
     item.costMeso += row.costMeso
-    group.items.set(row.itemGroup, item)
+    group.items.set(row.targetItem, item)
   }
 
   return [...groups.values()]

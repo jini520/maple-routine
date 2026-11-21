@@ -94,7 +94,6 @@ beforeEach(() => {
     if (context.accounts === null) return 'retry'
     return {
       ocid: `ocid-${name}`,
-      accountId: 'maple-1',
       worldName: name === '머리맨들맨둘' ? '스페셜' : '엘리시움',
       worldKey: name === '머리맨들맨둘' ? 'special' : 'elysium',
       preLeap: false,
@@ -271,7 +270,7 @@ describe('수집', () => {
       'account-key',
       'cube',
       '2026-09-05',
-      [expect.objectContaining({ itemKey: 'arcane_umbra_knuckle', attempts: 2, eventWorld: false, ocid: 'ocid-낟낟' })],
+      [expect.objectContaining({ itemName: '아케인셰이드 클로', attempts: 2, eventWorld: false, ocid: 'ocid-낟낟' })],
       NOW,
       expect.any(Array),
     )
@@ -435,7 +434,7 @@ describe('캐릭터에 붙이기', () => {
   // 리프 전 줄은 리프 뒤 ocid 에 붙지만, 그 줄의 월드는 리프 전 월드다.
   it('리프 전 줄에는 같은 기간 스타포스 줄의 월드를 적고 이벤트 월드로 세지 않는다', async () => {
     ownerTable = {
-      낟낟: { ocid: 'o-새', accountId: 'maple-1', worldName: null, worldKey: null, preLeap: true, leapDate: '2026-09-11' },
+      낟낟: { ocid: 'o-새', worldName: null, worldKey: null, preLeap: true, leapDate: '2026-09-11' },
     }
     findPreLeapWorldKey.mockResolvedValue('challengers_2')
     fetchEnhancementHistory.mockImplementation(async (_credential: unknown, kind: string) => (kind === 'cube' ? page(['a']) : page([])))

@@ -1,32 +1,29 @@
 /**
  * 강화 합계(`enhancement_totals`)를 읽고 쓰는 자리.
  *
+ * 표는 월드를 줄 id 로, 장비를 넥슨이 준 이름으로 든다. 읽을 때 월드 key 와 장비 key 로 되돌리고, 스타포스 MVP 할인의 메이플 ID 와
+ * 지금 이름을 모를 때 대신 쓰는 이름은 `character_accounts` · `character_dated_names` 에서 찾는다.
+ *
  * @see docs/persistence/sqlite.md `enhancement_totals`
  */
 import type { EnhancementCategory } from '../lib/enhancement/categories'
+import { equipmentItemKeyOfApiName } from '../lib/equipment/equipment-items'
+import { findWorld, findWorldById } from '../lib/world/worlds'
 import type { EnhancementKind } from '../nexon/history/client'
 import type { SqliteDbConnection } from './ports'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 
-/** 저장된 합계 한 줄. */
-export interface EnhancementTotal {
-  id: string
-  nexonAccountId: string
+/** 쓸 값. 같은 열쇠(캐릭터 · 날짜 · 분류 · 장비 이름)의 줄이 있으면 그 줄의 id 를 지키고 값만 고친다. */
+export interface EnhancementTotalInput {
   historyDate: string
-  /** 응답이 준 그날의 이름. 묶고 찾는 것은 `ocid` 다 */
-  characterName: string
   /** 그날 그 이름이었던 캐릭터. 리프 전 기간의 줄은 리프 뒤의 ocid 다 */
   ocid: string
-  /** 그 캐릭터의 메이플 ID */
-  accountId: string
-  /** 그 줄의 월드 key. 리프 전 기간이라 모르면 `null` */
+  /** 그 줄의 월드 key. 리프 전 기간이라 모르면 `null`. 월드 표에 없는 key 도 비워 적는다 */
   worldKey: string | null
-  enhancementType: EnhancementKind
   enhancementCategory: EnhancementCategory
-  itemGroup: string
-  itemKey: string | null
+  /** 넥슨이 준 장비 이름 원문. 띄어쓰기만 달라도 다른 줄이다 */
   itemName: string
   attempts: number
   attemptCostMeso: number
@@ -40,8 +37,24 @@ export interface EnhancementTotal {
   eventWorld: boolean | null
 }
 
-/** 쓸 값. id 는 같은 열쇠의 줄이 있으면 그 줄의 것을 지킨다. */
-export type EnhancementTotalInput = Omit<EnhancementTotal, 'id' | 'nexonAccountId'>
+/** 저장된 합계 한 줄. */
+export interface EnhancementTotal extends EnhancementTotalInput {
+  id: string
+  /** 이름으로 장비 표에서 찾은 장비 key. 표에 없는 장비면 `null` */
+  itemKey: string | null
+  /** 그날의 이름. 받지 않은 날 · 리프 전 날은 아래 메이플 ID 를 찾은 소속 기록의 이름이다. 소속 기록이 없으면 `null` */
+  characterName: string | null
+  /** 그날 그 캐릭터의 메이플 ID. 그 날을 덮는 소속 기록이 없으면 그 캐릭터를 가장 늦게 본 소속 기록의 ID 다 */
+  accountId: string | null
+}
+
+/** 받은 API 종류가 정하는 분류. 하루치를 갈아 끼울 때 이 분류의 줄만 지운다. */
+const CATEGORIES_OF_KIND: Record<EnhancementKind, readonly EnhancementCategory[]> = {
+  cube: ['cube_reset'],
+  starforce: ['starforce'],
+  potential: ['potential', 'additional_potential'],
+  soul_potential: ['soul_potential'],
+}
 
 let revision = 0
 const revisionListeners = new Set<() => void>()
@@ -59,11 +72,6 @@ export function subscribeEnhancementTotalsRevision(listener: () => void): () => 
   }
 }
 
-/** 다른 저장소 함수가 이 표의 줄을 바꿨을 때 화면에 알린다. 계정 id 를 옮길 때 겹친 줄이 지워진다. */
-export function notifyEnhancementTotalsChanged(): void {
-  bumpRevision()
-}
-
 /** 구독자를 부르는 함수. `notifyAfterBatch` 가 같은 함수로 알아봐 반복 끝에 한 번만 부르도록 모듈에 하나만 둔다. */
 function notifyRevisionListeners(): void {
   for (const listener of revisionListeners) listener()
@@ -76,25 +84,18 @@ function bumpRevision(): void {
 
 const UPSERT_SQL = `
   INSERT INTO enhancement_totals
-    (nexon_account_id, history_date, character_name, ocid, account_id, world_key, enhancement_type, enhancement_category,
-     item_group, item_key, item_name, attempts, attempt_cost_meso, destroy_defence_cost_meso, superior_cost_meso, from_star,
-     to_star, event_world, updated_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT (ocid, history_date, enhancement_category, item_group) DO UPDATE SET
-    nexon_account_id = excluded.nexon_account_id,
-    character_name = excluded.character_name,
-    account_id = excluded.account_id,
-    world_key = excluded.world_key,
-    enhancement_type = excluded.enhancement_type,
-    item_key = excluded.item_key,
-    item_name = excluded.item_name,
-    attempts = excluded.attempts,
+    (ocid, history_date, category, item_name, attempt_count, attempt_cost_meso, destroy_defence_cost_meso, world_id,
+     superior_cost_meso, from_star, to_star, is_event_world, updated_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  ON CONFLICT (ocid, history_date, category, item_name) DO UPDATE SET
+    attempt_count = excluded.attempt_count,
     attempt_cost_meso = excluded.attempt_cost_meso,
     destroy_defence_cost_meso = excluded.destroy_defence_cost_meso,
+    world_id = excluded.world_id,
     superior_cost_meso = excluded.superior_cost_meso,
     from_star = excluded.from_star,
     to_star = excluded.to_star,
-    event_world = excluded.event_world,
+    is_event_world = excluded.is_event_world,
     updated_at = excluded.updated_at
   RETURNING id
 `
@@ -115,20 +116,14 @@ async function replaceIn(
   const writtenIds: string[] = []
   for (const total of totals) {
     const { values } = await db.query(UPSERT_SQL, [
-      nexonAccountId,
-      total.historyDate,
-      total.characterName,
       total.ocid,
-      total.accountId,
-      total.worldKey,
-      total.enhancementType,
+      total.historyDate,
       total.enhancementCategory,
-      total.itemGroup,
-      total.itemKey,
       total.itemName,
       total.attempts,
       total.attemptCostMeso,
       total.destroyDefenceCostMeso,
+      findWorld(total.worldKey)?.id ?? null,
       total.superiorCostMeso,
       total.fromStar,
       total.toStar,
@@ -138,15 +133,16 @@ async function replaceIn(
     const id = (values ?? [])[0]?.id
     if (typeof id === 'string') writtenIds.push(id)
   }
-  // 한 번 받으면 그 넥슨 계정의 그날 줄이 모두 온다. 그래서 그 계정 id 로 적힌 줄과 그 계정 캐릭터의 줄 가운데 새 합계에 없는
-  // 줄을 지운다. 계정 id 만 보면 옛 번호로 적힌 같은 캐릭터의 줄이 남는다.
+  // 한 번 받으면 그 넥슨 계정의 그날 줄이 모두 온다. 그래서 그 계정으로 본 캐릭터의 줄 가운데 새 합계에 없는 줄을 지운다. 소속
+  // 기록은 목록에서 사라진 캐릭터와 리프 전 ocid 도 지우지 않고 둬서 그 ocid 의 줄도 범위에 든다.
+  const categories = CATEGORIES_OF_KIND[enhancementType]
   const ocids = [...new Set([...accountOcids, ...totals.map((total) => total.ocid)])]
   await db.run(
     `DELETE FROM enhancement_totals
-      WHERE enhancement_type = ? AND history_date = ?
-        AND (nexon_account_id = ?${ocids.length > 0 ? ` OR ocid IN (${ocids.map(() => '?').join(', ')})` : ''})
+      WHERE history_date = ? AND category IN (${categories.map(() => '?').join(', ')})
+        AND (ocid IN (SELECT ocid FROM character_accounts WHERE nexon_account_id = ?)${ocids.length > 0 ? ` OR ocid IN (${ocids.map(() => '?').join(', ')})` : ''})
         ${writtenIds.length > 0 ? `AND id NOT IN (${writtenIds.map(() => '?').join(', ')})` : ''}`,
-    [enhancementType, historyDate, nexonAccountId, ...ocids, ...writtenIds],
+    [historyDate, ...categories, nexonAccountId, ...ocids, ...writtenIds],
   )
 }
 
@@ -156,7 +152,7 @@ async function replaceIn(
  * 합계에는 응답 줄의 id 가 없어 같은 줄을 두 번 받았는지 가릴 수 없다. 그래서 그 날을 통째로 다시 받아 갈아 끼운다.
  *
  * @param totals 그 날짜 · 그 종류의 합계 전부. 비면 그 날의 줄을 모두 지운다
- * @param accountOcids 그 넥슨 계정의 캐릭터. 그 캐릭터들의 그날 줄도 지우는 범위에 든다
+ * @param accountOcids 그 넥슨 계정의 캐릭터. 소속 기록에 아직 없는 캐릭터의 그날 줄도 지우는 범위에 든다
  */
 export async function replaceEnhancementTotals(
   nexonAccountId: string,
@@ -173,29 +169,27 @@ export async function replaceEnhancementTotals(
   bumpRevision()
 }
 
-function rowToTotal(row: Record<string, unknown>): EnhancementTotal {
-  const eventWorld = row.event_world as number | null | undefined
-  return {
-    id: row.id as string,
-    nexonAccountId: row.nexon_account_id as string,
-    historyDate: row.history_date as string,
-    characterName: row.character_name as string,
-    ocid: row.ocid as string,
-    accountId: row.account_id as string,
-    worldKey: (row.world_key as string | null | undefined) ?? null,
-    enhancementType: row.enhancement_type as EnhancementKind,
-    enhancementCategory: row.enhancement_category as EnhancementCategory,
-    itemGroup: row.item_group as string,
-    itemKey: (row.item_key as string | null | undefined) ?? null,
-    itemName: row.item_name as string,
-    attempts: row.attempts as number,
-    attemptCostMeso: row.attempt_cost_meso as number,
-    destroyDefenceCostMeso: row.destroy_defence_cost_meso as number,
-    superiorCostMeso: row.superior_cost_meso as number,
-    fromStar: (row.from_star as number | null | undefined) ?? null,
-    toStar: (row.to_star as number | null | undefined) ?? null,
-    eventWorld: eventWorld === null || eventWorld === undefined ? null : eventWorld === 1,
+/** 소속 기록 한 줄. `character_accounts` 의 줄이다. */
+interface Sighting {
+  name: string
+  accountId: string
+  firstSeenDate: string
+  lastSeenDate: string
+}
+
+/**
+ * 그 날짜를 덮는 소속 기록, 없으면 가장 늦게 본 소속 기록. 수집기는 앱이 그 캐릭터를 처음 보기 전의 날도 받아서, 날짜로만 찾으면
+ * 그런 줄이 메이플 ID 를 잃는다.
+ */
+function sightingAt(sightings: readonly Sighting[], dateKey: string): Sighting | null {
+  let covering: Sighting | null = null
+  let latest: Sighting | null = null
+  for (const sighting of sightings) {
+    const covers = sighting.firstSeenDate <= dateKey && dateKey <= sighting.lastSeenDate
+    if (covers && (covering === null || sighting.lastSeenDate > covering.lastSeenDate)) covering = sighting
+    if (latest === null || sighting.lastSeenDate > latest.lastSeenDate) latest = sighting
   }
+  return covering ?? latest
 }
 
 /** 날짜 범위(두 끝 포함)의 합계. 계정은 가리지 않는다. */
@@ -205,7 +199,61 @@ export async function loadEnhancementTotals(fromDate: string, toDate: string): P
     'SELECT * FROM enhancement_totals WHERE history_date BETWEEN ? AND ? ORDER BY history_date, ocid, id',
     [fromDate, toDate],
   )
-  return (values ?? []).map(rowToTotal)
+  const rows = values ?? []
+  const ocids = [...new Set(rows.map((row) => row.ocid as string))]
+  if (ocids.length === 0) return []
+  const marks = ocids.map(() => '?').join(', ')
+  const sightingRows = await db.query(
+    `SELECT ocid, name, account_id, first_seen_date, last_seen_date FROM character_accounts WHERE ocid IN (${marks})`,
+    ocids,
+  )
+  const datedRows = await db.query(
+    `SELECT ocid, history_date, name FROM character_dated_names
+      WHERE ocid IN (${marks}) AND history_date BETWEEN ? AND ? AND name IS NOT NULL`,
+    [...ocids, fromDate, toDate],
+  )
+  const sightingsOf = new Map<string, Sighting[]>()
+  for (const row of sightingRows.values ?? []) {
+    const ocid = row.ocid as string
+    sightingsOf.set(ocid, [
+      ...(sightingsOf.get(ocid) ?? []),
+      {
+        name: row.name as string,
+        accountId: row.account_id as string,
+        firstSeenDate: row.first_seen_date as string,
+        lastSeenDate: row.last_seen_date as string,
+      },
+    ])
+  }
+  const datedName = new Map(
+    (datedRows.values ?? []).map((row) => [`${row.ocid as string}|${row.history_date as string}`, row.name as string]),
+  )
+
+  return rows.map((row) => {
+    const ocid = row.ocid as string
+    const historyDate = row.history_date as string
+    const itemName = row.item_name as string
+    const sighting = sightingAt(sightingsOf.get(ocid) ?? [], historyDate)
+    const eventWorld = row.is_event_world as number | null | undefined
+    return {
+      id: row.id as string,
+      historyDate,
+      ocid,
+      worldKey: findWorldById(row.world_id as string | null | undefined)?.key ?? null,
+      enhancementCategory: row.category as EnhancementCategory,
+      itemName,
+      itemKey: equipmentItemKeyOfApiName(itemName),
+      attempts: row.attempt_count as number,
+      attemptCostMeso: row.attempt_cost_meso as number,
+      destroyDefenceCostMeso: row.destroy_defence_cost_meso as number,
+      superiorCostMeso: row.superior_cost_meso as number,
+      fromStar: (row.from_star as number | null | undefined) ?? null,
+      toStar: (row.to_star as number | null | undefined) ?? null,
+      eventWorld: eventWorld === null || eventWorld === undefined ? null : eventWorld === 1,
+      characterName: datedName.get(`${ocid}|${historyDate}`) ?? sighting?.name ?? null,
+      accountId: sighting?.accountId ?? null,
+    }
+  })
 }
 
 /**
@@ -217,11 +265,10 @@ export async function loadEnhancementTotals(fromDate: string, toDate: string): P
 export async function findPreLeapWorldKey(ocid: string, leapDate: string, aroundDate: string): Promise<string | null> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
-    `SELECT world_key FROM enhancement_totals
-      WHERE ocid = ? AND enhancement_type = 'starforce' AND world_key IS NOT NULL AND history_date < ?
+    `SELECT world_id FROM enhancement_totals
+      WHERE ocid = ? AND category = 'starforce' AND world_id IS NOT NULL AND history_date < ?
       ORDER BY abs(julianday(history_date) - julianday(?)) LIMIT 1`,
     [ocid, leapDate, aroundDate],
   )
-  const found = values?.[0]?.world_key
-  return typeof found === 'string' ? found : null
+  return findWorldById(values?.[0]?.world_id as string | null | undefined)?.key ?? null
 }

@@ -1667,15 +1667,12 @@ describe('loadFragmentStorage', () => {
 /** 기기 `enhancement_totals` 한 줄. 기본은 큐브 한 번 450,000 메소다. */
 const 합계 = (over: Partial<EnhancementTotal> = {}): EnhancementTotal => ({
   id: 't1',
-  nexonAccountId: 'account-main',
   historyDate: '2026-08-23',
   characterName: '낟낟',
   ocid: `ocid-${over.characterName ?? '낟낟'}`,
   accountId: 'maple-1',
   worldKey: 'elysium',
-  enhancementType: 'cube',
   enhancementCategory: 'cube_reset',
-  itemGroup: 'key:arcane_umbra_knuckle',
   itemKey: 'arcane_umbra_knuckle',
   itemName: '아케인셰이드 클로',
   attempts: 1,
@@ -1688,8 +1685,7 @@ const 합계 = (over: Partial<EnhancementTotal> = {}): EnhancementTotal => ({
   ...over,
 })
 
-const 스타포스합계 = (over: Partial<EnhancementTotal> = {}) =>
-  합계({ enhancementType: 'starforce', enhancementCategory: 'starforce', ...over })
+const 스타포스합계 = (over: Partial<EnhancementTotal> = {}) => 합계({ enhancementCategory: 'starforce', ...over })
 
 // 강화 합계는 넷째 원천이다. 저장된 값은 MVP 할인 전이라 할인은 여기서 붙인다.
 describe('강화 지출이 칸에 든다', () => {
@@ -1741,6 +1737,15 @@ describe('강화 지출이 칸에 든다', () => {
     expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso).toBe(900_000 + 55_382_200)
   })
 
+  // 소속 기록이 하나도 없는 캐릭터는 메이플 ID 를 몰라 등급을 찾을 수 없다.
+  it('메이플 ID 를 모르는 스타포스 줄은 할인 없이 센다', async () => {
+    mvp.starforceMvpDiscountOf.mockReturnValue(10)
+    enhancementTotals.loadEnhancementTotals.mockResolvedValue([스타포스합계({ accountId: null, attemptCostMeso: 1_000_000 })])
+
+    expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23'].expenseMeso).toBe(1_000_000)
+    expect(mvp.starforceMvpDiscountOf).not.toHaveBeenCalled()
+  })
+
   it('MVP 할인은 스타포스에만 붙는다', async () => {
     mvp.starforceMvpDiscountOf.mockReturnValue(10)
     enhancementTotals.loadEnhancementTotals.mockResolvedValue([합계()])
@@ -1769,7 +1774,7 @@ describe('강화 지출이 칸에 든다', () => {
 // 자동 줄인데 지출이다. 앞의 둘(결정석·판매)과 갈리는 자리가 이것뿐이다.
 describe('강화 줄', () => {
   const 잠재합계 = (over: Partial<EnhancementTotal> = {}) =>
-    합계({ enhancementType: 'potential', enhancementCategory: 'potential', attemptCostMeso: 38_250_000, ...over })
+    합계({ enhancementCategory: 'potential', attemptCostMeso: 38_250_000, ...over })
 
   // 캐릭터의 지금 이름은 프로필이 준다. `ocid-이름` 의 지금 이름은 그 이름이다.
   beforeEach(() => {
@@ -1788,7 +1793,7 @@ describe('강화 줄', () => {
   it('캐릭터 하나에 분류마다 한 줄로 접는다', async () => {
     const rows = await 줄들([
       합계(),
-      합계({ id: 't2', itemGroup: 'key:dea_sidus_earring', itemKey: 'dea_sidus_earring' }),
+      합계({ id: 't2', itemKey: 'dea_sidus_earring', itemName: '데아 시두스 이어링' }),
       합계({ id: 't3', characterName: '풉품' }),
     ])
 
@@ -1812,7 +1817,7 @@ describe('강화 줄', () => {
   it('장비별 합계의 금액과 횟수를 모은다', async () => {
     const [row] = await 줄들([
       합계({ attempts: 2, attemptCostMeso: 900_000 }),
-      합계({ id: 't2', itemGroup: 'key:dea_sidus_earring', itemKey: 'dea_sidus_earring', attemptCostMeso: 338_000 }),
+      합계({ id: 't2', itemKey: 'dea_sidus_earring', itemName: '데아 시두스 이어링', attemptCostMeso: 338_000 }),
     ])
 
     expect(row).toMatchObject({
@@ -1863,7 +1868,7 @@ describe('강화 줄', () => {
   // 펼쳐서 보는 이유가 **어디에 썼나** 라서 이름순이면 그 답이 안 보인다.
   it('만진 장비를 큰 금액부터 담는다', async () => {
     const [row] = await 줄들([
-      합계({ itemGroup: 'key:dea_sidus_earring', itemKey: 'dea_sidus_earring', itemName: '데아 시두스 이어링', attemptCostMeso: 338_000 }),
+      합계({ itemKey: 'dea_sidus_earring', itemName: '데아 시두스 이어링', attemptCostMeso: 338_000 }),
       합계({ id: 't2', attempts: 2, attemptCostMeso: 1_600_000 }),
     ])
 
@@ -1873,11 +1878,24 @@ describe('강화 줄', () => {
     ])
   })
 
+  // 합계 표가 한 줄을 넥슨이 준 이름 글자로 가린다. 장비 key 로 묶으면 표의 두 줄이 한 칸에 섞여 처음 든 이름만 보인다.
+  it('펼친 장비 칸은 장비 이름으로 묶는다', async () => {
+    const [row] = await 줄들([
+      합계({ itemKey: null, itemName: '블랙 마법깃펜', attemptCostMeso: 2_000_000 }),
+      합계({ id: 't2', itemKey: null, itemName: '블랙마법깃펜', attemptCostMeso: 1_000_000 }),
+    ])
+
+    expect(row.kind === 'enhancement' && row.items.map((item) => [item.targetItem, item.costMeso])).toEqual([
+      ['블랙 마법깃펜', 2_000_000],
+      ['블랙마법깃펜', 1_000_000],
+    ])
+  })
+
   // 금액이 같으면 순서가 흔들리면 안 된다. 다시 그릴 때마다 줄이 자리를 바꾼다.
   it('금액이 같으면 건수로, 그것도 같으면 이름으로 가른다', async () => {
     const [row] = await 줄들([
-      합계({ itemGroup: 'name:나', itemKey: null, itemName: '나' }),
-      합계({ id: 't2', itemGroup: 'name:가', itemKey: null, itemName: '가' }),
+      합계({ itemKey: null, itemName: '나' }),
+      합계({ id: 't2', itemKey: null, itemName: '가' }),
     ])
 
     expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual(['가', '나'])
@@ -1892,7 +1910,7 @@ describe('강화 줄', () => {
   it('섞여 있으면 안 쓴 장비만 펼침에서 빠진다', async () => {
     const [row] = await 줄들([
       합계(),
-      합계({ id: 't2', itemGroup: 'name:초보자의장갑', itemKey: null, itemName: '초보자의 장갑', attemptCostMeso: 0 }),
+      합계({ id: 't2', itemKey: null, itemName: '초보자의 장갑', attemptCostMeso: 0 }),
     ])
 
     expect(row.kind === 'enhancement' && row.items.map((item) => item.targetItem)).toEqual(['아케인셰이드 클로'])

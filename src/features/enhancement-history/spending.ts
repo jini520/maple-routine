@@ -1,5 +1,5 @@
 /**
- * 받은 강화 내역 줄을 날짜 · 캐릭터(ocid) · 분류 · 장비별 합계로 묶는다. 응답 원본은 저장하지 않고 이 합계만 저장한다.
+ * 받은 강화 내역 줄을 날짜 · 캐릭터(ocid) · 분류 · 장비 이름별 합계로 묶는다. 응답 원본은 저장하지 않고 이 합계만 저장한다.
  *
  * 비용은 MVP 할인 전 세 몫이다. 할인은 화면에 보일 때 붙인다. 값을 못 매기는 줄과 전용 재화 줄은 합계에 넣지 않는다.
  */
@@ -15,7 +15,7 @@ import {
 import type { EnhancementCategory } from '../../lib/enhancement/categories'
 import { judgeEventWorld, type EventWorldJudgment, type OwnerWorld } from '../../lib/enhancement/world'
 import { worldKeyOfApiName } from '../../lib/world/worlds'
-import { comparableEquipmentName, equipmentItemLevelOf } from '../../lib/equipment/equipment-items'
+import { equipmentItemLevelOf } from '../../lib/equipment/equipment-items'
 import type { EnhancementKind } from '../../nexon/history/client'
 
 /** 묶기 전 응답 줄 한 개. 수집기가 받은 줄과 옛 원본 표의 줄이 이 모양이다. */
@@ -37,20 +37,13 @@ export interface EnhancementSource {
 /** 합계 한 줄. 기기 `enhancement_totals` 의 칸과 맞는다. */
 export interface EnhancementTotalDraft {
   historyDate: string
-  /** 응답이 준 그날의 이름 */
-  characterName: string
   /** 그날 그 이름이었던 캐릭터 */
   ocid: string
-  /** 그 캐릭터의 메이플 ID */
-  accountId: string
   /** 그 줄의 월드 key. 스타포스는 줄의 월드, 아니면 그 캐릭터의 월드다. 리프 전 줄이라 모르면 `null` */
   worldKey: string | null
-  enhancementType: EnhancementKind
-  /** 화면이 가르는 단위. `enhancementType` 과 달리 잠재를 본 · 에디셔널로 나눈다 */
+  /** 화면이 가르는 단위. 받은 API 종류와 달리 잠재를 본 · 에디셔널로 나눈다 */
   enhancementCategory: EnhancementCategory
-  /** 장비별로 묶는 열쇠. 장비 key, 없으면 공백을 지운 이름이다 */
-  itemGroup: string
-  itemKey: string | null
+  /** 넥슨이 준 장비 이름 원문. 장비를 이 글자로 묶는다 */
   itemName: string
   attempts: number
   attemptCostMeso: number
@@ -68,7 +61,6 @@ export interface EnhancementTotalDraft {
 /** 줄을 붙인 캐릭터. 붙이지 못한 줄은 합계에 넣지 않는다. */
 export interface EntryOwner extends OwnerWorld {
   ocid: string
-  accountId: string
 }
 
 function categoryOf(entry: EnhancementSource): EnhancementCategory {
@@ -248,13 +240,11 @@ function worldKeyOfEntry(entry: EnhancementSource, owner: EntryOwner): string | 
   return worldName !== '' ? worldKeyOfApiName(worldName) : owner.worldKey
 }
 
-/** 장비별로 묶는 열쇠. 장비 key 와 이름이 같은 글자여도 섞이지 않게 앞에 표시를 단다. */
-export function itemGroupOf(itemKey: string | null, targetItem: string): string {
-  return itemKey !== null ? `key:${itemKey}` : `name:${comparableEquipmentName(targetItem)}`
-}
-
 /**
- * 줄들을 날짜 · 캐릭터(ocid) · 분류 · 장비별 합계로 묶는다.
+ * 줄들을 날짜 · 캐릭터(ocid) · 분류 · 장비 이름별 합계로 묶는다.
+ *
+ * 장비는 넥슨이 준 이름 글자 그대로 묶는다. 서버 표가 한 줄을 이 이름으로 가린다. 넥슨이 같은 장비를 띄어쓰기만 다르게 주면 두
+ * 줄로 갈린다.
  *
  * 붙이지 못한 줄은 넣지 않는다. 어느 캐릭터의 기록인지 모르는 줄을 남기지 않는다. 이름으로 묶으면 이름을 바꾼 캐릭터가 둘로
  * 갈리고, 이름이 다시 쓰이면 다른 캐릭터에 붙는다. 전용 재화 줄과 값을 못 매기는 줄도 넣지 않는다. 전용 재화는 메소가 안 들고,
@@ -278,8 +268,7 @@ export function summarizeEnhancement(
     const owner = ownerOf(entry)
     if (owner === null) continue
     const category = categoryOf(entry)
-    const itemGroup = itemGroupOf(entry.itemKey, entry.targetItem)
-    const key = [entry.dateKey, owner.ocid, category, itemGroup].join('|')
+    const key = [entry.dateKey, owner.ocid, category, entry.targetItem].join('|')
     if (entry.kind === 'starforce') {
       const first = firsts.get(key)
       if (first === undefined || timeOf(entry) < timeOf(first)) firsts.set(key, entry)
@@ -288,14 +277,9 @@ export function summarizeEnhancement(
     }
     const total = totals.get(key) ?? {
       historyDate: entry.dateKey,
-      characterName: entry.characterName,
       ocid: owner.ocid,
-      accountId: owner.accountId,
       worldKey: worldKeyOfEntry(entry, owner),
-      enhancementType: entry.kind,
       enhancementCategory: category,
-      itemGroup,
-      itemKey: entry.itemKey,
       itemName: entry.targetItem,
       attempts: 0,
       attemptCostMeso: 0,

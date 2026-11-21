@@ -1,6 +1,7 @@
 /// <reference types="node" />
 /**
- * 강화 합계 표(`enhancement_totals`)를 진짜 SQLite 로 태운다. 갈아 끼우기의 덮어 적기 · 지우기와 옛 원본을 옮기는 부팅 단계를 본다.
+ * 강화 합계 표(`enhancement_totals`)를 진짜 SQLite 로 태운다. 갈아 끼우기의 덮어 적기 · 지우기, 읽을 때 소속 기록에서 찾는 값과 옛
+ * 원본을 옮기는 부팅 단계를 본다.
  *
  * 그 날을 통째로 다시 받아 갈아 끼우므로, 같은 줄이 둘로 늘거나 사라진 줄이 남으면 가계부의 강화 지출이 부푼다.
  */
@@ -11,6 +12,7 @@ import {
 import type { EnhancementTotalDraft } from '../../../features/enhancement-history/spending'
 import { findPreLeapWorldKey, loadEnhancementTotals, replaceEnhancementTotals } from '../../enhancement-totals'
 import { recordCharacterAccounts } from '../../character-accounts'
+import { saveDatedName } from '../../character-dated-names'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
@@ -58,14 +60,9 @@ const NOW = new Date('2026-10-26T00:00:00.000Z')
 
 const draft = (over: Partial<EnhancementTotalDraft> = {}): EnhancementTotalDraft => ({
   historyDate: '2026-10-20',
-  characterName: over.characterName ?? '낟낟',
-  ocid: `ocid-${over.characterName ?? '낟낟'}`,
-  accountId: 'maple-1',
+  ocid: 'ocid-낟낟',
   worldKey: 'elysium',
-  enhancementType: 'cube',
   enhancementCategory: 'cube_reset',
-  itemGroup: 'key:arcane_umbra_knuckle',
-  itemKey: 'arcane_umbra_knuckle',
   itemName: '아케인셰이드 클로',
   attempts: 1,
   attemptCostMeso: 450_000,
@@ -77,7 +74,20 @@ const draft = (over: Partial<EnhancementTotalDraft> = {}): EnhancementTotalDraft
   ...over,
 })
 
-const EARRING = { itemGroup: 'key:dea_sidus_earring', itemKey: 'dea_sidus_earring', itemName: '데아 시두스 이어링' }
+const EARRING = { itemName: '데아 시두스 이어링' }
+
+/** 그 넥슨 계정의 목록에서 그 캐릭터를 두 날짜 사이에 본 소속 기록. */
+async function sighting(ocid: string, name: string, account: { maple: string; nexon: string }, from: string, to: string): Promise<void> {
+  for (const seenOn of [from, to]) {
+    await recordCharacterAccounts(
+      [{ accountId: account.maple, characters: [{ ocid, name, world: '', worldKey: 'elysium', jobClass: '', level: 1 }] }],
+      seenOn,
+      account.nexon,
+    )
+  }
+}
+
+const MAIN = { maple: 'maple-1', nexon: 'account-main' }
 
 describe('갈아 끼우기', () => {
   it('같은 열쇠의 줄은 값을 고쳐 한 줄로 두고, 새 합계에 없는 줄은 지운다', async () => {
@@ -86,68 +96,68 @@ describe('갈아 끼우기', () => {
     await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [draft({ attempts: 3 })], NOW)
 
     expect(await loadEnhancementTotals('2026-10-20', '2026-10-20')).toEqual([
-      expect.objectContaining({ itemGroup: 'key:arcane_umbra_knuckle', attempts: 3 }),
+      expect.objectContaining({ itemName: '아케인셰이드 클로', attempts: 3 }),
     ])
   })
 
-  // 계정 id 만 보면 옛 번호로 적힌 같은 캐릭터의 줄이 남아 같은 강화가 두 번 세어진다.
-  it('그 넥슨 계정 캐릭터의 그날 줄은 다른 계정 id 로 적혔어도 갈아 끼운다', async () => {
-    await replaceEnhancementTotals('account-old', 'cube', '2026-10-20', [draft(), draft(EARRING)], NOW)
+  // 표에 넥슨 계정 칸이 없다. 소속 기록은 목록에서 사라진 캐릭터와 리프 전 ocid 도 지우지 않고 둬서, 그 ocid 의 줄도 지운다.
+  it('그 넥슨 계정으로 본 캐릭터의 그날 줄은 지금 목록에 없는 옛 ocid 의 줄이어도 갈아 끼운다', async () => {
+    await sighting('ocid-옛', '낟낟', MAIN, '2026-09-01', '2026-09-10')
+    await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [draft({ ocid: 'ocid-옛' })], NOW)
 
-    await replaceEnhancementTotals('account-new', 'cube', '2026-10-20', [draft({ attempts: 3 })], NOW, ['ocid-낟낟'])
+    await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [draft({ attempts: 3 })], NOW)
 
-    expect((await loadEnhancementTotals('2026-10-20', '2026-10-20')).map((total) => [total.nexonAccountId, total.itemGroup, total.attempts]))
-      .toEqual([['account-new', 'key:arcane_umbra_knuckle', 3]])
+    expect((await loadEnhancementTotals('2026-10-20', '2026-10-20')).map((total) => [total.ocid, total.attempts])).toEqual([
+      ['ocid-낟낟', 3],
+    ])
   })
 
   // 한 종류를 다시 받았다고 같은 날 다른 종류 · 다른 계정의 합계가 지워지면 안 된다.
-  it('비우면 그 계정 · 종류 · 날짜의 줄만 지운다', async () => {
+  it('비우면 그 계정 캐릭터 · 종류 · 날짜의 줄만 지운다', async () => {
+    await sighting('ocid-낟낟', '낟낟', MAIN, '2026-10-01', '2026-10-31')
+    await sighting('ocid-부캐', '부캐', { maple: 'maple-2', nexon: 'account-sub' }, '2026-10-01', '2026-10-31')
     await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [draft()], NOW)
-    await replaceEnhancementTotals('account-sub', 'cube', '2026-10-20', [draft({ characterName: '부캐' })], NOW)
-    const starforce = draft({ enhancementType: 'starforce', enhancementCategory: 'starforce' })
-    await replaceEnhancementTotals('account-main', 'starforce', '2026-10-20', [starforce], NOW)
+    await replaceEnhancementTotals('account-sub', 'cube', '2026-10-20', [draft({ ocid: 'ocid-부캐' })], NOW)
+    await replaceEnhancementTotals('account-main', 'starforce', '2026-10-20', [draft({ enhancementCategory: 'starforce' })], NOW)
 
     await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [], NOW)
 
-    expect((await loadEnhancementTotals('2026-10-20', '2026-10-20')).map((total) => total.characterName).sort())
-      .toEqual(['낟낟', '부캐'])
-  })
-
-  // 다시 매기기 요청이 성 없는 옛 줄을 이 길로 채운다. 고쳐 적기에서 칸이 빠지면 다시 받아도 성이 안 선다.
-  it('갈아 끼울 때 성 칸도 고쳐 적는다', async () => {
-    const starforce = (fromStar: number | null, toStar: number | null) =>
-      draft({ enhancementType: 'starforce', enhancementCategory: 'starforce', fromStar, toStar })
-    await replaceEnhancementTotals('account-main', 'starforce', '2026-10-20', [starforce(null, null)], NOW)
-
-    await replaceEnhancementTotals('account-main', 'starforce', '2026-10-20', [starforce(17, 21)], NOW)
-
-    expect(await loadEnhancementTotals('2026-10-20', '2026-10-20')).toEqual([
-      expect.objectContaining({ fromStar: 17, toStar: 21 }),
+    expect(
+      (await loadEnhancementTotals('2026-10-20', '2026-10-20')).map((total) => [total.ocid, total.enhancementCategory]).sort(),
+    ).toEqual([
+      ['ocid-낟낟', 'starforce'],
+      ['ocid-부캐', 'cube_reset'],
     ])
   })
 
-  // 슈페리얼 비용은 MVP 할인을 받지 않아 칸이 따로다. 칸이 생기기 전 기기의 표에는 열 때 더한다.
-  it('슈페리얼 비용 칸을 적고 읽는다. 칸이 없던 옛 기기의 표에도 더해지고 옛 줄은 0 이다', async () => {
+  // 잠재능력 API 는 본 잠재와 에디셔널을 함께 준다. 다른 API 의 분류를 지우면 그 지출이 빠진다.
+  it('받은 API 종류가 정하는 분류만 지운다. 잠재능력은 본 잠재와 에디셔널이다', async () => {
+    await sighting('ocid-낟낟', '낟낟', MAIN, '2026-10-01', '2026-10-31')
     await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [draft()], NOW)
-    await closeBossProfitDb()
-    real.inspect((db) => db.exec('ALTER TABLE enhancement_totals DROP COLUMN superior_cost_meso'))
-
-    expect(await loadEnhancementTotals('2026-10-20', '2026-10-20')).toEqual([
-      expect.objectContaining({ enhancementType: 'cube', superiorCostMeso: 0 }),
-    ])
-
-    const belt = { itemGroup: 'name:타일런트리카온벨트', itemKey: null, itemName: '타일런트 리카온 벨트' }
     await replaceEnhancementTotals(
       'account-main',
-      'starforce',
+      'potential',
       '2026-10-20',
-      [draft({ ...belt, enhancementType: 'starforce', enhancementCategory: 'starforce', attemptCostMeso: 0, superiorCostMeso: 55_382_200 })],
+      [draft({ enhancementCategory: 'potential' }), draft({ enhancementCategory: 'additional_potential' })],
       NOW,
     )
 
-    expect(await loadEnhancementTotals('2026-10-20', '2026-10-20')).toContainEqual(
-      expect.objectContaining({ enhancementType: 'starforce', attemptCostMeso: 0, superiorCostMeso: 55_382_200 }),
-    )
+    await replaceEnhancementTotals('account-main', 'potential', '2026-10-20', [], NOW)
+
+    expect((await loadEnhancementTotals('2026-10-20', '2026-10-20')).map((total) => total.enhancementCategory)).toEqual(['cube_reset'])
+  })
+
+  // 다시 매기기 요청이 성 없는 옛 줄을 이 길로 채운다. 고쳐 적기에서 칸이 빠지면 다시 받아도 성이 안 선다.
+  it('갈아 끼울 때 성 칸과 슈페리얼 비용도 고쳐 적는다', async () => {
+    const starforce = (fromStar: number | null, toStar: number | null, superiorCostMeso: number) =>
+      draft({ enhancementCategory: 'starforce', fromStar, toStar, superiorCostMeso })
+    await replaceEnhancementTotals('account-main', 'starforce', '2026-10-20', [starforce(null, null, 0)], NOW)
+
+    await replaceEnhancementTotals('account-main', 'starforce', '2026-10-20', [starforce(17, 21, 55_382_200)], NOW)
+
+    expect(await loadEnhancementTotals('2026-10-20', '2026-10-20')).toEqual([
+      expect.objectContaining({ fromStar: 17, toStar: 21, superiorCostMeso: 55_382_200 }),
+    ])
   })
 
   it('이벤트 월드 판정의 세 값을 그대로 되읽는다', async () => {
@@ -155,15 +165,49 @@ describe('갈아 끼우기', () => {
       'account-main',
       'cube',
       '2026-10-20',
-      [draft({ eventWorld: true }), draft({ characterName: '둘째', eventWorld: false }), draft({ characterName: '셋째', eventWorld: null })],
+      [draft({ eventWorld: true }), draft({ ocid: 'ocid-둘째', eventWorld: false }), draft({ ocid: 'ocid-셋째', eventWorld: null })],
       NOW,
     )
 
     const totals = await loadEnhancementTotals('2026-10-20', '2026-10-20')
-    expect(totals.map((total) => [total.characterName, total.eventWorld])).toEqual([
-      ['낟낟', true],
-      ['둘째', false],
-      ['셋째', null],
+    expect(totals.map((total) => [total.ocid, total.eventWorld])).toEqual([
+      ['ocid-낟낟', true],
+      ['ocid-둘째', false],
+      ['ocid-셋째', null],
+    ])
+  })
+})
+
+describe('읽기', () => {
+  // 표는 월드를 줄 id 로, 장비를 이름으로 든다. 화면은 월드 key 로 가르고 장비 key 로 그림을 찾는다.
+  it('월드를 key 로 되돌리고, 장비 key 는 이름으로 장비 표에서 찾는다', async () => {
+    await replaceEnhancementTotals('account-main', 'cube', '2026-10-20', [draft(), draft({ itemName: '타일런트 리카온 벨트', worldKey: null })], NOW)
+
+    const totals = (await loadEnhancementTotals('2026-10-20', '2026-10-20')).sort((a, b) => a.itemName.localeCompare(b.itemName))
+    expect(totals.map((total) => [total.itemName, total.itemKey, total.worldKey])).toEqual([
+      ['아케인셰이드 클로', 'arcane_umbra_knuckle', 'elysium'],
+      ['타일런트 리카온 벨트', null, null],
+    ])
+  })
+
+  // 수집기는 앱이 그 캐릭터를 처음 보기 전의 날도 받는다. 날짜로만 찾으면 그런 줄의 스타포스가 MVP 할인을 잃는다.
+  it('메이플 ID 와 대신 쓰는 이름은 그 날짜를 덮는 소속 기록에서, 없으면 가장 늦게 본 소속 기록에서 찾고, 그날 이름이 있으면 그 이름이다', async () => {
+    await sighting('ocid-낟낟', '살름', { maple: 'maple-옛', nexon: 'account-main' }, '2026-09-01', '2026-09-30')
+    await sighting('ocid-낟낟', '낟낟', MAIN, '2026-10-01', '2026-10-31')
+    await saveDatedName('ocid-낟낟', '2026-09-15', { name: '그날이름', worldName: '엘리시움' }, NOW)
+    for (const historyDate of ['2026-08-01', '2026-09-15', '2026-09-20', '2026-10-10']) {
+      await replaceEnhancementTotals('account-main', 'cube', historyDate, [draft({ historyDate })], NOW)
+    }
+    await replaceEnhancementTotals('account-main', 'cube', '2026-10-11', [draft({ historyDate: '2026-10-11', ocid: 'ocid-모름' })], NOW)
+
+    expect(
+      (await loadEnhancementTotals('2026-08-01', '2026-10-31')).map((total) => [total.historyDate, total.ocid, total.accountId, total.characterName]),
+    ).toEqual([
+      ['2026-08-01', 'ocid-낟낟', 'maple-1', '낟낟'],
+      ['2026-09-15', 'ocid-낟낟', 'maple-옛', '그날이름'],
+      ['2026-09-20', 'ocid-낟낟', 'maple-옛', '살름'],
+      ['2026-10-10', 'ocid-낟낟', 'maple-1', '낟낟'],
+      ['2026-10-11', 'ocid-모름', null, null],
     ])
   })
 })
@@ -193,8 +237,7 @@ async function seedHistory(rows: { id: string; kind: string; date: string; name:
 // 리프 전 줄은 리프 뒤 ocid 에 붙지만 그 월드는 리프 전 월드다. 같은 기간의 스타포스 줄이 그 월드를 든다.
 describe('리프 전 월드', () => {
   it('리프한 날 앞의 그 캐릭터 스타포스 줄 가운데 날짜가 가까운 줄의 월드다', async () => {
-    const starforce = (historyDate: string, worldKey: string) =>
-      draft({ historyDate, enhancementType: 'starforce', enhancementCategory: 'starforce', worldKey })
+    const starforce = (historyDate: string, worldKey: string) => draft({ historyDate, enhancementCategory: 'starforce', worldKey })
     await replaceEnhancementTotals('account-main', 'starforce', '2026-08-01', [starforce('2026-08-01', 'challengers_2')], NOW)
     await replaceEnhancementTotals('account-main', 'starforce', '2026-09-20', [starforce('2026-09-20', 'elysium')], NOW)
 
@@ -217,8 +260,9 @@ async function seenAs(ocid: string, name: string, worldKey: string): Promise<voi
   )
 }
 
+// 새 DB 는 열 때 기기 변환을 마쳐, 옮긴 합계가 변환한 표의 모양으로 들어가는지 본다.
 describe('옛 원본을 합계로 옮기기', () => {
-  it('날짜 · 종류마다 앱이 본 캐릭터에 붙여 메인 계정으로 적고, 다 옮기면 표시를 남긴다', async () => {
+  it('날짜 · 종류마다 앱이 본 캐릭터에 붙여 적고, 다 옮기면 표시를 남긴다', async () => {
     await seenAs('o-낟낟', '낟낟', 'elysium')
     await seenAs('o-머리', '머리맨들맨둘', 'special')
     await seedHistory([
@@ -231,13 +275,12 @@ describe('옛 원본을 합계로 옮기기', () => {
     await ensureEnhancementTotals()
 
     const totals = await loadEnhancementTotals('2026-10-01', '2026-10-02')
-    expect(totals.map((total) => [total.historyDate, total.ocid, total.enhancementType, total.attempts, total.eventWorld]))
+    expect(totals.map((total) => [total.historyDate, total.ocid, total.enhancementCategory, total.attempts, total.eventWorld]))
       .toEqual([
-        ['2026-10-01', 'o-낟낟', 'cube', 2, false],
+        ['2026-10-01', 'o-낟낟', 'cube_reset', 2, false],
         ['2026-10-02', 'o-낟낟', 'starforce', 1, false],
-        ['2026-10-02', 'o-머리', 'cube', 1, true],
+        ['2026-10-02', 'o-머리', 'cube_reset', 1, true],
       ])
-    expect(new Set(totals.map((total) => total.nexonAccountId))).toEqual(new Set(['account-main']))
     expect(moved.markEnhancementTotalsMoved).toHaveBeenCalledTimes(1)
     expect(historyTableExists()).toBe(false)
   })

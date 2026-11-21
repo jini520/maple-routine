@@ -11,7 +11,7 @@ import { isChallengersWorld } from '../../lib/world/worlds'
 import { moveBossProfitCalculatorRecordsToOcid } from '../../storage/boss-profit-calculator-records'
 import { moveBossRecordsToOcid } from '../../storage/boss-profit'
 import { getCharacterProfiles } from '../../storage/character-profiles'
-import { getCharacterWorldLeaps } from '../../storage/character-world-leaps'
+import { getCharacterWorldLeaps, moveWorldLeapsToOcid } from '../../storage/character-world-leaps'
 import { moveIncomeRecordsToOcid } from '../../storage/income'
 import { moveLastBossIncomeTransfersToOcid } from '../../storage/last-boss-income-transfers'
 import { moveLastEpicDungeonRewardsToOcid } from '../../storage/last-epic-dungeon-rewards'
@@ -54,6 +54,8 @@ async function moveLink(fromOcid: string, toOcid: string): Promise<number> {
     // 약속 화면은 캐시만 그린다. 낡은 캐시를 다시 저장하면 옮긴 ocid 가 옛 ocid 로 돌아간다.
     void queryClient.invalidateQueries({ queryKey: queryKeys.partyAppointments() })
   }
+  // 다시 리프한 캐릭터는 앞 연결도 지금 ocid 를 가리키게 옮긴다. 서버 표처럼 한 캐릭터의 연결이 모두 그 캐릭터를 가리켜야 한다.
+  await moveWorldLeapsToOcid(fromOcid, toOcid).catch(ignore)
   return bossPeriods
 }
 

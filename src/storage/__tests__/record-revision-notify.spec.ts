@@ -3,7 +3,6 @@
 import { readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
 
-import { notifyEnhancementTotalsChanged, subscribeEnhancementTotalsRevision } from '../enhancement-totals'
 import { bumpIncomeRecordsRevision, subscribeIncomeRecordsRevision } from '../income'
 import { batchRecordWrites } from '../record-revision-batch'
 import { bumpSpendRecordsRevision, subscribeSpendRecordsRevision } from '../spend'
@@ -14,7 +13,6 @@ describe('기록 표의 판 알림', () => {
   it.each([
     ['수입', subscribeIncomeRecordsRevision, bumpIncomeRecordsRevision],
     ['지출', subscribeSpendRecordsRevision, bumpSpendRecordsRevision],
-    ['강화 합계', subscribeEnhancementTotalsRevision, notifyEnhancementTotalsChanged],
   ])('%s 표는 반복 안의 여러 쓰기에 알림을 한 번 낸다', async (_name, subscribe, bump) => {
     const listener = jest.fn()
     const unsubscribe = subscribe(listener)
