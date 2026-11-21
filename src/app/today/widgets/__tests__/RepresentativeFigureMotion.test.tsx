@@ -57,6 +57,9 @@ function 주소들(imageUrl: string, frames: readonly LookFrame[]): string[] {
   return frames.map((frame) => lookFrameUrl(imageUrl, frame))
 }
 
+/** 깜빡임 간격이 3.5초가 되는 무작위 값. 7.5초 동안 깜빡임이 꼭 든다 */
+const RANDOM_VALUE = 0.5
+
 beforeEach(() => {
   jest.useFakeTimers()
   jest.clearAllMocks()
@@ -133,7 +136,9 @@ describe('움직임', () => {
     expect([...seen].sort()).toEqual(['A24.0|E02.0', 'A24.1|E02.0'])
   })
 
+  // 깜빡임 간격과 동작 길이가 무작위라, 무작위를 고정하지 않으면 7.5초 안에 깜빡임이 들지 않는 판이 가끔 나온다.
   it('고르지 않은 캐릭터는 서기 1 로 서 있고 사이사이 눈을 깜빡인다', async () => {
+    const random = jest.spyOn(Math, 'random').mockReturnValue(RANDOM_VALUE)
     const view = await 위젯()
     const seen = new Set<string>()
 
@@ -143,6 +148,7 @@ describe('움직임', () => {
       })
       보이는그림(view).forEach((key) => seen.add(key))
     }
+    random.mockRestore()
 
     expect([...seen].every((key) => key.startsWith('A00.'))).toBe(true)
     expect([...seen].some((key) => key.endsWith('|E06.1'))).toBe(true)
