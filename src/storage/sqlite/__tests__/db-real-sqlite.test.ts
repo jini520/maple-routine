@@ -11,6 +11,7 @@
  * 차례·개수는 여기 말고 `db.spec.ts` 다(그쪽이 훨씬 싸다).
  */
 import { closeBossProfitDb, getBossProfitDb } from '../db'
+import { runDeviceConversion } from '../device-conversion'
 import { __setMigrationCeilingForTest, LEGACY_TABLES_DROPPED_AT } from '../migrations'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { getFragmentStorage, getIncomeRecordsBetween, insertIncomeRecord, type IncomeRecord } from '../../income'
@@ -80,6 +81,14 @@ let real: RealSqlite
  * 버전은 `legacy-tables-real-sqlite.test.ts` 가 본다.
  */
 const BEFORE_LEGACY_DROP = LEGACY_TABLES_DROPPED_AT - 1
+
+/**
+ * 이관이 옮긴 기록을 화면 코드로 읽기 전에 1.0.15 기기 변환을 돌린다. 기기도 이관 뒤 변환을 거쳐 화면을 연다. 변환은 이관
+ * 상한과 상관없이 돌고, 다 돈 DB 에서는 아무것도 안 한다.
+ */
+async function convertDevice(): Promise<void> {
+  await runDeviceConversion(await getBossProfitDb())
+}
 
 beforeEach(() => {
   __setMigrationCeilingForTest(BEFORE_LEGACY_DROP)
@@ -600,6 +609,7 @@ describe('버전 이관: 드롭 기록에 아이템 key 를 채운다', () => {
     )
     expect(rows).toHaveLength(5)
     expect(rows[4]).toEqual({ item_key: null, item_name: '익셉셔널 해머', box_origin_key: null, box_origin: null })
+    await convertDevice()
     expect(await getAllBossDropRecords(['ocid-1'])).toHaveLength(4)
   })
 })
@@ -713,7 +723,7 @@ describe('버전 이관: 보스 기록 표의 기본키를 보스 key 로 다시
   // 새 기본키가 보스 key 라 이름 칸이 달라도 같은 행을 고친다.
   it('다시 만든 표는 보스 key 로 행을 가른다', async () => {
     seedOldBossTables()
-    await getBossProfitDb()
+    await convertDevice()
 
     await upsertBossProfitRecord({
       ocid: 'ocid-1',
@@ -862,7 +872,7 @@ describe('버전 이관: 수익 기록 · 프로필에 월드 key 를 채운다'
   it('월드 이름으로 월드 key 를 채우고, 월드를 모르는 행은 비워 둔다', async () => {
     seedV5Device()
 
-    await getBossProfitDb()
+    await convertDevice()
 
     const records = await getBossProfitRecords(['ocid-1', 'ocid-2', 'ocid-3'], ['2026-09-10'])
     expect(records.map((record) => [record.ocid, record.world, record.worldKey]).sort()).toEqual([
@@ -946,7 +956,7 @@ describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 �
     )
     await rewindTo(7)
 
-    await getBossProfitDb()
+    await convertDevice()
 
     const records = await getBossProfitRecords(['ocid-1'], ['2026-09-17'])
     expect(records.map((each) => [each.bossKey, each.priceMeso, each.payoutMeso]).sort()).toEqual([
@@ -978,7 +988,7 @@ describe('버전 이관: 카링 노멀과 찬란한 흉성 노멀의 뒤바뀐 �
     )
     await rewindTo(7)
 
-    await getBossProfitDb()
+    await convertDevice()
 
     const records = await getBossProfitRecords(['ocid-2'], ['2026-09-17'])
     expect(records.map((each) => [each.bossKey, each.difficulty, each.priceMeso, each.payoutMeso]).sort()).toEqual([
@@ -1095,13 +1105,15 @@ describe('버전 이관: 드롭 비율 칸 넷을 지운다', () => {
     expect(columns('boss_party_settings')).not.toContain('drop_my_share')
     expect(columns('boss_party_settings')).not.toContain('drop_shares_total')
     expect(columns('boss_profit_records')).not.toContain('drop_my_share')
+    // 기기 변환이 비율을 % 의 1000 배로 옮기고, 등급을 따르는 설정의 요율을 비운다.
+    await convertDevice()
     const [setting] = await getBossPartySettings(['ocid-1'])
     expect(setting).toMatchObject({
       bossKey: 'lotus',
       partySize: 2,
-      crystalMyShare: 2,
-      crystalSharesTotal: 3,
-      splitFeePercent: 5,
+      crystalMyShare: 66667,
+      crystalSharesTotal: 100000,
+      splitFeePercent: null,
       splitFeeAuto: true,
     })
     expect(userVersion(real)).toBe(BEFORE_LEGACY_DROP)
@@ -1224,9 +1236,9 @@ describe('버전 이관: 다시 못 캐는 날짜 없는 보스 기록에 기간
     await getBossProfitDb()
     seedOldProfit(record({ periodKey: '2026-08-27' }))
     seedOldProfit(record(blackMage('2026-08')))
-    expect(await getDatedBossProfitRecords(['ocid-1'], '2026-07-01', '2026-09-30')).toEqual([])
 
     await datesAfterMigration()
+    await convertDevice()
 
     const dated = await getDatedBossProfitRecords(['ocid-1'], '2026-07-01', '2026-09-30')
     expect(dated.map((each) => [each.bossKey, each.defeatedOn]).sort()).toEqual([

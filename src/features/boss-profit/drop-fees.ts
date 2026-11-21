@@ -21,14 +21,20 @@ export function dropFeeSeeds(drop: RecordedDrop, edit: FeesValue | undefined): [
   ]
 }
 
-/** 카드가 준 수수료를 드롭 기록 칸으로. 도메인 타입은 빈 칸을 `undefined` 로 든다. */
+/**
+ * 카드가 준 수수료를 드롭 기록 칸으로. 도메인 타입은 빈 칸을 `undefined` 로 든다.
+ *
+ * 가격을 고치는 패치는 모두 이것을 펼치므로 저장된 받는 메소도 여기서 비운다. 남기면 고친 가격 대신 옛 금액이 보이고,
+ * 저장할 때 다시 센다.
+ */
 export function dropFeeFields(
   fees: FeesValue | undefined,
-): Pick<RecordedDrop, 'saleFeePercent' | 'splitFeePercent' | 'saleFeeAuto' | 'splitFeeAuto'> {
+): Pick<RecordedDrop, 'saleFeePercent' | 'splitFeePercent' | 'saleFeeAuto' | 'splitFeeAuto' | 'saleReceivedMeso'> {
   return {
     saleFeePercent: fees?.saleFeePercent ?? undefined,
     saleFeeAuto: fees?.saleFeeAuto === true ? true : undefined,
     splitFeePercent: fees?.splitFeePercent ?? undefined,
     splitFeeAuto: fees?.splitFeeAuto === true ? true : undefined,
+    saleReceivedMeso: undefined,
   }
 }

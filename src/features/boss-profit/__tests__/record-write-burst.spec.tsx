@@ -34,7 +34,7 @@ function PriceButton(): React.JSX.Element {
 async function writeDates(count: number): Promise<void> {
   for (let index = 0; index < count; index++) {
     await setBossProfitDefeatedOn(
-      { ocid: 'ocid-1', bossKey: `boss-${index}`, difficulty: 'hard', periodKey: '2026-09-17' },
+      { ocid: `ocid-${index}`, bossKey: 'lucid', difficulty: 'hard', periodKey: '2026-09-17' },
       '2026-09-18',
     )
   }

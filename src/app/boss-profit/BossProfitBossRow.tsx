@@ -411,8 +411,7 @@ export function BossProfitBossRow(props: BossProfitBossRowProps): React.JSX.Elem
           difficulty={row.difficulty}
           periodKey={row.periodKey}
           isComplete={row.isComplete}
-          // 시트에는 **기록된 순서**를 넘긴다. 저장이 replace-all 이라 정렬한 배열을 넘기면
-          // 그 순서가 `sort_order` 로 굳어, 보여 주려던 차례가 저장 계층까지 내려간다.
+          // 시트에는 **기록된 순서**를 넘긴다. 저장 계층이 드롭 표의 차례로 늘어놓은 순서다.
           initialDrops={props.drops}
           onSave={(drops) => setBossDrops(row, drops)}
           onClose={() => setIsDropSheetOpen(false)}

@@ -40,8 +40,7 @@ export async function recalcDropUpdates(): Promise<DropFeeUpdate[]> {
     const saleFeePercent = drop.saleFeeAuto ? percent : drop.saleFeePercent
     const splitFeePercent = drop.splitFeeAuto ? percent : drop.splitFeePercent
     if (saleFeePercent === drop.saleFeePercent && splitFeePercent === drop.splitFeePercent) continue
-    const { ocid, bossKey, difficulty, periodKey, dropIndex } = drop
-    updates.push({ ocid, bossKey, difficulty, periodKey, dropIndex, saleFeePercent, splitFeePercent })
+    updates.push({ dropRecordId: drop.dropRecordId, saleFeePercent, splitFeePercent })
   }
   return updates
 }

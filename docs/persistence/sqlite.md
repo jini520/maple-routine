@@ -8,13 +8,14 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `storage/sqlite/db.ts` | 테이블 정의(`TABLE_DEFINITIONS`) · DB 열기와 닫기 · 칸 보강(`ensureColumn`) · 버전 23 전 DB 의 옛 표 준비(`prepareLegacyTables`) · `income_records` 재작성 |
+| `storage/sqlite/db.ts` | 테이블 정의(`TABLE_DEFINITIONS`) · 기기 변환 단계에 맞는 보스 표 정의 고르기(`bossTableDefinitions`) · DB 열기와 닫기 · 칸 보강(`ensureColumn`) · 버전 23 전 DB 의 옛 표 준비(`prepareLegacyTables`) · `income_records` 재작성 |
 | `storage/sqlite/legacy-tables.ts` | 버전 23 이 지우는 옛 표 여섯의 정의. 앞 버전 이관이 읽는 모양이라 고치지 않는다 |
-| `storage/sqlite/boss-tables.ts` | 보스 표 셋의 정의를 한 곳에 둔다. 정상 생성과 버전 4 재작성에서 함께 쓴다 |
+| `storage/sqlite/boss-tables.ts` | 보스 기록 표의 정의 세 무리. 버전 14 전의 옛 표 셋(버전 4 · 12 가 이 정의로 다시 만든다), 버전 14 의 표 셋(기기 변환 전 DB), 기기 변환이 만드는 지금 표 셋이다. 앞의 둘은 앞 버전 이관이 읽는 모양이라 고치지 않는다 |
 | `storage/sqlite/cashbook-tables.ts` | 가계부 기록 표 여섯과 인벤토리 표의 정의 · 날짜 인덱스 · 인벤토리 한 줄 기준 인덱스 |
 | `storage/sqlite/record-key-tables.ts` | 버전 16 이 uuid 기본키로 다시 쓴 다섯 표(캐릭터 · 월드 리프 · 강화 조회 기록 · MVP 등급 · 메이플 ID 소속)의 정의 |
 | `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 23) |
 | `storage/sqlite/device-conversion.ts` | 1.0.15 기기 변환의 단계 목록과 돌리는 함수(`runDeviceConversion`). 아직 안 돈 단계를 한 트랜잭션으로 돌리고 마친 번호를 `device_conversion` 에 적는다. 돌 단계가 있으면 먼저 `…-before-1.0.15.db` 사본을 뜬다([[ADR-286]] 결정 1) |
+| `storage/sqlite/convert-boss-tables.ts` | 기기 변환의 보스 기록 단계(`convertBossTables`). 버전 14 의 표 셋을 지금 표 셋으로 옮기고 옛 표를 지운다([[ADR-286]] 결정 3) |
 | `storage/sqlite/transaction.ts` | 쓰기 여럿을 트랜잭션 하나로 묶는 `inTransaction`. 같은 연결의 트랜잭션은 차례로 돈다. 겹쳐 열면 SQLite 가 뒤의 것을 거절하기 때문이다(앱을 켤 때 계정 칸 채우기와 강화 합계 옮기기가 겹쳤다). 그래서 `work` 안에서 다시 부르면 멈춘다. 트랜잭션 안에서 못 도는 `VACUUM` 은 같은 줄 뒤에 세운다(`outsideTransaction`) |
 | `storage/legacy-space.ts` | 옛 표를 다 지운 뒤 한 번 사본 파일을 지우고 `VACUUM` 하는 회수([[ADR-078]] 결정 11) |
 | `storage/sqlite/uuid.ts` | 행 식별자를 SQLite 가 만드는 식(`NEW_UUID_SQL`) |
@@ -29,13 +30,19 @@
 1. 같은 이름의 커넥션이 남아 있으면 닫는다.
 2. `PRAGMA foreign_keys = ON` 으로 외래키를 켠다. op-sqlite 는 기본이 꺼져 있어, 켜지 않으면 `ON DELETE CASCADE` 가
    안 돈다. 트랜잭션 안에서는 이 문장이 먹지 않아 맨 앞에서 켠다.
-3. `user_version` 이 23 보다 작으면 옛 표 여섯(`LEGACY_TABLE_DEFINITIONS`)을 만들고, `income_records.meso_amount` 가
+3. 표가 하나도 없으면 새로 설치한 기기로 본다(9 단계가 쓴다).
+4. `device_conversion` 표를 만들고, 거기 적힌 단계 번호로 보스 기록 표를 어느 정의로 만들지 고른다. 보스 기록 단계까지 돈
+   DB 는 지금 표 셋, 아니면 버전 14 의 표 셋이다. 번호를 보지 않으면 변환이 지운 표가 빈 표로 다시 생긴다.
+5. `user_version` 이 23 보다 작으면 옛 표 여섯(`LEGACY_TABLE_DEFINITIONS`)을 만들고, `income_records.meso_amount` 가
    `NOT NULL` 이면 그 표를 다시 쓰고, 옛 표에 나중에 생긴 칸을 더하고, 옛 `boss_drop_records` 의 빈 분배 칸을 채운다. 앞
    버전 이관이 이 모양을 읽는다. 23 이상이면 건너뛴다. 지운 옛 표가 빈 표로 다시 생기지 않게 하려는 것이다([[ADR-078]] 결정 9).
-4. `TABLE_DEFINITIONS` 의 `CREATE TABLE IF NOT EXISTS` 를 모두 실행한다.
-5. `ensureColumn` 으로 나중에 생긴 칸을 지금 테이블에 더한다.
-6. `user_version` 보다 큰 버전 이관을 차례로 실행한다.
-7. 인덱스 `boss_drops_period` · `cashbook_entries_entry_date` · `enhancement_totals_date` · `inventory_items_owner` 를 만든다.
+6. 고른 보스 표 정의와 `TABLE_DEFINITIONS` 의 `CREATE TABLE IF NOT EXISTS` 를 모두 실행한다.
+7. `ensureColumn` 으로 나중에 생긴 칸을 지금 테이블에 더한다. 버전 14 표의 칸(`crystal_excluded` · `over_crystal_limit`)은
+   기기 변환 전 DB 에만 더한다. 변환 뒤에는 그 표가 없다.
+8. `user_version` 보다 큰 버전 이관을 차례로 실행한다.
+9. 새로 설치한 기기면 기기 변환을 곧바로 돌린다. 바꿀 줄이 없어 게임 데이터 없이 돌고 사본을 뜨지 않는다.
+10. 인덱스 `cashbook_entries_entry_date` · `enhancement_totals_date` · `inventory_items_owner` 를 만든다. 기기 변환 전 DB 에는
+    `boss_drops_period` 도 만든다. 변환 뒤의 `boss_drops` 에는 그 인덱스의 칸이 없다.
 
 열기는 10초, 닫기(`closeBossProfitDb`)는 5초 상한이 있다. OTA 적용과 데이터 삭제는 리로드 전에 닫는다.
 
@@ -45,25 +52,28 @@
 
 ## 테이블
 
-외래키는 보스 기록 표 셋과 가계부 기록 표 여섯에만 있다. `boss_parties` → `boss_party_periods` → `boss_drops`, 그리고
+외래키는 보스 기록 표 둘과 가계부 기록 표 여섯에만 있다. `boss_profit_entries` → `boss_drops`, 그리고
 `cashbook_entries` → `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` · `cashbook_entry_transfer_inputs` ·
 `cashbook_entry_exchange_inputs` 차례로 부모를 가리키고, 부모를 지우면 자식도
-지워진다(`ON DELETE CASCADE`). 가계부 품목의 `inventory_item_id` 도 `inventory_items` 를 가리킨다. 다른 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서,
+지워진다(`ON DELETE CASCADE`). 보스 분배 설정(`boss_split_settings`)은 수익 건의 부모가 아니다. 가계부 품목의 `inventory_item_id` 도 `inventory_items` 를 가리킨다. 다른 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서,
 한쪽만 지우면 짝이 없는 행이 남는다. 그래서 데이터 삭제는 서로 이어 읽는 표를 한 그룹으로 함께 지운다(`lifecycle.md`).
 
 `데이터 삭제` 칸은 데이터 삭제의 어느 그룹이 그 표를 지우는지다. `남긴다` 는 어떤 그룹도 지우지 않는 표다. `행 단위` 는
-한 표에 두 그룹의 행이 섞여 있어 표를 통째로 지우지 않는 표다(`BOSS_TABLE_NAMES`).
+한 표에 두 그룹의 행이 섞여 있어 표를 통째로 지우지 않는 표다(`storage/cache-data.ts` 의 `CLEAR_BOSS_RECORDS` ·
+`CLEAR_BOSS_SPLITS`).
 
 옛 보스 기록 표 넷(`boss_profit_records` · `boss_party_settings` · `boss_party_period_overrides` · `boss_drop_records`)은
 버전 14 가 새 표 셋으로, 옛 가계부 표 둘(`income_records` · `spend_records`)은 버전 15 가 기록 표 셋으로 옮겼다. 여섯은
 버전 23 이 지운다([[ADR-078]] 결정 9). 옛 강화 원본(`enhancement_history`)은 합계로 옮긴 뒤 코드가 지운다. 다 지운 뒤 한 번
-사본 파일(`…-before-v15.db`)을 지우고 `VACUUM` 한다([[ADR-078]] 결정 11). 그래서 아래 표에서 뺐다.
+사본 파일(`…-before-v15.db`)을 지우고 `VACUUM` 한다([[ADR-078]] 결정 11). 버전 14 의 보스 기록 표 셋(`boss_parties` ·
+`boss_party_periods` · `boss_drops`)은 1.0.15 기기 변환이 아래 표 셋으로 옮기고 지운다([[ADR-286]] 결정 3). `boss_drops` 는
+칸이 바뀐 같은 이름의 표가 된다. 변환 전 DB 는 옛 표 셋을 그대로 쓴다. 그래서 아래 표에서 뺐다.
 
 | 테이블 | 기본키 | 담는 것 | 쓰는 곳 | 데이터 삭제 | 문서 |
 |---|---|---|---|---|---|
-| `boss_parties` | `id`(uuid, `(ocid, boss_key, difficulty)` 는 UNIQUE) | 캐릭터 · 보스 · 난이도 조합. 분배 칸이 보스 관리의 파티 설정이고, 비어 있으면 정한 적이 없다 | `storage/boss-party-settings.ts` | 행 단위(분배 칸은 수동 선택 항목) | [[ADR-078]] |
-| `boss_party_periods` | `id`(uuid, `(party_id, period_key)` 는 UNIQUE) | 조합 하나의 한 기간. `cleared` 면 처치 기록(결정석 가격 · 받은 몫 · 처치 날짜 · 분배)이고, `open` 이면 그 기간만 고친 분배 값이나 드롭만 있다. 월드도 여기 있다 | `storage/boss-profit.ts` · `storage/boss-party-period-overrides.ts` | 행 단위(처치는 보스 처치 · 드롭, 그 기간 값은 수동 선택 항목) | [[ADR-078]] |
-| `boss_drops` | `id`(uuid, 서버의 `drop_record_id`) | 기간 행에 붙는 드롭 한 개와 판매가 · 분배 · 수수료. 상태는 서버와 같은 `record_status` | `storage/boss-drops.ts` | 행 단위(보스 처치 · 드롭) | [[ADR-078]] |
+| `boss_split_settings` | `id`(uuid, `(ocid, boss_difficulty_id)` 는 UNIQUE) | 캐릭터 · 보스 난이도마다의 보스 관리 파티 설정. 분배를 정한 줄만 있다 | `storage/boss-party-settings.ts` | 지운다 (수동 선택 항목) | [[ADR-078]] |
+| `boss_profit_entries` | `id`(uuid, `(ocid, boss_difficulty_id, period_code)` 는 UNIQUE) | 한 캐릭터가 한 기간에 한 보스 난이도에서 거둔 수익 한 건. `clear_recorded_by` 가 차 있으면 처치 기록(결정석 가격 · 받은 메소 · 처치 날짜 · 분배)이고, 비어 있으면 그 기간만 고친 분배나 드롭만 있다. 월드도 여기 있다 | `storage/boss-profit.ts` · `storage/boss-party-period-overrides.ts` · `storage/boss-periods.ts` | 행 단위(처치는 보스 처치 · 드롭, 그 기간 값은 수동 선택 항목) | [[ADR-078]] |
+| `boss_drops` | `id`(uuid, 서버의 `drop_record_id`, `(profit_entry_id, item_id)` 는 UNIQUE) | 수익 건에 붙는 드롭 한 개와 판매가 · 받는 메소 · 분배 · 수수료. 상태는 서버 `boss_drops` 와 같은 `price_status` | `storage/boss-drops.ts` | 지운다 (보스 처치 · 드롭) | [[ADR-078]] |
 | `character_profiles` | `id`(uuid, `ocid` 는 UNIQUE) | 기록 옆에 보일 캐릭터 이름 · 초상 주소 · 월드 · 레벨 · 직업. 리프 자동 판정이 읽는 만든 날 | `storage/character-profiles.ts` | 남긴다 | `features/character.md` |
 | `character_world_leaps` | `id`(uuid, `from_ocid` 는 UNIQUE) | 월드 리프로 바뀐 옛 ocid 와 새 ocid 의 연결. 리프한 기간의 중복 기록을 정리하고 옛 ocid 의 기록을 새 ocid 로 옮기는 데 쓴다([[ADR-101]] 결정 22) | `storage/character-world-leaps.ts` | 남긴다 | `features/character.md` |
 | `enhancement_totals` | `id`(uuid, `(ocid, history_date, enhancement_category, item_group)` 는 UNIQUE) | 강화 내역을 날짜 · 캐릭터(ocid) · 분류 · 장비별로 묶은 합계. 응답이 준 그날 이름을 그날 그 이름이었던 캐릭터에 붙여 적는다. 비용은 MVP 할인 전 시도 비용과 할인을 받지 않는 파괴 방지 · 슈페리얼 비용이고, 스타포스는 그날 첫 성과 끝 성을 든다. 이벤트 월드 판정도 든다 | `storage/enhancement-totals.ts` | 지운다 (강화) | [[ADR-100]] · [[ADR-101]] |
@@ -92,16 +102,16 @@
 
 ### 칸
 
-`NN` 은 `NOT NULL` 이다. 각 칸의 뜻은 표마다의 문서와 `db.ts` · `boss-tables.ts` · `record-key-tables.ts` 의 DDL 주석에 있다. 칸 이름은 서버 규칙을 따른다([[ADR-098]] 결정 7).
+`NN` 은 `NOT NULL` 이다. 각 칸의 뜻은 표마다의 문서와 `db.ts` · `boss-tables.ts` · `record-key-tables.ts` 의 DDL 주석에 있다. 칸 이름은 서버 규칙을 따른다([[ADR-098]] 결정 7). 보스 기록 표 셋은 칸 이름이 서버 표와 같다([[ADR-286]] 결정 2).
 
 `nexon_account_id` 는 인증 수단의 넥슨 계정 id 다. 빈 글자는 계정 칸이 생기기 전의 행이고, 앱을 켤 때 메인 계정 id 로 채운다(`fillLegacyAccountIds`). `NULL` 은 계정을 모르는 자격(저장 전에 검증하는 키)으로 본 소속이거나, 캐릭터나 메이플 ID 가 있는 가계부 기록이다. 가계부 기록에서 이 칸이 찬 행은 주인을 모르는 옛 기록뿐이다([[ADR-161]] 결정 4). 넥슨 로그인이 메이플 ID 가 같은 키를 거두면 로그인은 그 키의 id 를 이어받고, 로그인의 옛 id 로 적힌 줄은 그 id 로 옮긴다. 겹치면 나중 줄이 남는다([[ADR-098]] 결정 5).
 가계부 기록의 `account_id` 는 메이플 ID 기록의 메이플 ID 이고, `character_accounts.account_id` 와 같은 값이다. 캐릭터 기록과 캐릭터 없이 적은 옛 기록은 `NULL` 이다. 메이플 ID 를 고를 수 있는 분류의 옛 기록은 그 넥슨 계정의 메이플 ID 가 하나뿐이면 앱을 켤 때 그 ID 로 채운다([[ADR-161]] 결정 4 · 5).
 
 | 테이블 | 칸 |
 |---|---|
-| `boss_parties` | `id` NN · `ocid` NN · `boss_key` NN · `difficulty` NN · 분배 조건 · `crystal_excluded` · `created_at` NN · `updated_at` NN |
-| `boss_party_periods` | `id` NN · `party_id` NN · `period_key` NN · `cycle` NN · `world_key` · `clear_status` NN · `price_meso` · `payout_meso` · `defeated_date` · `source` · 분배 조건 · `crystal_excluded` · `over_crystal_limit` · `created_at` NN · `updated_at` NN |
-| `boss_drops` | `id` NN · `period_id` NN · `sort_order` NN · `category` NN · `item_key` NN · `box_origin_key` · `ring_level` · `record_status` NN · `price_meso` · `priced_at` · `sale_fee_percent` · `sale_fee_auto` · 분배 조건 · `created_at` NN · `updated_at` NN |
+| `boss_split_settings` | `id` NN · `ocid` NN · `boss_difficulty_id` NN · 분배 칸 · `created_at` NN · `updated_at` NN |
+| `boss_profit_entries` | `id` NN · `ocid` NN · `boss_difficulty_id` NN · `period_code` NN · `world_id` · `crystal_price_meso` · `crystal_received_meso` · 분배 칸 · `cleared_date` · `clear_recorded_by` · `over_crystal_sale_limit` · `created_at` NN · `updated_at` NN |
+| `boss_drops` | `id` NN · `profit_entry_id` NN · `item_id` NN · `category` NN · `price_status` NN · `sale_price_meso` · `sale_received_meso` · `priced_at` · `sale_fee_percent` · `sale_fee_follows_mvp_grade` NN · 분배 칸 · `created_at` NN · `updated_at` NN |
 | `character_profiles` | `id` NN · `ocid` NN UNIQUE · `name` NN · `image_url` NN · `world` · `world_key` · `level` · `job_class` · `created_date` · `updated_at` NN |
 | `character_world_leaps` | `id` NN · `from_ocid` NN UNIQUE · `to_ocid` NN · `linked_at` NN |
 | `enhancement_totals` | `id` NN · `nexon_account_id` NN · `history_date` NN · `character_name` NN · `ocid` NN · `account_id` NN · `world_key` · `enhancement_type` NN · `enhancement_category` NN · `item_group` NN · `item_key` · `item_name` NN · `attempts` NN · `attempt_cost_meso` NN · `destroy_defence_cost_meso` NN · `superior_cost_meso` NN(기본 0) · `from_star` · `to_star`(스타포스만, 다른 분류와 칸이 생기기 전 줄은 `NULL`) · `event_world`(1 이벤트 월드 · 0 아님 · `NULL` 모름) · `updated_at` NN |
@@ -128,20 +138,31 @@
 | `device_conversion` | `version` NN |
 | `query_cache` | `id` NN · `key` NN UNIQUE · `value` NN |
 
-분배 조건은 세 표가 같이 쓰는 여섯 칸이다. `split_mode`(`even` · `ratio`) · `party_size` · `my_share` · `shares_total` ·
-`split_fee_percent` · `split_fee_auto`. 정의는 `boss-tables.ts` 한 곳에 있다. 이름은 저장하지 않는다. 보스 · 아이템 · 월드
-이름은 읽을 때 key 로 게임 데이터에서 찾는다([[ADR-078]] 결정 6).
+분배 칸은 세 표가 같이 쓰는 다섯 칸이다. `split_type`(`even` · `ratio` · `excluded`, 드롭에는 `excluded` 가 없다) · `party_size` ·
+`split_share_millipercent`(내 % 에 1000 을 곱한 정수) · `split_fee_percent` · `split_fee_follows_mvp_grade` NN(1 · 0). 정의는
+`boss-tables.ts` 한 곳에 있다([[ADR-078]] 결정 2). 분배 설정 표는 `split_type` 을 비울 수 없다(CHECK). 분배를 정한 줄만 두기
+때문이다. `split_type` 이 `excluded` 면 분배 방식 `제외` 다. 인원 · 내 몫 · 요율이 비어 있고 솔로로 읽는다([[ADR-038]] 결정 12).
 
-`boss_parties` · `boss_party_periods` 에는 분배 칸 `crystal_excluded` 가 하나 더 있다. `1` 이면 분배 방식 `제외` 다([[ADR-038]]
-결정 12). `boss_party_periods.over_crystal_limit` 는 주간 결정석 판매 한도를 넘겨 0 메소로 읽는 처치다. `payout_meso` 는 그대로
-두고 읽을 때 0 으로 읽는다([[ADR-042]] 결정 15). 두 칸 모두 옛 기기에는 `ensureColumn` 이 붙인다.
+게임 데이터는 줄 id(`boss_difficulty_id` · `item_id` · `world_id`)로 가리키고 이름은 저장하지 않는다. 저장 함수가 읽을 때 줄 id
+를 key 로 바꾸고, 이름은 그 key 로 게임 데이터에서 찾는다. 반지는 레벨 줄이고 상자에서 나온 연마석은 상자용 줄이다. 나온
+상자는 적지 않고 읽을 때 드롭 표에서 다시 찾는다(`lib/boss/drop-item-ids.ts`). 기간은 기간 값(`period_code`, 주간 `W202647` ·
+월간 `M202611`)이고 `lib/boss/period-code.ts` 가 기간 key 와 오간다([[ADR-078]] 결정 1 · 6).
 
-`boss_drops` 의 `(period_id, sort_order)` 에는 인덱스 `boss_drops_period` 가 있다. 유일 인덱스가 아니다. 한 행씩 고치는
-동안 `sort_order` 가 잠깐 겹치기 때문이다([[ADR-077]] 결정 8).
+처치했는지는 `boss_profit_entries.clear_recorded_by` 가 찼는지로 안다. 처치한 줄은 `crystal_price_meso` · `crystal_received_meso` ·
+`clear_recorded_by` 가 모두 차 있고 처치 전 줄은 셋 다 비어 있다(CHECK). `over_crystal_sale_limit` 는 주간 결정석 판매 한도를
+넘겨 0 메소로 읽는 처치다. `crystal_received_meso` 는 그대로 두고 읽을 때 0 으로 읽는다([[ADR-042]] 결정 15). 서버에는 없는
+기기만의 칸이다.
+
+`boss_drops.sale_received_meso` 는 판매 수수료와 분배를 반영해 내가 받는 메소다. 가격 · 분배 · 수수료를 고칠 때만 다시 센다
+([[ADR-044]] 결정 10). 드롭의 차례는 저장하지 않고 읽을 때 드롭 표의 차례로 늘어놓는다([[ADR-078]] 결정 5).
+
+기기 변환 전 DB 의 `boss_drops` 에는 `(period_id, sort_order)` 인덱스 `boss_drops_period` 가 있다. 유일 인덱스가 아니다. 그 표를
+쓰던 저장 함수가 한 행씩 고치는 동안 `sort_order` 가 잠깐 겹쳤기 때문이다([[ADR-077]] 결정 8).
 
 ## 테이블이나 칸을 더할 때
 
-1. `db.ts` 의 `TABLE_DEFINITIONS` 에 넣는다. 이 배열 밖에서 만들면 열 때 만들어지지 않는다.
+1. `db.ts` 의 `TABLE_DEFINITIONS` 에 넣는다. 이 배열 밖에서 만들면 열 때 만들어지지 않는다. 보스 기록 표는 기기 변환 단계에
+   따라 정의가 달라서 `bossTableDefinitions` 에 있다.
 2. 기본키는 uuid 한 칸으로 둔다. 같은 값의 행이 둘 있으면 안 되는 조합은 일반 인덱스가 아니라 `UNIQUE` 로 건다.
    조회 속도는 같고 중복 행만 거절한다. 일반 인덱스는 고치는 동안 값이 잠깐 겹치는 칸에만 쓴다([[ADR-077]] 결정 8).
 3. 칸을 더할 때는 `CREATE TABLE` 문과 `ensureColumn` 을 둘 다 고친다([[ADR-007]] 결정 4).
@@ -168,7 +189,7 @@
 | 11 | `fillUnreachableDefeatDates` | 날짜를 다시 알아낼 수 없는 보스 기록에 기간 첫날을 적는다 |
 | 12 | `rekeyDropRecordsByUuid` | 드롭 기록에 `drop_record_id` 를 채우고 그것을 기본키로 다시 만든다 |
 | 13 | `dropBossProfitPeriodChecks` | 읽는 코드가 없는 `boss_profit_period_checks` 표를 지운다. 조회했는지는 조회 원장이 답한다 |
-| 14 | `moveBossTablesToParties` | 옛 보스 기록 표 넷의 행을 새 표 셋으로 옮긴다. 옛 표는 지우지 않는다([[ADR-078]] 결정 8) |
+| 14 | `moveBossTablesToParties` | 옛 보스 기록 표 넷의 행을 버전 14 의 표 셋(`boss_parties` · `boss_party_periods` · `boss_drops`)으로 옮긴다. 옛 표는 지우지 않는다([[ADR-078]] 결정 8). 이 표 셋은 1.0.15 기기 변환이 지금 표로 다시 옮긴다([[ADR-286]] 결정 3) |
 | 15 | `moveCashbookRecordsToEntries` | 옛 가계부 표 둘의 행을 기록 표 셋으로 옮긴다. 옮기기 전에 DB 를 파일째 떠 둔다([[ADR-096]] 결정 9) |
 | 16 | `moveRecordKeysToUuid` | 기본키가 값의 조합이던 다섯 표를 uuid 기본키로 다시 쓰고, 칸 이름을 서버 규칙에 맞춘다. 계정 칸이 생기기 전의 행은 계정 칸에 빈 글자를 적는다([[ADR-098]]) |
 | 17 | `dropCashbookMemo` | 입력 시트가 모두 비워 두던 가계부 메모 칸을 지운다. 버전 22 가 다시 더한다 |

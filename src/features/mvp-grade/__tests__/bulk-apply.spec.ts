@@ -49,12 +49,10 @@ describe('일괄 적용이 고쳐 쓸 목록', () => {
 
   it('드롭은 판매 · 분배 두 칸에 같은 요율을 붙인다', async () => {
     mocked(getBulkFeeDropRecords).mockResolvedValue([
-      { ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', dropIndex: 0 },
-      { ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-07-30', dropIndex: 0 },
+      { dropRecordId: 'd1', ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', dropIndex: 0 },
+      { dropRecordId: 'd2', ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-07-30', dropIndex: 0 },
     ])
 
-    await expect(bulkDropUpdates()).resolves.toEqual([
-      { ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', dropIndex: 0, saleFeePercent: 3, splitFeePercent: 3 },
-    ])
+    await expect(bulkDropUpdates()).resolves.toEqual([{ dropRecordId: 'd1', saleFeePercent: 3, splitFeePercent: 3 }])
   })
 })

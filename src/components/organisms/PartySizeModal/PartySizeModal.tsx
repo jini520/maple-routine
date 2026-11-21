@@ -12,7 +12,7 @@
  * 머리는 원형 초상화 · 이름 · 난이도뿐이다. 일러스트 띠를 두었더니 머리가 높아져 모달이 컸다.
  *
  * 분배는 `기본`·`비율`·`제외` 세그먼트로 가른다. 지금 어느 쪽인지가 늘 보여야 해서 스위치가 아니다.
- * `제외` 는 고르기 전 분배를 지우지 않고 숨긴다. 숨긴 분배를 드롭 가격 카드가 처음 값으로 쓴다.
+ * `제외` 는 고르기 전 인원 · 비율 · 수수료를 지우고 솔로로 둔다. 다시 `기본` 이나 `비율` 을 고르면 새로 정한다.
  *
  * **언제 저장할지는 호출부가 정한다.** 인원 · 비율 · 수수료는 고치는 동안 여러 번 바뀌어서, 바뀔 때마다
  * 쓰면 저장과 토스트가 여러 번 일어난다.
@@ -26,6 +26,7 @@ import type { BossDifficulty } from '../../../types'
 import { Badge, Button, Text, TextInput, XIcon } from '../../atoms'
 import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
+import { auctionFeePercentOf } from '../../../lib/mvp/grades'
 import {
   acceptSharePercentText,
   crystalPayoutMeso,
@@ -49,7 +50,7 @@ export interface PartyModalShares {
   splitFeePercent: number | null
   /** 송금 수수료가 등급을 따라가나. 적용하면 요율은 그 등급 요율로 나간다 */
   splitFeeAuto?: boolean
-  /** 분배 방식 `제외`. 위 칸들은 숨겨 둔 분배다 */
+  /** 분배 방식 `제외`. 결정석을 팔지 않은 처치라 위 칸들이 비어 있다 */
   crystalExcluded?: boolean
 }
 
@@ -147,9 +148,10 @@ export function PartySizeModal(props: {
 
   const usesShares = draft.shares.crystalSharesTotal !== null
   const excluded = draft.shares.crystalExcluded === true
-  const splitFeePercent = draft.shares.splitFeePercent ?? 3
-  const splitFeeAuto = draft.shares.splitFeeAuto === true
   const autoFee = props.autoFee ?? null
+  // 등급을 따르는 동안은 요율 칸이 비어 그 등급 요율을 고른 것으로 보인다. 등급을 모르면 일반 요율이다.
+  const splitFeePercent = draft.shares.splitFeePercent ?? autoFee?.percent ?? auctionFeePercentOf(null)
+  const splitFeeAuto = draft.shares.splitFeeAuto === true
   /** 금액을 셀 송금 수수료. 자동이면 그 등급 요율이고, 적용도 이 값을 내보낸다. */
   const effectiveFeePercent = splitFeeAuto ? (autoFee?.percent ?? draft.shares.splitFeePercent) : draft.shares.splitFeePercent
   const priceMeso = props.crystalPriceMeso ?? null
@@ -224,19 +226,16 @@ export function PartySizeModal(props: {
                   selected={excluded ? '제외' : usesShares ? '비율' : '기본'}
                   size="md"
                   onSelect={(option) => {
+                    // `제외` 는 그 전의 인원 · 비율 · 수수료를 지우고 솔로로 둔다. 다시 고르면 새로 정한다.
                     if (option === '제외') {
-                      setShares({ ...draft.shares, crystalExcluded: true })
+                      setDraft({ partySize: 1, shares: { ...NO_SHARES, crystalExcluded: true } })
                       return
                     }
                     if (option === '기본') {
                       setShares(NO_SHARES)
                       return
                     }
-                    // `제외` 로 숨겨 둔 비율이 있으면 그대로 돌아온다.
-                    if (usesShares) {
-                      setShares({ ...draft.shares, crystalExcluded: false })
-                      return
-                    }
+                    if (usesShares) return
                     setPercentText(sharePercentText(SEED_SHARES.myShare, SEED_SHARES.sharesTotal))
                     setShares({
                       crystalMyShare: SEED_SHARES.myShare,

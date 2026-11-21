@@ -478,6 +478,7 @@ type PricePatch = Pick<
   | 'splitFeePercent'
   | 'saleFeeAuto'
   | 'splitFeeAuto'
+  | 'saleReceivedMeso'
 >
 
 /** 값을 매긴 패치. 가격 입력 화면과 인벤토리가 같은 값을 쓴다. */

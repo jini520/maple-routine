@@ -456,6 +456,8 @@ export function toRecordedDrop(record: BossDropRecord): RecordedDrop {
     splitFeePercent: record.splitFeePercent ?? undefined,
     saleFeeAuto: record.saleFeeAuto || undefined,
     splitFeeAuto: record.splitFeeAuto || undefined,
+    // 빠뜨리면 지난 금액을 지금 셈법으로 다시 세어, 셈법이 바뀐 옛 기록의 금액이 화면에서 바뀐다.
+    saleReceivedMeso: record.saleReceivedMeso ?? undefined,
   }
 }
 

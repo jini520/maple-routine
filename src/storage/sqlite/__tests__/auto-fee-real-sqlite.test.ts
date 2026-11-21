@@ -81,14 +81,14 @@ describe('드롭의 자동 수수료', () => {
     category: 'equipment' as const, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }
     await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-08-06', [
       { ...base, priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2, saleFeePercent: 5, splitFeePercent: 5, saleFeeAuto: true },
-      { ...base, priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2, saleFeePercent: 3, splitFeePercent: 3 },
+      { ...base, itemKey: 'dreamy_belt', priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2, saleFeePercent: 3, splitFeePercent: 3 },
     ], '2026-08-10T00:00:00.000Z', NO_WORLD)
 
     const auto = await getAutoFeeDropRecords()
-    expect(auto.map((record) => record.dropIndex)).toEqual([0])
+    expect(auto.map((record) => record.itemKey)).toEqual(['loose_control_machine_mark'])
 
-    await updateDropFees([{ ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', dropIndex: 0, saleFeePercent: 3, splitFeePercent: 5 }])
-    const [first] = await getBossDropRecords(['ocid-1'], ['2026-08-06'])
+    await updateDropFees([{ dropRecordId: auto[0]!.dropRecordId, saleFeePercent: 3, splitFeePercent: 5 }])
+    const first = (await getBossDropRecords(['ocid-1'], ['2026-08-06'])).find((record) => record.itemKey === 'loose_control_machine_mark')
     expect(first).toMatchObject({ saleFeePercent: 3, splitFeePercent: 5, saleFeeAuto: true, splitFeeAuto: false })
   })
 })
@@ -115,7 +115,7 @@ describe('결정석의 자동 송금 수수료', () => {
 
   it('자동인 기록을 읽고 요율과 받은 몫을 고쳐 쓴다', async () => {
     await upsertBossProfitRecord(crystal)
-    await upsertBossProfitRecord({ ...crystal, bossKey: 'demian', boss: '데미안', splitFeeAuto: false })
+    await upsertBossProfitRecord({ ...crystal, bossKey: 'lucid', boss: '루시드', splitFeeAuto: false })
 
     const auto = await getAutoFeeProfitRecords()
     expect(auto.map((record) => record.bossKey)).toEqual(['lotus'])
@@ -154,15 +154,15 @@ describe('일괄 적용 대상', () => {
     category: 'equipment' as const, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', quantity: 1 }
     await replaceBossDropRecords('ocid-1', 'lotus', 'hard', '2026-08-06', [
       { ...base, priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2 },
-      { ...base },
-      { ...base, priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2, saleFeePercent: 3 },
+      { ...base, itemKey: 'dreamy_belt' },
+      { ...base, itemKey: 'magic_eyepatch', priceState: 'entered', priceMeso: 1_000_000_000, priceShare: 2, saleFeePercent: 3 },
     ], '2026-08-10T00:00:00.000Z', NO_WORLD)
 
     const candidates = await getBulkFeeDropRecords()
-    expect(candidates.map((record) => record.dropIndex)).toEqual([0])
+    expect(candidates.map((record) => record.itemKey)).toEqual(['loose_control_machine_mark'])
 
-    await applyAutoDropFees([{ ocid: 'ocid-1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', dropIndex: 0, saleFeePercent: 3, splitFeePercent: 3 }])
-    const [first] = await getBossDropRecords(['ocid-1'], ['2026-08-06'])
+    await applyAutoDropFees([{ dropRecordId: candidates[0]!.dropRecordId, saleFeePercent: 3, splitFeePercent: 3 }])
+    const first = (await getBossDropRecords(['ocid-1'], ['2026-08-06'])).find((record) => record.itemKey === 'loose_control_machine_mark')
     expect(first).toMatchObject({ saleFeePercent: 3, splitFeePercent: 3, saleFeeAuto: true, splitFeeAuto: true })
   })
 })

@@ -320,36 +320,38 @@ describe('분배 방식 `제외`', () => {
     expect(queryByText('수수료')).toBeNull()
   })
 
-  // 숨긴 분배는 드롭 가격 카드의 처음 값과 `기본` 으로 돌아올 때 쓰인다.
-  it('적용하면 숨긴 분배와 `제외` 를 함께 내보낸다', async () => {
+  // `제외` 를 고르면 그 전의 인원 · 비율 · 송금 수수료를 지운다. 인원이 없으니 솔로로 다룬다.
+  it('적용하면 인원 · 비율 · 수수료를 비운 솔로 `제외` 를 내보낸다', async () => {
     const onApply = jest.fn()
-    const { getByLabelText, getByText } = await renderOverlay(<PartySizeModal {...props({ onApply })} />)
+    const shares = { ...EVEN_SHARES, crystalMyShare: 2, crystalSharesTotal: 3, splitFeePercent: 3 }
+    const { getByLabelText, getByText } = await renderOverlay(<PartySizeModal {...props({ shares, onApply })} />)
 
     await fireEvent.press(getByLabelText('제외'))
     await fireEvent.press(getByText('적용'))
 
-    expect(onApply).toHaveBeenCalledWith({ partySize: 4, shares: { ...EVEN_SHARES, crystalExcluded: true } })
+    expect(onApply).toHaveBeenCalledWith({ partySize: 1, shares: { ...EVEN_SHARES, crystalExcluded: true } })
   })
 
-  it('`제외` 에서 `기본` 을 고르면 숨긴 인원이 그대로 돌아온다', async () => {
+  // 다시 `기본` 이나 `비율` 을 고르면 옛 값을 되살리지 않고 새로 정한다.
+  it('`제외` 를 골랐다가 `기본` 을 고르면 솔로에서 새로 정한다', async () => {
     const onApply = jest.fn()
-    const shares = { ...EVEN_SHARES, crystalExcluded: true }
-    const { getByLabelText, getByText } = await renderOverlay(<PartySizeModal {...props({ shares, onApply })} />)
+    const { getByLabelText, getByText } = await renderOverlay(<PartySizeModal {...props({ onApply })} />)
 
-    expect(getByLabelText('제외').props.accessibilityState?.selected).toBe(true)
+    await fireEvent.press(getByLabelText('제외'))
     await fireEvent.press(getByLabelText('기본'))
     await fireEvent.press(getByText('적용'))
 
-    expect(onApply).toHaveBeenCalledWith({ partySize: 4, shares: expect.not.objectContaining({ crystalExcluded: true }) })
+    expect(onApply).toHaveBeenCalledWith({ partySize: 1, shares: expect.not.objectContaining({ crystalExcluded: true }) })
   })
 
-  it('`제외` 에서 `비율` 을 고르면 숨긴 비율이 그대로 돌아온다', async () => {
-    const shares = { ...EVEN_SHARES, crystalMyShare: 1, crystalSharesTotal: 4, crystalExcluded: true }
+  it('`제외` 를 골랐다가 `비율` 을 고르면 옛 비율 대신 처음 비율에서 새로 정한다', async () => {
+    const shares = { ...EVEN_SHARES, crystalMyShare: 1, crystalSharesTotal: 4 }
     const { getByLabelText, getByTestId } = await renderOverlay(<PartySizeModal {...props({ shares })} />)
 
+    await fireEvent.press(getByLabelText('제외'))
     await fireEvent.press(getByLabelText('비율'))
 
-    expect(getByTestId('party-share-percent').props.value).toBe('25')
+    expect(getByTestId('party-share-percent').props.value).toBe('66.667')
   })
 })
 

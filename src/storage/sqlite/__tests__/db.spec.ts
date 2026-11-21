@@ -113,9 +113,12 @@ describe('getBossProfitDb', () => {
     // 버전 목록을 손으로 적지 않는다. `DB_VERSION` 이 오를 때마다 이 배열이 조용히 스탈해진다.
     const versions = Array.from({ length: DB_VERSION }, (_, index) => index + 1)
     const markers = ['BEGIN', 'COMMIT', ...versions.map((version) => `PRAGMA user_version = ${version}`)]
-    expect(tail.filter((sql) => markers.includes(sql))).toEqual(
-      versions.flatMap((version) => ['BEGIN', `PRAGMA user_version = ${version}`, 'COMMIT']),
-    )
+    // 새 DB 라 이관 뒤 1.0.15 기기 변환도 곧바로 한 트랜잭션으로 돈다.
+    expect(tail.filter((sql) => markers.includes(sql))).toEqual([
+      ...versions.flatMap((version) => ['BEGIN', `PRAGMA user_version = ${version}`, 'COMMIT']),
+      'BEGIN',
+      'COMMIT',
+    ])
   })
 
   it('웹 플랫폼에서는 커넥션을 열기 전에 initWebStore를 먼저 호출한다', async () => {
@@ -203,16 +206,14 @@ describe('getBossProfitDb', () => {
 // 정의 배열을 순회해 CREATE하므로 구조적으로 drift가 어렵지만, 배열을 거치지 않고 db.execute에
 // CREATE 문을 직접 끼워 넣는 경우까지 잡기 위해 소스 자체를 읽어 대조한다. 여기서 누락되면
 // 이름 목록이 그 테이블을 조용히 빠뜨린다(boss_drop_records가 그랬다).
-describe('BOSS_PROFIT_TABLE_NAMES', () => {
-  it('db.ts가 만드는 모든 테이블이 export된 이름 목록에 들어 있다', async () => {
-    const { BOSS_PROFIT_TABLE_NAMES } = require('../db') as typeof import('../db')
+describe('tableNamesOf', () => {
+  it('db.ts가 만드는 모든 테이블이 기기 변환 전 · 뒤의 이름 목록에 들어 있다', async () => {
+    const { tableNamesOf } = require('../db') as typeof import('../db')
 
     const source = readFileSync((__dirname + '/../db.ts'), 'utf-8')
-    const createdTables = [...source.matchAll(/CREATE TABLE IF NOT EXISTS (\w+)/g)].map(
-      (match) => match[1],
-    )
+    const createdTables = new Set([...source.matchAll(/CREATE TABLE IF NOT EXISTS (\w+)/g)].map((match) => match[1]))
 
-    expect([...createdTables].sort()).toEqual([...BOSS_PROFIT_TABLE_NAMES].sort())
+    expect([...createdTables].sort()).toEqual([...new Set([...tableNamesOf(false), ...tableNamesOf(true)])].sort())
   })
 })
 

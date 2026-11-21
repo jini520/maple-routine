@@ -50,16 +50,17 @@
 
 | 그룹 | 지우는 것 |
 |---|---|
-| `manual`(수동 선택 항목) | Preferences 의 `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` · `hexaStorageChecks` · `lastBossIncomeTransfers` · `lastEpicDungeonRewards` + 보스 기록 표 셋의 분배 칸(파티 설정 · 그 기간만 고친 값, 행 단위) |
-| `boss`(보스 처치 · 드롭) | 보스 기록 표 셋의 처치 · 드롭 행(행 단위) |
+| `manual`(수동 선택 항목) | Preferences 의 `manualTrackedContent:*` · `worldSharedProgress:*` · `accountSharedProgress:*` · `lastHunts` · `lastHuntSelection` · `lastHuntToggles` · `lastPointRate` · `hexaStorageChecks` · `lastBossIncomeTransfers` · `lastEpicDungeonRewards` + 보스 분배 설정 표(`boss_split_settings`)와 처치 전 수익 건의 분배 칸(그 기간만 고친 값, 줄 단위) |
+| `boss`(보스 처치 · 드롭) | 보스 드롭과 처치한 수익 건(줄 단위) |
 | `cashbook`(가계부) | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` · `remembered_levels` |
 | `enhancement`(강화) | `enhancement_totals` · `enhancement_history_checks` · `enhancement_recomputes` · `enhancement_refetches` · `character_dated_names` · `character_first_days` |
 | `cache`(캐시) | `query_cache` · `schedulerCache:*` · `characterBasicCache:*` · `mesoRateCache:*` · `eventWorldNames`. `characterBasicCache:*` 의 프로필 중 표에 없는 것은 `character_profiles` 에 심은 뒤 지운다 |
 
-보스 기록 표 셋(`boss_parties` · `boss_party_periods` · `boss_drops`, `BOSS_TABLE_NAMES`)은 통째로 지우지 않고 행 단위로
-지운다. 한 표에 두 그룹의 행이 섞여 있고, 조합 행이 처치와 드롭의 부모라서 표를 통째로 지우면 외래키를 따라
-처치 · 드롭까지 사라지기 때문이다. `manual` 은 분배 칸을 비우고, `boss` 는 처치 · 드롭과 그것만 남은 기간 행을 지운다.
-어느 쪽이든 분배 칸도 기간도 남지 않은 조합 행은 함께 지운다([[ADR-078]] 결정 10).
+수익 건 표(`boss_profit_entries`)는 통째로 지우지 않고 줄 단위로 지운다. 한 줄에 처치(`boss`)와 그 기간 값(`manual`)이 섞여
+있고, 수익 건이 드롭의 부모라서 표를 통째로 지우면 외래키를 따라 드롭까지 사라지기 때문이다. `manual` 은 분배 설정 표를 비우고,
+드롭이 없는 처치 전 수익 건을 지우고, 드롭이 남은 처치 전 수익 건은 분배 칸만 비운다. `boss` 는 드롭을 모두 지우고, 처치한
+수익 건과 분배 칸이 빈 수익 건을 지운다. 지우는 문장은 `storage/cache-data.ts` 의 `CLEAR_BOSS_RECORDS` · `CLEAR_BOSS_SPLITS`
+에 있다([[ADR-078]] 결정 10).
 
 그룹 목록에 없는 키와 테이블은 어떤 선택에서도 남긴다. 사용자가 그룹 이름을 보고 고르는 기능이라, 화면에 적지 않은 것을
 함께 지우면 사용자가 모르는 것을 잃기 때문이다. 게임 데이터 사본과 받은 그림, 조회 원장, 캐릭터 이력, 이전 버전 사본 표,

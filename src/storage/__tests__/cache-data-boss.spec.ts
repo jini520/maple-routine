@@ -30,22 +30,22 @@ afterEach(async () => {
 })
 
 const AT = '2026-10-03T00:00:00.000Z'
-const PERIODS = ['2026-10-02', '2026-10-09']
+const PERIODS = ['2026-10-01', '2026-10-08']
 
 async function seed(): Promise<void> {
   await setBossPartySetting({ ocid: 'o', bossKey: 'lucid', difficulty: 'hard', partySize: 2, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null, updatedAt: AT })
   await upsertBossProfitRecord({
-    ocid: 'o', bossKey: 'lucid', boss: '', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-10-02',
+    ocid: 'o', bossKey: 'lucid', boss: '', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-10-01',
     partySize: 2, priceMeso: 10, payoutMeso: 5, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null,
     recordedAt: AT, world: null, worldKey: null,
   })
-  await replaceBossDropRecords('o', 'lucid', 'hard', '2026-10-02', [
+  await replaceBossDropRecords('o', 'lucid', 'hard', '2026-10-01', [
     { dropRecordId: null, category: 'fixed', itemKey: 'black_boss_ring_box', itemName: '', quantity: 1 },
   ], AT, NO_WORLD)
-  await setBossPartyPeriodOverride({ ocid: 'o', bossKey: 'lucid', difficulty: 'hard', periodKey: '2026-10-09', partySize: 4, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null, updatedAt: AT })
+  await setBossPartyPeriodOverride({ ocid: 'o', bossKey: 'lucid', difficulty: 'hard', periodKey: '2026-10-08', partySize: 4, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null, updatedAt: AT })
   // 드롭만 있는 기간에 그 기간 값도 있다.
-  await setBossPartyPeriodOverride({ ocid: 'o', bossKey: 'will', difficulty: 'hard', periodKey: '2026-10-09', partySize: 3, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null, updatedAt: AT })
-  await replaceBossDropRecords('o', 'will', 'hard', '2026-10-09', [
+  await setBossPartyPeriodOverride({ ocid: 'o', bossKey: 'will', difficulty: 'hard', periodKey: '2026-10-08', partySize: 3, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null, updatedAt: AT })
+  await replaceBossDropRecords('o', 'will', 'hard', '2026-10-08', [
     { dropRecordId: null, category: 'fixed', itemKey: 'black_boss_ring_box', itemName: '', quantity: 1 },
   ], AT, NO_WORLD)
 }
@@ -87,7 +87,7 @@ describe('보스 기록 새 표 셋의 데이터 삭제', () => {
 
     await clearCacheData({ ...NONE, manual: true, boss: true })
 
-    expect([count('boss_parties'), count('boss_party_periods'), count('boss_drops')]).toEqual([0, 0, 0])
+    expect([count('boss_split_settings'), count('boss_profit_entries'), count('boss_drops')]).toEqual([0, 0, 0])
   })
 
   it('처치와 드롭의 건수를 센다', async () => {

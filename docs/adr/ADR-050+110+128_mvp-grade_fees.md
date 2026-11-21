@@ -132,9 +132,12 @@ rounded   = round100(1000 + L³ × (S+1)^exp / divisor)
 - 다시 계산은 행을 다시 쓰는 방식이다. 자동 기록도 받은 금액(가계부는 품목의 `amount_meso`)과 뗀 수수료를 행에 적어 두고, 등급
   이력이 바뀌면 새 요율로 다시 적는다. 집계는 받은 금액 한 칸만 더하므로, 볼 때 계산하게 바꾸면 집계 코드를
   모두 고쳐야 하기 때문이다.
-- 자동 여부는 행마다 적는다. `cashbook_entry_items.sale_fee_auto`([[ADR-096]]) · `boss_drops.sale_fee_auto` ·
-  `boss_drops.split_fee_auto` · `boss_parties.split_fee_auto` · `boss_party_periods.split_fee_auto`
-  (`INTEGER`, 1 이면 자동)다([[ADR-078]]). `NULL` 은 이 칸이 생기기 전의 행이고 직접 고른 것으로 읽는다.
+- 자동 여부는 행마다 적는다. 가계부 품목은 `cashbook_entry_items.sale_fee_auto`(`INTEGER`, 1 이면 자동, [[ADR-096]])이고,
+  `NULL` 은 이 칸이 생기기 전의 행이라 직접 고른 것으로 읽는다. 보스 기록은 `boss_drops.sale_fee_follows_mvp_grade` ·
+  `boss_drops.split_fee_follows_mvp_grade` · `boss_split_settings.split_fee_follows_mvp_grade` ·
+  `boss_profit_entries.split_fee_follows_mvp_grade` 이고, 비울 수 없는 1 · 0 이다([[ADR-078]] 결정 2).
+- 결정석 기록은 비율로 나눈 처치만 다시 계산한다(`getAutoFeeProfitRecords`). 결정석의 송금 수수료는 비율로 나눌 때만 금액에
+  들어가기 때문이다([[ADR-099]] 결정 25).
 
 수수료 줄(`FeeRow`)은 한 줄에 `수수료` 라벨, `자동` 체크박스, 값이 차례로 놓인다.
 
@@ -163,8 +166,9 @@ rounded   = round100(1000 + L³ × (S+1)^exp / divisor)
 - 송금 · 분배 수수료의 처음 값도 내 등급이다(사용자 결정). 실제로는 보내는 사람의 등급을 따르므로, 내가 받는
   쪽이거나 파티원이 드롭을 팔았으면 요율이 다를 수 있다. 고칠 수 있으니 처음 값은 언제나 내 등급으로 채우고,
   다르면 사용자가 체크박스를 끄고 고른다.
-- 파티 설정(`boss_parties` 의 분배 칸)이 자동이면, 새 결정석 기록은 그 기록 날짜의 등급 요율로 적히고
-  `split_fee_auto` 가 1 이 된다. 모달은 이번 주 등급을 보여 준다. 설정은 앞으로 적힐 기록에 쓸 값이기 때문이다.
+- 파티 설정(`boss_split_settings`)이 자동이면, 새 결정석 기록은 그 기록 날짜의 등급 요율로 적히고
+  `split_fee_follows_mvp_grade` 가 1 이 된다. 자동인 설정은 요율 칸이 비어 있다. 모달은 이번 주 등급을 보여 준다. 설정은 앞으로
+  적힐 기록에 쓸 값이기 때문이다.
 - 보스 수익 행에서 연 모달은 그 기록 하나만 고친다. 명패와 요율은 그 기록 날짜의 등급이고, 체크박스를 끄면 그
   기록만 직접 고른 요율이 된다.
 - 판매 분배금 계산기([[ADR-001]])에는 두지 않는다(사용자 지정). 기록을 남기지 않는 도구라 등급을 자동으로
@@ -175,13 +179,15 @@ rounded   = round100(1000 + L³ × (S+1)^exp / divisor)
 드롭 아이템을 경매장에 팔 때 수수료가 한 번 나가고, 한 명이 팔아 파티원에게 나눠 보내면 송금할 때 한 번 더
 나간다. 판매 분배금 계산기와 같은 상황이다.
 
-- `boss_drops` 에 `sale_fee_percent` 와 `split_fee_percent` 두 칸이 있다. 두 칸은 가격을 매긴 드롭(`completed`)만
-  갖는다. 가격을 매겼는데 `NULL` 이면 수수료를 계산하지 않던 옛 행이고, 예전 금액 그대로 읽힌다.
+- `boss_drops` 에 `sale_fee_percent` 와 `split_fee_percent` 두 칸이 있다. 두 칸은 가격을 매긴 드롭(`entered`)만
+  갖는다. 가격을 매겼는데 비어 있으면 수수료 없음이다.
+- 내 몫은 드롭 줄의 `sale_received_meso` 에 저장하고, 요율을 고치면 함께 다시 적는다([[ADR-044]] 결정 10).
 - 내 몫은 판매 수수료를 뗀 금액에서 보낼 금액을 거꾸로 구해 정한다(`lib/drop/drop-price.ts` 의 `dropPayoutMeso`).
   균등이면 내가 팔아 `인원 − 1` 명에게 보낸다. 혼자면 분배 수수료가 들지 않는다.
 - 비율로 나눌 때는 몫이 큰 쪽이 보낸다고 본다(사용자 지적). 내 몫이 25% 인데 내가 75% 를 보낸다고 계산하면
   큰 금액에 수수료가 붙어 양쪽 모두 손해다. 결정석 분배(`crystalPayoutMeso`)도 같은 규칙이다.
-- 드롭 수익을 읽는 곳은 많지만 모두 `dropPayoutMeso` 하나를 거친다. 그래서 보스 수익 · today · 가계부가 함께 바뀐다.
+- 드롭 수익을 읽는 곳은 많지만 모두 `dropPayoutMeso` 하나를 거친다. 그래서 보스 수익 · today · 가계부가 함께 바뀐다. 이
+  함수는 저장된 받는 메소가 있으면 그 값을 쓴다.
 
 ### 결정 9. 조각 정산과 사냥 폼의 조각 판매에 판매 수수료를 붙인다 (사용자 지정)
 

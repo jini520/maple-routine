@@ -31,8 +31,7 @@ export async function bulkDropUpdates(): Promise<DropFeeUpdate[]> {
     const grade = recordGradeAt(context, drop.ocid, periodStartDateKey(drop.periodKey))
     if (grade === null) continue
     const percent = auctionFeePercentOf(grade)
-    const { ocid, bossKey, difficulty, periodKey, dropIndex } = drop
-    updates.push({ ocid, bossKey, difficulty, periodKey, dropIndex, saleFeePercent: percent, splitFeePercent: percent })
+    updates.push({ dropRecordId: drop.dropRecordId, saleFeePercent: percent, splitFeePercent: percent })
   }
   return updates
 }

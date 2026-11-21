@@ -294,7 +294,7 @@ export function pruneUnobtainableDrops(
 }
 
 /**
- * SQLite `boss_drop_records` 한 행에서 이 계산에 필요한 부분만 추린 모양. 저장 계층 타입을 쓰지
+ * 저장 계층이 읽은 드롭 기록(`boss_drops`)에서 이 계산에 필요한 부분만 추린 모양. 저장 계층 타입을 쓰지
  * 않는 이유는 `lib/` 가 `storage/` 를 의존하지 않기 위함이다.
  */
 export interface StoredDropRecord extends RecordedDrop {
@@ -331,6 +331,8 @@ function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
     splitFeePercent: record.splitFeePercent,
     saleFeeAuto: record.saleFeeAuto,
     splitFeeAuto: record.splitFeeAuto,
+    // 다른 난이도로 옮겨도 가격 · 분배 · 수수료는 그대로라 저장된 받는 메소를 이어 든다.
+    saleReceivedMeso: record.saleReceivedMeso,
   }
 }
 
@@ -373,7 +375,7 @@ export function planConfirmedDifficultyDropMigration(
     .map(toRecordedDrop)
   const seenTiles = new Set(existing.map(dropTileIdentity))
 
-  // SQLite는 `ORDER BY sort_order` 만 보장하므로 난이도가 섞이면 순서가 미정이다. 정규 난이도
+  // 저장 계층은 수익 건 안의 차례만 보장하므로 난이도가 섞이면 순서가 미정이다. 정규 난이도
   // 순서로 정렬해 이관 결과가 실행마다 같게 한다. 겹치는 타일에서 어느 쪽이 남는지도 이 순서가 정한다.
   const migrated = pruneUnobtainableDrops(
     boss,

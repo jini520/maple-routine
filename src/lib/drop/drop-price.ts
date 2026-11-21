@@ -37,6 +37,11 @@ export interface DropPriceFields {
   saleFeePercent?: number | null
   /** 파티원에게 보낼 때의 분배 수수료(%). `null` 은 없음 */
   splitFeePercent?: number | null
+  /**
+   * 저장된 받는 메소. 있으면 다시 세지 않고 이 값이다. 지난 금액이 셈법이 바뀌어도 그대로이게 저장해 둔다. 가격 · 분배 ·
+   * 수수료를 고치는 쪽은 이 칸을 비운다.
+   */
+  saleReceivedMeso?: number | null
 }
 
 /**
@@ -73,6 +78,7 @@ function totalOf(drop: DropPriceFields): number {
  */
 export function dropPayoutMeso(drop: DropPriceFields): number {
   if (drop.priceState !== 'entered' || drop.priceMeso === undefined || drop.priceMeso === null) return 0
+  if (drop.saleReceivedMeso !== undefined && drop.saleReceivedMeso !== null) return drop.saleReceivedMeso
   const total = totalOf(drop)
   const mine = myShareOf(drop)
   const saleFee = drop.saleFeePercent ?? null

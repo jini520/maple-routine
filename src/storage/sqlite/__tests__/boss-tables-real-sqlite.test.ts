@@ -174,7 +174,12 @@ describe('버전 14: 보스 기록 테이블 넷을 셋으로 옮긴다', () => 
   })
 })
 
-describe('새 테이블의 제약', () => {
+describe('버전 14 표의 제약', () => {
+  // 1.0.15 기기 변환 전의 표다. 새 DB 는 처음 열 때 변환을 돌아서 상한으로 막는다.
+  beforeEach(() => {
+    __setMigrationCeilingForTest(DB_VERSION)
+  })
+
   async function party(id: string, ocid = 'ocid-1'): Promise<void> {
     await getBossProfitDb()
     real.inspect((db) => db.exec(`INSERT INTO boss_parties (id, ocid, boss_key, difficulty, created_at, updated_at)
