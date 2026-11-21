@@ -1,15 +1,13 @@
 /// <reference types="node" />
 /**
- * 손입력 수입 어댑터를 진짜 SQLite 로 태운다. 수입은 가계부 기록 표 셋에 `entry_type = 'income'` 으로 살고, 사냥의
- * 계산 입력은 사냥 입력 표에 따로 든다. 넣은 모양이 그대로 되읽히는지와 조각 보관 셈을 본다.
+ * 손입력 수입 어댑터를 진짜 SQLite 로 태운다. 수입은 가계부 기록 표에 수입 분류의 기록으로 살고, 사냥의 계산 입력은 사냥
+ * 입력 표에 따로 든다. 넣은 모양이 그대로 되읽히는지와 조각 보관 셈을 본다.
  */
-import { recordCharacterAccounts } from '../character-accounts'
+import { itemTargetIdOf } from '../../lib/cashbook/entry-ids'
 import {
-  assignLegacyIncomeAccounts,
   deleteIncomeRecord,
   getFragmentStorage,
   getIncomeRecordsBetween,
-  getIncomeRecordsRevision,
   insertIncomeRecord,
   updateIncomeRecord,
   type IncomeRecord,
@@ -81,7 +79,7 @@ const calculatorHunt: IncomeRecord = {
     mode: 'calculator',
     characterLevel: 285,
     missedMobs: 2,
-    boosts: ['wealth', 'exp_coupon'],
+    boosts: ['potion', 'union'],
     sojae: 8,
     fragments: 30,
     fragmentPrice: null,
@@ -103,11 +101,12 @@ describe('넣은 수입을 같은 모양으로 되읽는다', () => {
     ['계산 입력이 없던 옛 사냥', { ...calculatorHunt, id: idOf(), itemKey: null, item: '츄츄 아일랜드', hunt: null }],
     ['메이플 ID 에 붙은 기타', { ...sale, id: idOf(), ocid: null, accountId: 'maple-a', category: 'etc', itemKind: null }],
     [
-      '메포 기타. 주인을 모르는 옛 기록이다',
+      '메이플 ID 에 붙은 메포 기타',
       {
         ...sale,
         id: idOf(),
         ocid: null,
+        accountId: 'maple-a',
         category: 'etc',
         item: '이벤트 보상',
         itemKind: null,
@@ -126,15 +125,19 @@ describe('넣은 수입을 같은 모양으로 되읽는다', () => {
     expect(await getIncomeRecordsBetween(record.earnedOn, record.earnedOn)).toEqual([record])
   })
 
-  it('사냥은 품목 하나에 소재 수를 수량으로 두고, 계산 입력은 사냥 입력 표에 둔다', async () => {
+  it('사냥은 품목 하나에 사냥터 줄과 소재 수를 두고, 계산 입력은 켠 효과를 두 칸으로 나눠 사냥 입력 표에 둔다', async () => {
     await insertIncomeRecord(calculatorHunt)
 
-    expect(all('SELECT item_key, quantity FROM cashbook_entry_items')).toEqual([
-      { item_key: 'tallahart_road_of_night_3', quantity: 8 },
+    expect(all('SELECT target_type, target_id, quantity FROM cashbook_entry_items')).toEqual([
+      {
+        target_type: 'hunting_ground',
+        target_id: itemTargetIdOf('hunting_ground', 'tallahart_road_of_night_3'),
+        quantity: 8,
+      },
     ])
-    expect(all('SELECT missed_mobs, boosts, typed_meso, union_tier FROM cashbook_entry_hunt_inputs')).toEqual([
-      { missed_mobs: 2, boosts: 'wealth,exp_coupon', typed_meso: null, union_tier: 2 },
-    ])
+    expect(
+      all('SELECT missed_mob_quantity, uses_wealth_potion, uses_union_wealth, typed_meso, union_wealth_tier FROM cashbook_entry_hunt_inputs'),
+    ).toEqual([{ missed_mob_quantity: 2, uses_wealth_potion: 1, uses_union_wealth: 1, typed_meso: null, union_wealth_tier: 2 }])
   })
 })
 
@@ -150,8 +153,8 @@ describe('고치기 · 지우기', () => {
     await updateIncomeRecord(edited)
 
     expect(await getIncomeRecordsBetween('2026-08-01', '2026-08-31')).toEqual([edited])
-    expect(all('SELECT missed_mobs, typed_meso FROM cashbook_entry_hunt_inputs')).toEqual([
-      { missed_mobs: null, typed_meso: 800_000_000 },
+    expect(all('SELECT missed_mob_quantity, uses_wealth_potion, typed_meso FROM cashbook_entry_hunt_inputs')).toEqual([
+      { missed_mob_quantity: null, uses_wealth_potion: null, typed_meso: 800_000_000 },
     ])
   })
 
@@ -175,33 +178,6 @@ describe('메모', () => {
     await updateIncomeRecord({ ...sale, memo: '   ' })
     expect(await getIncomeRecordsBetween('2026-08-20', '2026-08-20')).toEqual([sale])
     expect(all('SELECT memo FROM cashbook_entries')).toEqual([{ memo: null }])
-  })
-})
-
-describe('assignLegacyIncomeAccounts: 주인을 모르는 옛 수입을 메이플 ID 로 옮긴다', () => {
-  // 사냥은 이미 캐릭터가 필수라 옛 기록도 옮기지 않는다. 수정으로 열면 캐릭터를 골라야 저장된다.
-  it('넥슨 계정의 메이플 ID 가 하나면 고를 수 있는 분류의 옛 기록만 옮기고, 판은 옮긴 것이 있을 때만 오른다', async () => {
-    await recordCharacterAccounts(
-      [{ accountId: 'maple-a', characters: [{ ocid: 'ocid-1', name: '낟낟', world: '스카니아', worldKey: 'scania', jobClass: '히어로', level: 280 }] }],
-      '2026-08-01',
-      'account-a',
-    )
-    const etc: IncomeRecord = { ...sale, id: idOf(), ocid: null, category: 'etc', itemKind: null }
-    const hunt: IncomeRecord = { ...calculatorHunt, id: idOf(), ocid: null }
-    for (const record of [etc, hunt]) {
-      await insertIncomeRecord(record)
-      real.inspect((db) => db.prepare(`UPDATE cashbook_entries SET nexon_account_id = 'account-a' WHERE id = ?`).run(record.id))
-    }
-    const before = getIncomeRecordsRevision()
-
-    await assignLegacyIncomeAccounts(['etc'])
-    await assignLegacyIncomeAccounts(['etc'])
-
-    expect(all('SELECT category_key, account_id, nexon_account_id FROM cashbook_entries ORDER BY category_key')).toEqual([
-      { category_key: 'etc', account_id: 'maple-a', nexon_account_id: null },
-      { category_key: 'hunting', account_id: null, nexon_account_id: 'account-a' },
-    ])
-    expect(getIncomeRecordsRevision()).toBe(before + 1)
   })
 })
 

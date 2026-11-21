@@ -6,6 +6,8 @@
 import fc from 'fast-check'
 
 import { allocateHexaStorage } from '../../../lib/cashbook/hexa-matrix'
+import { recordCharacterAccounts } from '../../character-accounts'
+import { saveCharacterProfile } from '../../character-profiles'
 import { FragmentShortageError, readFragmentMoves } from '../../fragment-ledger'
 import { getHuntFragmentFloor } from '../../fragment-moves'
 import {
@@ -92,7 +94,7 @@ function hexa(
     spentOn,
     category: 'hexa_matrix',
     item: null,
-    itemKey: '헥사 스탯 Ⅰ',
+    itemKey: 'hexa_stat_1',
     formItemKeys: null,
     itemKind: null,
     levelFrom: null,
@@ -181,6 +183,15 @@ describe('사냥 기록을 고쳐 모자라면 헥사 강화를 다른 보관으
   })
 
   it('강화한 캐릭터의 메이플 ID · 월드의 기타 조각으로 다른 캐릭터 보관보다 먼저 옮긴다', async () => {
+    // 기타 조각 사용은 기록의 메이플 ID · 월드에서 빠진다. 캐릭터 기록은 소속의 메이플 ID 와 프로필의 월드다.
+    await saveCharacterProfile({
+      ocid: 'a', name: 'a', imageUrl: '', world: '스카니아', worldKey: 'scania', level: 285, jobClass: '히어로', updatedAt: '2026-09-01T00:00:00.000Z',
+    })
+    await recordCharacterAccounts(
+      [{ accountId: 'maple-a', characters: [{ ocid: 'a', name: 'a', world: '스카니아', worldKey: 'scania', jobClass: '히어로', level: 285 }] }],
+      '2026-09-01',
+      'account-a',
+    )
     await insertIncomeRecord(hunt('hunt-a', 'a', '2026-09-17', 60))
     await insertIncomeRecord(hunt('hunt-b', 'b', '2026-09-10', 40))
     await insertSpendRecord(hexa('hexa-20', 'a', '2026-09-20', { fragments: 100, uses: [{ ocid: 'a', fragments: 60 }], asSpend: false, price: 7_200_000 }))

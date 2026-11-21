@@ -98,6 +98,7 @@ export function spendEntryOf(record: SpendRecord): StoredEntry {
       categoryKey: record.category,
       entryDate: record.spentOn,
       memo: storedMemoOf(record.memo),
+      worldKey: null,
       createdAt: record.recordedAt,
     },
     items: spendItemsOf(record),
@@ -166,7 +167,7 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
 /**
  * 사냥 입력 행 ↔ 한 덩어리. 어느 모양인지는 **칸 둘이 가른다**.
  *
- * `typed_meso` 가 있으면 수동이고, 없는데 `missed_mobs` 가 있으면 계산기다. 둘 다 없으면 계산 입력이 없던 때 적힌
+ * `typed_meso` 가 있으면 수동이고, 없는데 `missed_mob_quantity` 가 있으면 계산기다. 둘 다 없으면 계산 입력이 없던 때 적힌
  * 행이라 `null` 이고, 그 행은 수동 입력 폼이 합계를 그대로 받아 연다.
  *
  * **친 메소가 `0` 이어도 수동이다.** 조각만 먹은 사냥이 그렇다. `0` 과 `NULL` 이 갈리는 자리라 `??` 로 접으면 그
@@ -240,6 +241,7 @@ export function incomeEntryOf(record: IncomeRecord): StoredEntry {
       categoryKey: record.category,
       entryDate: record.earnedOn,
       memo: storedMemoOf(record.memo),
+      worldKey: record.worldKey ?? null,
       createdAt: record.recordedAt,
     },
     items: [
@@ -293,6 +295,7 @@ export function incomeRecordOf(entry: StoredEntry): IncomeRecord {
     ...(item.inventoryItemId === null ? {} : { inventoryItemId: item.inventoryItemId }),
     ...(item.ringLevel === null ? {} : { ringLevel: item.ringLevel }),
     ...(entry.otherFragmentUses[0] === undefined ? {} : { otherFragmentUse: entry.otherFragmentUses[0] }),
+    ...(entry.head.worldKey === null ? {} : { worldKey: entry.head.worldKey }),
     ...memoField(entry.head.memo),
     ...(entry.exchange == null ? {} : { exchange: entry.exchange }),
   }

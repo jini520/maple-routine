@@ -30,7 +30,6 @@ export async function fillLegacyNexonAccountIds(mainAccountId: string): Promise<
     ])
     await db.run(`DELETE FROM enhancement_history_checks WHERE nexon_account_id = ''`)
     await db.run(`UPDATE character_accounts SET nexon_account_id = ? WHERE nexon_account_id = ''`, [mainAccountId])
-    await db.run(`UPDATE cashbook_entries SET nexon_account_id = ? WHERE nexon_account_id = ''`, [mainAccountId])
   })
 }
 
@@ -65,7 +64,6 @@ export async function moveNexonAccountRows(fromIds: readonly string[], toId: str
       // 합계는 ocid 로 가려 계정 칸이 판정 열쇠에 없다. 그 계정의 날을 갈아 끼우는 단위라 칸만 옮긴다.
       await db.run(`UPDATE enhancement_totals SET nexon_account_id = ? WHERE nexon_account_id = ?`, [toId, fromId])
       await db.run(`UPDATE character_accounts SET nexon_account_id = ? WHERE nexon_account_id = ?`, [toId, fromId])
-      await db.run(`UPDATE cashbook_entries SET nexon_account_id = ? WHERE nexon_account_id = ?`, [toId, fromId])
     }
   })
   notifyEnhancementTotalsChanged()

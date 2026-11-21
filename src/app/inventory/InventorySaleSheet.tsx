@@ -128,9 +128,13 @@ export function InventorySaleSheet(props: { cell: ItemCell; owner: string; onClo
           itemKind: cell.itemKindKey,
           hunt: null,
           memo,
-          // 기타 조각은 메이플 ID · 월드마다 모아 세어 조각 사용으로 적는다. 헥사 강화가 가져간 것과 한 표에서 센다.
+          // 기타 조각은 메이플 ID · 월드마다 모아 세어 조각 사용으로 적는다. 헥사 강화가 가져간 것과 한 표에서 센다. 조각 사용은
+          // 개수만 적고 메이플 ID · 월드는 기록의 것이라, 판 조각의 월드를 기록의 월드로 적는다.
           ...(fragment
-            ? { otherFragmentUse: { accountId: cell.item.accountId, worldKey: cell.item.worldKey, fragments: quantity } }
+            ? {
+                worldKey: cell.item.worldKey,
+                otherFragmentUse: { accountId: cell.item.accountId, worldKey: cell.item.worldKey, fragments: quantity },
+              }
             : { inventoryItemId: cell.item.id }),
         },
         new Date(),

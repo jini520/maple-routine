@@ -31,11 +31,12 @@ const ALL: CacheDataSelection = { manual: true, boss: true, cashbook: true, enha
 
 let seq = 0
 
-/** CHECK 제약이 있는 칸은 아무 글자나 못 넣어 맞는 값을 준다. */
-const CHECKED_VALUES: Record<string, string> = { entry_type: 'income' }
+/** 비어도 되는 칸이지만 CHECK 가 하나는 채우라고 하는 표. 가계부 기록은 캐릭터나 메이플 ID 가 있어야 한다. */
+const REQUIRED_ONE_OF: Record<string, Record<string, string>> = { cashbook_entries: { ocid: 'ocid-1' } }
 
 /** NOT NULL 칸만 채운 줄 하나를 넣는다. 이 파일은 줄이 남았는가 만 보므로 값의 뜻은 따지지 않는다. */
-function insertRow(table: string, values: Record<string, string | number> = {}): void {
+function insertRow(table: string, given: Record<string, string | number> = {}): void {
+  const values = { ...REQUIRED_ONE_OF[table], ...given }
   real.inspect((db) => {
     const columns = db.prepare(`PRAGMA table_info(${table})`).all() as {
       name: string
@@ -51,10 +52,6 @@ function insertRow(table: string, values: Record<string, string | number> = {}):
         continue
       }
       if ((column.notnull === 0 && column.pk === 0) || column.dflt_value !== null) continue
-      if (column.name in CHECKED_VALUES) {
-        row[column.name] = CHECKED_VALUES[column.name]!
-        continue
-      }
       seq += 1
       row[column.name] = /INT|REAL|NUM/i.test(column.type) ? seq : `${column.name}-${seq}`
     }

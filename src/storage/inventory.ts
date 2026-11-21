@@ -3,7 +3,13 @@
  *
  * 남은 개수는 저장하지 않고 센다. 넣은 개수에 그 줄을 가리키는 구매 수량을 더하고 판매 수량을 빼며, 기타 조각이면 그 메이플
  * ID · 월드의 조각 사용을 뺀다. 따로 저장하면 구매 · 판매 기록을 고치거나 지울 때마다 그 값도 맞춰야 한다.
+ *
+ * 표는 월드 · 아이템 · 종류를 게임 데이터의 줄 id 로 적고, 화면은 key 를 든다. 쓸 때 줄 id 로 바꾸고 읽을 때 되돌린다.
  */
+import { cashbookItemTypeIdOf, cashbookItemTypeKeyOf, itemTargetIdOf, itemTargetKeyOf } from '../lib/cashbook/entry-ids'
+import { findItem } from '../lib/item-catalog'
+import { findWorld, findWorldById } from '../lib/world/worlds'
+import { categorySql, entryAccountSql, sqlText } from './cashbook-entries'
 import type { SqliteDbConnection } from './ports'
 import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
@@ -52,46 +58,105 @@ export class InventoryShortageError extends Error {
   }
 }
 
-/** 줄 `i` 를 가리키는 품목의 수량. 장비는 수량 칸이 비어 있어 하나로 센다. 구매와 판매는 품목이 든 기록의 분류로 가른다. */
-function linkedQuantitySql(purchase: boolean): string {
-  return `COALESCE((SELECT SUM(COALESCE(ci.quantity, 1)) FROM cashbook_entry_items ci
-     JOIN cashbook_entries e ON e.id = ci.entry_id
-    WHERE ci.inventory_item_id = i.id AND e.category_key ${purchase ? '=' : '<>'} 'item_purchase'), 0)`
+/** 표에 없는 key 를 적으려 할 때 던지는 실패. 줄 id 칸을 비울 수 없다. */
+function unknownKey(what: string, key: string): Error {
+  return new Error(`인벤토리에 적을 수 없는 ${what}입니다: ${key}`)
 }
 
-const SOLD_SQL = linkedQuantitySql(false)
-const PURCHASED_SQL = linkedQuantitySql(true)
+/** 솔 에르다 조각의 아이템 줄 id 글자. 표에 없으면 어느 줄과도 같지 않은 글자다. */
+function solErdaFragmentIdSql(): string {
+  return sqlText(findItem(SOL_ERDA_FRAGMENT_ITEM_KEY)?.id ?? '')
+}
 
-const OTHER_USED_SQL = `COALESCE((SELECT SUM(u.fragments) FROM cashbook_entry_fragment_uses u
-   WHERE u.fragment_source = 'other' AND u.account_id = i.account_id AND u.world_key = i.world_key), 0)`
+/** 장비 종류의 줄 id 글자. 장비는 하나가 한 줄이라 한 줄 기준을 걸지 않는다. */
+function equipmentTypeIdSql(): string {
+  return sqlText(cashbookItemTypeIdOf('equipment') ?? '')
+}
 
-const ITEMS_SQL = `
-  SELECT i.*, CASE WHEN i.item_key = '${SOL_ERDA_FRAGMENT_ITEM_KEY}' THEN ${OTHER_USED_SQL} ELSE ${SOLD_SQL} END AS used,
-         ${PURCHASED_SQL} AS purchased
+/** 줄 `i` 를 가리키는 품목의 수량. 장비는 수량 칸이 비어 있어 하나로 센다. 구매와 판매는 품목이 든 기록의 분류로 가른다. */
+function linkedQuantitySql(purchase: boolean): string {
+  const isPurchase = categorySql('spend', 'item_purchase')
+  return `COALESCE((SELECT SUM(COALESCE(ci.quantity, 1)) FROM cashbook_entry_items ci
+     JOIN cashbook_entries e ON e.id = ci.entry_id
+    WHERE ci.inventory_item_id = i.id AND ${purchase ? isPurchase : `NOT (${isPurchase})`}), 0)`
+}
+
+/** 기타 조각을 가져간 조각 사용. 메이플 ID · 월드는 그 기록의 것이다. */
+const INVENTORY_USES_SQL = `
+  SELECT ${entryAccountSql('e')} AS account_id, e.world_id AS world_id, u.fragment_quantity AS quantity, u.entry_id AS entry_id
+    FROM cashbook_entry_fragment_uses u JOIN cashbook_entries e ON e.id = u.entry_id
+   WHERE u.fragment_source = 'inventory'`
+
+/** 줄 `i` 의 메이플 ID · 월드에서 기타 조각을 가져간 개수. */
+const OTHER_USED_SQL = `COALESCE((SELECT SUM(o.quantity) FROM (${INVENTORY_USES_SQL}) o
+   WHERE o.account_id = i.account_id AND o.world_id = i.world_id), 0)`
+
+function itemsSql(): string {
+  return `
+  SELECT i.*, CASE WHEN i.item_id = ${solErdaFragmentIdSql()} THEN ${OTHER_USED_SQL} ELSE ${linkedQuantitySql(false)} END AS used,
+         ${linkedQuantitySql(true)} AS purchased
     FROM inventory_items i
    ORDER BY i.created_at, i.id`
+}
 
-function itemOf(row: Record<string, unknown>): InventoryItem {
-  const quantity = Number(row.quantity)
+/** 줄을 key 모양으로. 월드 · 아이템 · 종류를 게임 데이터에서 못 찾는 줄은 화면에 세울 이름이 없어 `null` 이다. */
+function itemOf(row: Record<string, unknown>): InventoryItem | null {
+  const world = findWorldById(row.world_id as string)
+  const item = itemTargetKeyOf('item', row.item_id as string)
+  const kind = cashbookItemTypeKeyOf(row.cashbook_item_type_id as string)
+  if (world === null || item === null || kind === null) return null
+  const quantity = Number(row.added_quantity)
   const used = Number(row.used)
   const purchased = Number(row.purchased)
   return {
     id: row.id as string,
     accountId: row.account_id as string,
-    worldKey: row.world_key as string,
-    itemKey: row.item_key as string,
-    itemKindKey: row.item_kind_key as string,
+    worldKey: world.key,
+    itemKey: item.key,
+    itemKindKey: kind,
     quantity,
     used,
     purchased,
     remaining: quantity + purchased - used,
-    ringLevel: row.ring_level == null ? null : Number(row.ring_level),
+    ringLevel: item.ringLevel,
   }
 }
 
 async function readItems(db: SqliteDbConnection): Promise<InventoryItem[]> {
-  const { values } = await db.query(ITEMS_SQL)
-  return (values ?? []).map(itemOf)
+  const { values } = await db.query(itemsSql())
+  return (values ?? []).flatMap((row) => itemOf(row) ?? [])
+}
+
+/** 넣는 줄의 줄 id 셋. 표에 없는 월드 · 아이템 · 종류는 던진다. */
+function idsOf(input: { worldKey: string; itemKey: string; itemKindKey: string; ringLevel?: number | null }): {
+  worldId: string
+  itemId: string
+  typeId: string
+} {
+  const worldId = findWorld(input.worldKey)?.id ?? null
+  const itemId = itemTargetIdOf('item', input.itemKey, { ringLevel: input.ringLevel ?? null })
+  const typeId = cashbookItemTypeIdOf(input.itemKindKey)
+  if (worldId === null) throw unknownKey('월드', input.worldKey)
+  if (itemId === null) throw unknownKey('아이템', input.itemKey)
+  if (typeId === null) throw unknownKey('종류', input.itemKindKey)
+  return { worldId, itemId, typeId }
+}
+
+/** 장비가 아닌 아이템이면 같은 메이플 ID · 월드 · 아이템의 줄. 장비는 하나가 한 줄이라 찾지 않는다. */
+async function sameItemRowOf(
+  db: SqliteDbConnection,
+  accountId: string,
+  ids: { worldId: string; itemId: string; typeId: string },
+): Promise<string | null> {
+  if (ids.typeId === cashbookItemTypeIdOf('equipment')) return null
+  const { values } = await db.query(
+    `SELECT id FROM inventory_items
+      WHERE account_id = ? AND world_id = ? AND item_id = ? AND cashbook_item_type_id <> ${equipmentTypeIdSql()}
+      ORDER BY created_at, id LIMIT 1`,
+    [accountId, ids.worldId, ids.itemId],
+  )
+  const found = values?.[0]?.id
+  return typeof found === 'string' ? found : null
 }
 
 /**
@@ -104,19 +169,19 @@ export async function readInventoryRemaining(db: SqliteDbConnection): Promise<Ma
   for (const item of await readItems(db)) {
     if (item.itemKey !== SOL_ERDA_FRAGMENT_ITEM_KEY) remaining.set(`item:${item.id}`, item.remaining)
   }
+  const fragment = solErdaFragmentIdSql()
   const { values } = await db.query(`
-    SELECT o.account_id, o.world_key,
-           COALESCE((SELECT SUM(i.quantity + ${PURCHASED_SQL}) FROM inventory_items i
-                      WHERE i.account_id = o.account_id AND i.world_key = o.world_key AND i.item_key = ?), 0)
-         - COALESCE((SELECT SUM(u.fragments) FROM cashbook_entry_fragment_uses u
-                      WHERE u.fragment_source = 'other' AND u.account_id = o.account_id AND u.world_key = o.world_key), 0)
+    SELECT o.account_id, o.world_id,
+           COALESCE((SELECT SUM(i.added_quantity + ${linkedQuantitySql(true)}) FROM inventory_items i
+                      WHERE i.account_id = o.account_id AND i.world_id = o.world_id AND i.item_id = ${fragment}), 0)
+         - COALESCE((SELECT SUM(u.quantity) FROM (${INVENTORY_USES_SQL}) u
+                      WHERE u.account_id = o.account_id AND u.world_id = o.world_id), 0)
            AS remaining
-      FROM (SELECT account_id, world_key FROM inventory_items WHERE item_key = ?
-            UNION SELECT account_id, world_key FROM cashbook_entry_fragment_uses WHERE fragment_source = 'other') o`,
-    [SOL_ERDA_FRAGMENT_ITEM_KEY, SOL_ERDA_FRAGMENT_ITEM_KEY],
-  )
+      FROM (SELECT account_id, world_id FROM inventory_items WHERE item_id = ${fragment}
+            UNION SELECT account_id, world_id FROM (${INVENTORY_USES_SQL})) o`)
   for (const row of values ?? []) {
-    remaining.set(`other:${row.account_id as string}:${row.world_key as string}`, Number(row.remaining))
+    const worldKey = findWorldById(row.world_id as string | null)?.key ?? ''
+    remaining.set(`other:${String(row.account_id)}:${worldKey}`, Number(row.remaining))
   }
   return remaining
 }
@@ -156,18 +221,30 @@ export async function getInventoryItems(): Promise<InventoryItem[]> {
   return readItems(await getBossProfitDb())
 }
 
-/** 장비가 아니면 같은 메이플 ID · 월드의 같은 아이템 줄에 개수를 더한다. 장비는 하나가 한 줄이다. */
+/**
+ * 장비가 아니면 같은 메이플 ID · 월드의 같은 아이템 줄에 개수를 더한다. 장비는 하나가 한 줄이다. 한 줄 기준은 인덱스가 아니라
+ * 여기서 지킨다. 인덱스 조건에 장비 종류의 줄 id 를 적어야 하는데, 새로 설치한 DB 를 처음 열 때는 게임 데이터가 없어 그 id 를 모른다.
+ */
 export async function addInventoryItem(item: NewInventoryItem, now: Date): Promise<void> {
   const db = await getBossProfitDb()
   const at = now.toISOString()
-  const equipment = item.itemKindKey === 'equipment'
-  await db.run(
-    `INSERT INTO inventory_items (id, account_id, world_key, item_key, item_kind_key, quantity, ring_level, created_at, updated_at)
-     VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT (account_id, world_key, item_key) WHERE item_kind_key <> 'equipment'
-     DO UPDATE SET quantity = quantity + excluded.quantity, updated_at = excluded.updated_at`,
-    [item.accountId, item.worldKey, item.itemKey, item.itemKindKey, equipment ? 1 : item.quantity, item.ringLevel ?? null, at, at],
-  )
+  const ids = idsOf(item)
+  await inTransaction(db, async () => {
+    const same = await sameItemRowOf(db, item.accountId, ids)
+    if (same !== null) {
+      await db.run(`UPDATE inventory_items SET added_quantity = added_quantity + ?, updated_at = ? WHERE id = ?`, [
+        item.quantity,
+        at,
+        same,
+      ])
+      return
+    }
+    await db.run(
+      `INSERT INTO inventory_items (id, account_id, world_id, item_id, cashbook_item_type_id, added_quantity, created_at, updated_at)
+       VALUES (${NEW_UUID_SQL}, ?, ?, ?, ?, ?, ?, ?)`,
+      [item.accountId, ids.worldId, ids.itemId, ids.typeId, item.itemKindKey === 'equipment' ? 1 : item.quantity, at, at],
+    )
+  })
   bumpInventoryItemsRevision()
 }
 
@@ -187,7 +264,7 @@ export async function setInventoryRemaining(id: string, remaining: number, now: 
     const item = await itemById(db, id)
     const quantity = item.used + remaining - item.purchased
     if (quantity < 0) throw new InventoryShortageError([`item:${id}`])
-    await db.run(`UPDATE inventory_items SET quantity = ?, updated_at = ? WHERE id = ?`, [quantity, now.toISOString(), id])
+    await db.run(`UPDATE inventory_items SET added_quantity = ?, updated_at = ? WHERE id = ?`, [quantity, now.toISOString(), id])
   })
   bumpInventoryItemsRevision()
 }
@@ -201,12 +278,12 @@ export async function deleteInventoryRemaining(id: string, now: Date): Promise<v
   await inTransaction(db, async () => {
     await db.run(
       `UPDATE cashbook_entry_items SET inventory_item_id = NULL
-        WHERE inventory_item_id = ? AND entry_id IN (SELECT id FROM cashbook_entries WHERE category_key = 'item_purchase')`,
+        WHERE inventory_item_id = ? AND entry_id IN (SELECT e.id FROM cashbook_entries e WHERE ${categorySql('spend', 'item_purchase')})`,
       [id],
     )
     const used = (await itemById(db, id)).used
     if (used === 0) await db.run(`DELETE FROM inventory_items WHERE id = ?`, [id])
-    else await db.run(`UPDATE inventory_items SET quantity = ?, updated_at = ? WHERE id = ?`, [used, now.toISOString(), id])
+    else await db.run(`UPDATE inventory_items SET added_quantity = ?, updated_at = ? WHERE id = ?`, [used, now.toISOString(), id])
   })
   bumpInventoryItemsRevision()
 }
@@ -218,12 +295,13 @@ export async function deleteInventoryRemaining(id: string, now: Date): Promise<v
  */
 export async function getOtherFragmentStorage(accountId: string, worldKey: string, excludeRecordId?: string): Promise<number> {
   const db = await getBossProfitDb()
+  const worldId = findWorld(worldKey)?.id ?? null
   const { values } = await db.query(
-    `SELECT COALESCE((SELECT SUM(i.quantity + ${PURCHASED_SQL}) FROM inventory_items i
-                       WHERE i.account_id = ? AND i.world_key = ? AND i.item_key = ?), 0)
-          - COALESCE((SELECT SUM(fragments) FROM cashbook_entry_fragment_uses
-                        WHERE fragment_source = 'other' AND account_id = ? AND world_key = ? AND entry_id IS NOT ?), 0) AS stored`,
-    [accountId, worldKey, SOL_ERDA_FRAGMENT_ITEM_KEY, accountId, worldKey, excludeRecordId ?? null],
+    `SELECT COALESCE((SELECT SUM(i.added_quantity + ${linkedQuantitySql(true)}) FROM inventory_items i
+                       WHERE i.account_id = ? AND i.world_id = ? AND i.item_id = ${solErdaFragmentIdSql()}), 0)
+          - COALESCE((SELECT SUM(u.quantity) FROM (${INVENTORY_USES_SQL}) u
+                        WHERE u.account_id = ? AND u.world_id = ? AND u.entry_id IS NOT ?), 0) AS stored`,
+    [accountId, worldId, accountId, worldId, excludeRecordId ?? null],
   )
   return Number(values?.[0]?.stored ?? 0)
 }
@@ -255,30 +333,27 @@ export async function inventoryRowForPurchase(
     now: Date
   },
 ): Promise<string> {
+  const ids = idsOf(input)
   if (input.itemKindKey === 'equipment') {
     if (input.previousId !== null) {
       const { values } = await db.query(
         `SELECT id FROM inventory_items
-          WHERE id = ? AND account_id = ? AND world_key = ? AND item_key = ? AND ring_level IS ? AND item_kind_key = 'equipment'`,
-        [input.previousId, input.accountId, input.worldKey, input.itemKey, input.ringLevel],
+          WHERE id = ? AND account_id = ? AND world_id = ? AND item_id = ? AND cashbook_item_type_id = ?`,
+        [input.previousId, input.accountId, ids.worldId, ids.itemId, ids.typeId],
       )
       if (values?.[0] !== undefined) return input.previousId
     }
   } else {
-    const { values } = await db.query(
-      `SELECT id FROM inventory_items WHERE account_id = ? AND world_key = ? AND item_key = ? AND item_kind_key <> 'equipment'`,
-      [input.accountId, input.worldKey, input.itemKey],
-    )
-    const found = values?.[0]?.id
-    if (typeof found === 'string') return found
+    const found = await sameItemRowOf(db, input.accountId, ids)
+    if (found !== null) return found
   }
   const { values } = await db.query(`SELECT ${NEW_UUID_SQL} AS id`)
   const id = values?.[0]?.id as string
   const at = input.now.toISOString()
   await db.run(
-    `INSERT INTO inventory_items (id, account_id, world_key, item_key, item_kind_key, quantity, ring_level, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)`,
-    [id, input.accountId, input.worldKey, input.itemKey, input.itemKindKey, input.ringLevel, at, at],
+    `INSERT INTO inventory_items (id, account_id, world_id, item_id, cashbook_item_type_id, added_quantity, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
+    [id, input.accountId, ids.worldId, ids.itemId, ids.typeId, at, at],
   )
   return id
 }
@@ -290,11 +365,9 @@ export async function inventoryRowForPurchase(
 export async function deleteEmptyInventoryRows(db: SqliteDbConnection): Promise<void> {
   await db.run(
     `DELETE FROM inventory_items
-      WHERE quantity = 0
+      WHERE added_quantity = 0
         AND NOT EXISTS (SELECT 1 FROM cashbook_entry_items ci WHERE ci.inventory_item_id = inventory_items.id)
-        AND NOT (item_key = ? AND EXISTS (SELECT 1 FROM cashbook_entry_fragment_uses u
-                  WHERE u.fragment_source = 'other' AND u.account_id = inventory_items.account_id
-                    AND u.world_key = inventory_items.world_key))`,
-    [SOL_ERDA_FRAGMENT_ITEM_KEY],
+        AND NOT (item_id = ${solErdaFragmentIdSql()} AND EXISTS (SELECT 1 FROM (${INVENTORY_USES_SQL}) u
+                  WHERE u.account_id = inventory_items.account_id AND u.world_id = inventory_items.world_id))`,
   )
 }
