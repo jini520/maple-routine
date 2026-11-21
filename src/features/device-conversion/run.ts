@@ -8,7 +8,8 @@ import { useSyncExternalStore } from 'react'
 import { mainNexonAccountIdOf } from '../../lib/nexon-credential'
 import { getAuthConfig } from '../../storage/api-key'
 import { getRepresentativeCharacter, getTrackedCharacterOcids } from '../../storage/character-selection'
-import { holdRecordTablesUntil, getBossProfitDbUngated } from '../../storage/sqlite/db'
+import { holdRecordsUntil } from '../../storage/record-hold'
+import { getBossProfitDbUngated } from '../../storage/sqlite/db'
 import {
   DeviceConversionError,
   runDeviceConversion,
@@ -90,7 +91,7 @@ function convert(): Promise<void> {
  * @example startDeviceConversion()
  */
 export function startDeviceConversion(): void {
-  holdRecordTablesUntil(
+  holdRecordsUntil(
     new Promise<void>((resolve) => {
       release = resolve
     }),
@@ -103,11 +104,11 @@ export function retryDeviceConversion(): Promise<void> {
   return convert()
 }
 
-/** 테스트 전용. 단계를 처음으로 되돌리고 기록 표 막기를 푼다. */
+/** 테스트 전용. 단계를 처음으로 되돌리고 기록 막기를 푼다. */
 export function __resetDeviceConversionForTest(): void {
   phase = 'running'
   listeners.clear()
   attempt = null
   release = () => {}
-  holdRecordTablesUntil(Promise.resolve())
+  holdRecordsUntil(Promise.resolve())
 }
