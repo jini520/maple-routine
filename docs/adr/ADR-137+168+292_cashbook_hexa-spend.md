@@ -1,4 +1,4 @@
-# ADR-137+168 헥사 강화 지출과 강화 레벨 기억
+# ADR-137+168+292 헥사 강화 지출과 강화 레벨 기억
 
 > 🟢 유효
 > 관련 소스: `app/cashbook/spend/HexaMatrixForm.tsx` · `app/cashbook/spend/LevelRangeGrid.tsx` · `app/cashbook/spend/level-range.ts` · `app/cashbook/spend/SymbolForm.tsx` · `lib/cashbook/hexa-matrix.ts` · `features/cashbook/remembered-levels.ts` · `storage/remembered-levels.ts` · `nexon/hexamatrix/` · `features/cashbook/records.ts` · `storage/cashbook-entries.ts` · `storage/income.ts` · `storage/fragment-ledger.ts` · `storage/hexa-storage-checks.ts`
@@ -47,6 +47,7 @@
 5. 기록을 저장하면 강화 후 레벨이 기억한 값이 된다. 다음에 폼을 열면 그 값이 강화 전 칸에 선다.
 6. 기억한 값이 실제 게임 레벨과 달라도 **사용자가 친 값을 믿는다**. 넥슨 레벨로 기억을 채우는 것은 위 1 · 4 처럼 비어 있을 때뿐이다.
 7. 그 코어(심볼)의 가장 최근 기록을 고치면 기억한 값도 고친 강화 후 레벨로 바뀐다. 가장 최근 기록을 지우면 그 기록의 강화 전 레벨로 돌아간다(사용자 선택 2026-10-30). 더 옛 기록을 고치거나 지우면 기억은 그대로다. 그 뒤에 적은 기록이 이미 레벨을 옮겼기 때문이다.
+8. 기억은 `remembered_levels` 에 캐릭터 · 종류(`type`: `symbol` · `hexa`) · 대상(`target_id`)마다 한 줄로 둔다. 대상은 심볼 줄이나 헥사 코어 줄의 id 다. 코어는 이름이 같아도 직업마다 다른 줄이라 그 캐릭터 직업의 줄을 적고, 직업에 없으면 `전직업` 의 줄을 적는다. 표에 없는 심볼 · 코어의 레벨은 적지 않는다. 대상 칸을 비울 수 없고, 폼은 표에 있는 대상만 보인다([[ADR-286]] 결정 5). 넥슨이 표보다 먼저 새 코어를 주면 그 코어의 레벨만 빠진다.
 
 ### 결정 4. 헥사 코어 레벨은 `/maplestory/v1/character/hexamatrix` 에서 받는다
 
@@ -227,7 +228,7 @@
 
 - 폼에는 보관에서 가져오는 합만 `보관 중인 조각 사용` 옆에 선다. 어느 캐릭터에서 몇 개를 가져오는지는 보이지 않고 고칠 수도
   없다(사용자 지정). 캐릭터마다 줄을 세우면 시트가 길어진다.
-- 저장할 때 배분을 표 `cashbook_entry_fragment_uses` 에 캐릭터마다 한 줄로 적는다. 칸은 uuid 기본키 · 기록 id · `ocid` · 개수이고,
+- 저장할 때 배분을 표 `cashbook_entry_fragment_uses` 에 캐릭터마다 한 줄로 적는다. 칸은 uuid 기본키 · 기록 id · 가져온 보관(`fragment_source`) · `ocid` · 개수(`fragment_quantity`)이고,
   기록을 지우면 함께 지워진다. 저장할 때마다 다시 계산하면 옛 사냥 기록을 고쳤을 때 지난 헥사 기록이 가져간 캐릭터가 조용히 바뀐다.
 - `getFragmentStorage` 는 사냥 보관에서 정산한 개수와 함께 이 표의 개수도 뺀다.
 - 저장 · 수정 · 삭제는 조각 장부를 0 아래로 내리는지 검사를 거친다([[ADR-049]] 결정 17).
@@ -257,7 +258,7 @@
 | `app/cashbook/spend/__tests__/LevelRangeGrid.test.tsx` | 결정 2: 강화 전을 고르면 탭이 강화 후로 넘어가고, 강화 전을 강화 후 위로 올리면 강화 후를 밀고, 못 고르는 칸은 눌러도 안 바뀌는지 본다. 고르지 않은 칸의 원 자리도 네이티브 뷰로 남는지(`collapsable={false}`) 본다 |
 | `app/cashbook/__tests__/SpendSheet.test.tsx` (`헥사 매트릭스` · `심볼 강화`) | 결정 3 · 6 · 8 · 9 · 10: 직업의 코어가 종류별로 묶이는지, 강화 전이 기억한 레벨인지, 조각 · 금액 · 저장 값, 개당 가격이 비면 저장이 꺼지는지, 교환 불가가 더 많으면 0 메소로 저장하는지, 헥사 스탯 활성화와 수정 되살리기, 심볼의 기억 레벨 · 만렙 묶음을 본다 |
 | `features/cashbook/__tests__/remembered-levels.spec.ts` | 결정 3: 추적 시작 때 기억이 없을 때만 넥슨 값으로 채우는지, 폼은 기억이 있으면 넥슨을 안 부르는지, 저장 · 지우기가 가장 최근 기록일 때만 기억을 옮기는지 본다 |
-| `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` | 결정 3 · 9: 조각 칸 넷이 그대로 돌아오는지, 칸이 없는 옛 품목 표에 칸이 붙는지, 가장 최근 기록 조회와 기억의 fill · overwrite 를 진짜 SQLite 로 본다 |
+| `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` | 결정 3 · 9: 조각 칸 넷이 그대로 돌아오는지, 칸이 없는 변환 전 품목 표에 칸이 붙는지, 가장 최근 기록 조회와 기억의 fill · overwrite 를 진짜 SQLite 로 본다. 결정 3: 표에 없는 코어와 그 직업에 없는 코어의 레벨은 적지 않고 나머지만 적는지 본다 |
 | `features/cashbook/__tests__/records.spec.ts` · `row-icon.spec.ts` · `features/stats/__tests__/aggregate.spec.ts` | 결정 12: 0 메소 헥사 줄이 서는지, 줄 두 줄 · 그림, 통계의 코어 · 스탯별 몫을 본다 |
 | `lib/__tests__/hexa-matrix.test.ts` (보관) | 결정 14 · 15 · 17: 교환 불가를 먼저 빼고 보관을 차례대로 가져오며 마지막 캐릭터는 모자란 만큼만 쓰는지, 강화한 캐릭터 다음 같은 메이플 ID · 같은 월드 캐릭터를 캐릭터 관리 순서로 두는지, 메이플 ID 나 월드를 모르면 자신뿐이고 월드를 모르는 다른 캐릭터는 빠지는지, 보관 0 이하를 건너뛰는지, 지출 체크에 따라 금액이 갈리는지 본다 |
 | `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` (`보관에서 가져온 조각`) | 결정 13 · 16 · 17: 두 체크와 배분이 그대로 돌아오고 가격 없는 기록도 헥사 기록인지, 고치면 배분을 갈아 끼우고 지우면 함께 지워지는지, 보관이 헥사 기록이 가져간 개수를 빼고 수정 중인 기록의 몫은 되돌리는지 진짜 SQLite 로 본다 |
@@ -272,3 +273,5 @@
 - ADR-137 (2026-10-30): 가계부 기록을 서버로 보내지 않게 되어([[ADR-099]] 결정 1) 결정 9 의 서버 기록 표와 결정 10 의 0 메소 기록 전송 규칙을 지웠다
 - ADR-168 (2026-11-05): 헥사 강화가 같은 메이플 ID 캐릭터의 보관 조각을 쓰는 결정 13 ~ 17 을 더하고, 결정 10 의 `보관한 조각을 빼지 않는다` 를 지웠다. 결정 9 의 금액 식은 결정 17 로 옮겼다. 같은 날 결정 15 의 후보를 같은 월드로 더 좁혔다
 - (2026-11-13) 결정 12 에 하루 목록에서 같은 캐릭터의 헥사 기록을 한 줄로 합친다는 것을 적었다. 결정은 [[ADR-047]] 결정 18 에 있다(#924)
+- ADR-292 (2026-11-21): 결정 3 에 기억을 대상 줄 id 로 두고 표에 없는 대상은 적지 않는다는 것(8)을 더하고, 결정 16 의 칸 이름을
+  1.0.15 기기 변환이 만든 표에 맞췄다(#947)

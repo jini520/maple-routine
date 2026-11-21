@@ -1,5 +1,5 @@
 /**
- * 손입력 수입 어댑터. 기록은 가계부 기록 표 셋(`cashbook-entries.ts`)에 `entry_type = 'income'` 으로 산다. 수입은
+ * 손입력 수입 어댑터. 기록은 가계부 기록 표(`cashbook-entries.ts`)에 수입 분류의 기록으로 산다. 수입은
  * 품목 하나이고, 사냥의 계산 입력은 사냥 입력 표에 따로 든다. 화면이 쓰는 모양(`IncomeRecord`)은 그대로다.
  *
  * 손입력은 같은 날 같은 것을 두 번이 정상이라 자연키가 성립하지 않는다. 기록마다 uuid 하나다.
@@ -13,15 +13,7 @@
 import type { IncomeCategoryKey, ItemKindKey } from '../lib/cashbook/categories'
 import type { UnionTier } from '../lib/cashbook/hunting-meso'
 import type { FeePercent } from '../lib/cashbook/item-split'
-import {
-  assignLegacyEntryAccounts,
-  assignOwnerlessEntries,
-  deleteEntry,
-  insertEntry,
-  moveEntriesToOcid,
-  readEntries,
-  replaceEntry,
-} from './cashbook-entries'
+import { categorySql, deleteEntry, entryTypeSql, insertEntry, moveEntriesToOcid, readEntries, replaceEntry } from './cashbook-entries'
 import { availableFragmentsOn } from '../lib/cashbook/fragment-ledger'
 import type { EntryExchange, OtherFragmentUse } from './cashbook-entries'
 import { incomeEntryOf, incomeRecordOf } from './cashbook-entry-shape'
@@ -35,10 +27,15 @@ import { inTransaction } from './sqlite/transaction'
 
 export interface IncomeRecord {
   id: string
-  /** 기록이 붙은 캐릭터. 메이플 ID 기록과 주인을 모르는 옛 기록은 `null` 이다. */
+  /** 기록이 붙은 캐릭터. 메이플 ID 기록은 `null` 이다. 저장한 기록은 이것과 `accountId` 가운데 하나가 반드시 있다. */
   ocid: string | null
   /** 기록이 붙은 메이플 ID. 메이플 ID 기록에만 있다. */
   accountId?: string
+  /**
+   * 메이플 ID 기록의 월드. 인벤토리에서 판 기타 조각 기록만 판 조각의 월드를 든다. 그 월드의 남은 기타 조각에서 판 개수를 뺀다.
+   * 캐릭터 기록은 칸이 없고, 월드는 저장할 때 캐릭터에서 정한다.
+   */
+  worldKey?: string
   /** `'YYYY-MM-DD'` KST. **사용자가 고른 날짜**라 캘린더 칸에 바로 선다. */
   earnedOn: string
   /** 분류 key. */
@@ -265,29 +262,6 @@ export function updateIncomeRecord(record: IncomeRecord, sources?: HexaSources):
   return writeIncomeChange({ kind: 'edit', record }, sources)
 }
 
-/**
- * 주인을 모르는 옛 수입을 그 넥슨 계정의 하나뿐인 메이플 ID 로 옮긴다. 옮긴 것이 있을 때만 판이 오른다.
- *
- * @param categoryKeys 메이플 ID 를 고를 수 있는 수입 분류
- */
-export async function assignLegacyIncomeAccounts(categoryKeys: readonly IncomeCategoryKey[]): Promise<void> {
-  const db = await getBossProfitDb()
-  if (await assignLegacyEntryAccounts(db, 'income', categoryKeys)) bumpIncomeRecordsRevision()
-}
-
-/**
- * 남은 주인 모르는 옛 수입을 대표 캐릭터에게 붙인다. 붙인 것이 있을 때만 판이 오른다.
- *
- * @param categoryKeys 메이플 ID 를 고를 수 있는 수입 분류
- */
-export async function assignOwnerlessIncomes(
-  owner: { ocid: string; accountId: string },
-  categoryKeys: readonly IncomeCategoryKey[],
-): Promise<void> {
-  const db = await getBossProfitDb()
-  if (await assignOwnerlessEntries(db, 'income', owner, categoryKeys)) bumpIncomeRecordsRevision()
-}
-
 /** 월드 리프한 캐릭터의 수입을 새 ocid 로 옮긴다. 옮긴 것이 있을 때만 판이 오른다. */
 export async function moveIncomeRecordsToOcid(fromOcid: string, toOcid: string): Promise<void> {
   const db = await getBossProfitDb()
@@ -299,7 +273,6 @@ export function deleteIncomeRecord(id: string, sources?: HexaSources): Promise<v
   return writeIncomeChange({ kind: 'remove', id }, sources)
 }
 
-const INCOME = `e.entry_type = 'income'`
 
 /**
  * 날짜 범위의 기록. **두 끝을 포함**한다. 월간이든 주간이든 부르는 쪽이 범위만 정한다
@@ -313,7 +286,7 @@ export async function getIncomeRecordsBetween(
   toDateKey: string,
 ): Promise<IncomeRecord[]> {
   const db = await getBossProfitDb()
-  const entries = await readEntries(db, `${INCOME} AND e.entry_date BETWEEN ? AND ?`, [fromDateKey, toDateKey])
+  const entries = await readEntries(db, `${entryTypeSql('income')} AND e.date BETWEEN ? AND ?`, [fromDateKey, toDateKey])
   return entries.map(incomeRecordOf)
 }
 
@@ -322,7 +295,8 @@ export async function getAutoFeeIncomeRecords(): Promise<IncomeRecord[]> {
   const db = await getBossProfitDb()
   const entries = await readEntries(
     db,
-    `${INCOME} AND EXISTS (SELECT 1 FROM cashbook_entry_items i WHERE i.entry_id = e.id AND i.sale_fee_auto = 1)`,
+    `${entryTypeSql('income')}
+     AND EXISTS (SELECT 1 FROM cashbook_entry_items i WHERE i.entry_id = e.id AND i.sale_fee_follows_mvp_grade = 1)`,
     [],
   )
   return entries.map(incomeRecordOf)
@@ -337,9 +311,10 @@ export interface IncomeSaleFeeUpdate {
 }
 
 const UPDATE_FEE_SQL = `UPDATE cashbook_entry_items SET amount_meso = ?, sale_fee_percent = ?, sale_fee_meso = ?`
-const OF_INCOME_ENTRY = `WHERE entry_id = ? AND sort_order = 0`
+/** 수입은 품목이 하나라 기록 id 로 그 품목을 고른다. */
+const OF_INCOME_ENTRY = `WHERE entry_id = ?`
 
-/** 자동 수수료를 다시 셀 때 세 칸만 고쳐 쓴다. 수입은 품목 하나다. 조각 하나가 트랜잭션 하나다. */
+/** 자동 수수료를 다시 셀 때 세 칸만 고쳐 쓴다. 조각 하나가 트랜잭션 하나다. */
 export async function updateIncomeSaleFees(updates: readonly IncomeSaleFeeUpdate[]): Promise<void> {
   if (updates.length === 0) return
   const db = await getBossProfitDb()
@@ -364,10 +339,9 @@ export async function getBulkFeeIncomeRecords(): Promise<IncomeRecord[]> {
   const db = await getBossProfitDb()
   const entries = await readEntries(
     db,
-    `${INCOME}
-     AND EXISTS (SELECT 1 FROM cashbook_entry_items i WHERE i.entry_id = e.id AND i.sort_order = 0 AND i.sale_fee_percent IS NULL)
-     AND (e.category_key IN ('item_sale', 'sol_erda_fragment')
-          OR (e.category_key = 'hunting'
+    `EXISTS (SELECT 1 FROM cashbook_entry_items i WHERE i.entry_id = e.id AND i.sale_fee_percent IS NULL)
+     AND (${categorySql('income', 'item_sale')} OR ${categorySql('income', 'sol_erda_fragment')}
+          OR (${categorySql('income', 'hunting')}
               AND EXISTS (SELECT 1 FROM cashbook_entry_hunt_inputs h WHERE h.entry_id = e.id AND h.fragment_price_meso IS NOT NULL)))`,
     [],
   )
@@ -380,7 +354,7 @@ export async function applyAutoIncomeSaleFees(updates: readonly IncomeSaleFeeUpd
   const db = await getBossProfitDb()
   await inTransaction(db, async () => {
     for (const update of updates) {
-      await db.run(`${UPDATE_FEE_SQL}, sale_fee_auto = 1 ${OF_INCOME_ENTRY}`, [
+      await db.run(`${UPDATE_FEE_SQL}, sale_fee_follows_mvp_grade = 1 ${OF_INCOME_ENTRY}`, [
         update.mesoAmount,
         update.saleFeePercent,
         update.saleFeeMeso,

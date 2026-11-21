@@ -211,21 +211,21 @@ describe('db.ts 와 맞물리는가', () => {
       'ALTER TABLE cashbook_entry_items ADD COLUMN inventory_item_id TEXT REFERENCES inventory_items(id)',
       'ALTER TABLE inventory_items ADD COLUMN ring_level INTEGER',
       'ALTER TABLE cashbook_entry_items ADD COLUMN ring_level INTEGER',
+      // 계정 단위 기록이 어느 넥슨 계정의 것인지와 캐릭터 기록의 그때 월드. 기기 변환 전 가계부 표에만 더한다.
+      'ALTER TABLE cashbook_entries ADD COLUMN nexon_account_id TEXT',
+      'ALTER TABLE cashbook_entries ADD COLUMN account_id TEXT',
+      'ALTER TABLE cashbook_entries ADD COLUMN world_key TEXT',
       'ALTER TABLE character_profiles ADD COLUMN world_key TEXT',
       "ALTER TABLE enhancement_history ADD COLUMN target_item TEXT NOT NULL DEFAULT ''",
       'ALTER TABLE enhancement_history ADD COLUMN item_level INTEGER',
       // 강화 기록도 장비 이름 대신 장비 key 를 든다.
       'ALTER TABLE enhancement_history ADD COLUMN item_key TEXT',
-      // 계정 단위 기록이 어느 넥슨 계정의 것인지.
-      'ALTER TABLE cashbook_entries ADD COLUMN nexon_account_id TEXT',
-      'ALTER TABLE cashbook_entries ADD COLUMN account_id TEXT',
       // 스타포스 첫 성 · 끝 성.
       'ALTER TABLE enhancement_totals ADD COLUMN from_star INTEGER',
       'ALTER TABLE enhancement_totals ADD COLUMN to_star INTEGER',
       'ALTER TABLE enhancement_totals ADD COLUMN superior_cost_meso INTEGER NOT NULL DEFAULT 0',
       'ALTER TABLE character_accounts ADD COLUMN world_key TEXT',
-      // 캐릭터 기록의 그때 월드와 리프 자동 판정이 읽는 만든 날.
-      'ALTER TABLE cashbook_entries ADD COLUMN world_key TEXT',
+      // 리프 자동 판정이 읽는 만든 날.
       'ALTER TABLE character_profiles ADD COLUMN created_date TEXT',
       // 분배 방식 `제외` 와 한도를 넘긴 처치.
       'ALTER TABLE boss_parties ADD COLUMN crystal_excluded INTEGER',

@@ -6,10 +6,22 @@
  */
 import type { SqliteDbConnection } from '../ports'
 import { convertBossTables } from './convert-boss-tables'
+import { convertCashbookTables } from './convert-cashbook-tables'
 import { inTransaction } from './transaction'
 
+/**
+ * 단계가 받는 Preferences 의 값. 저장소 층의 단계는 Preferences 를 읽지 않아 부팅이 변환 전에 읽어 넘긴다. 새로 설치한 DB 는 바꿀
+ * 줄이 없어 비어 있다.
+ */
+export interface DeviceConversionContext {
+  /** 지금 넥슨을 부르는 자격의 계정 id. 계정 칸이 생기기 전의 기록은 모두 이 계정으로 받았다. 로그인 전이면 없다 */
+  mainNexonAccountId?: string | null
+  /** 화면이 대표로 세우는 캐릭터. 주인을 모르는 옛 손입력이 이 캐릭터에게 붙는다 */
+  representativeOcid?: string | null
+}
+
 /** 변환 단계 하나. 앞 단계가 바꾼 표를 받아 다음 모양으로 바꾼다. */
-export type DeviceConversionStep = (db: SqliteDbConnection) => Promise<unknown>
+export type DeviceConversionStep = (db: SqliteDbConnection, context: DeviceConversionContext) => Promise<unknown>
 
 /** 마친 단계의 번호를 적는 한 줄짜리 표. 데이터 삭제가 지우지 않는다. 지우면 바뀐 표를 다시 바꾸려다 던진다. */
 export const DEVICE_CONVERSION_BODY = `(
@@ -33,10 +45,13 @@ async function dropLeftoverBossProfitPeriodChecks(db: SqliteDbConnection): Promi
 }
 
 /** 단계는 뒤에만 더한다. 차례를 바꾸거나 빼면 이미 그 번호까지 돈 기기가 다른 단계를 건너뛴다. */
-const STEPS: readonly DeviceConversionStep[] = [dropLeftoverBossProfitPeriodChecks, convertBossTables]
+const STEPS: readonly DeviceConversionStep[] = [dropLeftoverBossProfitPeriodChecks, convertBossTables, convertCashbookTables]
 
 /** 보스 기록 표 셋을 새 모양으로 바꾸는 단계의 번호. 이 번호까지 돈 DB 는 DB 를 열 때 새 표를 만든다. */
 export const BOSS_TABLES_CONVERTED_AT = STEPS.indexOf(convertBossTables) + 1
+
+/** 가계부 기록 표 · 인벤토리 · 기억한 레벨을 새 모양으로 바꾸는 단계의 번호. 이 번호까지 돈 DB 는 DB 를 열 때 새 표를 만든다. */
+export const CASHBOOK_TABLES_CONVERTED_AT = STEPS.indexOf(convertCashbookTables) + 1
 
 /** 마지막 단계의 번호. */
 export const DEVICE_CONVERSION_VERSION = STEPS.length
@@ -69,10 +84,11 @@ async function backup(db: SqliteDbConnection): Promise<void> {
   }
 }
 
-/** 변환을 돌리는 방법. 새로 설치한 DB 는 바꿀 줄이 없어 사본을 뜨지 않는다. 단계는 테스트가 갈아 끼울 때만 넘긴다. */
+/** 변환을 돌리는 방법. 새로 설치한 DB 는 바꿀 줄이 없어 사본을 뜨지 않고 맥락도 없다. 단계는 테스트가 갈아 끼울 때만 넘긴다. */
 export interface DeviceConversionOptions {
   backup?: boolean
   steps?: readonly DeviceConversionStep[]
+  context?: DeviceConversionContext
 }
 
 /**
@@ -91,7 +107,7 @@ export async function runDeviceConversion(db: SqliteDbConnection, options: Devic
   await inTransaction(db, async () => {
     for (let version = current + 1; version <= steps.length; version += 1) {
       try {
-        await steps[version - 1]!(db)
+        await steps[version - 1]!(db, options.context ?? {})
       } catch (error: unknown) {
         throw new DeviceConversionError(version, error)
       }

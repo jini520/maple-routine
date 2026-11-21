@@ -764,7 +764,7 @@ interface ManualDayRecordBase {
   /**
    * 그 기록에 붙은 캐릭터의 이름, 메이플 ID 기록이면 그 ID 의 이름(`메이플ID-da9b2f21`). 없으면 빈 문자열이다.
    *
-   * 주인을 모르는 옛 기록이거나 캐시에 이름이 없으면 빈다. 줄은 그때 항목만 적는다.
+   * 캐시에 이름이 없으면 빈다. 줄은 그때 항목만 적는다.
    */
   characterName: string
 }
@@ -1291,7 +1291,7 @@ function autoDetail(entry: AutoDayRecord): string {
  * 하루 목록 카드의 두 줄(ADR 이 분류마다의 규칙을 든다). 이름 · 카드 제목 · 단위는 서버 표에서 찾으므로, 관리 화면에서
  * 고치면 옛 기록도 새 글자로 선다. key 로 못 찾으면 적어 둔 이름, 그것도 없으면 분류 제목이다.
  *
- * 첫 줄 앞에는 캐릭터 이름이, 메이플 ID 기록이면 그 ID 의 이름이 붙는다. 주인을 모르는 옛 기록이나 이름을 모르는 줄은 제목만 선다.
+ * 첫 줄 앞에는 캐릭터 이름이, 메이플 ID 기록이면 그 ID 의 이름이 붙는다. 이름을 모르는 줄은 제목만 선다.
  */
 export function recordCardOf(entry: DayRecord): RecordCard {
   const card = isManualRecord(entry)

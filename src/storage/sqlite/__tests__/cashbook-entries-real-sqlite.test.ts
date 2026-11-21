@@ -1,18 +1,22 @@
 /// <reference types="node" />
 /**
- * 가계부 손입력 두 표(`spend_records` · `income_records`)를 기록 표 셋으로 옮기는 버전 15 를 진짜 SQLite 로 태운다.
+ * 가계부 기록 표를 진짜 SQLite 로 태운다. 가계부 손입력 두 표(`spend_records` · `income_records`)를 기록 표로 옮기는 버전 15 와
+ * 그 뒤 이관, 그리고 1.0.15 기기 변환 뒤의 표를 쓰는 어댑터를 본다.
  *
- * 옛 행을 심고 버전 14 로 되돌린 뒤 다시 열어, 저장 함수로 되읽은 기록을 옛 값과 견준다. 손입력은 되살릴 API 가 없어
- * 한 건이라도 잃으면 끝이다.
+ * 버전 15 는 옛 행을 심고 버전 14 로 되돌린 뒤 다시 열어, 기기 변환까지 돌려 저장 함수로 되읽은 기록을 옛 값과 견준다. 손입력은
+ * 되살릴 API 가 없어 한 건이라도 잃으면 끝이다.
  */
 import { existsSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
 
+import { itemTargetIdOf } from '../../../lib/cashbook/entry-ids'
+import { findWorld } from '../../../lib/world/worlds'
 import { saveCharacterProfile } from '../../character-profiles'
-import { getIncomeRecordsBetween, insertIncomeRecord, updateIncomeRecord, type IncomeRecord } from '../../income'
+import { getIncomeRecordsBetween, updateIncomeRecord, type IncomeRecord } from '../../income'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
-import { assignOwnerlessSpends, deleteSpendRecord, getSpendRecordsBetween, insertSpendRecord, updateSpendRecord, type SpendRecord } from '../../spend'
+import { deleteSpendRecord, getSpendRecordsBetween, insertSpendRecord, updateSpendRecord, type SpendRecord } from '../../spend'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
+import { runDeviceConversion } from '../device-conversion'
 import { __setMigrationCeilingForTest, DB_VERSION } from '../migrations'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
@@ -37,14 +41,31 @@ function all(sql: string): Row[] {
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+const AT = '2026-10-05T01:00:00.000Z'
 
-/** 버전 14 기기를 만든다. 그 버전까지만 이관한 DB 의 옛 표에 행을 넣는다. */
-async function seedVersion14(seed: (db: DatabaseSync) => void): Promise<void> {
-  __setMigrationCeilingForTest(14)
+/** 그 버전 기기를 만든다. 그 버전까지만 이관한 DB 의 옛 표에 행을 넣는다. */
+async function seedVersion(version: number, seed: (db: DatabaseSync) => void): Promise<void> {
+  __setMigrationCeilingForTest(version)
   await getBossProfitDb()
   await closeBossProfitDb()
   real.inspect(seed)
   __setMigrationCeilingForTest(null)
+}
+
+/** 버전 14 기기를 만든다. */
+function seedVersion14(seed: (db: DatabaseSync) => void): Promise<void> {
+  return seedVersion(14, seed)
+}
+
+/**
+ * 이관을 다 돈 DB 에 기기 변환까지 돌린다. 저장 함수는 변환한 표를 읽는다. 주인을 모르는 옛 기록은 대표 캐릭터 `ocid-1` 과 그
+ * 메이플 ID 에 붙는다.
+ */
+async function convertAfterMigrations(): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(`INSERT INTO character_accounts (ocid, name, account_id, nexon_account_id, first_seen_date, last_seen_date)
+                VALUES ('ocid-1', '대표', 'maple-1', 'account-1', '2026-01-01', '2026-11-01')`)
+  await runDeviceConversion(db, { backup: false, context: { representativeOcid: 'ocid-1' } })
 }
 
 const SPEND_COLUMNS =
@@ -60,7 +81,7 @@ function seedDevice(db: DatabaseSync): void {
     ('mg1abc-x4', NULL, '2026-10-02', '아이템 구매', 'item_purchase', '앱솔랩스 아처슈즈', NULL, NULL, 'equipment', NULL, NULL, NULL, 1100000000, 100000000, NULL, NULL, NULL, NULL, '2026-10-02T01:00:00.000Z'),
     ('mg1abc-x5', NULL, '2026-10-03', '없어진 분류', NULL, '옛 지출', NULL, NULL, NULL, NULL, NULL, NULL, 500, NULL, NULL, NULL, NULL, NULL, '2026-10-03T00:00:00.000Z')`)
   db.exec(`INSERT INTO income_records (${INCOME_COLUMNS}) VALUES
-    ('mg1abc-y1', 'ocid-1', '2026-10-01', '사냥', 'hunting', '밤의 길 3', 'tallahart_road_of_night_3', 900000000, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 285, 2, 'wealth', 8, 30, NULL, 120, NULL, 2, NULL, '2026-10-01T03:00:00.000Z'),
+    ('mg1abc-y1', 'ocid-1', '2026-10-01', '사냥', 'hunting', '밤의 길 3', 'tallahart_road_of_night_3', 900000000, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 285, 2, 'potion', 8, 30, NULL, 120, NULL, 2, NULL, '2026-10-01T03:00:00.000Z'),
     ('mg1abc-y2', 'ocid-1', '2026-10-02', '사냥', 'hunting', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 12, 0, NULL, 0, NULL, NULL, '2026-10-02T03:00:00.000Z'),
     ('mg1abc-y3', 'ocid-1', '2026-10-03', '아이템 판매', 'item_sale', '루즈 컨트롤 머신 마크', NULL, 950000000, 5, 50000000, 1, NULL, NULL, NULL, 10, 'consumable', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '판매', '2026-10-03T03:00:00.000Z'),
     ('mg1abc-y4', NULL, '2026-10-03', '솔 에르다 조각', 'sol_erda_fragment', NULL, NULL, 400000000, NULL, NULL, NULL, NULL, NULL, NULL, 20, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-10-03T04:00:00.000Z')`)
@@ -76,6 +97,7 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
 
   it('한 건도 안 잃고 값이 그대로다. id 는 새 uuid 이고 저장 시각이 차례를 지킨다', async () => {
     await seedVersion14(seedDevice)
+    await convertAfterMigrations()
 
     const spend = await getSpendRecordsBetween('2026-10-01', '2026-10-31')
     const income = await getIncomeRecordsBetween('2026-10-01', '2026-10-31')
@@ -112,7 +134,7 @@ describe('버전 15: 가계부 손입력 두 표를 기록 표 셋으로 옮긴�
           mode: 'calculator',
           characterLevel: 285,
           missedMobs: 2,
-          boosts: ['wealth'],
+          boosts: ['potion'],
           sojae: 8,
           fragments: 30,
           fragmentPrice: null,
@@ -245,8 +267,10 @@ describe('가계부 기록의 월드', () => {
   }
 
   function worldOf(id: string): unknown {
-    return all(`SELECT world_key FROM cashbook_entries WHERE id = '${id}'`)[0]?.world_key
+    return all(`SELECT world_id FROM cashbook_entries WHERE id = '${id}'`)[0]?.world_id
   }
+
+  const worldIdOf = (key: string) => findWorld(key)!.id
 
   it('캐릭터 기록은 적을 때 그 캐릭터의 프로필 월드를 채우고, 메이플 ID 기록은 비운다', async () => {
     await saveWorld('ocid-1', '엘리시움', 'elysium')
@@ -254,7 +278,7 @@ describe('가계부 기록의 월드', () => {
     await insertSpendRecord(버프)
     await insertSpendRecord(메이플ID기록)
 
-    expect(worldOf(버프.id)).toBe('elysium')
+    expect(worldOf(버프.id)).toBe(worldIdOf('elysium'))
     expect(worldOf(메이플ID기록.id)).toBeNull()
   })
 
@@ -267,35 +291,27 @@ describe('가계부 기록의 월드', () => {
     real.inspect((db) => db.exec(`UPDATE cashbook_entries SET ocid = 'ocid-2' WHERE id = '${버프.id}'`))
 
     await updateSpendRecord({ ...버프, ocid: 'ocid-2', mesoAmount: 5_000_000 })
-    expect(worldOf(버프.id)).toBe('challengers_2')
+    expect(worldOf(버프.id)).toBe(worldIdOf('challengers_2'))
 
     await updateSpendRecord({ ...버프, ocid: 'ocid-3' })
-    expect(worldOf(버프.id)).toBe('scania')
-  })
-
-  it('주인 모르는 옛 기록을 대표 캐릭터에 붙이면 그 캐릭터의 월드를 채운다', async () => {
-    await saveWorld('ocid-1', '엘리시움', 'elysium')
-    await insertSpendRecord({ ...버프, ocid: null })
-
-    await assignOwnerlessSpends({ ocid: 'ocid-1', accountId: 'acc-1' }, ['etc'])
-
-    expect(worldOf(버프.id)).toBe('elysium')
+    expect(worldOf(버프.id)).toBe(worldIdOf('scania'))
   })
 
   it('버전 19 는 이미 있는 캐릭터 기록의 월드를 그 캐릭터의 프로필 월드로 채운다', async () => {
-    await saveWorld('ocid-1', '엘리시움', 'elysium')
-    await insertSpendRecord(버프)
-    await insertSpendRecord(메이플ID기록)
-    await closeBossProfitDb()
-    real.inspect((db) => {
-      db.exec('UPDATE cashbook_entries SET world_key = NULL')
-      db.exec('PRAGMA user_version = 18')
+    await seedVersion(18, (db) => {
+      db.exec(`INSERT INTO character_profiles (ocid, name, image_url, world, world_key, level, updated_at)
+               VALUES ('ocid-1', 'ocid-1', '', '엘리시움', 'elysium', 285, '2026-10-01T00:00:00.000Z')`)
+      db.exec(`INSERT INTO cashbook_entries (id, ocid, account_id, entry_type, category_key, entry_date, created_at, updated_at)
+               VALUES ('${버프.id}', 'ocid-1', NULL, 'spend', 'buff', '2026-10-05', '${AT}', '${AT}'),
+                      ('${메이플ID기록.id}', NULL, 'acc-1', 'spend', 'etc', '2026-10-05', '${AT}', '${AT}')`)
     })
 
     await getBossProfitDb()
 
-    expect(worldOf(버프.id)).toBe('elysium')
-    expect(worldOf(메이플ID기록.id)).toBeNull()
+    expect(all('SELECT id, world_key FROM cashbook_entries ORDER BY id')).toEqual([
+      { id: 버프.id, world_key: 'elysium' },
+      { id: 메이플ID기록.id, world_key: null },
+    ])
   })
 })
 
@@ -353,7 +369,7 @@ describe('메포 지출의 메소마켓 수수료율', () => {
   }
 
   function feesOf(entryId: string): unknown[] {
-    return all(`SELECT meso_market_fee_percent FROM cashbook_entry_items WHERE entry_id = '${entryId}' ORDER BY sort_order`).map(
+    return all(`SELECT meso_market_fee_percent FROM cashbook_entry_items WHERE entry_id = '${entryId}' ORDER BY rowid`).map(
       (row) => row.meso_market_fee_percent,
     )
   }
@@ -368,11 +384,17 @@ describe('메포 지출의 메소마켓 수수료율', () => {
   })
 
   it('버전 20 은 메포 지출 품목에만 요율 1 을 채우고, 메소 지출과 메포 수입은 비워 둔다', async () => {
-    await insertSpendRecord({ ...메포지출, mesoMarketFeePercent: null })
-    await insertSpendRecord(메소지출)
-    await insertIncomeRecord(메포수입)
-    await closeBossProfitDb()
-    real.inspect((db) => db.exec('PRAGMA user_version = 19'))
+    await seedVersion(19, (db) => {
+      db.exec(`INSERT INTO cashbook_entries (id, ocid, entry_type, category_key, entry_date, created_at, updated_at)
+               VALUES ('${메포지출.id}', 'ocid-1', 'spend', 'content', '2026-10-05', '${AT}', '${AT}'),
+                      ('${메소지출.id}', 'ocid-1', 'spend', 'buff', '2026-10-05', '${AT}', '${AT}'),
+                      ('${메포수입.id}', 'ocid-1', 'income', 'etc', '2026-10-05', '${AT}', '${AT}')`)
+      db.exec(`INSERT INTO cashbook_entry_items (id, entry_id, sort_order, item_key, amount_meso, amount_point)
+               VALUES ('i1', '${메포지출.id}', 0, 'high_mountain_1', NULL, 7501),
+                      ('i2', '${메포지출.id}', 1, 'high_mountain_2', NULL, 29999),
+                      ('i3', '${메소지출.id}', 0, 'seiram_elixir', 4000000, NULL),
+                      ('i4', '${메포수입.id}', 0, NULL, NULL, 30000)`)
+    })
 
     await getBossProfitDb()
 
@@ -488,5 +510,72 @@ describe('시트 입력 표: 주간 보스 수입 이전 · 메소마켓 환전 
     expect(await getSpendRecordsBetween('2026-11-20', '2026-11-20')).toEqual([])
     const [read] = await getIncomeRecordsBetween('2026-11-20', '2026-11-20')
     expect(read).toMatchObject({ id: 판매만.id, recordedAt: 판매만.recordedAt, mesoAmount: 22_448_015, exchange: 수입.exchange })
+  })
+})
+
+// 변환한 표는 key 대신 줄 id 를 적는다. 줄 id 를 비우면 다른 물건의 기록이 되거나 기록이 사라져, 표에 없는 key 는 적지 않는다.
+describe('줄 id 로 적고 key 로 되읽는다', () => {
+  const 헥사: SpendRecord = {
+    id: '9e0f1a2b-3c4d-4e5f-8a6b-7c8d9e0f1a2b',
+    ocid: 'ocid-1',
+    spentOn: '2026-11-20',
+    category: 'hexa_matrix',
+    item: null,
+    itemKey: '블리츠 실드 VI/블리츠 버스트',
+    formItemKeys: null,
+    itemKind: null,
+    levelFrom: 1,
+    levelTo: 2,
+    quantity: null,
+    mesoAmount: 0,
+    tariffMeso: null,
+    pointAmount: null,
+    pointPer100mMeso: null,
+    mesoMarketFeePercent: null,
+    cashAmount: null,
+    hexa: {
+      fragmentCount: 10,
+      untradableFragmentCount: 10,
+      fragmentPrice: null,
+      activation: null,
+      useStorage: false,
+      storageAsSpend: false,
+      storageUses: [],
+    },
+    recordedAt: '2026-11-20T01:00:00.000Z',
+  }
+
+  async function saveJob(jobClass: string): Promise<void> {
+    await saveCharacterProfile({
+      ocid: 'ocid-1', name: 'ocid-1', imageUrl: '', world: '스카니아', worldKey: 'scania', level: 285, jobClass, updatedAt: '2026-10-01T00:00:00.000Z',
+    })
+  }
+
+  it('표에 없는 품목 · 분류 key 를 적으려 하면 던지고 아무것도 남기지 않는다', async () => {
+    await expect(insertSpendRecord({ ...헥사, category: 'buff', itemKey: 'no_such_item', hexa: null })).rejects.toThrow('no_such_item')
+    await expect(insertSpendRecord({ ...헥사, category: 'no_such_category' as SpendRecord['category'], hexa: null })).rejects.toThrow()
+
+    expect(all('SELECT count(*) AS n FROM cashbook_entries')).toEqual([{ n: 0 }])
+  })
+
+  // 같은 이름의 코어가 직업마다 다른 줄이다. 그 캐릭터 직업의 줄을 적어야 서버에서 그 직업의 코어로 선다.
+  it('헥사 코어는 그 캐릭터 직업의 줄을 적고, 직업에서 못 찾으면 이름을 적어 두 경우 모두 코어 이름으로 되읽는다', async () => {
+    await saveJob('팔라딘')
+    await insertSpendRecord(헥사)
+    await saveJob('비숍')
+    await insertSpendRecord({ ...헥사, id: '0f1a2b3c-4d5e-4f6a-9b7c-8d9e0f1a2b3c' })
+
+    expect(all('SELECT target_type, target_id, item_name FROM cashbook_entry_items ORDER BY rowid')).toEqual([
+      {
+        target_type: 'hexa_core',
+        target_id: itemTargetIdOf('hexa_core', 헥사.itemKey!, { job: '팔라딘' }),
+        item_name: null,
+      },
+      { target_type: null, target_id: null, item_name: 헥사.itemKey },
+    ])
+    expect((await getSpendRecordsBetween('2026-11-20', '2026-11-20')).map((record) => record.itemKey)).toEqual([
+      헥사.itemKey,
+      헥사.itemKey,
+    ])
   })
 })

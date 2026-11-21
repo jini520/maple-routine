@@ -17,12 +17,12 @@
 | `features/cashbook/range.ts` | 미리 읽는 창 · 데이터 공급자에 알리는 범위 · 조회 한도 |
 | `features/cashbook/records.ts` | 저장 · 고치기 · 지우기, 원천 넷을 하루 단위로 합치기, 카드 두 줄(`recordCardOf`) · 금액, 그날 합계. 시트의 캐릭터 이름 · 레벨 · 월드는 쿼리 캐시의 `characterBasic(ocid)` 에서 읽는다(`features/schedule-sync/read-schedule.ts` 의 `readCharacterBasic`) |
 | `features/cashbook/account-names.ts` | 메이플 ID 기록의 이름(`메이플ID-da9b2f21`)과 시트의 메이플 ID 보기. 보기의 차례를 정하는 대표 캐릭터는 기기에 저장된 `characterList` 쿼리에서 고른다 |
-| `features/cashbook/legacy-entry-accounts.ts` | 주인을 모르는 옛 손입력을 그 넥슨 계정의 하나뿐인 메이플 ID 로 옮기는 부팅 단계 |
 | `features/cashbook/row-icon.ts` | 하루 목록 줄의 그림과 펼친 강화 줄의 장비 그림(`enhancedItemIconOf`) |
 | `features/cashbook/merged-rows.ts` | 하루 목록에서 헥사 매트릭스 · 아이템 구매 기록을 캐릭터마다 한 줄로 합치기(`mergeDayRows`), 합친 줄의 두 줄 · 금액 · 그림. 펼친 칸의 두 줄은 `records.ts` 의 `spendTileOf` 다 |
 | `features/cashbook/ledger-query.ts` | 날짜별 줄 쿼리 `ledgerDays(from, to)`. 기록 표의 판이 오르면 다시 읽는다. today · 통계도 같은 열쇠를 쓴다 |
 | `features/ledger/LedgerDataProvider.tsx` · `useLedgerData.ts` | 넥슨 API 회차를 관리하는 데이터 공급자와 그것을 읽는 훅. 진행률 · 모달 · 강화 범위를 들고 기록은 들지 않는다. 화면은 범위를 알리고 다시 받아 달라고 요청한다 |
-| `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` | `cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` |
+| `storage/income.ts` · `storage/spend.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` | 가계부 기록 표 여섯(`cashbook_entries` · `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` · `cashbook_entry_transfer_inputs` · `cashbook_entry_exchange_inputs`). 표의 줄 id 와 화면이 드는 key 를 오간다 |
+| `lib/cashbook/entry-ids.ts` | 가계부 분류 · 품목의 대상 · 아이템 종류 · 추가 리워드 종류의 key 와 줄 id 를 오가는 함수 |
 | `storage/enhancement-totals.ts` · `storage/enhancement-history.ts` · `features/enhancement-history/` · `lib/enhancement/` | 강화 사용 내역 수집 · 비용 계산 · 합계 저장 · 지출 판정. 원장은 `enhancement-history.ts` 에 있다 |
 | `app/cashbook/IncomeSheet.tsx` · `SpendSheet.tsx` · `CategoryPicker.tsx` · `sheet-fields.tsx` | 두 시트와 공용 부품 |
 | `app/cashbook/income/` · `app/cashbook/spend/` | 분류별 폼 |
@@ -48,8 +48,8 @@
 
 | 원천 | 저장 위치 | 여기서 고치나 |
 |---|---|---|
-| 손으로 적은 지출 | `cashbook_entries`(`entry_type = 'spend'`) | 예 |
-| 손으로 적은 수입 | `cashbook_entries`(`entry_type = 'income'`) | 예 |
+| 손으로 적은 지출 | `cashbook_entries`(지출 분류의 기록) | 예 |
+| 손으로 적은 수입 | `cashbook_entries`(수입 분류의 기록) | 예 |
 | 보스 결정석 | 처치한 `boss_profit_entries` 줄(보스 수익 탭이 적는다) | 아니오. 누르면 그날 잡은 보스가 펼쳐진다([[ADR-047]] 결정 13). 가계부에서 빼지 않는다. 결정석을 팔지 않은 처치는 보스 수익 탭의 분배 방식 `제외` 로, 주간 결정석 판매 한도를 넘긴 처치는 판정으로 0 메소가 되고, 0 이 된 결정석은 이 줄의 목록과 `n마리` 에서 빠진다([[ADR-038]] 결정 12 · [[ADR-042]] 결정 15) |
 | 아이템 판매 | `boss_drops`(보스 수익 탭이 적는다) | 아니오. 누르면 판 아이템이 펼쳐진다([[ADR-047]] 결정 13) |
 | 강화 사용 내역 | `enhancement_totals`(넥슨 API 에서 받아 합계로 저장한다) | 아니오. 누르면 장비별 금액이 펼쳐지고, 스타포스는 그날 첫 성과 끝 성도 선다([[ADR-100]] 결정 8). 편집 상태에서 장비 한 줄씩 가계부에서 뺀다([[ADR-160]]) |
@@ -160,7 +160,7 @@ today 빠른 이동의 `사냥` · `전리품 판매` 칸으로 오면 분류를
 
 - 분류와 항목 타일은 테두리 없는 카드 안에 하나씩 `card-inset` 칸으로 선다(항목 격자는 묶음 줄마다 카드 하나). 폼의 줄은 테두리 없는 카드 하나 안에 줄마다 `card-inset` 칸으로 서고(메소마켓 환전 수수료만 판매 · 구매 두 카드), 큰 숫자는 그 카드 아래에 선다([[ADR-048]] 결정 2 · 4).
 - 항목 격자에는 지금 고를 수 있는 묶음만 선다. 기간제 묶음은 관리 화면에서 닫으면 격자에서 빠지고, 그 묶음으로 적은 기록은 그대로 고칠 수 있다([[ADR-048]] 결정 12).
-- 캐릭터 칸은 수입 기타 · 지출 컨텐츠 · 지출 이벤트·BM · 지출 기타에서 캐릭터나 메이플 ID 를, 지출 버프 · 주문서 · 심볼 강화 · 아이템 구매에서 캐릭터를 골라야 저장된다. 이 분류들에는 `선택 안함` 이 없고, 새 기록은 빈 칸으로 열린다. 지출 컨텐츠의 에픽던전 추가 리워드만 아래처럼 마지막 캐릭터가 채워질 수 있다. 메이플 ID 보기는 캐릭터 뒤에 메이플 ID 이름 글자로 선다. 캐릭터 없이 적힌 옛 기록은 메이플 ID 를 고를 수 있는 분류에서 그 넥슨 계정의 메이플 ID 가 하나뿐이면 그 ID 로 옮기고, 남은 기록은 대표 캐릭터에게 붙인다. 메이플 ID 분류는 대표 캐릭터의 메이플 ID 에, 캐릭터 분류는 대표 캐릭터에 붙는다([[ADR-161]] 결정 1 · 5, [[ADR-101]] 결정 28 · 29).
+- 캐릭터 칸은 수입 기타 · 지출 컨텐츠 · 지출 이벤트·BM · 지출 기타에서 캐릭터나 메이플 ID 를, 지출 버프 · 주문서 · 심볼 강화 · 아이템 구매에서 캐릭터를 골라야 저장된다. 이 분류들에는 `선택 안함` 이 없고, 새 기록은 빈 칸으로 열린다. 지출 컨텐츠의 에픽던전 추가 리워드만 아래처럼 마지막 캐릭터가 채워질 수 있다. 메이플 ID 보기는 캐릭터 뒤에 메이플 ID 이름 글자로 선다. 캐릭터 없이 적힌 옛 기록은 1.0.15 기기 변환이 옮기기 전에 한 번 붙인다. 메이플 ID 를 고를 수 있는 분류에서 그 넥슨 계정의 메이플 ID 가 하나뿐이면 그 ID 로 옮기고, 남은 기록은 대표 캐릭터에게 붙인다. 메이플 ID 분류는 대표 캐릭터의 메이플 ID 에, 캐릭터 분류는 대표 캐릭터에 붙는다. 붙일 곳이 없는 기록은 옮기지 않는다([[ADR-161]] 결정 1 · 5, [[ADR-101]] 결정 28 · 29).
 - 큰 숫자는 언제나 합계이고 직접 입력할 수 없다. 금액은 각 칸을 누르면 뜨는 입력 카드에서 입력한다.
 - 아이템 판매의 판매 대금 · 단가, 아이템 구매의 구매 비용 · 단가, 지출 항목의 개당 가격은 입력 카드에서 단위(`기본` · `만` · `억`)를 골라 소수점까지 친다. 고른 단위는 칸마다 기기에 기억된다([[ADR-082]] 결정 13).
 - 아이템 구매 · 판매의 아이템 칸은 입력 카드 안 목록에서 고른다. 찾기 규칙과 목록은 인벤토리 넣기와 같고, 목록에 없는 이름도 친

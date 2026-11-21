@@ -19,6 +19,14 @@ import {
   CASHBOOK_ENTRY_ITEMS_BODY,
   INVENTORY_ITEMS_BODY,
   INVENTORY_ITEMS_OWNER_INDEX,
+  UNCONVERTED_CASHBOOK_ENTRIES_BODY,
+  UNCONVERTED_CASHBOOK_ENTRIES_DATE_INDEX,
+  UNCONVERTED_CASHBOOK_ENTRY_EXCHANGE_INPUTS_BODY,
+  UNCONVERTED_CASHBOOK_ENTRY_FRAGMENT_USES_BODY,
+  UNCONVERTED_CASHBOOK_ENTRY_HUNT_INPUTS_BODY,
+  UNCONVERTED_CASHBOOK_ENTRY_ITEMS_BODY,
+  UNCONVERTED_CASHBOOK_ENTRY_TRANSFER_INPUTS_BODY,
+  UNCONVERTED_INVENTORY_ITEMS_BODY,
 } from './cashbook-tables'
 import {
   ENHANCEMENT_RECOMPUTES_BODY,
@@ -30,6 +38,7 @@ import {
 } from './enhancement-tables'
 import {
   BOSS_TABLES_CONVERTED_AT,
+  CASHBOOK_TABLES_CONVERTED_AT,
   DEVICE_CONVERSION_BODY,
   deviceConversionVersionOf,
   runDeviceConversion,
@@ -38,7 +47,7 @@ import { GAME_DATA_META_BODY, GAME_DATA_SECTIONS_BODY } from './game-data-tables
 import { QUERY_CACHE_BODY } from './query-cache-tables'
 import { INCOME_RECORDS_BODY, LEGACY_TABLE_DEFINITIONS } from './legacy-tables'
 import { LEGACY_TABLES_DROPPED_AT, isMigrationCeilingSet, runVersionedMigrations, userVersionOf } from './migrations'
-import { REMEMBERED_LEVELS_BODY } from './remembered-level-tables'
+import { REMEMBERED_LEVELS_BODY, UNCONVERTED_REMEMBERED_LEVELS_BODY } from './remembered-level-tables'
 import {
   CHARACTER_ACCOUNTS_BODY,
   CHARACTER_PROFILES_BODY,
@@ -68,7 +77,66 @@ function bossTableDefinitions(converted: boolean): { name: string; createSql: st
   ]
 }
 
-// 지금 쓰는 테이블의 정의는 여기와 위 보스 표 정의뿐이다. openBossProfitDb가 이 배열을 순회해 스키마를 만든다.
+/**
+ * 가계부 기록 표 여섯 · 인벤토리 · 기억한 레벨. 기기 변환 전 DB 는 버전 15 이후의 모양이고 앞 버전 이관이 그 모양을 읽는다. 표 이름은
+ * 변환 뒤에도 같다. 품목이 인벤토리를 가리키므로 인벤토리가 먼저 서고, 기록이 품목 · 입력보다 먼저 서야 외래키가 선다.
+ */
+function cashbookTableDefinitions(converted: boolean): { name: string; createSql: string }[] {
+  if (!converted) {
+    return [
+      { name: 'inventory_items', createSql: `CREATE TABLE IF NOT EXISTS inventory_items ${UNCONVERTED_INVENTORY_ITEMS_BODY}` },
+      { name: 'cashbook_entries', createSql: `CREATE TABLE IF NOT EXISTS cashbook_entries ${UNCONVERTED_CASHBOOK_ENTRIES_BODY}` },
+      {
+        name: 'cashbook_entry_items',
+        createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_items ${UNCONVERTED_CASHBOOK_ENTRY_ITEMS_BODY}`,
+      },
+      {
+        name: 'cashbook_entry_hunt_inputs',
+        createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_hunt_inputs ${UNCONVERTED_CASHBOOK_ENTRY_HUNT_INPUTS_BODY}`,
+      },
+      {
+        name: 'cashbook_entry_transfer_inputs',
+        createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_transfer_inputs ${UNCONVERTED_CASHBOOK_ENTRY_TRANSFER_INPUTS_BODY}`,
+      },
+      {
+        name: 'cashbook_entry_exchange_inputs',
+        createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_exchange_inputs ${UNCONVERTED_CASHBOOK_ENTRY_EXCHANGE_INPUTS_BODY}`,
+      },
+      {
+        name: 'cashbook_entry_fragment_uses',
+        createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_fragment_uses ${UNCONVERTED_CASHBOOK_ENTRY_FRAGMENT_USES_BODY}`,
+      },
+      {
+        name: 'remembered_levels',
+        createSql: `CREATE TABLE IF NOT EXISTS remembered_levels ${UNCONVERTED_REMEMBERED_LEVELS_BODY}`,
+      },
+    ]
+  }
+  return [
+    { name: 'inventory_items', createSql: `CREATE TABLE IF NOT EXISTS inventory_items ${INVENTORY_ITEMS_BODY}` },
+    { name: 'cashbook_entries', createSql: `CREATE TABLE IF NOT EXISTS cashbook_entries ${CASHBOOK_ENTRIES_BODY}` },
+    { name: 'cashbook_entry_items', createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_items ${CASHBOOK_ENTRY_ITEMS_BODY}` },
+    {
+      name: 'cashbook_entry_hunt_inputs',
+      createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_hunt_inputs ${CASHBOOK_ENTRY_HUNT_INPUTS_BODY}`,
+    },
+    {
+      name: 'cashbook_entry_transfer_inputs',
+      createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_transfer_inputs ${CASHBOOK_ENTRY_TRANSFER_INPUTS_BODY}`,
+    },
+    {
+      name: 'cashbook_entry_exchange_inputs',
+      createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_exchange_inputs ${CASHBOOK_ENTRY_EXCHANGE_INPUTS_BODY}`,
+    },
+    {
+      name: 'cashbook_entry_fragment_uses',
+      createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_fragment_uses ${CASHBOOK_ENTRY_FRAGMENT_USES_BODY}`,
+    },
+    { name: 'remembered_levels', createSql: `CREATE TABLE IF NOT EXISTS remembered_levels ${REMEMBERED_LEVELS_BODY}` },
+  ]
+}
+
+// 지금 쓰는 테이블의 정의는 여기와 위 보스 · 가계부 표 정의뿐이다. openBossProfitDb가 이 배열을 순회해 스키마를 만든다.
 // 버전 23 이 지우는 옛 표는 `legacy-tables.ts` 에 있다.
 // 데이터 삭제(storage/cache-data.ts)는 이 배열을 쓰지 않고 그룹마다 적은 표 목록으로 지운다.
 // 새 테이블은 그 목록에 더해야만 지워진다.
@@ -120,42 +188,6 @@ const TABLE_DEFINITIONS = [
   {
     name: 'enhancement_history_checks',
     createSql: `CREATE TABLE IF NOT EXISTS enhancement_history_checks ${ENHANCEMENT_HISTORY_CHECKS_BODY}`,
-  },
-  // 인벤토리에 넣은 아이템. 가계부 품목이 이 표를 가리키므로 가계부 표보다 먼저 선다.
-  {
-    name: 'inventory_items',
-    createSql: `CREATE TABLE IF NOT EXISTS inventory_items ${INVENTORY_ITEMS_BODY}`,
-  },
-  // 가계부 손입력 기록. 위 둘을 버전 15 가 옮긴 표다. 부모가 먼저 서야 외래키가 선다. 옛 둘은 옛 코드가 새 DB 를
-  // 열어도 열리도록 v1.0.14 까지 남긴다.
-  {
-    name: 'cashbook_entries',
-    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entries ${CASHBOOK_ENTRIES_BODY}`,
-  },
-  {
-    name: 'cashbook_entry_items',
-    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_items ${CASHBOOK_ENTRY_ITEMS_BODY}`,
-  },
-  {
-    name: 'cashbook_entry_hunt_inputs',
-    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_hunt_inputs ${CASHBOOK_ENTRY_HUNT_INPUTS_BODY}`,
-  },
-  {
-    name: 'cashbook_entry_transfer_inputs',
-    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_transfer_inputs ${CASHBOOK_ENTRY_TRANSFER_INPUTS_BODY}`,
-  },
-  {
-    name: 'cashbook_entry_exchange_inputs',
-    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_exchange_inputs ${CASHBOOK_ENTRY_EXCHANGE_INPUTS_BODY}`,
-  },
-  {
-    name: 'cashbook_entry_fragment_uses',
-    createSql: `CREATE TABLE IF NOT EXISTS cashbook_entry_fragment_uses ${CASHBOOK_ENTRY_FRAGMENT_USES_BODY}`,
-  },
-  // 심볼 · 헥사 코어의 강화 레벨 기억. 가계부 기록에서 나온 값이라 데이터 삭제의 가계부 그룹이 함께 지운다.
-  {
-    name: 'remembered_levels',
-    createSql: `CREATE TABLE IF NOT EXISTS remembered_levels ${REMEMBERED_LEVELS_BODY}`,
   },
   // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 데이터 삭제가 지우지 않는다.
   {
@@ -220,10 +252,11 @@ const TABLE_DEFINITIONS = [
 /**
  * DB 를 열 때 만드는 표의 이름. 보스 표는 기기 변환 전과 뒤가 다르다. 데이터 삭제는 이 목록을 쓰지 않는다.
  *
- * @param converted 기기 변환이 보스 표를 바꾼 뒤의 DB 인가
+ * @param converted 기기 변환이 기록 표를 바꾼 뒤의 DB 인가
  */
 export function tableNamesOf(converted: boolean): readonly string[] {
-  return ['device_conversion', ...[...bossTableDefinitions(converted), ...TABLE_DEFINITIONS].map((table) => table.name)]
+  const tables = [...bossTableDefinitions(converted), ...cashbookTableDefinitions(converted), ...TABLE_DEFINITIONS]
+  return ['device_conversion', ...tables.map((table) => table.name)]
 }
 
 /** 표가 하나라도 있는가. 없으면 새로 설치한 기기다. */
@@ -425,6 +458,32 @@ async function prepareLegacyTables(db: SqliteDbConnection): Promise<void> {
   await ensureColumn(db, 'boss_drop_records', 'drop_record_id', 'TEXT')
 }
 
+/**
+ * 변환 전 가계부 표에 나중에 생긴 칸을 더한다. 버전 15 · 19 이관이 이 칸을 읽고 쓴다. 이미 가계부를 적은 기기에는 CREATE 가 안
+ * 붙인다.
+ */
+async function ensureUnconvertedCashbookColumns(db: SqliteDbConnection): Promise<void> {
+  // 헥사 강화의 조각 칸.
+  await ensureColumn(db, 'cashbook_entry_items', 'fragment_count', 'INTEGER')
+  await ensureColumn(db, 'cashbook_entry_items', 'untradable_fragment_count', 'INTEGER')
+  await ensureColumn(db, 'cashbook_entry_items', 'fragment_price_meso', 'INTEGER')
+  await ensureColumn(db, 'cashbook_entry_items', 'hexa_activation', 'INTEGER')
+  await ensureColumn(db, 'cashbook_entry_items', 'hexa_use_storage', 'INTEGER')
+  await ensureColumn(db, 'cashbook_entry_items', 'hexa_storage_as_spend', 'INTEGER')
+  // 이 칸이 생기기 전의 메포 지출에는 버전 20 이관이 요율을 채운다.
+  await ensureColumn(db, 'cashbook_entry_items', 'meso_market_fee_percent', 'INTEGER')
+  // 인벤토리에서 판 판매가 가리키는 줄.
+  await ensureColumn(db, 'cashbook_entry_items', 'inventory_item_id', 'TEXT REFERENCES inventory_items(id)')
+  await ensureColumn(db, 'inventory_items', 'ring_level', 'INTEGER')
+  await ensureColumn(db, 'cashbook_entry_items', 'ring_level', 'INTEGER')
+  // 주인을 모르는 옛 기록이 어느 넥슨 계정의 것인지. 옛 행은 버전 16 이 표시한다.
+  await ensureColumn(db, 'cashbook_entries', 'nexon_account_id', 'TEXT')
+  // 메이플 ID 기록의 ID. 옛 행은 NULL 이고, 그 넥슨 계정의 메이플 ID 가 하나뿐이면 기기 변환이 채운다.
+  await ensureColumn(db, 'cashbook_entries', 'account_id', 'TEXT')
+  // 캐릭터 기록의 그때 월드. 옛 행은 버전 19 가 프로필 월드로 채운다.
+  await ensureColumn(db, 'cashbook_entries', 'world_key', 'TEXT')
+}
+
 let dbPromise: Promise<SqliteDbConnection> | null = null
 
 /** 기기 변환이 끝나면 풀리는 약속. 부팅이 막기를 걸기 전에는 풀려 있다. */
@@ -462,31 +521,23 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await db.execute('PRAGMA foreign_keys = ON')
   // 표가 하나도 없으면 새로 설치한 기기다. 이관을 다 돈 뒤 기기 변환도 곧바로 돈다. 바꿀 줄이 없어 게임 데이터 없이 돈다.
   const fresh = !(await anyTableExists(db))
-  // 기기 변환이 지운 표를 빈 표로 다시 만들지 않게 보스 표의 정의를 마친 단계의 번호로 고른다. 데이터 삭제는 이 표를
+  // 기기 변환이 지운 표를 빈 표로 다시 만들지 않게 보스 · 가계부 표의 정의를 마친 단계의 번호로 고른다. 데이터 삭제는 이 표를
   // 지우지 않는다. 지우면 바뀐 표를 다시 바꾸려다 던진다.
   await db.execute(DEVICE_CONVERSION_TABLE)
-  const bossConverted = (await deviceConversionVersionOf(db)) >= BOSS_TABLES_CONVERTED_AT
+  const conversion = await deviceConversionVersionOf(db)
+  const bossConverted = conversion >= BOSS_TABLES_CONVERTED_AT
+  const cashbookConverted = conversion >= CASHBOOK_TABLES_CONVERTED_AT
   // 앞 버전 이관이 읽는 옛 표는 버전 23 전 DB 에만 만든다.
   if ((await userVersionOf(db)) < LEGACY_TABLES_DROPPED_AT) await prepareLegacyTables(db)
-  for (const table of [...bossTableDefinitions(bossConverted), ...TABLE_DEFINITIONS]) {
+  const tables = [...bossTableDefinitions(bossConverted), ...cashbookTableDefinitions(cashbookConverted), ...TABLE_DEFINITIONS]
+  for (const table of tables) {
     await db.execute(table.createSql)
   }
   // 이미 프로필을 쌓아 둔 기기에는 CREATE 가 안 붙인다. 없으면 월드 이전 판정이 그 캐릭터를
   // 영영 못 짚는다(직업을 모르면 안 묻기로 했다).
   await ensureColumn(db, 'character_profiles', 'job_class', 'TEXT')
-  // 헥사 강화의 조각 칸. 이미 가계부를 적은 기기에는 CREATE 가 안 붙인다.
-  await ensureColumn(db, 'cashbook_entry_items', 'fragment_count', 'INTEGER')
-  await ensureColumn(db, 'cashbook_entry_items', 'untradable_fragment_count', 'INTEGER')
-  await ensureColumn(db, 'cashbook_entry_items', 'fragment_price_meso', 'INTEGER')
-  await ensureColumn(db, 'cashbook_entry_items', 'hexa_activation', 'INTEGER')
-  await ensureColumn(db, 'cashbook_entry_items', 'hexa_use_storage', 'INTEGER')
-  await ensureColumn(db, 'cashbook_entry_items', 'hexa_storage_as_spend', 'INTEGER')
-  // 이 칸이 생기기 전의 메포 지출에는 버전 20 이관이 요율을 채운다.
-  await ensureColumn(db, 'cashbook_entry_items', 'meso_market_fee_percent', 'INTEGER')
-  // 인벤토리에서 판 판매가 가리키는 줄. 이미 가계부를 적은 기기에는 CREATE 가 안 붙인다.
-  await ensureColumn(db, 'cashbook_entry_items', 'inventory_item_id', 'TEXT REFERENCES inventory_items(id)')
-  await ensureColumn(db, 'inventory_items', 'ring_level', 'INTEGER')
-  await ensureColumn(db, 'cashbook_entry_items', 'ring_level', 'INTEGER')
+  // 변환 전 가계부 표의 칸. 이미 가계부를 적은 기기에는 CREATE 가 안 붙인다. 기기 변환 뒤에는 이 칸들이 없다.
+  if (!cashbookConverted) await ensureUnconvertedCashbookColumns(db)
   await ensureColumn(db, 'character_profiles', 'world_key', 'TEXT')
   // 옛 강화 원본 표의 칸. 새 기기에는 이 표가 없고, 옛 기기는 합계로 옮긴 뒤 지운다. 옮기기 전의 기기만 칸을 더한다.
   if (await tableExists(db, 'enhancement_history')) {
@@ -495,18 +546,12 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
     // 강화 기록도 이름 대신 장비 key 를 든다. 값은 아래 버전 이관이 채운다.
     await ensureColumn(db, 'enhancement_history', 'item_key', 'TEXT')
   }
-  // 주인을 모르는 옛 기록이 어느 넥슨 계정의 것인지. 버전 15 에서 만든 표에는 CREATE 가 안 붙인다. 옛 행은 버전 16 이 표시한다.
-  await ensureColumn(db, 'cashbook_entries', 'nexon_account_id', 'TEXT')
-  // 메이플 ID 기록의 ID. 옛 행은 NULL 이고, 그 넥슨 계정의 메이플 ID 가 하나뿐이면 부팅 단계가 채운다.
-  await ensureColumn(db, 'cashbook_entries', 'account_id', 'TEXT')
   // 스타포스 첫 성 · 끝 성. 옛 줄은 NULL 이고 다시 매기기 요청이 그 날을 다시 받아 채운다.
   await ensureColumn(db, 'enhancement_totals', 'from_star', 'INTEGER')
   await ensureColumn(db, 'enhancement_totals', 'to_star', 'INTEGER')
   // 슈페리얼 장비의 스타포스 비용. 옛 줄은 0 이고, 다시 매기기 요청이 슈페리얼 줄이 있는 날을 다시 받아 채운다.
   await ensureColumn(db, 'enhancement_totals', 'superior_cost_meso', 'INTEGER NOT NULL DEFAULT 0')
   await ensureColumn(db, 'character_accounts', 'world_key', 'TEXT')
-  // 캐릭터 기록의 그때 월드. 옛 행은 버전 19 가 프로필 월드로 채운다.
-  await ensureColumn(db, 'cashbook_entries', 'world_key', 'TEXT')
   // 리프 자동 판정이 읽는 만든 날. 옛 행은 NULL 이고 다음 `character/basic` 이 채운다.
   await ensureColumn(db, 'character_profiles', 'created_date', 'TEXT')
   // 분배 방식 `제외` 와 한도를 넘긴 처치. 옛 행은 NULL 이라 둘 다 아니다. 기기 변환 뒤에는 이 표가 없다.
@@ -519,10 +564,16 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await runVersionedMigrations(db)
   // 이관 상한을 건 DB 는 앞 버전 이관을 보는 테스트라 바꾸지 않는다.
   if (fresh && !isMigrationCeilingSet()) await runDeviceConversion(db, { backup: false })
-  if ((await deviceConversionVersionOf(db)) < BOSS_TABLES_CONVERTED_AT) await db.execute(PERIOD_BOSS_DROPS_INDEX)
-  await db.execute(CASHBOOK_ENTRIES_DATE_INDEX)
+  // 인덱스는 변환 뒤의 단계 번호로 고른다. 새로 설치한 DB 는 위에서 변환을 마쳤다.
+  const converted = await deviceConversionVersionOf(db)
+  if (converted < BOSS_TABLES_CONVERTED_AT) await db.execute(PERIOD_BOSS_DROPS_INDEX)
+  if (converted < CASHBOOK_TABLES_CONVERTED_AT) {
+    await db.execute(UNCONVERTED_CASHBOOK_ENTRIES_DATE_INDEX)
+    await db.execute(INVENTORY_ITEMS_OWNER_INDEX)
+  } else {
+    await db.execute(CASHBOOK_ENTRIES_DATE_INDEX)
+  }
   await db.execute(ENHANCEMENT_TOTALS_DATE_INDEX)
-  await db.execute(INVENTORY_ITEMS_OWNER_INDEX)
 
   return db
 }

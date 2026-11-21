@@ -2,6 +2,7 @@
 /**
  * 헥사 강화 기록의 조각 칸과 강화 레벨 기억을 진짜 SQLite 로 태운다.
  */
+import { saveCharacterProfile } from '../../character-profiles'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { getFragmentStorage, insertIncomeRecord, type IncomeRecord } from '../../income'
 import { getRememberedLevels, rememberLevels } from '../../remembered-levels'
@@ -14,6 +15,7 @@ import {
   type SpendRecord,
 } from '../../spend'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
+import { __setMigrationCeilingForTest, DB_VERSION } from '../migrations'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 let real: RealSqlite
@@ -24,6 +26,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
+  __setMigrationCeilingForTest(null)
   await closeBossProfitDb()
   __resetStoragePortsForTest()
   real.dispose()
@@ -87,27 +90,30 @@ describe('헥사 기록의 조각 칸', () => {
     expect(row?.hexa).toBeNull()
   })
 
-  // 이미 가계부를 적은 기기의 품목 표는 CREATE 가 안 붙인다. 칸이 없으면 헥사 기록 저장이 던진다.
-  it('칸이 없는 옛 품목 표를 열면 조각 칸과 보관 체크 칸이 붙는다', async () => {
+  // 이미 가계부를 적은 기기의 품목 표는 CREATE 가 안 붙인다. 칸이 없으면 기기 변환이 헥사 칸을 읽다 던진다. 새 DB 는 열 때
+  // 기기 변환을 돌아서 이관 상한으로 막고 변환 전 표를 본다.
+  it('칸이 없는 변환 전 품목 표를 열면 조각 칸과 보관 체크 칸이 붙는다', async () => {
+    const columns = [
+      'fragment_count',
+      'untradable_fragment_count',
+      'fragment_price_meso',
+      'hexa_activation',
+      'hexa_use_storage',
+      'hexa_storage_as_spend',
+    ]
+    __setMigrationCeilingForTest(DB_VERSION)
     await getBossProfitDb()
     await closeBossProfitDb()
     real.inspect((db) => {
-      for (const column of [
-        'fragment_count',
-        'untradable_fragment_count',
-        'fragment_price_meso',
-        'hexa_activation',
-        'hexa_use_storage',
-        'hexa_storage_as_spend',
-      ]) {
-        db.exec(`ALTER TABLE cashbook_entry_items DROP COLUMN ${column}`)
-      }
+      for (const column of columns) db.exec(`ALTER TABLE cashbook_entry_items DROP COLUMN ${column}`)
     })
 
-    await insertSpendRecord(선참)
+    await getBossProfitDb()
 
-    const [row] = await getSpendRecordsBetween('2026-10-30', '2026-10-30')
-    expect(row?.hexa).toEqual(선참.hexa)
+    const names = real.inspect((db) =>
+      (db.prepare('PRAGMA table_info(cashbook_entry_items)').all() as { name: string }[]).map((row) => row.name),
+    )
+    expect(columns.filter((column) => !names.includes(column))).toEqual([])
   })
 })
 
@@ -222,22 +228,40 @@ describe('getLatestSpendFor: 그 대상의 가장 최근 기록', () => {
 })
 
 describe('강화 레벨 기억', () => {
+  const 선참코어 = '매화검 본초 : 선참 VI'
+  const 만참코어 = '창룡파천검 : 만참'
+
+  beforeEach(async () => {
+    await saveCharacterProfile({
+      ocid: 'ocid-1', name: 'ocid-1', imageUrl: '', world: '스카니아', worldKey: 'scania', level: 285, jobClass: '렌',
+      updatedAt: '2026-10-01T00:00:00.000Z',
+    })
+  })
+
   // 사용자가 친 값을 믿는다. 넥슨 레벨이 기억을 덮으면 앱이 실제보다 앞서 적힌 기록을 지운 셈이 된다.
   it('fill 은 기억이 없는 대상만 채우고, overwrite 는 갈아 끼운다', async () => {
-    await rememberLevels('ocid-1', 'hexa', { 선참: 25 }, 'overwrite')
-    await rememberLevels('ocid-1', 'hexa', { 선참: 28, 만참: 19 }, 'fill')
+    await rememberLevels('ocid-1', 'hexa', { [선참코어]: 25 }, 'overwrite')
+    await rememberLevels('ocid-1', 'hexa', { [선참코어]: 28, [만참코어]: 19 }, 'fill')
 
-    await expect(getRememberedLevels('ocid-1', 'hexa')).resolves.toEqual({ 선참: 25, 만참: 19 })
+    await expect(getRememberedLevels('ocid-1', 'hexa')).resolves.toEqual({ [선참코어]: 25, [만참코어]: 19 })
 
-    await rememberLevels('ocid-1', 'hexa', { 선참: 28 }, 'overwrite')
-    await expect(getRememberedLevels('ocid-1', 'hexa')).resolves.toEqual({ 선참: 28, 만참: 19 })
+    await rememberLevels('ocid-1', 'hexa', { [선참코어]: 28 }, 'overwrite')
+    await expect(getRememberedLevels('ocid-1', 'hexa')).resolves.toEqual({ [선참코어]: 28, [만참코어]: 19 })
   })
 
   it('캐릭터와 종류(심볼 · 헥사)가 갈린다', async () => {
     await rememberLevels('ocid-1', 'symbol', { cernium: 7 }, 'overwrite')
-    await rememberLevels('ocid-2', 'hexa', { cernium: 3 }, 'overwrite')
+    await rememberLevels('ocid-2', 'hexa', { '솔 야누스': 3 }, 'overwrite')
 
     await expect(getRememberedLevels('ocid-1', 'hexa')).resolves.toEqual({})
     await expect(getRememberedLevels('ocid-1', 'symbol')).resolves.toEqual({ cernium: 7 })
+    await expect(getRememberedLevels('ocid-2', 'hexa')).resolves.toEqual({ '솔 야누스': 3 })
+  })
+
+  // 대상 칸은 줄 id 라 비울 수 없다. 넥슨이 표보다 먼저 새 코어를 주면 그 코어의 레벨만 빠지고 나머지는 적는다.
+  it('표에 없는 코어와 그 직업에 없는 코어는 적지 않고 나머지만 적는다', async () => {
+    await rememberLevels('ocid-1', 'hexa', { [선참코어]: 25, '없는 코어': 9, '스피릿 칼리버': 3 }, 'fill')
+
+    await expect(getRememberedLevels('ocid-1', 'hexa')).resolves.toEqual({ [선참코어]: 25 })
   })
 })

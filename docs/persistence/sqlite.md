@@ -8,14 +8,17 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `storage/sqlite/db.ts` | 테이블 정의(`TABLE_DEFINITIONS`) · 기기 변환 단계에 맞는 보스 표 정의 고르기(`bossTableDefinitions`) · DB 열기와 닫기 · 칸 보강(`ensureColumn`) · 버전 23 전 DB 의 옛 표 준비(`prepareLegacyTables`) · `income_records` 재작성 |
+| `storage/sqlite/db.ts` | 테이블 정의(`TABLE_DEFINITIONS`) · 기기 변환 단계에 맞는 보스 · 가계부 표 정의 고르기(`bossTableDefinitions` · `cashbookTableDefinitions`) · DB 열기와 닫기 · 칸 보강(`ensureColumn`) · 버전 23 전 DB 의 옛 표 준비(`prepareLegacyTables`) · `income_records` 재작성 |
 | `storage/sqlite/legacy-tables.ts` | 버전 23 이 지우는 옛 표 여섯의 정의. 앞 버전 이관이 읽는 모양이라 고치지 않는다 |
 | `storage/sqlite/boss-tables.ts` | 보스 기록 표의 정의 세 무리. 버전 14 전의 옛 표 셋(버전 4 · 12 가 이 정의로 다시 만든다), 버전 14 의 표 셋(기기 변환 전 DB), 기기 변환이 만드는 지금 표 셋이다. 앞의 둘은 앞 버전 이관이 읽는 모양이라 고치지 않는다 |
-| `storage/sqlite/cashbook-tables.ts` | 가계부 기록 표 여섯과 인벤토리 표의 정의 · 날짜 인덱스 · 인벤토리 한 줄 기준 인덱스 |
+| `storage/sqlite/cashbook-tables.ts` | 가계부 기록 표 여섯과 인벤토리 표의 정의 두 무리 · 날짜 인덱스. 기기 변환 전의 표(`UNCONVERTED_…`, 앞 버전 이관이 읽는 모양)와 변환이 만드는 지금 표다. 인벤토리 한 줄 기준 인덱스는 변환 전 표에만 건다 |
+| `storage/sqlite/remembered-level-tables.ts` | 강화 레벨 기억 표의 정의. 기기 변환 전 표와 지금 표다 |
 | `storage/sqlite/record-key-tables.ts` | 버전 16 이 uuid 기본키로 다시 쓴 다섯 표(캐릭터 · 월드 리프 · 강화 조회 기록 · MVP 등급 · 메이플 ID 소속)의 정의 |
 | `storage/sqlite/migrations.ts` | 값을 옮기는 버전 이관(`DB_VERSION` 23) |
 | `storage/sqlite/device-conversion.ts` | 1.0.15 기기 변환의 단계 목록과 돌리는 함수(`runDeviceConversion`). 아직 안 돈 단계를 한 트랜잭션으로 돌리고 마친 번호를 `device_conversion` 에 적는다. 돌 단계가 있으면 먼저 `…-before-1.0.15.db` 사본을 뜬다([[ADR-286]] 결정 1) |
 | `storage/sqlite/convert-boss-tables.ts` | 기기 변환의 보스 기록 단계(`convertBossTables`). 버전 14 의 표 셋을 지금 표 셋으로 옮기고 옛 표를 지운다([[ADR-286]] 결정 3) |
+| `storage/sqlite/convert-cashbook-tables.ts` | 기기 변환의 가계부 단계(`convertCashbookTables`). 주인을 모르는 옛 손입력을 붙인 뒤 가계부 기록 표 여섯 · 인벤토리 · 강화 레벨 기억을 지금 표로 옮기고 옛 표를 지운다([[ADR-286]] 결정 4 · 5 · 9 · 10) |
+| `storage/sqlite/legacy-cashbook-entries.ts` | 변환 전 가계부 표를 쓰는 SQL. 버전 15 가 옮긴 기록을 넣는 일과 가계부 단계가 주인을 모르는 옛 손입력을 붙이는 일이다 |
 | `storage/sqlite/transaction.ts` | 쓰기 여럿을 트랜잭션 하나로 묶는 `inTransaction`. 같은 연결의 트랜잭션은 차례로 돈다. 겹쳐 열면 SQLite 가 뒤의 것을 거절하기 때문이다(앱을 켤 때 계정 칸 채우기와 강화 합계 옮기기가 겹쳤다). 그래서 `work` 안에서 다시 부르면 멈춘다. 트랜잭션 안에서 못 도는 `VACUUM` 은 같은 줄 뒤에 세운다(`outsideTransaction`) |
 | `storage/legacy-space.ts` | 옛 표를 다 지운 뒤 한 번 사본 파일을 지우고 `VACUUM` 하는 회수([[ADR-078]] 결정 11) |
 | `storage/sqlite/uuid.ts` | 행 식별자를 SQLite 가 만드는 식(`NEW_UUID_SQL`) |
@@ -31,18 +34,20 @@
 2. `PRAGMA foreign_keys = ON` 으로 외래키를 켠다. op-sqlite 는 기본이 꺼져 있어, 켜지 않으면 `ON DELETE CASCADE` 가
    안 돈다. 트랜잭션 안에서는 이 문장이 먹지 않아 맨 앞에서 켠다.
 3. 표가 하나도 없으면 새로 설치한 기기로 본다(9 단계가 쓴다).
-4. `device_conversion` 표를 만들고, 거기 적힌 단계 번호로 보스 기록 표를 어느 정의로 만들지 고른다. 보스 기록 단계까지 돈
-   DB 는 지금 표 셋, 아니면 버전 14 의 표 셋이다. 번호를 보지 않으면 변환이 지운 표가 빈 표로 다시 생긴다.
+4. `device_conversion` 표를 만들고, 거기 적힌 단계 번호로 보스 기록 표와 가계부 기록 표 · 인벤토리 · 강화 레벨 기억을 어느
+   정의로 만들지 고른다. 그 단계까지 돈 DB 는 지금 표, 아니면 변환 전 표(보스는 버전 14 의 표 셋)다. 번호를 보지 않으면 변환이
+   지운 표가 빈 표로 다시 생기거나 지금 표에 옛 칸을 더하려다 DB 가 열리지 않는다.
 5. `user_version` 이 23 보다 작으면 옛 표 여섯(`LEGACY_TABLE_DEFINITIONS`)을 만들고, `income_records.meso_amount` 가
    `NOT NULL` 이면 그 표를 다시 쓰고, 옛 표에 나중에 생긴 칸을 더하고, 옛 `boss_drop_records` 의 빈 분배 칸을 채운다. 앞
    버전 이관이 이 모양을 읽는다. 23 이상이면 건너뛴다. 지운 옛 표가 빈 표로 다시 생기지 않게 하려는 것이다([[ADR-078]] 결정 9).
-6. 고른 보스 표 정의와 `TABLE_DEFINITIONS` 의 `CREATE TABLE IF NOT EXISTS` 를 모두 실행한다.
-7. `ensureColumn` 으로 나중에 생긴 칸을 지금 테이블에 더한다. 버전 14 표의 칸(`crystal_excluded` · `over_crystal_limit`)은
-   기기 변환 전 DB 에만 더한다. 변환 뒤에는 그 표가 없다.
+6. 고른 보스 · 가계부 표 정의와 `TABLE_DEFINITIONS` 의 `CREATE TABLE IF NOT EXISTS` 를 모두 실행한다.
+7. `ensureColumn` 으로 나중에 생긴 칸을 지금 테이블에 더한다. 버전 14 표의 칸(`crystal_excluded` · `over_crystal_limit`)과 변환 전
+   가계부 표의 칸(`ensureUnconvertedCashbookColumns`)은 그 단계의 변환 전 DB 에만 더한다. 변환 뒤에는 그 표나 칸이 없다.
 8. `user_version` 보다 큰 버전 이관을 차례로 실행한다.
 9. 새로 설치한 기기면 기기 변환을 곧바로 돌린다. 바꿀 줄이 없어 게임 데이터 없이 돌고 사본을 뜨지 않는다.
-10. 인덱스 `cashbook_entries_entry_date` · `enhancement_totals_date` · `inventory_items_owner` 를 만든다. 기기 변환 전 DB 에는
-    `boss_drops_period` 도 만든다. 변환 뒤의 `boss_drops` 에는 그 인덱스의 칸이 없다.
+10. 인덱스 `enhancement_totals_date` 를 만든다. 가계부 단계까지 돈 DB 는 `cashbook_entries_date` 를, 그 전 DB 는
+    `cashbook_entries_entry_date` 와 유일 인덱스 `inventory_items_owner_item` 을 만든다. 보스 단계 전 DB 에는 `boss_drops_period`
+    도 만든다. 변환 뒤의 표에는 옛 인덱스의 칸이 없다.
 
 열기는 10초, 닫기(`closeBossProfitDb`)는 5초 상한이 있다. OTA 적용과 데이터 삭제는 리로드 전에 닫는다.
 
@@ -55,7 +60,7 @@
 외래키는 보스 기록 표 둘과 가계부 기록 표 여섯에만 있다. `boss_profit_entries` → `boss_drops`, 그리고
 `cashbook_entries` → `cashbook_entry_items` · `cashbook_entry_hunt_inputs` · `cashbook_entry_fragment_uses` · `cashbook_entry_transfer_inputs` ·
 `cashbook_entry_exchange_inputs` 차례로 부모를 가리키고, 부모를 지우면 자식도
-지워진다(`ON DELETE CASCADE`). 보스 분배 설정(`boss_split_settings`)은 수익 건의 부모가 아니다. 가계부 품목의 `inventory_item_id` 도 `inventory_items` 를 가리킨다. 다른 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서,
+지워진다(`ON DELETE CASCADE`). 보스 분배 설정(`boss_split_settings`)은 수익 건의 부모가 아니다. 가계부 품목의 `inventory_item_id` 도 `inventory_items` 를 가리키고, 그 줄을 지우면 비운다(`ON DELETE SET NULL`). 다른 표 사이의 관계는 앱 코드가 같은 키로 이어 읽는 것뿐이라서,
 한쪽만 지우면 짝이 없는 행이 남는다. 그래서 데이터 삭제는 서로 이어 읽는 표를 한 그룹으로 함께 지운다(`lifecycle.md`).
 
 `데이터 삭제` 칸은 데이터 삭제의 어느 그룹이 그 표를 지우는지다. `남긴다` 는 어떤 그룹도 지우지 않는 표다. `행 단위` 는
@@ -83,14 +88,14 @@
 | `enhancement_refetches` | `id`(uuid, `(nexon_account_id, enhancement_type, history_date)` 는 UNIQUE) | 다시 받아야 하는 강화 내역의 날. 버전 18 이관과 옛 원본 옮기기가 캐릭터에 붙이지 못한 줄의 날을 적는다. 가계부 · 통계 화면의 회차가 끝난 뒤 수집기가 따로 받아 굳히면 지운다 | `storage/enhancement-refetches.ts` | 지운다 (강화) | [[ADR-101]] |
 | `character_dated_names` | `id`(uuid, `(ocid, history_date)` 는 UNIQUE) | 캐릭터의 그날 이름과 월드 이름. 강화 줄의 이름을 캐릭터에 붙일 때 `character/basic` 에 날짜를 넣어 받은 값이다. 그날 값이 없으면 이름이 `NULL` 이다 | `storage/character-dated-names.ts` | 지운다 (강화) | [[ADR-101]] |
 | `character_first_days` | `id`(uuid, `ocid` 는 UNIQUE) | 캐릭터의 만든 날과 처음 값이 온 날 · 그날 이름. 리프 전 기간을 가른다 | `storage/character-first-days.ts` | 지운다 (강화) | [[ADR-101]] |
-| `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 분류 · 캐릭터나 메이플 ID. 캐릭터 기록은 적을 때의 월드를 든다. 아이템 구매 · 판매는 메모를 든다 | `storage/income.ts` · `storage/spend.ts` | 지운다 (가계부) | [[ADR-096]] · [[ADR-161]] · [[ADR-048]] |
-| `cashbook_entry_items` | `id`(uuid, `(entry_id, sort_order)` 는 UNIQUE) | 기록의 품목. 항목 key 또는 직접 친 이름, 수량 · 레벨, 금액 · 수수료 · 관세, 헥사 강화의 조각 칸 넷과 보관 체크 칸 둘, 인벤토리에서 판 판매가 가리키는 인벤토리 줄 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-096]] · [[ADR-209]] |
+| `cashbook_entries` | `id`(uuid) | 가계부에 손으로 적은 수입 · 지출 한 건. 날짜 · 분류 줄 · 캐릭터나 메이플 ID. 수입인지 지출인지는 분류 줄이 안다. 캐릭터 기록은 적을 때의 월드를, 인벤토리에서 판 기타 조각 기록은 판 조각의 월드를 든다. 아이템 구매 · 판매는 메모를 든다 | `storage/income.ts` · `storage/spend.ts` | 지운다 (가계부) | [[ADR-096]] · [[ADR-161]] · [[ADR-048]] |
+| `cashbook_entry_items` | `id`(uuid, `(entry_id, spend_reward_type_id)` 는 UNIQUE) | 기록의 품목. 분류가 정한 표의 줄(대상) 또는 직접 친 이름, 수량 · 레벨, 금액 · 수수료 · 관세, 헥사 강화의 조각 칸 넷과 보관 체크 칸 둘, 인벤토리에서 판 판매가 가리키는 인벤토리 줄 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-096]] · [[ADR-209]] |
 | `cashbook_entry_hunt_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | 사냥 기록의 계산기 입력 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-096]] |
 | `cashbook_entry_transfer_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | `주간 보스 수입 이전` 시트 입력. 이 줄이 있는 `기타` 지출은 그 시트로 연다 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-047]] |
 | `cashbook_entry_exchange_inputs` | `id`(uuid, `entry_id` 는 UNIQUE) | `메소마켓 환전 수수료` 시트 입력. 이 줄이 있는 `기타` 지출 · 수입은 그 시트로 연다 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-047]] |
-| `cashbook_entry_fragment_uses` | `id`(uuid) | 기록이 보관에서 가져온 조각을 보관마다 한 줄. 사냥 조각(`hunt`)은 캐릭터, 인벤토리의 기타 조각(`other`)은 메이플 ID · 월드의 것이다. 보관 개수가 이것을 뺀다 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-137]] · [[ADR-209]] |
-| `inventory_items` | `id`(uuid, 장비가 아닌 줄은 `(account_id, world_key, item_key)` 가 UNIQUE) | 인벤토리에 넣은 아이템. 메이플 ID · 월드의 아이템 하나가 한 줄이고 장비는 하나가 한 줄이다. 남은 개수는 판매 · 조각 사용을 빼서 센다 | `storage/inventory.ts` | 지운다 (가계부) | [[ADR-209]] |
-| `remembered_levels` | `id`(uuid, `(ocid, kind, item_key)` 는 UNIQUE) | 캐릭터의 심볼 · 헥사 코어 강화 레벨 기억. 추적을 시작할 때 넥슨 값으로 채우고 기록을 저장 · 고치기 · 지우기 할 때 옮긴다 | `storage/remembered-levels.ts` | 지운다 (가계부) | [[ADR-137]] |
+| `cashbook_entry_fragment_uses` | `id`(uuid, `(entry_id, fragment_source, ocid)` 는 UNIQUE) | 기록이 보관에서 가져온 조각을 보관마다 한 줄. 사냥 조각(`hunt`)은 캐릭터, 인벤토리의 기타 조각(`inventory`)은 그 기록의 메이플 ID · 월드의 것이다. 보관 개수가 이것을 뺀다 | `storage/cashbook-entries.ts` | 지운다 (가계부) | [[ADR-137]] · [[ADR-209]] |
+| `inventory_items` | `id`(uuid. 장비가 아닌 줄은 `(account_id, world_id, item_id)` 가 한 줄이고 저장 코드가 지킨다) | 인벤토리에 넣은 아이템. 메이플 ID · 월드의 아이템 하나가 한 줄이고 장비는 하나가 한 줄이다. 남은 개수는 판매 · 조각 사용을 빼서 센다 | `storage/inventory.ts` | 지운다 (가계부) | [[ADR-209]] |
+| `remembered_levels` | `id`(uuid, `(ocid, type, target_id)` 는 UNIQUE) | 캐릭터의 심볼 · 헥사 코어 강화 레벨 기억. 추적을 시작할 때 넥슨 값으로 채우고 기록을 저장 · 고치기 · 지우기 할 때 옮긴다 | `storage/remembered-levels.ts` | 지운다 (가계부) | [[ADR-137]] |
 | `mvp_grade_history` | `id`(uuid, `(account_id, from_date)` 는 UNIQUE) | 메이플 ID 마다 MVP 등급과 시작 날짜 | `storage/mvp-grades.ts` | 남긴다 | `features/mvp-grade.md` |
 | `character_accounts` | `id`(uuid, `(ocid, name, account_id)` 는 UNIQUE) | 캐릭터가 어느 메이플 ID 에 속했는지, 그것을 어느 넥슨 계정의 목록에서 봤는지와 처음 · 마지막으로 본 날 | `storage/character-accounts.ts` | 남긴다 | `features/mvp-grade.md` |
 | `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 못 보낸 드롭. 평소에는 비어 있다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 줄은 전송이 보내지 않고 지운다(`registry.ts` 에 없는 종류다) | `storage/server-sync-queue.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-018]] |
@@ -102,10 +107,10 @@
 
 ### 칸
 
-`NN` 은 `NOT NULL` 이다. 각 칸의 뜻은 표마다의 문서와 `db.ts` · `boss-tables.ts` · `record-key-tables.ts` 의 DDL 주석에 있다. 칸 이름은 서버 규칙을 따른다([[ADR-098]] 결정 7). 보스 기록 표 셋은 칸 이름이 서버 표와 같다([[ADR-286]] 결정 2).
+`NN` 은 `NOT NULL` 이다. 각 칸의 뜻은 표마다의 문서와 `db.ts` · `boss-tables.ts` · `record-key-tables.ts` 의 DDL 주석에 있다. 칸 이름은 서버 규칙을 따른다([[ADR-098]] 결정 7). 보스 기록 표 셋 · 가계부 기록 표 · 인벤토리 · 강화 레벨 기억은 칸 이름이 서버 표와 같다([[ADR-286]] 결정 2).
 
-`nexon_account_id` 는 인증 수단의 넥슨 계정 id 다. 빈 글자는 계정 칸이 생기기 전의 행이고, 앱을 켤 때 메인 계정 id 로 채운다(`fillLegacyAccountIds`). `NULL` 은 계정을 모르는 자격(저장 전에 검증하는 키)으로 본 소속이거나, 캐릭터나 메이플 ID 가 있는 가계부 기록이다. 가계부 기록에서 이 칸이 찬 행은 주인을 모르는 옛 기록뿐이다([[ADR-161]] 결정 4). 넥슨 로그인이 메이플 ID 가 같은 키를 거두면 로그인은 그 키의 id 를 이어받고, 로그인의 옛 id 로 적힌 줄은 그 id 로 옮긴다. 겹치면 나중 줄이 남는다([[ADR-098]] 결정 5).
-가계부 기록의 `account_id` 는 메이플 ID 기록의 메이플 ID 이고, `character_accounts.account_id` 와 같은 값이다. 캐릭터 기록과 캐릭터 없이 적은 옛 기록은 `NULL` 이다. 메이플 ID 를 고를 수 있는 분류의 옛 기록은 그 넥슨 계정의 메이플 ID 가 하나뿐이면 앱을 켤 때 그 ID 로 채운다([[ADR-161]] 결정 4 · 5).
+`nexon_account_id` 는 인증 수단의 넥슨 계정 id 다. 빈 글자는 계정 칸이 생기기 전의 행이고, 앱을 켤 때 메인 계정 id 로 채운다(`fillLegacyAccountIds`). `NULL` 은 계정을 모르는 자격(저장 전에 검증하는 키)으로 본 소속이다. 가계부 기록 표에는 이 칸이 없다. 1.0.15 기기 변환이 주인을 모르는 옛 기록에 주인을 붙인 뒤 없앴다([[ADR-161]] 결정 4). 넥슨 로그인이 메이플 ID 가 같은 키를 거두면 로그인은 그 키의 id 를 이어받고, 로그인의 옛 id 로 적힌 줄은 그 id 로 옮긴다. 겹치면 나중 줄이 남는다([[ADR-098]] 결정 5).
+가계부 기록의 `account_id` 는 메이플 ID 기록의 메이플 ID 이고, `character_accounts.account_id` 와 같은 값이다. 캐릭터 기록은 `NULL` 이고, 기록은 `ocid` 와 `account_id` 가운데 하나가 반드시 차 있다(CHECK). 캐릭터 기록의 메이플 ID 가 필요하면 그 캐릭터를 가장 늦게 본 소속에서 찾는다([[ADR-161]] 결정 4 · 5).
 
 | 테이블 | 칸 |
 |---|---|
@@ -121,14 +126,14 @@
 | `enhancement_refetches` | `id` NN · `nexon_account_id` NN · `enhancement_type` NN · `history_date` NN · `created_at` NN |
 | `character_dated_names` | `id` NN · `ocid` NN · `history_date` NN · `name` · `world_name` · `checked_at` NN |
 | `character_first_days` | `id` NN · `ocid` NN · `created_date` NN · `first_date` NN · `first_name` NN · `checked_at` NN |
-| `cashbook_entries` | `id` NN · `ocid` · `account_id` · `nexon_account_id` · `world_key` · `entry_type` NN(`income` · `spend`) · `category_key` NN · `entry_date` NN · `memo` · `created_at` NN · `updated_at` NN |
-| `cashbook_entry_items` | `id` NN · `entry_id` NN · `sort_order` NN · `item_key` · `item_name` · `form_key` · `item_kind_key` · `quantity` · `from_level` · `to_level` · `amount_meso` · `tariff_meso` · `sale_fee_percent` · `sale_fee_meso` · `sale_fee_auto` · `amount_point` · `point_per_100m_meso` · `meso_market_fee_percent` · `amount_cash` · `fragment_count` · `untradable_fragment_count` · `fragment_price_meso` · `hexa_activation` · `hexa_use_storage` · `hexa_storage_as_spend` · `inventory_item_id` · `ring_level`(아이템 구매 · 판매의 특수스킬 반지 레벨, 옛 줄에는 `ensureColumn` 이 붙인다) |
-| `cashbook_entry_hunt_inputs` | `id` NN · `entry_id` NN UNIQUE · `character_level` · `missed_mobs` · `boosts` · `fragments` · `fragment_price_meso` · `meso_rate` · `typed_meso` · `union_tier` |
-| `cashbook_entry_transfer_inputs` | `id` NN · `entry_id` NN UNIQUE · `receiver_ocid` NN · `transfer_meso` NN · `fee_percent` NN · `fee_auto`(1 자동 · `NULL` 손으로 고름) |
-| `cashbook_entry_exchange_inputs` | `id` NN · `entry_id` NN UNIQUE · `sold_meso` NN · `sell_point_per_100m_meso` NN · `bought_meso`(판매만 적었으면 `NULL`) · `buy_point_per_100m_meso`(같음) · `meso_market_fee_percent` NN |
-| `cashbook_entry_fragment_uses` | `id` NN · `entry_id` NN · `fragment_source` NN(`hunt` · `other`) · `ocid`(`hunt` 만) · `account_id` · `world_key`(`other` 만) · `fragments` NN |
-| `inventory_items` | `id` NN · `account_id` NN · `world_key` NN · `item_key` NN · `item_kind_key` NN · `quantity` NN · `ring_level`(특수스킬 반지만, 옛 줄에는 `ensureColumn` 이 붙인다) · `created_at` NN · `updated_at` NN |
-| `remembered_levels` | `id` NN · `ocid` NN · `kind` NN · `item_key` NN · `level` NN · `updated_at` NN |
+| `cashbook_entries` | `id` NN · `ocid` · `account_id` · `world_id` · `category_id` NN · `date` NN · `memo` · `recorded_at` NN · `updated_at` NN |
+| `cashbook_entry_items` | `id` NN · `entry_id` NN · `target_type`(`hunting_ground` · `item` · `spend_item` · `symbol` · `hexa_core` · `hexa_stat`) · `target_id` · `item_name` · `spend_reward_type_id` · `item_type_id` · `quantity` · `from_level` · `to_level` · `amount_meso` · `tariff_meso` · `sale_fee_percent` · `sale_fee_meso` · `sale_fee_follows_mvp_grade`(1 · 0) · `amount_maple_point` · `maple_point_per_100m_meso` · `meso_market_fee_percent` · `amount_cash` · `fragment_quantity` · `untradable_fragment_quantity` · `fragment_price_meso` · `includes_hexa_activation` · `uses_stored_fragments` · `counts_stored_fragments_as_spend` · `inventory_item_id` |
+| `cashbook_entry_hunt_inputs` | `id` NN · `entry_id` NN UNIQUE · `character_level` · `missed_mob_quantity` · `uses_wealth_potion` · `uses_union_wealth` · `union_wealth_tier` · `fragment_quantity` · `fragment_price_meso` · `meso_acquisition_percent` · `typed_meso` |
+| `cashbook_entry_transfer_inputs` | `id` NN · `entry_id` NN UNIQUE · `receiver_ocid` NN · `transfer_meso` NN · `fee_percent` NN · `fee_follows_mvp_grade` NN(1 자동 · 0 손으로 고름) |
+| `cashbook_entry_exchange_inputs` | `id` NN · `entry_id` NN UNIQUE · `sold_meso` NN · `sell_maple_point_per_100m_meso` NN · `bought_meso`(판매만 적었으면 `NULL`) · `buy_maple_point_per_100m_meso`(같음) · `meso_market_fee_percent` NN |
+| `cashbook_entry_fragment_uses` | `id` NN · `entry_id` NN · `fragment_source` NN(`hunt` · `inventory`) · `ocid`(`hunt` 만) · `fragment_quantity` NN |
+| `inventory_items` | `id` NN · `account_id` NN · `world_id` NN · `item_id` NN(반지는 레벨 줄) · `cashbook_item_type_id` NN · `added_quantity` NN · `created_at` NN · `updated_at` NN |
+| `remembered_levels` | `id` NN · `ocid` NN · `type` NN(`symbol` · `hexa`) · `target_id` NN(심볼 줄 · 헥사 코어 줄) · `level` NN · `updated_at` NN |
 | `mvp_grade_history` | `id` NN · `account_id` NN · `from_date` NN · `grade` · `updated_at` NN |
 | `character_accounts` | `id` NN · `ocid` NN · `name` NN · `account_id` NN · `nexon_account_id` · `first_seen_date` NN · `last_seen_date` NN · `world_key` |
 | `server_sync_queue` | `id` NN · `record_type` NN · `record_id` NN UNIQUE · `attempts` NN(기본 0) · `last_error` · `created_at` NN |
@@ -161,8 +166,8 @@
 
 ## 테이블이나 칸을 더할 때
 
-1. `db.ts` 의 `TABLE_DEFINITIONS` 에 넣는다. 이 배열 밖에서 만들면 열 때 만들어지지 않는다. 보스 기록 표는 기기 변환 단계에
-   따라 정의가 달라서 `bossTableDefinitions` 에 있다.
+1. `db.ts` 의 `TABLE_DEFINITIONS` 에 넣는다. 이 배열 밖에서 만들면 열 때 만들어지지 않는다. 보스 기록 표와 가계부 기록 표 ·
+   인벤토리 · 강화 레벨 기억은 기기 변환 단계에 따라 정의가 달라서 `bossTableDefinitions` · `cashbookTableDefinitions` 에 있다.
 2. 기본키는 uuid 한 칸으로 둔다. 같은 값의 행이 둘 있으면 안 되는 조합은 일반 인덱스가 아니라 `UNIQUE` 로 건다.
    조회 속도는 같고 중복 행만 거절한다. 일반 인덱스는 고치는 동안 값이 잠깐 겹치는 칸에만 쓴다([[ADR-077]] 결정 8).
 3. 칸을 더할 때는 `CREATE TABLE` 문과 `ensureColumn` 을 둘 다 고친다([[ADR-007]] 결정 4).

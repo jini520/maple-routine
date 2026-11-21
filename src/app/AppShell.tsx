@@ -12,8 +12,8 @@ import { loadMesoUnits } from '../features/input-card/meso-unit'
 import { useNoticeStore } from '../features/notice/store'
 import { requestNotificationReconcile, watchReconcileTriggers } from '../features/local-notifications/run'
 import { syncBackgroundRefreshRegistration } from '../features/schedule-alert/background-refresh'
-import { assignLegacyEntryAccounts } from '../features/cashbook/legacy-entry-accounts'
 import { dropEmptyMvpGradeRows } from '../features/mvp-grade/empty-rows'
+import { fillLegacyAccountIds } from '../features/auth/legacy-account-ids'
 import { kickServerSync } from '../features/server-sync/kick'
 import { useAppEntryStore } from '../features/app-entry/store'
 import { useAuthStore } from '../features/auth/store'
@@ -223,11 +223,10 @@ function ReadyShell(): React.JSX.Element {
     void kickServerSync()
   }, [isReady])
 
-  // 계정 칸이 생기기 전의 행을 메인 넥슨 계정으로 채우고, 이어서 주인을 모르는 옛 손입력을 메이플 ID 로 옮긴다.
-  // 계정이 서는 `isReady` 뒤에 돈다.
+  // 계정 칸이 생기기 전의 행을 메인 넥슨 계정으로 채운다. 계정이 서는 `isReady` 뒤에 돈다. 실패하면 다음 호출이 다시 돈다.
   useEffect(() => {
     if (!isReady) return
-    void assignLegacyEntryAccounts()
+    void fillLegacyAccountIds()
   }, [isReady])
 
   // 옛 판이 남긴 MVP 등급 빈 줄을 지운다. 지우면 자동 수수료 다시 계산이 돌아 작업 진행을 띄울 수 있는 `isReady` 뒤에 돈다.

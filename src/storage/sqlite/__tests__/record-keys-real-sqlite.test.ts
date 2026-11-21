@@ -239,7 +239,7 @@ describe('버전 16: 남은 다섯 표의 기본키를 uuid 로 옮기고 칸 �
     expect(all('SELECT id FROM character_profiles ORDER BY ocid')).toEqual(before)
   })
 
-  it('부팅 단계가 빈 글자 계정 칸을 메인 계정 id 로 채우고, 이미 다시 조회한 날짜는 새 줄을 남긴다', async () => {
+  it('부팅 단계가 빈 글자 계정 칸을 메인 계정 id 로 채우고, 이미 다시 조회한 날짜는 새 줄을 남긴다. 가계부 기록은 건드리지 않는다', async () => {
     await seedVersion15()
     const db = await getBossProfitDb()
     await db.run(
@@ -256,8 +256,9 @@ describe('버전 16: 남은 다섯 표의 기본키를 uuid 로 옮기고 칸 �
       { nexon_account_id: 'main', enhancement_type: 'starforce', history_date: '2026-10-26', next_cursor: 'cursor-new' },
     ])
     expect(all('SELECT DISTINCT nexon_account_id FROM character_accounts')).toEqual([{ nexon_account_id: 'main' }])
+    // 가계부 기록의 빈 글자 계정 칸은 1.0.15 기기 변환이 옮기기 전에 채운다. 변환 뒤의 표에는 이 칸이 없다.
     expect(all('SELECT id, nexon_account_id FROM cashbook_entries ORDER BY id')).toEqual([
-      { id: 'e-account', nexon_account_id: 'main' },
+      { id: 'e-account', nexon_account_id: '' },
       { id: 'e-character', nexon_account_id: null },
     ])
   })

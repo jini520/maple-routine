@@ -2,9 +2,10 @@
  * 솔 에르다 조각 장부를 가계부 기록에서 읽고, 장부를 바꾸는 저장을 검사하는 자리.
  *
  * 장부는 저장하지 않고 기록에서 센다. 가격 빈 사냥 기록이 조각을 들이고, `솔 에르다 조각` 정산과 헥사 기록이 보관에서
- * 가져간 개수(`cashbook_entry_fragment_uses`)가 조각을 낸다. 개수를 따로 저장하면 기록을 고칠 때마다 그 값도 맞춰야 한다.
+ * 가져간 개수(`cashbook_entry_fragment_uses` 의 `hunt` 줄)가 조각을 낸다. 개수를 따로 저장하면 기록을 고칠 때마다 그 값도 맞춰야 한다.
  */
 import { fragmentShortfall, type FragmentMove, type FragmentShortDay } from '../lib/cashbook/fragment-ledger'
+import { categorySql } from './cashbook-entries'
 import { inventoryShortagesOf, InventoryShortageError, readInventoryRemaining } from './inventory'
 import type { SqliteDbConnection } from './ports'
 
@@ -35,19 +36,22 @@ export class FragmentShortageError extends Error {
   }
 }
 
-const MOVES_SQL = `
-  SELECT e.id AS entry_id, 'hunt' AS kind, e.ocid AS ocid, e.entry_date AS date, h.fragments AS delta, e.created_at AS created_at
+/** 장부의 줄. 분류 줄 id 는 게임 데이터에 있어 읽을 때마다 만든다. */
+function movesSql(): string {
+  return `
+  SELECT e.id AS entry_id, 'hunt' AS kind, e.ocid AS ocid, e.date AS date, h.fragment_quantity AS delta, e.recorded_at AS recorded_at
     FROM cashbook_entries e JOIN cashbook_entry_hunt_inputs h ON h.entry_id = e.id
-   WHERE e.entry_type = 'income' AND e.category_key = 'hunting' AND h.fragment_price_meso IS NULL
-     AND e.ocid IS NOT NULL AND h.fragments > 0
+   WHERE ${categorySql('income', 'hunting')} AND h.fragment_price_meso IS NULL
+     AND e.ocid IS NOT NULL AND h.fragment_quantity > 0
   UNION ALL
-  SELECT e.id, 'settle', e.ocid, e.entry_date, -i.quantity, e.created_at
+  SELECT e.id, 'settle', e.ocid, e.date, -i.quantity, e.recorded_at
     FROM cashbook_entries e JOIN cashbook_entry_items i ON i.entry_id = e.id
-   WHERE e.entry_type = 'income' AND e.category_key = 'sol_erda_fragment' AND e.ocid IS NOT NULL AND i.quantity > 0
+   WHERE ${categorySql('income', 'sol_erda_fragment')} AND e.ocid IS NOT NULL AND i.quantity > 0
   UNION ALL
-  SELECT e.id, 'hexa', u.ocid, e.entry_date, -u.fragments, e.created_at
+  SELECT e.id, 'hexa', u.ocid, e.date, -u.fragment_quantity, e.recorded_at
     FROM cashbook_entries e JOIN cashbook_entry_fragment_uses u ON u.entry_id = e.id
-   WHERE u.fragment_source = 'hunt' AND u.fragments > 0`
+   WHERE u.fragment_source = 'hunt' AND u.fragment_quantity > 0`
+}
 
 /**
  * 조각 장부. 날짜 차례이고, 같은 날이면 먼저 적은 기록이 앞이다.
@@ -57,7 +61,7 @@ const MOVES_SQL = `
 export async function readFragmentMoves(db: SqliteDbConnection, ocid?: string): Promise<StoredFragmentMove[]> {
   const where = ocid === undefined ? '' : 'WHERE ocid = ?'
   const { values } = await db.query(
-    `SELECT * FROM (${MOVES_SQL}) ${where} ORDER BY date, created_at, entry_id`,
+    `SELECT * FROM (${movesSql()}) ${where} ORDER BY date, recorded_at, entry_id`,
     ocid === undefined ? [] : [ocid],
   )
   return (values ?? []).map((row: Record<string, unknown>) => ({

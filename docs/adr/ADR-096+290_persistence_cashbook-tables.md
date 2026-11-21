@@ -1,7 +1,7 @@
-# ADR-096 가계부 기록 테이블 재설계
+# ADR-096+290 가계부 기록 테이블 재설계
 
 > 🟢 유효
-> 관련 소스: `storage/sqlite/db.ts` · `storage/sqlite/cashbook-tables.ts` · `storage/sqlite/migrations.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` · `storage/spend.ts` · `storage/income.ts` · `features/cashbook/records.ts` · `lib/cashbook/categories.ts` · `lib/cashbook/spend-catalog.ts`
+> 관련 소스: `storage/sqlite/db.ts` · `storage/sqlite/cashbook-tables.ts` · `storage/sqlite/convert-cashbook-tables.ts` · `storage/sqlite/legacy-cashbook-entries.ts` · `storage/sqlite/migrations.ts` · `storage/cashbook-entries.ts` · `storage/cashbook-entry-shape.ts` · `storage/spend.ts` · `storage/income.ts` · `features/cashbook/records.ts` · `lib/cashbook/categories.ts` · `lib/cashbook/entry-ids.ts` · `lib/cashbook/spend-catalog.ts`
 
 ## 배경
 
@@ -24,31 +24,41 @@
 
 이 결정은 #670 과 함께 정했고(2026-10-25), v1.0.13 스토어 바이너리로 낸다. #631 · #507 · #614 는 이 작업에 넣지 않는다(사용자 선택).
 
+DB 버전 15 가 옛 두 표를 기록 표로 옮겼다. 그때 표는 분류 · 품목을 key 글자(`category_key` · `item_key`)로 들고 수입 · 지출을
+`entry_type` 칸으로 갈랐다. 1.0.15 기기 변환이 같은 이름의 표를 서버 표와 같은 칸으로 다시 옮긴다([[ADR-286]] 결정 4). 기기와
+서버가 기록 줄을 그대로 주고받으려면 두 표의 모양이 같아야 하기 때문이다([[ADR-099]] 결정 19).
+
 ## 결정
 
-### 결정 1. 수입과 지출을 테이블 하나로 합치고, 수입과 지출은 `entry_type` 칸으로 가른다
+### 결정 1. 수입과 지출을 테이블 하나로 합치고, 수입과 지출은 분류로 가른다
 
 ```
-cashbook_entries               id · ocid · account_id · nexon_account_id · entry_type · category_key · entry_date · memo · created_at · updated_at
-  ├ cashbook_entry_items       id · entry_id · sort_order · item_key · item_name · form_key · item_kind_key
-  │                            · quantity · from_level · to_level · 금액 칸
+cashbook_entries               id · ocid · account_id · world_id · category_id · date · memo · recorded_at · updated_at
+  ├ cashbook_entry_items       id · entry_id · target_type · target_id · item_name · spend_reward_type_id · item_type_id
+  │                            · quantity · from_level · to_level · 금액 칸 · inventory_item_id
   ├ cashbook_entry_hunt_inputs id · entry_id · 사냥 계산기 입력
-  ├ cashbook_entry_fragment_uses id · entry_id · ocid · fragments
+  ├ cashbook_entry_fragment_uses id · entry_id · fragment_source · ocid · fragment_quantity
   ├ cashbook_entry_transfer_inputs id · entry_id · 주간 보스 수입 이전 시트 입력
   └ cashbook_entry_exchange_inputs id · entry_id · 메소마켓 환전 수수료 시트 입력
 ```
 
-- `entry_type` 은 `income` · `spend` 둘이다. 하루 목록과 기간 합계를 테이블 하나에서 읽으려고 합쳤다(사용자 선택).
-- `category_key` 는 `entry_type` 과 함께 읽는다. 기타(`etc`)가 수입과 지출 양쪽에 있기 때문이다.
-- `entry_date` 는 돈이 오간 날(KST `YYYY-MM-DD`)이고, 시트에서 고르며 고칠 수 있다. 달력 칸 · 하루 목록 · 기간 합계가
-  이 값으로 기록을 놓는다. `created_at` 은 저장한 시각이라 사용자가 못 고치고, 같은 날 안의 차례를 정한다. 이름은 서버의
-  날짜 칸 규칙(`from_date` 처럼 `_date`)을 따랐다. 옛 `spent_on` · `earned_on` 을 옮긴다(사용자 지정).
-- 이름 규칙은 서버를 따른다(사용자 선택). 차례는 `sort_order`, 금액은 `amount_meso` · `amount_point` · `amount_cash` 처럼
-  `무엇_화폐` 꼴, 직접 친 품목 이름은 `item_name`, 심볼 레벨은 `from_level` · `to_level` 이다. 나중에 서버로 올릴 때(#507)
-  칸 이름을 다시 바꾸지 않아도 된다.
-- 기록에는 묶음 key 를 두지 않는다(사용자 선택). 품목의 `item_key` 가 이미 묶음을 알아서, 두면 같은 값이 두 곳에 생긴다.
-  한 기록의 품목은 모두 같은 묶음이다.
-- 헥사 기록이 보관에서 가져온 조각은 캐릭터마다 한 줄이라 `cashbook_entry_fragment_uses` 로 뺀다([[ADR-137]] 결정 16).
+- 수입인지 지출인지는 분류 줄(`category_id`)이 안다. 하루 목록과 기간 합계를 테이블 하나에서 읽으려고 합쳤다(사용자 선택).
+  종류 칸을 따로 두면 분류 줄과 같은 사실을 두 번 적는다([[ADR-099]] 결정 45).
+- 분류는 수입 · 지출 분류 줄의 id 다. 기타(`etc`)는 수입과 지출 양쪽에 있어 key 로는 가르지 못하지만 분류 줄은 둘이 다르다.
+- `date` 는 돈이 오간 날(KST `YYYY-MM-DD`)이고, 시트에서 고르며 고칠 수 있다. 달력 칸 · 하루 목록 · 기간 합계가 이 값으로
+  기록을 놓는다. `recorded_at` 은 저장한 시각이라 사용자가 못 고치고, 같은 날 안의 차례를 정한다. 옛 `spent_on` · `earned_on` 을
+  옮겼다(사용자 지정).
+- 칸 이름은 서버 표와 같다([[ADR-286]] 결정 2). 금액은 `amount_meso` · `amount_maple_point` · `amount_cash` 처럼 `무엇_화폐` 꼴,
+  직접 친 품목 이름은 `item_name`, 심볼 레벨은 `from_level` · `to_level` 이다. 서버는 캐릭터와 메이플 ID 를 줄 id 로 가리키고
+  기기는 `ocid` 와 `account_id` 로 가리킨다. 기록은 둘 가운데 하나가 반드시 차 있다(CHECK).
+- 품목의 대상은 기록의 분류가 정한 표(사냥터 · 아이템 · 지출 항목 · 심볼 · 헥사 코어 · 헥사 스탯)의 줄 id 다. 반지는 레벨
+  줄이다. 아이템 종류 · 추가 리워드 종류 · 월드도 게임 데이터의 줄 id 다. 저장 함수가 화면이 드는 key 와 줄 id 를 오간다
+  (`storage/cashbook-entries.ts` · `lib/cashbook/entry-ids.ts`). 그래서 화면 코드는 표가 바뀌어도 그대로다.
+- 품목은 추가 리워드 종류의 차례로 늘어놓아 차례 칸이 없다([[ADR-099]] 결정 53). 서버처럼 한 기록의 추가 리워드 종류는
+  품목 하나다(`UNIQUE`).
+- 기록에는 묶음 key 를 두지 않는다(사용자 선택). 품목의 대상이 이미 묶음을 알아서, 두면 같은 값이 두 곳에 생긴다. 한 기록의
+  품목은 모두 같은 묶음이다.
+- 헥사 기록이 보관에서 가져온 조각은 보관마다 한 줄이라 `cashbook_entry_fragment_uses` 로 뺀다([[ADR-137]] 결정 16).
 - 사냥 계산기 입력은 수입 사냥에만 있어서 `cashbook_entry_hunt_inputs` 로 뺀다. 기록 하나에 0개나 1개다. 합친 테이블에 두면
   지출 행마다 빈 칸이 열 개 넘게 붙는다.
 - `주간 보스 수입 이전` 과 `메소마켓 환전 수수료` 시트의 입력도 같은 이유로 `cashbook_entry_transfer_inputs` ·
@@ -105,8 +115,8 @@ cashbook_entries               id · ocid · account_id · nexon_account_id · e
   지출 분류 · 형태를 빼고, 이름을 앱 상수에 둔다는 문장도 함께 고친다.
 - 심볼 강화의 둘째 줄은 심볼 이름(`symbols.name`)을 그대로 쓰고, 사냥은 수량과 단위만 적는다. 두 표에는 칸을
   더하지 않는다(사용자 선택).
-- [[ADR-078]] 결정 6 과 같은 이유로 서버 게임 데이터의 key 는 지우지 않는다. 기록이 key 만 가지므로 key 가 사라지면
-  그 기록의 이름을 찾을 수 없다.
+- [[ADR-078]] 결정 6 과 같은 이유로 서버 게임 데이터의 줄은 지우지 않는다. 기록이 줄 id 만 가지므로 줄이 사라지면 그 기록의
+  이름을 찾을 수 없다.
 
 ### 결정 4. 둘째 줄의 수량에는 단위를 붙이고, 단위는 모두 서버가 든다
 
@@ -168,3 +178,6 @@ cashbook_entries               id · ocid · account_id · nexon_account_id · e
 - ADR-096 (2026-10-25): 이관 전 사본과 이관 뒤 대조(결정 9)를 더했다. 실기기 데이터로 옛 · 새 코드의 하루 목록 235일 · 684줄 금액과 합계가 같은 것을 확인했다
 - ADR-096 (2026-10-26): 쓰지 않던 `memo` 칸을 지운 것과 계정 칸([[ADR-098]] 결정 6)을 표 그림에 반영했다
 - (2026-11-14) 아이템 구매 · 판매의 메모를 담는 `memo` 칸을 표 그림에 다시 넣었다([[ADR-048]] 결정 19)
+- ADR-290 (2026-11-21): 결정 1 을 1.0.15 기기 변환이 만든 표로 다시 썼다. 수입 · 지출을 분류 줄로 가르고, 분류 · 품목의 대상 ·
+  종류 · 월드를 게임 데이터의 줄 id 로 가리키며, 품목의 차례 칸과 넥슨 계정 칸을 없앴다. 결정 3 의 지우지 않는 서버 값을 줄로
+  고쳤다(#947)

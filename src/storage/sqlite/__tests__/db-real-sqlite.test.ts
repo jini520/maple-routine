@@ -90,6 +90,17 @@ async function convertDevice(): Promise<void> {
   await runDeviceConversion(await getBossProfitDb())
 }
 
+/**
+ * 이관이 옮긴 가계부 기록을 저장 함수로 읽기 전에 기기 변환을 돌린다. 주인을 모르는 옛 손입력은 대표 캐릭터 `ocid-1` 과 그
+ * 메이플 ID 에 붙는다. 붙일 곳이 없으면 변환이 그 기록을 옮기지 않는다.
+ */
+async function convertWithRepresentative(): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(`INSERT OR IGNORE INTO character_accounts (ocid, name, account_id, nexon_account_id, first_seen_date, last_seen_date)
+                VALUES ('ocid-1', '대표', 'maple-1', 'account-1', '2026-01-01', '2026-11-01')`)
+  await runDeviceConversion(db, { context: { representativeOcid: 'ocid-1' } })
+}
+
 beforeEach(() => {
   __setMigrationCeilingForTest(BEFORE_LEGACY_DROP)
   real = createRealSqlite()
@@ -143,6 +154,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
     })
 
     await getBossProfitDb()
+    await convertWithRepresentative()
 
     // 버전 15 가 기록 표로 옮기며 id 를 uuid 로 바꾼다. 날짜로 찾는다.
     const rows = await getIncomeRecordsBetween('2026-08-01', '2026-08-31')
@@ -182,6 +194,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
     })
 
     await getBossProfitDb()
+    await convertWithRepresentative()
 
     const rows = await getIncomeRecordsBetween('2026-08-01', '2026-08-31')
     expect(rows).toHaveLength(1)
@@ -244,7 +257,7 @@ describe('income_records.meso_amount 재작성 (이슈 #265)', () => {
  */
 describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLite)', () => {
   const base = {
-    ocid: null,
+    ocid: 'ocid-1',
     earnedOn: '2026-08-28',
     category: 'etc',
     item: '이벤트 보상',
@@ -259,7 +272,7 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
   } as const
 
   it('메포 `기타`', async () => {
-    await getBossProfitDb()
+    await convertDevice()
 
     await insertIncomeRecord({
       ...base,
@@ -283,7 +296,7 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
   })
 
   it('캐시 `기타`', async () => {
-    await getBossProfitDb()
+    await convertDevice()
 
     await insertIncomeRecord({
       ...base,
@@ -302,7 +315,7 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
 
   // 막혀 있던 것은 메포·캐시 하나뿐이었다. 고치면서 나머지가 조용히 상하지 않는지 함께 본다.
   it('메소 `기타`와 사냥은 그대로다', async () => {
-    await getBossProfitDb()
+    await convertDevice()
 
     await insertIncomeRecord({
       ...base,
@@ -326,7 +339,7 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
         mode: 'calculator',
         characterLevel: 294,
         missedMobs: 1,
-        boosts: ['union-wealth'],
+        boosts: ['union'],
         sojae: 4,
         fragments: 83,
         fragmentPrice: 2_500_000,
@@ -342,7 +355,7 @@ describe('기타를 메포·캐시로 적어도 저장된다 (목이 아닌 SQLi
       mode: 'calculator',
       characterLevel: 294,
       missedMobs: 1,
-      boosts: ['union-wealth'],
+      boosts: ['union'],
       sojae: 4,
       fragments: 83,
       fragmentPrice: 2_500_000,
@@ -391,7 +404,7 @@ function userVersion(target: RealSqlite): number {
 describe('심볼 강화의 레벨 두 칸', () => {
   const 심볼기록: SpendRecord = {
     id: 'symbol',
-    ocid: null,
+    ocid: 'ocid-1',
     spentOn: '2026-09-19',
     category: 'symbol',
     item: '소멸의 여로 Lv.3 → 7',
@@ -412,7 +425,7 @@ describe('심볼 강화의 레벨 두 칸', () => {
   }
 
   it('새 DB 에 적고 그대로 되읽는다', async () => {
-    await getBossProfitDb()
+    await convertDevice()
 
     await insertSpendRecord(심볼기록)
 
@@ -430,6 +443,7 @@ describe('심볼 강화의 레벨 두 칸', () => {
     })
 
     await getBossProfitDb()
+    await convertWithRepresentative()
     await insertSpendRecord(심볼기록)
 
     const rows = await getSpendRecordsBetween('2026-09-19', '2026-09-19')
@@ -508,7 +522,8 @@ describe('버전 이관: 가계부 기록에 key 를 채운다', () => {
       item_key: null,
       form_item_keys: null,
     })
-    // 기록 표로 옮겨도 이름이 남는다. key 가 없어 화면이 이 글자를 쓴다.
+    // 기록 표로 옮기고 기기 변환을 거쳐도 이름이 남는다. key 가 없어 화면이 이 글자를 쓴다.
+    await convertWithRepresentative()
     const moved = await getSpendRecordsBetween('2026-08-01', '2026-08-31')
     expect(moved).toHaveLength(7)
     expect(moved.find((row) => row.item === '없어진 항목')).toMatchObject({ category: 'content', itemKey: null })
@@ -1057,7 +1072,8 @@ describe('버전 이관: 사냥 기록의 조각 가격 0 을 안 적은 가격�
     expect(byId.get('unchecked')?.hunt_fragment_price).toBeNull()
     expect(byId.get('sold')?.hunt_fragment_price).toBe(8_000_000)
     expect(byId.get('legacy')?.hunt_typed_meso).toBeNull()
-    // 기록 표로 옮긴 뒤에도 가격 칸과 금액이 그대로다.
+    // 기록 표로 옮기고 기기 변환을 거쳐도 가격 칸과 금액이 그대로다.
+    await convertDevice()
     const rows = await getIncomeRecordsBetween('2026-09-10', '2026-09-10')
     expect(rows.map((row) => [row.hunt?.fragmentPrice ?? 'none', row.mesoAmount]).sort()).toEqual([
       [8_000_000, 1_080_000_000],
@@ -1071,7 +1087,7 @@ describe('버전 이관: 사냥 기록의 조각 가격 0 을 안 적은 가격�
   it('옮긴 두 기록의 조각이 보관에 들고, 이관 뒤에 0 으로 적은 조각은 안 든다', async () => {
     await seed()
 
-    await getBossProfitDb()
+    await convertDevice()
     await insertIncomeRecord({ ...hunt, id: 'zero-after', hunt: { ...hunt.hunt!, fragments: 5 } as IncomeRecord['hunt'] })
 
     await expect(getFragmentStorage('ocid-adele', '2026-09-10')).resolves.toBe(120)

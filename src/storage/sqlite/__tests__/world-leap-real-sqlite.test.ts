@@ -4,6 +4,7 @@
  *
  * 충돌 무시(`INSERT OR IGNORE ... SELECT`)와 칸별 최솟값은 엔진이 판정하는 것이라 목으로는 못 본다.
  */
+import { findWorld } from '../../../lib/world/worlds'
 import { closeBossProfitDb } from '../db'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { copyMissingBossPartySettings, getBossPartySettings, setBossPartySetting } from '../../boss-party-settings'
@@ -260,18 +261,18 @@ describe('월드 리프 옮기기', () => {
     expect(spend!.hexa!.storageUses).toEqual([{ ocid: 'new', fragments: 10 }])
     await expect(getFragmentStorage('new', '2026-09-30')).resolves.toBe(20)
     await expect(getFragmentStorage('old', '2026-09-30')).resolves.toBe(0)
-    expect(real.inspect((db) => db.prepare('SELECT DISTINCT world_key FROM cashbook_entries').all())).toEqual([
-      { world_key: 'challengers_2' },
+    expect(real.inspect((db) => db.prepare('SELECT DISTINCT world_id FROM cashbook_entries').all())).toEqual([
+      { world_id: findWorld('challengers_2')!.id },
     ])
   })
 
   it('기억한 레벨: 새 캐릭터에 없는 대상만 옮기고 옛 줄은 지운다', async () => {
-    await rememberLevels('old', 'symbol', { arcane_vanishing_journey: 20, arcane_chu_chu: 18 }, 'overwrite')
-    await rememberLevels('new', 'symbol', { arcane_chu_chu: 19 }, 'overwrite')
+    await rememberLevels('old', 'symbol', { road_of_vanishing: 20, chew_chew: 18 }, 'overwrite')
+    await rememberLevels('new', 'symbol', { chew_chew: 19 }, 'overwrite')
 
     await moveRememberedLevelsToOcid('old', 'new')
 
-    await expect(getRememberedLevels('new', 'symbol')).resolves.toEqual({ arcane_vanishing_journey: 20, arcane_chu_chu: 19 })
+    await expect(getRememberedLevels('new', 'symbol')).resolves.toEqual({ road_of_vanishing: 20, chew_chew: 19 })
     await expect(getRememberedLevels('old', 'symbol')).resolves.toEqual({})
   })
 })

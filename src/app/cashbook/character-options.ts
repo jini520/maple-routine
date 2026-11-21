@@ -46,7 +46,7 @@ export function ownerOptions(
   ]
 }
 
-/** 기록의 주인을 보기 값으로. 주인을 모르는 옛 기록과 새 기록은 `null` 이라 빈 칸으로 열린다. */
+/** 기록의 주인을 보기 값으로. 새 기록은 `null` 이라 빈 칸으로 열린다. */
 export function ownerValueOf(record: { ocid: string | null; accountId?: string } | undefined): string | null {
   if (record?.accountId !== undefined) return `${ACCOUNT_VALUE_PREFIX}${record.accountId}`
   return record?.ocid ?? null

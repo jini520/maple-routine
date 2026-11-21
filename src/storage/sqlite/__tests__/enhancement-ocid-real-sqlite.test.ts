@@ -6,7 +6,7 @@
  */
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
-import { DB_VERSION } from '../migrations'
+import { __setMigrationCeilingForTest, DB_VERSION } from '../migrations'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 let real: RealSqlite
@@ -17,6 +17,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
+  __setMigrationCeilingForTest(null)
   await closeBossProfitDb()
   __resetStoragePortsForTest()
   real.dispose()
@@ -70,8 +71,11 @@ function 조회(id: string, nexonAccountId: string | null, date: string, checked
 }
 
 async function seedVersion17(): Promise<void> {
+  // 새 DB 는 열 때 기기 변환을 돈다. 버전 19 이후의 이관이 변환 전 가계부 표를 읽어서 이관 상한으로 막는다.
+  __setMigrationCeilingForTest(DB_VERSION)
   await getBossProfitDb()
   await closeBossProfitDb()
+  __setMigrationCeilingForTest(null)
   real.inspect((db) => {
     db.exec('DROP TABLE enhancement_totals')
     db.exec('DROP TABLE enhancement_history_checks')

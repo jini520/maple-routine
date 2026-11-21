@@ -1,5 +1,5 @@
 /**
- * 지출 어댑터. 기록은 가계부 기록 표 셋(`cashbook-entries.ts`)에 `entry_type = 'spend'` 로 산다.
+ * 지출 어댑터. 기록은 가계부 기록 표(`cashbook-entries.ts`)에 지출 분류의 기록으로 산다.
  *
  * 화면이 쓰는 모양(`SpendRecord`)은 그대로 두고 여기서 기록 행 · 품목 행과 서로 옮긴다. 에픽던전 리워드는 형태마다
  * 품목 하나이고, 나머지는 품목 하나다. `id` · `recordedAt` 을 호출부가 주는 규약은 `income.ts` 와 같다.
@@ -8,15 +8,17 @@
  * 한 행 = 한 통화로는 표현이 안 된다.
  */
 import type { ItemKindKey, SpendCategoryKey } from '../lib/cashbook/categories'
+import { itemTargetIdsOf, itemTargetTypeOf } from '../lib/cashbook/entry-ids'
 import {
-  assignLegacyEntryAccounts,
-  assignOwnerlessEntries,
+  categorySql,
   deleteEntry,
+  entryTypeSql,
   insertEntry,
   moveEntriesToOcid,
   moveFragmentUsesToOcid,
   readEntries,
   replaceEntry,
+  sqlText,
 } from './cashbook-entries'
 import type { EntryExchange, EntryTransfer, OtherFragmentUse } from './cashbook-entries'
 import { spendEntryOf, spendRecordOf } from './cashbook-entry-shape'
@@ -29,7 +31,7 @@ import { inTransaction } from './sqlite/transaction'
 
 export interface SpendRecord {
   id: string
-  /** 기록이 붙은 캐릭터. 메이플 ID 기록과 주인을 모르는 옛 기록은 `null` 이다. */
+  /** 기록이 붙은 캐릭터. 메이플 ID 기록은 `null` 이다. 저장한 기록은 이것과 `accountId` 가운데 하나가 반드시 있다. */
   ocid: string | null
   /** 기록이 붙은 메이플 ID. 메이플 ID 기록에만 있다. */
   accountId?: string
@@ -243,29 +245,6 @@ export async function updateSpendRecord(record: SpendRecord): Promise<void> {
   bumpSpendRecordsRevision()
 }
 
-/**
- * 주인을 모르는 옛 지출을 그 넥슨 계정의 하나뿐인 메이플 ID 로 옮긴다. 옮긴 것이 있을 때만 판이 오른다.
- *
- * @param categoryKeys 메이플 ID 를 고를 수 있는 지출 분류
- */
-export async function assignLegacySpendAccounts(categoryKeys: readonly SpendCategoryKey[]): Promise<void> {
-  const db = await getBossProfitDb()
-  if (await assignLegacyEntryAccounts(db, 'spend', categoryKeys)) bumpSpendRecordsRevision()
-}
-
-/**
- * 남은 주인 모르는 옛 지출을 대표 캐릭터에게 붙인다. 붙인 것이 있을 때만 판이 오른다.
- *
- * @param categoryKeys 메이플 ID 를 고를 수 있는 지출 분류
- */
-export async function assignOwnerlessSpends(
-  owner: { ocid: string; accountId: string },
-  categoryKeys: readonly SpendCategoryKey[],
-): Promise<void> {
-  const db = await getBossProfitDb()
-  if (await assignOwnerlessEntries(db, 'spend', owner, categoryKeys)) bumpSpendRecordsRevision()
-}
-
 /** 월드 리프한 캐릭터의 지출과 그 캐릭터 보관에서 가져간 조각을 새 ocid 로 옮긴다. 옮긴 것이 있을 때만 판이 오른다. */
 export async function moveSpendRecordsToOcid(fromOcid: string, toOcid: string): Promise<void> {
   const db = await getBossProfitDb()
@@ -294,7 +273,8 @@ export async function getAutoFeeTransferRecords(): Promise<SpendRecord[]> {
   const db = await getBossProfitDb()
   const entries = await readEntries(
     db,
-    `e.entry_type = 'spend' AND EXISTS (SELECT 1 FROM cashbook_entry_transfer_inputs t WHERE t.entry_id = e.id AND t.fee_auto = 1)`,
+    `${entryTypeSql('spend')}
+     AND EXISTS (SELECT 1 FROM cashbook_entry_transfer_inputs t WHERE t.entry_id = e.id AND t.fee_follows_mvp_grade = 1)`,
     [],
   )
   return entries.map(spendRecordOf)
@@ -326,7 +306,7 @@ export async function getSpendRecordsBetween(
   toDateKey: string,
 ): Promise<SpendRecord[]> {
   const db = await getBossProfitDb()
-  const entries = await readEntries(db, `e.entry_type = 'spend' AND e.entry_date BETWEEN ? AND ?`, [
+  const entries = await readEntries(db, `${entryTypeSql('spend')} AND e.date BETWEEN ? AND ?`, [
     fromDateKey,
     toDateKey,
   ])
@@ -343,11 +323,15 @@ export async function getLatestSpendFor(
   itemKey: string,
 ): Promise<SpendRecord | null> {
   const db = await getBossProfitDb()
+  // 헥사 코어는 이름이 같아도 직업마다 줄이 달라 이름의 줄 전부로 찾고, 표에서 못 찾아 이름만 적힌 품목도 찾는다.
+  const targetType = itemTargetTypeOf('spend', category, null)
+  const targetIds = targetType === null ? [] : itemTargetIdsOf(targetType, itemKey)
   const entries = await readEntries(
     db,
-    `e.entry_type = 'spend' AND e.ocid = ? AND e.category_key = ?
-      AND e.id IN (SELECT entry_id FROM cashbook_entry_items WHERE item_key = ?)`,
-    [ocid, category, itemKey],
+    `${categorySql('spend', category)} AND e.ocid = ?
+      AND e.id IN (SELECT entry_id FROM cashbook_entry_items
+                    WHERE target_id IN (${targetIds.map(sqlText).join(', ')}) OR (target_id IS NULL AND item_name = ?))`,
+    [ocid, itemKey],
   )
   const last = entries.at(-1)
   return last === undefined ? null : spendRecordOf(last)
