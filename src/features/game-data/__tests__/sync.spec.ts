@@ -31,6 +31,7 @@ import {
   retryGameData,
   startGameData,
   useGameTable,
+  whenGameDataReady,
 } from '../sync'
 
 const fetchRemote = jest.mocked(fetchGameData)
@@ -138,6 +139,25 @@ describe('처음 켤 때 (사본 없음)', () => {
     expect(saveCopy.mock.invocationCallOrder[0]).toBeGreaterThan(jest.mocked(files.download).mock.invocationCallOrder[1]!)
     expect(assetFilesTable.get().files.map((f) => f.id)).toEqual(['bosses/a.webp', 'items/b.webp'])
     expect(getGameDataStatus().phase).toBe('ready')
+  })
+
+  // 기기 변환이 이 약속을 기다린다. 실패에서 끝나면 줄 id 가 없는 빈 표로 변환이 돌아 기록을 지운다.
+  it('준비를 기다리는 약속은 실패에서 끝나지 않고, 다시 시도로 준비될 때 끝난다', async () => {
+    fetchRemote.mockResolvedValue(응답([file('bosses/a.webp', SHA_A)]))
+    jest.mocked(files.download).mockRejectedValueOnce(new Error('offline'))
+    let ready = false
+    void whenGameDataReady().then(() => {
+      ready = true
+    })
+
+    await 확인하며(startGameData)
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(getGameDataStatus().phase).toBe('failed')
+    expect(ready).toBe(false)
+
+    await retryGameData()
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(ready).toBe(true)
   })
 
   it('그림 하나라도 못 받으면 실패로 남고 사본도 표도 그대로다. 다시 시도하면 묻지 않고 받는다', async () => {

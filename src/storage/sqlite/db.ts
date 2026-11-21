@@ -20,6 +20,7 @@ import {
   CHARACTER_FIRST_DAYS_BODY,
   ENHANCEMENT_REFETCHES_BODY,
 } from './enhancement-tables'
+import { DEVICE_CONVERSION_BODY } from './device-conversion'
 import { GAME_DATA_META_BODY, GAME_DATA_SECTIONS_BODY } from './game-data-tables'
 import { QUERY_CACHE_BODY } from './query-cache-tables'
 import { INCOME_RECORDS_BODY, LEGACY_TABLE_DEFINITIONS } from './legacy-tables'
@@ -136,6 +137,11 @@ const TABLE_DEFINITIONS = [
   {
     name: 'remembered_levels',
     createSql: `CREATE TABLE IF NOT EXISTS remembered_levels ${REMEMBERED_LEVELS_BODY}`,
+  },
+  // 1.0.15 기기 변환이 마친 단계의 번호. 한 줄이다. 지우면 바뀐 표를 다시 바꾸려다 던져서 데이터 삭제가 지우지 않는다.
+  {
+    name: 'device_conversion',
+    createSql: `CREATE TABLE IF NOT EXISTS device_conversion ${DEVICE_CONVERSION_BODY}`,
   },
   // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 데이터 삭제가 지우지 않는다.
   {
@@ -396,6 +402,19 @@ async function prepareLegacyTables(db: SqliteDbConnection): Promise<void> {
 
 let dbPromise: Promise<SqliteDbConnection> | null = null
 
+/** 기기 변환이 끝나면 풀리는 약속. 부팅이 막기를 걸기 전에는 풀려 있다. */
+let converted: Promise<void> = Promise.resolve()
+
+/**
+ * 기록 표 접근을 `ready` 가 풀릴 때까지 막는다. 새 앱 코드는 옛 모양의 기록 표를 읽지 못해서, 변환이 끝나기 전에는
+ * `getBossProfitDb()` 가 기다린다. 부팅이 저장소를 건드리기 전에 한 번 부른다.
+ *
+ * @example holdRecordTablesUntil(conversionDone)
+ */
+export function holdRecordTablesUntil(ready: Promise<void>): void {
+  converted = ready
+}
+
 async function openBossProfitDb(): Promise<SqliteDbConnection> {
   const connection = getSqlitePort()
 
@@ -504,8 +523,19 @@ function withOpenTimeout(promise: Promise<SqliteDbConnection>): Promise<SqliteDb
   return withTimeout(promise, OPEN_TIMEOUT_MS, 'SQLite 커넥션 열기 시간 초과')
 }
 
-// 앱 전체에서 커넥션을 하나만 열도록 모듈 스코프에서 캐싱한다. 동일 이름 커넥션을 중복으로 열면 에러가 난다.
-export function getBossProfitDb(): Promise<SqliteDbConnection> {
+/** 기록 표를 읽고 쓰는 저장소가 거치는 연결. 기기 변환이 끝날 때까지 기다린다. */
+export async function getBossProfitDb(): Promise<SqliteDbConnection> {
+  await converted
+  return getBossProfitDbUngated()
+}
+
+/**
+ * 기기 변환을 기다리지 않는 연결. 변환이 바꾸지 않는 표(게임 데이터 사본 · 조회 캐시 · 사용 로그)와 변환만 쓴다. 이 셋은
+ * 잠금 화면 동안에도 쓰여서, 기다리면 잠금 화면이 풀리지 않는다.
+ *
+ * 앱 전체에서 커넥션을 하나만 열도록 모듈 스코프에서 캐싱한다. 동일 이름 커넥션을 중복으로 열면 에러가 난다.
+ */
+export function getBossProfitDbUngated(): Promise<SqliteDbConnection> {
   if (dbPromise === null) {
     dbPromise = withOpenTimeout(openBossProfitDb()).catch((error: unknown) => {
       // 실패한 시도를 캐시하면 이후 모든 SQLite 접근이 재시도 없이 같은 실패를 영구히 돌려받는다

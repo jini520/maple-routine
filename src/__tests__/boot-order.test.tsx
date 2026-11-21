@@ -18,7 +18,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 import { focusManager } from '@tanstack/react-query'
-import { act } from '@testing-library/react-native'
+import { act, fireEvent } from '@testing-library/react-native'
 import { AppState, type AppStateStatus } from 'react-native'
 
 /** 관측한 호출을 부른 순서대로 쌓는 목록. 무엇을 했는지가 아니라 **언제** 했는지가 계약이다. */
@@ -176,18 +176,26 @@ jest.mock('../navigation/AppNavigation', () => {
 jest.mock('../app/mvp-grade/MvpGradeHost', () => ({ __esModule: true, MvpGradeHost: () => null }))
 jest.mock('../app/resumable-task/TaskHost', () => ({ __esModule: true, TaskHost: () => null }))
 
-// 게임 데이터 받기는 자기 테스트가 따로 있다. 여기서는 준비 상태만 바꿔 끼운다.
-const mockGameData = { phase: 'ready' }
+// 게임 데이터 받기는 자기 테스트가 따로 있다. 여기서는 준비 상태와 진행만 바꿔 끼운다.
+const NO_PROGRESS = { dataBytes: null as number | null, imageBytes: 0, imageTotal: 0 }
+const mockGameData = { phase: 'ready', progress: NO_PROGRESS }
 jest.mock('../features/game-data/sync', () => ({
   __esModule: true,
-  useGameDataStatus: () => ({
-    phase: mockGameData.phase,
-    progress: { dataBytes: null, imageBytes: 0, imageTotal: 0 },
-  }),
+  useGameDataStatus: () => ({ phase: mockGameData.phase, progress: mockGameData.progress }),
   refreshGameData: jest.fn(async () => {
     mockCalls.push('refresh:gameData')
   }),
   retryGameData: jest.fn(async () => {}),
+}))
+
+// 기기 변환은 자기 테스트가 따로 있다. 여기서는 단계만 바꿔 끼운다.
+const mockConversion = { phase: 'done' }
+jest.mock('../features/device-conversion/run', () => ({
+  __esModule: true,
+  useDeviceConversionStatus: () => mockConversion.phase,
+  retryDeviceConversion: jest.fn(async () => {
+    mockCalls.push('retry:conversion')
+  }),
 }))
 
 // 점검 잠금은 자기 테스트가 따로 있다. 여기서는 잠겼는지만 바꿔 끼운다.
@@ -213,6 +221,8 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     mockCalls.length = 0
     mockEntry.stage = 'ready'
     mockGameData.phase = 'ready'
+    mockGameData.progress = NO_PROGRESS
+    mockConversion.phase = 'done'
     mockMaintenance.locked = false
     jest.useFakeTimers()
   })
@@ -285,6 +295,47 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     expect(view.getByTestId('game-data-lock')).toBeTruthy()
     expect(view.queryByText('navigation')).toBeNull()
     expect(mockCalls.sort()).toEqual(['restore:theme'])
+  })
+
+  // 새 앱 코드는 옛 모양의 기록 표를 읽지 못한다. 변환이 끝나기 전에 화면이 서면 읽는 곳마다 던진다.
+  it('기기 변환이 끝나기 전에는 앱의 나머지를 마운트하지 않고, 게임 데이터를 받은 실행이면 다 받은 잠금 화면을 그대로 둔다', async () => {
+    mockConversion.phase = 'running'
+    mockGameData.progress = { dataBytes: 2_000_000, imageBytes: 5_000_000, imageTotal: 5_000_000 }
+    const view = await renderOverlay(<AppShell />)
+    await act(async () => {})
+
+    expect(view.getByTestId('game-data-lock')).toBeTruthy()
+    expect(view.getByText('100%')).toBeTruthy()
+    expect(view.queryByText('navigation')).toBeNull()
+    expect(mockCalls.sort()).toEqual(['restore:theme'])
+  })
+
+  // 받을 것이 없던 실행은 잠금 화면이 선 적이 없다. 0% 패널을 띄우면 받지도 않는 것을 받는 것처럼 보인다.
+  it('받을 것이 없던 실행이면 기기 변환 동안 잠금 화면을 띄우지 않는다', async () => {
+    mockConversion.phase = 'running'
+    const view = await renderOverlay(<AppShell />)
+    await act(async () => {})
+
+    expect(view.queryByTestId('game-data-lock')).toBeNull()
+    expect(view.queryByText('navigation')).toBeNull()
+  })
+
+  // 변환 코드의 잘못을 OTA 로 고칠 수 있어야 한다. 실패 패널 위에 모달이 없으면 고친 번들을 받을 길이 없다.
+  it('기기 변환이 실패하면 실패 패널과 업데이트 모달이 서고, `다시 시도` 가 변환을 다시 돌린다', async () => {
+    mockConversion.phase = 'failed'
+    mockLiveUpdate.status = 'ready-to-apply'
+    const view = await renderOverlay(<AppShell />)
+
+    expect(view.getByText('기록을 옮기지 못했습니다')).toBeTruthy()
+    expect(view.getByText('기기에 저장된 기록은 그대로입니다. 다시 시도해주세요.')).toBeTruthy()
+    expect(view.getByText('업데이트 준비 완료')).toBeTruthy()
+    expect(view.queryByText('navigation')).toBeNull()
+    mockLiveUpdate.status = 'idle'
+
+    await act(async () => {
+      fireEvent.press(view.getByText('다시 시도'))
+    })
+    expect(mockCalls).toContain('retry:conversion')
   })
 
   // 잠금이 안 풀리는 결함도 OTA 로 고칠 수 있어야 한다. 잠긴 동안 모달이 없으면 받을 길이 없다.

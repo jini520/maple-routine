@@ -4,7 +4,7 @@
  * 칸과 표식을 한 트랜잭션으로 쓴다. 표식이 있으면 칸과 그림을 다 받은 사본이고, 잠금 화면은 그것을 믿고 풀린다.
  * 쓰다 실패하면 앞 사본이 그대로 남는다.
  */
-import { getBossProfitDb } from './sqlite/db'
+import { getBossProfitDbUngated } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 
 export interface GameDataCopy {
@@ -18,7 +18,7 @@ export interface GameDataCopy {
 
 /** 표식이 없으면 `null`. */
 export async function loadGameDataCopy(): Promise<GameDataCopy | null> {
-  const db = await getBossProfitDb()
+  const db = await getBossProfitDbUngated()
   const meta = new Map(
     ((await db.query('SELECT key, value FROM game_data_meta')).values ?? []).map((row) => [
       row.key as string,
@@ -35,7 +35,7 @@ export async function loadGameDataCopy(): Promise<GameDataCopy | null> {
 
 /** 사본을 통째로 바꾼다. 이번에 없는 칸은 지운다. */
 export async function saveGameDataCopy(copy: GameDataCopy): Promise<void> {
-  const db = await getBossProfitDb()
+  const db = await getBossProfitDbUngated()
   await inTransaction(db, async () => {
     await db.run('DELETE FROM game_data_sections')
     for (const [section, body] of Object.entries(copy.sections))
@@ -47,7 +47,7 @@ export async function saveGameDataCopy(copy: GameDataCopy): Promise<void> {
 }
 
 export async function clearGameDataCopy(): Promise<void> {
-  const db = await getBossProfitDb()
+  const db = await getBossProfitDbUngated()
   await inTransaction(db, async () => {
     await db.run('DELETE FROM game_data_meta')
     await db.run('DELETE FROM game_data_sections')

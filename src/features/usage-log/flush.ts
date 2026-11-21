@@ -9,6 +9,7 @@ import { takeUsageEvents } from '../../storage/usage-events'
 import type { UsageEvent, UsageEventBatch } from '../../types/usage-event'
 import { serverIdentityHeaders } from '../auth/server-identity'
 import { useLiveUpdateStore } from '../live-update/store'
+import { appendQuietly, usageActionEvent, type UsageActionName } from './record'
 
 export interface FlushDeps {
   identity: () => Promise<Record<string, string> | null>
@@ -48,4 +49,15 @@ async function run(deps: FlushDeps): Promise<void> {
   } catch {
     // 사용 로그라 다시 보내지 않는다.
   }
+}
+
+/**
+ * 동작을 적고 곧바로 보내는 함수. 평소 전송은 화면이 열린 뒤에 돌아서, 화면을 열지 못하는 실패는 여기서 보내야 서버에 닿는다.
+ * 던지지 않는다.
+ *
+ * @example await reportUsageActionNow('device-conversion-failed:3')
+ */
+export async function reportUsageActionNow(name: UsageActionName): Promise<void> {
+  await appendQuietly(usageActionEvent(name))
+  await flushUsageEvents()
 }

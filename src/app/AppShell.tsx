@@ -28,7 +28,9 @@ import { AppNavigation } from '../navigation/AppNavigation'
 import { BootSplash } from './BootSplash'
 import { UpdatePromptModal } from './UpdatePromptModal'
 import { GameDataLock } from './game-data/GameDataLock'
-import { refreshGameData, useGameDataStatus } from '../features/game-data/sync'
+import { DeviceConversionFailed } from './device-conversion/DeviceConversionFailed'
+import { refreshGameData, useGameDataStatus, type GameDataStatus } from '../features/game-data/sync'
+import { useDeviceConversionStatus, type DeviceConversionPhase } from '../features/device-conversion/run'
 import {
   checkServerMaintenance,
   shownMaintenanceUntil,
@@ -61,6 +63,9 @@ import { useUsageLog } from '../features/usage-log/useUsageLog'
  * 3. **게임 데이터 잠금**. 테마 · 글자 크기 · 하단바 순서 복원과 OTA 모달을 뺀 나머지는 게임 데이터가 준비된 뒤에 마운트한다
  *    (`ReadyShell`). 빈 표를 읽은 이펙트가 엉뚱한 일을 하지 않게 하기 위해서다. 알림 예약 맞추기가 빈 컨텐츠 표를 읽으면
  *    예약을 전부 지운다. 준비 전에는 `GameDataLock` 이 선다.
+ * 3-0'. **기기 변환**. 게임 데이터가 준비돼도 1.0.15 기기 변환이 끝나기 전에는 `ReadyShell` 을 마운트하지 않는다. 새 앱
+ *    코드는 옛 모양의 기록 표를 읽지 못한다. 받은 실행이면 잠금 화면을 다 받은 모습 그대로 두고, 받을 것이 없던 실행이면
+ *    스플래시를 붙든다. 실패하면 `DeviceConversionFailed` 가 선다.
  * 3-0. **서버 점검 잠금**. 서버가 점검 중이면 게임 데이터가 준비됐어도 `ReadyShell` 을 내리고 `ServerMaintenanceLock` 을
  *    세운다. 게임 데이터 잠금보다 앞이다. 점검 중에는 게임 데이터를 받을 수 없다.
  * 3-1. **저장소 복원 다섯**(인증·진입 단계·테마·트래킹 모드·드롭 연출). 서로 독립이라 순서가 없다. 각자
@@ -281,11 +286,26 @@ function checkMaintenanceOnReturn(): void {
   void checkServerMaintenance()
 }
 
+/**
+ * 잠금 화면이 그릴 상태. 게임 데이터를 받은 실행이면 기기 변환이 끝날 때까지 다 받은 진행 패널을 그대로 둔다. 변환 동안 새
+ * 문구를 띄우지 않기로 했다.
+ */
+function lockStatusOf(gameData: GameDataStatus, conversion: DeviceConversionPhase): GameDataStatus {
+  if (gameData.phase !== 'ready' || conversion === 'done' || gameData.progress.dataBytes === null) return gameData
+  return { phase: 'downloading', progress: gameData.progress }
+}
+
+/** 받을 것이 없던 실행의 기기 변환. 잠금 화면이 선 적이 없어 시작 화면이 가린다. */
+function convertingWithoutLock(gameData: GameDataStatus, conversion: DeviceConversionPhase): boolean {
+  return gameData.phase === 'ready' && conversion === 'running' && gameData.progress.dataBytes === null
+}
+
 export function AppShell(): React.JSX.Element {
   const restoreTheme = useThemeStore((state) => state.restoreFromStorage)
   const restoreTextSize = useTextSizeStore((state) => state.restoreFromStorage)
   const restoreBarOrder = useBarOrderStore((state) => state.restoreFromStorage)
   const gameData = useGameDataStatus()
+  const conversion = useDeviceConversionStatus()
   const holdingSplash = useLiveUpdateStore((state) => state.holdingSplash)
   const maintenanceLocked = useServerMaintenanceStore((state) => state.locked)
   const maintenanceUntil = useServerMaintenanceStore(shownMaintenanceUntil)
@@ -331,17 +351,22 @@ export function AppShell(): React.JSX.Element {
           <ServerMaintenanceLock until={maintenanceUntil} />
           <LockedUpdatePrompt />
         </>
-      ) : gameData.phase === 'ready' ? (
+      ) : gameData.phase === 'ready' && conversion === 'done' ? (
         <ReadyShell />
+      ) : gameData.phase === 'ready' && conversion === 'failed' ? (
+        <>
+          <DeviceConversionFailed />
+          <LockedUpdatePrompt />
+        </>
       ) : (
         <>
-          <GameDataLock status={gameData} />
+          <GameDataLock status={lockStatusOf(gameData, conversion)} />
           <LockedUpdatePrompt />
         </>
       )}
       {/* 스플래시의 두 번째 겹. **형제 중 마지막이라 맨 위에 그려진다.** 이 층이 그려졌다는
           사실이 네이티브 스플래시를 내리는 신호라, 순서가 뒤집히면 그 사이가 빈다. */}
-      <BootSplash holding={holdingSplash} />
+      <BootSplash holding={holdingSplash || convertingWithoutLock(gameData, conversion)} />
     </>
   )
 }
