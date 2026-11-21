@@ -52,7 +52,7 @@ export interface TradeRow {
   quantity: string | null
   icon: ImageAssetRef | null
   owner: TradeOwner | null
-  /** 캐릭터 이름이나 메이플 ID 이름. 주인을 모르는 옛 기록은 빈 문자열 */
+  /** 캐릭터 이름이나 메이플 ID 이름. 이름을 모르면 빈 문자열 */
   ownerName: string
   /** 기록이 나온 경로. 가계부 하루 목록 첫 줄의 분류 이름이자 상세 시트 머리의 기록 이름이다 */
   originName: string
@@ -152,7 +152,7 @@ function dropRowOf(sold: TradeDrop): TradeRow {
 }
 
 /**
- * 줄 둘째 줄의 왼쪽 글자. `경로 이름 · 캐릭터` 이고, 주인을 모르는 옛 기록은 경로 이름만이다. 같은 아이템을 어디서 사고팔았는지
+ * 줄 둘째 줄의 왼쪽 글자. `경로 이름 · 캐릭터` 이고, 주인 이름을 모르면 경로 이름만이다. 같은 아이템을 어디서 사고팔았는지
  * 줄에서 가르려고 둔다.
  */
 export function tradeOwnerLineOf(row: TradeRow): string {

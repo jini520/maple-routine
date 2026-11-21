@@ -39,7 +39,7 @@ export function EtcForm(
   },
 ): React.JSX.Element {
   const editing = props.editing !== undefined
-  /** 고른 캐릭터나 메이플 ID(`ownerValueOf`). 주인을 모르는 옛 기록은 빈 채로 열린다. */
+  /** 고른 캐릭터나 메이플 ID(`ownerValueOf`). 새 기록은 빈 채로 열린다. */
   const [owner, setOwner] = useState<string | null>(ownerValueOf(props.editing))
   const [name, setName] = useState(props.editing?.item ?? '')
   const { text: quantityText, pristine: quantityPristine, set: setQuantityText } = useCountField(

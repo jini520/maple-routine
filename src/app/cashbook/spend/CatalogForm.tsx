@@ -226,7 +226,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
     if (editing === undefined || found?.item?.unitPrice !== null) return ''
     return mesoTextOf(Math.round((editing.mesoAmount ?? 0) / (editing.quantity ?? 1)))
   })
-  /** 고른 캐릭터나 메이플 ID(`ownerValueOf`). 주인을 모르는 옛 기록은 빈 채로 열린다. */
+  /** 고른 캐릭터나 메이플 ID(`ownerValueOf`). 새 기록은 빈 채로 열린다. */
   const [owner, setOwner] = useState<string | null>(ownerValueOf(props.editing))
   const [rateText, setRateText] = useState(() => {
     const rate = props.editing?.pointPer100mMeso ?? props.lastPointRate

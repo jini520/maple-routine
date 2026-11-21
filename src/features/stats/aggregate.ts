@@ -89,7 +89,7 @@ interface CharacterEntry {
 /**
  * 범위의 기록에 캐릭터 key 를 붙인 목록. 캐릭터별 합계와 캐릭터별 분류가 같은 기준으로 나뉘도록 둘이 함께 쓴다.
  *
- * 메이플 ID 기록은 ID 마다 한 줄이다. 주인을 모르는 옛 손입력은 안 든다. 강화 기록도 그날 그 이름이었던 캐릭터(ocid)에
+ * 메이플 ID 기록은 ID 마다 한 줄이다. 강화 기록도 그날 그 이름이었던 캐릭터(ocid)에
  * 붙어 있어, 이름을 바꾼 캐릭터의 줄도 그 캐릭터로 묶인다.
  */
 function characterEntriesBetween(byDate: DaysByDate, range: StatsRange): CharacterEntry[] {
