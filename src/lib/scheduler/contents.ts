@@ -1,7 +1,7 @@
 /**
  * 컨텐츠 마스터 표(`contents` 칸) 조회. 컨텐츠를 key 로 찾는 자리는 전부 이 모듈을 거친다.
  *
- * 캐시 · 추적 목록 · 공유 원장은 컨텐츠 key 를 들고, 이름 · 분류 · 그림 · 요구 레벨은 이 표에서 찾는다.
+ * 캐시와 화면은 컨텐츠 key 를 들고, 이름 · 분류 · 그림 · 요구 레벨은 이 표에서 찾는다. 추적 목록 · 공유 원장은 줄 id 로 적는다.
  * API 이름에서 key 를 얻는 규칙도 여기 하나다(`contentKeyOfApiName`). 응답의 줄에서 지금 코드가 읽는
  * `ContentEntry` 를 만드는 것도 여기다. 수동 모드 기본값 중 `registration_flag` · `now_count` · `quest_state` 는
  * 표에 없고 `type` 이 정한다.
@@ -209,6 +209,8 @@ const index = derive(contentsTable, (table) => {
     template: { daily, weekly } as Readonly<Record<ContentSection, readonly ContentEntry[]>>,
     entryByKey: new Map(all.map((entry) => [entry.key, entry])),
     sectionByKey: new Map<string, ContentSection>(table.contents.map((row) => [row.key, row.cycle])),
+    idByKey: new Map(table.contents.map((row) => [row.key, row.id])),
+    keyById: new Map(table.contents.map((row) => [row.id, row.key])),
     keyByComparableName: new Map(all.map((entry) => [comparableName(entry.content_name), entry.key])),
     keysBySection: {
       daily: new Set(daily.map((entry) => entry.key)) as ReadonlySet<string>,
@@ -230,6 +232,16 @@ export function templateKeysOf(section: ContentSection): ReadonlySet<string> {
 /** 표의 한 줄. 모르는 key 와 key 없음은 `null` 이다. */
 export function findContent(key: string | null | undefined): ContentEntry | null {
   return key == null ? null : (index().entryByKey.get(key) ?? null)
+}
+
+/** 컨텐츠 key 의 줄 id. 기록이 컨텐츠를 줄 id 로 가리킨다. 표에 없으면 `null` 이다. */
+export function contentIdOf(key: string | null | undefined): string | null {
+  return key == null ? null : (index().idByKey.get(key) ?? null)
+}
+
+/** 줄 id 의 컨텐츠 key. 모르는 id 는 `null` 이다. */
+export function contentKeyOfId(id: string): string | null {
+  return index().keyById.get(id) ?? null
 }
 
 /** API 이름에서 key. 표에 없으면 `null` 이다. */
