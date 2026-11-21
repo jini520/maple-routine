@@ -91,14 +91,12 @@ describe('다시 계산이 고쳐 쓸 목록', () => {
   it('드롭은 자동인 칸만 바꾼다', async () => {
     mocked(getAutoFeeDropRecords).mockResolvedValue([
       {
-        ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', dropIndex: 0,
+        dropRecordId: 'd1', ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', dropIndex: 0,
         saleFeePercent: 5, splitFeePercent: 5, saleFeeAuto: true, splitFeeAuto: false,
       },
     ])
 
-    await expect(recalcDropUpdates()).resolves.toEqual([
-      { ocid: 'a1', bossKey: 'lotus', difficulty: 'hard', periodKey: '2026-08-06', dropIndex: 0, saleFeePercent: 3, splitFeePercent: 5 },
-    ])
+    await expect(recalcDropUpdates()).resolves.toEqual([{ dropRecordId: 'd1', saleFeePercent: 3, splitFeePercent: 5 }])
   })
 
   it('결정석은 요율과 함께 받은 몫을 다시 센다', async () => {

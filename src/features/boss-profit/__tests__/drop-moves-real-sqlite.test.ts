@@ -34,7 +34,7 @@ const NOW = new Date('2026-10-05T00:00:00.000Z')
 
 describe('난이도 확정 이관', () => {
   it('드롭이 식별자와 가격을 들고 확정 난이도로 옮겨 가고, 옛 기간 행은 지워진다', async () => {
-    await replaceBossDropRecords('o', 'lucid', 'hard', '2026-10-02', [
+    await replaceBossDropRecords('o', 'lucid', 'hard', '2026-10-01', [
       {
         dropRecordId: null, category: 'equipment', itemKey: 'twilight_mark', itemName: '', quantity: 1,
         priceState: 'entered', priceMeso: 5_000, priceSplitMode: 'even', pricePartySize: 2,
@@ -42,25 +42,25 @@ describe('난이도 확정 이관', () => {
     ], AT, { name: '엘리시움', key: 'elysium' })
     const before = await getAllBossDropRecords(['o'])
 
-    await migrateDropsToConfirmedDifficulty({ ocid: 'o', bossKey: 'lucid', difficulty: 'normal', periodKey: '2026-10-02' }, before, NOW)
+    await migrateDropsToConfirmedDifficulty({ ocid: 'o', bossKey: 'lucid', difficulty: 'normal', periodKey: '2026-10-01' }, before, NOW)
 
     const after = await getAllBossDropRecords(['o'])
     expect(after.map((row) => [row.difficulty, row.dropRecordId, row.priceMeso])).toEqual([
       ['normal', before[0].dropRecordId, 5_000],
     ])
-    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_party_periods').get())).toEqual({ n: 1 })
+    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_profit_entries').get())).toEqual({ n: 1 })
   })
 
   it('확정 난이도에서 못 얻는 드롭은 옮기지 않고 지운다', async () => {
-    await replaceBossDropRecords('o', 'lucid', 'hard', '2026-10-02', [
+    await replaceBossDropRecords('o', 'lucid', 'hard', '2026-10-01', [
       { dropRecordId: null, category: 'equipment', itemKey: 'dreamy_belt', itemName: '', quantity: 1 },
     ], AT, NO_WORLD)
     const before = await getAllBossDropRecords(['o'])
 
-    await migrateDropsToConfirmedDifficulty({ ocid: 'o', bossKey: 'lucid', difficulty: 'normal', periodKey: '2026-10-02' }, before, NOW)
+    await migrateDropsToConfirmedDifficulty({ ocid: 'o', bossKey: 'lucid', difficulty: 'normal', periodKey: '2026-10-01' }, before, NOW)
 
     expect(await getAllBossDropRecords(['o'])).toEqual([])
-    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_party_periods').get())).toEqual({ n: 0 })
+    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_profit_entries').get())).toEqual({ n: 0 })
   })
 })
 
@@ -70,7 +70,7 @@ describe('직접 완료', () => {
     bossKey: 'lucid',
     bossName: '루시드',
     cycle: 'weekly',
-    periodKey: '2026-10-02',
+    periodKey: '2026-10-01',
     difficulty: 'hard',
     partySize: 1,
     shares: { myShare: null, sharesTotal: null, splitFeePercent: null },
@@ -80,7 +80,7 @@ describe('직접 완료', () => {
   }
 
   async function seedDrop(difficulty: string): Promise<string> {
-    const [id] = await replaceBossDropRecords('o', 'lucid', difficulty, '2026-10-02', [
+    const [id] = await replaceBossDropRecords('o', 'lucid', difficulty, '2026-10-01', [
       { dropRecordId: null, category: 'equipment', itemKey: 'twilight_mark', itemName: '', quantity: 1 },
     ], AT, NO_WORLD)
     return id
@@ -92,21 +92,21 @@ describe('직접 완료', () => {
 
     await saveManualCompletion({ ...input, difficulty: 'normal', previousDifficulty: 'hard' }, NOW)
 
-    expect((await getBossProfitRecords(['o'], ['2026-10-02'])).map((row) => [row.difficulty, row.defeatedOn])).toEqual([
+    expect((await getBossProfitRecords(['o'], ['2026-10-01'])).map((row) => [row.difficulty, row.defeatedOn])).toEqual([
       ['normal', '2026-10-03'],
     ])
     expect((await getAllBossDropRecords(['o'])).map((row) => [row.difficulty, row.dropRecordId])).toEqual([['normal', id]])
-    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_party_periods').get())).toEqual({ n: 1 })
+    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_profit_entries').get())).toEqual({ n: 1 })
   })
 
   it('취소하면 처치와 드롭이 사라지고 기간 행도 남지 않는다', async () => {
     await saveManualCompletion(input, NOW)
     await seedDrop('hard')
 
-    await cancelManualCompletion({ ocid: 'o', bossKey: 'lucid', difficulty: 'hard', periodKey: '2026-10-02' }, NOW)
+    await cancelManualCompletion({ ocid: 'o', bossKey: 'lucid', difficulty: 'hard', periodKey: '2026-10-01' }, NOW)
 
-    expect(await getBossProfitRecords(['o'], ['2026-10-02'])).toEqual([])
+    expect(await getBossProfitRecords(['o'], ['2026-10-01'])).toEqual([])
     expect(await getAllBossDropRecords(['o'])).toEqual([])
-    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_party_periods').get())).toEqual({ n: 0 })
+    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_profit_entries').get())).toEqual({ n: 0 })
   })
 })

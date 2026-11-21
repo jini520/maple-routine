@@ -14,6 +14,7 @@ jest.mock('../../../storage/sqlite/device-conversion', () => {
 
 import { __resetStoragePortsForTest, setSqlitePort } from '../../../storage/ports'
 import { closeBossProfitDb, getBossProfitDb } from '../../../storage/sqlite/db'
+import { __setMigrationCeilingForTest, DB_VERSION } from '../../../storage/sqlite/migrations'
 import { DeviceConversionError, runDeviceConversion } from '../../../storage/sqlite/device-conversion'
 import { createRealSqlite, type RealSqlite } from '../../../storage/sqlite/__tests__/node-sqlite-port'
 import { whenGameDataReady } from '../../game-data/sync'
@@ -47,6 +48,8 @@ function watchRecordTables(): { opened: () => boolean } {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  // 새 DB 는 처음 열 때 변환을 곧바로 돈다. 여기서는 부팅의 변환만 보려고 상한으로 막는다.
+  __setMigrationCeilingForTest(DB_VERSION)
   real = createRealSqlite()
   setSqlitePort(real.port)
   gameDataReady.mockResolvedValue()
@@ -54,6 +57,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
+  __setMigrationCeilingForTest(null)
   __resetDeviceConversionForTest()
   await closeBossProfitDb()
   __resetStoragePortsForTest()

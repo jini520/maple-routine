@@ -5,11 +5,11 @@ import { getBossProfitDb } from './sqlite/db'
 
 const textOrNull = (value: unknown): string | null => (value as string | null | undefined) ?? null
 
-/** 드롭 하나가 붙은 기간 행 id. 드롭이 없으면 `null`. */
+/** 드롭 하나가 붙은 수익 건 id. 드롭이 없으면 `null`. */
 export async function getDropPeriodId(dropRecordId: string): Promise<string | null> {
   const db = await getBossProfitDb()
-  const { values } = await db.query('SELECT period_id FROM boss_drops WHERE id = ?', [dropRecordId])
-  return textOrNull((values ?? [])[0]?.period_id)
+  const { values } = await db.query('SELECT profit_entry_id FROM boss_drops WHERE id = ?', [dropRecordId])
+  return textOrNull((values ?? [])[0]?.profit_entry_id)
 }
 
 /** 과거 올리기가 나눠 읽는 종류. 표와 조건이 종류마다 다르다. */

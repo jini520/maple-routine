@@ -1,7 +1,7 @@
 /// <reference types="node" />
 /**
- * 1.0.15 기기 변환의 보스 기록 단계를 진짜 SQLite 로 태운다. 1.0.14 의 표 셋에 줄을 심고 변환을 돌려, 새 표 셋의 줄이 ADR-286
- * 결정 3 의 규칙대로인지 본다. 변환은 줄을 지워 되돌릴 수 없어서, 규칙이 틀리면 사용자의 기록이 사라지거나 금액이 바뀐다.
+ * 1.0.15 기기 변환의 보스 기록 단계를 진짜 SQLite 로 태운다. 1.0.14 의 표 셋에 줄을 심고 변환을 돌려, 새 표 셋의 줄이 변환
+ * 규칙대로인지 본다. 변환은 줄을 지워 되돌릴 수 없어서, 규칙이 틀리면 사용자의 기록이 사라지거나 금액이 바뀐다.
  */
 import { bossDifficultyIdOf } from '../../../lib/boss/bosses'
 import { crystalPayoutMeso } from '../../../lib/boss/party-shares'

@@ -11,17 +11,20 @@ import { findNexonAccountIdOfMapleIds, getNexonAccountIdsOfOcids, recordCharacte
 import { fillLegacyNexonAccountIds } from '../../nexon-account-ids'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { closeBossProfitDb, getBossProfitDb } from '../db'
-import { DB_VERSION } from '../migrations'
+import { __setMigrationCeilingForTest, DB_VERSION } from '../migrations'
 import { createRealSqlite, type RealSqlite } from './node-sqlite-port'
 
 let real: RealSqlite
 
+// 버전 16 · 22 가 옛 보스 표에 하는 일을 본다. 새 DB 가 처음 열 때 1.0.15 기기 변환을 돌면 그 표가 사라져서 상한으로 막는다.
 beforeEach(() => {
+  __setMigrationCeilingForTest(DB_VERSION)
   real = createRealSqlite()
   setSqlitePort(real.port)
 })
 
 afterEach(async () => {
+  __setMigrationCeilingForTest(null)
   await closeBossProfitDb()
   __resetStoragePortsForTest()
   real.dispose()

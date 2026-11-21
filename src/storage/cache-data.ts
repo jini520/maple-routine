@@ -1,6 +1,6 @@
 import { preferences } from './ports'
 import { characterBasicCacheKey, STORAGE_KEYS } from './keys'
-import { CRYSTAL_SPLIT_COLUMN_NAMES } from './boss-periods'
+import { NO_SPLIT_VALUES, SPLIT_COLUMN_NAMES } from './boss-periods'
 import { getCachedCharacterBasic } from './character-basic-cache'
 import { addMissingCharacterProfile, type CharacterProfileSnapshot } from './character-profiles'
 import { getBossProfitDb } from './sqlite/db'
@@ -64,28 +64,25 @@ const ENHANCEMENT_TABLES = [
   'character_first_days',
 ]
 
-const NULL_SPLIT = CRYSTAL_SPLIT_COLUMN_NAMES.map((column) => `${column} = NULL`).join(', ')
+/** 분배를 고르지 않은 칸 다섯을 적는 SET 절. 수수료는 등급을 따르는 것으로 둔다. */
+const NO_SPLIT = SPLIT_COLUMN_NAMES.map((column, index) => `${column} = ${NO_SPLIT_VALUES[index] ?? 'NULL'}`).join(', ')
 
-// 보스 기록 표 셋은 한 표에 두 그룹의 행이 섞여 있어 행 단위로 지운다. 조합 행이 처치와 드롭의 부모라 표를 통째로
-// 지우면 외래키를 따라 다른 그룹까지 사라진다.
+// 수익 건 표는 처치(보스 처치 · 드롭 그룹)와 그 기간 값(수동 선택 그룹)이 한 줄에 섞여 있어 줄 단위로 지운다. 드롭이 수익
+// 건의 자식이라 표를 통째로 지우면 외래키를 따라 다른 그룹까지 사라진다.
 
-/** 처치와 드롭. 그 기간 값이 없는 기간 행은 함께 지운다. */
+/** 처치와 드롭. 그 기간 값이 없는 수익 건은 함께 지운다. */
 const CLEAR_BOSS_RECORDS = [
   'DELETE FROM boss_drops',
-  `DELETE FROM boss_party_periods WHERE clear_status = 'cleared' OR split_mode IS NULL`,
+  'DELETE FROM boss_profit_entries WHERE clear_recorded_by IS NOT NULL OR split_type IS NULL',
 ]
 
-/** 파티 분배 설정과 그 기간 값. 드롭이 남은 기간은 행을 남기고 분배 칸만 비운다. */
+/** 파티 분배 설정과 그 기간 값. 드롭이 남은 수익 건은 줄을 남기고 분배 칸만 비운다. */
 const CLEAR_BOSS_SPLITS = [
-  `UPDATE boss_parties SET ${NULL_SPLIT}`,
-  `DELETE FROM boss_party_periods
-    WHERE clear_status = 'open' AND NOT EXISTS (SELECT 1 FROM boss_drops WHERE period_id = boss_party_periods.id)`,
-  `UPDATE boss_party_periods SET ${NULL_SPLIT} WHERE clear_status = 'open'`,
+  'DELETE FROM boss_split_settings',
+  `DELETE FROM boss_profit_entries
+    WHERE clear_recorded_by IS NULL AND NOT EXISTS (SELECT 1 FROM boss_drops WHERE profit_entry_id = boss_profit_entries.id)`,
+  `UPDATE boss_profit_entries SET ${NO_SPLIT} WHERE clear_recorded_by IS NULL`,
 ]
-
-/** 설정도 기간도 없는 조합 행. 남기면 기록을 지웠는데 조합만 남는다. */
-const PRUNE_BOSS_PARTIES = `DELETE FROM boss_parties
-  WHERE split_mode IS NULL AND NOT EXISTS (SELECT 1 FROM boss_party_periods WHERE party_id = boss_parties.id)`
 
 function statementsFor(selection: CacheDataSelection): string[] {
   return [
@@ -93,7 +90,6 @@ function statementsFor(selection: CacheDataSelection): string[] {
     ...(selection.enhancement ? ENHANCEMENT_TABLES.map((table) => `DELETE FROM ${table}`) : []),
     ...(selection.boss ? CLEAR_BOSS_RECORDS : []),
     ...(selection.manual ? CLEAR_BOSS_SPLITS : []),
-    ...(selection.boss || selection.manual ? [PRUNE_BOSS_PARTIES] : []),
     ...(selection.cache ? ['DELETE FROM query_cache'] : []),
     // 대기 표가 남으면 방금 지운 기록마다 서버로 지우기 요청이 간다. 서버 사본은 남긴다. 캐시만 지우면 기록이 그대로라
     // 비우지 않는다. 비우면 아직 못 보낸 드롭 시세가 사라진다.
@@ -168,7 +164,7 @@ export async function getCacheDataCounts(): Promise<CacheDataCounts> {
 
   return {
     manualCharacters: keys.filter((key) => key.startsWith('manualTrackedContent:')).length,
-    bossClears: await scalar(`SELECT count(*) AS n FROM boss_party_periods WHERE clear_status = 'cleared'`),
+    bossClears: await scalar('SELECT count(*) AS n FROM boss_profit_entries WHERE clear_recorded_by IS NOT NULL'),
     bossDrops: await scalar('SELECT count(*) AS n FROM boss_drops'),
     cashbookEntries:
       (await scalar('SELECT count(*) AS n FROM cashbook_entries')) + (await scalar('SELECT count(*) AS n FROM inventory_items')),

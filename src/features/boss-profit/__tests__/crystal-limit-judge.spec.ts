@@ -79,45 +79,45 @@ describe('judgeCrystalLimit', () => {
     for (const week of [WEEK_A, WEEK_B]) {
       await clear('lucid', week, 100)
       await clear('will', week, 200)
-      await clear('gloom', week, 300)
+      await clear('verus_hilla', week, 300)
     }
 
     await judgeCrystalLimit([WEEK_B])
-    expect(await payouts(WEEK_A)).toEqual({ lucid: 0, will: 200, gloom: 300 })
-    expect(await payouts(WEEK_B)).toEqual({ lucid: 0, will: 200, gloom: 300 })
+    expect(await payouts(WEEK_A)).toEqual({ lucid: 0, will: 200, verus_hilla: 300 })
+    expect(await payouts(WEEK_B)).toEqual({ lucid: 0, will: 200, verus_hilla: 300 })
 
     await clear('darknell', WEEK_A, 400)
     await judgeCrystalLimit([WEEK_B])
     expect(await payouts(WEEK_A)).toMatchObject({ will: 200 })
 
     await judgeCrystalLimit([WEEK_A])
-    expect(await payouts(WEEK_A)).toEqual({ lucid: 0, will: 0, gloom: 300, darknell: 400 })
+    expect(await payouts(WEEK_A)).toEqual({ lucid: 0, will: 0, verus_hilla: 300, darknell: 400 })
   })
 
   // 주를 통째로 다시 보므로 `제외` 를 고르면 한도 안으로 들어온다.
   it('한도 안으로 들어오면 0 이던 처치가 금액을 되찾는다', async () => {
     await clear('lucid', WEEK_A, 100)
     await clear('will', WEEK_A, 200)
-    await clear('gloom', WEEK_A, 300)
+    await clear('verus_hilla', WEEK_A, 300)
     await judgeCrystalLimit([WEEK_A])
 
-    await clear('gloom', WEEK_A, 0, { crystalExcluded: true })
+    await clear('verus_hilla', WEEK_A, 0, { crystalExcluded: true })
     await judgeCrystalLimit([WEEK_A])
 
-    expect(await payouts(WEEK_A)).toEqual({ lucid: 100, will: 200, gloom: 0 })
+    expect(await payouts(WEEK_A)).toEqual({ lucid: 100, will: 200, verus_hilla: 0 })
   })
 
   // 소속 없이 한 묶음으로 세면 다른 메이플 ID 의 처치까지 합쳐 팔 수 있던 결정석을 0 으로 만든다.
   it('메이플 ID 소속을 못 읽으면 지난 판정을 그대로 두고 던지지 않는다', async () => {
     await clear('lucid', WEEK_A, 100)
     await clear('will', WEEK_A, 200)
-    await clear('gloom', WEEK_A, 300)
+    await clear('verus_hilla', WEEK_A, 300)
     await judgeCrystalLimit([WEEK_A])
 
     loadMapleIdOwners.mockRejectedValue(new Error('읽기 실패'))
     await clear('darknell', WEEK_A, 400)
     await expect(judgeCrystalLimit([WEEK_A])).resolves.toBeUndefined()
 
-    expect(await payouts(WEEK_A)).toEqual({ lucid: 0, will: 200, gloom: 300, darknell: 400 })
+    expect(await payouts(WEEK_A)).toEqual({ lucid: 0, will: 200, verus_hilla: 300, darknell: 400 })
   })
 })

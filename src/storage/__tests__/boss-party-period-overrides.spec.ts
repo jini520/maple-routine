@@ -35,7 +35,7 @@ function override(over: Partial<BossPartyPeriodOverride> = {}): BossPartyPeriodO
     ocid: 'ocid-1',
     bossKey: 'lucid',
     difficulty: 'hard',
-    periodKey: '2026-10-02',
+    periodKey: '2026-10-01',
     partySize: 3,
     crystalMyShare: null,
     crystalSharesTotal: null,
@@ -47,26 +47,27 @@ function override(over: Partial<BossPartyPeriodOverride> = {}): BossPartyPeriodO
 }
 
 describe('setBossPartyPeriodOverride', () => {
-  it('같은 기간을 다시 고치면 덮고, 비율과 자동 수수료를 함께 적는다', async () => {
+  // 처치 전 줄은 자동이면 요율을 비운다. 처치할 때 그 날의 등급 요율을 구한다.
+  it('같은 기간을 다시 고치면 덮고, 비율은 % 의 1000 배로 적으며 자동 수수료는 요율을 비운다', async () => {
     await setBossPartyPeriodOverride(override())
     await setBossPartyPeriodOverride(override({ partySize: 4, crystalMyShare: 1, crystalSharesTotal: 4, splitFeePercent: 5, splitFeeAuto: true }))
 
-    expect(await getBossPartyPeriodOverride('ocid-1', 'lucid', 'hard', '2026-10-02')).toEqual(
-      override({ partySize: 4, crystalMyShare: 1, crystalSharesTotal: 4, splitFeePercent: 5, splitFeeAuto: true }),
+    expect(await getBossPartyPeriodOverride('ocid-1', 'lucid', 'hard', '2026-10-01')).toEqual(
+      override({ partySize: 4, crystalMyShare: 25_000, crystalSharesTotal: 100_000, splitFeePercent: null, splitFeeAuto: true }),
     )
   })
 
   it('처치한 기간은 건드리지 않는다', async () => {
     await upsertBossProfitRecord({
-      ocid: 'ocid-1', bossKey: 'lucid', boss: '', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-10-02',
+      ocid: 'ocid-1', bossKey: 'lucid', boss: '', difficulty: 'hard', cycle: 'weekly', periodKey: '2026-10-01',
       partySize: 2, priceMeso: 10, payoutMeso: 5, crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null,
       recordedAt: AT, world: null, worldKey: null,
     })
 
     await setBossPartyPeriodOverride(override({ partySize: 6 }))
 
-    expect((await getBossProfitRecords(['ocid-1'], ['2026-10-02']))[0].partySize).toBe(2)
-    expect(await getBossPartyPeriodOverride('ocid-1', 'lucid', 'hard', '2026-10-02')).toBeNull()
+    expect((await getBossProfitRecords(['ocid-1'], ['2026-10-01']))[0].partySize).toBe(2)
+    expect(await getBossPartyPeriodOverride('ocid-1', 'lucid', 'hard', '2026-10-01')).toBeNull()
   })
 })
 
@@ -74,29 +75,29 @@ describe('getBossPartyPeriodOverrides', () => {
   it('그 기간 값만 준다. 처치한 기간과 드롭만 있는 기간은 안 준다', async () => {
     await setBossPartyPeriodOverride(override())
     await setBossPartyPeriodOverride(override({ ocid: 'ocid-2', periodKey: '2026-10' }))
-    await replaceBossDropRecords('ocid-1', 'will', 'hard', '2026-10-02', [
+    await replaceBossDropRecords('ocid-1', 'will', 'hard', '2026-10-01', [
       { dropRecordId: null, category: 'fixed', itemKey: 'black_boss_ring_box', itemName: '', quantity: 1 },
     ], AT, NO_WORLD)
 
-    const read = await getBossPartyPeriodOverrides(['ocid-1', 'ocid-2'], ['2026-10-02', '2026-10'])
+    const read = await getBossPartyPeriodOverrides(['ocid-1', 'ocid-2'], ['2026-10-01', '2026-10'])
     expect(read.map((row) => [row.ocid, row.bossKey, row.periodKey])).toEqual(
-      expect.arrayContaining([['ocid-1', 'lucid', '2026-10-02'], ['ocid-2', 'lucid', '2026-10']]),
+      expect.arrayContaining([['ocid-1', 'lucid', '2026-10-01'], ['ocid-2', 'lucid', '2026-10']]),
     )
     expect(read).toHaveLength(2)
   })
 
   it('캐릭터나 기간이 비면 조회하지 않는다', async () => {
-    expect(await getBossPartyPeriodOverrides([], ['2026-10-02'])).toEqual([])
+    expect(await getBossPartyPeriodOverrides([], ['2026-10-01'])).toEqual([])
     expect(await getBossPartyPeriodOverrides(['ocid-1'], [])).toEqual([])
   })
 })
 
 describe('분배 방식 `제외`', () => {
-  it('그 기간만 `제외` 로 고치면 숨긴 인원과 함께 `제외` 로 읽는다', async () => {
+  it('그 기간만 `제외` 로 고치면 인원을 버리고 솔로인 `제외` 로 읽는다', async () => {
     await setBossPartyPeriodOverride(override({ partySize: 4, crystalExcluded: true }))
 
-    expect(await getBossPartyPeriodOverride('ocid-1', 'lucid', 'hard', '2026-10-02')).toMatchObject({
-      partySize: 4,
+    expect(await getBossPartyPeriodOverride('ocid-1', 'lucid', 'hard', '2026-10-01')).toMatchObject({
+      partySize: 1,
       crystalExcluded: true,
     })
   })

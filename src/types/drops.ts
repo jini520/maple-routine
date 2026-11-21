@@ -96,4 +96,6 @@ export interface RecordedDrop {
   saleFeeAuto?: boolean
   /** 분배 수수료가 등급을 따라가나 */
   splitFeeAuto?: boolean
+  /** 저장된 받는 메소. 가격 · 분배 · 수수료를 고치면 비운다. 비면 저장할 때 다시 센다 */
+  saleReceivedMeso?: number
 }

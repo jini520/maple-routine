@@ -42,7 +42,7 @@ jest.mock('@op-engineering/op-sqlite', () => ({
 }))
 
 import { IOS_DOCUMENT_PATH } from '@op-engineering/op-sqlite'
-import { BOSS_PROFIT_TABLE_NAMES, closeBossProfitDb, getBossProfitDb } from '../../sqlite/db'
+import { closeBossProfitDb, getBossProfitDb, tableNamesOf } from '../../sqlite/db'
 import { LEGACY_TABLE_NAMES } from '../../sqlite/legacy-tables'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 
@@ -316,7 +316,7 @@ describe('db.ts 와 맞물리는가', () => {
     // 버전 이관이 다시 만드는 표(`_rebuild`)는 세지 않는다. 그 수는 이관 단계가 정한다.
     // `user_version` 을 흉내 내지 않아 옛 표를 지우기 전 DB 로 열린다. 그래서 옛 표도 만든다.
     expect(executed.filter((statement) => /^CREATE TABLE IF NOT EXISTS/.test(statement))).toHaveLength(
-      BOSS_PROFIT_TABLE_NAMES.length + LEGACY_TABLE_NAMES.length,
+      tableNamesOf(false).length + LEGACY_TABLE_NAMES.length,
     )
     /**
      * 여기도 개수를 안 박는다. 대신 성질을 본다. 데이터 이관은 전부 `WHERE` 를 갖고, 그것이 이미

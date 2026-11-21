@@ -217,19 +217,24 @@ const TABLE_DEFINITIONS = [
   },
 ] as const
 
-export const BOSS_PROFIT_TABLE_NAMES: readonly string[] = TABLE_DEFINITIONS.map(
-  (table) => table.name,
-)
+/**
+ * DB 를 열 때 만드는 표의 이름. 보스 표는 기기 변환 전과 뒤가 다르다. 데이터 삭제는 이 목록을 쓰지 않는다.
+ *
+ * @param converted 기기 변환이 보스 표를 바꾼 뒤의 DB 인가
+ */
+export function tableNamesOf(converted: boolean): readonly string[] {
+  return ['device_conversion', ...[...bossTableDefinitions(converted), ...TABLE_DEFINITIONS].map((table) => table.name)]
+}
 
-// 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.
-// SQLite에 ADD COLUMN IF NOT EXISTS가 없으므로 table_info로 있는지 보고 없을 때만 더한다
-// (ALTER를 try/catch로 삼키면 다른 원인의 실패까지 숨는다).
 /** 표가 하나라도 있는가. 없으면 새로 설치한 기기다. */
 async function anyTableExists(db: SqliteDbConnection): Promise<boolean> {
   const { values } = await db.query(`SELECT 1 FROM sqlite_master WHERE type = 'table' LIMIT 1`)
   return (values ?? []).length > 0
 }
 
+// 이미 만들어진 DB에는 CREATE TABLE IF NOT EXISTS가 컬럼을 더해주지 않는다.
+// SQLite에 ADD COLUMN IF NOT EXISTS가 없으므로 table_info로 있는지 보고 없을 때만 더한다
+// (ALTER를 try/catch로 삼키면 다른 원인의 실패까지 숨는다).
 async function tableExists(db: SqliteDbConnection, table: string): Promise<boolean> {
   const { values } = await db.query(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?`, [table])
   return (values ?? []).length > 0
