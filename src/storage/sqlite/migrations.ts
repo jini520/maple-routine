@@ -35,15 +35,15 @@ import type { SqliteDbConnection } from '../ports'
 import type { SpendRecord } from '../spend'
 import { BOSS_DROP_RECORDS_BODY, BOSS_KEYED_TABLES } from './boss-tables'
 import { UNCONVERTED_CASHBOOK_ENTRY_FRAGMENT_USES_BODY } from './cashbook-tables'
-import { ENHANCEMENT_TOTALS_BODY } from './enhancement-tables'
+import { UNCONVERTED_ENHANCEMENT_TOTALS_BODY } from './enhancement-tables'
 import { insertUnconvertedEntry } from './legacy-cashbook-entries'
 import { LEGACY_TABLE_NAMES } from './legacy-tables'
 import {
   CHARACTER_ACCOUNTS_BODY,
   CHARACTER_PROFILES_BODY,
-  CHARACTER_WORLD_LEAPS_BODY,
   ENHANCEMENT_HISTORY_CHECKS_BODY,
-  MVP_GRADE_HISTORY_BODY,
+  UNCONVERTED_CHARACTER_WORLD_LEAPS_BODY,
+  UNCONVERTED_MVP_GRADE_HISTORY_BODY,
 } from './record-key-tables'
 import { NEW_UUID_SQL } from './uuid'
 
@@ -673,7 +673,7 @@ const RECORD_KEY_TABLES: ReadonlyArray<{ table: string; body: string; columns: R
   },
   {
     table: 'character_world_leaps',
-    body: CHARACTER_WORLD_LEAPS_BODY,
+    body: UNCONVERTED_CHARACTER_WORLD_LEAPS_BODY,
     columns: { from_ocid: 'from_ocid', to_ocid: 'to_ocid', linked_at: 'linked_at' },
   },
   {
@@ -686,7 +686,7 @@ const RECORD_KEY_TABLES: ReadonlyArray<{ table: string; body: string; columns: R
   },
   {
     table: 'mvp_grade_history',
-    body: MVP_GRADE_HISTORY_BODY,
+    body: UNCONVERTED_MVP_GRADE_HISTORY_BODY,
     columns: { account_id: 'account_id', from_date: 'start_date', grade: 'grade', updated_at: 'updated_at' },
   },
   {
@@ -857,7 +857,7 @@ async function rebuildEnhancementTotals(db: SqliteDbConnection): Promise<void> {
   const worldOf = new Map((profileRows ?? []).map((row) => [String(row.ocid), textOrNull(row.world_key)]))
 
   const rebuilt = 'enhancement_totals_v18'
-  await db.execute(`CREATE TABLE ${rebuilt} ${ENHANCEMENT_TOTALS_BODY}`)
+  await db.execute(`CREATE TABLE ${rebuilt} ${UNCONVERTED_ENHANCEMENT_TOTALS_BODY}`)
   const { values: rows } = await db.query('SELECT * FROM enhancement_totals ORDER BY updated_at, id')
   const refetch = new Map<string, readonly [string, string, string]>()
   for (const row of rows ?? []) {

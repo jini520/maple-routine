@@ -3,6 +3,9 @@
  *
  * `id` 는 SQLite 가 기본값으로 채운다. 쓰는 SQL 이 `id` 를 몰라도 행이 들어가고, 옛 기본키 조합은 `UNIQUE` 라
  * `ON CONFLICT(옛 조합)` 이 그대로 돈다.
+ *
+ * 월드 리프와 MVP 등급은 정의가 둘이다. 1.0.15 기기 변환 전의 표(`UNCONVERTED_…`)는 버전 16 이 다시 쓴 모양이고 변환 전 DB 와 앞
+ * 버전 이관이 쓴다. 변환이 칸 이름을 서버 표와 같게 바꾼 지금 표로 옮긴 뒤 지운다.
  */
 import { NEW_UUID_SQL } from './uuid'
 
@@ -26,12 +29,20 @@ export const CHARACTER_PROFILES_BODY = `(
     updated_at TEXT NOT NULL
   )`
 
-/** 월드 리프로 갈린 옛 ocid 와 새 ocid. 옛 ocid 하나는 한 번만 옮겨간다. */
-export const CHARACTER_WORLD_LEAPS_BODY = `(
+/** 변환 전 표. 월드 리프로 갈린 옛 ocid 와 새 ocid. 옛 ocid 하나는 한 번만 옮겨간다. */
+export const UNCONVERTED_CHARACTER_WORLD_LEAPS_BODY = `(
     ${ID_COLUMN},
     from_ocid TEXT NOT NULL UNIQUE,
     to_ocid TEXT NOT NULL,
     linked_at TEXT NOT NULL
+  )`
+
+/** 월드 리프로 갈린 옛 ocid 와 그 캐릭터의 지금 ocid. 옛 ocid 하나는 한 번만 옮겨간다. 서버의 캐릭터 줄 id 자리에 지금 ocid 를 든다. */
+export const CHARACTER_WORLD_LEAPS_BODY = `(
+    ${ID_COLUMN},
+    previous_ocid TEXT NOT NULL UNIQUE,
+    -- 캐릭터가 다시 리프하면 옛 ocid 의 기록을 옮기는 회차가 이 칸도 새 ocid 로 옮긴다.
+    ocid TEXT NOT NULL
   )`
 
 /**
@@ -56,14 +67,26 @@ export const ENHANCEMENT_HISTORY_CHECKS_BODY = `(
     UNIQUE (nexon_account_id, enhancement_type, history_date)
   )`
 
-/** 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이다. */
-export const MVP_GRADE_HISTORY_BODY = `(
+/** 변환 전 표. 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이다. */
+export const UNCONVERTED_MVP_GRADE_HISTORY_BODY = `(
     ${ID_COLUMN},
     account_id TEXT NOT NULL,
     -- 그 등급을 달성한 날 YYYY-MM-DD. 아무 요일이나 된다.
     from_date TEXT NOT NULL,
     -- 등급 key. NULL 은 옛 판이 첫 기록 앞에 기간을 끼울 때 남긴 빈 줄이고 켤 때 지운다(features/mvp-grade/empty-rows.ts).
     grade TEXT,
+    updated_at TEXT NOT NULL,
+    UNIQUE (account_id, from_date)
+  )`
+
+/** 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이다. */
+export const MVP_GRADE_HISTORY_BODY = `(
+    ${ID_COLUMN},
+    account_id TEXT NOT NULL,
+    -- 그 등급을 달성한 날 YYYY-MM-DD. 아무 요일이나 된다.
+    from_date TEXT NOT NULL,
+    -- 등급 줄 id. 서버처럼 비울 수 있지만 앱은 빈 줄을 적지 않고, 남아 있으면 켤 때 지운다(features/mvp-grade/empty-rows.ts).
+    grade_id TEXT,
     updated_at TEXT NOT NULL,
     UNIQUE (account_id, from_date)
   )`

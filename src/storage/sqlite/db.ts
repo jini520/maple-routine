@@ -35,11 +35,14 @@ import {
   CHARACTER_DATED_NAMES_BODY,
   CHARACTER_FIRST_DAYS_BODY,
   ENHANCEMENT_REFETCHES_BODY,
+  UNCONVERTED_ENHANCEMENT_TOTALS_BODY,
 } from './enhancement-tables'
 import {
   BOSS_TABLES_CONVERTED_AT,
   CASHBOOK_TABLES_CONVERTED_AT,
+  ENHANCEMENT_TABLES_CONVERTED_AT,
   DEVICE_CONVERSION_BODY,
+  DEVICE_CONVERSION_VERSION,
   deviceConversionVersionOf,
   runDeviceConversion,
 } from './device-conversion'
@@ -54,6 +57,8 @@ import {
   CHARACTER_WORLD_LEAPS_BODY,
   ENHANCEMENT_HISTORY_CHECKS_BODY,
   MVP_GRADE_HISTORY_BODY,
+  UNCONVERTED_CHARACTER_WORLD_LEAPS_BODY,
+  UNCONVERTED_MVP_GRADE_HISTORY_BODY,
 } from './record-key-tables'
 
 const DB_NAME = 'boss_profit'
@@ -136,7 +141,32 @@ function cashbookTableDefinitions(converted: boolean): { name: string; createSql
   ]
 }
 
-// 지금 쓰는 테이블의 정의는 여기와 위 보스 · 가계부 표 정의뿐이다. openBossProfitDb가 이 배열을 순회해 스키마를 만든다.
+/**
+ * 강화 합계 · 월드 리프 · MVP 등급 이력. 기기 변환 전 DB 는 버전 16 · 18 이 다시 쓴 모양이고 앞 버전 이관이 그 모양을 읽는다. 표
+ * 이름은 변환 뒤에도 같다.
+ */
+function enhancementTableDefinitions(converted: boolean): { name: string; createSql: string }[] {
+  return [
+    // 월드 리프로 갈린 옛 ocid 와 지금 ocid. 리프한 기간의 중복 기록을 지우고 옛 ocid 의 기록을 새 ocid 로 옮기는 데 쓴다.
+    // 옛 ocid 는 목록에서 빠져 되살릴 길이 없어 데이터 삭제가 지우지 않는다.
+    {
+      name: 'character_world_leaps',
+      createSql: `CREATE TABLE IF NOT EXISTS character_world_leaps ${converted ? CHARACTER_WORLD_LEAPS_BODY : UNCONVERTED_CHARACTER_WORLD_LEAPS_BODY}`,
+    },
+    // 강화 내역의 날짜 · 캐릭터 · 분류 · 장비별 합계. 응답 원본은 저장하지 않는다. 다시 받을 수 있는 기간이 2년이라 기록이다.
+    {
+      name: 'enhancement_totals',
+      createSql: `CREATE TABLE IF NOT EXISTS enhancement_totals ${converted ? ENHANCEMENT_TOTALS_BODY : UNCONVERTED_ENHANCEMENT_TOTALS_BODY}`,
+    },
+    // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 데이터 삭제가 지우지 않는다.
+    {
+      name: 'mvp_grade_history',
+      createSql: `CREATE TABLE IF NOT EXISTS mvp_grade_history ${converted ? MVP_GRADE_HISTORY_BODY : UNCONVERTED_MVP_GRADE_HISTORY_BODY}`,
+    },
+  ]
+}
+
+// 지금 쓰는 테이블의 정의는 여기와 위 보스 · 가계부 · 강화 표 정의뿐이다. openBossProfitDb가 이 배열을 순회해 스키마를 만든다.
 // 버전 23 이 지우는 옛 표는 `legacy-tables.ts` 에 있다.
 // 데이터 삭제(storage/cache-data.ts)는 이 배열을 쓰지 않고 그룹마다 적은 표 목록으로 지운다.
 // 새 테이블은 그 목록에 더해야만 지워진다.
@@ -148,17 +178,6 @@ const TABLE_DEFINITIONS = [
   {
     name: 'character_profiles',
     createSql: `CREATE TABLE IF NOT EXISTS character_profiles ${CHARACTER_PROFILES_BODY}`,
-  },
-  // 월드 리프로 갈린 옛 ocid → 새 ocid 연결. 리프한 기간의 중복 기록을 지우고 옛 ocid 의 기록을 새 ocid 로 옮기는 데 쓴다.
-  // 옛 ocid 는 목록에서 빠져 되살릴 길이 없어 데이터 삭제가 지우지 않는다.
-  {
-    name: 'character_world_leaps',
-    createSql: `CREATE TABLE IF NOT EXISTS character_world_leaps ${CHARACTER_WORLD_LEAPS_BODY}`,
-  },
-  // 강화 내역의 날짜 · 캐릭터 · 분류 · 장비별 합계. 응답 원본은 저장하지 않는다. 다시 받을 수 있는 기간이 2년이라 기록이다.
-  {
-    name: 'enhancement_totals',
-    createSql: `CREATE TABLE IF NOT EXISTS enhancement_totals ${ENHANCEMENT_TOTALS_BODY}`,
   },
   // 다시 매기기 요청의 진행. 지워지면 끝난 요청을 처음부터 다시 받아 넥슨 · 서버 호출이 다시 몰린다. 그래서 기록이다.
   {
@@ -188,11 +207,6 @@ const TABLE_DEFINITIONS = [
   {
     name: 'enhancement_history_checks',
     createSql: `CREATE TABLE IF NOT EXISTS enhancement_history_checks ${ENHANCEMENT_HISTORY_CHECKS_BODY}`,
-  },
-  // 메이플 ID 의 MVP 등급 이력. 사용자가 적은 값이라 데이터 삭제가 지우지 않는다.
-  {
-    name: 'mvp_grade_history',
-    createSql: `CREATE TABLE IF NOT EXISTS mvp_grade_history ${MVP_GRADE_HISTORY_BODY}`,
   },
   // 서버로 보낼 사용 로그. 백그라운드로 갈 때와 다음 실행 때 통째로 꺼내 보낸다. 신원이 없는 기기에서 끝없이 자라지 않게
   // 줄 수에 상한이 있다(`storage/usage-events.ts`). 데이터 삭제와는 상관없다.
@@ -249,14 +263,23 @@ const TABLE_DEFINITIONS = [
   },
 ] as const
 
+/** 기기 변환 단계 번호에 맞는 표 정의. 보스 · 가계부 · 강화 표는 변환 전과 뒤가 다르다. */
+function tableDefinitionsAt(conversion: number): { name: string; createSql: string }[] {
+  return [
+    ...bossTableDefinitions(conversion >= BOSS_TABLES_CONVERTED_AT),
+    ...cashbookTableDefinitions(conversion >= CASHBOOK_TABLES_CONVERTED_AT),
+    ...enhancementTableDefinitions(conversion >= ENHANCEMENT_TABLES_CONVERTED_AT),
+    ...TABLE_DEFINITIONS,
+  ]
+}
+
 /**
- * DB 를 열 때 만드는 표의 이름. 보스 표는 기기 변환 전과 뒤가 다르다. 데이터 삭제는 이 목록을 쓰지 않는다.
+ * DB 를 열 때 만드는 표의 이름. 기록 표는 기기 변환 전과 뒤가 다르다. 데이터 삭제는 이 목록을 쓰지 않는다.
  *
  * @param converted 기기 변환이 기록 표를 바꾼 뒤의 DB 인가
  */
 export function tableNamesOf(converted: boolean): readonly string[] {
-  const tables = [...bossTableDefinitions(converted), ...cashbookTableDefinitions(converted), ...TABLE_DEFINITIONS]
-  return ['device_conversion', ...tables.map((table) => table.name)]
+  return ['device_conversion', ...tableDefinitionsAt(converted ? DEVICE_CONVERSION_VERSION : 0).map((table) => table.name)]
 }
 
 /** 표가 하나라도 있는가. 없으면 새로 설치한 기기다. */
@@ -521,16 +544,16 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await db.execute('PRAGMA foreign_keys = ON')
   // 표가 하나도 없으면 새로 설치한 기기다. 이관을 다 돈 뒤 기기 변환도 곧바로 돈다. 바꿀 줄이 없어 게임 데이터 없이 돈다.
   const fresh = !(await anyTableExists(db))
-  // 기기 변환이 지운 표를 빈 표로 다시 만들지 않게 보스 · 가계부 표의 정의를 마친 단계의 번호로 고른다. 데이터 삭제는 이 표를
-  // 지우지 않는다. 지우면 바뀐 표를 다시 바꾸려다 던진다.
+  // 기기 변환이 지운 표를 빈 표로 다시 만들지 않게 보스 · 가계부 · 강화 표의 정의를 마친 단계의 번호로 고른다. 데이터 삭제는 이
+  // 표를 지우지 않는다. 지우면 바뀐 표를 다시 바꾸려다 던진다.
   await db.execute(DEVICE_CONVERSION_TABLE)
   const conversion = await deviceConversionVersionOf(db)
   const bossConverted = conversion >= BOSS_TABLES_CONVERTED_AT
   const cashbookConverted = conversion >= CASHBOOK_TABLES_CONVERTED_AT
+  const enhancementConverted = conversion >= ENHANCEMENT_TABLES_CONVERTED_AT
   // 앞 버전 이관이 읽는 옛 표는 버전 23 전 DB 에만 만든다.
   if ((await userVersionOf(db)) < LEGACY_TABLES_DROPPED_AT) await prepareLegacyTables(db)
-  const tables = [...bossTableDefinitions(bossConverted), ...cashbookTableDefinitions(cashbookConverted), ...TABLE_DEFINITIONS]
-  for (const table of tables) {
+  for (const table of tableDefinitionsAt(conversion)) {
     await db.execute(table.createSql)
   }
   // 이미 프로필을 쌓아 둔 기기에는 CREATE 가 안 붙인다. 없으면 월드 이전 판정이 그 캐릭터를
@@ -546,11 +569,13 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
     // 강화 기록도 이름 대신 장비 key 를 든다. 값은 아래 버전 이관이 채운다.
     await ensureColumn(db, 'enhancement_history', 'item_key', 'TEXT')
   }
-  // 스타포스 첫 성 · 끝 성. 옛 줄은 NULL 이고 다시 매기기 요청이 그 날을 다시 받아 채운다.
-  await ensureColumn(db, 'enhancement_totals', 'from_star', 'INTEGER')
-  await ensureColumn(db, 'enhancement_totals', 'to_star', 'INTEGER')
-  // 슈페리얼 장비의 스타포스 비용. 옛 줄은 0 이고, 다시 매기기 요청이 슈페리얼 줄이 있는 날을 다시 받아 채운다.
-  await ensureColumn(db, 'enhancement_totals', 'superior_cost_meso', 'INTEGER NOT NULL DEFAULT 0')
+  // 스타포스 첫 성 · 끝 성과 슈페리얼 장비의 스타포스 비용. 옛 줄은 NULL · 0 이고 다시 매기기 요청이 그 날을 다시 받아 채운다. 기기
+  // 변환이 만드는 표에는 처음부터 있다.
+  if (!enhancementConverted) {
+    await ensureColumn(db, 'enhancement_totals', 'from_star', 'INTEGER')
+    await ensureColumn(db, 'enhancement_totals', 'to_star', 'INTEGER')
+    await ensureColumn(db, 'enhancement_totals', 'superior_cost_meso', 'INTEGER NOT NULL DEFAULT 0')
+  }
   await ensureColumn(db, 'character_accounts', 'world_key', 'TEXT')
   // 리프 자동 판정이 읽는 만든 날. 옛 행은 NULL 이고 다음 `character/basic` 이 채운다.
   await ensureColumn(db, 'character_profiles', 'created_date', 'TEXT')
