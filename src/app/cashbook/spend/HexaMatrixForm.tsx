@@ -87,7 +87,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
   const [enhanceText, setEnhanceText] = useState(() => {
     if (editedHexa?.activation == null) return ''
     const stat = findHexaStat(props.editing?.itemKey ?? null)
-    const activationPart = editedHexa.activation ? (stat?.activationFragments ?? 0) : 0
+    const activationPart = editedHexa.activation ? (stat?.activationFragmentQuantity ?? 0) : 0
     return mesoTextOf(Math.max(0, editedHexa.fragmentCount - activationPart))
   })
   // 개당 가격은 빈 칸으로 연다. 마지막으로 친 값을 채우지 않는다(사용자 지정).
@@ -126,7 +126,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
   const stat = findHexaStat(statKey)
 
   const skillCost = core?.kind == null ? null : hexaFragmentsBetween(core.kind.key, range.from, range.to)
-  const activationFragments = stat?.activationFragments
+  const activationFragments = stat?.activationFragmentQuantity
   const enhanceFragments = mesoValueOf(enhanceText === '' ? '0' : enhanceText)
   const fragments =
     mode === '헥사 스킬'
@@ -228,7 +228,7 @@ export function HexaMatrixForm(props: SpendFormProps): React.JSX.Element {
   const coreOptions: SelectOption[] = cores.map((each) => ({
     value: each.name,
     label: each.name,
-    group: each.kind?.name ?? each.apiType,
+    group: each.kind.name,
   }))
   const fragmentIcon = solErdaFragmentIcon()
   // 헥사 스킬은 종류와 레벨이 바로 위 칸들에 이미 보여 둘째 줄을 두지 않는다. 헥사 스탯만 활성화 몫을 가른다.

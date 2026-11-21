@@ -236,7 +236,14 @@ export interface SymbolCostsTable extends TableHead {
 }
 
 /** 헥사 코어 종류. API 타입마다 기본 종류가 하나이고, 나머지 종류는 이름 표가 코어를 가리킨다. */
-export interface HexaCoreKindRow {
+/** 직업 하나. 넥슨 `character_class` 의 이름이고, 모든 직업이 함께 쓰는 코어는 `전직업` 줄(`isAllJobs`)을 가리킨다. */
+export interface JobRow {
+  id: string
+  name: string
+  isAllJobs: boolean
+}
+export interface HexaCoreTypeRow {
+  id: string
   key: string
   name: string
   /** 넥슨 `hexa_core_type` 의 글자. */
@@ -244,38 +251,39 @@ export interface HexaCoreKindRow {
   isDefault: boolean
   maxLevel: number
   iconAssetId: string
+  /** 한 직업의 코어 목록에서 종류의 차례 */
+  sortOrder: number
+}
+export interface HexaCoreRow {
+  id: string
+  jobId: string
+  /** 넥슨이 주는 코어 이름. 같은 이름도 직업마다 다른 줄이다. */
+  name: string
+  typeId: string
+  iconAssetId: string
+  /** 한 직업의 같은 종류 안에서의 차례 */
+  sortOrder: number
 }
 export interface HexaCoreLevelCostRow {
-  kind: string
-  /** 강화 전 레벨. Lv.level → level+1 의 값이다. */
-  level: number
-  fragments: number
-  solErda: number
-}
-/** 기본 종류가 아닌 코어 하나. */
-export interface HexaCoreNameKindRow {
-  name: string
-  kind: string
-}
-export interface HexaJobCoreRow {
-  /** 넥슨 `character_class` 의 글자. */
-  job: string
-  name: string
-  apiType: string
-  iconAssetId: string
+  typeId: string
+  /** 강화 전 레벨. Lv.fromLevel → fromLevel+1 의 값이다. */
+  fromLevel: number
+  fragmentQuantity: number
+  solErdaQuantity: number
 }
 export interface HexaStatRow {
+  id: string
   key: string
   name: string
   /** 모르면 없다. 그때 활성화 체크를 막는다. */
-  activationFragments?: number
+  activationFragmentQuantity?: number
 }
 export interface HexaMatrixTable extends TableHead {
-  kinds: HexaCoreKindRow[]
-  levelCosts: HexaCoreLevelCostRow[]
-  nameKinds: HexaCoreNameKindRow[]
-  jobCores: HexaJobCoreRow[]
-  stats: HexaStatRow[]
+  jobs: JobRow[]
+  hexaCoreTypes: HexaCoreTypeRow[]
+  hexaCores: HexaCoreRow[]
+  hexaCoreLevelCosts: HexaCoreLevelCostRow[]
+  hexaStats: HexaStatRow[]
 }
 
 /** 컨텐츠 분류 key. 카드 모양 · 길드 판정 · 계열 한도가 이 값으로 갈려 코드가 집합을 든다. 글자는 표가 든다. */
