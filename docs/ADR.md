@@ -221,3 +221,4 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-228](./adr/ADR-228_trade-history_page.md) | 🟢 | trade-history | 거래 내역 |
 | [ADR-250](./adr/ADR-250_design-system_press-feedback.md) | 🟢 | design-system | 누를 때 흐려지지 않는다 |
 | [ADR-261](./adr/ADR-261_error-resilience_server-maintenance.md) | 🟢 | error-resilience | 서버 점검 잠금 |
+| [ADR-286](./adr/ADR-286_persistence_device-conversion.md) | ⚪ | persistence | 1.0.15 기기 변환 |
