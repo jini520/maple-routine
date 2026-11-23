@@ -1,7 +1,7 @@
 # ADR-078+254+287 보스 기록 테이블 재설계
 
 > 🟢 유효
-> 관련 소스: `storage/sqlite/boss-tables.ts` · `storage/sqlite/convert-boss-tables.ts` · `storage/sqlite/db.ts` · `storage/sqlite/migrations.ts` · `storage/boss-periods.ts` · `storage/boss-profit.ts` · `storage/boss-drops.ts` · `storage/boss-party-settings.ts` · `storage/boss-party-period-overrides.ts` · `storage/cache-data.ts` · `storage/legacy-space.ts` · `lib/boss/period-code.ts` · `lib/boss/drop-item-ids.ts` · `features/enhancement-history/legacy-totals.ts` · `features/server-sync/drop-price-sync.ts`
+> 관련 소스: `storage/sqlite/boss-tables.ts` · `storage/sqlite/convert-boss-tables.ts` · `storage/sqlite/db.ts` · `storage/sqlite/migrations.ts` · `storage/boss-periods.ts` · `storage/boss-profit.ts` · `storage/boss-drops.ts` · `storage/boss-party-settings.ts` · `storage/boss-party-period-overrides.ts` · `storage/cache-data.ts` · `storage/legacy-space.ts` · `lib/boss/period-code.ts` · `lib/boss/drop-item-ids.ts` · `features/enhancement-history/legacy-totals.ts`
 
 ## 배경
 
@@ -94,8 +94,7 @@ boss_profit_entries   id · ocid · boss_difficulty_id · period_code · world_i
 ### 결정 5. 드롭은 서버 `boss_drops` 와 칸 이름 · 상태 값을 맞춘다
 
 - `price_status` 는 서버 `boss_drops` 와 같은 `pending` · `entered` · `skipped` 다. 앱 타입은 화면의 말인 `priceState`
-  (`entered` · `excluded` · `null`)로 읽는다. 지금 서버로 보내는 판매가 경로는 옛 상태 이름을 받아서 보낼 때 `entered` 를
-  `completed` 로 바꾼다(`dropPricePayloadOf`, [[ADR-018]] 결정 5). 지운 드롭은 행을 지우고 `DELETE` 를 보낸다.
+  (`entered` · `excluded` · `null`)로 읽는다. 지운 드롭은 행을 지운다.
 - `sale_price_meso` · `sale_received_meso` · `priced_at` · 분배 칸은 `entered` 일 때만 값이 있다(CHECK). 판매 수수료도 `entered`
   일 때만 적는다(`replaceBossDropRecords`). 그래서 값을 안 매긴 드롭의 분배 칸은 늘 비어 있고, 화면은 분배 처음 값으로 연다.
 - `sale_received_meso` 는 판매 수수료와 분배를 반영해 내가 받는 메소다. 가격 · 분배 · 수수료를 고칠 때만 다시 세고, 같은 값으로
@@ -103,8 +102,7 @@ boss_profit_entries   id · ocid · boss_difficulty_id · period_code · world_i
 - 차례 칸은 없다. 읽을 때 수익 건마다 드롭 표의 차례로 늘어놓고 차례 번호(`dropIndex`)를 매긴다. 차례를 저장하면 드롭 하나를
   넣거나 뺄 때마다 그 묶음의 모든 줄이 바뀐다([[ADR-099]] 결정 27). 그래서 드롭 하나를 고치는 쓰기(`updateDropFees`)는 차례
   번호가 아니라 드롭 id 로 가리킨다.
-- 칸은 서버 `boss_drops` 와 같고, 서버의 동기화 칸(`change_seq` · `deleted_at`)만 없다. 지금 판매가 경로는 분배 · 수수료를
-  싣지 않는다. 내 몫을 세는 재료라 시세에 쓰지 않기 때문이다([[ADR-018]]).
+- 칸은 서버 `boss_drops` 와 같고, 서버의 동기화 칸(`change_seq` · `deleted_at`)만 없다.
 
 ### 결정 6. 이름은 저장하지 않고 게임 데이터의 줄 id 만 둔다
 

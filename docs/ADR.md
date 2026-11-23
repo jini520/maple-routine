@@ -144,7 +144,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-015+156+265](./adr/ADR-015+156+265_site_guide.md) | ⚪ | site | 안내 사이트와 홍보 첫 화면 |
 | [ADR-016+167+181+197+264+266+280](./adr/ADR-016+167+181+197+264+266+280_server_platform.md) | ⚪ | server | 서버 구성 · 관리 화면 짜임 |
 | [ADR-017+159+172+185+194](./adr/ADR-017+159+172+185+194_server_users.md) | ⚪ | server | 서버의 사용자와 신원 · 로그아웃과 계정 삭제 · 키 사용자 합치기 · 추천인 코드 |
-| [ADR-018](./adr/ADR-018_server-sync_drop-price.md) | 🟢 | server-sync | 드롭 가격 서버 전송 |
+| [ADR-018](./adr/ADR-018_server-sync_drop-record-id.md) | 🟢 | server-sync | 드롭 기록의 id 와 월드 |
 | [ADR-019](./adr/ADR-019_game-data_reference.md) | 🟢 | game-data | 게임 데이터의 규칙 |
 | [ADR-020+097+103+140+244+263](./adr/ADR-020+097+103+140+244+263_game-data_server-catalog.md) | 🟢 | game-data | 게임 데이터 서버 표와 기기 사본 |
 | [ADR-021+195](./adr/ADR-021+195_nexon-api_sync.md) | 🟢 | nexon-api | 넥슨 API 호출과 스케줄러 동기화 |
@@ -221,4 +221,4 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-228](./adr/ADR-228_trade-history_page.md) | 🟢 | trade-history | 거래 내역 |
 | [ADR-250](./adr/ADR-250_design-system_press-feedback.md) | 🟢 | design-system | 누를 때 흐려지지 않는다 |
 | [ADR-261](./adr/ADR-261_error-resilience_server-maintenance.md) | 🟢 | error-resilience | 서버 점검 잠금 |
-| [ADR-286](./adr/ADR-286_persistence_device-conversion.md) | ⚪ | persistence | 1.0.15 기기 변환 |
+| [ADR-286](./adr/ADR-286_persistence_device-conversion.md) | 🟢 | persistence | 1.0.15 기기 변환 |

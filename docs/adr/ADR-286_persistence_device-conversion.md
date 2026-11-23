@@ -1,6 +1,6 @@
 # ADR-286 1.0.15 기기 변환: 기기의 기록을 서버 표와 같은 모양으로 한 번 바꾼다
 
-> ⚪ 미구현
+> 🟢 유효
 > 관련 소스: `storage/sqlite/device-conversion.ts` · `features/device-conversion/run.ts` · `app/device-conversion/DeviceConversionFailed.tsx` · `app/AppShell.tsx` · `boot.ts` · `storage/sqlite/db.ts` · `storage/sqlite/convert-boss-tables.ts` · `storage/sqlite/convert-cashbook-tables.ts` · `storage/sqlite/legacy-cashbook-entries.ts` · `storage/sqlite/boss-tables.ts` · `storage/sqlite/cashbook-tables.ts` · `storage/sqlite/record-key-tables.ts` · `storage/sqlite/enhancement-tables.ts` · `storage/sqlite/remembered-level-tables.ts` · `storage/sqlite/migrations.ts` · `storage/keys.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `lib/cashbook/entry-ids.ts` · `storage/cashbook-entries.ts` · `storage/inventory.ts` · `storage/remembered-levels.ts` · `app/inventory/InventorySaleSheet.tsx` · `storage/sqlite/convert-enhancement-tables.ts` · `storage/enhancement-totals.ts` · `storage/character-world-leaps.ts` · `storage/mvp-grades.ts` · `features/enhancement-history/legacy-totals.ts` · `features/enhancement-history/spending.ts` · `features/cashbook/records.ts` · `features/boss-profit/world-leap-moves.ts` · `features/mvp-grade/empty-rows.ts` · `storage/preferences-conversion.ts` · `storage/record-hold.ts` · `lib/boss/period-code.ts` · `lib/scheduler/contents.ts` · `storage/manual-tracked-content.ts` · `storage/shared-progress-cache.ts` · `storage/party-appointments.ts` · `storage/boss-profit-calculator-records.ts` · `storage/quick-links.ts` · `storage/bar-order.ts` · `storage/figure-motions.ts` · `storage/tracking-mode.ts` · `storage/stats-cumulative-start.ts` · `storage/mvp-grade-prefs.ts`
 
 ## 배경
@@ -56,6 +56,9 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
   화면만 가리기 때문이다. 부팅(`boot.ts` 의 `loadGameData`)이 저장소를 건드리기 전에 이 막기를 건다.
   - 게임 데이터 사본 · 조회 캐시 · 사용 로그는 잠금 화면 동안에도 쓰므로 기다리지 않는 접근(`getBossProfitDbUngated()`)을 쓴다. 셋
     다 변환이 바꾸지 않는 표다. 변환도 이 접근으로 DB 를 연다.
+  - 서버 신원이 읽는 메인 키의 메이플 ID(`character_accounts`)도 기다리지 않는 접근으로 읽는다([[ADR-099]] 결정 67). 변환이 실패하면
+    사용 로그를 곧바로 보내는데, 키 사용자의 신원이 변환을 기다리면 그 전송과 `다시 시도` 가 함께 멈춘다. 변환은 이 표의 칸을 바꾸지
+    않고 빈 넥슨 계정 칸만 채운다(결정 10).
 - 변환이 도는 동안 새 문구를 띄우지 않는다(사용자 선택 2026-11-21). 게임 데이터를 받은 실행이면 잠금 화면의 진행 패널을 다 받은
   모습 그대로 두고, 받을 것이 없던 실행이면 시작 화면(`BootSplash`)을 붙든다. 2026-11-20 기기 백업 기준 기록이 3,000줄쯤이라
   대개 1초 안팎에 끝난다.
@@ -316,9 +319,9 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 - 서버 표에 없는 보스 · 난이도 · 아이템 · 가계부 분류 · 지출 항목 · 심볼 · 사냥터를 가리키는 기록(결정 19 · 28 · 위 표들).
 - 월드 · 등급 · 가계부 품목의 아이템 종류와 추가 리워드 종류처럼 기록의 대상이 아니라 속성인 칸은 못 찾으면 비운다. 월드를 모르는
   줄은 지금도 있다(#947 설계 원본).
-- 서버로 못 보낸 드롭 대기 표(`server_sync_queue`)는 비운다. 1.0.15 에는 드롭 판매가 경로(`/v1/drop-prices`)가 없고, 기기의 드롭은
-  첫 올리기([[ADR-099]] 결정 13)가 모두 올린다. Preferences `serverBackfill` 도 지운다. 백업의 대기 표는 비어 있다. 이 단계는 드롭
-  판매가를 보내는 코드를 걷는 작업에 함께 넣는다. 그 코드가 남아 있는 동안 비우면 개발 빌드에서 보낼 판매가가 사라진다.
+- 서버로 못 보낸 드롭 대기 표(`server_sync_queue`)는 모든 줄을 비운다(SQLite 변환의 마지막 단계 `clearLegacyServerSyncQueue`).
+  1.0.15 에는 드롭 판매가 경로(`/v1/drop-prices`)가 없고, 기기의 드롭은 첫 올리기([[ADR-099]] 결정 13)가 모두 올린다. 과거 드롭을
+  어디까지 올렸는지 적던 Preferences `serverBackfill` 도 Preferences 변환이 지운다. 백업의 대기 표는 비어 있다.
 - 버전 13 이 지웠어야 할 빈 표 `boss_profit_period_checks` 가 그 지우기를 넣기 전에 버전 13 을 지난 기기에 남아 있다. 변환에서 지운다.
 - 주인을 붙일 캐릭터가 하나도 없는 옛 손입력(결정 10).
 - 앞 사람의 기록([[ADR-099]] 결정 14)은 변환에서 지우지 않는다. 같은 사람인지는 서버가 답하므로 첫 받기에서 가린다.
@@ -379,7 +382,7 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `storage/sqlite/__tests__/device-conversion-real-sqlite.test.ts` | 결정 1: 한 트랜잭션이고 단계가 던지면 앞 단계의 변경과 번호가 함께 되돌아가며 다시 돌면 끝까지 가는지, 번호가 끝이면 다시 돌지 않는지, 사본 파일을 한 번만 뜨는지, 던진 단계의 번호를 알리는지 본다. 결정 8: 남은 빈 표 `boss_profit_period_checks` 를 지우는지 본다 |
+| `storage/sqlite/__tests__/device-conversion-real-sqlite.test.ts` | 결정 1: 한 트랜잭션이고 단계가 던지면 앞 단계의 변경과 번호가 함께 되돌아가며 다시 돌면 끝까지 가는지, 번호가 끝이면 다시 돌지 않는지, 사본 파일을 한 번만 뜨는지, 던진 단계의 번호를 알리는지 본다. 결정 8: 남은 빈 표 `boss_profit_period_checks` 를 지우는지, 옛 대기 줄을 모두 비우는지 본다 |
 | `storage/sqlite/__tests__/convert-boss-tables-real-sqlite.test.ts` | 결정 3: 분배 설정은 분배를 정한 줄만 옮기는지, 비율을 % 의 1000 배로 반올림하고 `제외` 의 숨긴 분배를 버리는지, 수익 건을 기간 값 · 월드 줄 id · 바뀐 처치 칸으로 옮기는지, 처치한 비율 분배의 빈 요율을 그 날 등급 요율로 채우고 받은 메소를 다시 세는지 본다. 반지는 레벨 줄로, 상자 연마석과 상자로만 주는 난이도의 상자 칸 빈 연마석은 상자용 줄로 옮기는지, 가격을 적은 드롭의 받는 메소를 적는지, 모르는 보스 · 아이템의 기록과 빈 처치 전 줄을 지우는지, 같은 아이템 줄이 둘이면 먼저 적은 줄만 남기는지 본다 |
 | `lib/__tests__/drop-item-ids.spec.ts` | 결정 3: 아이템 key · 반지 레벨 · 나온 상자 칸 셋과 아이템 줄 id 가 서로 오가는지 본다 |
 | `lib/__tests__/period-code.spec.ts` | 결정 3: 기간 key 와 기간 값(`W202647` · `M202611`)이 서로 오가는지 본다. 결정 7: 일간 기간 값(`D20261119`)이 날짜와 오가는지 본다 |
@@ -389,9 +392,10 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 | `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` | 결정 4: 저장한 기록을 key 모양으로 되읽는지, 표에 없는 key 를 적으면 던지는지, 헥사 코어를 못 찾은 기록을 코어 이름으로 되읽는지 본다 |
 | `features/device-conversion/__tests__/run.spec.ts` | 결정 1: 게임 데이터가 준비되기 전에는 돌지 않고 기록 표 접근이 기다리는지, 끝나면 풀리는지, 실패하면 기록 표를 막은 채 사용 로그를 적어 보내고 `다시 시도` 로 이어 가는지, Preferences 의 메인 넥슨 계정과 대표 캐릭터를 변환 맥락으로 넘기는지, SQLite 변환 뒤에 Preferences 변환을 부르고 그것이 던지면 `preferences` 로 알리는지 본다 |
 | `__tests__/boot-order.test.tsx` | 결정 1: 변환이 끝나기 전에는 앱의 나머지를 마운트하지 않고 받은 실행이면 잠금 화면을 그대로 두는지, 실패하면 실패 패널과 업데이트 모달이 서는지 본다 |
-| `storage/__tests__/preferences-conversion.spec.ts` | 결정 7: 키마다 새 모양으로 바뀌는지, 두 번 돌려도 같은지, 못 찾은 항목만 빠지는지, 이름으로 적힌 옛 수동 추적 항목을 줄 id 로 옮기는지 본다. 결정 1: 옛 월드 공유 원장을 `character_accounts` · `character_profiles` 로 찾은 메이플 ID 와 월드로 나눠 새 모양으로 적는지, 못 찾은 추적 캐릭터가 있으면 옛 원장을 남기는지, 표식이 있으면 다시 돌지 않는지 본다 |
+| `storage/__tests__/preferences-conversion.spec.ts` | 결정 7: 키마다 새 모양으로 바뀌는지, 두 번 돌려도 같은지, 못 찾은 항목만 빠지는지, 이름으로 적힌 옛 수동 추적 항목을 줄 id 로 옮기는지 본다. 결정 8: `serverBackfill` 을 지우는지 본다. 결정 1: 옛 월드 공유 원장을 `character_accounts` · `character_profiles` 로 찾은 메이플 ID 와 월드로 나눠 새 모양으로 적는지, 못 찾은 추적 캐릭터가 있으면 옛 원장을 남기는지, 표식이 있으면 다시 돌지 않는지 본다 |
 | `storage/__tests__/manual-tracked-content.spec.ts` · `shared-progress-cache.spec.ts` · `party-appointments.spec.ts` · `boss-profit-calculator-records.spec.ts` · `figure-motions.spec.ts` · `mvp-grade-prefs.spec.ts` | 결정 7: 저장소가 새 모양으로 적고 화면이 드는 모양으로 되읽는지, 게임 데이터에 없는 줄 id 의 항목을 건너뛰는지, 표에 없는 key 를 적으면 던지는지 본다 |
 | `storage/__tests__/record-hold.spec.ts` | 결정 1: 변환한 키를 읽고 쓰는 저장소가 변환이 끝나기를 기다리는지, 하단바 순서는 기다리지 않고 두 모양을 다 읽는지 본다 |
+| `features/auth/__tests__/server-identity.spec.ts` | 결정 1: 기기 변환이 기록을 막는 동안에도 키 사용자의 서버 신원을 읽는지 본다 |
 | `lib/__tests__/contents.spec.ts` | 결정 7: 컨텐츠 key 와 줄 id 가 서로 오가는지 본다 |
 | `storage/sqlite/__tests__/convert-boss-tables-real-sqlite.test.ts` | 결정 1: 변환 뒤 DB 를 다시 열어도 옛 표 · 옛 인덱스를 다시 만들지 않고 열리는지 본다 |
 | `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` | 결정 5: 장비가 아닌 아이템을 다시 넣으면 같은 줄의 개수를 더하는지 본다. 결정 9: 기록의 메이플 ID · 월드로 기타 조각의 남은 수를 월드마다 세는지, 캐릭터 기록은 그 캐릭터의 메이플 ID 로 세는지 본다 |
@@ -406,3 +410,5 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 
 - ADR-286 (2026-11-21): 1.0.15 기기 변환의 표 · 칸 대응과 변환 차례를 처음 작성했다. 인벤토리 기타 조각 판매의 월드(결정 9)와
   기기에만 있던 칸 넷(결정 10)은 사용자가 골랐다(#947)
+- (2026-11-23) 결정 8 의 대기 표 비우기와 `serverBackfill` 지우기를 드롭 판매가 경로를 걷는 작업과 함께 구현했다([[ADR-099]] 결정 67).
+  모든 결정을 구현해 🟢 로 바꿨다. 결정 1 에 서버 신원의 메이플 ID 를 기다리지 않고 읽는 것을 적었다

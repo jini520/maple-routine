@@ -56,7 +56,8 @@
 
 `getBossProfitDb()` 는 1.0.15 기기 변환이 끝날 때까지 기다린다(`storage/record-hold.ts`). 부팅(`boot.ts` 의 `loadGameData`)이
 막기를 걸고, SQLite 변환과 Preferences 변환이 다 끝나면 푼다. 새 앱 코드가 옛 모양의 기록 표를 읽지 않게 하려는 것이다. 게임 데이터 사본 · 조회 캐시 · 사용 로그와 변환은 잠금 화면
-동안에도 써야 해서 기다리지 않는 `getBossProfitDbUngated()` 를 쓴다([[ADR-286]] 결정 1).
+동안에도 써야 해서 기다리지 않는 `getBossProfitDbUngated()` 를 쓴다([[ADR-286]] 결정 1). 서버 신원이 읽는 메인 키의 메이플 ID
+(`character_accounts`)도 이 연결로 읽는다. 변환이 실패한 실행에서 사용 로그를 보낼 때도 신원이 필요하다.
 
 ## 테이블
 
@@ -101,7 +102,7 @@
 | `remembered_levels` | `id`(uuid, `(ocid, type, target_id)` 는 UNIQUE) | 캐릭터의 심볼 · 헥사 코어 강화 레벨 기억. 추적을 시작할 때 넥슨 값으로 채우고 기록을 저장 · 고치기 · 지우기 할 때 옮긴다 | `storage/remembered-levels.ts` | 지운다 (가계부) | [[ADR-137]] |
 | `mvp_grade_history` | `id`(uuid, `(account_id, from_date)` 는 UNIQUE) | 메이플 ID 마다 MVP 등급(등급 표의 줄 id)과 시작 날짜 | `storage/mvp-grades.ts` | 남긴다 | `features/mvp-grade.md` |
 | `character_accounts` | `id`(uuid, `(ocid, name, account_id)` 는 UNIQUE) | 캐릭터가 어느 메이플 ID 에 속했는지, 그것을 어느 넥슨 계정의 목록에서 봤는지와 처음 · 마지막으로 본 날 | `storage/character-accounts.ts` | 남긴다 | `features/mvp-grade.md` |
-| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 못 보낸 드롭. 평소에는 비어 있다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 줄은 전송이 보내지 않고 지운다(`registry.ts` 에 없는 종류다) | `storage/server-sync-queue.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-018]] |
+| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 못 보낸 기록. 지금은 넣는 코드가 없어 비어 있다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 · 드롭 판매가 줄은 1.0.15 기기 변환이 비우고, 남은 줄도 전송이 보내지 않고 지운다(`registry.ts` 에 없는 종류다) | `storage/server-sync-queue.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-099]] 결정 10 · [[ADR-286]] 결정 8 |
 | `game_data_sections` | `id`(uuid, `section` 은 UNIQUE) | 게임 데이터 사본의 칸 하나. 서버 응답의 그 칸 JSON 을 그대로 든다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
 | `game_data_meta` | `id`(uuid, `key` 는 UNIQUE) | 사본의 표식(계약 판 · ETag). 칸과 한 트랜잭션으로 쓰고, 있으면 다 받은 사본이다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
 | `usage_events` | `id`(uuid) | 서버로 보낼 사용 로그. 백그라운드로 갈 때와 다음 실행 때 통째로 꺼내 보내고, 꺼낸 줄은 지운다. 신원이 없는 기기에서 끝없이 자라지 않게 500줄까지만 둔다 | `storage/usage-events.ts` | 남긴다 | [[ADR-158]] |
@@ -214,4 +215,4 @@
 
 보스 기록 표 셋의 `id` 같은 v4 uuid 는 JS 가 아니라 SQLite 가 `INSERT` 안에서 만든다
 (`NEW_UUID_SQL`, `randomblob()` 식). JS 전역에는 `crypto` 가 없고, 새 네이티브 모듈을 추가하면 스토어 빌드를 기다려야
-하기 때문이다. 같은 그룹을 다시 저장할 때 기존 값을 이어 쓰는 규칙은 [[ADR-018]] 에 있다.
+하기 때문이다. 같은 그룹을 다시 저장할 때 기존 값을 이어 쓰는 규칙은 [[ADR-018]] 결정 2 에 있다.
