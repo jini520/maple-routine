@@ -38,13 +38,13 @@
 | `features/server-sync/accounts.ts` | 메인 신원으로 메이플 ID 알리기 · 지금 로그인의 부계정 키 등록(`prepareServerAccounts`) |
 | `features/server-sync/push.ts` | 올리기. 대기 표를 묶어 보내고 결과마다 대기 줄과 기기 줄을 다룬다(`pushServerSync`) |
 | `features/server-sync/push-records.ts` | 표마다 기기 값을 서버 칸으로 바꾼다. 넥슨 식별자의 해시 · 참 거짓 · 메이플 ID 찾기(`pushRecordOf`) |
-| `features/server-sync/pull.ts` | 받기. 번호를 보내고 받은 줄을 넣은 뒤 번호를 갈아 끼운다. 가장 오래된 삭제 표식보다 번호가 작은 주인을 비운다(`pullServerSync`) |
+| `features/server-sync/pull.ts` | 받기. 번호를 보내고 받은 줄을 넣은 뒤 번호를 갈아 끼운다. 가장 오래된 삭제 표식보다 번호가 작은 주인을 비우고, 다른 기기가 해제한 부계정을 뺀다(`pullServerSync`) |
 | `features/server-sync/pull-records.ts` | 표마다 서버 줄을 기기 칸으로 바꾼다. 해시를 원문으로, 짝이 없으면 `#` 를 붙인 해시로(`pulledRecordOf`) |
 | `features/server-sync/refresh.ts` | 기기 줄을 고친 표의 화면을 다시 읽게 한다. 동기화가 올린 판은 동기화를 다시 깨우지 않는다 |
 | `features/server-sync/rejection-notice.ts` | 두 거절의 알림 문구와 기록 이름 |
-| `features/server-sync/after-write.ts` | 기록을 쓰면 동기화를 깨운다(`startServerSyncAfterWrites`) |
+| `features/server-sync/after-write.ts` | 기록을 쓰거나 스케줄 회차가 넥슨에서 받으면 동기화를 깨운다(`startServerSyncAfterWrites`) |
 | `features/server-sync/forget.ts` | 계정 삭제를 서버에 보내고, 로그아웃 · 계정 삭제 때 대기 표와 사용 로그 표를 비운다 |
-| `features/account-manage/store.ts` | 부계정 키를 더하거나 바꿀 때 서버에 먼저 등록하고, 지울 때 서버의 등록을 먼저 해제한다 |
+| `features/account-manage/store.ts` | 부계정 키를 더하거나 바꿀 때 서버에 먼저 등록하고, 지울 때 서버의 등록을 먼저 해제한다. 다른 기기가 해제한 부계정의 키를 지운다(`forgetReleasedSubAccounts`) |
 | `features/auth/server-identity.ts` | 메인 신원의 헤더(`serverIdentityHeaders` · `mainServerIdentityOf`) |
 | `features/auth/current-credential.ts` | 캐릭터마다 넥슨을 부를 자격. `#` 로 시작하는 ocid 에는 자격을 주지 않는다 |
 | `lib/crypto/nexon-id-hash.ts` | 넥슨 식별자(메이플 ID · ocid)의 SHA-256 |
@@ -56,6 +56,7 @@
 | `storage/server-sync-pull.ts` | 받은 줄을 SQLite 기록 표에 넣고 지운다. 유일 기준이 같은 기기 줄을 서버 줄로 바꾼다. 주인의 기록 비우기 |
 | `storage/server-sync-pull-preferences.ts` | 받은 줄을 Preferences 기록 키에 넣고 지운다 |
 | `storage/server-sync-cursors.ts` | 받기의 번호(Preferences `serverSyncCursors`) |
+| `storage/server-sync-unmatched.ts` | `#` 를 붙여 넣은 값 가운데 짝이 생긴 것을 원문으로 바꾼다(`replaceMatchedNexonIds`) |
 | `server/sync.ts` | 올리기와 받기의 서버 경로. 응답을 읽을 수 있는 응답 · 요청 전체의 거절 · 응답 없음으로 가른다 |
 | `server/write.ts` | 쓰기 호출. 결과를 `sent` · `no-response` · `rejected` 로 나눈다 |
 | `server/accounts.ts` | 메이플 ID 알리기 · 부계정 등록과 해제의 서버 경로 |
@@ -70,6 +71,7 @@
 | 사용자 동작 · 앱 일 | 보내는 것 |
 |---|---|
 | 앱을 켬 | 메인 계정의 메이플 ID 를 알리고 지금 로그인의 부계정 키를 등록한 뒤, 대기 표를 올리고 받는다 |
+| 스케줄 회차가 넥슨에서 받음 | 동기화를 깨운다. 회차는 동기화를 기다리지 않고 받은 스케줄로 화면을 먼저 그린다. 배경 실행(`schedule-alert/background-refresh.ts`)의 회차와 하나도 받지 못한 회차는 깨우지 않는다 |
 | 기록을 씀 | 동기화를 깨워 대기 표를 올리고 받는다. 기록 판을 올리는 저장 함수는 판 알림으로, 그 밖의 저장 함수와 Preferences 기록은 `noteRecordsWritten` 으로 알린다. 반복 쓰기 안의 여러 쓰기는 한 번으로 모은다. 동기화가 화면을 다시 읽으려고 올린 판은 깨우지 않는다 |
 | 부계정 키 추가 · 변경 | 저장하기 전에 그 키의 메이플 ID 해시로 부계정을 등록한다 |
 | `API 키 삭제` | 기기에서 지우기 전에 그 계정의 메이플 ID 해시로 부계정 등록을 해제한다 |
@@ -200,13 +202,15 @@
 올리기 다음에 `POST /v1/sync/pull` 로 다른 기기가 올린 기록을 받는다(`pull.ts`, [[ADR-099]] 결정 9 · 67). 올리기가 멈춰도 받는다.
 아직 못 올린 기록은 대기 줄이 있어 받기가 건너뛴다. 신원이 없으면 아무것도 하지 않는다.
 
-1. Preferences `serverSyncCursors` 의 번호를 보낸다. 사람(넥슨 계정 줄 id 와 번호)과 메이플 ID 해시마다의 번호다. 처음이면 빈 번호다.
-2. 응답의 `oldestDeletedChangeSeq` 보다 보낸 번호가 작은 주인이 있으면(번호 0 은 빼고) 그 주인의 기록을 비우고 번호를 0 으로 적은 뒤
+1. `#` 를 붙여 넣은 값 가운데 `character_accounts` 에 짝이 생긴 것을 원문으로 바꾼다(`짝이 생긴 # 바꾸기`).
+2. Preferences `serverSyncCursors` 의 번호를 보낸다. 사람(넥슨 계정 줄 id 와 번호)과 메이플 ID 해시마다의 번호다. 처음이면 빈 번호다.
+3. 첫 응답의 메이플 ID 목록에서 앞 받기의 목록에 있던 메이플 ID 가 빠졌으면 그 부계정을 이 기기에서 뺀다(`다른 기기의 부계정 해제`).
+   응답의 `oldestDeletedChangeSeq` 보다 보낸 번호가 작은 주인이 있으면(번호 0 은 빼고) 그 주인의 기록을 비우고 번호를 0 으로 적은 뒤
    다시 받는다. 그 응답의 줄은 넣지 않는다.
-3. 받은 줄을 표 차례대로 기기 칸으로 바꿔(`pull-records.ts`) 넣는다.
-4. 응답의 `cursors` 를 적는다. `hasMore` 가 켜져 있으면 1 로 돌아간다. 번호가 그대로면 멈춘다. 한 동기화는 100쪽(5만 줄)까지
+4. 받은 줄을 표 차례대로 기기 칸으로 바꿔(`pull-records.ts`) 넣는다.
+5. 응답의 `cursors` 를 적는다. `hasMore` 가 켜져 있으면 2 로 돌아간다. 번호가 그대로면 멈춘다. 한 동기화는 100쪽(5만 줄)까지
    받고, 남은 줄은 다음 동기화가 이어 받는다.
-5. 넣은 표의 화면을 다시 읽게 한다(`refresh.ts`).
+6. 넣은 표의 화면을 다시 읽게 한다(`refresh.ts`).
 
 응답이 없거나 요청 전체가 거절되면(401 · 403 · 400 · 500 · 읽을 수 없는 본문) 번호를 두고 멈춘다. 다음 동기화가 같은 번호로 받는다.
 
@@ -243,6 +247,30 @@
 `#` 로 시작하는 ocid 는 해시라 넥슨 식별자가 아니다. 캐릭터마다 넥슨을 부를 자격을 고르는 `credentialsOfOcids` · `credentialOfOcid`
 가 그 ocid 에 자격을 주지 않는다. 기록의 ocid 로 넥슨을 부르는 곳(처치 날짜 채우기 · 강화 레벨 기억 · 메소 획득량 · 스케줄 창)은 모두
 이 함수로 자격을 받아 자격이 없으면 부르지 않는다. 추적 캐릭터는 `#` 가 될 수 없어(받기가 넣지 않는다) 회차의 넥슨 조회에 들지 않는다.
+
+### 짝이 생긴 `#` 바꾸기
+
+다른 기기에서 받은 캐릭터와 메이플 ID 가 이 기기의 `character_accounts` 에 없으면 `#` 를 붙인 해시로 적는다. 부계정 키를 등록하거나 넥슨
+목록이 늘면 짝이 생긴다. 받기를 시작할 때마다 기기의 `#` 값을 훑어 짝이 생긴 값만 원문으로 바꾼다(`replaceMatchedNexonIds`).
+
+- SQLite 기록 표의 ocid · 메이플 ID 칸과 Preferences 기록(수동 추적 항목 · 공유 진행의 키, 메이플 ID 이름 · 대표 캐릭터 동작의 열쇠,
+  약속 · 계산기 기록의 `ocid`)을 바꾼다.
+- 서버는 같은 해시를 이미 들고 있어 바꾸는 쓰기는 대기 표에 넣지 않는다(`withServerSyncPaused`). Preferences 기록은 저장 함수를
+  거치지 않고 키에 바로 적는다.
+- 원문으로 바꾸면 유일 기준이 겹치는 기기 줄이 있으면 그 줄은 두고, 같은 받기가 서버 줄을 넣을 때 겹친 기기 줄을 서버 줄로 바꾼다.
+  Preferences 의 키와 열쇠가 겹치면 원문 쪽 값을 둔다. 이 기기에서 고른 값이다.
+- 바꾼 표의 화면을 다시 읽게 한다.
+
+### 다른 기기의 부계정 해제
+
+해제는 서버가 기준이다([[ADR-101]] 결정 6). 다른 기기에서 부계정을 해제하면 다음 받기의 응답의 메이플 ID 목록에서 그 메이플 ID 가
+빠진다. 이 기기는 그 메이플 ID 를 든 부계정 키를 지우고 그 계정의 캐릭터를 추적에서 뺀다(`forgetReleasedSubAccounts`). 서버의 등록은
+이미 없어 해제를 부르지 않는다. 남기면 동기화가 그 키를 다시 등록해 해제를 되돌린다.
+
+- 앞 목록은 번호(`serverSyncCursors`)의 메이플 ID 열쇠다. 서버는 이 신원이 쓸 수 있는 메이플 ID 마다 번호를 돌려준다.
+- 번호의 넥슨 계정 줄이 응답과 같을 때만 견준다. 다른 사람으로 로그인했거나 줄이 합쳐졌으면 목록이 바뀌는 것이 해제가 아니다.
+- 키는 지금 로그인에 귀속된 부계정 키만 본다. 메이플 ID 는 `character_accounts` 에서 그 키의 넥슨 계정으로 찾는다.
+- 그 메이플 ID 의 기록은 아직 이 기기에 남는다. 비우는 일은 [[ADR-099]] 결정 67 의 구현 차례 다섯째다.
 
 ### 주인의 기록 비우기
 

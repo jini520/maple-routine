@@ -23,7 +23,7 @@
 | `nexon/notice/` | 넥슨 공지 목록과 상세 |
 | `nexon/developer-keys.ts` · `nexon/key-stage.ts` | 번들 개발자 키 교대, API 키 단계 판정 |
 | `features/schedule-sync/` | 스케줄 동기화 회차, `character/basic` 5분 가드, 자격 판정, 에러 종류 `toScheduleSyncError`. `schedule-query.ts` 가 회차를 쿼리로 두고 캐릭터 열쇠에 나눠 넣는다 |
-| `features/query/` | 쿼리 캐시 · 열쇠 · 신선함(10분 + KST 자정) · 앱 복귀 · 자정 타이머 · 기기 저장 · 표의 판 무효화(`invalidation.ts` · `meta.ts`)([[ADR-142]]) |
+| `features/query/` | 쿼리 캐시 · 열쇠 · 신선함(5분 + KST 자정) · 앱 복귀 · 자정 타이머 · 기기 저장 · 표의 판 무효화(`invalidation.ts` · `meta.ts`)([[ADR-142]]) |
 | `features/schedule-window/` | 지난 13일을 채우는 창 |
 | `features/refresh/pull.ts` | 당겨서 새로고침 하나(`pullRefresh`). 스케줄 회차 → 13일 창 → 오늘 강화 |
 | `features/boss-profit/round-record.ts` · `defeat-dates.ts` | 회차가 동기화 뒤에 부르는 자동 기록과 처치 날짜 캐기 |
@@ -31,7 +31,7 @@
 | `features/schedule-sync/read-schedule.ts` · `character-basic-fetch.ts` | 쿼리 캐시를 렌더 밖에서 읽는 함수(`readScheduleEntry` · `readCharacterBasic`) · `character/basic` 통과 지점(`fetchCharacterBasicCached`). 받은 값은 쿼리 캐시 `characterBasic(ocid)` 에만 넣는다 |
 | `features/mvp-grade/character-list.ts` | `character/list` 를 5분 안에 한 번만 받는 `fetchCharacterListCached`(쿼리 `characterList(credentialKey)`). 캐릭터 관리 · MVP 등급 · 회차 · 강화 수집이 같은 응답을 쓴다 |
 | `storage/scheduler-cache.ts` · `storage/character-basic-cache.ts` | 1.0.12 까지의 Preferences 캐시(`schedulerCache:{ocid}` · `characterBasicCache:{ocid}`) 읽기 · 지우기. 업데이트 뒤 첫 실행이 추적 캐릭터의 키를 쿼리 캐시로 옮긴 뒤 지운다([[ADR-142]] 결정 7). 남은 `characterBasicCache:{ocid}` 는 프로필 조회의 마지막 폴백이다([[ADR-142]] 결정 10) |
-| `lib/scheduler/sync-freshness.ts` | 10분 값 `SYNC_TTL_MS`. `features/query/freshness.ts` 의 `scheduleStaleTime` 이 쓴다 |
+| `lib/scheduler/sync-freshness.ts` | 5분 값 `SYNC_TTL_MS`. `features/query/freshness.ts` 의 `scheduleStaleTime` 이 쓴다 |
 | `lib/boss/boss-profit-period.ts` | 조회 가능한 날짜의 상한과 하한 |
 
 ## 호출 방법
