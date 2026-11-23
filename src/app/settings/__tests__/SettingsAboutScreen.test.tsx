@@ -6,12 +6,13 @@
 // ③ OTA 상태는 포트를 갈아끼우는 것으로 만든다. 문구 열넷의 계약은 `AppUpdateSection` 테스트가
 //    프롭을 직접 넣어 지킨다. 여기서 보는 것은 배선이다.
 // ④ 카드 경계는 `Card` atom 의 라운딩 대신 **트리 상의 조상 관계**로 본다.
-// ⑤ 삭제 뒤 흐름(타임아웃 경쟁 → `closeBossProfitDb` → 스플래시 → 리로드)은 **core 의
-//    `clearCacheDataAndReload` 가 소유한다**. 여기서는 **화면이 무엇을 넘기고 무엇을 받는가**만
-//    본다. 순서 자체는 `storage/__tests__/cache-data.spec.ts` 가 지킨다.
+// ⑤ 삭제 흐름(서버에서 먼저 지우기 → 타임아웃 경쟁 → `closeBossProfitDb` → 스플래시 → 리로드)은 **core 의
+//    `clearRecordGroupsAndReload` 가 소유한다**. 여기서는 **화면이 무엇을 넘기고 무엇을 받는가**만
+//    본다. 순서 자체는 `features/server-sync/__tests__/clear.spec.ts` 와 `storage/__tests__/cache-data.spec.ts` 가 지킨다.
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { clearCacheDataAndReload, loadCacheDataCounts } from '../../../features/settings/cache-data'
+import { clearRecordGroupsAndReload } from '../../../features/server-sync/clear'
+import { loadCacheDataCounts } from '../../../features/settings/cache-data'
 
 import { useLiveUpdateStore } from '../../../features/live-update/store'
 import { openInAppBrowser } from '../../../native/browser'
@@ -46,10 +47,8 @@ function installLiveUpdatePort(overrides: Partial<LiveUpdatePort> = {}): void {
 
 jest.mock('../../../hooks/useSettingsNavigation', () => ({ useSettingsNavigation: jest.fn() }))
 jest.mock('../../../native/browser', () => ({ openInAppBrowser: jest.fn() }))
-jest.mock('../../../features/settings/cache-data', () => ({
-  loadCacheDataCounts: jest.fn(),
-  clearCacheDataAndReload: jest.fn(async () => {}),
-}))
+jest.mock('../../../features/settings/cache-data', () => ({ loadCacheDataCounts: jest.fn() }))
+jest.mock('../../../features/server-sync/clear', () => ({ clearRecordGroupsAndReload: jest.fn(async () => true) }))
 jest.mock('../../../features/auth/store', () => {
   const actions = { signOut: jest.fn(), deleteAccount: jest.fn() }
   return { useAuthStore: (selector: (s: typeof actions) => unknown) => selector(actions), actions }
@@ -65,7 +64,7 @@ const { toast } = jest.requireMock('../../../features/toast/store') as {
   toast: { showSuccess: jest.Mock; showError: jest.Mock }
 }
 const mockedLoadCounts = jest.mocked(loadCacheDataCounts)
-const mockedClearAndReload = jest.mocked(clearCacheDataAndReload)
+const mockedClearAndReload = jest.mocked(clearRecordGroupsAndReload)
 
 const mockedUseSettingsNavigation = jest.mocked(useSettingsNavigation)
 const navigate = jest.fn()
@@ -112,6 +111,7 @@ beforeEach(() => {
   installLiveUpdatePort()
   mockedLoadCounts.mockReturnValue(new Promise(() => {}))
   authActions.deleteAccount.mockResolvedValue(true)
+  mockedClearAndReload.mockResolvedValue(true)
   // 스토어는 모듈 싱글턴이라 케이스 사이에 상태가 샌다.
   useLiveUpdateStore.setState({ currentVersion: null, status: 'idle', channel: '' })
 })
@@ -269,6 +269,20 @@ describe('계정 묶음', () => {
     await press(view.getByText(/^삭제/))
 
     expect(view.getByTestId('button-busy', { includeHiddenElements: true })).toBeTruthy()
+  })
+
+  // 계정 삭제가 실패할 때와 같은 꼴이다. 아무것도 지우지 않아 다시 누를 수 있다.
+  it('서버가 지우지 못하면 확인 창을 닫고 오류 토스트를 띄운다', async () => {
+    mockedClearAndReload.mockResolvedValue(false)
+    const view = await renderOverlay(<SettingsAboutScreen />)
+
+    await press(rowOf(view, '데이터 삭제'))
+    await press(view.getByLabelText('가계부'))
+    await press(view.getByText(/^삭제/))
+
+    expect(toast.showError).toHaveBeenCalledWith('데이터를 삭제하지 못했습니다. 잠시 뒤 다시 시도해 주세요.')
+    expect(view.queryByText('데이터를 삭제할까요?')).toBeNull()
+    expect(rowOf(view, '데이터 삭제')).toBeTruthy()
   })
 
   it('계정 삭제는 확인을 받은 뒤에만 부르고, 예약되면 30일 뒤 지워진다고 알린다', async () => {
