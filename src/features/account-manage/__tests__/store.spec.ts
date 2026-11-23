@@ -1,5 +1,5 @@
-// 계정 관리의 추가 · 변경 · 삭제. 부계정은 기기마다 따로 관리하고, 서버는 어느 키가 그 사람의 부계정인지만 적는다.
-// 그래서 지우기는 서버에 묻지 않고, 서버의 등록 정보를 남긴다.
+// 계정 관리의 추가 · 변경 · 삭제. 부계정은 기기마다 따로 관리하고, 서버는 어느 넥슨 계정이 그 로그인의 부계정인지만 적는다.
+// 부계정은 넥슨 ID 하나에만 등록되어, 지우기는 서버의 등록을 먼저 해제해야 다른 넥슨 ID 가 그 계정을 등록할 수 있다.
 import { apiKeyHashHex } from '../../../lib/crypto/api-key-hash'
 import { nexonIdHashHex } from '../../../lib/crypto/nexon-id-hash'
 import type { NexonAuthConfig } from '../../../types'
@@ -22,7 +22,7 @@ jest.mock('../../../storage/character-selection', () => ({
   getTrackedCharacterOcids: jest.fn(),
   setTrackedCharacterOcids: jest.fn(async () => undefined),
 }))
-jest.mock('../../../server/accounts', () => ({ registerSubAccountOnServer: jest.fn() }))
+jest.mock('../../../server/accounts', () => ({ registerSubAccountOnServer: jest.fn(), unregisterSubAccountOnServer: jest.fn() }))
 jest.mock('../../schedule-sync/save-tracked', () => ({ saveTrackedCharacters: jest.fn(async () => undefined) }))
 jest.mock('../../mvp-grade/character-list', () => ({
   readCachedCharacterListOfAccount: jest.fn(() => undefined),
@@ -69,20 +69,22 @@ beforeEach(async () => {
   owners.getMapleIdsByNexonAccount.mockResolvedValue(new Map([['login-1', ['m-main']], ['k-sub', ['m-sub']]]))
   owners.getCharacterAccountSightings.mockResolvedValue([])
   server.registerSubAccountOnServer.mockResolvedValue('registered')
+  server.unregisterSubAccountOnServer.mockResolvedValue({ outcome: 'sent' })
   selection.getTrackedCharacterOcids.mockResolvedValue([])
   useToastStore.setState({ toasts: [] } as never)
   await useAccountManageStore.getState().load()
 })
 
 describe('추가', () => {
-  it('검증을 거쳐 서버에 등록한 뒤 그 로그인의 부계정 키로 저장한다', async () => {
+  it('검증을 거쳐 메이플 ID 해시로 서버에 등록한 뒤 그 로그인의 부계정 키로 저장한다', async () => {
     validate.checkApiKey.mockResolvedValue(통과)
 
     await expect(useAccountManageStore.getState().addKey('새-키')).resolves.toEqual({ outcome: 'saved' })
 
     // 막는 겹침은 로그인의 메이플 ID 다. 부계정과 겹치면 막지 않고 그 계정의 키를 바꿀지 묻는다.
     expect(validate.checkApiKey).toHaveBeenCalledWith('새-키', { taken: [h('m-main')], target: null })
-    expect(server.registerSubAccountOnServer).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, apiKeyHashHex('새-키'), [h('m-new')])
+    // 1.0.15 서버는 부계정을 메이플 ID 로 찾고 키 해시를 받지 않는다.
+    expect(server.registerSubAccountOnServer).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, [h('m-new')])
     expect(server.registerSubAccountOnServer.mock.invocationCallOrder[0]).toBeLessThan(apiKeyStore.addSubApiKey.mock.invocationCallOrder[0]!)
     expect(apiKeyStore.addSubApiKey).toHaveBeenCalledWith('새-키', 'login-1', 'uuid-new')
     expect(characterList.recordCharacterList).toHaveBeenCalledWith(통과.accounts, 'uuid-new')
@@ -95,6 +97,20 @@ describe('추가', () => {
 
     await expect(useAccountManageStore.getState().addKey('새-키')).resolves.toEqual({ outcome: 'rejected', reason: 'alreadyRegistered' })
     expect(apiKeyStore.addSubApiKey).not.toHaveBeenCalled()
+  })
+
+  // 다른 넥슨 ID 가 그 계정을 먼저 등록했거나 두 로그인이 서로를 부계정으로 두게 되는 등록은 다시 보내도 같은 답이다.
+  it.each([
+    ['registered_elsewhere', 'registeredElsewhere'],
+    ['has_sub_accounts', 'hasSubAccounts'],
+    ['login_is_sub_account', 'loginIsSubAccount'],
+  ])('서버가 %s 로 거절하면 저장하지 않고 그 이유를 돌려준다', async (code, reason) => {
+    validate.checkApiKey.mockResolvedValue(통과)
+    server.registerSubAccountOnServer.mockResolvedValue(code)
+
+    await expect(useAccountManageStore.getState().addKey('새-키')).resolves.toEqual({ outcome: 'rejected', reason })
+    expect(apiKeyStore.addSubApiKey).not.toHaveBeenCalled()
+    expect(characterList.recordCharacterList).not.toHaveBeenCalled()
   })
 
   // 등록은 다음 서버 전송 회차가 다시 한다. 그 사이에는 기기의 키로 그 계정을 부른다.
@@ -122,7 +138,7 @@ describe('추가', () => {
 
     expect(validate.checkApiKey).toHaveBeenCalledTimes(1)
     expect(apiKeyStore.replaceApiKeyValue).toHaveBeenCalledWith('k-sub', '같은-계정-키')
-    expect(server.registerSubAccountOnServer).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, apiKeyHashHex('같은-계정-키'), [h('m-sub')])
+    expect(server.registerSubAccountOnServer).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, [h('m-sub')])
   })
 
   it('검증에 걸리면 서버에도 기기에도 적지 않는다', async () => {
@@ -135,15 +151,35 @@ describe('추가', () => {
 })
 
 describe('변경', () => {
-  it('변경은 그 계정을 빼고 겹침을 보고, 같은 계정 id 의 키 값만 바꾼 뒤 새 키로 다시 등록한다', async () => {
+  it('변경은 그 계정을 빼고 겹침을 보고, 메이플 ID 해시로 다시 등록한 뒤 같은 계정 id 의 키 값만 바꾼다', async () => {
     validate.checkApiKey.mockResolvedValue({ ...통과, mapleIdHashes: [h('m-sub')] })
 
     await expect(useAccountManageStore.getState().changeKey('k-sub', '새-부-키')).resolves.toEqual({ outcome: 'saved' })
 
     expect(validate.checkApiKey).toHaveBeenCalledWith('새-부-키', { taken: [h('m-main')], target: [h('m-sub')] })
+    expect(server.registerSubAccountOnServer).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, [h('m-sub')])
+    expect(server.registerSubAccountOnServer.mock.invocationCallOrder[0]).toBeLessThan(apiKeyStore.replaceApiKeyValue.mock.invocationCallOrder[0]!)
     expect(apiKeyStore.replaceApiKeyValue).toHaveBeenCalledWith('k-sub', '새-부-키')
     expect(apiKeyStore.addSubApiKey).not.toHaveBeenCalled()
-    expect(server.registerSubAccountOnServer).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, apiKeyHashHex('새-부-키'), [h('m-sub')])
+  })
+
+  it('서버가 등록을 거절하면 키를 바꾸지 않고 그 이유를 돌려준다', async () => {
+    validate.checkApiKey.mockResolvedValue({ ...통과, mapleIdHashes: [h('m-sub')] })
+    server.registerSubAccountOnServer.mockResolvedValue('registered_elsewhere')
+
+    await expect(useAccountManageStore.getState().changeKey('k-sub', '새-부-키')).resolves.toEqual({
+      outcome: 'rejected',
+      reason: 'registeredElsewhere',
+    })
+    expect(apiKeyStore.replaceApiKeyValue).not.toHaveBeenCalled()
+  })
+
+  it('서버가 받지 못하면 키를 바꾸고 다음 회차가 다시 등록한다', async () => {
+    validate.checkApiKey.mockResolvedValue({ ...통과, mapleIdHashes: [h('m-sub')] })
+    server.registerSubAccountOnServer.mockResolvedValue('failed')
+
+    await expect(useAccountManageStore.getState().changeKey('k-sub', '새-부-키')).resolves.toEqual({ outcome: 'saved' })
+    expect(apiKeyStore.replaceApiKeyValue).toHaveBeenCalledWith('k-sub', '새-부-키')
   })
 })
 
@@ -161,8 +197,8 @@ it('무효 표시가 붙은 키를 바꾸면 뺐던 캐릭터를 추적 목록 �
 })
 
 describe('삭제', () => {
-  // 같은 키를 다른 기기에서 계속 쓰면 그 기기의 기록이 이 사람에게 이어져야 한다.
-  it('서버에 묻지 않고 이 기기의 키와 그 계정의 메이플 ID 에 속한 추적 캐릭터를 뺀다', async () => {
+  // 기기에서만 지우면 서버에 등록이 남아 다른 넥슨 ID 가 그 계정을 등록하지 못한다.
+  it('서버의 등록을 먼저 해제하고, 받으면 이 기기의 키와 그 계정의 메이플 ID 에 속한 추적 캐릭터를 뺀다', async () => {
     selection.getTrackedCharacterOcids.mockResolvedValue(['o-main', 'o-sub'])
     owners.getCharacterAccountSightings.mockResolvedValue([
       { ocid: 'o-main', name: '본캐', accountId: 'm-main', firstSeenOn: '2026-11-01', lastSeenOn: '2026-11-11' },
@@ -171,10 +207,34 @@ describe('삭제', () => {
 
     await expect(useAccountManageStore.getState().removeAccount('k-sub')).resolves.toBe('removed')
 
-    expect(server.registerSubAccountOnServer).not.toHaveBeenCalled()
+    expect(server.unregisterSubAccountOnServer).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, [h('m-sub')])
+    expect(server.unregisterSubAccountOnServer.mock.invocationCallOrder[0]).toBeLessThan(apiKeyStore.removeApiKey.mock.invocationCallOrder[0]!)
     expect(apiKeyStore.removeApiKey).toHaveBeenCalledWith('부-키')
     expect(selection.setTrackedCharacterOcids).toHaveBeenCalledWith(['o-main'])
     expect(mockResolveFromStorage).not.toHaveBeenCalled()
+  })
+
+  // 같은 키를 다시 넣었을 때 등록이 응답 없이 끝나면, 남은 적은 값 때문에 회차가 다시 등록하지 않는다.
+  it('해제하면 서버에 등록했다고 적은 그 키의 값을 뺀다', async () => {
+    await useAccountManageStore.getState().removeAccount('k-sub')
+
+    expect(serverState.setServerAccounts).toHaveBeenCalledWith({ reported: {}, registered: [] })
+  })
+
+  it.each([
+    ['응답이 없으면', { outcome: 'no-response' }],
+    ['서버가 거절하면', { outcome: 'rejected', status: 401 }],
+  ])('%s 아무것도 지우지 않고 실패를 알린다', async (_label, result) => {
+    server.unregisterSubAccountOnServer.mockResolvedValue(result)
+
+    await expect(useAccountManageStore.getState().removeAccount('k-sub')).resolves.toBe('failed')
+
+    expect(apiKeyStore.removeApiKey).not.toHaveBeenCalled()
+    expect(selection.setTrackedCharacterOcids).not.toHaveBeenCalled()
+    expect(serverState.setServerAccounts).not.toHaveBeenCalled()
+    expect(useToastStore.getState().toasts).toEqual([
+      expect.objectContaining({ variant: 'error', message: 'API 키를 삭제하지 못했습니다. 잠시 뒤 다시 시도해 주세요.' }),
+    ])
   })
 
   it('추적 캐릭터가 하나도 남지 않으면 진입 단계를 다시 판정해 캐릭터 설정으로 보낸다', async () => {

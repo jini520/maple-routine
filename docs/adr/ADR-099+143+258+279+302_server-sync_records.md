@@ -2579,7 +2579,8 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
 |---|---|
 | `features/server-sync/__tests__/registry.spec.ts` | 결정 1 · 2: 대기 표에 남은 처치 · 가계부 · 강화 합계 · 드롭 판매가 줄을 실제 레지스트리로 훑으면 원본을 읽지도 서버에 보내지도 않고 지우는지 |
 | `features/server-sync/__tests__/kick.spec.ts` | 결정 4: 도는 중에 다시 깨우면 겹쳐 돌지 않고 끝난 뒤 한 번 더 도는지 |
-| `features/auth/__tests__/server-identity.spec.ts` | 결정 6 · 67: 신원 헤더 하나만 싣고 기기 계정 id 를 싣지 않는지, 키 사용자는 메인 키의 넥슨 계정에서 본 메이플 ID 가운데 정렬해 맨 앞의 것의 해시로 밝히고 키 해시를 싣지 않는지, 기기 변환이 기록을 막는 동안에도 신원을 읽는지 본다 |
+| `features/auth/__tests__/server-identity.spec.ts` | 결정 6 · 67: 신원 헤더 하나만 싣고 기기 계정 id 를 싣지 않는지, 키 사용자는 메인 키의 넥슨 계정에서 본 메이플 ID 가운데 정렬해 맨 앞의 것의 해시로 밝히고 키 해시를 싣지 않는지 본다 |
+| `storage/sqlite/__tests__/character-owners-real-sqlite.test.ts` | 결정 67: 신원이 읽는 메인 키의 메이플 ID 를 기기 변환이 기록을 막는 동안에도 읽는지 본다 |
 | `features/server-sync/__tests__/sweep.spec.ts` · `src/server/__tests__/write.spec.ts` | 결정 10: 응답이 없으면 횟수를 세지 않고 거절이면 세어 다섯 번째에 버리는지, 쓰기 호출이 응답 없음과 거절을 가르는지 본다 |
 | `features/server-sync/__tests__/accounts.spec.ts` · `src/server/__tests__/accounts.spec.ts` | 결정 67: 메이플 ID 알리기를 메인 신원으로만 보내는지, 부계정 등록 · 해제가 메이플 ID 해시만 싣고 409 의 code 넷을 서버의 코드 목록으로 가르는지 본다 |
 | `storage/sqlite/__tests__/device-conversion-real-sqlite.test.ts` · `storage/__tests__/preferences-conversion.spec.ts` | 결정 3: 기기 변환이 옛 대기 줄과 `serverBackfill` 을 지우는지 본다 |

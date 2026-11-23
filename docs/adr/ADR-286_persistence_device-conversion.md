@@ -395,7 +395,7 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 | `storage/__tests__/preferences-conversion.spec.ts` | 결정 7: 키마다 새 모양으로 바뀌는지, 두 번 돌려도 같은지, 못 찾은 항목만 빠지는지, 이름으로 적힌 옛 수동 추적 항목을 줄 id 로 옮기는지 본다. 결정 8: `serverBackfill` 을 지우는지 본다. 결정 1: 옛 월드 공유 원장을 `character_accounts` · `character_profiles` 로 찾은 메이플 ID 와 월드로 나눠 새 모양으로 적는지, 못 찾은 추적 캐릭터가 있으면 옛 원장을 남기는지, 표식이 있으면 다시 돌지 않는지 본다 |
 | `storage/__tests__/manual-tracked-content.spec.ts` · `shared-progress-cache.spec.ts` · `party-appointments.spec.ts` · `boss-profit-calculator-records.spec.ts` · `figure-motions.spec.ts` · `mvp-grade-prefs.spec.ts` | 결정 7: 저장소가 새 모양으로 적고 화면이 드는 모양으로 되읽는지, 게임 데이터에 없는 줄 id 의 항목을 건너뛰는지, 표에 없는 key 를 적으면 던지는지 본다 |
 | `storage/__tests__/record-hold.spec.ts` | 결정 1: 변환한 키를 읽고 쓰는 저장소가 변환이 끝나기를 기다리는지, 하단바 순서는 기다리지 않고 두 모양을 다 읽는지 본다 |
-| `features/auth/__tests__/server-identity.spec.ts` | 결정 1: 기기 변환이 기록을 막는 동안에도 키 사용자의 서버 신원을 읽는지 본다 |
+| `storage/sqlite/__tests__/character-owners-real-sqlite.test.ts` | 결정 1: 서버 신원이 읽는 메인 키의 메이플 ID 를 기기 변환이 기록을 막는 동안에도 읽는지 본다 |
 | `lib/__tests__/contents.spec.ts` | 결정 7: 컨텐츠 key 와 줄 id 가 서로 오가는지 본다 |
 | `storage/sqlite/__tests__/convert-boss-tables-real-sqlite.test.ts` | 결정 1: 변환 뒤 DB 를 다시 열어도 옛 표 · 옛 인덱스를 다시 만들지 않고 열리는지 본다 |
 | `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` | 결정 5: 장비가 아닌 아이템을 다시 넣으면 같은 줄의 개수를 더하는지 본다. 결정 9: 기록의 메이플 ID · 월드로 기타 조각의 남은 수를 월드마다 세는지, 캐릭터 기록은 그 캐릭터의 메이플 ID 로 세는지 본다 |
