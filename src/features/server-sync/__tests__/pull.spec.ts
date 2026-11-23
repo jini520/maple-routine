@@ -82,9 +82,11 @@ it('신원이 없으면 받지 않는다', async () => {
   const { deps } = setup([])
   ;(deps.identity as jest.Mock).mockResolvedValue(null)
 
-  await pullServerSync(deps)
+  const summary = await pullServerSync(deps)
 
   expect(deps.pull).not.toHaveBeenCalled()
+  // 처음 동기화는 끝까지 받았을 때만 올린다. 신원이 없어 받지 않은 것을 끝까지 받은 것으로 읽으면 받기 없이 올린다.
+  expect(summary.finished).toBe(false)
 })
 
 it('기억한 번호를 보내고, 받은 줄을 표 차례로 다 넣은 뒤에 응답의 번호를 적는다', async () => {
@@ -117,7 +119,7 @@ it('기억한 번호를 보내고, 받은 줄을 표 차례로 다 넣은 뒤에
     `cursors ${JSON.stringify({ nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 10 } })}`,
   ])
   expect(current()).toEqual(response().cursors)
-  expect(summary).toMatchObject({ applied: 4, skipped: 0, stopped: false })
+  expect(summary).toMatchObject({ applied: 4, skipped: 0, stopped: false, finished: true })
   expect(deps.afterRecordsChanged).toHaveBeenCalledWith(
     new Set(['bossProfitEntries', 'bossDrops', 'enhancementSettledDays', 'mapleIdNames']),
   )
@@ -167,7 +169,7 @@ it('`hasMore` 인데 번호가 그대로면 멈춘다', async () => {
   const summary = await pullServerSync(deps)
 
   expect(deps.pull).toHaveBeenCalledTimes(2)
-  expect(summary.stopped).toBe(true)
+  expect(summary).toMatchObject({ stopped: true, finished: false })
 })
 
 it('응답이 없거나 요청 전체가 거절되면 번호를 두고 멈춘다', async () => {
@@ -176,7 +178,7 @@ it('응답이 없거나 요청 전체가 거절되면 번호를 두고 멈춘다
 
     const summary = await pullServerSync(deps)
 
-    expect(summary.stopped).toBe(true)
+    expect(summary).toMatchObject({ stopped: true, finished: false })
     expect(deps.setCursors).not.toHaveBeenCalled()
   }
 })

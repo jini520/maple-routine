@@ -26,6 +26,7 @@ const resolver: NexonIdResolver = {
 const owners: RecordOwners = {
   mapleIdOfOcid: async (ocid) => (ocid === RECEIVER ? OTHER_MAPLE : KNOWN_OCIDS.includes(ocid) ? MAPLE : null),
   mapleIdOfNexonAccount: async (id) => (id === 'nexon-account-1' ? MAPLE : null),
+  mapleIdOfProfitEntry: async () => MAPLE,
 }
 
 /** 서버가 받기에 싣는 꼴. 올린 몸에 동기화 칸을 붙이고, 빼고 올린 빈 칸은 빈 값으로 돌려준다. */

@@ -83,6 +83,8 @@ export interface PullSummary {
   skipped: number
   /** 응답이 없거나 요청 전체가 거절되거나 번호가 그대로라 멈췄다 */
   stopped: boolean
+  /** `hasMore` 가 꺼질 때까지 받았다. 처음 동기화는 이것이 참일 때만 올린다 */
+  finished: boolean
 }
 
 function resolverOf(lookup: NexonIdLookup): NexonIdResolver {
@@ -168,7 +170,7 @@ async function applyPage(
  * 신원이 없으면 아무것도 안 한다. 키를 지웠거나 로그인 전인 상태다.
  */
 export async function pullServerSync(deps: PullDeps = DEFAULT_DEPS): Promise<PullSummary> {
-  const summary: PullSummary = { pages: 0, applied: 0, skipped: 0, stopped: false }
+  const summary: PullSummary = { pages: 0, applied: 0, skipped: 0, stopped: false, finished: false }
   const headers = await deps.identity()
   if (headers === null) return summary
   // 기기 변환 전의 기록은 칸이 서버와 달라 넣을 수 없다.
@@ -210,7 +212,10 @@ export async function pullServerSync(deps: PullDeps = DEFAULT_DEPS): Promise<Pul
 
       await applyPage(deps, response.records, resolver, summary, changed)
       await deps.setCursors({ nexonAccount: response.cursors.nexonAccount, mapleIds: response.cursors.mapleIds })
-      if (!response.hasMore) break
+      if (!response.hasMore) {
+        summary.finished = true
+        break
+      }
       // 서버가 같은 쪽을 계속 주면 끝나지 않는다.
       if (sameCursors(sent, response.cursors)) {
         summary.stopped = true

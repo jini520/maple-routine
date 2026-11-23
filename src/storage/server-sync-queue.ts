@@ -195,6 +195,20 @@ export async function enqueueChangedPreferenceRecords(
 }
 
 /**
+ * 처음 동기화가 Preferences 기록을 견주지 않고 넣는다. 이미 대기 줄이 있는 기록은 그 줄을 둔다. 동기화를 깨우지 않는다. 부르는 처음
+ * 동기화가 곧 올린다.
+ *
+ * @param createdAt 넣는 줄의 `created_at`. 처음 올리기의 줄을 이 시각으로 가른다
+ */
+export async function enqueueServerSyncRecords(
+  db: SqliteDbConnection,
+  records: readonly { table: ServerSyncTable; recordId: string }[],
+  createdAt: string,
+): Promise<void> {
+  for (const record of records) await db.run(ENQUEUE_SQL, [record.table, record.recordId, createdAt, record.recordId])
+}
+
+/**
  * 설정 칸 하나를 바꾼 저장이 부른다. 서버가 실은 칸만 고쳐서 칸마다 넣는다.
  *
  * @param column 서버 `account_settings` 의 칸 이름(낙타 표기)
