@@ -648,6 +648,13 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   비운다.
 - 요율이 바뀌는 줄은 받는 메소(`crystal_received_meso`)를 다시 계산한다(사용자 확인 2026-11-18). 그 날짜에 실버 이상이던 메이플
   ID 의 줄은 3% 그대로라 바뀌지 않고, 일반 · 브론즈였거나 등급을 고르지 않은 메이플 ID 의 줄은 3% 에서 5% 로 바뀐다.
+- 주간 보스 수익 계산기는 저장한 날이 아니라 오늘을 센다. 가격도 늘 지금 가격이다([[ADR-074]] 결정 3). 그래서 요율이 빈(자동)
+  보스는 그 캐릭터가 속한 메이플 ID 의 오늘 등급 요율로 센다. 보스 줄의 몫 · 캐릭터 합계 · 기록 목록의 합계가 모두 이 요율이다.
+  - 계산기의 파티 모달은 보스 관리의 설정 자리처럼 오늘 등급을 `자동` 의 명패와 요율로 받는다. 요율이 빈 보스는 `자동` 이 켜진
+    채로 열린다.
+  - 모달에서 `자동` 으로 적용하면 계산기는 요율을 비운 채 둔다. 계산기는 수수료 자동을 따로 저장하지 않고 요율이 비었는지로
+    가르기 때문이다(결정 57). 모달이 내보내는 등급 요율을 그대로 담으면 손으로 고른 요율이 된다.
+  - 보스 관리 값을 가져올 때도 같다. 자동인 파티 설정은 요율을 비워 가져온다.
 
 ### 결정 26. 드롭 기록과 시세를 재는 판매가는 다른 표에 둔다 (사용자 선택 2026-11-18)
 
@@ -1108,6 +1115,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 이름이 같아도 그림이 다르면 다른 코어다(사용자 지정 2026-11-18). `시그너스 팔랑크스 VI` 는 여섯 직업에 있고 그림이 여섯
   장이다. 이런 이름이 열 개다. 구분하려고 이름을 따로 짓지 않는다. 이름 칸에는 넥슨이 주는 이름을 그대로 두고, 줄 id 와 직업으로
   구분한다. 넥슨 응답과 맞출 때는 캐릭터의 직업이 가진 코어 안에서 이름으로 찾는다.
+- 앱의 가계부 줄 그림(`features/cashbook/row-icon.ts`)은 헥사 스킬 품목이 가리키는 코어 줄 id 로 코어를 찾는다. 그 줄 id 는
+  저장할 때 캐릭터의 직업이 가진 코어에서 고른 줄이다(결정 44). 이름으로 찾으면 이름이 같은 코어 가운데 표에 먼저 선 직업의
+  그림이 나온다. 캐릭터의 직업을 몰라 줄 id 를 고르지 못하고 코어 이름만 남은 품목(결정 44)은 이름으로 찾는다.
 - 코어 줄이 종류 여섯 가운데 하나를 직접 가리킨다. 넥슨 타입 글자 칸 `api_type` 은 코어 줄에서 없앤다. 넥슨 타입은 종류 줄에
   있다. 이름 표 `hexa_core_name_kinds` 는 없앤다.
 - 종류 표의 이름은 끝말 규칙대로 `hexa_core_types` 다(결정 32). 넥슨이 주는 값의 이름 `hexa_core_type` 과 말이 겹치지만, 종류 표가
@@ -1635,6 +1645,12 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   시세와 메소마켓 수수료율은 기록할 때의 값이다. 헥사 칸 여섯은 헥사 강화 시트의 입력이고, `inventory_item_id` 는 인벤토리의
   남은 개수를 세는 연결이다.
 - 기기 표도 1.0.15 의 기기 변환(결정 19)에서 같은 이름으로 바꾸고 차례 칸을 없앤다.
+- 앱은 게임 데이터의 지출 항목 통화(`spendItems` 의 `currency`)를 `maple_point` · `meso` 로 읽는다. 옛 값 `point` 가 든 칸은 계약을
+  어긴 칸이라 받지 않는다. 그래서 계약 판(`GAME_DATA_CONTRACT`)을 올린다. 기기에 남은 옛 사본은 켤 때 버리고 새로 받는다.
+  - 기기의 기록에는 이 값이 남는 곳이 없다. 지출 기록은 통화를 적지 않고 어느 금액 칸(`amount_maple_point` 등)이 찼는지로
+    가르기 때문이다. 그래서 기기 변환([[ADR-286]])에서 바꿀 값도 없다.
+  - 손입력 시트의 통화 고르개 값(`lib/cashbook/free-currency.ts`)은 이 enum 이 아니다. 저장하지 않는 화면 안의 값이라 그대로 둔다.
+  - 앱과 서버의 develop 은 함께 바뀌어야 한다. 한쪽만 바뀌면 앱이 받는 지출 목록 칸이 계약을 어겨 게임 데이터 받기가 실패한다.
 
 ### 결정 54. 조각 사용 줄은 메이플 ID 와 월드를 적지 않고, 사냥 입력의 켠 효과는 참 · 거짓 칸으로 나눈다 (사용자 선택 2026-11-19)
 
@@ -2062,6 +2078,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 - 바스켓의 무게(`index_weight`)는 둔다(사용자 선택). 다시 계산할 수 있는 값이지만 바스켓을 정한 날의 구성을 그대로 보인다.
 - 반지 레벨 칸은 없앤다(결정 28). 운영 143줄이 레벨 줄로 옮겨진다. 앱이 받는 응답의 `ringLevel` 과 요청의 `?ring=`, 응답을 찾는
   열쇠의 반지 레벨 조각도 함께 없어진다.
+  - 앱은 시세의 `itemKey` 로 아이템 표의 줄을 찾는다. 반지는 레벨 줄의 key(`restraint_ring_lv4`)로 오므로, 레벨 줄이면 원래
+    반지의 이름 뒤에 레벨을 붙여 보인다(`리스트레인트 링 4레벨`). 지금까지 보이던 이름과 같다.
+  - 상세는 그 key 와 월드로만 부른다. 기기에 저장하는 상세 쿼리의 열쇠에서도 반지 레벨을 뺀다.
 - `maspi_basket.base_price_meso` 의 형을 `bigint` 로 바꾼다. 운영 26줄이 모두 정수다.
 - 한 줄의 기준이 바뀐다. 기준가 표는 `date` · `item_id` · `scope_type` · `scope_id`, 판정 표는 `date` · `user_id`, 바스켓은
   `item_id` · `scope_type` · `scope_id` 다.
@@ -2178,7 +2197,8 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
     `itemId` · `quantity` · `validFrom` · `validUntil`)를, `dropBoxes` 칸은 `dropBoxes`(`id` · `itemId` · `ringLevelMin` ·
     `ringLevelMax`)와 `dropBoxContents`(`boxId` · `itemId`)를, `crystalPrices` 칸은 `bossCrystalPrices`(`bossDifficultyId` ·
     `priceMeso` · `validFrom` · `validUntil`)를 싣는다. 배열의 차례가 드롭 시트의 타일 차례이고 상자를 열면 서는 후보 차례다.
-    직접 완료 경로(`GET /v1/manual-completion`)는 `bossManualCompletionPeriods`(`bossId` · `fromDate`)를 낸다.
+    직접 완료 경로(`GET /v1/manual-completion`)는 `bossManualCompletionPeriods`(`bossId` · `fromDate`)를 낸다. 앱은 보스 줄 id 로
+    게임 데이터의 보스를 찾아 그 보스가 열렸는지 가른다([[ADR-037]] 결정 9).
   - 첫 묶음의 `bosses` 칸은 난이도 줄을 보스 줄 안의 `difficulties` 로 냈다. 이것도 결정 59 대로 표 이름의 배열
     `bossDifficulties`(줄마다 `bossId`)로 뺀다. 둘째 묶음의 월드 기간을 `worldOpenPeriods` 로 뺀 것과 같은 일이다.
   - 옮길 때 고정 보상의 수량은 글자 끝의 `개` 를 떼고 정수로 바꾼다(결정 33). 2026-11-20 운영의 154줄이 모두 숫자이거나 숫자
@@ -2909,13 +2929,14 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
 | `storage/sqlite/__tests__/server-sync-unmatched-real-sqlite.test.ts` | 결정 12 · 67: `#` 를 붙여 넣은 값 가운데 `character_accounts` 에 짝이 생긴 것을 SQLite 기록 표와 Preferences 기록(키 · 열쇠 · 약속 · 계산기 기록)에서 원문으로 바꾸고 대기 표에 넣지 않는지, 짝이 없는 값과 유일 기준이 겹치는 줄은 두는지 본다 |
 | `features/server-sync/__tests__/pull.spec.ts`(해제) · `features/account-manage/__tests__/store.spec.ts`(해제) | 결정 67 · [[ADR-101]] 결정 2 · 6: 앞 받기의 목록에 있던 메이플 ID 가 빠지면 그 메이플 ID 를 든 부계정 키를 지우고 그 계정의 캐릭터를 추적에서 빼며 서버 해제를 부르지 않는지, 그 메이플 ID 의 기록을 대기 중인 것까지 비우는지, 넥슨 계정 줄이 바뀌었거나 앞 목록이 없으면 견주지 않는지, 이 기기에서 해제하면 그 메이플 ID 의 기록과 번호를 지우는지 본다 |
 | `features/schedule-sync/__tests__/schedule-query.spec.ts`(동기화) | 결정 9 · 67: 회차가 넥슨에서 받으면 동기화를 깨우고, 하나도 받지 못한 회차와 배경 실행의 회차는 깨우지 않는지 본다 |
+| `lib/__tests__/boss-profit-calculator.spec.ts` · `app/utility/__tests__/BossProfitCalculatorScreen.test.tsx` · `features/boss-profit-calculator/__tests__/store.spec.ts` | 결정 25: 계산기에서 요율이 빈 보스는 넘긴 등급 요율로, 요율이 있는 보스는 그 요율로 세는지, 화면의 보스 줄 · 캐릭터 합계가 그 캐릭터의 오늘 등급 요율로 세는지, 파티 모달이 오늘 등급의 `자동` 으로 열리고 `자동` 으로 적용하면 요율을 비워 두는지, 보스 관리의 자동 설정을 가져오면 요율을 비우는지 본다 |
 | `lib/__tests__/drop-item-ids.spec.ts` · `storage/sqlite/__tests__/convert-boss-tables-real-sqlite.test.ts` · `storage/sqlite/__tests__/drop-record-id-real-sqlite.test.ts` · 서버 `drop-prices/drop-prices.repository.spec.ts` | 결정 28: 드롭의 상자를 수익 건의 난이도와 아이템으로 드롭 표에서 찾는지(기기가 아이템 줄 id 를 되짚을 때와 관리 화면의 획득처), 직접 떨어진 연마석과 상자에서 나온 연마석이 한 수익 건에 함께 들어가는지 본다 |
 | (서버 테스트를 더한다) | 결정 30: 시세가 따로 둔 줄의 판매가를 원래 아이템으로 모으는지 |
 | (구현 때 더한다) | 결정 30: 연결이 두 번 이어지는 줄을 받지 않는지 |
 | (구현 때 더한다) | 결정 31: 처치한 난이도에서 얻을 수 있는 드롭이 남고 못 얻는 드롭이 지워지는지, 경로만 다른 연마석이 같은 물건의 다른 줄로 바뀌는지 |
 | `features/content-scheduler/__tests__/content-completion.test.ts` · `app/content-scheduler/__tests__/ContentCards.test.tsx`(완료 배지) · `features/remaining-schedule/__tests__/remaining-schedule.spec.ts`(카드와 같은 완료 판정) · 서버 `contents/contents.repository.spec.ts` | 결정 34: 컨텐츠의 `check_type` 과 완료 횟수로 완료를 세는지, 카드의 완료 배지와 진행 링 · 남은 스케줄이 같은 조건으로 완료를 가르는지, 완료 횟수가 `count_only` 가 아닌 줄에 들어가지 않는지(서버 DB 의 `CHECK`) 본다 |
 | `lib/__tests__/hexa-matrix.test.ts` | 결정 35: 한 직업의 코어 목록에 공용 코어가 들어가고 종류의 차례가 지금과 같은지 본다 |
-| (구현 때 더한다) | 결정 35: 이름이 같고 그림이 다른 코어가 직업마다 제 그림으로 나오는지. 가계부 행 아이콘(`features/cashbook/row-icon.ts`)은 아직 코어를 이름으로 찾는다 |
+| `features/cashbook/__tests__/row-icon.spec.ts` · `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts`(코어 줄 id) | 결정 35: 이름이 같고 그림이 다른 코어가 코어 줄 id 로 직업마다 제 그림으로 나오고 줄 id 가 없는 품목은 이름으로 찾는지, 헥사 스킬 기록을 읽으면 저장할 때 캐릭터의 직업으로 고른 코어 줄 id 가 함께 오는지 본다 |
 | `features/enhancement-history/__tests__/spending.spec.ts` · `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` · `features/cashbook/__tests__/records.spec.ts` · `features/cashbook/__tests__/row-icon.spec.ts` · `storage/sqlite/__tests__/convert-enhancement-tables-real-sqlite.test.ts`(다시 받기) | 결정 37: 장비 표에 있는 장비와 없는 장비가 모두 이름으로 한 줄씩 묶이는지, 읽을 때 이름으로 장비 그림을 찾는지, 기기 변환 뒤에 같은 날을 다시 받아도 줄이 늘지 않고 변환한 줄의 id 를 지키는지 본다 |
 | `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` · `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(기억한 레벨) · `lib/__tests__/cashbook-entry-ids.spec.ts` | 결정 38: 종류와 줄 id 로 기억을 읽고 쓰는지(변환이 대상 줄 id 로 옮기는 것 포함), 이름이 같은 코어가 직업마다 다른 줄로 기억되는지 본다 |
 | (서버 테스트를 더한다) | 결정 38: 종류가 말하는 표에 없는 id 를 받지 않는지 |
@@ -2931,6 +2952,7 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
 | (서버 테스트를 더한다) | 결정 49: 가계부 기록에서 캐릭터와 메이플 ID 가 어긋나면 거절하는지, 올린 메모와 저장한 시각이 받기의 응답에 그대로 오는지 |
 | `lib/__tests__/scheduler-merge.spec.ts` · `features/content-scheduler/__tests__/content-completion.test.ts` · 서버 `contents/contents.repository.spec.ts` | 결정 52: 넥슨이 최대 횟수를 0 으로 줘도 표의 `max_count` 로 완료와 분모를 정하는지, `count_only` 가 아닌 줄에 `max_count` 가 들어가지 않는지, 표에 없는 컨텐츠가 넥슨의 `type` 으로 판정되는지 본다 |
 | `storage/__tests__/spend.spec.ts`(품목 차례) · `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(같은 종류 품목) · 서버 `sync/push.repository.spec.ts`(딸린 줄) | 결정 53: 추가 리워드를 두 종류로 받은 기록의 품목이 들어간 차례와 상관없이 종류의 차례로 읽히는지, 한 기록에 같은 종류의 품목을 두 줄 받지 않는지 본다 |
+| `lib/__tests__/spend-catalog.test.ts`(통화) · `app/cashbook/__tests__/SpendSheet.test.tsx`(메포 항목) | 결정 53: 지출 항목의 통화를 `maple_point` · `meso` 로 읽고 옛 값 `point` 가 든 칸은 받지 않는지, 메이플포인트 항목을 고르면 메포 금액 칸에 적는지 본다 |
 | `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(기타 조각 · 딸린 입력) · `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` · `storage/__tests__/income.spec.ts` · 서버 `sync/push.repository.spec.ts`(딸린 줄) | 결정 54: 기기 변환 뒤에 기타 조각의 남은 개수가 변환 전과 같은지, 한 기록이 같은 보관에서 두 줄로 가져가지 못하는지, 켠 효과가 적힌 차례와 상관없이 같은 칸으로 옮겨지는지 본다 |
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` · 서버 `users/nexon-accounts.repository.spec.ts` | 결정 55: 다시 받은 날의 줄을 분류로 갈아 끼워도 다른 API 종류의 줄이 지워지지 않는지, 넥슨 계정 줄을 합칠 때 굳은 날이 한 줄로 남는지 본다 |
 | `storage/__tests__/preferences-conversion.spec.ts`(약속 · 계산기 기록) · `storage/__tests__/party-appointments.spec.ts` · 서버 `users/nexon-accounts.repository.spec.ts` | 결정 57: 기기 변환 뒤에 약속이 주차 값과 난이도 줄 id 로 적히고 변환 전 모양으로 되읽히는지, 균등 분배와 % 로 나눠떨어지는 비율의 계산기 기록이 변환 전과 같은 금액으로 열리는지, 넥슨 계정 줄을 합칠 때 설정이 한 줄로 남는지 본다 |
@@ -2938,11 +2960,12 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
 | 서버 `cli/move-old-db.spec.ts`(심볼 · 사냥터 · 강화 비용 · MVP) · `lib/__tests__/symbol-costs.test.ts` · `lib/__tests__/hunting-grounds.spec.ts` · `lib/enhancement/__tests__/cost.spec.ts` · `lib/game-data/__tests__/sections.spec.ts` | 결정 59: 이름을 바꾼 칸의 값이 옮긴 뒤에도 같은지, 응답의 배열 이름과 줄 id 로 앱이 심볼 · 사냥터 · 강화 비용을 지금과 같이 읽는지 본다 |
 | 서버 `cli/move-old-db.spec.ts`(컨텐츠 · 가계부 기준 표) · `app/today/__tests__/view-model.test.ts` · `features/remaining-schedule/__tests__/remaining-schedule.spec.ts` | 결정 60: 옮긴 뒤 공유 컨텐츠 위젯과 남은 스케줄의 줄인 이름이 옮기기 전과 같은지(서버는 공유 줄의 짧은 이름을 위젯 글자로 옮기고 앱은 표의 짧은 이름을 그린다), 지역 아이콘을 쓰던 타일의 그림 두 칸이 한 칸으로 옮겨지는지 본다 |
 | 서버 `cli/move-old-db.spec.ts`(크롭 · 공지 · FAQ · 게임 규칙) · `lib/__tests__/image-crop.test.ts` · `lib/faq/__tests__/faqs.spec.ts` · `lib/__tests__/game-rules.spec.ts` | 결정 61: 크롭 글자를 숫자 셋으로 옮기고 앱이 그 숫자로 자리를 그리는지, 규칙 아홉의 값이 한 줄의 칸으로 옮겨지는지, FAQ 답을 빈 줄로 이어 앱이 같은 문단으로 나누는지 본다 |
+| `features/enhancement-history/__tests__/anomalies.spec.ts` | 결정 61: 강화 이상 보고의 줄이 표의 칸 이름(`apiType` · `reason`)으로 서고 `itemKey` 를 싣지 않는지 본다 |
 | 서버 `identity/identity.guard.spec.ts` · `users/users.repository.spec.ts` · `users/nexon-accounts.repository.spec.ts` · `auth/sessions.repository.spec.ts` | 결정 62: 메이플 ID 해시로 온 요청이 같은 넥슨 계정 줄을 찾는지(줄을 합친 뒤에도), 신원 가드를 거치는 요청이 세션의 `last_used_at` 을 밀어 주는지 본다 |
 | (구현 때 더한다) | 결정 62: 세션 가드(`SessionGuard`)만 거치는 요청(`POST /v1/friends/stream`)도 `last_used_at` 을 밀어 주는지 |
 | 서버 `cli/move-old-db.spec.ts`(시세) · `drop-market/market-publish.spec.ts` | 결정 63: 옮긴 뒤 시세의 줄 수와 기준가가 같은지(시세 하나에 한 줄), 응답의 전일 대비가 두 종가의 차이와 같은지 본다 |
 | (서버 테스트를 더한다) | 결정 63: 여러 날 · 반지 레벨 · 뺀 줄이 섞인 시세를 옮겨도 시세마다 줄 수와 날마다 기준가가 같은지, 거래권으로 재던 소비 아이템의 지난 줄이 거래권 줄을 가리키는지 |
-| (구현 때 더한다) | 결정 63: 앱이 반지 레벨 없는 새 시세 응답을 읽는지. `server/market.ts` 는 아직 `ringLevel` 이 없는 항목을 버린다 |
+| `server/__tests__/market.spec.ts` · `features/market/__tests__/catalog.test.ts` · `app/utility/__tests__/MaspiScreen.test.tsx` · `app/utility/__tests__/MaspiItemScreen.test.tsx` | 결정 63: 반지 레벨 칸이 없는 새 시세 응답의 줄을 받고 상세를 아이템 key 와 월드로만 부르는지, 반지 레벨 줄의 key 면 원래 반지 이름에 레벨을 붙이는지, 목록의 줄이 그 key 로 상세를 열고 상세가 그 key 로 이름을 세우는지 본다 |
 | `features/device-conversion/__tests__/run.spec.ts`(점검) · `features/server-maintenance/__tests__/store.spec.ts`(풀리기 기다리기) · `__tests__/boot-order.test.tsx`(점검을 기다리는 변환) | 결정 64: 돌 단계가 남았으면 점검 잠금이 풀린 뒤에 기기 변환을 시작하고 그동안 기록 접근도 기다리는지, 돌 것이 없으면 점검을 묻지 않는지, 잠금이 풀리기를 기다리는 약속이 답을 못 받으면 지금 상태를 따르는지, 변환이 점검을 기다리는 동안 시작 화면이 점검 잠금 화면을 덮지 않는지 본다. 첫 동기화는 `features/server-sync/__tests__/run.spec.ts` 가 본다 |
 | (구현 때 더한다) | 결정 65: 운영 덤프를 새 표로 옮긴 뒤 표마다 줄 수가 결정들이 적은 대로인지 |
 | 서버 `cli/move-old-db.spec.ts` | 결정 19 · 61 · 65: 옮긴 그림의 분류 · 파일 이름 · 확장자를 이으면 옛 경로의 파일 이름이 되고 줄 id 가 그대로인지, 시즌 보스는 표시가 켜지고 난이도의 주기가 주간으로, 월간 보스는 난이도의 주기가 월간으로 옮겨지는지, 폴더를 분류로 읽지 못하는 그림이 있으면 아무것도 옮기지 않는지 |
@@ -2956,6 +2979,7 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
 | 서버 `drop-items/drop-items.repository.spec.ts`(상자) | 결정 65: `dropBoxes` 칸이 상자와 내용물을 표 이름의 배열 둘에 아이템 줄 id 로 상자 안 차례대로 내는지, 관리 줄은 아이템 key 로 내는지 |
 | 서버 `bosses/bosses.repository.spec.ts`(게임 데이터 칸) | 결정 59 · 65: `bosses` 칸이 난이도 줄을 보스 줄 안에 넣지 않고 배열 `bossDifficulties` 에 보스 줄 id 와 함께 내는지 |
 | 서버 `cli/move-old-db.spec.ts`(보스 기준 표) | 결정 28 · 33 · 65: 드롭 표 · 상자 · 결정석 가격 · 직접 완료를 줄 id 그대로 새 칸 이름으로 옮기는지, 개수 글자의 `개` 를 떼고 정수로 옮기며 다른 꼴이면 멈추는지, 연마석을 가리키던 상자 내용물만 상자 연마석 줄로 바꾸는지 |
+| `server/__tests__/manual-completion.spec.ts` · `lib/boss/__tests__/manual-completion.spec.ts` | 결정 65: 직접 완료 응답의 `bossManualCompletionPeriods` 를 보스 줄 id 와 여는 날로 읽고, 보스 key 의 줄 id 로 그 보스가 열렸는지 가르는지 본다 |
 | 서버 `contents/contents.repository.spec.ts` | 결정 34 · 59 · 60 · 65: `contents` 칸이 표 이름의 배열 둘에 분류 줄 id 와 표의 칸 이름으로 내는지, 최대 횟수가 완료 조건이 `count_only` 인 줄에만 들어가는지(DB `CHECK`), 그림 표에 없는 그림을 거절하는지 |
 | 서버 `cli/move-old-db.spec.ts`(컨텐츠) | 결정 34 · 52 · 60 · 65: 완료 조건을 결정 34 의 표대로 정하는지, 최대 횟수를 횟수로 세는 줄에만 남기고 덮는 값을 쓰는지, 공유 줄의 짧은 이름을 위젯 글자로 옮기는지, 분류 칸을 새 이름으로 옮기는지 |
 | 서버 `spend-catalog/spend-catalog.repository.spec.ts` | 결정 59 · 60 · 65: `spendCatalog` 칸이 표 이름의 배열에 묶음 · 타일 · 리워드 종류를 줄 id 로 잇는지, 관리 줄은 key 로 내는지, 타일 그림이 한 칸이고 그림 표에 없는 그림을 거절하는지 |
@@ -3036,3 +3060,8 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
   묻는 때와 기다리는 동안의 화면은 [[ADR-286]] 결정 1 에 적었다. 결정 64 · 67 과 [[ADR-261]] 결정 5 에서 따라 나와 Claude 가 정했다
 - (2026-11-24) 테스트 표의 `(구현 때 더한다)` 행을 실제 테스트로 채웠다. 확인하지 못한 몫은 서버에 테스트를 더할 행과 구현 때 더할 행으로
   나눠 남겼다. 결정 34 · 42 · 45 · 48 · 49 · 52 · 62 에 남아 있던 설계 때의 `지금은` 문장을 구현된 코드에 맞췄다
+- (2026-11-24) 결정 25 · 35 · 53 · 63 의 앱 몫을 구현했다. 결정 25 에 계산기가 요율이 빈 보스를 그 캐릭터의 오늘 등급 요율로 세는 것과
+  파티 모달 · 가져오기에서 자동을 요율을 비워 두는 것으로 다루는 것을, 결정 35 에 가계부 줄 그림을 코어 줄 id 로 찾는 것을, 결정 53 에
+  앱이 통화 값 `maple_point` 를 읽고 계약 판을 올리는 것과 기기에 바꿀 값이 없다는 것을, 결정 63 에 반지 레벨 줄의 key 로 이름을
+  세우는 것을 적었다. 결정 61 · 65 에서 앱이 따라가지 못한 강화 이상 보고의 몸과 직접 완료 응답 읽기를 함께 고쳤다. 모두 각 결정과
+  [[ADR-074]] 결정 3 · 13 에서 따라 나와 Claude 가 정했다
