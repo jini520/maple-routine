@@ -36,7 +36,19 @@ const {
 } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
 
 jest.mock('../../../server/nexon-auth', () => ({ revokeNexonSession: jest.fn() }))
-jest.mock('../../server-sync/forget', () => ({ requestAccountDeletion: jest.fn(), clearUnsentServerData: jest.fn() }))
+jest.mock('../../server-sync/forget', () => ({
+  requestAccountDeletion: jest.fn(),
+  syncBeforeSignOut: jest.fn(),
+  clearUnsentUsageEvents: jest.fn(),
+}))
+// 앞 사람의 기록을 가리는 일은 `server-sync/__tests__/owner-switch.spec.ts` 가 본다. 여기서는 저장을 맡기는지만 본다.
+jest.mock('../../server-sync/owner-switch', () => ({
+  switchServerSyncOwner: jest.fn(async (_next: unknown, save: () => Promise<void>) => {
+    await save()
+    return true
+  }),
+}))
+const { switchServerSyncOwner: switchServerSyncOwnerMock } = jest.requireMock('../../server-sync/owner-switch') as Record<string, jest.Mock>
 jest.mock('../nexon-login', () => ({ signInWithNexon: jest.fn() }))
 jest.mock('../current-credential', () => ({ currentCredential: jest.fn() }))
 jest.mock('../reentry-account-id', () => ({ reusableNexonAccountId: jest.fn() }))
@@ -710,18 +722,22 @@ describe('useAuthStore.signOut', () => {
     expect(signOutAuthMock).toHaveBeenCalledTimes(1)
   })
 
-  it('서버 세션과 못 보낸 것을 거둔 뒤에 기기를 지운다', async () => {
+  // 세션을 거둔 뒤에는 그 세션으로 올릴 수 없다. 대기 표는 비우지 않는다.
+  it('남은 기록을 올린 뒤 서버 세션을 거두고 못 보낸 사용 로그를 비운 다음 기기를 지운다', async () => {
     getAuthConfigMock.mockResolvedValue({
       login: { type: 'login', id: 'account-login', session: '세션값' },
       mainKeyId: null,
       apiKeys: [],
     })
     const 순서: string[] = []
+    forget.syncBeforeSignOut.mockImplementation(async () => {
+      순서.push('올리기')
+    })
     revokeNexonSessionMock.mockImplementation(async () => {
       순서.push('세션')
     })
-    forget.clearUnsentServerData.mockImplementation(async () => {
-      순서.push('못 보낸 것')
+    forget.clearUnsentUsageEvents.mockImplementation(async () => {
+      순서.push('사용 로그')
     })
     signOutAuthMock.mockImplementation(async () => {
       순서.push('기기')
@@ -730,7 +746,7 @@ describe('useAuthStore.signOut', () => {
     await useAuthStore.getState().signOut()
 
     expect(revokeNexonSessionMock).toHaveBeenCalledWith('세션값')
-    expect(순서).toEqual(['세션', '못 보낸 것', '기기'])
+    expect(순서).toEqual(['올리기', '세션', '사용 로그', '기기'])
   })
 
   it('상태를 initialAuthState로 되돌리고 진입 단계를 처음으로 돌린다', async () => {
@@ -932,6 +948,43 @@ describe('useAuthStore.signIn: 새 로그인은 추적 목록을 비운다', () 
     await useAuthStore.getState().signIn('key-1')
 
     expect(forgetTrackedSelectionMock).not.toHaveBeenCalled()
+  })
+})
+
+// 앞 사람의 올리지 못한 기록이 남았으면 저장하기 전에 묻는다. 같은 사람인지는 메이플 ID 로 가린다.
+describe('주인 바꾸기', () => {
+  beforeEach(() => {
+    fetchCharacterListMock.mockResolvedValue([account('acc-1')])
+  })
+
+  it('키 입력이 받은 목록의 메이플 ID 와 추적 목록 비우기 · 저장을 주인 바꾸기에 맡긴다', async () => {
+    await useAuthStore.getState().signIn('key-1')
+
+    expect(switchServerSyncOwnerMock).toHaveBeenCalledWith({ mapleIds: ['acc-1'], login: false }, expect.any(Function))
+    expect(forgetTrackedSelectionMock).toHaveBeenCalledTimes(1)
+    expect(setMainApiKeyMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('키 입력에서 `그만두기` 면 저장하지 않고 폼에 남는다', async () => {
+    switchServerSyncOwnerMock.mockResolvedValueOnce(false)
+
+    await expect(useAuthStore.getState().signIn('key-1')).resolves.toBe(false)
+
+    expect(setMainApiKeyMock).not.toHaveBeenCalled()
+    expect(forgetTrackedSelectionMock).not.toHaveBeenCalled()
+    expect(resolveAfterSignInMock).not.toHaveBeenCalled()
+    expect(showSuccessMock).not.toHaveBeenCalled()
+    expect(useAuthStore.getState()).toMatchObject({ status: 'signedOut', error: null })
+  })
+
+  it('메인 키 바꾸기도 맡기고, `그만두기` 면 키를 바꾸지 않는다', async () => {
+    switchServerSyncOwnerMock.mockResolvedValueOnce(false)
+
+    await expect(useAuthStore.getState().replaceMainApiKey('new-key')).resolves.toBe('cancelled')
+
+    expect(switchServerSyncOwnerMock).toHaveBeenCalledWith({ mapleIds: ['acc-1'], login: false }, expect.any(Function))
+    expect(setMainApiKeyMock).not.toHaveBeenCalled()
+    expect(showSuccessMock).not.toHaveBeenCalled()
   })
 })
 

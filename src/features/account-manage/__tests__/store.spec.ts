@@ -23,6 +23,7 @@ jest.mock('../../../storage/character-selection', () => ({
   setTrackedCharacterOcids: jest.fn(async () => undefined),
 }))
 jest.mock('../../../server/accounts', () => ({ registerSubAccountOnServer: jest.fn(), unregisterSubAccountOnServer: jest.fn() }))
+jest.mock('../../../storage/server-sync-owners', () => ({ forgetServerSyncMapleIds: jest.fn(async () => undefined) }))
 jest.mock('../../schedule-sync/save-tracked', () => ({ saveTrackedCharacters: jest.fn(async () => undefined) }))
 jest.mock('../../mvp-grade/character-list', () => ({
   readCachedCharacterListOfAccount: jest.fn(() => undefined),
@@ -49,6 +50,7 @@ const server = mocked<Record<string, unknown>>('../../../server/accounts')
 const characterList = mocked<Record<string, unknown>>('../../mvp-grade/character-list')
 const validate = mocked<Record<string, unknown>>('../validate-key')
 const tracked = mocked<Record<string, unknown>>('../../schedule-sync/save-tracked')
+const syncOwners = mocked<Record<string, unknown>>('../../../storage/server-sync-owners')
 
 const { useAccountManageStore } = require('../store') as typeof import('../store')
 const { useToastStore } = require('../../toast/store') as typeof import('../../toast/store')
@@ -215,6 +217,14 @@ describe('삭제', () => {
     expect(mockResolveFromStorage).not.toHaveBeenCalled()
   })
 
+  // 해제한 부계정의 기록은 이 사람의 것이 아니다. 기록은 서버에 남고 다시 등록하면 처음부터 받는다.
+  it('해제하면 키를 지운 뒤 그 계정의 메이플 ID 의 기록과 번호를 이 기기에서 지운다', async () => {
+    await useAccountManageStore.getState().removeAccount('k-sub')
+
+    expect(syncOwners.forgetServerSyncMapleIds).toHaveBeenCalledWith([h('m-sub')])
+    expect(apiKeyStore.removeApiKey.mock.invocationCallOrder[0]).toBeLessThan(syncOwners.forgetServerSyncMapleIds.mock.invocationCallOrder[0]!)
+  })
+
   // 같은 키를 다시 넣었을 때 등록이 응답 없이 끝나면, 남은 적은 값 때문에 회차가 다시 등록하지 않는다.
   it('해제하면 서버에 등록했다고 적은 그 키의 값을 뺀다', async () => {
     await useAccountManageStore.getState().removeAccount('k-sub')
@@ -233,6 +243,7 @@ describe('삭제', () => {
     expect(apiKeyStore.removeApiKey).not.toHaveBeenCalled()
     expect(selection.setTrackedCharacterOcids).not.toHaveBeenCalled()
     expect(serverState.setServerAccounts).not.toHaveBeenCalled()
+    expect(syncOwners.forgetServerSyncMapleIds).not.toHaveBeenCalled()
     expect(useToastStore.getState().toasts).toEqual([
       expect.objectContaining({ variant: 'error', message: 'API 키를 삭제하지 못했습니다. 잠시 뒤 다시 시도해 주세요.' }),
     ])
