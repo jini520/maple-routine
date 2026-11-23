@@ -6,13 +6,13 @@
  *
  * @see docs/foundation/server-sync.md `올리기`
  */
-import { getBarOrder } from './bar-order'
+import { getBarOrder, subPageOrderSyncRecordIds } from './bar-order'
 import { getCharacterProfiles } from './character-profiles'
 import { accountSharedProgressKey, manualTrackedContentKey, representativeCharacterKey, STORAGE_KEYS, trackedCharactersKey, worldSharedProgressKey } from './keys'
 import { getMapleIdNames } from './maple-id-names'
 import { preferences } from './ports'
 import { getQuickLinks } from './quick-links'
-import { partsOfPreferenceRecordId, withServerSyncPaused, type ServerSyncTable } from './server-sync-queue'
+import { isServerSyncQueued, partsOfPreferenceRecordId, preferenceRecordIdOf, withServerSyncPaused, type ServerSyncTable } from './server-sync-queue'
 import { readStoredSharedProgress } from './shared-progress-cache'
 import { getBossProfitDb } from './sqlite/db'
 
@@ -89,6 +89,23 @@ export async function storedSettingColumns(): Promise<string[]> {
     if ((await preferences.get(setting.key)) !== null && (await setting.read()) !== null) columns.push(column)
   }
   return columns
+}
+
+/**
+ * 맞추는 설정을 기본값으로 돌린다. 다른 사람으로 로그인할 때 앞 사람의 값을 비운다. 키를 지워 대기 표에 넣지 않는다. 대기 중인 칸이 든
+ * 키는 둔다. 새 사람이 저장하고 아직 못 올린 값이다. 하단바 순서의 키에는 하위 페이지 차례도 든다.
+ */
+export async function resetServerSyncSettings(): Promise<void> {
+  const recordIdsByKey = new Map<string, string[]>()
+  for (const [column, setting] of Object.entries(SETTINGS)) {
+    recordIdsByKey.set(setting.key, [...(recordIdsByKey.get(setting.key) ?? []), preferenceRecordIdOf('accountSettings', [column])])
+  }
+  recordIdsByKey.get(STORAGE_KEYS.barOrder)?.push(...(await subPageOrderSyncRecordIds()))
+  for (const [key, recordIds] of recordIdsByKey) {
+    let queued = false
+    for (const recordId of recordIds) queued ||= await isServerSyncQueued(recordId)
+    if (!queued) await preferences.remove(key)
+  }
 }
 
 function parsed(raw: string | null): unknown {

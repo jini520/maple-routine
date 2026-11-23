@@ -29,8 +29,14 @@ function response(patch: Partial<SyncPullResponse> = {}): SyncPullResponse {
 
 const answered = (one: SyncPullResponse): SyncPullOutcome => ({ outcome: 'answered', response: one })
 
-function setup(outcomes: SyncPullOutcome[], stored: ServerSyncCursors = { nexonAccount: null, mapleIds: {} }) {
+function setup(
+  outcomes: SyncPullOutcome[],
+  stored: ServerSyncCursors = { nexonAccount: null, mapleIds: {} },
+  signIn: { previousMapleIds: string[] } | null = null,
+  device: string[] = [],
+) {
   let cursors = stored
+  let signedIn = signIn
   const events: string[] = []
   const sent: SyncPullCursors[] = []
   const deps: PullDeps = {
@@ -73,6 +79,15 @@ function setup(outcomes: SyncPullOutcome[], stored: ServerSyncCursors = { nexonA
     forgetReleasedSubAccounts: jest.fn(async (hashes: ReadonlySet<string>) => {
       events.push(`released ${[...hashes].join(',')}`)
     }),
+    forgetMapleIds: jest.fn(async (hashes: readonly string[]) => {
+      events.push(`forget ${hashes.join(',')}`)
+    }),
+    getSignIn: jest.fn(async () => signedIn),
+    clearSignIn: jest.fn(async () => {
+      events.push('sign-in cleared')
+      signedIn = null
+    }),
+    deviceMapleIds: jest.fn(async () => device),
     afterRecordsChanged: jest.fn(),
   }
   return { deps, events, sent, current: () => cursors }
@@ -289,6 +304,18 @@ describe('다른 기기의 부계정 해제', () => {
     expect(deps.forgetReleasedSubAccounts).toHaveBeenCalledWith(new Set([OTHER_HASH]))
   })
 
+  // 해제한 메이플 ID 의 기록은 서버가 받지 않는다. 다시 등록하면 받기가 0 부터 받아 돌아온다.
+  it('그 메이플 ID 의 기록을 대기 중인 것까지 비우고, 응답의 번호로 그 메이플 ID 의 번호를 뺀다', async () => {
+    const stored = { nexonAccount: { id: 'account-1', changeSeq: 9 }, mapleIds: { [MAPLE_HASH]: 9, [OTHER_HASH]: 9 } }
+    const { deps, events, current } = setup([answered(response())], stored)
+
+    await pullServerSync({}, deps)
+
+    expect(events.indexOf(`forget ${OTHER_HASH}`)).toBeGreaterThan(events.indexOf(`released ${OTHER_HASH}`))
+    expect(current().mapleIds).toEqual({ [MAPLE_HASH]: 10 })
+    expect(deps.afterRecordsChanged).toHaveBeenCalled()
+  })
+
   // 다른 사람으로 로그인했거나 넥슨 계정 줄이 합쳐졌으면 목록이 바뀌는 것이 해제가 아니다.
   it('넥슨 계정 줄이 바뀌었거나 앞 목록이 없으면 견주지 않는다', async () => {
     const moved = setup(
@@ -301,5 +328,79 @@ describe('다른 기기의 부계정 해제', () => {
     const fresh = setup([answered(response())])
     await pullServerSync({}, fresh.deps)
     expect(fresh.deps.forgetReleasedSubAccounts).not.toHaveBeenCalled()
+  })
+})
+
+// 같은 사람인지는 서버가 답한다. 로그인할 때 기기가 비운 것은 기기가 아는 새 계정의 메이플 ID 로 가린 것이다.
+describe('로그인 뒤 첫 받기', () => {
+  it('응답의 목록에 없는 메이플 ID 의 기록을 비우고 표시를 지운다. 같은 사람이면 그 응답의 줄을 넣는다', async () => {
+    const { deps, events } = setup(
+      [answered(response({ records: { bossProfitEntries: [{ id: 'entry-1', ocid: nexonIdHashHex('ocid-1'), deletedAt: null }] } }))],
+      { nexonAccount: { id: 'account-1', changeSeq: 3 }, mapleIds: { [MAPLE_HASH]: 5 } },
+      { previousMapleIds: [MAPLE_HASH] },
+      [MAPLE, 'maple-old', `#${OTHER_HASH}`, `#${MAPLE_HASH}`],
+    )
+
+    await pullServerSync({}, deps)
+
+    expect(events.slice(0, 4)).toEqual([
+      'replace matched',
+      `clear ${JSON.stringify({ mapleIds: ['maple-old', `#${OTHER_HASH}`], person: false })}`,
+      'sign-in cleared',
+      'sqlite bossProfitEntries entry-1',
+    ])
+    expect(deps.pull).toHaveBeenCalledTimes(1)
+  })
+
+  // 번호의 넥슨 계정 줄이 응답과 같으면 서버가 번호 뒤의 줄만 주어 비운 기록이 돌아오지 않는다.
+  it('앞 계정과 하나도 겹치지 않으면 사람의 기록도 비우고, 사람의 번호 없이 그 응답의 줄은 넣지 않고 다시 받는다', async () => {
+    const { deps, events, sent } = setup(
+      [answered(response({ records: { partyAppointments: [{ id: 'appointment-1' }] } })), answered(response())],
+      { nexonAccount: { id: 'account-1', changeSeq: 3 }, mapleIds: { [MAPLE_HASH]: 5 } },
+      { previousMapleIds: [OTHER_HASH] },
+      [MAPLE],
+    )
+
+    await pullServerSync({}, deps)
+
+    // 다른 사람이면 `#` 로 적은 캐릭터의 기록과 맞추는 설정도 앞 사람의 것이다.
+    expect(events).toContain(`clear ${JSON.stringify({ mapleIds: [], person: true, anotherPerson: true })}`)
+    expect(sent[1]).toEqual({ nexonAccount: null, mapleIds: { [MAPLE_HASH]: 5 } })
+    expect(deps.applyPreferences).not.toHaveBeenCalled()
+    expect(deps.getSignIn).toHaveBeenCalledTimes(1)
+  })
+
+  // 로그인 화면의 로그인은 한 쪽만 기다린다. 비우고 다시 받는 요청을 세면 아무것도 넣지 못한 채 끝나 캐릭터 설정으로 간다.
+  it('한 쪽만 받을 때 사람의 기록을 비우고 다시 받는 요청은 세지 않는다', async () => {
+    const { deps } = setup(
+      [answered(response({ hasMore: true })), answered(response({ hasMore: true, records: { partyAppointments: [{ id: 'appointment-1' }] } }))],
+      { nexonAccount: { id: 'account-1', changeSeq: 3 }, mapleIds: { [MAPLE_HASH]: 5 } },
+      { previousMapleIds: [OTHER_HASH] },
+      [MAPLE],
+    )
+
+    const summary = await pullServerSync({ maxPages: 1 }, deps)
+
+    expect(deps.pull).toHaveBeenCalledTimes(2)
+    expect(deps.applyPreferences).toHaveBeenCalledTimes(1)
+    expect(summary.finished).toBe(false)
+  })
+
+  it('한 쪽만 받으면 `hasMore` 여도 더 받지 않는다', async () => {
+    const { deps } = setup([answered(response({ hasMore: true })), answered(response())])
+
+    const summary = await pullServerSync({ maxPages: 1 }, deps)
+
+    expect(deps.pull).toHaveBeenCalledTimes(1)
+    expect(summary.finished).toBe(false)
+  })
+
+  it('표시가 없으면 비우지 않는다', async () => {
+    const { deps } = setup([answered(response())], { nexonAccount: null, mapleIds: {} }, null, ['maple-old'])
+
+    await pullServerSync({}, deps)
+
+    expect(deps.clearOwners).not.toHaveBeenCalled()
+    expect(deps.clearSignIn).not.toHaveBeenCalled()
   })
 })

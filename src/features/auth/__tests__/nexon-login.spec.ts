@@ -13,6 +13,7 @@ jest.mock('../../../server/nexon-auth', () => ({
 jest.mock('../prune-covered-keys', () => ({ saveNexonLogin: jest.fn() }))
 jest.mock('../../character-selection/forget', () => ({ forgetTrackedSelection: jest.fn() }))
 jest.mock('../../mvp-grade/character-list', () => ({ fetchUnsavedCharacterList: jest.fn() }))
+jest.mock('../../server-sync/owner-switch', () => ({ switchServerSyncOwner: jest.fn() }))
 
 const { openAuthSession } = jest.requireMock('../../../native/browser') as Record<string, jest.Mock>
 const { startNexonLogin, redeemNexonSession, revokeNexonSession } = jest.requireMock(
@@ -21,6 +22,7 @@ const { startNexonLogin, redeemNexonSession, revokeNexonSession } = jest.require
 const { saveNexonLogin } = jest.requireMock('../prune-covered-keys') as Record<string, jest.Mock>
 const { forgetTrackedSelection } = jest.requireMock('../../character-selection/forget') as Record<string, jest.Mock>
 const { fetchUnsavedCharacterList } = jest.requireMock('../../mvp-grade/character-list') as Record<string, jest.Mock>
+const { switchServerSyncOwner } = jest.requireMock('../../server-sync/owner-switch') as Record<string, jest.Mock>
 
 const 시작값 = { authorizeUrl: 'https://openid.nexon.com/oauth2/authorize?state=s', redeemKey: '되찾기열쇠' }
 const 메이플ID목록 = [{ accountId: '메이플ID', characters: [] }]
@@ -39,6 +41,10 @@ beforeEach(() => {
   forgetTrackedSelection.mockResolvedValue(undefined)
   revokeNexonSession.mockResolvedValue(undefined)
   fetchUnsavedCharacterList.mockResolvedValue(메이플ID목록)
+  switchServerSyncOwner.mockImplementation(async (_next: unknown, save: () => Promise<void>) => {
+    await save()
+    return true
+  })
   콜백('com.mapleroutine.app://oauth/callback?receipt=영수증')
 })
 
@@ -249,5 +255,31 @@ describe('새 로그인의 추적 목록 비우기', () => {
     await signInWithNexon({ fresh: true })
 
     expect(forgetTrackedSelection).not.toHaveBeenCalled()
+  })
+})
+
+// 앞 사람의 올리지 못한 기록이 남았으면 저장하기 전에 묻는다. 연동은 같은 사람이 로그인을 붙이는 것이라 묻지 않는다.
+describe('주인 바꾸기', () => {
+  it('새 로그인은 받은 목록의 메이플 ID 와 저장을 맡긴다. 귀속된 부계정 키도 본다', async () => {
+    await signInWithNexon({ fresh: true })
+
+    expect(switchServerSyncOwner).toHaveBeenCalledWith({ mapleIds: ['메이플ID'], login: true, fresh: true }, expect.any(Function))
+    expect(saveNexonLogin).toHaveBeenCalledWith('받은세션', { fresh: true })
+  })
+
+  it('`그만두기` 면 추적 목록을 비우지 않고 저장하지 않으며, 받은 세션을 거두고 취소로 끝난다', async () => {
+    switchServerSyncOwner.mockResolvedValue(false)
+
+    await expect(signInWithNexon({ fresh: true })).resolves.toEqual({ kind: 'cancelled' })
+
+    expect(forgetTrackedSelection).not.toHaveBeenCalled()
+    expect(saveNexonLogin).not.toHaveBeenCalled()
+    expect(revokeNexonSession).toHaveBeenCalledWith('받은세션')
+  })
+
+  it('연동은 맡기지 않는다', async () => {
+    await signInWithNexon()
+
+    expect(switchServerSyncOwner).not.toHaveBeenCalled()
   })
 })

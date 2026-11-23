@@ -42,3 +42,36 @@ export async function getServerSyncCursors(): Promise<ServerSyncCursors> {
 export async function setServerSyncCursors(cursors: ServerSyncCursors): Promise<void> {
   await preferences.set(STORAGE_KEYS.serverSyncCursors, JSON.stringify(cursors))
 }
+
+/** 사람의 번호만 지운다. 다음 받기가 사람의 기록을 처음부터 받는다. 로그인 화면의 로그인이 비운 추적 목록을 다시 받으려고 부른다. */
+export async function clearServerSyncPersonCursor(): Promise<void> {
+  const cursors = await getServerSyncCursors()
+  if (cursors.nexonAccount !== null) await setServerSyncCursors({ ...cursors, nexonAccount: null })
+}
+
+/** 로그인 뒤 첫 받기의 표시. 로그인 화면의 로그인과 메인 키 바꾸기가 저장한 뒤 적는다. */
+export interface ServerSyncSignIn {
+  /** 앞 계정의 메이플 ID 해시. 응답의 목록과 하나도 겹치지 않으면 다른 사람이다 */
+  previousMapleIds: string[]
+}
+
+/** 로그인 뒤 첫 받기의 표시. 없거나 깨졌으면 `null` 이다. 깨진 표시로 비우면 같은 사람의 기록을 잃는다. */
+export async function getServerSyncSignIn(): Promise<ServerSyncSignIn | null> {
+  const raw = await preferences.get(STORAGE_KEYS.serverSyncSignIn)
+  if (raw === null) return null
+  try {
+    const parsed = JSON.parse(raw) as { previousMapleIds?: unknown }
+    const ids = parsed.previousMapleIds
+    return Array.isArray(ids) && ids.every((one) => typeof one === 'string') ? { previousMapleIds: ids } : null
+  } catch {
+    return null
+  }
+}
+
+export async function setServerSyncSignIn(previousMapleIds: readonly string[]): Promise<void> {
+  await preferences.set(STORAGE_KEYS.serverSyncSignIn, JSON.stringify({ previousMapleIds }))
+}
+
+export async function clearServerSyncSignIn(): Promise<void> {
+  await preferences.remove(STORAGE_KEYS.serverSyncSignIn)
+}

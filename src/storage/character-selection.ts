@@ -1,6 +1,6 @@
 import { preferences } from './ports'
 import { lastSelectedCharacterKey, representativeCharacterKey, trackedCharactersKey } from './keys'
-import { enqueueChangedPreferenceRecords, preferenceRecordIdOf } from './server-sync-queue'
+import { enqueueChangedPreferenceRecords, preferenceRecordIdOf, removeServerSyncTable } from './server-sync-queue'
 
 const LEGACY_TRACKED_KEYS = [
   'trackedCharacters:content',
@@ -129,9 +129,14 @@ export async function setTrackedCharacterOcids(ocids: string[]): Promise<void> {
   })
 }
 
-/** 로그인할 때 앞 로그인의 목록을 비운다. 대기 표에 넣지 않는다. 넣으면 새 기기의 로그인이 서버의 추적 목록을 지운다. */
+/**
+ * 로그인할 때 앞 로그인의 목록을 비운다. 대기 표에 넣지 않는다. 넣으면 새 기기의 로그인이 서버의 추적 목록을 지운다. 추적 캐릭터의 대기
+ * 줄도 지운다. 남기면 올리기가 원본이 없다고 지우기를 보내, 같은 사람이 다시 로그인했을 때 서버의 추적 목록을 지운다.
+ */
 export async function clearTrackedCharacterOcids(): Promise<void> {
   await preferences.remove(trackedCharactersKey())
+  // 목록은 이미 비웠다. 대기 줄을 못 지웠다고 로그인을 막지 않는다.
+  await removeServerSyncTable('trackedCharacters').catch(() => undefined)
 }
 
 /**

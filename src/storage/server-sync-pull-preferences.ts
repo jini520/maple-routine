@@ -310,16 +310,25 @@ function recordIdOf(record: Exclude<PulledPreferenceRecord, { table: 'accountSet
   }
 }
 
-async function notQueued(table: Parameters<typeof preferenceRecordIdOf>[0], parts: readonly string[]): Promise<boolean> {
-  return !(await isServerSyncQueued(preferenceRecordIdOf(table, parts)))
-}
-
-/** 주인의 Preferences 기록. `clearServerSyncOwners` 가 SQLite 기록을 비운 뒤 부른다. 대기 줄이 있는 항목은 남긴다. */
+/**
+ * 주인의 Preferences 기록. `clearServerSyncOwners` 가 SQLite 기록을 비운 뒤 부른다. 대기 줄이 있는 항목은 남긴다. `includeQueued` 면 그
+ * 항목도 대기 줄과 함께 지운다.
+ */
 export async function clearServerSyncOwnerPreferences(owners: {
   mapleIds: readonly string[]
   ocids: readonly string[]
   person: boolean
+  includeQueued?: boolean
 }): Promise<void> {
+  /** 그 기록을 남기나. 대기 중인 기록만 남긴다. */
+  const keepsId = async (recordId: string): Promise<boolean> => {
+    if (owners.includeQueued !== true) return isServerSyncQueued(recordId)
+    await removeServerSync(recordId)
+    return false
+  }
+  const notQueued = async (table: Parameters<typeof preferenceRecordIdOf>[0], parts: readonly string[]): Promise<boolean> =>
+    !(await keepsId(preferenceRecordIdOf(table, parts)))
+
   for (const ocid of owners.ocids) {
     const key = manualTrackedContentKey(ocid)
     const items = (await readList(key)).filter(isRow)
@@ -369,7 +378,7 @@ export async function clearServerSyncOwnerPreferences(owners: {
   for (const key of [STORAGE_KEYS.partyAppointments, STORAGE_KEYS.bossProfitCalculatorRecords]) {
     const left: unknown[] = []
     for (const item of await readList(key)) {
-      if (isRow(item) && typeof item.id === 'string' && (await isServerSyncQueued(item.id))) left.push(item)
+      if (isRow(item) && typeof item.id === 'string' && (await keepsId(item.id))) left.push(item)
     }
     await writeJson(key, left)
   }

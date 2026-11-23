@@ -104,16 +104,6 @@ export async function countServerSyncAttempt(recordId: string, lastError: string
   await db.run(`UPDATE server_sync_queue SET attempts = attempts + 1, last_error = ? WHERE record_id = ?`, [lastError, recordId])
 }
 
-/**
- * 표를 통째로 비운다. **로그아웃이 부른다.**
- *
- * 남겨 두면 다음에 다른 키를 넣은 사람이 **앞사람의 기록을 자기 이름으로** 올린다. 대기 줄에는 누가 만든 것인지가 안 적혀 있다.
- */
-export async function clearServerSyncQueue(): Promise<void> {
-  const db = await getBossProfitDb()
-  await db.run(`DELETE FROM server_sync_queue`)
-}
-
 /** 그 기록의 대기 줄이 있나. 받기가 아직 못 올린 기기 값을 덮지 않으려고 본다. */
 export async function isServerSyncQueued(recordId: string): Promise<boolean> {
   return (await serverSyncQueuedAt(recordId)) !== null
@@ -127,10 +117,16 @@ export async function serverSyncQueuedAt(recordId: string): Promise<string | nul
   return typeof found === 'string' ? found : null
 }
 
-/** 보냈거나 포기했다. 줄을 지우는 자리는 여기 하나다. */
+/** 보냈거나 포기했다. */
 export async function removeServerSync(recordId: string): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(`DELETE FROM server_sync_queue WHERE record_id = ?`, [recordId])
+}
+
+/** 그 서버 표의 대기 줄을 모두 지운다. 로그인이 추적 목록을 비울 때 부른다. */
+export async function removeServerSyncTable(table: ServerSyncTable): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(`DELETE FROM server_sync_queue WHERE record_type = ?`, [table])
 }
 
 /**

@@ -16,6 +16,7 @@ import { addSubApiKey, getAuthConfig, removeApiKey, replaceApiKeyValue } from '.
 import { getCharacterAccountSightings, getMapleIdsByNexonAccount } from '../../storage/character-accounts'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getServerAccounts, setServerAccounts } from '../../storage/server-accounts'
+import { forgetServerSyncMapleIds } from '../../storage/server-sync-owners'
 import type { NexonApiKeyMethod, NexonAuthConfig, NexonLoginMethod } from '../../types'
 import { currentCredentials } from '../auth/current-credential'
 import { formatAuthError } from '../auth/format'
@@ -66,7 +67,10 @@ export interface AccountManageStore {
    * @param accountKey `addKey` 가 돌려준 계정의 `key`
    */
   replaceWithKey(accountKey: string, apiKey: string): Promise<KeyActionResult>
-  /** 서버의 부계정 등록을 해제하고 이 기기에서 지운다. 서버가 받지 못하면 아무것도 지우지 않고 토스트로 알린다 */
+  /**
+   * 서버의 부계정 등록을 해제하고 이 기기에서 키와 추적 캐릭터, 그 메이플 ID 의 기록을 지운다. 서버가 받지 못하면 아무것도 지우지 않고
+   * 토스트로 알린다
+   */
   removeAccount(accountKey: string): Promise<'removed' | 'failed'>
 }
 
@@ -295,6 +299,9 @@ export const useAccountManageStore = create<AccountManageStore>()((set, get) => 
     await removeApiKey(account.apiKey.value)
     await unmarkRegistered(auth.login.id, account.apiKey.value).catch(() => undefined)
     await untrackMapleIds(new Set(mapleIdHashes))
+    // 해제한 부계정의 기록은 이 사람의 것이 아니다. 기록은 서버에 남고, 다시 등록하면 받기가 처음부터 받는다. 다음 받기가 그 메이플
+    // ID 가 빠진 것을 보고 다시 비우므로 실패해도 키 삭제를 되돌리지 않는다.
+    await forgetServerSyncMapleIds(mapleIdHashes).catch(() => undefined)
 
     void get().load()
     return 'removed'
@@ -305,7 +312,7 @@ export const useAccountManageStore = create<AccountManageStore>()((set, get) => 
  * 다른 기기에서 해제한 부계정을 이 기기에서 뺀다. 동기화의 받기가 응답의 메이플 ID 목록에서 빠진 메이플 ID 를 넘긴다. 그 메이플 ID 를
  * 든 지금 로그인의 부계정 키를 지우고 그 계정의 추적 캐릭터를 뺀다. 남기면 동기화가 그 키를 다시 등록해 해제를 되돌린다.
  *
- * 서버의 등록은 이미 없어 해제를 부르지 않는다. 기록은 이 기기에 남는다.
+ * 서버의 등록은 이미 없어 해제를 부르지 않는다. 그 메이플 ID 의 기록은 받기가 비운다.
  *
  * @param mapleIdHashes 서버 목록에서 빠진 메이플 ID 해시
  */
