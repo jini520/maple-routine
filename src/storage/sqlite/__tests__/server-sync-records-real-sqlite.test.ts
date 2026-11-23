@@ -13,6 +13,7 @@ import { preferenceRecordIdOf } from '../../server-sync-queue'
 import {
   deleteServerSyncRecord,
   mapleIdOfOcid,
+  mapleIdOfProfitEntry,
   readServerSyncSource,
   replaceServerSyncRecordId,
 } from '../../server-sync-records'
@@ -144,6 +145,25 @@ describe('원본 읽기', () => {
 
     await expect(mapleIdOfOcid('ocid-1')).resolves.toBe('maple-new')
     await expect(mapleIdOfOcid('ocid-없음')).resolves.toBeNull()
+  })
+
+  // 드롭은 메이플 ID 칸이 없다. 수익 건의 캐릭터를 모르면 수익 건이 대기 표에 남아, 드롭만 보내면 서버가 수익 건이 없다고 거절한다.
+  it('수익 건의 메이플 ID 는 그 캐릭터를 가장 늦게 본 소속에서 찾고, 캐릭터나 수익 건이 없으면 모른다', async () => {
+    const list = (accountId: string) => [
+      { accountId, characters: [{ ocid: 'ocid-1', name: '이름', world: '스카니아', worldKey: 'scania', jobClass: '비숍', level: 280 }] },
+    ]
+    await recordCharacterAccounts(list('maple-old'), '2026-10-01', 'account-1')
+    await recordCharacterAccounts(list('maple-new'), '2026-11-01', 'account-1')
+    await insertEntry('entry-a')
+    await db.run(
+      `INSERT INTO boss_profit_entries (id, ocid, boss_difficulty_id, period_code, split_fee_follows_mvp_grade, created_at, updated_at)
+       VALUES ('entry-b', 'ocid-없음', 'difficulty-1', 'W202647', 1, ?, ?)`,
+      [AT, AT],
+    )
+
+    await expect(mapleIdOfProfitEntry('entry-a')).resolves.toBe('maple-new')
+    await expect(mapleIdOfProfitEntry('entry-b')).resolves.toBeNull()
+    await expect(mapleIdOfProfitEntry('entry-없음')).resolves.toBeNull()
   })
 })
 

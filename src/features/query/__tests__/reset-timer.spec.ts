@@ -16,7 +16,8 @@ describe('startResetBoundaryTimer', () => {
   })
 
   it('KST 자정에 넥슨 쿼리를 무효화하고 틱을 올린 뒤 다음 자정을 다시 건다', () => {
-    const client = new QueryClient()
+    // 쿼리를 지우는 타이머(기본 5분)가 남으면 테스트가 끝나도 jest 작업 프로세스가 끝나지 않는다.
+    const client = new QueryClient({ defaultOptions: { queries: { gcTime: Number.POSITIVE_INFINITY } } })
     client.setQueryData(['schedule', 'a'], { v: 1 })
     client.getQueryCache().find({ queryKey: ['schedule', 'a'] })!.setOptions({ queryKey: ['schedule', 'a'], meta: { source: 'nexon' } })
     client.setQueryData(['ledger-days', '2026-10'], { v: 1 })

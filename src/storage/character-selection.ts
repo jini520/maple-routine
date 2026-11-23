@@ -110,6 +110,11 @@ async function trackedRecords(): Promise<Map<string, unknown>> {
   )
 }
 
+/** 처음 동기화가 넣는 대기 줄 id. 저장 함수가 넣는 것과 같다. */
+export async function trackedCharacterSyncRecordIds(): Promise<string[]> {
+  return [...(await trackedRecords()).keys()]
+}
+
 /** 추적 목록이나 대표를 바꾸는 쓰기. 차례나 대표 표시가 바뀐 캐릭터를 대기 표에 넣는다. */
 async function withTrackedRecords(write: () => Promise<void>): Promise<void> {
   const before = await trackedRecords()

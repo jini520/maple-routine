@@ -33,6 +33,11 @@ function subPageRecordsOf(subs: unknown): Map<string, unknown> {
   return new Map(Object.entries(subs).map(([group, pages]) => [preferenceRecordIdOf('bottomBarSubPageOrders', [group]), pages]))
 }
 
+/** 처음 동기화가 넣는 대기 줄 id. 저장 함수가 넣는 것과 같다. */
+export async function subPageOrderSyncRecordIds(): Promise<string[]> {
+  return [...subPageRecordsOf(((await getBarOrder()) as { subs?: unknown } | null)?.subs).keys()]
+}
+
 /** 서버는 그룹 목록 칸과 하위 페이지 차례의 그룹마다 고친다. 그래서 그 칸과 그룹마다 견주어 바뀐 것을 대기 표에 넣는다. */
 export async function setBarOrder(order: BarOrder): Promise<void> {
   const before = (await getBarOrder()) as { groups?: unknown; subs?: unknown } | null

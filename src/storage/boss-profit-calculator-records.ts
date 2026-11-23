@@ -167,6 +167,11 @@ async function readStored(): Promise<unknown[]> {
   }
 }
 
+/** 처음 동기화가 넣는 대기 줄 id. 저장 함수가 넣는 것과 같다. */
+export async function bossProfitCalculatorSyncRecordIds(): Promise<string[]> {
+  return [...recordsOf(await readStored()).keys()]
+}
+
 /** 더하거나 고치거나 지운 기록을 대기 표에 넣는다. */
 export async function setBossProfitCalculatorRecords(records: readonly BossProfitCalculatorRecord[]): Promise<void> {
   await whenRecordsReleased()

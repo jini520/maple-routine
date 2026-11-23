@@ -46,19 +46,49 @@ export const REFERENCES: Partial<Record<ServerSyncTable, readonly { table: strin
   ],
 }
 
-/** 서버 `account_settings` 의 칸 이름 → 그 값을 읽는 함수. 기기에서는 Preferences 의 설정 키와 하단바 순서에 있다. */
-const SETTING_READERS: Record<string, () => Promise<unknown>> = {
-  trackingType: async () => {
-    const value = await preferences.get(STORAGE_KEYS.trackingType)
-    return value === 'auto' || value === 'manual' ? value : null
+/** 서버 `account_settings` 의 칸 이름 → 그 값이 든 Preferences 키와 값을 읽는 함수. 기기에서는 설정 키와 하단바 순서에 있다. */
+const SETTINGS: Record<string, { key: string; read: () => Promise<unknown> }> = {
+  trackingType: {
+    key: STORAGE_KEYS.trackingType,
+    read: async () => {
+      const value = await preferences.get(STORAGE_KEYS.trackingType)
+      return value === 'auto' || value === 'manual' ? value : null
+    },
   },
-  quickLinkRowCount: async () => ((await getQuickLinks()) as { rows?: unknown } | null)?.rows ?? null,
-  quickLinkKeys: async () => ((await getQuickLinks()) as { ids?: unknown } | null)?.ids ?? null,
-  barGroupKeys: async () => ((await getBarOrder()) as { groups?: unknown } | null)?.groups ?? null,
-  statsCumulativeStartDate: async () => preferences.get(STORAGE_KEYS.statsCumulativeStartDate),
-  isMvpWeeklyCheckOff: async () => (await preferences.get(STORAGE_KEYS.isMvpWeeklyCheckOff)) === 'true',
-  mvpLastCheckedWeekCode: async () => preferences.get(STORAGE_KEYS.mvpLastCheckedWeekCode),
-  isMvpBulkApplyAsked: async () => (await preferences.get(STORAGE_KEYS.isMvpBulkApplyAsked)) === 'true',
+  quickLinkRowCount: {
+    key: STORAGE_KEYS.quickLinks,
+    read: async () => ((await getQuickLinks()) as { rows?: unknown } | null)?.rows ?? null,
+  },
+  quickLinkKeys: { key: STORAGE_KEYS.quickLinks, read: async () => ((await getQuickLinks()) as { ids?: unknown } | null)?.ids ?? null },
+  barGroupKeys: { key: STORAGE_KEYS.barOrder, read: async () => ((await getBarOrder()) as { groups?: unknown } | null)?.groups ?? null },
+  statsCumulativeStartDate: {
+    key: STORAGE_KEYS.statsCumulativeStartDate,
+    read: async () => preferences.get(STORAGE_KEYS.statsCumulativeStartDate),
+  },
+  isMvpWeeklyCheckOff: {
+    key: STORAGE_KEYS.isMvpWeeklyCheckOff,
+    read: async () => (await preferences.get(STORAGE_KEYS.isMvpWeeklyCheckOff)) === 'true',
+  },
+  mvpLastCheckedWeekCode: {
+    key: STORAGE_KEYS.mvpLastCheckedWeekCode,
+    read: async () => preferences.get(STORAGE_KEYS.mvpLastCheckedWeekCode),
+  },
+  isMvpBulkApplyAsked: {
+    key: STORAGE_KEYS.isMvpBulkApplyAsked,
+    read: async () => (await preferences.get(STORAGE_KEYS.isMvpBulkApplyAsked)) === 'true',
+  },
+}
+
+/**
+ * 이 기기의 키에 값이 적힌 설정 칸. 처음 동기화가 이 칸만 넣는다. 고른 적이 없는 칸을 기본값으로 올리면 다른 기기가 고른 값을 덮는다.
+ * 참 · 거짓 칸은 거짓이면 키를 지우는 저장이라 참인 칸만 남는다.
+ */
+export async function storedSettingColumns(): Promise<string[]> {
+  const columns: string[] = []
+  for (const [column, setting] of Object.entries(SETTINGS)) {
+    if ((await preferences.get(setting.key)) !== null && (await setting.read()) !== null) columns.push(column)
+  }
+  return columns
 }
 
 function parsed(raw: string | null): unknown {
@@ -118,8 +148,8 @@ async function preferenceSourceOf(table: ServerSyncTable, recordId: string): Pro
     }
     case 'accountSettings': {
       const [column = ''] = parts
-      const read = SETTING_READERS[column]
-      return read === undefined ? null : { column, value: await read() }
+      const setting = SETTINGS[column]
+      return setting === undefined ? null : { column, value: await setting.read() }
     }
     case 'bottomBarSubPageOrders': {
       const [groupKey = ''] = parts
@@ -169,6 +199,21 @@ export async function mapleIdOfOcid(ocid: string): Promise<string | null> {
   const { values } = await db.query(
     'SELECT account_id FROM character_accounts WHERE ocid = ? ORDER BY last_seen_date DESC LIMIT 1',
     [ocid],
+  )
+  const found = values?.[0]?.account_id
+  return typeof found === 'string' ? found : null
+}
+
+/**
+ * 수익 건의 캐릭터를 가장 늦게 본 소속의 메이플 ID. 드롭의 주인이다. 수익 건이 없거나 그 캐릭터를 본 적이 없으면 `null` 이다.
+ */
+export async function mapleIdOfProfitEntry(profitEntryId: string): Promise<string | null> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(
+    `SELECT character_accounts.account_id FROM boss_profit_entries
+       JOIN character_accounts ON character_accounts.ocid = boss_profit_entries.ocid
+      WHERE boss_profit_entries.id = ? ORDER BY character_accounts.last_seen_date DESC LIMIT 1`,
+    [profitEntryId],
   )
   const found = values?.[0]?.account_id
   return typeof found === 'string' ? found : null

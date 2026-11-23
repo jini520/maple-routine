@@ -123,6 +123,29 @@ async function setSharedProgressEntry(
   )
 }
 
+/** 처음 동기화가 넣는 대기 줄 id. 저장 함수가 넣는 것과 같다. */
+export async function sharedProgressSyncRecordIds(): Promise<string[]> {
+  const accountPrefix = accountSharedProgressKey('')
+  const worldPrefix = worldSharedProgressKey('', '').slice(0, -1)
+  const ids: string[] = []
+  for (const key of await preferences.keys()) {
+    let owner: [string, string] | null = null
+    if (key.startsWith(accountPrefix)) owner = [key.slice(accountPrefix.length), '']
+    else if (key.startsWith(worldPrefix)) {
+      // 월드로만 묶던 옛 원장(`worldSharedProgress:{월드}`)은 메이플 ID 가 없다. 기기 변환이 나눈 뒤 지운다.
+      const rest = key.slice(worldPrefix.length)
+      const at = rest.indexOf(':')
+      if (at >= 0) owner = [rest.slice(0, at), rest.slice(at + 1)]
+    }
+    if (owner === null) continue
+    const [mapleId, worldId] = owner
+    for (const contentId of Object.keys(await readStoredSharedProgress(key))) {
+      ids.push(preferenceRecordIdOf('sharedContentProgress', [mapleId, worldId, contentId]))
+    }
+  }
+  return ids
+}
+
 /** 월드 key 의 원장. 표에 없는 월드면 `null` 이다. */
 function worldLedgerOf(accountId: string, worldKey: string): { key: string; accountId: string; worldId: string } | null {
   const world = findWorld(worldKey)

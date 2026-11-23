@@ -4,6 +4,8 @@
  * 기록을 쓰는 곳마다 넣게 하면 한 곳을 빠뜨려도 그 기록이 조용히 올라가지 않는다. 여러 줄을 한 번에 고치는 쓰기는 바뀐 줄의 id 를
  * 돌려주지도 않는다. 기기 변환을 마친 DB 에만 건다. 변환 전 표는 칸이 서버와 다르다.
  *
+ * 변환이 옮긴 줄은 트리거를 거치지 않아, 처음 동기화가 같은 표 목록으로 줄을 모두 넣는다(`enqueueAllRecordRows`).
+ *
  * @see docs/persistence/sqlite.md `대기 표의 트리거`
  */
 import type { SqliteDbConnection } from '../ports'
@@ -29,8 +31,8 @@ interface TriggerSpec {
   key: 'id' | 'entry_id'
   /** 서버로 가는 칸. 이 칸들의 값이 바뀐 쓰기만 넣는다 */
   columns: readonly string[]
-  /** 넣는 줄의 조건. 강화 조회 기록은 굳은 날만 서버에 있다 */
-  onlyWhen?: string
+  /** 넣는 줄의 조건. 강화 조회 기록은 굳은 날만 서버에 있다. 인자는 줄을 가리키는 앞말(`NEW.` · 표 이름) */
+  onlyWhen?: (row: string) => string
   /** 지우기를 넣는가. 굳은 날은 데이터 삭제로만 지운다 */
   deletes: boolean
 }
@@ -197,7 +199,7 @@ const SPECS: readonly TriggerSpec[] = [
     serverTable: 'enhancementSettledDays',
     key: 'id',
     columns: ['nexon_account_id', 'enhancement_type', 'history_date', 'settled'],
-    onlyWhen: 'NEW.settled = 1',
+    onlyWhen: (row) => `${row}settled = 1`,
     deletes: false,
   },
   {
@@ -226,16 +228,19 @@ const SPECS: readonly TriggerSpec[] = [
 const NOT_PAUSED = 'NOT EXISTS (SELECT 1 FROM server_sync_pause)'
 
 /**
- * 기록 하나를 대기 표에 넣는 문장. 같은 기록의 줄이 있으면 넣지 않는다.
+ * 기록 하나를 대기 표에 넣는 문장. 같은 기록의 줄이 있으면 넣지 않고 넣은 시각만 지금으로 고친다. 넣은 시각이 처음 올리기를 가르는
+ * 값이라, 처음 올리기의 줄을 사용자가 고치면 사용자가 친 값으로 다뤄야 한다.
  *
  * 충돌로 막지 않는 이유는 바깥 문장의 `OR IGNORE` · `OR REPLACE` 가 트리거 안의 문장에도 옮겨 붙기 때문이다. `OR REPLACE` 가
  * 붙으면 대기 줄이 갈려 거절 횟수가 0 으로 돌아간다.
  */
 function enqueueStatement(serverTable: ServerSyncTable, recordId: string): string {
+  const now = `strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
   return (
     `INSERT INTO server_sync_queue (id, record_type, record_id, created_at) ` +
-    `SELECT ${NEW_UUID_SQL}, '${serverTable}', ${recordId}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now') ` +
-    `WHERE NOT EXISTS (SELECT 1 FROM server_sync_queue WHERE record_id = ${recordId});`
+    `SELECT ${NEW_UUID_SQL}, '${serverTable}', ${recordId}, ${now} ` +
+    `WHERE NOT EXISTS (SELECT 1 FROM server_sync_queue WHERE record_id = ${recordId}); ` +
+    `UPDATE server_sync_queue SET created_at = ${now} WHERE record_id = ${recordId};`
   )
 }
 
@@ -244,9 +249,10 @@ function triggersOf(spec: TriggerSpec): { name: string; sql: string }[] {
   const name = (event: string): string => `${TRIGGER_PREFIX}${spec.table}_${event}`
   const newKey = `NEW.${spec.key}`
   const oldKey = `OLD.${spec.key}`
-  const insertWhen = [NOT_PAUSED, ...(spec.onlyWhen === undefined ? [] : [spec.onlyWhen])].join(' AND ')
+  const onlyWhen = spec.onlyWhen === undefined ? [] : [spec.onlyWhen('NEW.')]
+  const insertWhen = [NOT_PAUSED, ...onlyWhen].join(' AND ')
   const changed = spec.columns.map((column) => `OLD.${column} IS NOT NEW.${column}`).join(' OR ')
-  const updateWhen = [NOT_PAUSED, ...(spec.onlyWhen === undefined ? [] : [spec.onlyWhen]), `(${changed})`].join(' AND ')
+  const updateWhen = [NOT_PAUSED, ...onlyWhen, `(${changed})`].join(' AND ')
   // 딸린 줄을 다른 기록으로 옮기면 앞 기록에서도 빠진 것이라 두 기록을 다 넣는다.
   const updateBody =
     spec.key === 'entry_id'
@@ -272,6 +278,26 @@ function triggersOf(spec: TriggerSpec): { name: string; sql: string }[] {
 }
 
 const TRIGGERS = SPECS.flatMap(triggersOf)
+
+/**
+ * 처음 동기화가 트리거를 건 표의 줄을 모두 대기 표에 넣는다. 트리거와 같은 표 · 같은 조건이다. 가계부의 딸린 줄은 기록이 대신하고,
+ * 이미 대기 줄이 있는 기록은 그 줄을 둔다. 한 표 안에서는 그 표의 rowid 차례로 넣는다.
+ *
+ * @param createdAt 넣는 줄의 `created_at`. 처음 올리기의 줄을 이 시각으로 가른다
+ */
+export async function enqueueAllRecordRows(db: SqliteDbConnection, createdAt: string): Promise<void> {
+  for (const spec of SPECS) {
+    if (spec.key !== 'id') continue
+    const onlyWhen = spec.onlyWhen === undefined ? '' : `${spec.onlyWhen(`${spec.table}.`)} AND `
+    await db.run(
+      `INSERT INTO server_sync_queue (id, record_type, record_id, created_at)
+       SELECT ${NEW_UUID_SQL}, ?, ${spec.table}.id, ? FROM ${spec.table}
+        WHERE ${onlyWhen}NOT EXISTS (SELECT 1 FROM server_sync_queue WHERE record_id = ${spec.table}.id)
+        ORDER BY ${spec.table}.rowid`,
+      [spec.serverTable, createdAt],
+    )
+  }
+}
 
 /**
  * 트리거를 정의대로 맞춘다. 정의가 같은 트리거는 두고, 빠지거나 바뀐 것만 다시 만들고, 이제 없는 이름은 지운다. 정의가 그대로면 한

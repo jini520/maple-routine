@@ -200,3 +200,124 @@ describe('설정', () => {
     expect(await json('barOrder')).toEqual({ groupKeys: ['today'], subPageKeys: { schedule: ['Boss'], more: ['B'] } })
   })
 })
+
+// 먼저 올린 기기의 값이 남는다. id 가 없는 기록은 대기 줄 id 가 유일 기준의 값이라, 평소처럼 건너뛰면 나중 기기의 값이 서버를 덮는다.
+describe('처음 동기화의 받기', () => {
+  const QUEUED_AT = '2026-11-24T00:00:00.000Z'
+  const FIRST = '2026-11-23T23:59:59.000Z'
+  const LATER = '2026-11-24T00:00:01.000Z'
+
+  async function enqueueAt(recordId: string, createdAt: string): Promise<void> {
+    await db.run(`INSERT INTO server_sync_queue (id, record_type, record_id, created_at) VALUES (?, 'x', ?, ?)`, [
+      `q-${recordId}`,
+      recordId,
+      createdAt,
+    ])
+  }
+
+  it('처음 올리기의 대기 줄이 있는 항목과 설정 칸은 서버 값으로 덮고 그 대기 줄을 빼며, 그 뒤에 들어간 대기 줄은 둔다', async () => {
+    await prefs.set('mapleIdNames', JSON.stringify({ 'maple-1': '메인', 'maple-2': '부캐' }))
+    await prefs.set('manualTrackedContent:ocid-1', JSON.stringify([{ type: 'weekly', targetId: 'c1' }]))
+    await prefs.set('trackingType', 'auto')
+    await prefs.set('isMvpWeeklyCheckOff', 'true')
+    await enqueueAt('mapleIdNames:maple-1', FIRST)
+    await enqueueAt('mapleIdNames:maple-2', LATER)
+    await enqueueAt('manualTrackedItems:ocid-1/weekly/c1', QUEUED_AT)
+    await enqueueAt('accountSettings:trackingType', FIRST)
+    await enqueueAt('accountSettings:isMvpWeeklyCheckOff', LATER)
+
+    await applyPulledPreferenceRecords(
+      [
+        { table: 'mapleIdNames', deleted: false, mapleId: 'maple-1', name: '본캐' },
+        { table: 'mapleIdNames', deleted: false, mapleId: 'maple-2', name: '서브' },
+        { table: 'manualTrackedItems', deleted: true, ocid: 'ocid-1', type: 'weekly', targetId: 'c1' },
+        { table: 'accountSettings', values: { trackingType: 'manual', isMvpWeeklyCheckOff: false } },
+      ],
+      { firstQueuedAt: QUEUED_AT },
+    )
+
+    expect(await json('mapleIdNames')).toEqual({ 'maple-1': '본캐', 'maple-2': '부캐' })
+    expect(await json('manualTrackedContent:ocid-1')).toEqual([])
+    await expect(prefs.get('trackingType')).resolves.toBe('manual')
+    await expect(prefs.get('isMvpWeeklyCheckOff')).resolves.toBe('true')
+    expect(queue()).toEqual(['mapleIdNames:maple-2', 'accountSettings:isMvpWeeklyCheckOff'])
+  })
+
+  // 기기의 uuid 가 줄 id 라 두 기기의 약속이 둘 다 남는다. 같은 id 면 이 기기가 올린 같은 약속이다.
+  it('약속은 처음 올리기의 대기 줄이 있어도 덮지 않는다', async () => {
+    await prefs.set('partyAppointments', JSON.stringify([appointment('a1', '20:00')]))
+    await enqueueAt('a1', FIRST)
+
+    await applyPulledPreferenceRecords([{ table: 'partyAppointments', id: 'a1', deleted: false, item: appointment('a1', '22:00') as never }], {
+      firstQueuedAt: QUEUED_AT,
+    })
+
+    expect(await json('partyAppointments')).toEqual([appointment('a1', '20:00')])
+    expect(queue()).toEqual(['a1'])
+  })
+
+  // 서버 차례 값과 기기 자리를 같은 칸에 견주면 같은 값이 둘 생겨 기기마다 차례가 갈린다.
+  it('추적 목록은 서버 캐릭터를 서버 차례대로 앞에, 서버에 없는 기기 캐릭터를 지금 차례대로 뒤에 두고 서버의 대표를 따른다', async () => {
+    await prefs.set('trackedCharacters', JSON.stringify(['z', 'x', 'y']))
+    await prefs.set('representativeCharacter', 'z')
+    for (const ocid of ['z', 'x', 'y']) await enqueueAt(`trackedCharacters:${ocid}`, FIRST)
+
+    await applyPulledPreferenceRecords(
+      [
+        { table: 'trackedCharacters', deleted: false, ocid: 'w', sortOrder: 1, isRepresentative: false },
+        { table: 'trackedCharacters', deleted: false, ocid: 'x', sortOrder: 0, isRepresentative: true },
+      ],
+      { firstQueuedAt: QUEUED_AT },
+    )
+
+    expect(await json('trackedCharacters')).toEqual(['x', 'w', 'z', 'y'])
+    await expect(prefs.get('representativeCharacter')).resolves.toBe('x')
+    expect(queue()).toEqual(['trackedCharacters:z', 'trackedCharacters:y'])
+  })
+
+  // 남기면 기기 쪽 대표가 올라가, 서버가 넥슨 계정마다 하나인 대표를 그것으로 바꾼다.
+  it('서버 목록의 대표가 이 기기에 짝이 없으면 서버에 없는 기기 캐릭터의 대표 표시를 지운다', async () => {
+    await prefs.set('trackedCharacters', JSON.stringify(['z']))
+    await prefs.set('representativeCharacter', 'z')
+    await enqueueAt('trackedCharacters:z', FIRST)
+
+    await applyPulledPreferenceRecords([], { firstQueuedAt: QUEUED_AT, unpairedRepresentative: true })
+
+    expect(await json('trackedCharacters')).toEqual(['z'])
+    await expect(prefs.get('representativeCharacter')).resolves.toBeNull()
+    expect(queue()).toEqual(['trackedCharacters:z'])
+  })
+
+  it('서버 목록에 대표가 없으면 서버에 없는 기기 캐릭터의 대표는 남고, 서버에 있는 캐릭터는 서버의 거짓 표시를 따른다', async () => {
+    await prefs.set('trackedCharacters', JSON.stringify(['z', 'x']))
+    await prefs.set('representativeCharacter', 'z')
+    for (const ocid of ['z', 'x']) await enqueueAt(`trackedCharacters:${ocid}`, FIRST)
+    await applyPulledPreferenceRecords([{ table: 'trackedCharacters', deleted: false, ocid: 'x', sortOrder: 0, isRepresentative: false }], {
+      firstQueuedAt: QUEUED_AT,
+    })
+    expect(await json('trackedCharacters')).toEqual(['x', 'z'])
+    await expect(prefs.get('representativeCharacter')).resolves.toBe('z')
+
+    await prefs.set('representativeCharacter', 'x')
+    await enqueueAt('trackedCharacters:x', FIRST)
+    await applyPulledPreferenceRecords([{ table: 'trackedCharacters', deleted: false, ocid: 'x', sortOrder: 0, isRepresentative: false }], {
+      firstQueuedAt: QUEUED_AT,
+    })
+    await expect(prefs.get('representativeCharacter')).resolves.toBeNull()
+  })
+
+  // 사용자가 처음 동기화 뒤에 친 값이다. 올리기가 서버를 덮는다.
+  it('그 뒤에 들어간 대기 줄의 추적 캐릭터는 덮지 않는다', async () => {
+    await prefs.set('trackedCharacters', JSON.stringify(['z', 'x']))
+    await enqueueAt('trackedCharacters:z', FIRST)
+    await enqueueAt('trackedCharacters:x', LATER)
+
+    await applyPulledPreferenceRecords([{ table: 'trackedCharacters', deleted: false, ocid: 'x', sortOrder: 5, isRepresentative: true }], {
+      firstQueuedAt: QUEUED_AT,
+    })
+
+    expect(await json('trackedCharacters')).toEqual(['z', 'x'])
+    await expect(prefs.get('representativeCharacter')).resolves.toBeNull()
+    expect(queue()).toEqual(['trackedCharacters:z', 'trackedCharacters:x'])
+  })
+})

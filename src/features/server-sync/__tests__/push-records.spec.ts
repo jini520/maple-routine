@@ -13,6 +13,7 @@ const h = nexonIdHashHex
 const OWNERS: RecordOwners = {
   mapleIdOfOcid: async (ocid) => ({ 'ocid-1': 'maple-1', 'ocid-2': 'maple-2' })[ocid] ?? null,
   mapleIdOfNexonAccount: async (account) => (account === 'account-1' ? 'maple-1' : null),
+  mapleIdOfProfitEntry: async (entry) => (entry === 'entry-1' ? 'maple-1' : null),
 }
 
 const SPLIT = {
@@ -222,6 +223,24 @@ describe('SQLite 기록', () => {
         OWNERS,
       ),
     ).resolves.toEqual({ kind: 'hold' })
+  })
+
+  // 수익 건이 대기 표에 남은 채 드롭만 보내면 서버가 수익 건이 없다고 거절해, 다섯 번째에 대기 줄이 빠지고 다시 올라가지 않는다.
+  it('드롭은 수익 건의 캐릭터의 메이플 ID 를 모르면 수익 건과 함께 둔다', async () => {
+    const drop = {
+      id: 'drop-1',
+      profit_entry_id: 'entry-모름',
+      item_id: 'item-1',
+      category: 'fixed',
+      price_status: 'pending',
+      sale_fee_follows_mvp_grade: 1,
+      split_fee_follows_mvp_grade: 1,
+    }
+
+    await expect(pushRecordOf('bossDrops', 'drop-1', drop, OWNERS)).resolves.toEqual({ kind: 'hold' })
+    await expect(pushRecordOf('bossDrops', 'drop-1', { ...drop, profit_entry_id: 'entry-1' }, OWNERS)).resolves.toMatchObject({
+      kind: 'send',
+    })
   })
 
   // 받기가 짝이 없는 해시 앞에 `#` 를 붙여 원문 칸에 적는다. 다시 해시하면 서버가 다른 캐릭터로 본다.

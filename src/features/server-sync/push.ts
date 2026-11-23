@@ -5,9 +5,9 @@
  * 대기 줄을 서버 표 차례 · 넣은 차례로 늘어놓는다
  *   원본을 읽어 서버 칸으로 바꾼다. 메이플 ID 를 모르면 두고, 보낼 것이 없으면 대기 줄만 지운다
  *   100건 · 256KB 까지, 가리키는 표와 가리켜지는 표는 따로 묶는다
- * 보낸다
+ * 보낸다. 처음 올리기의 줄을 실은 요청은 앞 요청과 1초 띄운다
  *   받았다              → 대기 줄을 지운다. 보낸 뒤 원본이 바뀌었으면 남긴다. id 가 다르면 기기 줄을 서버 id 로 바꾼다
- *   두 거절             → 대기 줄과 기기 줄을 지우고 끝날 때 알린다
+ *   두 거절             → 대기 줄과 기기 줄을 지우고 끝날 때 알린다. 처음 올리기의 줄은 알리지 않는다
  *   다른 거절           → 횟수를 센다. 다섯 번째면 대기 줄을 뺀다
  *   응답 없음 · 요청 전체의 거절 → 아무것도 세지 않고 멈춘다
  * ```
@@ -30,6 +30,7 @@ import {
   deleteServerSyncRecord,
   mapleIdOfNexonAccount,
   mapleIdOfOcid,
+  mapleIdOfProfitEntry,
   readServerSyncSource,
   replaceServerSyncRecordId,
 } from '../../storage/server-sync-records'
@@ -44,6 +45,9 @@ const PUSH_RECORD_LIMIT = 100
 
 /** 한 요청의 본문 바이트. 서버 `BODY_LIMIT_BYTES` 와 같다. 넘으면 요청 전체가 413 이다. */
 const PUSH_BODY_LIMIT_BYTES = 256 * 1024
+
+/** 처음 올리기의 줄을 실은 요청이 앞 요청과 띄우는 시간. 출시 직후 모든 기기가 한꺼번에 올리는 부하를 나눈다. */
+const FIRST_UPLOAD_GAP_MS = 1_000
 
 /**
  * 같은 요청에 싣지 않는 표의 짝. 서버가 앞의 표의 줄을 유일 기준이 같은 다른 줄로 합치면 받은 id 의 줄을 지워서, 같은 요청의 뒤의
@@ -69,13 +73,14 @@ export interface PushDeps {
   notify(message: string): void
   /** 기기 줄을 고치거나 지운 표. 그 표를 읽는 화면이 다시 읽게 한다 */
   afterRecordsChanged(tables: ReadonlySet<ServerSyncTable>): void
+  wait(ms: number): Promise<void>
 }
 
 const DEFAULT_DEPS: PushDeps = {
   identity: serverIdentityHeaders,
   list: listServerSyncQueue,
   read: readServerSyncSource,
-  owners: { mapleIdOfOcid, mapleIdOfNexonAccount },
+  owners: { mapleIdOfOcid, mapleIdOfNexonAccount, mapleIdOfProfitEntry },
   send: pushSyncRecords,
   remove: removeServerSync,
   countAttempt: countServerSyncAttempt,
@@ -85,6 +90,7 @@ const DEFAULT_DEPS: PushDeps = {
   // 입력이 저장되지 않았다는 알림이라 다른 저장 실패처럼 사용자가 닫을 때까지 둔다.
   notify: (message) => useToastStore.getState().showError(message),
   afterRecordsChanged: refreshAfterServerSync,
+  wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 }
 
 /** 한 번의 올리기가 한 일. 화면에 안 쓰고 테스트가 본다. */
@@ -103,8 +109,11 @@ export interface PushSummary {
 }
 
 export interface PushOptions {
-  /** 두 거절을 알릴지. 처음 동기화는 알리지 않는다. 기본은 알린다 */
-  notify?: boolean
+  /**
+   * 처음 동기화가 대기 표에 넣기를 마친 시각. 이 시각까지 들어간 줄이 처음 올리기다. 그 줄의 거절은 알리지 않고, 그 줄을 실은 요청은
+   * 앞 요청과 띄운다. 없으면 모든 줄이 평소의 올리기다
+   */
+  firstQueuedAt?: string
 }
 
 /** 한 요청에 실은 기록과 그 원본. 결과를 차례로 짝짓는다. */
@@ -176,6 +185,14 @@ async function accept(deps: PushDeps, one: Batched, serverId: string | null, cha
 }
 
 /**
+ * 처음 올리기의 줄인가. 메이플 ID 를 몰라 남은 줄은 캐릭터가 나타날 때까지 남아서, 처음 동기화가 끝나는 때가 아니라 줄마다 가른다.
+ * 처음 동기화가 넣은 줄의 넣은 시각은 넣기를 마친 시각과 같다.
+ */
+function isFirstUpload(options: PushOptions, entry: SyncQueueEntry): boolean {
+  return options.firstQueuedAt !== undefined && entry.createdAt <= options.firstQueuedAt
+}
+
+/**
  * 대기 표를 올린다. **던지지 않는 쪽은 부르는 쪽이다.** 저장소나 서버 경로가 던지면 그대로 올라간다.
  *
  * 신원이 없으면 아무것도 안 한다. 키를 지웠거나 로그인 전인 상태이고, 그것은 기록의 잘못이 아니다.
@@ -188,9 +205,12 @@ export async function pushServerSync(options: PushOptions = {}, deps: PushDeps =
   const done = new Set<string>()
   const rejections: Rejection[] = []
   const changed = new Set<ServerSyncTable>()
+  let requests = 0
   for (;;) {
     const batch = await nextBatch(deps, done, summary)
     if (batch.length === 0) break
+    if (requests > 0 && batch.some((one) => isFirstUpload(options, one.entry))) await deps.wait(FIRST_UPLOAD_GAP_MS)
+    requests += 1
     const outcome = await deps.send(
       headers,
       batch.map((one) => one.record),
@@ -211,7 +231,7 @@ export async function pushServerSync(options: PushOptions = {}, deps: PushDeps =
         const name = await deps.nameOf(one.table, one.source)
         await deps.deleteRecord(one.table, one.entry.recordId)
         changed.add(one.table)
-        if (name !== 'silent') rejections.push({ code: result.code, name })
+        if (name !== 'silent' && !isFirstUpload(options, one.entry)) rejections.push({ code: result.code, name })
         summary.conflicts += 1
         continue
       }
@@ -227,6 +247,6 @@ export async function pushServerSync(options: PushOptions = {}, deps: PushDeps =
   }
 
   if (changed.size > 0) deps.afterRecordsChanged(changed)
-  if (options.notify !== false) for (const message of rejectionMessagesOf(rejections)) deps.notify(message)
+  for (const message of rejectionMessagesOf(rejections)) deps.notify(message)
   return summary
 }

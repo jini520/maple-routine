@@ -82,9 +82,11 @@ it('신원이 없으면 받지 않는다', async () => {
   const { deps } = setup([])
   ;(deps.identity as jest.Mock).mockResolvedValue(null)
 
-  await pullServerSync(deps)
+  const summary = await pullServerSync({}, deps)
 
   expect(deps.pull).not.toHaveBeenCalled()
+  // 처음 동기화는 끝까지 받았을 때만 올린다. 신원이 없어 받지 않은 것을 끝까지 받은 것으로 읽으면 받기 없이 올린다.
+  expect(summary.finished).toBe(false)
 })
 
 it('기억한 번호를 보내고, 받은 줄을 표 차례로 다 넣은 뒤에 응답의 번호를 적는다', async () => {
@@ -105,7 +107,7 @@ it('기억한 번호를 보내고, 받은 줄을 표 차례로 다 넣은 뒤에
     stored,
   )
 
-  const summary = await pullServerSync(deps)
+  const summary = await pullServerSync({}, deps)
 
   expect(sent).toEqual([stored])
   expect(events).toEqual([
@@ -117,7 +119,7 @@ it('기억한 번호를 보내고, 받은 줄을 표 차례로 다 넣은 뒤에
     `cursors ${JSON.stringify({ nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 10 } })}`,
   ])
   expect(current()).toEqual(response().cursors)
-  expect(summary).toMatchObject({ applied: 4, skipped: 0, stopped: false })
+  expect(summary).toMatchObject({ applied: 4, skipped: 0, stopped: false, finished: true })
   expect(deps.afterRecordsChanged).toHaveBeenCalledWith(
     new Set(['bossProfitEntries', 'bossDrops', 'enhancementSettledDays', 'mapleIdNames']),
   )
@@ -136,11 +138,34 @@ it('넣지 못한 줄과 대기 중이라 건너뛴 줄은 세고 나머지를 �
     ),
   ])
 
-  const summary = await pullServerSync(deps)
+  const summary = await pullServerSync({}, deps)
 
   expect(summary).toMatchObject({ applied: 1, skipped: 3 })
   expect(current()).toEqual(response().cursors)
   expect(deps.applyPreferences).not.toHaveBeenCalled()
+})
+
+// 처음 동기화의 받기만 id 없는 Preferences 기록의 서버 값을 남긴다. 짝이 없는 대표를 모르면 기기 쪽 대표가 올라가 서버가 그 대표를 내린다.
+it('처음 동기화의 받기는 넣기를 마친 시각과 서버 대표가 짝이 없는 캐릭터인지를 Preferences 넣기에 넘긴다', async () => {
+  const records = {
+    trackedCharacters: [
+      { ocid: OTHER_HASH, sortOrder: 0, isRepresentative: true, deletedAt: null },
+      { ocid: nexonIdHashHex('ocid-1'), sortOrder: 1, isRepresentative: false, deletedAt: null },
+    ],
+  }
+  const first = setup([answered(response({ records }))])
+  await pullServerSync({ firstQueuedAt: 'Q' }, first.deps)
+  expect(first.deps.applyPreferences).toHaveBeenCalledWith(
+    [expect.objectContaining({ table: 'trackedCharacters', ocid: 'ocid-1' })],
+    { firstQueuedAt: 'Q', unpairedRepresentative: true },
+  )
+
+  const later = setup([answered(response({ records }))])
+  await pullServerSync({}, later.deps)
+  expect(later.deps.applyPreferences).toHaveBeenCalledWith([expect.objectContaining({ ocid: 'ocid-1' })], {
+    firstQueuedAt: undefined,
+    unpairedRepresentative: false,
+  })
 })
 
 it('`hasMore` 가 꺼질 때까지 이어 받고 화면은 끝에 한 번 다시 읽는다', async () => {
@@ -151,7 +176,7 @@ it('`hasMore` 가 꺼질 때까지 이어 받고 화면은 끝에 한 번 다시
   })
   const { deps, sent } = setup([answered(first), answered(response({ records: { rememberedLevels: [{ id: 'level-1' }] } }))])
 
-  const summary = await pullServerSync(deps)
+  const summary = await pullServerSync({}, deps)
 
   expect(sent[1]).toEqual(first.cursors)
   expect(summary.pages).toBe(2)
@@ -164,19 +189,19 @@ it('`hasMore` 인데 번호가 그대로면 멈춘다', async () => {
   const stuck = response({ hasMore: true })
   const { deps } = setup([answered(stuck), answered(stuck), answered(stuck)])
 
-  const summary = await pullServerSync(deps)
+  const summary = await pullServerSync({}, deps)
 
   expect(deps.pull).toHaveBeenCalledTimes(2)
-  expect(summary.stopped).toBe(true)
+  expect(summary).toMatchObject({ stopped: true, finished: false })
 })
 
 it('응답이 없거나 요청 전체가 거절되면 번호를 두고 멈춘다', async () => {
   for (const outcome of [{ outcome: 'no-response' } as const, { outcome: 'refused', status: 401 } as const]) {
     const { deps } = setup([outcome])
 
-    const summary = await pullServerSync(deps)
+    const summary = await pullServerSync({}, deps)
 
-    expect(summary.stopped).toBe(true)
+    expect(summary).toMatchObject({ stopped: true, finished: false })
     expect(deps.setCursors).not.toHaveBeenCalled()
   }
 })
@@ -191,7 +216,7 @@ describe('가장 오래된 삭제 표식', () => {
     })
     const { deps, events, sent } = setup([answered(stale), answered(response({ records: { mvpGradeHistory: [{ id: 'mvp-1' }] } }))], stored)
 
-    await pullServerSync(deps)
+    await pullServerSync({}, deps)
 
     expect(events[1]).toBe(`clear ${JSON.stringify({ mapleIds: [MAPLE], person: false })}`)
     expect(sent[1]).toEqual({ nexonAccount: { id: 'account-1', changeSeq: 50 }, mapleIds: { [MAPLE_HASH]: 0, [OTHER_HASH]: 0 } })
@@ -203,7 +228,7 @@ describe('가장 오래된 삭제 표식', () => {
     const stored = { nexonAccount: { id: 'account-1', changeSeq: 5 }, mapleIds: { [MAPLE_HASH]: 50 } }
     const { deps, sent } = setup([answered(response({ oldestDeletedChangeSeq: 20 })), answered(response())], stored)
 
-    await pullServerSync(deps)
+    await pullServerSync({}, deps)
 
     expect(deps.clearOwners).toHaveBeenCalledWith({ mapleIds: [], person: true })
     expect(sent[1]).toEqual({ nexonAccount: null, mapleIds: { [MAPLE_HASH]: 50 } })
@@ -212,18 +237,18 @@ describe('가장 오래된 삭제 표식', () => {
       [answered(response({ oldestDeletedChangeSeq: 20, cursors: { nexonAccount: { id: 'account-2', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 60 } } }))],
       stored,
     )
-    await pullServerSync(moved.deps)
+    await pullServerSync({}, moved.deps)
     expect(moved.deps.clearOwners).not.toHaveBeenCalled()
   })
 
   it('짝이 없는 메이플 ID 는 `#` 를 붙인 해시로 비우고, 표식이 null 이면 비우지 않는다', async () => {
     const stored = { nexonAccount: null, mapleIds: { [OTHER_HASH]: 5 } }
     const first = setup([answered(response({ mapleIds: [OTHER_HASH], oldestDeletedChangeSeq: 20 })), answered(response())], stored)
-    await pullServerSync(first.deps)
+    await pullServerSync({}, first.deps)
     expect(first.deps.clearOwners).toHaveBeenCalledWith({ mapleIds: [`#${OTHER_HASH}`], person: false })
 
     const none = setup([answered(response({ mapleIds: [OTHER_HASH], oldestDeletedChangeSeq: null }))], stored)
-    await pullServerSync(none.deps)
+    await pullServerSync({}, none.deps)
     expect(none.deps.clearOwners).not.toHaveBeenCalled()
   })
 })
@@ -233,7 +258,7 @@ it('받은 줄의 해시를 원문으로 바꿔 넣는다', async () => {
     answered(response({ records: { bossSplitSettings: [{ id: 'split-1', ocid: nexonIdHashHex('ocid-1'), createdAt: AT, updatedAt: AT }] } })),
   ])
 
-  await pullServerSync(deps)
+  await pullServerSync({}, deps)
 
   expect(deps.applySqlite).toHaveBeenCalledWith(expect.objectContaining({ id: 'split-1', row: expect.objectContaining({ ocid: 'ocid-1' }) }))
 })
@@ -246,7 +271,7 @@ it('받기 전에 짝이 생긴 `#` 를 원문으로 바꾸고, 바꾼 표의 �
     return new Set(['bossProfitEntries'])
   })
 
-  await pullServerSync(deps)
+  await pullServerSync({}, deps)
 
   expect(events[0]).toBe('replace matched')
   expect(deps.afterRecordsChanged).toHaveBeenCalledWith(new Set(['bossProfitEntries']))
@@ -258,7 +283,7 @@ describe('다른 기기의 부계정 해제', () => {
     const first = response({ hasMore: true, cursors: { nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 10 } } })
     const { deps } = setup([answered(first), answered(response())], stored)
 
-    await pullServerSync(deps)
+    await pullServerSync({}, deps)
 
     expect(deps.forgetReleasedSubAccounts).toHaveBeenCalledTimes(1)
     expect(deps.forgetReleasedSubAccounts).toHaveBeenCalledWith(new Set([OTHER_HASH]))
@@ -270,11 +295,11 @@ describe('다른 기기의 부계정 해제', () => {
       [answered(response())],
       { nexonAccount: { id: 'account-2', changeSeq: 9 }, mapleIds: { [OTHER_HASH]: 9 } },
     )
-    await pullServerSync(moved.deps)
+    await pullServerSync({}, moved.deps)
     expect(moved.deps.forgetReleasedSubAccounts).not.toHaveBeenCalled()
 
     const fresh = setup([answered(response())])
-    await pullServerSync(fresh.deps)
+    await pullServerSync({}, fresh.deps)
     expect(fresh.deps.forgetReleasedSubAccounts).not.toHaveBeenCalled()
   })
 })
