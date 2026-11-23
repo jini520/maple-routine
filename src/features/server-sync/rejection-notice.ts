@@ -7,7 +7,7 @@
  * @see docs/foundation/server-sync.md `거절 알림`
  */
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
-import { bossDifficultyOfId, bossShortNameOf } from '../../lib/boss/bosses'
+import { bossDifficultyOfId, bossNameOf } from '../../lib/boss/bosses'
 import { findCashbookCategoryById } from '../../lib/cashbook/categories'
 import { findItemById, ringLevelOf, withRingLevel } from '../../lib/item-catalog'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
@@ -48,10 +48,12 @@ function monthDayOf(dateKey: unknown): string | null {
   return match === null ? null : `${Number(match[1])}월 ${Number(match[2])}일`
 }
 
-/** `루시드 하드`. 좁은 자리에 쓰는 보스 이름이다. 게임 데이터에 없는 난이도 줄이면 `null` 이다. */
+/**
+ * `루시드 하드`. 처치를 적는 보스 수익 화면과 같은 정식 이름이라야 어느 줄인지 찾는다. 게임 데이터에 없는 난이도 줄이면 `null` 이다.
+ */
 function bossDifficultyNameOf(id: unknown): string | null {
   const owner = typeof id === 'string' ? bossDifficultyOfId(id) : null
-  return owner === null ? null : `${bossShortNameOf(owner.bossKey, owner.bossKey)} ${DIFFICULTY_NAME[owner.difficulty]}`
+  return owner === null ? null : `${bossNameOf(owner.bossKey, owner.bossKey)} ${DIFFICULTY_NAME[owner.difficulty]}`
 }
 
 /** 아이템 표의 이름. 특수스킬 반지의 레벨 줄은 레벨을 붙인다. */
@@ -80,9 +82,12 @@ export async function recordNameOf(
   if (source === null) return null
   switch (table) {
     case 'bossProfitEntries':
-      // 자동으로 적은 처치는 넥슨이 준 것이다. 처치 전 수익 건(분배만 고친 줄)은 이름을 정하지 않았다.
+      // 자동으로 적은 처치는 넥슨이 준 것이다. 처치 전 수익 건은 그 주의 분배만 든 줄이라 분배 설정으로 부른다.
       if (source.clear_recorded_by === 'auto') return 'silent'
-      return source.clear_recorded_by === 'manual' ? named(bossDifficultyNameOf(source.boss_difficulty_id), '처치 기록') : null
+      return named(
+        bossDifficultyNameOf(source.boss_difficulty_id),
+        source.clear_recorded_by === 'manual' ? '처치 기록' : '분배 설정',
+      )
     case 'bossDrops':
       return named(itemNameOf(source.item_id), '드롭 기록')
     case 'bossSplitSettings':

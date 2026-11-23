@@ -22,6 +22,22 @@ describe('기록 이름', () => {
     await expect(recordNameOf('bossProfitEntries', { ...entry, clear_recorded_by: 'auto' }, DEPS)).resolves.toBe('silent')
   })
 
+  // 처치를 적는 보스 수익 화면이 정식 이름을 쓴다. 알림도 같은 이름이어야 어느 줄인지 찾는다.
+  it('보스는 짧은 이름이 아니라 보스 수익 화면과 같은 정식 이름으로 짓는다', async () => {
+    const slime = bossDifficultyIdOf('guardian_angel_slime', 'chaos')!
+
+    await expect(
+      recordNameOf('bossProfitEntries', { id: 'e', boss_difficulty_id: slime, clear_recorded_by: 'manual' }, DEPS),
+    ).resolves.toBe('가디언 엔젤 슬라임 카오스 처치 기록')
+  })
+
+  // 처치 전 수익 건은 그 주의 분배만 든 줄이다. 분배를 고친 입력이라 분배 설정의 이름을 쓴다.
+  it('처치 전 수익 건은 분배 설정으로 이름 짓는다', async () => {
+    await expect(
+      recordNameOf('bossProfitEntries', { id: 'e', boss_difficulty_id: LUCID_HARD, clear_recorded_by: null }, DEPS),
+    ).resolves.toBe('루시드 하드 분배 설정')
+  })
+
   it('넥슨에서 받아 기기가 적는 기록은 알리지 않는다', async () => {
     for (const table of ['enhancementTotals', 'sharedContentProgress', 'rememberedLevels']) {
       await expect(recordNameOf(table, { id: 'x' }, DEPS)).resolves.toBe('silent')
@@ -68,7 +84,6 @@ describe('기록 이름', () => {
   it('이름의 재료가 기기에 없거나 표에 없는 기록이면 이름을 짓지 않는다', async () => {
     await expect(recordNameOf('bossDrops', { id: 'd', item_id: '없는-id' }, DEPS)).resolves.toBeNull()
     await expect(recordNameOf('characterWorldLeaps', { id: 'l', ocid: 'ocid-모름' }, DEPS)).resolves.toBeNull()
-    await expect(recordNameOf('bossProfitEntries', { id: 'e', boss_difficulty_id: LUCID_HARD, clear_recorded_by: null }, DEPS)).resolves.toBeNull()
     await expect(recordNameOf('bossDrops', null, DEPS)).resolves.toBeNull()
   })
 })

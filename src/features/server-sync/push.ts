@@ -104,7 +104,8 @@ const DEFAULT_DEPS: PushDeps = {
   replaceId: replaceServerSyncRecordId,
   deleteRecord: deleteServerSyncRecord,
   nameOf: (table, source) => recordNameOf(table, source, { characterNameOf }),
-  notify: (message) => useToastStore.getState().showInfo(message),
+  // 입력이 저장되지 않았다는 알림이라 다른 저장 실패처럼 사용자가 닫을 때까지 둔다.
+  notify: (message) => useToastStore.getState().showError(message),
   afterRecordsChanged: refreshScreens,
 }
 
