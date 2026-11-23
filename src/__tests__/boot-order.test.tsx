@@ -9,11 +9,9 @@
 // ① **셸이 무엇을 언제 하는가**. 렌더해서 실제 호출 순서를 본다.
 // ② **진입점이 무엇을 먼저 하는가**. 포트 주입과 스플래시 붙들기는 React 트리 **밖**이라 렌더로는
 //    못 본다. `index.ts` 를 소스로 읽어 순서만 본다.
-// ③ **OTA 가 아직 아무 데도 안 이어져 있는가**. 프로토콜 재설계를 뒤로 미뤄 뒀다.
-//    `LiveUpdatePort` 는 던지고, 그보다 앞서 core 의 live-update 스토어는 **import
-//    하는 것만으로** 죽는다(`import.meta.env`). 그래서 계약이 "부르지 않는다"가
-//    아니라 **"값으로 가져오지도 않는다"** 이고, 그건 호출 관측으로는 못 지킨다. 값 import 가
-//    하나 생기면 그 순간 앱도 테스트도 안 뜨므로 **그 전에** 여기가 빨개져야 한다.
+// ③ **OTA 가 이어져 있는가**. live-update 스토어가 `import.meta` 를 쓰면 RN 은 그 모듈을 **import
+//    하는 것만으로** 죽는다. 그건 호출 관측으로는 못 지켜서 소스를 읽어 본다. 업데이트 모달이 마운트된
+//    자리도 소스로 본다.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
@@ -248,8 +246,6 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     await act(async () => {})
   }
 
-  // 여기에 `startAds`(광고 SDK 초기화 + 사전 로드)가 다섯 번째 항목으로 있었다. 이
-  // 전면광고를 걷으며 셸에서 사라졌다.
   it('복원 여섯이 첫 렌더에 전부 시작된다', async () => {
     await mountShell()
 
@@ -472,8 +468,8 @@ describe('② 진입점이 무엇을 먼저 하는가', () => {
   })
 })
 
-describe('③ OTA 배선. 벽이 사라졌고, 사라진 채로 있어야 한다', () => {
-  /** `packages/app-rn` 의 **제품 소스** 전부(테스트·스냅샷 제외). */
+describe('③ OTA 배선. live-update 스토어를 import 할 수 있고 업데이트 모달이 마운트돼 있다', () => {
+  /** 앱의 **제품 소스** 전부(테스트·스냅샷 제외). */
   const sources = ((): string[] => {
     const walk = (dir: string): string[] =>
       readdirSync(dir).flatMap((entry) => {
@@ -493,15 +489,9 @@ describe('③ OTA 배선. 벽이 사라졌고, 사라진 채로 있어야 한다
 
   const relative = (file: string): string => path.relative(RN_ROOT, file)
 
-  // 여기 있던 세 케이스는 **아직 안 이어져 있다를 고정**하고 있었다(스토어를 타입으로만 import·
-  // `src/native/live-update` 호출 0· 모달 마운트 0). 그 셋이 다 뒤집혔으므로 그대로
-  // 두면 **구현하면 실패하는 테스트**가 된다. 글롭 고정 테스트를 `0이어야 한다`로
-  // 뒤집었을 때와 같은 처리다. 감시 대상이 사라진 게 아니라 **묻는 질문이 바뀐 것**이다.
-  //
-  // 이제 묻는 것은 **벽이 정말 사라졌는가** 다. 벽은 core 가 **Vite 전용 API** 를 쓰는 것이었고,
-  // 그것이 되살아나면 RN 은 다시 **import 하는 것만으로 죽는** 상태로 돌아간다. 그때 실패해야 하는
+  // 스토어가 **Vite 전용 API**(`import.meta`)를 쓰면 RN 은 **import 하는 것만으로 죽는다**. 그때 실패해야 하는
   // 자리는 이 모듈을 쓰는 화면 하나가 아니라 여기다.
-  it('core 의 live-update 스토어에 `import.meta` 가 없다. 그것이 벽이었다', () => {
+  it('live-update 스토어에 `import.meta` 가 없다', () => {
     const store = readFileSync(
       path.join(RN_ROOT, 'src', 'features', 'live-update', 'store.ts'),
       'utf8',

@@ -49,62 +49,25 @@ import { rnSqlitePort } from './storage/adapters/rn-sqlite'
 import { rnAssetFilesPort } from './storage/adapters/rn-asset-files'
 
 /**
- * 포트 15종을 한 번에 주입한다(인터페이스와 구현이
- * 앱이 넣는다).
+ * 저장소 · 네이티브 포트 스물하나를 한 번에 주입하는 함수. 진입점 `index.ts` 가 `registerRootComponent(App)` 앞에서 부른다.
  *
- * (아래 `setThemeAppearancePort` 가 값을 놓는 자리는 `src/theme/appearance-store.ts` 이고 그것을
- * 읽는 것은 `ThemeProvider` 다. 이 포트만 부팅 배선과 렌더 트리가 함께 있어야 성립한다.)
+ * 저장소 · 네이티브를 처음 만지는 코드보다 먼저 불러야 한다. 주입 전 접근은 슬롯(`storage/ports.ts` · `native/ports.ts`)이 던져서,
+ * 순서가 틀리면 조용히 넘어가지 않고 에러로 드러난다. 세터를 한 함수에 모으는 것은 하나라도 빠지면 그 기능만 던지고 나머지는 돌아
+ * 늦게 발견되기 때문이다. 주입 순서는 서로 상관없다.
  *
- * ## 언제 불러야 하는가. **저장소·네이티브를 처음 만지는 코드보다 먼저**
- *
- * 웹 쪽 참조 구현(`main.tsx`)이 세터 셋을 파일 맨 위에 두고 그 이유를 적어 두었다: 바로 아래
- * `checkOnBoot()` 부터 Preferences 를 읽고 라이브 업데이트를 확인하며, 그 실패 경로는 스플래시까지
- * 건드린다. RN 쪽 짝은 진입점 `index.ts` 이고, `registerRootComponent(App)` **앞**에
- * 부른다. 그 호출이 하는 일은 `AppRegistry` 등록이라 실제 렌더는 번들 평가가 끝난 뒤에 오지만,
- * "렌더보다 먼저"를 코드 순서로 읽히게 두는 편이 낫다.
- *
- * 주입 전 접근은 조용히 넘어가지 않고 던지므로(`ports.ts` 의 슬롯), 순서가 틀리면 무음 실패가
- * 아니라 에러로 드러난다.
- *
- * ## 왜 세터를 한 함수에 모으는가
- *
- * 하나라도 빠지면 **그 기능만** 던지고 나머지는 멀쩡히 돌아 발견이 늦다. 그래서 "전부"를 한
- * 자리에서 보장한다. 주입 순서는 서로 무관하다.
- * 포트끼리 참조하지 않는다.
- *
- * ## 열다섯이 전부 실구현이다
- *
- * 마지막까지 던지던 `LiveUpdatePort` 가 로 채워졌다(`rn-live-update.ts`). 그 하나가
- * 아직 안 만들었다로 남아 있던 이유는 다른 열둘과 달리 **프로토콜 자체가 바뀌기** 때문이었고
- * 그래서 `not-implemented.ts` 는 이제 비었다.
- *
- * 열넷째가 `PushPort` 다(`rn-push.ts`). 구독·해제 둘뿐인 것이 그 포트의 설계이고, 알림 권한은
- * 여기 없이 `NotificationsPort` 가 든다. OS 권한이 로컬과 원격을 안 가리는 하나라서다.
- *
- * 열다섯째가 `HapticsPort` 다(`rn-haptics.ts`). 두드림 하나뿐이고, 그 하나를 두 플랫폼이
- * 서로 다른 API 로 낸다.
- *
- * `StoreReviewPort` 는 앱 안 리뷰 팝업 하나다(`rn-store-review.ts`). 쓸 수 없는 기기에서는 아무것도 하지 않는다.
- *
- * `ClipboardPort` 는 글자 복사 하나다(`rn-clipboard.ts`). OS 가 복사를 스스로 알리는 기기인지도 답한다.
- *
- * 그 목록을 먼저 떠난 것이 셋이다:
- * - `ThemeAppearancePort`. `rn-theme-appearance.ts` 가 자리를 채웠다.
- * - `BackGesturePort`. **절반만 구현이다.** `moveToBackground` 는 실구현이고
- *  (그 하나는 내비게이션 라이브러리가 대신해 주지 않는다) 나머지 둘은 계속
- *   던지되 사유가 갈린다: *"아직 안 했다"* 가 아니라 *"이제 네이티브 스택이 소유한다."*
- *   그래서 메시지도 `not-implemented.ts` 가 아니라 `rn-back-gesture.ts` 가 갖는다.
- * - `SystemBarsPort`. 이쪽도 절반씩이다. `setNavigationBarStyle` 은 로컬 Expo
- *   모듈로 그대로 옮겼고, `refreshSafeAreaInsets` 는 **의도적인 no-op** 이다(던지지 않는다.
- *   `SafeAreaProvider` 가 그 갱신을 이미 자동으로 하므로 거부가 진짜 고장과 구분을 없앤다).
+ * - `ThemeAppearancePort` 가 놓는 값은 `src/theme/appearance-store.ts` 에 있고 `ThemeProvider` 가 읽는다. 이 포트만 부팅 배선과 렌더
+ *   트리가 함께 있어야 성립한다.
+ * - `BackGesturePort` 는 `moveToBackground` 만 구현한다. 나머지 둘은 네이티브 스택이 맡아서 부르면 던진다(`rn-back-gesture.ts`).
+ * - `SystemBarsPort` 의 `refreshSafeAreaInsets` 는 아무것도 하지 않는다. `SafeAreaProvider` 가 그 갱신을 이미 한다.
+ * - `PushPort` 는 구독 · 해제 둘이다. 알림 권한은 로컬과 원격을 가리지 않는 하나라서 `NotificationsPort` 가 든다.
  */
 export function installPorts(): void {
-  // 저장소 먼저. 웹 쪽 `main.tsx` 와 같은 순서다(기술적 의존은 없고, 두 앱을 나란히 읽기 위한 것).
+  // 저장소 포트.
   setPreferencesPort(rnPreferencesPort)
   setSqlitePort(rnSqlitePort)
   setAssetFilesPort(rnAssetFilesPort)
 
-  // RN 구현이 있는 열둘.
+  // 네이티브 포트.
   setAdsPort(rnAdsPort)
   setBackGesturePort(rnBackGesturePort)
   setColorSchemePort(rnColorSchemePort)
