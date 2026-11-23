@@ -14,6 +14,7 @@ import { requestNotificationReconcile, watchReconcileTriggers } from '../feature
 import { syncBackgroundRefreshRegistration } from '../features/schedule-alert/background-refresh'
 import { dropEmptyMvpGradeRows } from '../features/mvp-grade/empty-rows'
 import { fillLegacyAccountIds } from '../features/auth/legacy-account-ids'
+import { startServerSyncAfterWrites } from '../features/server-sync/after-write'
 import { kickServerSync } from '../features/server-sync/kick'
 import { useAppEntryStore } from '../features/app-entry/store'
 import { useAuthStore } from '../features/auth/store'
@@ -213,7 +214,7 @@ function ReadyShell(): React.JSX.Element {
     void prehydrateTabStores()
   }, [isReady])
 
-  // 서버가 이 기기의 넥슨 계정을 알게 한다. **첫 화면을 막지 않는다** - `void` 로 띄우고 결과를 안
+  // 서버가 이 기기의 넥슨 계정을 알게 한 뒤 대기 표를 올린다. **첫 화면을 막지 않는다** - `void` 로 띄우고 결과를 안
   // 기다린다.
   //
   // `isReady` 를 기다리는 것은 밝힐 수단이 그때 서기 때문이다. 키도 로그인도 없는 단계에서 돌면
@@ -221,6 +222,12 @@ function ReadyShell(): React.JSX.Element {
   useEffect(() => {
     if (!isReady) return
     void kickServerSync()
+  }, [isReady])
+
+  // 기록을 쓰면 회차를 깨워 입력 직후에 올린다. 준비 전의 쓰기는 위의 회차가 올린다.
+  useEffect(() => {
+    if (!isReady) return
+    return startServerSyncAfterWrites()
   }, [isReady])
 
   // 계정 칸이 생기기 전의 행을 메인 넥슨 계정으로 채운다. 계정이 서는 `isReady` 뒤에 돈다. 실패하면 다음 호출이 다시 돈다.

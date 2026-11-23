@@ -211,7 +211,8 @@ function notifyRevisionListeners(): void {
   for (const listener of revisionListeners) listener()
 }
 
-function bumpInventoryItemsRevision(): void {
+/** 판을 올린다. 올리기가 거절된 기록을 지우거나 서버 id 로 바꿀 때 이 모듈 밖에서도 부른다. */
+export function bumpInventoryItemsRevision(): void {
   inventoryItemsRevision += 1
   notifyAfterBatch(notifyRevisionListeners)
 }

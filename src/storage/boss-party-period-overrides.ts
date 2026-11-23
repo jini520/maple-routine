@@ -10,6 +10,7 @@
 import { ENTRY_KEY_WHERE, SPLIT_COLUMN_NAMES, entryKeyOf, entryKeyValues, periodCodesOf, shareOf, splitValues } from './boss-periods'
 import type { BossPartyShareColumns } from './boss-party-settings'
 import { getBossProfitDb } from './sqlite/db'
+import { noteRecordsWritten } from './server-sync-queue'
 import { NEW_UUID_SQL } from './sqlite/uuid'
 
 export interface BossPartyPeriodOverride extends BossPartyShareColumns {
@@ -46,6 +47,7 @@ const HAS_OVERRIDE = 'clear_recorded_by IS NULL AND split_type IS NOT NULL'
 export async function setBossPartyPeriodOverride(override: BossPartyPeriodOverride): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(UPSERT_SQL, [...entryKeyValues(override), ...splitValues(override, false), override.updatedAt, override.updatedAt])
+  noteRecordsWritten()
 }
 
 /** 줄을 그 기간 값으로. 게임 데이터에 없는 난이도 줄이면 `null` 이다. */

@@ -9,6 +9,7 @@
  */
 import { itemTargetIdOf, itemTargetKeyOf, type CashbookItemTargetType } from '../lib/cashbook/entry-ids'
 import { getBossProfitDb } from './sqlite/db'
+import { noteRecordsWritten } from './server-sync-queue'
 import { inTransaction } from './sqlite/transaction'
 import { NEW_UUID_SQL } from './sqlite/uuid'
 
@@ -60,6 +61,7 @@ export async function rememberLevels(
       )
     }
   })
+  noteRecordsWritten()
 }
 
 /** 그 캐릭터의 기억이 하나라도 있나. 추적을 다시 시작할 때 넥슨에서 다시 받을지 가른다. */
@@ -82,4 +84,5 @@ export async function moveRememberedLevelsToOcid(fromOcid: string, toOcid: strin
     )
     await db.run(`DELETE FROM remembered_levels WHERE ocid = ?`, [fromOcid])
   })
+  noteRecordsWritten()
 }

@@ -44,6 +44,7 @@
 | `DELETE /v1/me/sub-accounts` | 세션 | `{ mapleIds }` | 204. 등록이 없어도 204 | 10초 |
 | `POST /v1/usage-events` | 세션 또는 메이플 ID 해시 | 사용 로그 묶음 | `{ ok: true }` | 10초 |
 | `POST /v1/enhancement-anomalies` | 세션 또는 메이플 ID 해시 | `{ items }` | `{ ok: true }` | 10초 |
+| `POST /v1/sync/push` | 세션 또는 메이플 ID 해시 | `{ records: [{ table, action, row }] }`. 100건 · 256KB 까지 | `{ results }`. 기록마다 받았으면 `{ ok: true, id }`, 거절이면 `{ ok: false, code, reason }` | 10초 |
 | `POST /v1/auth/nexon/login` | 없음 | `{ platform }` | `{ authorizeUrl, redeemKey }` | 15초 |
 | `POST /v1/auth/nexon/session` | 없음 | `{ redeemKey, receipt }` | `{ status: 'ok', session }` · `{ status: 'pending' }` · 404 | 15초 |
 | `DELETE /v1/auth/nexon/session` | 세션 | | | 15초 |
@@ -54,7 +55,7 @@
 알릴 때 서버가 같은 메이플 ID 의 넥슨 계정 줄을 로그인 줄로 합친다([[ADR-017]] 결정 9, [[ADR-101]] 결정 25).
 
 1.0.15 서버에는 기기 간 동기화의 받기 · 올리기 · 데이터 삭제 경로(`POST /v1/sync/pull` · `/v1/sync/push` · `/v1/sync/clear`)가 있다.
-앱은 아직 부르지 않는다. 요청과 응답의 모양은 [[ADR-099]] 결정 66 에 있다.
+앱은 지금 올리기만 부른다(`foundation/server-sync.md` 의 `올리기`). 요청과 응답의 모양은 [[ADR-099]] 결정 66 에 있다.
 
 ## 신원 헤더
 

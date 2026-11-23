@@ -34,6 +34,8 @@ interface BossProfitCalculatorState {
   open: () => Promise<void>
   openRecord: (id: string) => void
   deleteRecord: (id: string) => Promise<void>
+  /** 저장소의 기록 목록을 다시 읽는다. 다른 기기가 지운 기록을 서버가 거절해 기기에서 지웠을 때 부른다. 아직 안 열었으면 하지 않는다 */
+  reloadRecords: () => Promise<void>
   save: (mode: CalculatorSaveMode, now: Date) => Promise<void>
   importFromBossManage: (ocid: string, now: Date) => void
   clearCharacter: (ocid: string) => void
@@ -111,6 +113,15 @@ export const useBossProfitCalculatorStore = create<BossProfitCalculatorState>()(
     // 저장이 먼저다. 저장이 실패했는데 목록만 바뀌면 다시 열었을 때 지운 기록이 돌아온다.
     await setBossProfitCalculatorRecords(records)
     set((state) => ({ records, openedId: state.openedId === id ? null : state.openedId }))
+  },
+
+  async reloadRecords() {
+    if (!get().loaded) return
+    const records = newestFirst(await getBossProfitCalculatorRecords())
+    set((state) => ({
+      records,
+      openedId: records.some((one) => one.id === state.openedId) ? state.openedId : null,
+    }))
   },
 
   async save(mode, now) {

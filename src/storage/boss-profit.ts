@@ -145,6 +145,11 @@ function bumpRecordsRevision(): void {
   notifyAfterBatch(notifyRevisionListeners)
 }
 
+/** 이 모듈 밖에서 수익 건 · 분배 설정을 고쳤을 때 판을 올린다. 올리기가 거절된 기록을 지우거나 서버 id 로 바꿀 때 부른다. */
+export function bumpBossProfitRecordsRevision(): void {
+  bumpRecordsRevision()
+}
+
 /** 테스트 전용. 모듈 수준 상태라 테스트끼리 오염된다. 프로덕션에서 부르지 말 것. */
 export function resetBossProfitRecordsRevisionForTests(): void {
   recordsRevision = 0

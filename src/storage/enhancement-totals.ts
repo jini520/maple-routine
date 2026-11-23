@@ -82,6 +82,11 @@ function bumpRevision(): void {
   notifyAfterBatch(notifyRevisionListeners)
 }
 
+/** 이 모듈 밖에서 합계를 고쳤을 때 판을 올린다. 올리기가 거절된 기록을 지우거나 서버 id 로 바꿀 때 부른다. */
+export function bumpEnhancementTotalsRevision(): void {
+  bumpRevision()
+}
+
 const UPSERT_SQL = `
   INSERT INTO enhancement_totals
     (ocid, history_date, category, item_name, attempt_count, attempt_cost_meso, destroy_defence_cost_meso, world_id,
