@@ -29,6 +29,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/TrackingModeModal.tsx` · `TrackingModeSelector.tsx` | 스케줄 관리 방법 고르기 |
 | `app/settings/reload-tab-stores.ts` | 스케줄 관리 방법을 바꾼 뒤 컨텐츠 · 보스 · 수익 스토어를 차례로 다시 읽게 한다 |
 | `features/settings/cache-data.ts` · `storage/cache-data.ts` | 데이터 삭제 그룹 · 건수 · 삭제 · 다시 띄우기 |
+| `features/server-sync/clear.ts` | 데이터 삭제의 서버 쪽. 기록 그룹은 서버에서 먼저 지우고, 지운 뒤에만 기기에서 지운다 |
 | `src/data/release-notes.ts` · `types/release-notes.ts` | 버전별 변경 목록과 업데이트 모달의 핵심 줄 |
 
 ## 더보기
