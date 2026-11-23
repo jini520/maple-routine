@@ -6,30 +6,38 @@
  */
 import { runServerSync } from './run'
 
-let running: Promise<unknown> | null = null
+let running: Promise<void> | null = null
 let again = false
 /** 멈춰 둔 수. 0 보다 크면 깨워도 돌지 않고, 모두 풀릴 때 한 번 돈다 */
 let holds = 0
+/** 깨운 뒤 아직 시작하지 않은 회차를 기다리는 깨우기. 다음 회차가 끝나면 풀린다 */
+let waiting: (() => void)[] = []
 
-/** 결과를 기다리지 않는다. 테스트는 돌려받은 약속을 기다린다. */
-export function kickServerSync(): Promise<unknown> {
-  if (holds > 0) {
-    again = true
-    return Promise.resolve()
-  }
-  if (running !== null) {
-    again = true
-    return running
-  }
+function start(): void {
   running = (async () => {
-    do {
+    while (again && holds === 0) {
       again = false
+      const served = waiting
+      waiting = []
       await runServerSync()
-    } while (again)
+      for (const resolve of served) resolve()
+    }
   })().finally(() => {
     running = null
+    // 회차가 끝나 가는 사이에 깨운 것은 돌던 회차가 받지 못했다. 여기서 다시 시작하지 않으면 그 깨우기는 영영 돌지 않는다.
+    if (again && holds === 0) start()
   })
-  return running
+}
+
+/**
+ * 결과를 기다리지 않는다. 돌려받은 약속은 깨운 뒤에 시작한 회차가 끝나면 풀린다. 도는 회차는 깨우기 전의 대기 표를 읽었을 수 있다.
+ * 로그아웃과 테스트가 기다린다.
+ */
+export function kickServerSync(): Promise<void> {
+  const done = new Promise<void>((resolve) => waiting.push(resolve))
+  again = true
+  if (running === null && holds === 0) start()
+  return done
 }
 
 /**
@@ -47,6 +55,6 @@ export async function holdServerSync(): Promise<() => void> {
     if (released) return
     released = true
     holds -= 1
-    if (holds === 0 && again) void kickServerSync()
+    if (holds === 0 && again && running === null) start()
   }
 }

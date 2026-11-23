@@ -116,7 +116,7 @@ export async function signInWithNexon(options?: NexonSignInOptions): Promise<Nex
     }
 
     // 다른 사람이면 앞 사람의 기록을 저장하기 전에 비운다. 올리지 못한 기록이 남았으면 묻는다.
-    const saved = await switchServerSyncOwner({ mapleIds: accounts.map((one) => one.accountId), login: true }, async () => {
+    const saved = await switchServerSyncOwner({ mapleIds: accounts.map((one) => one.accountId), login: true, fresh: true }, async () => {
       // 로그인 만료는 로그아웃을 거치지 않는다. 그래서 로그아웃이 아니라 여기서 비워야 다른 넥슨 ID 로 들어올 때 앞 목록이
       // 남지 않는다.
       await forgetTrackedSelection()

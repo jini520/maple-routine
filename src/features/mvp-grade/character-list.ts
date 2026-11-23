@@ -33,7 +33,15 @@ export function fetchUnsavedCharacterList(credential: NexonCredential): Promise<
 
 /** 받은 목록의 메이플 ID 소속을 적는 함수. 실패해도 목록을 받은 자리는 그대로 간다. */
 export function recordCharacterList(accounts: readonly MapleAccount[], accountId: string | null, now: Date = new Date()): void {
-  void recordCharacterAccounts([...accounts], getCurrentKstDateKey(now), accountId).catch(() => undefined)
+  void recordCharacterListNow(accounts, accountId, now)
+}
+
+/**
+ * `recordCharacterList` 의 끝나기를 기다리는 꼴. 로그인 뒤 받기가 이 소속으로 받은 해시를 원문으로 바꾸므로 받기 전에 끝나야 한다.
+ * 던지지 않는다.
+ */
+export async function recordCharacterListNow(accounts: readonly MapleAccount[], accountId: string | null, now: Date = new Date()): Promise<void> {
+  await recordCharacterAccounts([...accounts], getCurrentKstDateKey(now), accountId).catch(() => undefined)
 }
 
 /**

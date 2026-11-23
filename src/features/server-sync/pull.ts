@@ -104,6 +104,11 @@ export interface PullOptions {
    * 있어도 서버 값을 남긴다
    */
   firstQueuedAt?: string
+  /**
+   * 받을 쪽의 상한. 로그인 뒤 받기는 한 쪽만 받는다. 주인을 비우고 다시 받는 요청은 세지 않는다. 세면 비우기만 하고 아무것도 넣지 못한 채
+   * 끝난다
+   */
+  maxPages?: number
 }
 
 /** 한 번의 받기가 한 일. 화면에 안 쓰고 테스트가 본다. */
@@ -233,8 +238,9 @@ export async function pullServerSync(options: PullOptions = {}, deps: PullDeps =
   const resolver = resolverOf(lookup)
   // 받은 줄의 유일 기준이 기기 줄과 맞도록 먼저 바꾼다.
   const changed = await deps.replaceMatched(lookup)
+  let pageLimit = options.maxPages ?? MAX_PAGES
   try {
-    for (let page = 0; page < MAX_PAGES; page += 1) {
+    for (let page = 0; page < pageLimit; page += 1) {
       const sent = await deps.getCursors()
       const outcome = await deps.pull(headers, sent)
       if (outcome.outcome !== 'answered') {
@@ -249,13 +255,15 @@ export async function pullServerSync(options: PullOptions = {}, deps: PullDeps =
           const owners = signInOwnersOf(signIn, await deps.deviceMapleIds(), response)
           // 대기 표에 남은 기록은 새 사람의 것이거나 주인을 모르는 기록이라 비우지 않는다.
           if (owners.mapleIds.length > 0 || owners.person) {
-            await deps.clearOwners(owners)
+            // 다른 사람이면 `#` 로 적은 캐릭터의 기록과 맞추는 설정도 앞 사람의 것이다.
+            await deps.clearOwners(owners.person ? { ...owners, anotherPerson: true } : owners)
             for (const table of SERVER_SYNC_TABLES) changed.add(table)
           }
           await deps.clearSignIn()
           if (owners.person) {
             // 번호의 넥슨 계정 줄이 응답과 같으면 서버가 번호 뒤의 줄만 주어 비운 기록이 돌아오지 않는다.
             await deps.setCursors({ nexonAccount: null, mapleIds: sent.mapleIds })
+            pageLimit += 1
             continue
           }
         }
@@ -280,6 +288,7 @@ export async function pullServerSync(options: PullOptions = {}, deps: PullDeps =
           nexonAccount: stale.person ? null : sent.nexonAccount,
           mapleIds: { ...sent.mapleIds, ...Object.fromEntries(stale.mapleIdHashes.map((hash) => [hash, 0])) },
         })
+        pageLimit += 1
         continue
       }
 

@@ -8,7 +8,7 @@
  * 그 결과를 `useAppEntryStore` 에 알린다.
  */
 import { create } from 'zustand'
-import { fetchUnsavedCharacterList, primeCharacterList, recordCharacterList } from '../mvp-grade/character-list'
+import { fetchUnsavedCharacterList, primeCharacterList, recordCharacterList, recordCharacterListNow } from '../mvp-grade/character-list'
 import { probeApiKeyStage } from '../../nexon/key-stage'
 import { lastKeySuccessAt } from '../../nexon/key-success'
 import {
@@ -38,6 +38,7 @@ import {
 } from './state'
 import { clearUnsentUsageEvents, requestAccountDeletion, syncBeforeSignOut } from '../server-sync/forget'
 import { switchServerSyncOwner } from '../server-sync/owner-switch'
+import { pullAfterSignIn } from '../server-sync/sign-in-pull'
 import { forgetTrackedSelection } from '../character-selection/forget'
 
 export interface AuthStore extends AuthState {
@@ -161,12 +162,13 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     try {
       const reusedId = (await reusableNexonAccountId(accounts)) ?? undefined
       // 다른 사람이면 앞 사람의 기록을 저장하기 전에 비운다. 올리지 못한 기록이 남았으면 묻는다.
-      const saved = await switchServerSyncOwner({ mapleIds: accounts.map((one) => one.accountId), login: false }, async () => {
-        // 로그인 화면에서 들어온 새 로그인이라 캐릭터를 새로 고른다.
+      const saved = await switchServerSyncOwner({ mapleIds: accounts.map((one) => one.accountId), login: false, fresh: true }, async () => {
+        // 로그인 화면에서 들어온 새 로그인이라 추적 목록을 비운다. 아래 받기가 서버의 추적 목록으로 채운다.
         await forgetTrackedSelection()
         await setMainApiKey(apiKey, '', reusedId)
         const key = (await getAuthConfig())?.apiKeys.find((one) => one.value === apiKey)
-        recordCharacterList(accounts, key?.id ?? null)
+        // 받기가 이 소속으로 받은 해시를 원문으로 바꾼다. 먼저 끝나야 추적 캐릭터가 짝을 찾는다.
+        await recordCharacterListNow(accounts, key?.id ?? null)
       })
       if (!saved) {
         set((state) => authReducer(state, { type: 'SIGN_IN_CANCELLED' }))
@@ -179,10 +181,12 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       return false
     }
 
+    // 비운 추적 목록을 서버 것으로 채운다. 그동안 제출 버튼이 대기 상태로 남는다. 받지 못하면 추적 목록이 비어 캐릭터 설정으로 간다.
+    await pullAfterSignIn()
     useToastStore.getState().showSuccess('API 키를 확인했어요')
     set((state) => authReducer(state, { type: 'API_KEY_VERIFIED', accounts }))
 
-    // 추적 목록을 비웠으므로 캐릭터 설정으로 간다. 파생은 부팅과 같은 함수 하나가 한다(setApiKey 뒤라야 authConfig 가
+    // 추적 목록이 비었으면 캐릭터 설정으로 간다. 파생은 부팅과 같은 함수 하나가 한다(setApiKey 뒤라야 authConfig 가
     // 채워져 있다).
     await useAppEntryStore.getState().resolveAfterSignIn(accounts)
     return true
@@ -248,7 +252,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     try {
       const reusedId = (await reusableNexonAccountId(accounts)) ?? undefined
       // 다른 넥슨 계정의 키면 다른 사람이다. 앞 사람의 기록을 저장하기 전에 비운다.
-      const saved = await switchServerSyncOwner({ mapleIds: accounts.map((one) => one.accountId), login: false }, async () => {
+      const saved = await switchServerSyncOwner({ mapleIds: accounts.map((one) => one.accountId), login: false, fresh: false }, async () => {
         await setMainApiKey(apiKey, '', reusedId)
         const key = (await getAuthConfig())?.apiKeys.find((one) => one.value === apiKey)
         recordCharacterList(accounts, key?.id ?? null)
@@ -351,8 +355,14 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
       // 목록은 로그인이 저장 전에 받아 왔다. 소속은 계정 id 가 정해진 지금 적는다.
       const { accounts } = result
-      recordCharacterList(accounts, credential.accountId)
       primeCharacterList(credential, accounts)
+      if (options?.fresh === true) {
+        // 받기가 이 소속으로 받은 해시를 원문으로 바꾼다. 비운 추적 목록을 서버 것으로 채운다.
+        await recordCharacterListNow(accounts, credential.accountId)
+        await pullAfterSignIn()
+      } else {
+        recordCharacterList(accounts, credential.accountId)
+      }
 
       useToastStore.getState().showSuccess('넥슨 계정을 연결했어요')
       set((state) => authReducer(state, { type: 'API_KEY_VERIFIED', accounts }))

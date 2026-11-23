@@ -7,7 +7,8 @@
  * 앞 계정과 새 계정의 메이플 ID 가 하나라도 겹치면 같은 사람이다
  * 대기 줄마다 주인을 찾아 앞 사람의 줄을 가린다
  *   있으면 묻는다. `그만두기` → 아무것도 바꾸지 않고 끝낸다. `버리고 로그인` → 그 줄과 기록을 지운다
- * 새 계정에 없는 메이플 ID 와, 다른 사람이면 사람의 기록을 비우고 그 번호를 지운다
+ * 새 계정에 없는 메이플 ID 와, 다른 사람이면 사람의 기록 · `#` 캐릭터의 기록 · 맞추는 설정을 비우고 그 번호를 지운다
+ * 로그인 화면의 로그인은 같은 사람이어도 사람의 번호를 지운다
  * 로그인을 저장하고 첫 받기의 표시를 적는다
  * ```
  *
@@ -19,7 +20,7 @@
 import { isUnmatchedNexonId } from '../../lib/crypto/nexon-id-hash'
 import { getAuthConfig } from '../../storage/api-key'
 import { findNexonAccountIdOfMapleIds, getMapleIdsByNexonAccount } from '../../storage/character-accounts'
-import { setServerSyncSignIn } from '../../storage/server-sync-cursors'
+import { clearServerSyncPersonCursor, setServerSyncSignIn } from '../../storage/server-sync-cursors'
 import { enqueueAllServerSyncRecords, getFirstServerSync, type FirstServerSync } from '../../storage/server-sync-first'
 import {
   discardServerSyncRecords,
@@ -30,9 +31,10 @@ import {
   type ServerSyncRecordOwner,
 } from '../../storage/server-sync-owners'
 import type { ServerSyncOwners } from '../../storage/server-sync-pull'
-import { listServerSyncQueue } from '../../storage/server-sync-queue'
+import { listServerSyncQueue, SERVER_SYNC_TABLES, type ServerSyncTable } from '../../storage/server-sync-queue'
 import { useUnsyncedPromptStore } from '../auth/unsynced-prompt'
 import { nexonIdHashOf } from './push-records'
+import { refreshAfterServerSync } from './refresh'
 
 /** 대기 줄 하나. 앞 사람의 것인지 가르고 버린다. */
 interface QueuedRecord {
@@ -57,6 +59,10 @@ export interface OwnerSwitchDeps {
   discard(entries: readonly QueuedRecord[]): Promise<void>
   forgetOwners(owners: ServerSyncOwners): Promise<void>
   markSignIn(previousMapleIds: readonly string[]): Promise<void>
+  /** 사람의 번호만 지운다 */
+  resetPersonCursor(): Promise<void>
+  /** 비운 표의 화면을 다시 읽게 한다 */
+  afterRecordsChanged(tables: ReadonlySet<ServerSyncTable>): void
 }
 
 /** 같은 넥슨 ID 로 다시 로그인하면 그 로그인에 귀속된 부계정 키가 다시 이어진다. 로그인의 계정 id 는 메이플 ID 로 찾는다. */
@@ -79,6 +85,8 @@ const DEFAULT_DEPS: OwnerSwitchDeps = {
   discard: discardServerSyncRecords,
   forgetOwners: forgetServerSyncOwners,
   markSignIn: setServerSyncSignIn,
+  resetPersonCursor: clearServerSyncPersonCursor,
+  afterRecordsChanged: refreshAfterServerSync,
 }
 
 /** 새로 로그인하는 계정. */
@@ -87,6 +95,8 @@ export interface NextServerSyncOwner {
   mapleIds: readonly string[]
   /** 넥슨 로그인이면 참. 이 기기에서 그 로그인에 귀속된 부계정 키의 메이플 ID 를 더한다 */
   login: boolean
+  /** 로그인 화면의 로그인이면 참. 추적 목록을 비워 같은 사람이어도 사람의 번호를 지우고 처음부터 받는다 */
+  fresh: boolean
 }
 
 /**
@@ -123,9 +133,15 @@ export async function switchServerSyncOwner(
     await deps.discard(previousRecords)
   }
 
-  // 대기 표에 남은 기록은 새 사람의 것이거나 주인을 모르는 기록이라 비우지 않는다.
+  // 대기 표에 남은 기록은 새 사람의 것이거나 주인을 모르는 기록이라 비우지 않는다. 다른 사람이면 `#` 캐릭터의 기록과 맞추는 설정도
+  // 앞 사람의 것이다.
   const cleared = (await deps.deviceMapleIds()).filter(isPreviousMapleId)
-  if (cleared.length > 0 || !samePerson) await deps.forgetOwners({ mapleIds: cleared, person: !samePerson })
+  const forgets = cleared.length > 0 || !samePerson
+  if (forgets) await deps.forgetOwners({ mapleIds: cleared, person: !samePerson, anotherPerson: !samePerson })
+  // 번호가 이어지면 서버가 번호 뒤의 줄만 주어, 비운 추적 목록이 다시 오지 않는다. 다른 사람이면 위에서 이미 지웠다.
+  if (next.fresh && samePerson) await deps.resetPersonCursor()
+  // 메모리에 든 설정(추적 방식 · 빠른 이동 · 하단바 순서)과 기록 판이 앞 사람의 값으로 남지 않게 한다.
+  if (forgets || previousRecords.length > 0) deps.afterRecordsChanged(new Set(SERVER_SYNC_TABLES))
 
   await save()
   await deps.markSignIn(previous)

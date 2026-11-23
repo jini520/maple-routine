@@ -12,7 +12,9 @@ import { cashbookItemTypeIdOf } from '../lib/cashbook/entry-ids'
 import type { SqliteDbConnection } from './ports'
 import { clearServerSyncOwnerPreferences } from './server-sync-pull-preferences'
 import { withServerSyncPaused } from './server-sync-queue'
-import { DEVICE_TABLES, REFERENCES } from './server-sync-records'
+import { DEVICE_TABLES, REFERENCES, resetServerSyncSettings } from './server-sync-records'
+import { manualTrackedContentKey, STORAGE_KEYS } from './keys'
+import { preferences } from './ports'
 import { getBossProfitDb } from './sqlite/db'
 import { NEW_UUID_SQL } from './sqlite/uuid'
 
@@ -256,6 +258,12 @@ export interface ServerSyncOwners {
   person: boolean
   /** 참이면 대기 중인 기록도 그 대기 줄과 함께 지운다. 해제한 메이플 ID 처럼 서버가 그 기록을 받지 않을 때만 준다 */
   includeQueued?: boolean
+  /**
+   * 참이면 다른 사람으로 로그인한 것이라 `#` 로 적은 캐릭터의 기록과 맞추는 설정도 비운다. `#` 의 기록은 앞 신원으로 받은 것이고, 설정을
+   * 남기면 새 사람의 기기만 앞 사람의 값을 보인다. 메이플 ID 마다 비울 때는 `#` 캐릭터의 메이플 ID 를 몰라 두고, 설정은 삭제 표식이 없어
+   * 놓칠 지우기가 없다
+   */
+  anotherPerson?: boolean
 }
 
 const NOT_QUEUED = 'id NOT IN (SELECT record_id FROM server_sync_queue)'
@@ -280,6 +288,18 @@ async function deleteOwned(
   await db.run(`DELETE FROM ${table} WHERE ${where}`, [...params])
 }
 
+/** 캐릭터들의 SQLite 기록을 비운다. 대기 중인 기록은 남기고, 대기 중인 드롭이 가리키는 수익 건도 남긴다. */
+async function clearCharacterRecords(db: SqliteDbConnection, ocids: readonly string[], includeQueued: boolean): Promise<void> {
+  if (ocids.length === 0) return
+  const inOcids = `ocid IN (${placeholders(ocids)})`
+  await deleteOwned(db, 'boss_drops', `profit_entry_id IN (SELECT id FROM boss_profit_entries WHERE ${inOcids})`, ocids, includeQueued)
+  await deleteOwned(db, 'boss_profit_entries', `${inOcids} AND id NOT IN (SELECT profit_entry_id FROM boss_drops)`, ocids, includeQueued)
+  for (const table of CHARACTER_TABLES) await deleteOwned(db, table, inOcids, ocids, includeQueued)
+}
+
+/** 수익 건과 드롭 밖에 캐릭터(`ocid`)로 주인을 가리는 기록 표. */
+const CHARACTER_TABLES = ['boss_split_settings', 'enhancement_totals', 'remembered_levels', 'character_world_leaps', 'cashbook_entries'] as const
+
 /** 한 메이플 ID 의 SQLite 기록을 비운다. 대기 중인 기록은 남기고, 대기 중인 드롭이 가리키는 수익 건도 남긴다. */
 async function clearMapleIdRecords(
   db: SqliteDbConnection,
@@ -288,14 +308,7 @@ async function clearMapleIdRecords(
   nexonAccountIds: readonly string[],
   includeQueued: boolean,
 ): Promise<void> {
-  if (ocids.length > 0) {
-    const inOcids = `ocid IN (${placeholders(ocids)})`
-    await deleteOwned(db, 'boss_drops', `profit_entry_id IN (SELECT id FROM boss_profit_entries WHERE ${inOcids})`, ocids, includeQueued)
-    await deleteOwned(db, 'boss_profit_entries', `${inOcids} AND id NOT IN (SELECT profit_entry_id FROM boss_drops)`, ocids, includeQueued)
-    for (const table of ['boss_split_settings', 'enhancement_totals', 'remembered_levels', 'character_world_leaps', 'cashbook_entries']) {
-      await deleteOwned(db, table, inOcids, ocids, includeQueued)
-    }
-  }
+  await clearCharacterRecords(db, ocids, includeQueued)
   for (const table of ['cashbook_entries', 'inventory_items', 'mvp_grade_history']) {
     await deleteOwned(db, table, 'account_id = ?', [mapleId], includeQueued)
   }
@@ -309,6 +322,24 @@ async function clearMapleIdRecords(
       includeQueued,
     )
   }
+}
+
+/** `#` 로 적은 캐릭터. 받기가 짝을 못 찾은 캐릭터라 어느 메이플 ID 의 것인지 모른다. */
+async function unmatchedOcids(db: SqliteDbConnection): Promise<string[]> {
+  const { values } = await db.query(
+    [...CHARACTER_TABLES, 'boss_profit_entries'].map((table) => `SELECT ocid FROM ${table} WHERE ocid LIKE '#%'`).join(' UNION '),
+  )
+  const found = new Set((values ?? []).map((row) => row.ocid as string))
+  const prefix = manualTrackedContentKey('')
+  for (const key of await preferences.keys()) if (key.startsWith(prefix + '#')) found.add(key.slice(prefix.length))
+  const motions = await preferences.get(STORAGE_KEYS.figureMotions)
+  try {
+    const parsed = motions === null ? null : (JSON.parse(motions) as unknown)
+    if (typeof parsed === 'object' && parsed !== null) for (const ocid of Object.keys(parsed)) if (ocid.startsWith('#')) found.add(ocid)
+  } catch {
+    // 깨진 동작은 캐릭터를 알려 주지 않는다.
+  }
+  return [...found]
 }
 
 /**
@@ -329,5 +360,11 @@ export async function clearServerSyncOwners(owners: ServerSyncOwners): Promise<v
     ocids.push(...mine)
     await withServerSyncPaused((paused) => clearMapleIdRecords(paused, mapleId, mine, accounts, owners.includeQueued === true))
   }
+  if (owners.anotherPerson === true) {
+    const marked = await unmatchedOcids(db)
+    ocids.push(...marked)
+    await withServerSyncPaused((paused) => clearCharacterRecords(paused, marked, owners.includeQueued === true))
+  }
   await clearServerSyncOwnerPreferences({ mapleIds: owners.mapleIds, ocids, person: owners.person, includeQueued: owners.includeQueued === true })
+  if (owners.anotherPerson === true) await resetServerSyncSettings()
 }

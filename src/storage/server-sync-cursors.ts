@@ -43,6 +43,12 @@ export async function setServerSyncCursors(cursors: ServerSyncCursors): Promise<
   await preferences.set(STORAGE_KEYS.serverSyncCursors, JSON.stringify(cursors))
 }
 
+/** 사람의 번호만 지운다. 다음 받기가 사람의 기록을 처음부터 받는다. 로그인 화면의 로그인이 비운 추적 목록을 다시 받으려고 부른다. */
+export async function clearServerSyncPersonCursor(): Promise<void> {
+  const cursors = await getServerSyncCursors()
+  if (cursors.nexonAccount !== null) await setServerSyncCursors({ ...cursors, nexonAccount: null })
+}
+
 /** 로그인 뒤 첫 받기의 표시. 로그인 화면의 로그인과 메인 키 바꾸기가 저장한 뒤 적는다. */
 export interface ServerSyncSignIn {
   /** 앞 계정의 메이플 ID 해시. 응답의 목록과 하나도 겹치지 않으면 다른 사람이다 */
