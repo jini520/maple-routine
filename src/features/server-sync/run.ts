@@ -17,14 +17,14 @@ import {
 import { serverIdentityHeaders } from '../auth/server-identity'
 import { checkServerMaintenance, useServerMaintenanceStore } from '../server-maintenance/store'
 import { prepareServerAccounts } from './accounts'
-import { pullServerSync, type PullSummary } from './pull'
+import { pullServerSync, type PullOptions, type PullSummary } from './pull'
 import { pushServerSync, type PushOptions } from './push'
 
 /** 한 번의 동기화가 밖에 맡기는 일 전부. 테스트가 갈아 끼운다. */
 export interface RunDeps {
   prepareAccounts(): Promise<void>
   push(options: PushOptions): Promise<unknown>
-  pull(): Promise<PullSummary>
+  pull(options: PullOptions): Promise<PullSummary>
   identity(): Promise<Record<string, string> | null>
   /** 지금 점검 중인가. 부팅의 점검 확인은 답을 기다리지 않아 다시 묻는다 */
   underMaintenance(): Promise<boolean>
@@ -36,7 +36,7 @@ export interface RunDeps {
 const DEFAULT_DEPS: RunDeps = {
   prepareAccounts: prepareServerAccounts,
   push: (options) => pushServerSync(options),
-  pull: () => pullServerSync(),
+  pull: (options) => pullServerSync(options),
   identity: serverIdentityHeaders,
   underMaintenance: async () => {
     await checkServerMaintenance()
@@ -73,10 +73,11 @@ export async function runServerSync(deps: RunDeps = DEFAULT_DEPS): Promise<void>
   const first = await firstSyncOf(deps).catch(() => null)
   if (first === null) return
   if (!first.pulled) {
-    const pulled = await deps.pull().catch(() => null)
+    // 이 받기만 id 가 없는 Preferences 기록에서 먼저 올린 기기의 값, 곧 서버 값을 남긴다.
+    const pulled = await deps.pull({ firstQueuedAt: first.queuedAt }).catch(() => null)
     if (pulled === null || !pulled.finished) return
     await deps.markPulled(first).catch(() => undefined)
   }
   await deps.push({ firstQueuedAt: first.queuedAt }).catch(() => undefined)
-  await deps.pull().catch(() => undefined)
+  await deps.pull({}).catch(() => undefined)
 }

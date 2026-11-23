@@ -254,6 +254,25 @@ describe('id 가 있는 항목', () => {
 })
 
 // 받은 값을 저장하는 동안 넣으면 받은 값을 다시 올린다.
+// 넣은 시각이 처음 올리기를 가른다. 처음 올리기의 줄을 사용자가 고친 뒤에도 옛 시각이면 처음 동기화의 받기가 그 입력을 덮는다.
+it('대기 줄이 이미 있는 항목이 또 바뀌면 넣은 시각만 지금으로 고치고 횟수는 두며, 그대로인 항목은 건드리지 않는다', async () => {
+  const OLD = '2026-01-01T00:00:00.000Z'
+  await setMapleIdNames({ 'maple-1': '본캐', 'maple-2': '부캐' })
+  real.inspect((file) => file.exec(`UPDATE server_sync_queue SET created_at = '${OLD}', attempts = 2`))
+
+  await setMapleIdNames({ 'maple-1': '메인', 'maple-2': '부캐' })
+
+  const rows = real.inspect(
+    (file) => file.prepare('SELECT record_id, attempts, created_at FROM server_sync_queue ORDER BY rowid').all() as Record<string, unknown>[],
+  )
+  expect(rows.map((row) => [row.record_id, row.attempts])).toEqual([
+    ['mapleIdNames:maple-1', 2],
+    ['mapleIdNames:maple-2', 2],
+  ])
+  expect(rows[0]!.created_at).not.toBe(OLD)
+  expect(rows[1]!.created_at).toBe(OLD)
+})
+
 it('`withServerSyncPaused` 안의 저장은 넣지 않는다', async () => {
   await withServerSyncPaused(async () => {
     await setMapleIdNames({ 'maple-1': '본캐' })

@@ -26,8 +26,8 @@ function setup(options: { first?: FirstServerSync | null; pulls?: boolean[] } = 
     push: jest.fn(async (pushOptions) => {
       order.push(`push ${pushOptions.firstQueuedAt ?? '-'}`)
     }),
-    pull: jest.fn(async () => {
-      order.push('pull')
+    pull: jest.fn(async (pullOptions) => {
+      order.push(`pull ${pullOptions.firstQueuedAt ?? '-'}`)
       return pulled(pulls.shift() ?? true)
     }),
     identity: jest.fn(async () => ({ 'x-maple-id-hash': 'h' })),
@@ -54,7 +54,7 @@ it('처음 동기화를 마친 기기는 계정을 알리고 올린 뒤 받는�
 
   await runServerSync(deps)
 
-  expect(order).toEqual(['accounts', `push ${DONE.queuedAt}`, 'pull'])
+  expect(order).toEqual(['accounts', `push ${DONE.queuedAt}`, 'pull -'])
   expect(deps.enqueueAll).not.toHaveBeenCalled()
 })
 
@@ -70,12 +70,13 @@ it('계정 알리기나 올리기가 던져도 받고, 받기가 던져도 던�
 })
 
 describe('처음 동기화', () => {
-  it('표시가 없으면 기록을 모두 넣고, 받기를 먼저 끝낸 뒤 올리고 한 번 더 받는다', async () => {
+  // 처음 동기화의 받기만 id 없는 Preferences 기록의 서버 값을 남긴다. 올린 뒤의 받기는 평소 받기다.
+  it('표시가 없으면 기록을 모두 넣고, 받기를 먼저 끝낸 뒤 올리고 한 번 더 받는다. 넣기를 마친 시각은 앞의 받기에만 넘긴다', async () => {
     const { deps, order } = setup({ first: null })
 
     await runServerSync(deps)
 
-    expect(order).toEqual(['accounts', 'maintenance', 'enqueue', 'pull', 'pulled', 'push Q', 'pull'])
+    expect(order).toEqual(['accounts', 'maintenance', 'enqueue', 'pull Q', 'pulled', 'push Q', 'pull -'])
   })
 
   // 다시 넣으면 받은 줄까지 대기 표에 들어가 서버로 되돌아간다.
@@ -94,11 +95,11 @@ describe('처음 동기화', () => {
     const { deps, order } = setup({ first: null, pulls: [false, true, true] })
 
     await runServerSync(deps)
-    expect(order).toEqual(['accounts', 'maintenance', 'enqueue', 'pull'])
+    expect(order).toEqual(['accounts', 'maintenance', 'enqueue', 'pull Q'])
 
     order.length = 0
     await runServerSync(deps)
-    expect(order).toEqual(['accounts', 'pull', 'pulled', 'push Q', 'pull'])
+    expect(order).toEqual(['accounts', 'pull Q', 'pulled', 'push Q', 'pull -'])
   })
 
   it('받기가 던져도 올리지 않는다', async () => {

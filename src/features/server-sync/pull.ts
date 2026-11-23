@@ -26,7 +26,11 @@ import {
   type PulledSqliteRecord,
   type ServerSyncOwners,
 } from '../../storage/server-sync-pull'
-import { applyPulledPreferenceRecords, type PulledPreferenceRecord } from '../../storage/server-sync-pull-preferences'
+import {
+  applyPulledPreferenceRecords,
+  type PulledPreferenceOptions,
+  type PulledPreferenceRecord,
+} from '../../storage/server-sync-pull-preferences'
 import { replaceMatchedNexonIds } from '../../storage/server-sync-unmatched'
 import { SERVER_SYNC_TABLES, type ServerSyncTable } from '../../storage/server-sync-queue'
 import { whenRecordsReleased } from '../../storage/record-hold'
@@ -49,7 +53,7 @@ export interface PullDeps {
   /** 넣었으면 참, 건너뛰었으면 거짓. 기기 표가 받지 않으면 던진다 */
   applySqlite(record: PulledSqliteRecord): Promise<boolean>
   applySettledDay(record: PulledSettledDay): Promise<boolean>
-  applyPreferences(records: readonly PulledPreferenceRecord[]): Promise<void>
+  applyPreferences(records: readonly PulledPreferenceRecord[], options: PulledPreferenceOptions): Promise<void>
   clearOwners(owners: ServerSyncOwners): Promise<void>
   /** 짝이 생긴 `#` 값을 원문으로 바꾸고 바꾼 표를 돌려준다 */
   replaceMatched(lookup: NexonIdLookup): Promise<Set<ServerSyncTable>>
@@ -72,6 +76,14 @@ const DEFAULT_DEPS: PullDeps = {
   replaceMatched: replaceMatchedNexonIds,
   forgetReleasedSubAccounts,
   afterRecordsChanged: refreshAfterServerSync,
+}
+
+export interface PullOptions {
+  /**
+   * 처음 동기화가 대기 표에 넣기를 마친 시각. 처음 동기화의 받기에서만 준다. id 가 없는 Preferences 기록은 처음 올리기의 대기 줄이
+   * 있어도 서버 값을 남긴다
+   */
+  firstQueuedAt?: string
 }
 
 /** 한 번의 받기가 한 일. 화면에 안 쓰고 테스트가 본다. */
@@ -128,16 +140,22 @@ function sameCursors(left: ServerSyncCursors, right: SyncPullResponse['cursors']
 /** 한 쪽의 줄을 표 차례로 넣는다. 한 줄 때문에 받기가 멈추면 번호가 오르지 않아 같은 줄에서 계속 멈추므로, 넣지 못한 줄은 건너뛴다. */
 async function applyPage(
   deps: PullDeps,
+  options: PullOptions,
   records: SyncPullResponse['records'],
   resolver: NexonIdResolver,
   summary: PullSummary,
   changed: Set<ServerSyncTable>,
 ): Promise<void> {
   const preferences: PulledPreferenceRecord[] = []
+  // 처음 동기화는 추적 목록의 대표를 서버에 맞춘다. 짝이 없는 대표를 모르면 기기 쪽 대표가 올라가 서버에 대표가 둘이 된다.
+  let unpairedRepresentative = false
   for (const table of SERVER_SYNC_TABLES) {
     for (const row of records[table] ?? []) {
       const record = pulledRecordOf(table, row, resolver)
       if (record === null) {
+        if (options.firstQueuedAt !== undefined && table === 'trackedCharacters' && row.isRepresentative === true && row.deletedAt == null) {
+          unpairedRepresentative = true
+        }
         summary.skipped += 1
         continue
       }
@@ -161,7 +179,9 @@ async function applyPage(
       changed.add(table)
     }
   }
-  if (preferences.length > 0) await deps.applyPreferences(preferences)
+  if (preferences.length > 0 || unpairedRepresentative) {
+    await deps.applyPreferences(preferences, { firstQueuedAt: options.firstQueuedAt, unpairedRepresentative })
+  }
 }
 
 /**
@@ -169,7 +189,7 @@ async function applyPage(
  *
  * 신원이 없으면 아무것도 안 한다. 키를 지웠거나 로그인 전인 상태다.
  */
-export async function pullServerSync(deps: PullDeps = DEFAULT_DEPS): Promise<PullSummary> {
+export async function pullServerSync(options: PullOptions = {}, deps: PullDeps = DEFAULT_DEPS): Promise<PullSummary> {
   const summary: PullSummary = { pages: 0, applied: 0, skipped: 0, stopped: false, finished: false }
   const headers = await deps.identity()
   if (headers === null) return summary
@@ -210,7 +230,7 @@ export async function pullServerSync(deps: PullDeps = DEFAULT_DEPS): Promise<Pul
         continue
       }
 
-      await applyPage(deps, response.records, resolver, summary, changed)
+      await applyPage(deps, options, response.records, resolver, summary, changed)
       await deps.setCursors({ nexonAccount: response.cursors.nexonAccount, mapleIds: response.cursors.mapleIds })
       if (!response.hasMore) {
         summary.finished = true

@@ -228,16 +228,19 @@ const SPECS: readonly TriggerSpec[] = [
 const NOT_PAUSED = 'NOT EXISTS (SELECT 1 FROM server_sync_pause)'
 
 /**
- * 기록 하나를 대기 표에 넣는 문장. 같은 기록의 줄이 있으면 넣지 않는다.
+ * 기록 하나를 대기 표에 넣는 문장. 같은 기록의 줄이 있으면 넣지 않고 넣은 시각만 지금으로 고친다. 넣은 시각이 처음 올리기를 가르는
+ * 값이라, 처음 올리기의 줄을 사용자가 고치면 사용자가 친 값으로 다뤄야 한다.
  *
  * 충돌로 막지 않는 이유는 바깥 문장의 `OR IGNORE` · `OR REPLACE` 가 트리거 안의 문장에도 옮겨 붙기 때문이다. `OR REPLACE` 가
  * 붙으면 대기 줄이 갈려 거절 횟수가 0 으로 돌아간다.
  */
 function enqueueStatement(serverTable: ServerSyncTable, recordId: string): string {
+  const now = `strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`
   return (
     `INSERT INTO server_sync_queue (id, record_type, record_id, created_at) ` +
-    `SELECT ${NEW_UUID_SQL}, '${serverTable}', ${recordId}, strftime('%Y-%m-%dT%H:%M:%fZ', 'now') ` +
-    `WHERE NOT EXISTS (SELECT 1 FROM server_sync_queue WHERE record_id = ${recordId});`
+    `SELECT ${NEW_UUID_SQL}, '${serverTable}', ${recordId}, ${now} ` +
+    `WHERE NOT EXISTS (SELECT 1 FROM server_sync_queue WHERE record_id = ${recordId}); ` +
+    `UPDATE server_sync_queue SET created_at = ${now} WHERE record_id = ${recordId};`
   )
 }
 

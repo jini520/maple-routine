@@ -157,12 +157,20 @@ describe('SQLite 기록 표', () => {
   it('이미 대기 줄이 있는 기록은 그 줄을 횟수 · 넣은 시각과 함께 두고 하나만 남긴다', async () => {
     await insertEntry('entry-1', 'ocid-1')
     await countServerSyncAttempt('entry-1', 'rejected: 수익 건이 아직 없다')
+    await prefs.set('mapleIdNames', JSON.stringify({ 'maple-1': '본캐' }))
+    await db.run(`INSERT INTO server_sync_queue (id, record_type, record_id, created_at) VALUES ('q-name', 'mapleIdNames', ?, ?)`, [
+      preferenceRecordIdOf('mapleIdNames', ['maple-1']),
+      AT,
+    ])
     const before = queueRows()
 
     await enqueueAllServerSyncRecords()
 
     expect(queueRows()).toEqual(before)
-    expect(before).toEqual([expect.objectContaining({ record_id: 'entry-1', attempts: 1 })])
+    expect(before).toEqual([
+      expect.objectContaining({ record_id: 'entry-1', attempts: 1 }),
+      { record_id: preferenceRecordIdOf('mapleIdNames', ['maple-1']), attempts: 0, created_at: AT },
+    ])
   })
 })
 
