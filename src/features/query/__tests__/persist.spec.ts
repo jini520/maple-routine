@@ -11,9 +11,14 @@ jest.mock('../../../storage/query-cache', () => ({
 }))
 const storage = jest.requireMock('../../../storage/query-cache') as Record<string, jest.Mock>
 
+/** 쿼리를 지우는 타이머(기본 5분)가 남으면 테스트가 끝나도 jest 작업 프로세스가 끝나지 않는다. */
+function testClient(): QueryClient {
+  return new QueryClient({ defaultOptions: { queries: { gcTime: Number.POSITIVE_INFINITY } } })
+}
+
 describe('shouldPersistQuery', () => {
   it('meta.persist 가 참이고 성공한 쿼리만 저장한다', () => {
-    const client = new QueryClient()
+    const client = testClient()
     client.setQueryData(['schedule', 'a'], { v: 1 })
     const persisted = client.getQueryCache().find({ queryKey: ['schedule', 'a'] })!
     persisted.setOptions({ queryKey: ['schedule', 'a'], meta: { persist: true } })
@@ -26,7 +31,7 @@ describe('shouldPersistQuery', () => {
 
   // 넥슨 공지는 받은 지 30일 안에 기기에서 지운다(넥슨 AI 에이전트 가이드). 저장에서 빠지면 다음 저장 때 기기에서 사라진다.
   it('meta.retainMs 가 있으면 받은 지 그만큼 지난 쿼리는 저장하지 않는다', () => {
-    const client = new QueryClient()
+    const client = testClient()
     const DAY = 24 * 60 * 60 * 1000
     client.setQueryData(['notices', 'event'], [], { updatedAt: Date.now() - 31 * DAY })
     client.setQueryData(['notices', 'game'], [], { updatedAt: Date.now() - DAY })
