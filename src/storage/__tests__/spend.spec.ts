@@ -137,6 +137,24 @@ describe('넣은 지출을 같은 모양으로 되읽는다', () => {
     ])
   })
 
+  // 품목 표에는 차례 칸이 없고 서버에서 받은 품목은 솔 에르다 → 경험치 차례로 들 수 있다. 기록의 시세는 첫 품목에서 읽는다.
+  it('품목 행이 솔 에르다 → 경험치 차례로 들어 있어도 경험치 품목을 첫 품목으로 읽는다', async () => {
+    await insertSpendRecord(rewardSpend)
+    const exp = spendRewardTypeIdOf('exp')
+    real.inspect((db) =>
+      db.exec(`CREATE TEMP TABLE moved AS SELECT * FROM cashbook_entry_items WHERE spend_reward_type_id = '${exp}';
+               DELETE FROM cashbook_entry_items WHERE spend_reward_type_id = '${exp}';
+               INSERT INTO cashbook_entry_items SELECT * FROM moved;
+               UPDATE cashbook_entry_items SET maple_point_per_100m_meso = 1200 WHERE spend_reward_type_id = '${exp}';`),
+    )
+    expect(all('SELECT spend_reward_type_id FROM cashbook_entry_items ORDER BY rowid')).toEqual([
+      { spend_reward_type_id: spendRewardTypeIdOf('sol_erda') },
+      { spend_reward_type_id: exp },
+    ])
+
+    expect(await getSpendRecordsBetween(rewardSpend.spentOn, rewardSpend.spentOn)).toEqual([{ ...rewardSpend, pointPer100mMeso: 1_200 }])
+  })
+
   // key 가 있는 기록은 이름을 참조표에서 찾는다. 직접 친 이름만 남는다.
   it('key 가 있는 기록은 이름을 안 적고, 직접 친 기록만 이름을 적는다', async () => {
     await insertSpendRecord({ ...mesoSpend, item: '세이람의 영약' })
