@@ -1,12 +1,14 @@
-// 서버가 연 보스가 **이 기간에도 열려 있는가**. 서버는 보스와 여는 날만 들고 기간 판정은 앱이 한다.
+// 서버가 연 보스가 **이 기간에도 열려 있는가**. 서버는 보스 줄 id 와 여는 날만 들고 기간 판정은 앱이 한다.
+import bosses from '../../../__fixtures__/game-data/bosses.json'
 import {
   applyManualCompletions,
   isManualCompletionOpen,
   manualCompletionKey,
 } from '../manual-completion'
 
-const 검마 = { boss: 'black_mage', from: '2026-09-01' }
-const 메이린 = { boss: 'meirin', from: '2026-09-17' }
+const bossIdOf = (key: string) => bosses.bosses.find((boss) => boss.key === key)!.id
+const 검마 = { bossId: bossIdOf('black_mage'), fromDate: '2026-09-01' }
+const 메이린 = { bossId: bossIdOf('meirin'), fromDate: '2026-09-17' }
 
 describe('여는 날이 든 기간부터 열린다', () => {
   it('여는 날이 그 주 안이면 그 주가 열린다', () => {
@@ -18,7 +20,7 @@ describe('여는 날이 든 기간부터 열린다', () => {
 
   it('여는 날이 주 한가운데여도 그 주가 열린다', () => {
     expect(
-      isManualCompletionOpen([{ boss: 'meirin', from: '2026-09-19' }], {
+      isManualCompletionOpen([{ ...메이린, fromDate: '2026-09-19' }], {
         bossKey: 'meirin',
         cycle: 'weekly',
         periodKey: '2026-09-17',
@@ -61,6 +63,17 @@ describe('목록에 없으면 안 열린다', () => {
     ).toBe(false)
   })
 
+  // 앱이 아직 모르는 보스의 줄 id 는 어느 보스 key 와도 맞지 않는다.
+  it('게임 데이터에 없는 보스 줄 id 는 아무 보스도 열지 않는다', () => {
+    expect(
+      isManualCompletionOpen([{ bossId: 'not-a-boss', fromDate: '2026-09-01' }], {
+        bossKey: 'black_mage',
+        cycle: 'monthly',
+        periodKey: '2026-09',
+      }),
+    ).toBe(false)
+  })
+
   // 서버를 못 받았을 때 `null` 이 그대로 흘러온다. 닫힘이 기본값이다.
   it('목록을 모르면 안 열린다', () => {
     expect(
@@ -70,7 +83,7 @@ describe('목록에 없으면 안 열린다', () => {
 
   it('여는 날의 모양이 이상하면 안 열린다', () => {
     expect(
-      isManualCompletionOpen([{ boss: 'black_mage', from: '2026-9-1' }], {
+      isManualCompletionOpen([{ ...검마, fromDate: '2026-9-1' }], {
         bossKey: 'black_mage',
         cycle: 'monthly',
         periodKey: '2026-09',

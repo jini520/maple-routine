@@ -2,6 +2,7 @@
 //
 // 파일의 **형태**는 `data/__tests__/spend-catalog.spec.ts` 가 붙든다(사용자가 준 값 그대로인가).
 // 여기서 보는 것은 **화면이 그 값을 어떻게 집어 오는가** 다. 분류별 묶음과 환산 둘.
+import spendCatalog from '../../__fixtures__/game-data/spend-catalog.json'
 import {
   BASE_TIER,
   buildSpendRewardName,
@@ -11,6 +12,7 @@ import {
   legacySpendKeysOf,
   optionAxesOf,
   optionItemOf,
+  parseSpendCatalog,
   pickSpendOption,
   pointToMeso,
   spentPointToMeso,
@@ -85,9 +87,20 @@ describe('spendGroupsOf: 분류 → 묶음들', () => {
         group.choices.flatMap((choice) => choice.items.map((item) => item.currency)),
       ),
     )
-    expect(이벤트).toEqual(new Set(['point', 'meso']))
+    expect(이벤트).toEqual(new Set(['maple_point', 'meso']))
     const 메소샵 = spendGroupsOf('event_bm', 패치후).find((group) => group.key === 'meso_shop')
     expect(new Set(메소샵?.choices.flatMap((choice) => choice.items.map((item) => item.currency)))).toEqual(new Set(['meso']))
+  })
+
+  // 통화 값은 `maple_point` 다. `point` 만으로는 어느 포인트인지 알 수 없다. 옛 값이 든 사본을 받으면 메포 항목이 메소로
+  // 읽히므로 그 칸을 받지 않는다.
+  it('옛 통화 값 point 가 든 칸은 계약을 어긴 칸이라 받지 않는다', () => {
+    expect(parseSpendCatalog(spendCatalog)).not.toBeNull()
+    const 옛값 = {
+      ...spendCatalog,
+      spendItems: spendCatalog.spendItems.map((item) => (item.currency === 'maple_point' ? { ...item, currency: 'point' } : item)),
+    }
+    expect(parseSpendCatalog(옛값)).toBeNull()
   })
 })
 

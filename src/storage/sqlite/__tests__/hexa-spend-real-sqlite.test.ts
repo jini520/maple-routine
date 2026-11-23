@@ -2,6 +2,7 @@
 /**
  * 헥사 강화 기록의 조각 칸과 강화 레벨 기억을 진짜 SQLite 로 태운다.
  */
+import hexaMatrix from '../../../__fixtures__/game-data/hexa-matrix.json'
 import { saveCharacterProfile } from '../../character-profiles'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { getFragmentStorage, insertIncomeRecord, type IncomeRecord } from '../../income'
@@ -114,6 +115,35 @@ describe('헥사 기록의 조각 칸', () => {
       (db.prepare('PRAGMA table_info(cashbook_entry_items)').all() as { name: string }[]).map((row) => row.name),
     )
     expect(columns.filter((column) => !names.includes(column))).toEqual([])
+  })
+})
+
+// 이름이 같은 코어는 직업마다 그림이 다르다. 읽은 기록이 저장할 때 고른 코어 줄을 들고 와야 줄 그림이 직업마다 제 그림이 된다.
+describe('헥사 스킬 기록의 코어 줄 id', () => {
+  const 이름 = '시그너스 팔랑크스 VI'
+  const coreIdOf = (job: string) => {
+    const jobId = hexaMatrix.jobs.find((one) => one.name === job)!.id
+    return hexaMatrix.hexaCores.find((core) => core.jobId === jobId && core.name === 이름)!.id
+  }
+  const profile = (ocid: string, jobClass: string) =>
+    saveCharacterProfile({
+      ocid, name: ocid, imageUrl: '', world: '스카니아', worldKey: 'scania', level: 285, jobClass, updatedAt: '2026-10-01T00:00:00.000Z',
+    })
+
+  it('저장할 때 캐릭터의 직업으로 고른 코어 줄 id 가 읽은 기록에 함께 오고, 직업을 몰라 고르지 못한 기록에는 없다', async () => {
+    await profile('ocid-nw', '나이트워커')
+    await profile('ocid-mh', '미하일')
+    await insertSpendRecord({ ...선참, id: 'a1b2c3d4-0000-4000-8000-000000000001', ocid: 'ocid-nw', itemKey: 이름 })
+    await insertSpendRecord({ ...선참, id: 'a1b2c3d4-0000-4000-8000-000000000002', ocid: 'ocid-mh', itemKey: 이름 })
+    await insertSpendRecord({ ...선참, id: 'a1b2c3d4-0000-4000-8000-000000000003', ocid: 'ocid-none', itemKey: 이름 })
+
+    const rows = await getSpendRecordsBetween('2026-10-30', '2026-10-30')
+    const byOcid = new Map(rows.map((row) => [row.ocid, row]))
+    expect(coreIdOf('나이트워커')).not.toBe(coreIdOf('미하일'))
+    expect(byOcid.get('ocid-nw')).toMatchObject({ itemKey: 이름, hexaCoreId: coreIdOf('나이트워커') })
+    expect(byOcid.get('ocid-mh')).toMatchObject({ itemKey: 이름, hexaCoreId: coreIdOf('미하일') })
+    expect(byOcid.get('ocid-none')?.itemKey).toBe(이름)
+    expect(byOcid.get('ocid-none')).not.toHaveProperty('hexaCoreId')
   })
 })
 

@@ -12,7 +12,7 @@ import { useManualCompletionBosses } from '../../../features/manual-completion/q
 import { findAllOfType, flattenStyle, 기본테마 } from '../../../components/__tests__/render-atom'
 import { MonthlyAccordionBody, WeeklyAccordionBody, WeeklySubtotalRow } from '../AccordionBody'
 import { WEEKLY_BOSS_CLEAR_LIMIT } from '../../../lib/boss/boss-matching'
-import { 다른주간보스, 월간보스, 보스행, 주차소계, 컨텍스트값, renderProfit } from './harness'
+import { 다른주간보스, 월간보스, 월간보스줄, 보스행, 주차소계, 컨텍스트값, renderProfit } from './harness'
 
 // 서버가 연 보스는 쿼리 훅이 낸다. 이 하네스에는 쿼리 클라이언트가 없어 훅을 세운다.
 jest.mock('../../../features/manual-completion/query', () => ({ useManualCompletionBosses: jest.fn() }))
@@ -255,7 +255,7 @@ describe('MonthlyAccordionBody', () => {
 
   // 직접 완료가 열린 보스여도 마찬가지다. 그 단추가 서는 자리는 주간 목록의 미완료 행 하나다.
   it('직접 완료가 열려 있어도 단추가 안 선다', async () => {
-    jest.mocked(useManualCompletionBosses).mockReturnValue([{ boss: 월간보스, from: '2026-09' }])
+    jest.mocked(useManualCompletionBosses).mockReturnValue([{ bossId: 월간보스줄, fromDate: '2026-09' }])
 
     const { queryByText } = await renderProfit(
       <MonthlyAccordionBody

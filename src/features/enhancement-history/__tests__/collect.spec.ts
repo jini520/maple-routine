@@ -396,7 +396,7 @@ describe('이벤트 월드 판정', () => {
       'account-key', 'cube', '2026-09-05', null, true, expect.any(String),
     )
     expect(reportEnhancementAnomalies).toHaveBeenCalledWith([
-      expect.objectContaining({ enhancementType: 'starforce', anomalyType: 'event_world_unknown', detail: '스페셜3' }),
+      expect.objectContaining({ apiType: 'starforce', reason: 'event_world_unknown', detail: '스페셜3' }),
     ])
   })
 })
@@ -614,7 +614,7 @@ describe('합계에서 빠진 줄 알리기', () => {
     await collectEnhancementHistory(['2026-09-05'], NOW)
 
     expect(reportEnhancementAnomalies).toHaveBeenCalledWith([
-      expect.objectContaining({ historyDate: '2026-09-05', enhancementType: 'starforce', anomalyType: 'no_star', rowCount: 1 }),
+      expect.objectContaining({ historyDate: '2026-09-05', apiType: 'starforce', reason: 'no_star', rowCount: 1 }),
     ])
   })
 

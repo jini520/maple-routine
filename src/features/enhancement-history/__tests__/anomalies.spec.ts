@@ -22,16 +22,16 @@ const potential = (payload: Record<string, unknown>) => entry({ kind: 'potential
 
 // 원본을 버리므로, 합계에서 빠진 줄은 이 값이 운영자가 원인을 볼 유일한 단서다.
 describe('합계에서 뺀 줄', () => {
-  it('같은 날 · 종류 · 이유 · 장비는 한 줄로 센다', () => {
+  // 줄은 그대로 요청 몸이 된다. 칸 이름은 서버 표를 따르고, 장비는 넥슨이 준 이름으로만 알아 아이템 key 를 싣지 않는다.
+  it('같은 날 · 종류 · 이유 · 장비는 한 줄로 세고, 줄의 칸은 서버 표의 이름이다', () => {
     const unknownItem = { itemKey: null, targetItem: '왕푸' }
     const rows = [starforce(unknownItem, { after_starforce_count: 15 }), starforce(unknownItem, { after_starforce_count: 15 })]
 
     expect(enhancementAnomaliesOf(rows, NO_EVENT)).toEqual([
       {
         historyDate: '2026-09-05',
-        enhancementType: 'starforce',
-        anomalyType: 'no_level',
-        itemKey: null,
+        apiType: 'starforce',
+        reason: 'no_level',
         itemName: '왕푸',
         rowCount: 2,
         detail: null,
@@ -45,7 +45,7 @@ describe('합계에서 뺀 줄', () => {
       starforce({ itemKey: null, targetItem: '새 슈페리얼 벨트' }, { superior_item_flag: '슈페리얼 장비 해당', after_starforce_count: 1 }),
     ]
 
-    expect(enhancementAnomaliesOf(rows, NO_EVENT).map((one) => [one.anomalyType, one.itemName])).toEqual([
+    expect(enhancementAnomaliesOf(rows, NO_EVENT).map((one) => [one.reason, one.itemName])).toEqual([
       ['no_cost', '새 슈페리얼 벨트'],
     ])
   })
@@ -60,7 +60,7 @@ describe('합계에서 뺀 줄', () => {
       potential({ potential_type: '잠재능력 재설정', before_potential_option: [{ value: 'x', grade: '노멀' }] }),
     ]
 
-    expect(enhancementAnomaliesOf(rows, NO_EVENT).map((one) => [one.enhancementType, one.anomalyType])).toEqual([
+    expect(enhancementAnomaliesOf(rows, NO_EVENT).map((one) => [one.apiType, one.reason])).toEqual([
       ['cube', 'no_level'],
       ['starforce', 'no_star'],
       ['potential', 'no_type'],
@@ -79,7 +79,7 @@ describe('합계에서 뺀 줄', () => {
       starforce(unknownItem),
     ]
 
-    expect(enhancementAnomaliesOf(rows, NO_EVENT).map((one) => [one.anomalyType, one.rowCount])).toEqual([['no_level', 2]])
+    expect(enhancementAnomaliesOf(rows, NO_EVENT).map((one) => [one.reason, one.rowCount])).toEqual([['no_level', 2]])
   })
 
   // 메소가 안 드는 강화라 빼는 것이 정상이다. 알리면 상황의 양이 부푼다.
@@ -102,7 +102,7 @@ describe('이벤트 월드를 판정하지 못한 줄', () => {
         { worldName: row.characterName === '새캐릭' ? '스페셜3' : null, worldKey: null, preLeap: false },
       )
 
-    expect(enhancementAnomaliesOf(rows, judgmentOf).map((one) => [one.enhancementType, one.rowCount, one.detail])).toEqual([
+    expect(enhancementAnomaliesOf(rows, judgmentOf).map((one) => [one.apiType, one.rowCount, one.detail])).toEqual([
       ['starforce', 2, '스페셜3'],
       ['cube', 1, '스페셜3'],
     ])
