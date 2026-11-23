@@ -1,7 +1,7 @@
 # ADR-099+143+258+279+302 사용자가 만든 기록은 서버에 두고 같은 사람의 기기끼리 맞춘다. 과거 드롭도 묶음으로 올린다
 
 > ⚪ 미구현
-> 관련 소스: `features/server-sync/*` · `storage/cache-data.ts` · `app/settings/SettingsAboutScreen.tsx` · `features/auth/server-identity.ts` · `features/account-manage/store.ts` · `server/accounts.ts` · `server/error-codes.ts` · `server/write.ts` · `storage/server-sync-queue.ts` · `storage/server-sync-records.ts` · `storage/server-sync-pull.ts` · `storage/server-sync-pull-preferences.ts` · `storage/server-sync-cursors.ts` · `storage/server-sync-first.ts` · `storage/sqlite/server-sync-triggers.ts` · `storage/sqlite/device-conversion.ts` · `storage/preferences-conversion.ts` · 서버 `modules/users` · `modules/identity` · `modules/sync` · `common/error-codes.ts`
+> 관련 소스: `features/server-sync/*` · `storage/cache-data.ts` · `app/settings/SettingsAboutScreen.tsx` · `features/auth/server-identity.ts` · `features/auth/store.ts` · `features/auth/nexon-login.ts` · `features/auth/unsynced-prompt.ts` · `app/auth/UnsyncedRecordsModal.tsx` · `storage/server-sync-owners.ts` · `features/account-manage/store.ts` · `server/accounts.ts` · `server/error-codes.ts` · `server/write.ts` · `storage/server-sync-queue.ts` · `storage/server-sync-records.ts` · `storage/server-sync-pull.ts` · `storage/server-sync-pull-preferences.ts` · `storage/server-sync-cursors.ts` · `storage/server-sync-first.ts` · `storage/sqlite/server-sync-triggers.ts` · `storage/sqlite/device-conversion.ts` · `storage/preferences-conversion.ts` · 서버 `modules/users` · `modules/identity` · `modules/sync` · `common/error-codes.ts`
 
 ## 배경
 
@@ -2779,7 +2779,7 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
   - `버리고 로그인` 은 그 대기 줄과 줄이 가리키는 기기의 기록을 지운다(`discardServerSyncRecords`). 지우는 쓰기는 대기 표에 넣지
     않는다. 설정과 하위 페이지 차례는 대기 줄만 지우고 기기의 값은 둔다. 화면의 모양을 정하는 값이라 기록처럼 지우면 새 사람의 화면이
     기본값으로 돌아간다.
-- 그다음 기기의 기록을 비우고(`clearServerSyncOwners`) 로그인을 저장한다. 앞 사람의 기록이 새 사람의 화면에 한 번도 그려지지 않게,
+- 그다음 기기의 기록을 비우고(`forgetServerSyncOwners`) 로그인을 저장한다. 앞 사람의 기록이 새 사람의 화면에 한 번도 그려지지 않게,
   받기를 기다리지 않고 저장하기 전에 비운다.
   - 메이플 ID 의 기록은 새 계정의 메이플 ID 에 없는 메이플 ID 의 것을 비운다. 메이플 ID 는 `character_accounts` 의 메이플 ID 와 기록에
     `#` 로 적은 메이플 ID 다(`listServerSyncMapleIds`). `#` 로 적은 메이플 ID 는 다른 사람일 때만 비운다. `#` 로 적은 캐릭터의 기록은
