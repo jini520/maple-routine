@@ -67,7 +67,7 @@ import { useUsageLog } from '../features/usage-log/useUsageLog'
  *    예약을 전부 지운다. 준비 전에는 `GameDataLock` 이 선다.
  * 3-0'. **기기 변환**. 게임 데이터가 준비돼도 1.0.15 기기 변환이 끝나기 전에는 `ReadyShell` 을 마운트하지 않는다. 새 앱
  *    코드는 옛 모양의 기록 표를 읽지 못한다. 받은 실행이면 잠금 화면을 다 받은 모습 그대로 두고, 받을 것이 없던 실행이면
- *    스플래시를 붙든다. 실패하면 `DeviceConversionFailed` 가 선다.
+ *    스플래시를 붙든다. 변환이 점검이 풀리기를 기다리는 동안은 붙들지 않는다. 실패하면 `DeviceConversionFailed` 가 선다.
  * 3-0. **서버 점검 잠금**. 서버가 점검 중이면 게임 데이터가 준비됐어도 `ReadyShell` 을 내리고 `ServerMaintenanceLock` 을
  *    세운다. 게임 데이터 잠금보다 앞이다. 점검 중에는 게임 데이터를 받을 수 없다.
  * 3-1. **저장소 복원 다섯**(인증·진입 단계·테마·트래킹 모드·드롭 연출). 서로 독립이라 순서가 없다. 각자
@@ -304,9 +304,16 @@ function lockStatusOf(gameData: GameDataStatus, conversion: DeviceConversionPhas
   return { phase: 'downloading', progress: gameData.progress }
 }
 
-/** 받을 것이 없던 실행의 기기 변환. 잠금 화면이 선 적이 없어 시작 화면이 가린다. */
-function convertingWithoutLock(gameData: GameDataStatus, conversion: DeviceConversionPhase): boolean {
-  return gameData.phase === 'ready' && conversion === 'running' && gameData.progress.dataBytes === null
+/**
+ * 받을 것이 없던 실행의 기기 변환. 잠금 화면이 선 적이 없어 시작 화면이 가린다. 점검 중이면 가리지 않는다. 변환은 점검이 풀리기를
+ * 기다리고, 시작 화면은 맨 위에 그려져 점검 잠금 화면을 덮는다.
+ */
+function convertingWithoutLock(
+  gameData: GameDataStatus,
+  conversion: DeviceConversionPhase,
+  maintenanceLocked: boolean,
+): boolean {
+  return !maintenanceLocked && gameData.phase === 'ready' && conversion === 'running' && gameData.progress.dataBytes === null
 }
 
 export function AppShell(): React.JSX.Element {
@@ -375,7 +382,7 @@ export function AppShell(): React.JSX.Element {
       )}
       {/* 스플래시의 두 번째 겹. **형제 중 마지막이라 맨 위에 그려진다.** 이 층이 그려졌다는
           사실이 네이티브 스플래시를 내리는 신호라, 순서가 뒤집히면 그 사이가 빈다. */}
-      <BootSplash holding={holdingSplash || convertingWithoutLock(gameData, conversion)} />
+      <BootSplash holding={holdingSplash || convertingWithoutLock(gameData, conversion, maintenanceLocked)} />
     </>
   )
 }

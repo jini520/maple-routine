@@ -69,6 +69,25 @@ export function checkServerMaintenance(): Promise<void> {
 }
 
 /**
+ * 점검 잠금이 풀려 있으면 끝나는 약속. 한 번 다시 묻고, 잠겨 있으면 풀릴 때 끝난다. 답을 못 받으면 지금 상태를 따른다.
+ *
+ * 부팅의 확인은 답을 기다리지 않아서, 점검 중에 시작하면 안 되는 일이 시작하기 전에 기다린다.
+ *
+ * @example await whenServerMaintenanceUnlocked()
+ */
+export async function whenServerMaintenanceUnlocked(): Promise<void> {
+  await checkServerMaintenance()
+  if (!useServerMaintenanceStore.getState().locked) return
+  await new Promise<void>((resolve) => {
+    const unsubscribe = useServerMaintenanceStore.subscribe((state) => {
+      if (state.locked) return
+      unsubscribe()
+      resolve()
+    })
+  })
+}
+
+/**
  * 켜자마자 한 번 묻고 주기로 다시 묻는다. 잠긴 동안은 30초, 아니면 5분마다다.
  *
  * @returns 주기를 멈추는 함수
