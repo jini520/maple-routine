@@ -1,5 +1,5 @@
 /**
- * 대기 표를 묶어 `POST /v1/sync/push` 로 올리고, 결과마다 대기 줄과 기기 줄을 다루는 회차의 한 부분.
+ * 대기 표를 묶어 `POST /v1/sync/push` 로 올리고, 결과마다 대기 줄과 기기 줄을 다루는 동기화의 한 부분.
  *
  * ```
  * 대기 줄을 서버 표 차례 · 넣은 차례로 늘어놓는다
@@ -16,11 +16,6 @@
  */
 import { utf8Bytes } from '../../lib/text-bytes'
 import { pushSyncRecords, type SyncPushOutcome, type SyncPushRecord } from '../../server/sync'
-import { bumpBossDropRecordsRevision } from '../../storage/boss-drops'
-import { bumpBossProfitRecordsRevision } from '../../storage/boss-profit'
-import { bumpEnhancementTotalsRevision } from '../../storage/enhancement-totals'
-import { bumpIncomeRecordsRevision } from '../../storage/income'
-import { bumpInventoryItemsRevision } from '../../storage/inventory'
 import {
   countServerSyncAttempt,
   listServerSyncQueue,
@@ -38,13 +33,10 @@ import {
   readServerSyncSource,
   replaceServerSyncRecordId,
 } from '../../storage/server-sync-records'
-import { bumpSpendRecordsRevision } from '../../storage/spend'
 import { serverIdentityHeaders } from '../auth/server-identity'
-import { useBossProfitCalculatorStore } from '../boss-profit-calculator/store'
-import { queryClient } from '../query/client'
-import { queryKeys } from '../query/keys'
 import { useToastStore } from '../toast/store'
 import { pushRecordOf, type RecordOwners } from './push-records'
+import { refreshAfterServerSync } from './refresh'
 import { isRejectionCode, recordNameOf, rejectionMessagesOf, type Rejection } from './rejection-notice'
 
 /** 한 요청에 싣는 기록 수. 서버 `PUSH_RECORD_LIMIT` 과 같다. */
@@ -62,7 +54,7 @@ const SEPARATE_REQUESTS: readonly (readonly [ServerSyncTable, ServerSyncTable])[
   ['bossProfitEntries', 'bossDrops'],
 ]
 
-/** 이 회차가 밖에 맡기는 일 전부. 테스트가 갈아 끼운다. */
+/** 올리기가 밖에 맡기는 일 전부. 테스트가 갈아 끼운다. */
 export interface PushDeps {
   identity(): Promise<Record<string, string> | null>
   list(): Promise<SyncQueueEntry[]>
@@ -79,20 +71,6 @@ export interface PushDeps {
   afterRecordsChanged(tables: ReadonlySet<ServerSyncTable>): void
 }
 
-/** 화면이 그 표를 다시 읽게 하는 일. 기록 판을 올리거나 쿼리 · 스토어를 다시 읽는다. */
-function refreshScreens(tables: ReadonlySet<ServerSyncTable>): void {
-  if (tables.has('bossProfitEntries') || tables.has('bossSplitSettings')) bumpBossProfitRecordsRevision()
-  if (tables.has('bossProfitEntries') || tables.has('bossDrops')) bumpBossDropRecordsRevision()
-  if (tables.has('cashbookEntries') || tables.has('inventoryItems')) {
-    bumpIncomeRecordsRevision()
-    bumpSpendRecordsRevision()
-  }
-  if (tables.has('inventoryItems')) bumpInventoryItemsRevision()
-  if (tables.has('enhancementTotals')) bumpEnhancementTotalsRevision()
-  if (tables.has('partyAppointments')) void queryClient.invalidateQueries({ queryKey: queryKeys.partyAppointments() })
-  if (tables.has('bossProfitCalculatorRecords')) void useBossProfitCalculatorStore.getState().reloadRecords()
-}
-
 const DEFAULT_DEPS: PushDeps = {
   identity: serverIdentityHeaders,
   list: listServerSyncQueue,
@@ -106,7 +84,7 @@ const DEFAULT_DEPS: PushDeps = {
   nameOf: (table, source) => recordNameOf(table, source, { characterNameOf }),
   // 입력이 저장되지 않았다는 알림이라 다른 저장 실패처럼 사용자가 닫을 때까지 둔다.
   notify: (message) => useToastStore.getState().showError(message),
-  afterRecordsChanged: refreshScreens,
+  afterRecordsChanged: refreshAfterServerSync,
 }
 
 /** 한 번의 올리기가 한 일. 화면에 안 쓰고 테스트가 본다. */
@@ -150,7 +128,7 @@ function separatedFrom(batch: readonly Batched[], table: string): boolean {
 }
 
 /**
- * 다음 요청에 실을 기록. 이 회차에서 다룬 줄(`done`)은 빼고, 두거나 대기 줄만 지운 줄은 `done` 에 적는다.
+ * 다음 요청에 실을 기록. 이 올리기에서 다룬 줄(`done`)은 빼고, 두거나 대기 줄만 지운 줄은 `done` 에 적는다.
  */
 async function nextBatch(deps: PushDeps, done: Set<string>, summary: PushSummary): Promise<Batched[]> {
   const entries = (await deps.list())
@@ -174,7 +152,7 @@ async function nextBatch(deps: PushDeps, done: Set<string>, summary: PushSummary
       await deps.remove(entry.recordId)
       continue
     }
-    // 한 건만으로 넘치면 혼자 보낸다. 서버가 413 으로 답하면 그 회차가 멈춘다.
+    // 한 건만으로 넘치면 혼자 보낸다. 서버가 413 으로 답하면 그 올리기가 멈춘다.
     if (batch.length > 0 && bodyBytes([...batch.map((one) => one.record), plan.record]) > PUSH_BODY_LIMIT_BYTES) break
     done.add(entry.recordId)
     batch.push({ entry, table, source, record: plan.record })

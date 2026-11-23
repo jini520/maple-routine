@@ -1,5 +1,5 @@
-// 올리기의 서버 경로. 응답을 못 받은 것 · 요청 전체의 거절 · 건마다의 결과를 갈라야 회차가 대기 줄을 맞게 다룬다.
-import { pushSyncRecords } from '../sync'
+// 올리기 · 받기의 서버 경로. 응답을 못 받은 것 · 요청 전체의 거절 · 읽을 수 있는 응답을 갈라야 동기화가 대기 줄과 번호를 맞게 다룬다.
+import { pullSyncRecords, pushSyncRecords } from '../sync'
 
 const fetchMock = jest.fn()
 
@@ -63,4 +63,50 @@ it('결과의 수가 보낸 수와 다르거나 모양이 틀리면 읽을 수 �
 
   fetchMock.mockResolvedValueOnce(answer(200, { results: [{ ok: 'yes' }, { ok: true, id: null }] }))
   await expect(pushSyncRecords({}, RECORDS)).resolves.toEqual({ outcome: 'refused', status: 200 })
+})
+
+describe('받기', () => {
+  const CURSORS = { nexonAccount: { id: 'account-1', changeSeq: 3 }, mapleIds: { ['a'.repeat(64)]: 5 } }
+  const RESPONSE = {
+    mapleIds: ['a'.repeat(64)],
+    cursors: { nexonAccount: { id: 'account-1', changeSeq: 9 }, mapleIds: { ['a'.repeat(64)]: 9 } },
+    oldestDeletedChangeSeq: null,
+    hasMore: false,
+    records: { mvpGradeHistory: [{ id: 'mvp-1', deletedAt: null }] },
+  }
+
+  it('신원 헤더와 번호를 `POST /sync/pull` 의 본문으로 보내고 응답을 그대로 돌려준다', async () => {
+    fetchMock.mockResolvedValueOnce(answer(200, RESPONSE))
+
+    await expect(pullSyncRecords({ 'x-maple-id-hash': 'h' }, CURSORS)).resolves.toEqual({ outcome: 'answered', response: RESPONSE })
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toMatch(/\/sync\/pull$/)
+    expect(init.method).toBe('POST')
+    expect(init.headers).toMatchObject({ 'x-maple-id-hash': 'h', 'content-type': 'application/json' })
+    expect(JSON.parse(String(init.body))).toEqual({ cursors: CURSORS })
+  })
+
+  it('응답이 없으면 no-response, 2xx 가 아니면 상태 코드를 단 refused 다', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('offline'))
+    await expect(pullSyncRecords({}, CURSORS)).resolves.toEqual({ outcome: 'no-response' })
+
+    fetchMock.mockResolvedValueOnce(answer(403, { code: 'account_deletion_pending' }))
+    await expect(pullSyncRecords({}, CURSORS)).resolves.toEqual({ outcome: 'refused', status: 403 })
+  })
+
+  // 번호를 잘못 읽어 적으면 다음 받기가 엉뚱한 번호로 받아 줄을 놓친다.
+  it('번호 · 목록 · 줄의 모양이 틀리면 읽을 수 없는 본문으로 보고 refused 다', async () => {
+    for (const broken of [
+      { ...RESPONSE, cursors: { mapleIds: {} } },
+      { ...RESPONSE, cursors: { ...RESPONSE.cursors, mapleIds: { x: '9' } } },
+      { ...RESPONSE, hasMore: 'no' },
+      { ...RESPONSE, oldestDeletedChangeSeq: '3' },
+      { ...RESPONSE, records: { mvpGradeHistory: {} } },
+      { ...RESPONSE, mapleIds: 'a' },
+    ]) {
+      fetchMock.mockResolvedValueOnce(answer(200, broken))
+      await expect(pullSyncRecords({}, CURSORS)).resolves.toEqual({ outcome: 'refused', status: 200 })
+    }
+  })
 })

@@ -1,6 +1,6 @@
 // 넥슨을 부르기 직전에 **쓸 수 있는 자격**을 고른다. 로그인이면 값은 서버 세션이다. 앱은 액세스
 // 토큰을 안 들고, 세션이 죽었는지는 서버가 401 로 답한다.
-import { credentialsOfOcids, currentCredential, currentCredentials } from '../current-credential'
+import { credentialOfOcid, credentialsOfOcids, currentCredential, currentCredentials } from '../current-credential'
 
 jest.mock('../../../storage/api-key', () => ({ getAuthConfig: jest.fn() }))
 jest.mock('../../../storage/character-accounts', () => ({ getNexonAccountIdsOfOcids: jest.fn() }))
@@ -104,5 +104,16 @@ describe('credentialsOfOcids', () => {
     const found = await credentialsOfOcids(['o-부'])
 
     expect(found.get('o-부')).toEqual({ type: 'login', value: '세션', accountId: 'account-login' })
+  })
+  // 받기가 짝을 못 찾은 캐릭터를 `#` 를 붙인 해시로 적는다. 넥슨 식별자가 아니라 넥슨이 오류로 답하고 그 계정의 상한만 쓴다.
+  it('`#` 로 시작하는 ocid 는 소속을 모르는 캐릭터여도 자격이 없다', async () => {
+    getAuthConfig.mockResolvedValue(로그인과부계정)
+    getNexonAccountIdsOfOcids.mockResolvedValue(new Map())
+
+    const found = await credentialsOfOcids([`#${'a'.repeat(64)}`, 'o-모름'])
+
+    expect(found.get(`#${'a'.repeat(64)}`)).toBeNull()
+    expect(found.get('o-모름')).toEqual({ type: 'login', value: '세션', accountId: 'account-login' })
+    await expect(credentialOfOcid(`#${'b'.repeat(64)}`)).resolves.toBeNull()
   })
 })

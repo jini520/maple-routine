@@ -5,7 +5,7 @@
  *
  * @see docs/foundation/server-sync.md `올리기`
  */
-import { nexonIdHashHex } from '../../lib/crypto/nexon-id-hash'
+import { isUnmatchedNexonId, nexonIdHashHex } from '../../lib/crypto/nexon-id-hash'
 import type { SyncPushRecord } from '../../server/sync'
 import { partsOfPreferenceRecordId, SERVER_SYNC_TABLES, type ServerSyncTable } from '../../storage/server-sync-queue'
 
@@ -28,7 +28,7 @@ class OwnerUnknown extends Error {}
  * 다시 해시하면 서버가 다른 캐릭터로 본다.
  */
 export function nexonIdHashOf(id: string): string {
-  return id.startsWith('#') ? id.slice(1) : nexonIdHashHex(id)
+  return isUnmatchedNexonId(id) ? id.slice(1) : nexonIdHashHex(id)
 }
 
 /** SQLite 의 1 · 0 을 참 거짓으로. 빈 칸은 빈 칸이다. */
