@@ -19,7 +19,8 @@ import { View } from 'react-native'
 import { reloadAppAsync } from 'expo'
 
 import type { CacheDataCounts } from '../../features/settings/cache-data'
-import { clearCacheDataAndReload, loadCacheDataCounts } from '../../features/settings/cache-data'
+import { loadCacheDataCounts } from '../../features/settings/cache-data'
+import { clearRecordGroupsAndReload } from '../../features/server-sync/clear'
 import { useAuthStore } from '../../features/auth/store'
 import { useToastStore } from '../../features/toast/store'
 import { useLiveUpdateStore } from '../../features/live-update/store'
@@ -81,10 +82,12 @@ export function SettingsAboutScreen(props: SettingsAboutScreenProps = {}): React
 
   async function handleClear(selection: CacheDataSelection): Promise<void> {
     setIsClearing(true)
-    await clearCacheDataAndReload(
-      selection,
-      props.reload ?? (() => void reloadAppAsync('데이터 삭제')),
-    )
+    const cleared = await clearRecordGroupsAndReload(selection, props.reload ?? (() => void reloadAppAsync('데이터 삭제')))
+    // 지웠으면 앱을 다시 띄운다. 서버가 지우지 못했으면 아무것도 지우지 않아 다시 누를 수 있다.
+    if (cleared) return
+    setIsClearing(false)
+    setIsCacheClearOpen(false)
+    useToastStore.getState().showError('데이터를 삭제하지 못했습니다. 잠시 뒤 다시 시도해 주세요.')
   }
 
   async function handleDeleteConfirm(): Promise<void> {

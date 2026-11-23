@@ -3,8 +3,8 @@ import { characterBasicCacheKey, STORAGE_KEYS } from './keys'
 import { NO_SPLIT_VALUES, SPLIT_COLUMN_NAMES } from './boss-periods'
 import { getCachedCharacterBasic } from './character-basic-cache'
 import { addMissingCharacterProfile, type CharacterProfileSnapshot } from './character-profiles'
+import { withServerSyncPaused, type ServerSyncTable } from './server-sync-queue'
 import { getBossProfitDb } from './sqlite/db'
-import { inTransaction } from './sqlite/transaction'
 
 // 데이터 삭제. 사용자가 고른 그룹이 목록으로 든 키와 표만 지운다. 목록에 없는 것은 어떤 선택에서도 남는다.
 // 화면에 적지 않은 것을 함께 지우면 사용자가 모르는 것을 잃는다. 새 키 · 새 표는 그룹 목록에 더해야만 지워진다.
@@ -34,9 +34,6 @@ const CACHE_KEY_PREFIXES = ['schedulerCache:', 'characterBasicCache:', 'mesoRate
 function isCacheKey(key: string): boolean {
   return key === STORAGE_KEYS.eventWorldNames || CACHE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))
 }
-
-/** 기록을 지우는 그룹. `cache` 는 다시 받는 값만 지운다. */
-const RECORD_GROUPS: readonly CacheDataGroupId[] = ['manual', 'boss', 'cashbook', 'enhancement']
 
 // 품목 · 사냥 입력 · 보관에서 가져온 조각은 기록의 자식이라 기록과 함께 지워야 고아가 안 생긴다. 강화 레벨 기억은
 // 기록에서 나온 값이라 기록만 지우고 남기면 다음 기록의 강화 전 칸이 지운 기록의 레벨로 선다.
@@ -71,29 +68,52 @@ const NO_SPLIT = SPLIT_COLUMN_NAMES.map((column, index) => `${column} = ${NO_SPL
 // 건의 자식이라 표를 통째로 지우면 외래키를 따라 다른 그룹까지 사라진다.
 
 /** 처치와 드롭. 그 기간 값이 없는 수익 건은 함께 지운다. */
-const CLEAR_BOSS_RECORDS = [
-  'DELETE FROM boss_drops',
-  'DELETE FROM boss_profit_entries WHERE clear_recorded_by IS NOT NULL OR split_type IS NULL',
-]
+const CLEARED_BOSS_ENTRIES = 'clear_recorded_by IS NOT NULL OR split_type IS NULL'
+const CLEAR_BOSS_RECORDS = ['DELETE FROM boss_drops', `DELETE FROM boss_profit_entries WHERE ${CLEARED_BOSS_ENTRIES}`]
 
 /** 파티 분배 설정과 그 기간 값. 드롭이 남은 수익 건은 줄을 남기고 분배 칸만 비운다. */
+const SPLIT_ONLY_BOSS_ENTRIES =
+  'clear_recorded_by IS NULL AND NOT EXISTS (SELECT 1 FROM boss_drops WHERE profit_entry_id = boss_profit_entries.id)'
 const CLEAR_BOSS_SPLITS = [
   'DELETE FROM boss_split_settings',
-  `DELETE FROM boss_profit_entries
-    WHERE clear_recorded_by IS NULL AND NOT EXISTS (SELECT 1 FROM boss_drops WHERE profit_entry_id = boss_profit_entries.id)`,
+  `DELETE FROM boss_profit_entries WHERE ${SPLIT_ONLY_BOSS_ENTRIES}`,
   `UPDATE boss_profit_entries SET ${NO_SPLIT} WHERE clear_recorded_by IS NULL`,
 ]
 
+/** 그 서버 표의 대기 줄을 모두 지우는 문장. 서버가 그 묶음을 이미 지웠다. */
+function dropQueued(tables: readonly ServerSyncTable[]): string {
+  return `DELETE FROM server_sync_queue WHERE record_type IN (${tables.map((table) => `'${table}'`).join(', ')})`
+}
+
+/**
+ * 이번에 지우는 수익 건의 대기 줄을 지우는 문장. 지우기 전에 돈다. 전에 지운 수익 건의 지우기는 남긴다. 이번에 서버가 지우지 않는
+ * 줄일 수 있어 버리면 서버에 남는다.
+ */
+function dropQueuedEntries(where: string): string {
+  return `DELETE FROM server_sync_queue WHERE record_type = 'bossProfitEntries' AND record_id IN (SELECT id FROM boss_profit_entries WHERE ${where})`
+}
+
+/**
+ * 고른 그룹을 지우는 문장. 그룹마다 그 기록의 대기 줄을 먼저 지운다. 아직 못 올린 줄은 사용자가 지우기로 고른 기록이다. 고르지 않은
+ * 그룹의 대기 줄은 아직 못 올린 기록이라 남긴다.
+ */
 function statementsFor(selection: CacheDataSelection): string[] {
   return [
-    ...(selection.cashbook ? CASHBOOK_TABLES.map((table) => `DELETE FROM ${table}`) : []),
-    ...(selection.enhancement ? ENHANCEMENT_TABLES.map((table) => `DELETE FROM ${table}`) : []),
-    ...(selection.boss ? CLEAR_BOSS_RECORDS : []),
-    ...(selection.manual ? CLEAR_BOSS_SPLITS : []),
+    ...(selection.cashbook
+      ? [dropQueued(['cashbookEntries', 'inventoryItems', 'rememberedLevels']), ...CASHBOOK_TABLES.map((table) => `DELETE FROM ${table}`)]
+      : []),
+    ...(selection.enhancement
+      ? [dropQueued(['enhancementTotals', 'enhancementSettledDays']), ...ENHANCEMENT_TABLES.map((table) => `DELETE FROM ${table}`)]
+      : []),
+    ...(selection.boss ? [dropQueued(['bossDrops']), dropQueuedEntries(CLEARED_BOSS_ENTRIES), ...CLEAR_BOSS_RECORDS] : []),
+    ...(selection.manual
+      ? [
+          dropQueued(['bossSplitSettings', 'manualTrackedItems', 'sharedContentProgress']),
+          dropQueuedEntries(SPLIT_ONLY_BOSS_ENTRIES),
+          ...CLEAR_BOSS_SPLITS,
+        ]
+      : []),
     ...(selection.cache ? ['DELETE FROM query_cache'] : []),
-    // 대기 표가 남으면 방금 지운 기록마다 서버로 지우기 요청이 간다. 트리거가 넣은 지우기도 여기서 함께 비운다. 서버 사본은
-    // 남긴다. 캐시만 지우면 기록이 그대로라 비우지 않는다. 비우면 아직 못 올린 기록이 사라진다.
-    ...(RECORD_GROUPS.some((group) => selection[group]) ? ['DELETE FROM server_sync_queue'] : []),
   ]
 }
 
@@ -123,14 +143,17 @@ async function legacyProfilesOf(keys: readonly string[]): Promise<CharacterProfi
   )
 }
 
-/** 고른 그룹만 지운다. 표는 트랜잭션 하나로 지우고, 끝나면 `VACUUM` 으로 파일을 줄인다. */
+/**
+ * 고른 그룹만 지운다. 표는 트랜잭션 하나로 지우고, 끝나면 `VACUUM` 으로 파일을 줄인다. 지우는 쓰기는 대기 표에 넣지 않는다. 서버에
+ * 올리는 그룹은 서버가 먼저 지웠다.
+ */
 export async function clearCacheData(selection: CacheDataSelection): Promise<void> {
   if (!Object.values(selection).some(Boolean)) return
 
   const keys = await preferences.keys()
   const profiles = selection.cache ? await legacyProfilesOf(keys) : []
   const db = await getBossProfitDb()
-  await inTransaction(db, async () => {
+  await withServerSyncPaused(async () => {
     for (const statement of statementsFor(selection)) await db.execute(statement)
     for (const profile of profiles) await addMissingCharacterProfile(profile)
   })
