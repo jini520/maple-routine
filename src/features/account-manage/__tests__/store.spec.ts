@@ -27,6 +27,7 @@ jest.mock('../../schedule-sync/save-tracked', () => ({ saveTrackedCharacters: je
 jest.mock('../../mvp-grade/character-list', () => ({
   readCachedCharacterListOfAccount: jest.fn(() => undefined),
   fetchCharacterListsCached: jest.fn(async () => []),
+  fetchUnsavedCharacterList: jest.fn(async () => []),
   recordCharacterList: jest.fn(),
 }))
 jest.mock('../../auth/current-credential', () => ({ currentCredentials: jest.fn(async () => []) }))
@@ -235,6 +236,30 @@ describe('삭제', () => {
     expect(useToastStore.getState().toasts).toEqual([
       expect.objectContaining({ variant: 'error', message: 'API 키를 삭제하지 못했습니다. 잠시 뒤 다시 시도해 주세요.' }),
     ])
+  })
+
+  // 캐릭터가 없는 메이플 ID 는 기기의 소속 표에 남지 않는다. 등록은 넥슨 목록의 메이플 ID 로 했으므로 같은 목록으로 해제한다.
+  it('기기가 그 계정의 메이플 ID 를 모르면 그 키로 넥슨 목록을 받아 거기 있는 메이플 ID 로 해제한다', async () => {
+    owners.getMapleIdsByNexonAccount.mockResolvedValue(new Map([['login-1', ['m-main']]]))
+    await useAccountManageStore.getState().load()
+    characterList.fetchUnsavedCharacterList.mockResolvedValue([{ accountId: 'm-sub', characters: [] }])
+
+    await expect(useAccountManageStore.getState().removeAccount('k-sub')).resolves.toBe('removed')
+
+    expect(characterList.fetchUnsavedCharacterList).toHaveBeenCalledWith({ type: 'key', value: '부-키', accountId: 'k-sub' })
+    expect(server.unregisterSubAccountOnServer).toHaveBeenCalledWith({ Authorization: 'Bearer S' }, [h('m-sub')])
+    expect(apiKeyStore.removeApiKey).toHaveBeenCalledWith('부-키')
+  })
+
+  it('목록으로도 메이플 ID 를 얻지 못하면 아무것도 지우지 않고 실패를 알린다', async () => {
+    owners.getMapleIdsByNexonAccount.mockResolvedValue(new Map([['login-1', ['m-main']]]))
+    await useAccountManageStore.getState().load()
+    characterList.fetchUnsavedCharacterList.mockRejectedValue(new Error('무효 키'))
+
+    await expect(useAccountManageStore.getState().removeAccount('k-sub')).resolves.toBe('failed')
+
+    expect(server.unregisterSubAccountOnServer).not.toHaveBeenCalled()
+    expect(apiKeyStore.removeApiKey).not.toHaveBeenCalled()
   })
 
   it('추적 캐릭터가 하나도 남지 않으면 진입 단계를 다시 판정해 캐릭터 설정으로 보낸다', async () => {

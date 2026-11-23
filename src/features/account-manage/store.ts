@@ -16,13 +16,14 @@ import { addSubApiKey, getAuthConfig, removeApiKey, replaceApiKeyValue } from '.
 import { getCharacterAccountSightings, getMapleIdsByNexonAccount } from '../../storage/character-accounts'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getServerAccounts, setServerAccounts } from '../../storage/server-accounts'
-import type { NexonAuthConfig, NexonLoginMethod } from '../../types'
+import type { NexonApiKeyMethod, NexonAuthConfig, NexonLoginMethod } from '../../types'
 import { currentCredentials } from '../auth/current-credential'
 import { formatAuthError } from '../auth/format'
 import { reusableNexonAccountId } from '../auth/reentry-account-id'
 import { untrackCharacters } from '../character-selection/untrack'
 import {
   fetchCharacterListsCached,
+  fetchUnsavedCharacterList,
   readCachedCharacterListOfAccount,
   recordCharacterList,
 } from '../mvp-grade/character-list'
@@ -108,6 +109,16 @@ async function unmarkRegistered(loginId: string, apiKey: string): Promise<void> 
   const state = await getServerAccounts()
   const tag = `${loginId}:${apiKeyHashHex(apiKey)}`
   if (state.registered.includes(tag)) await setServerAccounts({ ...state, registered: state.registered.filter((one) => one !== tag) })
+}
+
+/**
+ * 부계정 해제에 실을 메이플 ID 해시. 기기가 모르면 그 키로 넥슨 목록을 받는다. 캐릭터가 없는 메이플 ID 는 기기의 소속 표에 남지
+ * 않지만, 등록은 넥슨 목록의 메이플 ID 로 했다. 목록을 받지 못하면 빈 배열이다.
+ */
+async function mapleIdHashesToUnregister(account: ManagedAccount, apiKey: NexonApiKeyMethod): Promise<string[]> {
+  if (account.mapleIdHashes.length > 0) return account.mapleIdHashes
+  const accounts = await fetchUnsavedCharacterList({ type: 'key', value: apiKey.value, accountId: apiKey.id }).catch(() => [])
+  return accounts.map((one) => nexonIdHashHex(one.accountId))
 }
 
 /** 지운 계정의 메이플 ID 에 속한 추적 캐릭터를 뺀다. */
@@ -271,10 +282,11 @@ export const useAccountManageStore = create<AccountManageStore>()((set, get) => 
 
     // 서버의 등록을 먼저 해제한다. 기기에서만 지우면 서버에 등록이 남아 다른 넥슨 ID 가 그 계정을 등록하지 못한다.
     const auth = await loginOf()
+    const mapleIdHashes = auth === null ? [] : await mapleIdHashesToUnregister(account, account.apiKey)
     const unregistered =
-      auth === null || account.mapleIdHashes.length === 0
+      auth === null || mapleIdHashes.length === 0
         ? null
-        : await unregisterSubAccountOnServer(sessionOf(auth.login), account.mapleIdHashes)
+        : await unregisterSubAccountOnServer(sessionOf(auth.login), mapleIdHashes)
     if (auth === null || unregistered?.outcome !== 'sent') {
       useToastStore.getState().showError(REMOVE_FAILED_MESSAGE)
       return 'failed'
@@ -282,7 +294,7 @@ export const useAccountManageStore = create<AccountManageStore>()((set, get) => 
 
     await removeApiKey(account.apiKey.value)
     await unmarkRegistered(auth.login.id, account.apiKey.value).catch(() => undefined)
-    await untrackMapleIds(new Set(account.mapleIdHashes))
+    await untrackMapleIds(new Set(mapleIdHashes))
 
     void get().load()
     return 'removed'
