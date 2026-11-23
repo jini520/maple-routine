@@ -48,6 +48,10 @@
 
 - 로그인할 때 추적 목록과 대표를 비우는 일(`clearTrackedCharacterOcids`)은 넣지 않는다. 넣으면 새 기기의 로그인이 서버의 추적 목록을
   지운다. 대표는 추적 목록 안의 표시라, 목록을 먼저 비운 뒤의 대표 지우기는 바뀐 항목이 없다.
+- 동기화의 받기는 저장 함수를 거치지 않고 키에 바로 적는다(`storage/server-sync-pull-preferences.ts`). 받은 값을 대기 표에 넣지
+  않으려는 것이다. 다른 기기의 캐릭터와 메이플 ID 가 이 기기의 `character_accounts` 에 없으면 원문 대신 `#` 를 붙인 해시를 적는다
+  (`manualTrackedContent:#…` · `accountSharedProgress:#…` 의 키, 약속 · 계산기 기록의 `ocid`, `mapleIdNames` · `figureMotions` 의 열쇠).
+  추적 목록과 대표에는 적지 않는다([[ADR-099]] 결정 15 · 67).
 - 기기 변환(`preferences-conversion.ts`)과 옛 키 합치기는 Preferences 를 직접 써서 넣지 않는다. 변환 전 기록은 처음 동기화가 넣는다.
 - `server_sync_pause` 에 줄이 있는 동안은 넣지 않는다. 받은 값을 저장하는 동안이다.
 
@@ -83,6 +87,7 @@
 | `scheduleAlertEnabled` | `'on'` · `'off'` | `schedule-alert-settings.ts` | 남긴다 | 미완료 스케줄 알림 스위치. 없으면 켜짐 |
 | `partyAppointments` | JSON 약속 배열. 칸은 서버 `party_appointments` 와 같고(`time` · `alarmMinutesBefore` · `schedule.date` · `fromWeekCode` · `untilWeekCode`), 주는 주차 값, 보스 판은 `{ bossDifficultyId, ocid }` 다 | `party-appointments.ts` | 남긴다 | 사용자가 적은 파티 약속([[ADR-051]] 결정 12). `id` 는 uuid 이고, 옛 `시각 + 난수` id 는 읽을 때 uuid 로 바꿔 다시 저장한다([[ADR-098]] 결정 4) |
 | `serverAccounts` | JSON `{ reported: { [넥슨 계정 id]: 메이플 ID 해시[] }, registered: '로그인 계정 id:키 해시'[] }`. 깨진 값은 빈 값으로 읽는다 | `server-accounts.ts` | 남긴다 | 서버가 메인 계정에 마지막으로 돌려준 메이플 ID 와, 서버에 등록한 부계정 키. 이미 아는 것은 다시 보내지 않는다. 부계정을 지우면 서버가 해제를 받은 뒤 그 키의 값을 뺀다([[ADR-101]] 결정 14 · 25) |
+| `serverSyncCursors` | JSON `{ nexonAccount: { id, changeSeq } \| null, mapleIds: { [메이플 ID 해시]: changeSeq } }`. 깨진 값은 빈 번호로 읽는다 | `server-sync-cursors.ts` | 남긴다 | 동기화의 받기가 주인마다 마지막으로 받은 변경 번호. 받은 줄을 다 넣은 뒤 응답의 번호로 갈아 끼운다. 지워지면 처음부터 다시 받고, 같은 줄을 다시 넣어도 한 번 넣은 것과 같다([[ADR-099]] 결정 9 · 67) |
 | `legacyCleanupDone` | `'1'` | `legacy-cleanup.ts` | 남긴다 | 옛 키 정리가 끝났다는 표식. 있으면 부팅이 정리를 건너뛴다([[ADR-142]] 결정 12) |
 | `enhancementTotalsMoved` | `'1'` | `enhancement-totals-moved.ts` | 남긴다 | 옛 강화 원본(`enhancement_history`)을 합계로 옮겼는지. 옮기면 원본 표를 지운다([[ADR-100]] 결정 3) |
 | `legacySpaceReclaimed` | `'1'` | `legacy-space.ts` | 남긴다 | 옛 표를 다 지운 뒤 사본 파일을 지우고 `VACUUM` 했다는 표식. 있으면 다시 돌지 않는다([[ADR-078]] 결정 11) |

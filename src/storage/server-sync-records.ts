@@ -20,7 +20,7 @@ import { getBossProfitDb } from './sqlite/db'
 export type ServerSyncSource = Record<string, unknown>
 
 /** 서버 표 이름 → 기기 SQLite 표. 여기 없는 표는 Preferences 에 있다. */
-const DEVICE_TABLES: Partial<Record<ServerSyncTable, string>> = {
+export const DEVICE_TABLES: Partial<Record<ServerSyncTable, string>> = {
   characterWorldLeaps: 'character_world_leaps',
   inventoryItems: 'inventory_items',
   cashbookEntries: 'cashbook_entries',
@@ -34,7 +34,7 @@ const DEVICE_TABLES: Partial<Record<ServerSyncTable, string>> = {
 }
 
 /** 그 표의 id 를 가리키는 칸. id 를 바꾸면 함께 바꾼다. */
-const REFERENCES: Partial<Record<ServerSyncTable, readonly { table: string; column: string }[]>> = {
+export const REFERENCES: Partial<Record<ServerSyncTable, readonly { table: string; column: string }[]>> = {
   bossProfitEntries: [{ table: 'boss_drops', column: 'profit_entry_id' }],
   inventoryItems: [{ table: 'cashbook_entry_items', column: 'inventory_item_id' }],
   cashbookEntries: [

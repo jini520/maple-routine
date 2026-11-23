@@ -114,6 +114,13 @@ export async function clearServerSyncQueue(): Promise<void> {
   await db.run(`DELETE FROM server_sync_queue`)
 }
 
+/** 그 기록의 대기 줄이 있나. 받기가 아직 못 올린 기기 값을 덮지 않으려고 본다. */
+export async function isServerSyncQueued(recordId: string): Promise<boolean> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(`SELECT 1 FROM server_sync_queue WHERE record_id = ?`, [recordId])
+  return (values ?? []).length > 0
+}
+
 /** 보냈거나 포기했다. 줄을 지우는 자리는 여기 하나다. */
 export async function removeServerSync(recordId: string): Promise<void> {
   const db = await getBossProfitDb()

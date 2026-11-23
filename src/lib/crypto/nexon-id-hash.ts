@@ -10,3 +10,17 @@ import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js'
 export function nexonIdHashHex(id: string): string {
   return bytesToHex(sha256(utf8ToBytes(id)))
 }
+
+/**
+ * 받기가 이 기기에서 짝을 못 찾은 해시를 원문 칸에 적는 값. 해시 앞에 `#` 를 붙인다. 넥슨 식별자가 아니라 넥슨에 보내지 않는다.
+ *
+ * @example unmatchedNexonIdOf(hash) // '#3f2a…'
+ */
+export function unmatchedNexonIdOf(hash: string): string {
+  return `#${hash}`
+}
+
+/** 받기가 짝을 못 찾아 `#` 를 붙여 적은 해시인가. */
+export function isUnmatchedNexonId(id: string): boolean {
+  return id.startsWith('#')
+}

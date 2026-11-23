@@ -6,6 +6,7 @@
  *
  * @example const credential = await currentCredential()
  */
+import { isUnmatchedNexonId } from '../../lib/crypto/nexon-id-hash'
 import { credentialOf, credentialOfOwner, usableCredentialsOf } from '../../lib/nexon-credential'
 import { getAuthConfig } from '../../storage/api-key'
 import { getNexonAccountIdsOfOcids } from '../../storage/character-accounts'
@@ -35,11 +36,14 @@ export async function currentCredentials(): Promise<NexonCredential[]> {
  * 캐릭터마다 부를 자격. 그 캐릭터가 속한 넥슨 계정의 자격이고, 부를 수 없으면 `null` 이다.
  *
  * 어느 계정인지는 `character_accounts` 에서 찾는다. 모르는 캐릭터와 소속을 못 읽은 경우는 메인 계정의 자격이다. 계정 칸이
- * 생기기 전의 기록은 모두 메인 계정의 것이었다.
+ * 생기기 전의 기록은 모두 메인 계정의 것이었다. 받기가 `#` 를 붙여 적은 해시는 넥슨 식별자가 아니라 자격을 주지 않는다. 부르면
+ * 넥슨이 오류로 답하고 그 계정의 상한만 쓴다.
  */
 export async function credentialsOfOcids(ocids: readonly string[]): Promise<Map<string, NexonCredential | null>> {
   const [config, owners] = await Promise.all([readConfig(), readOwners(ocids)])
-  return new Map(ocids.map((ocid) => [ocid, credentialOfOwner(config, owners.get(ocid) ?? null)]))
+  return new Map(
+    ocids.map((ocid) => [ocid, isUnmatchedNexonId(ocid) ? null : credentialOfOwner(config, owners.get(ocid) ?? null)]),
+  )
 }
 
 async function readOwners(ocids: readonly string[]): Promise<Map<string, string>> {
