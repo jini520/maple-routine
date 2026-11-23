@@ -7,18 +7,19 @@ import { registerBackgroundRefresh, unregisterBackgroundRefresh } from '../../na
 import { getScheduleAlertEnabled } from '../../storage/schedule-alert-settings'
 import { requestNotificationReconcile } from '../local-notifications/run'
 import { whenQueryCacheRestored } from '../query/persist'
-import { refreshSchedules } from '../schedule-sync/schedule-query'
+import { refreshSchedulesInBackground } from '../schedule-sync/schedule-query'
 
 /** OS 에 거는 최소 간격. 하한일 뿐이고 OS 가 더 늦게 돌린다. 짧게 잡아도 iOS 는 무시하고 안드로이드는 넥슨 호출만 는다 */
 export const BACKGROUND_REFRESH_INTERVAL_MINUTES = 120
 
 /**
- * 태스크 몸통. 저장된 캐시를 다 올린 뒤 회차를 받는다. 복원 전에 읽으면 추적 캐릭터가 없는 것으로 보여 계획이 빈다.
+ * 태스크 몸통. 저장된 캐시를 다 올린 뒤 회차를 받는다. 복원 전에 읽으면 추적 캐릭터가 없는 것으로 보여 계획이 빈다. 이 회차는 서버
+ * 동기화를 깨우지 않는다. OS 가 주는 시간이 짧다.
  * 회차가 실패해도 재조정한다. 캐시의 마지막 상태로 다시 쓰는 것이고 이미 서 있는 예약과 같으면 아무것도 안 한다.
  */
 export async function runBackgroundRefresh(): Promise<void> {
   await whenQueryCacheRestored()
-  await refreshSchedules().catch(() => undefined)
+  await refreshSchedulesInBackground().catch(() => undefined)
   await requestNotificationReconcile()
 }
 
