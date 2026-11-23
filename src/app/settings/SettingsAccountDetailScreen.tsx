@@ -19,8 +19,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import type { ManagedAccount } from '../../features/account-manage/accounts'
-import { useAccountManageStore } from '../../features/account-manage/store'
-import type { KeyRejection } from '../../features/account-manage/validate-key'
+import { useAccountManageStore, type UnregistrableReason } from '../../features/account-manage/store'
 import { useAuthStore } from '../../features/auth/store'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { MAPLE_ID_NAME_MAX_BYTES, useMapleIdNamesStore } from '../../features/maple-id/names'
@@ -34,6 +33,10 @@ import { SETTINGS_CARD_CLASS } from './row-class'
 import { SectionTitle } from './SectionTitle'
 import { SettingsRow } from './SettingsRow'
 
+/** `API 키 삭제` 확인 모달의 안내. 삭제가 서버의 부계정 등록까지 해제해 다른 기기에서도 그 계정의 기록이 빠진다 */
+const DELETE_NOTE =
+  '부계정 등록을 해제하고 이 기기에서 키를 지워요. 이 계정의 캐릭터와 보스 수익 · 가계부 기록이 다른 기기에서도 빠져요. 기록은 서버에 남아 다시 등록하면 돌아와요.'
+
 export function SettingsAccountDetailScreen(props: { route?: { params?: Partial<AccountDetailParams> } }): React.JSX.Element {
   // 계정 관리는 앱 설정의 하위 페이지라 그 묶음을 함께 쓴다.
   const faq = useFaqSheet('app-settings')
@@ -43,7 +46,7 @@ export function SettingsAccountDetailScreen(props: { route?: { params?: Partial<
   const account = view?.accounts.find((one) => one.key === accountKey)
   const [keySheetOpen, setKeySheetOpen] = useState(props.route?.params?.openKeySheet === true)
   const [submitting, setSubmitting] = useState(false)
-  const [rejection, setRejection] = useState<KeyRejection | null>(null)
+  const [rejection, setRejection] = useState<UnregistrableReason | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -131,7 +134,7 @@ export function SettingsAccountDetailScreen(props: { route?: { params?: Partial<
           tone="error"
           title="API 키를 삭제할까요?"
           content={
-            <InsetNote>이 기기에서 키를 지우고, 이 계정의 캐릭터를 추적에서 빼요. 보스 수익 · 가계부 기록은 그대로 남아요.</InsetNote>
+            <InsetNote>{DELETE_NOTE}</InsetNote>
           }
           action={{ label: '취소', onPress: () => setConfirmingDelete(false), disabled: deleting }}
           secondaryAction={{

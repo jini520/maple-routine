@@ -40,7 +40,6 @@ import { withSqliteFallback, withSqliteTimeout } from './sqlite-guards'
 import { create } from 'zustand'
 import { dropShareSeedOf, toRecordedDrop } from './rows'
 import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../storage/boss-drops'
-import { reportDropPrice } from '../server-sync/drop-price-sync'
 import { recordUsageAction } from '../usage-log/record'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import {
@@ -505,7 +504,7 @@ async function writeGroup(entry: DropPriceEntry, siblings: readonly DropPriceEnt
     candidate.id === entry.id ? { ...candidate.drop, ...patch } : candidate.drop,
   )
 
-  const ids = await replaceBossDropRecords(
+  await replaceBossDropRecords(
     entry.ocid,
     entry.bossKey,
     entry.difficulty,
@@ -515,15 +514,6 @@ async function writeGroup(entry: DropPriceEntry, siblings: readonly DropPriceEnt
     // 가격만 고치는 경로다. 월드는 기존 행이 물려주므로 여기서 모를 수 있다.
     NO_WORLD,
   )
-
-  // 서버로 한 건 보낸다(시세 표본). **기기 저장이 끝난 뒤이고 결과를 안 기다린다** - 사용자가
-  // 보는 것은 저장이고 전송은 거기 얹힌 일이다. 실패는 대기 표가 들고 다음 부팅에 다시 나간다.
-  //
-  // 메모리의 드롭에 식별자가 없으면 저장소가 차례대로 돌려준 값에서 집는다. 식별자는 INSERT 에서
-  // 처음 생기므로 저장 뒤에야 안다.
-  const index = siblings.findIndex((candidate) => candidate.id === entry.id)
-  const dropRecordId = entry.drop.dropRecordId ?? ids[index] ?? null
-  if (dropRecordId !== null) void reportDropPrice(dropRecordId, new Date())
   recordUsageAction('drop-save')
 }
 

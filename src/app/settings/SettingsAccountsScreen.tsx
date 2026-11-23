@@ -21,8 +21,7 @@ import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import type { ManagedAccount } from '../../features/account-manage/accounts'
-import { useAccountManageStore } from '../../features/account-manage/store'
-import type { KeyRejection } from '../../features/account-manage/validate-key'
+import { useAccountManageStore, type UnregistrableReason } from '../../features/account-manage/store'
 import { NEXON_LOGIN_ENABLED } from '../../features/auth/nexon-login-enabled'
 import { useAuthStore } from '../../features/auth/store'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
@@ -40,7 +39,7 @@ export function SettingsAccountsScreen(): React.JSX.Element {
   const view = useAccountManageStore((state) => state.view)
   const [adding, setAdding] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [rejection, setRejection] = useState<KeyRejection | null>(null)
+  const [rejection, setRejection] = useState<UnregistrableReason | null>(null)
   const [limitOpen, setLimitOpen] = useState(false)
   // 추가한 키가 등록된 부계정의 키면 그 계정의 키를 바꿀지 묻는다. 시트는 그 뒤에 그대로 있다.
   const [replacing, setReplacing] = useState<{ accountKey: string; label: string; apiKey: string } | null>(null)

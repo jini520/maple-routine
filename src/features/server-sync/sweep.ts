@@ -17,16 +17,13 @@
  * **`attempts` 를 응답을 받은 뒤에 적는다.** 미리 적어 두고 성공하면 되돌리는 모양으로 짜면,
  * 훑는 중에 앱이 꺼졌을 때 그 되돌리기가 못 돌아 한 번 켰다 끈 것이 시도로 남는다.
  */
-import type { SendResult } from '../../server/drop-price'
+import type { SendResult } from '../../server/write'
 import { MAX_SYNC_ATTEMPTS, type SyncQueueEntry } from '../../storage/server-sync-queue'
 
 /**
  * 종류 하나가 서버와 주고받는 법.
  *
- * `read` 가 `null` 을 주면 그 기록은 서버에서 지운다. **삭제 판정이 종류 안에 있다** - 드롭
- * 가격은 **원본이 없거나 아이템 key 가 없다** 를 `null` 로 답한다.
- *
- * **어느 신원으로 보낼지도 종류가 정한다.** 기록마다 그 캐릭터가 속한 계정의 신원으로 보내야 서버가 받는다.
+ * `read` 가 `null` 을 주면 그 기록은 서버에서 지운다. **삭제 판정이 종류 안에 있다.**
  */
 export interface SyncHandler<Value> {
   read: (recordId: string) => Promise<Value | null>
@@ -35,7 +32,7 @@ export interface SyncHandler<Value> {
 
 /** 이 고리가 밖에 맡기는 일 전부. 저장소와 신원은 어댑터를 거친다. */
 export interface SweepDeps {
-  /** 메인 계정의 신원. 밝힐 수단이 없으면 `null` 이고 그 회차는 통째로 건너뛴다. 기록마다의 신원은 종류가 고른다. */
+  /** 메인 계정의 신원. 밝힐 수단이 없으면 `null` 이고 그 회차는 통째로 건너뛴다. */
   identity: () => Promise<Record<string, string> | null>
   list: () => Promise<SyncQueueEntry[]>
   countAttempt: (recordId: string, lastError: string) => Promise<void>

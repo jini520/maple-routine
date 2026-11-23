@@ -1,7 +1,8 @@
 /**
  * 계정 관리. 목록을 읽고, 부계정 키를 더하고 바꾸고 지운다.
  *
- * 부계정은 기기마다 따로 관리하고, 서버는 어느 키가 그 사람의 부계정인지만 적는다. 그래서 지울 때는 서버에 묻지 않고 등록 정보를 남긴다.
+ * 부계정은 기기마다 따로 관리하고, 서버는 어느 넥슨 계정이 그 로그인의 부계정인지만 메이플 ID 로 적는다. 부계정은 넥슨 ID 하나에만
+ * 등록되므로, 더하고 바꿀 때는 서버 등록을 먼저 하고, 지울 때는 서버의 등록을 먼저 해제한다.
  */
 import { create } from 'zustand'
 
@@ -9,18 +10,20 @@ import { apiKeyHashHex } from '../../lib/crypto/api-key-hash'
 import { nexonIdHashHex } from '../../lib/crypto/nexon-id-hash'
 import { accountOfOcid } from '../../lib/mvp/membership'
 import { randomUuid } from '../../native/uuid'
-import { registerSubAccountOnServer } from '../../server/accounts'
+import { registerSubAccountOnServer, unregisterSubAccountOnServer, type RegisterSubAccountResult } from '../../server/accounts'
+import { ERROR_CODES } from '../../server/error-codes'
 import { addSubApiKey, getAuthConfig, removeApiKey, replaceApiKeyValue } from '../../storage/api-key'
 import { getCharacterAccountSightings, getMapleIdsByNexonAccount } from '../../storage/character-accounts'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { getServerAccounts, setServerAccounts } from '../../storage/server-accounts'
-import type { NexonAuthConfig, NexonLoginMethod } from '../../types'
+import type { NexonApiKeyMethod, NexonAuthConfig, NexonLoginMethod } from '../../types'
 import { currentCredentials } from '../auth/current-credential'
 import { formatAuthError } from '../auth/format'
 import { reusableNexonAccountId } from '../auth/reentry-account-id'
 import { untrackCharacters } from '../character-selection/untrack'
 import {
   fetchCharacterListsCached,
+  fetchUnsavedCharacterList,
   readCachedCharacterListOfAccount,
   recordCharacterList,
 } from '../mvp-grade/character-list'
@@ -29,9 +32,15 @@ import { useToastStore } from '../toast/store'
 import { buildAccountManageView, type AccountManageSources, type AccountManageView, type ManagedAccount } from './accounts'
 import { checkApiKey, type KeyCheck, type KeyRejection } from './validate-key'
 
+/** 서버 등록이 막은 이유. 다른 넥슨 ID 의 부계정 · 부계정을 가진 넥슨 ID · 부계정인 로그인 */
+export type RegistrationRejection = 'registeredElsewhere' | 'hasSubAccounts' | 'loginIsSubAccount'
+
+/** `등록할 수 없는 키예요` 모달이 알리는 이유. 검증에 걸린 것과 서버 등록이 막은 것 */
+export type UnregistrableReason = KeyRejection | RegistrationRejection
+
 export type KeyActionResult =
   | { outcome: 'saved' }
-  | { outcome: 'rejected'; reason: KeyRejection }
+  | { outcome: 'rejected'; reason: UnregistrableReason }
   /** 이 기기의 넥슨 계정이 이미 5개다 */
   | { outcome: 'limit' }
   /** 추가한 키가 등록된 부계정의 키다. 저장하지 않았고, 바꿀지 물은 뒤 `replaceWithKey` 로 바꾼다 */
@@ -57,11 +66,20 @@ export interface AccountManageStore {
    * @param accountKey `addKey` 가 돌려준 계정의 `key`
    */
   replaceWithKey(accountKey: string, apiKey: string): Promise<KeyActionResult>
-  /** 이 기기에서 부계정을 지운다 */
+  /** 서버의 부계정 등록을 해제하고 이 기기에서 지운다. 서버가 받지 못하면 아무것도 지우지 않고 토스트로 알린다 */
   removeAccount(accountKey: string): Promise<'removed' | 'failed'>
 }
 
 const SAVED_MESSAGE = 'API 키를 확인했어요'
+const REMOVE_FAILED_MESSAGE = 'API 키를 삭제하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'
+
+/** 다시 보내도 같은 답이라 키를 저장하지 않는 등록 거절. 같은 넥슨 ID 는 검증의 `alreadyRegistered` 와 같은 안내다 */
+const REJECTION_OF: Partial<Record<RegisterSubAccountResult, UnregistrableReason>> = {
+  [ERROR_CODES.sameAccount]: 'alreadyRegistered',
+  [ERROR_CODES.registeredElsewhere]: 'registeredElsewhere',
+  [ERROR_CODES.hasSubAccounts]: 'hasSubAccounts',
+  [ERROR_CODES.loginIsSubAccount]: 'loginIsSubAccount',
+}
 
 function sessionOf(login: NexonLoginMethod): Record<string, string> {
   return { Authorization: `Bearer ${login.session}` }
@@ -84,6 +102,23 @@ async function markRegistered(loginId: string, apiKey: string): Promise<void> {
   const state = await getServerAccounts()
   const tag = `${loginId}:${apiKeyHashHex(apiKey)}`
   if (!state.registered.includes(tag)) await setServerAccounts({ ...state, registered: [...state.registered, tag] })
+}
+
+/** 해제한 키의 적은 값을 뺀다. 남기면 같은 키를 다시 넣고 등록이 응답 없이 끝났을 때 회차가 다시 등록하지 않는다. */
+async function unmarkRegistered(loginId: string, apiKey: string): Promise<void> {
+  const state = await getServerAccounts()
+  const tag = `${loginId}:${apiKeyHashHex(apiKey)}`
+  if (state.registered.includes(tag)) await setServerAccounts({ ...state, registered: state.registered.filter((one) => one !== tag) })
+}
+
+/**
+ * 부계정 해제에 실을 메이플 ID 해시. 기기가 모르면 그 키로 넥슨 목록을 받는다. 캐릭터가 없는 메이플 ID 는 기기의 소속 표에 남지
+ * 않지만, 등록은 넥슨 목록의 메이플 ID 로 했다. 목록을 받지 못하면 빈 배열이다.
+ */
+async function mapleIdHashesToUnregister(account: ManagedAccount, apiKey: NexonApiKeyMethod): Promise<string[]> {
+  if (account.mapleIdHashes.length > 0) return account.mapleIdHashes
+  const accounts = await fetchUnsavedCharacterList({ type: 'key', value: apiKey.value, accountId: apiKey.id }).catch(() => [])
+  return accounts.map((one) => nexonIdHashHex(one.accountId))
 }
 
 /** 지운 계정의 메이플 ID 에 속한 추적 캐릭터를 뺀다. */
@@ -112,7 +147,7 @@ let pendingReplacement: { accountKey: string; apiKey: string; check: PassedCheck
 
 /**
  * 부계정의 키를 같은 넥슨 계정의 새 키로 바꿔 저장한다. 계정 id 와 귀속을 그대로 써서 그 계정의 추적 캐릭터와 기록이 이어진다.
- * 무효 표시가 붙은 키였으면 그때 뺀 캐릭터를 되돌린다.
+ * 무효 표시가 붙은 키였으면 그때 뺀 캐릭터를 되돌린다. 서버 등록을 먼저 하고, 서버가 거절하면 바꾸지 않는다.
  */
 async function saveChangedKey(
   account: ManagedAccount,
@@ -123,6 +158,12 @@ async function saveChangedKey(
   if (account.apiKey === null) return { outcome: 'failed' }
   const accountId = account.apiKey.id
   const untracked = account.apiKey.invalid?.untrackedOcids ?? []
+
+  // 메이플 ID 가 같아 서버는 같은 넥슨 계정 줄의 등록으로 받는다. 응답이 없으면 저장하고 다음 회차가 다시 등록한다.
+  const registered = await registerSubAccountOnServer(sessionOf(login), check.mapleIdHashes)
+  const rejection = REJECTION_OF[registered]
+  if (rejection !== undefined) return { outcome: 'rejected', reason: rejection }
+
   try {
     await replaceApiKeyValue(accountId, apiKey)
   } catch {
@@ -130,9 +171,6 @@ async function saveChangedKey(
     return { outcome: 'failed' }
   }
   recordCharacterList(check.accounts, accountId)
-
-  // 메이플 ID 가 같아 서버가 새 키를 같은 넥슨 계정 줄에 단다. 응답이 없으면 다음 회차가 다시 등록한다.
-  const registered = await registerSubAccountOnServer(sessionOf(login), apiKeyHashHex(apiKey), check.mapleIdHashes)
   if (registered === 'registered') await markRegistered(login.id, apiKey).catch(() => undefined)
 
   await restoreUntracked(untracked).catch(() => undefined)
@@ -184,8 +222,9 @@ export const useAccountManageStore = create<AccountManageStore>()((set, get) => 
     }
 
     // 서버 등록부터다. 기기가 로그인의 메이플 ID 를 다 알지 못하면 같은 넥슨 ID 를 서버만 알아본다. 받지 못하면 기기에 두고 회차가 다시 등록한다.
-    const registered = await registerSubAccountOnServer(sessionOf(auth.login), apiKeyHashHex(apiKey), check.mapleIdHashes)
-    if (registered === 'same_account') return { outcome: 'rejected', reason: 'alreadyRegistered' }
+    const registered = await registerSubAccountOnServer(sessionOf(auth.login), check.mapleIdHashes)
+    const rejection = REJECTION_OF[registered]
+    if (rejection !== undefined) return { outcome: 'rejected', reason: rejection }
 
     const accountId = (await reusableNexonAccountId(check.accounts)) ?? randomUuid()
     try {
@@ -241,9 +280,21 @@ export const useAccountManageStore = create<AccountManageStore>()((set, get) => 
     const account = get().view?.accounts.find((one) => one.key === accountKey)
     if (account === undefined || account.kind !== 'subKey' || account.apiKey === null) return 'failed'
 
-    // 서버의 등록 정보는 남긴다. 같은 키를 다른 기기에서 계속 쓰면 그 기기의 기록이 이 사람에게 이어져야 한다.
+    // 서버의 등록을 먼저 해제한다. 기기에서만 지우면 서버에 등록이 남아 다른 넥슨 ID 가 그 계정을 등록하지 못한다.
+    const auth = await loginOf()
+    const mapleIdHashes = auth === null ? [] : await mapleIdHashesToUnregister(account, account.apiKey)
+    const unregistered =
+      auth === null || mapleIdHashes.length === 0
+        ? null
+        : await unregisterSubAccountOnServer(sessionOf(auth.login), mapleIdHashes)
+    if (auth === null || unregistered?.outcome !== 'sent') {
+      useToastStore.getState().showError(REMOVE_FAILED_MESSAGE)
+      return 'failed'
+    }
+
     await removeApiKey(account.apiKey.value)
-    await untrackMapleIds(new Set(account.mapleIdHashes))
+    await unmarkRegistered(auth.login.id, account.apiKey.value).catch(() => undefined)
+    await untrackMapleIds(new Set(mapleIdHashes))
 
     void get().load()
     return 'removed'

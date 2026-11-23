@@ -10,7 +10,6 @@ import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../stor
 import { batchRecordWrites } from '../../storage/record-revision-batch'
 import type { BossDropRecord } from '../../storage/boss-drops'
 import type { RecordedDrop } from '../../types/drops'
-import { reportDropPrice, reportDropRemoved } from '../server-sync/drop-price-sync'
 import { dropRowKey, toRecordedDrop } from './rows'
 import { withSqliteFallback } from './sqlite-guards'
 import type { BossProfitRow } from './rows'
@@ -23,10 +22,6 @@ import type { BossProfitRow } from './rows'
  *
  * **확정 키를 먼저 쓰고 옛 키를 비운다.** 순서를 뒤집으면 중간에 앱이 죽었을 때 기록이 사라지는데,
  * 이 순서면 최악이 "아무도 읽지 않는 옛 키에 사본이 남는다"(=이관 전과 같은 고아)로 끝난다.
- *
- * **옮긴 드롭은 서버에 다시 보낸다.** 전송값이 난이도를 싣는데 서버 줄은 옛 난이도를 가리키고
- * 있어서다. 기록 id 가 같아 서버가 값을 덮는다. 확정 키에 이미 있던 드롭은 안 보낸다. **걷힌 드롭은
- * 지우기를 보낸다.** 기기에서 기록이 사라졌으니 서버 줄도 deleted 가 되어야 한다.
  */
 export async function migrateDropsToConfirmedDifficulty(
   row: Pick<BossProfitRow, 'ocid' | 'bossKey' | 'difficulty' | 'periodKey'>,
@@ -64,27 +59,6 @@ export async function migrateDropsToConfirmedDifficulty(
       replaceBossDropRecords(row.ocid, row.bossKey, staleDifficulty, row.periodKey, [], recordedAt, NO_WORLD),
       undefined,
     )
-  }
-
-  const staleIds = new Set(
-    dropRecords
-      .filter(
-        (record) =>
-          record.ocid === row.ocid &&
-          record.bossKey === row.bossKey &&
-          record.periodKey === row.periodKey &&
-          record.difficulty !== row.difficulty,
-      )
-      .map((record) => record.dropRecordId),
-  )
-  for (const drop of plan.drops) {
-    if (drop.dropRecordId === null || !staleIds.has(drop.dropRecordId)) continue
-    staleIds.delete(drop.dropRecordId)
-    void reportDropPrice(drop.dropRecordId, now)
-  }
-  // 남은 것은 확정 난이도에서 못 얻거나 같은 타일이 이미 있어 걷힌 드롭이다.
-  for (const removedId of staleIds) {
-    void reportDropRemoved(removedId, now)
   }
 }
 
@@ -130,12 +104,6 @@ export async function loadDropsByRowKey(
           }),
           undefined,
         )
-        // 걷힌 드롭은 기기에서 기록이 사라진 것이다. 서버의 그 줄을 deleted 로 표시한다.
-        const keptIds = new Set(pruned.map((drop) => drop.dropRecordId))
-        for (const drop of drops) {
-          if (drop.dropRecordId === null || keptIds.has(drop.dropRecordId)) continue
-          void reportDropRemoved(drop.dropRecordId, now)
-        }
       }
     }
 

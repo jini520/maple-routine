@@ -98,7 +98,7 @@ const KEPT_KEYS = [
   'scheduleProbe:o1',
   'dataFetchedAt',
   'notices',
-  'serverBackfill',
+  'serverAccounts',
   'lastRunBundleVersion',
 ]
 

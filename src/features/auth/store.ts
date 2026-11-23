@@ -121,7 +121,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     }
 
     set((state) => authReducer(state, { type: 'RESTORE_SIGNED_IN' }))
-    // 로그인 직후 서버에서 잇지 못해 남은 키를 다시 다룬다. 앱을 여는 일은 기다리지 않는다.
+    // 로그인 직후 목록을 받지 못해 남은 키를 다시 다룬다. 앱을 여는 일은 기다리지 않는다.
     void pruneCoveredApiKeys().catch(() => undefined)
   },
 

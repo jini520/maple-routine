@@ -517,6 +517,11 @@ const RENAMED_SETTING_KEYS: readonly { from: string; to: string; value?: (value:
   { from: 'mvpBulkApplyAsked', to: STORAGE_KEYS.isMvpBulkApplyAsked },
 ]
 
+/**
+ * 옛 앱이 과거 드롭을 서버로 어디까지 올렸는지 적던 키. 1.0.15 에는 그 경로도 읽는 코드도 없다. 키 이름은 이 변환만 안다.
+ */
+const LEGACY_SERVER_BACKFILL_KEY = 'serverBackfill'
+
 async function convertSettingKeys(): Promise<void> {
   for (const { from, to, value } of RENAMED_SETTING_KEYS) {
     const stored = await preferences.get(from)
@@ -546,6 +551,7 @@ export async function runPreferencesConversion(db: SqliteDbConnection): Promise<
     await renameFields(STORAGE_KEYS.barOrder, { groups: 'groupKeys', subs: 'subPageKeys' })
     await convertFigureMotions()
     await convertSettingKeys()
+    await preferences.remove(LEGACY_SERVER_BACKFILL_KEY)
     await preferences.set(STORAGE_KEYS.preferencesConversion, String(PREFERENCES_CONVERSION_VERSION))
   } catch (error: unknown) {
     throw new PreferencesConversionError(error)

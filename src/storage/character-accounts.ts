@@ -6,7 +6,7 @@
 import type { OwnerSighting } from '../lib/enhancement/sighted-owner'
 import type { CharacterAccountSighting } from '../lib/mvp/membership'
 import type { MapleAccount } from '../types'
-import { getBossProfitDb } from './sqlite/db'
+import { getBossProfitDb, getBossProfitDbUngated } from './sqlite/db'
 
 const UPSERT_SQL = `
   INSERT INTO character_accounts (ocid, name, account_id, nexon_account_id, first_seen_date, last_seen_date, world_key)
@@ -102,38 +102,6 @@ export async function getNexonAccountIdsOfOcids(ocids: readonly string[]): Promi
   return found
 }
 
-/** 캐릭터 하나의 주인. 서버로 보내는 기록에 싣는 메이플 ID 와, 그 기록을 보낼 신원의 넥슨 계정이다. */
-export interface CharacterOwner {
-  mapleId: string
-  /** 계정을 모르는 자격(저장 전에 검증하는 키)으로만 본 캐릭터는 `null` */
-  nexonAccountId: string | null
-}
-
-/**
- * 캐릭터마다 마지막으로 본 줄의 메이플 ID 와 넥슨 계정. 앱이 본 적 없는 캐릭터는 빠진다.
- *
- * 이름을 바꾼 캐릭터는 줄이 여럿이라 마지막으로 본 줄을 쓴다.
- */
-export async function getCharacterOwnersOfOcids(ocids: readonly string[]): Promise<Map<string, CharacterOwner>> {
-  const found = new Map<string, CharacterOwner>()
-  if (ocids.length === 0) return found
-  const db = await getBossProfitDb()
-  const { values } = await db.query(
-    `SELECT ocid, account_id, nexon_account_id FROM character_accounts
-      WHERE ocid IN (${ocids.map(() => '?').join(', ')})
-      ORDER BY last_seen_date ASC`,
-    [...ocids],
-  )
-  for (const row of values ?? []) {
-    const account = row.nexon_account_id as string | null | undefined
-    found.set(row.ocid as string, {
-      mapleId: row.account_id as string,
-      nexonAccountId: account === undefined || account === null || account === '' ? null : account,
-    })
-  }
-  return found
-}
-
 /** 넥슨 계정마다 그 계정의 메이플 ID. 계정을 모르는 줄은 빠진다. 메이플 ID 는 글자 차례다. */
 export async function getMapleIdsByNexonAccount(): Promise<Map<string, string[]>> {
   const db = await getBossProfitDb()
@@ -148,6 +116,21 @@ export async function getMapleIdsByNexonAccount(): Promise<Map<string, string[]>
     byAccount.set(account, [...(byAccount.get(account) ?? []), row.account_id as string])
   }
   return byAccount
+}
+
+/**
+ * 한 넥슨 계정에서 본 메이플 ID. 글자 차례이고 겹치지 않는다. 계정을 모르면 빈 목록이다.
+ *
+ * 기기 변환을 기다리지 않는다. 서버 신원이 이 값에서 나오고, 변환이 실패한 실행에서도 사용 로그를 보내야 한다. 변환은 이 표의
+ * 칸을 바꾸지 않고 빈 넥슨 계정 칸만 채운다.
+ */
+export async function getMapleIdsOfNexonAccountUngated(nexonAccountId: string): Promise<string[]> {
+  const db = await getBossProfitDbUngated()
+  const { values } = await db.query(
+    'SELECT DISTINCT account_id FROM character_accounts WHERE nexon_account_id = ? ORDER BY account_id',
+    [nexonAccountId],
+  )
+  return (values ?? []).map((row) => row.account_id as string)
 }
 
 /** 강화 줄을 캐릭터에 붙일 때 쓰는 소속 기록. 어느 넥슨 계정의 목록에서 봤는지와 월드까지 든다. */

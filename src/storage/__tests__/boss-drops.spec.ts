@@ -7,7 +7,6 @@ import {
   applyAutoDropFees,
   getAllBossDropRecords,
   getAutoFeeDropRecords,
-  getBossDropRecordById,
   getBossDropRecords,
   getBossDropRecordsRevision,
   getBulkFeeDropRecords,
@@ -217,13 +216,6 @@ describe('읽기', () => {
 
     expect((await getAllBossDropRecords(['ocid-1'])).map((row) => row.itemKey)).toEqual([ELSEWHERE, MARK, BELT])
     expect(await getAllBossDropRecords([])).toEqual([])
-  })
-
-  it('getBossDropRecordById 는 없으면 null 이다', async () => {
-    const [id] = await save([drop(MARK)])
-
-    expect((await getBossDropRecordById(id))?.itemKey).toBe(MARK)
-    expect(await getBossDropRecordById('nope')).toBeNull()
   })
 
   it('빈 목록이면 조회하지 않는다', async () => {

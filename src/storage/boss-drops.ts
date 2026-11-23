@@ -309,8 +309,8 @@ export async function replaceBossDropRecords(
   // 그때 올리면 읽는 쪽이 헛되이 전 기간을 다시 읽는다.
   bumpRecordsRevision()
 
-  // 드롭을 넘긴 차례 그대로의 식별자. 가격을 서버로 보내는 쪽이 이것으로 기록을 가리킨다.
-  // 메모리의 드롭은 식별자가 없을 수 있고(시트에서 방금 적은 것), 그 값은 위 INSERT 에서 처음 생긴다.
+  // 드롭을 넘긴 차례 그대로의 식별자. 메모리의 드롭은 식별자가 없을 수 있고(시트에서 방금 적은 것), 그 값은 위 INSERT 에서
+  // 처음 생긴다.
   return ids
 }
 
@@ -412,21 +412,6 @@ export async function getBossDropRecords(
   )
 
   return ordered(values)
-}
-
-/**
- * 식별자 하나로 그 기록을 찾는다. 서버로 보낼 때 **현재 값**을 읽는 자리다.
- *
- * 없으면 `null` 이고, 그것이 **서버에서 지워라** 의 신호다 - 보내기와 지우기를 가르는 칸을 따로
- * 두지 않고 원본의 유무로 판다. 차례는 그 수익 건의 드롭을 다 읽어 매긴다.
- */
-export async function getBossDropRecordById(dropRecordId: string): Promise<BossDropRecord | null> {
-  const db = await getBossProfitDb()
-  const { values } = await db.query(
-    `${DROP_SELECT} WHERE d.profit_entry_id = (SELECT profit_entry_id FROM boss_drops WHERE id = ?)`,
-    [dropRecordId],
-  )
-  return ordered(values).find((record) => record.dropRecordId === dropRecordId) ?? null
 }
 
 /** 판매 · 분배 수수료 중 하나라도 자동인 기록 전부. 등급 기록이 바뀌면 다시 셀 대상이다. */

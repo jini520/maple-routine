@@ -45,12 +45,21 @@ async function dropLeftoverBossProfitPeriodChecks(db: SqliteDbConnection): Promi
   await db.execute('DROP TABLE IF EXISTS boss_profit_period_checks')
 }
 
+/**
+ * 1.0.14 가 서버로 못 보낸 드롭 판매가 줄을 비운다. 1.0.15 서버에는 그 경로가 없고, 기기의 드롭은 첫 올리기가 모두 올린다. 옛
+ * 앱의 다른 종류 줄도 보낼 곳이 없어 함께 비운다.
+ */
+async function clearLegacyServerSyncQueue(db: SqliteDbConnection): Promise<void> {
+  await db.execute('DELETE FROM server_sync_queue')
+}
+
 /** 단계는 뒤에만 더한다. 차례를 바꾸거나 빼면 이미 그 번호까지 돈 기기가 다른 단계를 건너뛴다. */
 const STEPS: readonly DeviceConversionStep[] = [
   dropLeftoverBossProfitPeriodChecks,
   convertBossTables,
   convertCashbookTables,
   convertEnhancementTables,
+  clearLegacyServerSyncQueue,
 ]
 
 /** 보스 기록 표 셋을 새 모양으로 바꾸는 단계의 번호. 이 번호까지 돈 DB 는 DB 를 열 때 새 표를 만든다. */

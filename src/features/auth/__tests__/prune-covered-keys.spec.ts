@@ -1,6 +1,5 @@
-// 메이플 ID 가 같은 키를 서버에서 잇고 거둔다. 키를 지우면 해시를 다시 만들 수 없어서, 잇기 전에 지우면 그 키로 보낸
-// 기록이 서버에서 다른 사람으로 계속 남는다. 로그인이 새 계정 id 를 받으면 키 시절 강화 지출이 기기에서 두 번 세어진다.
-import { apiKeyHashHex } from '../../../lib/crypto/api-key-hash'
+// 메이플 ID 가 같은 키를 거둔다. 서버는 부르지 않는다. 키 사용자는 메이플 ID 해시로 밝혀져, 로그인 세션의 메이플 ID 알리기가
+// 서버의 두 줄을 합친다. 로그인이 새 계정 id 를 받으면 키 시절 강화 지출이 기기에서 두 번 세어진다.
 import type { MapleAccount } from '../../../types'
 import type { NexonCredential } from '../../../types/auth'
 
@@ -10,7 +9,6 @@ jest.mock('../../mvp-grade/character-list', () => ({
   fetchAndRecordCharacterList: jest.fn(),
   fetchUnsavedCharacterList: jest.fn(),
 }))
-jest.mock('../../../server/api-key-link', () => ({ linkApiKeyOnServer: jest.fn() }))
 jest.mock('../reentry-account-id', () => ({ reusableNexonAccountId: jest.fn() }))
 
 const { getAuthConfig, setNexonLogin } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
@@ -20,7 +18,6 @@ const { fetchAndRecordCharacterList, fetchUnsavedCharacterList } = jest.requireM
   jest.Mock
 >
 const { reusableNexonAccountId } = jest.requireMock('../reentry-account-id') as Record<string, jest.Mock>
-const { linkApiKeyOnServer } = jest.requireMock('../../../server/api-key-link') as Record<string, jest.Mock>
 
 import { pruneCoveredApiKeys, saveNexonLogin } from '../prune-covered-keys'
 
@@ -47,43 +44,23 @@ beforeEach(() => {
   reusableNexonAccountId.mockResolvedValue(null)
   setNexonLogin.mockResolvedValue(undefined)
   moveNexonAccountRows.mockResolvedValue(undefined)
-  linkApiKeyOnServer.mockResolvedValue({ outcome: 'sent' })
+  global.fetch = jest.fn(async () => {
+    throw new Error('서버를 부르면 안 된다')
+  }) as unknown as typeof fetch
   getAuthConfig.mockResolvedValue({ login: null, mainKeyId: 'k1', apiKeys: [키('같은-키', 'k1'), 키('다른-키', 'k2')] })
 })
 
 describe('saveNexonLogin: 로그인 직후', () => {
-  it('저장하기 전에 메이플 ID 가 같은 키만 서버에서 잇고, 이은 키를 넘겨 로그인을 저장한다', async () => {
-    const order: string[] = []
-    linkApiKeyOnServer.mockImplementation(async () => {
-      order.push('link')
-      return { outcome: 'sent' }
-    })
-    setNexonLogin.mockImplementation(async () => {
-      order.push('save')
-    })
-
+  it('저장하기 전에 메이플 ID 가 같은 키만 골라, 서버를 부르지 않고 그 키를 넘겨 로그인을 저장한다', async () => {
     await saveNexonLogin('세션')
 
-    expect(linkApiKeyOnServer).toHaveBeenCalledTimes(1)
-    expect(linkApiKeyOnServer).toHaveBeenCalledWith('세션', apiKeyHashHex('같은-키'))
     expect(setNexonLogin).toHaveBeenCalledWith({ session: '세션' }, ['같은-키'], undefined, undefined)
-    expect(order).toEqual(['link', 'save'])
+    expect(global.fetch).not.toHaveBeenCalled()
   })
 
-  // 지우면 다시 이을 수 없다. 남긴 키는 로그인한 채 앱을 켤 때 다시 다룬다.
-  it.each([
-    ['응답이 없으면', { outcome: 'no-response' }],
-    ['서버가 거절하면', { outcome: 'rejected', status: 403 }],
-  ])('%s 그 키를 넘기지 않는다', async (_label, result) => {
-    linkApiKeyOnServer.mockResolvedValue(result)
-
-    await saveNexonLogin('세션')
-
-    expect(setNexonLogin).toHaveBeenCalledWith({ session: '세션' }, [], undefined, undefined)
-  })
-
-  it('잇기가 던져도 로그인은 저장한다', async () => {
-    linkApiKeyOnServer.mockRejectedValue(new Error('끊겼다'))
+  // 빈 목록을 같다고 읽으면 멀쩡한 키가 지워진다. 남긴 키는 로그인한 채 앱을 켤 때 다시 다룬다.
+  it('키의 목록을 받지 못하면 그 키를 넘기지 않고 로그인은 저장한다', async () => {
+    fetchAndRecordCharacterList.mockRejectedValue(new Error('끊겼다'))
 
     await saveNexonLogin('세션')
 
@@ -162,9 +139,9 @@ describe('pruneCoveredApiKeys: 로그인한 채 앱을 켤 때', () => {
     expect(setNexonLogin).not.toHaveBeenCalledWith(expect.anything(), ['같은-키'], undefined, undefined)
   })
 
-  it('서버가 받지 못한 키는 거두지 않는다', async () => {
+  it('목록을 받지 못한 키는 거두지 않는다', async () => {
     getAuthConfig.mockResolvedValue({ login: 로그인, mainKeyId: null, apiKeys: [키('같은-키', 'k1', 'login-id')] })
-    linkApiKeyOnServer.mockResolvedValue({ outcome: 'no-response' })
+    fetchAndRecordCharacterList.mockRejectedValue(new Error('끊겼다'))
 
     await pruneCoveredApiKeys()
 
@@ -183,6 +160,5 @@ describe('pruneCoveredApiKeys: 로그인한 채 앱을 켤 때', () => {
     await pruneCoveredApiKeys()
 
     expect(fetchAndRecordCharacterList).not.toHaveBeenCalled()
-    expect(linkApiKeyOnServer).not.toHaveBeenCalled()
   })
 })

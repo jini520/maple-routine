@@ -32,7 +32,6 @@ jest.mock('../../../storage/manual-tracked-content', () => ({ getManualTrackedCo
 jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
 jest.mock('../../schedule-window/sync', () => ({ syncScheduleWindow: jest.fn() }))
 jest.mock('../../schedule-window/window', () => ({ getLastWindowFailures: jest.fn(() => []) }))
-jest.mock('../../server-sync/drop-price-sync', () => ({ reportDropPrice: jest.fn(), reportDropRemoved: jest.fn() }))
 
 import { getAdjacentPeriodKey, getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
 import type { BossDropRecord } from '../../../storage/boss-drops'

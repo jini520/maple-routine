@@ -324,22 +324,21 @@ iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다
 
 ### 수집 신고(Play 데이터 안전 · App Store 개인정보 라벨)
 
-앱은 우리 서버로 드롭 가격 기록을 보낸다(`features/server-sync/drop-price-sync.ts` 의 `dropPricePayloadOf`).
-보내는 칸은 `mapleId` · `ocid` · `dropRecordId` · `itemKey` · `status` · `priceMeso` · `periodKey` · `worldKey` ·
-`ringLevel` · `boss` · `difficulty` · `periodRecordId` · `pricedAt` · `boxOriginKey` 이고, 신원 헤더 하나가 함께 간다
-(`features/auth/server-identity.ts`). `mapleId` · `ocid` 는 원문이 아니라 SHA-256 해시다([[ADR-017]] 결정 11). 전송은 `AppShell` 이
-띄우는 `runServerSync` 와 가격을 저장하는 순간에 일어난다([[ADR-018]]).
+지금 develop 의 앱은 사용자가 적은 기록을 서버로 보내지 않는다. 1.0.14 까지 보내던 드롭 판매가 경로는 1.0.15 서버에 없고, 기기 간
+동기화를 구현하면 사용자가 적은 기록 전부를 보낸다([[ADR-099]] 결정 67). 그때 아래 표의 `기타 사용자 생성 콘텐츠` 를 다시 적는다.
 
-계정 정보도 보낸다. 계정마다 메이플 ID 해시 목록을 알리고, 넥슨 로그인 사용자가 부계정을 추가하면 그 키의 해시와 메이플 ID 해시
-목록을 등록한다(`features/server-sync/accounts.ts`, [[ADR-101]] 결정 6 · 25).
+계정 정보는 보낸다. 쓰기 요청마다 신원 헤더 하나(넥슨 로그인 세션 또는 메인 키의 메이플 ID 해시)가 간다
+(`features/auth/server-identity.ts`). 메인 계정의 메이플 ID 해시 목록을 알리고, 넥슨 로그인 사용자가 부계정을 추가하거나 지우면 그
+계정의 메이플 ID 해시 목록으로 등록하거나 해제한다(`features/server-sync/accounts.ts` · `features/account-manage/store.ts`,
+[[ADR-101]] 결정 6 · 25). 메이플 ID 는 원문이 아니라 SHA-256 해시다([[ADR-017]] 결정 11).
 
 사용 로그도 보낸다. 방문 · 화면 이름과 체류 시간 · 드롭과 가계부 저장 횟수를 플랫폼 · 앱 버전과 함께 묶어 보낸다
 (`features/usage-log/`, [[ADR-158]]).
 
 | 신고 항목 | 왜 |
 |---|---|
-| 사용자 ID | 넥슨 로그인 세션이나 API 키 해시, 메이플 ID · 캐릭터 식별자의 해시를 보낸다. 되돌릴 수 없는 해시여도 한 사람의 기록을 묶는 값이다 |
-| 기타 사용자 생성 콘텐츠 | 사용자가 적은 판매가와 아이템 · 기간 · 월드 · 반지 레벨 |
+| 사용자 ID | 넥슨 로그인 세션이나 메이플 ID 의 해시를 보낸다. 되돌릴 수 없는 해시여도 한 사람의 기록을 묶는 값이다 |
+| 기타 사용자 생성 콘텐츠 | 지금 develop 의 앱은 보내지 않는다. 1.0.14 는 사용자가 적은 판매가와 아이템 · 기간 · 월드 · 반지 레벨을 보낸다. 기기 간 동기화를 구현하면 그 범위로 다시 적는다 |
 | 광고 ID | 앱에 `AD_ID` 권한이 들어 있다 |
 | 기기 식별자 | Firebase 가 FCM 등록 토큰을 보관한다 |
 | 앱 상호작용(Play) · 제품 상호작용(App Store) | 사용 로그. 어느 화면을 얼마나 봤는지, 드롭 · 가계부를 몇 번 저장했는지 |

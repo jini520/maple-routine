@@ -20,18 +20,6 @@ const {
   getBossDropRecordsRevision: getBossDropRecordsRevisionMock,
 } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 
-// 서버 전송은 다른 기능이 소유한다(`features/server-sync`). 여기서는 **부르는지만** 본다 -
-// 실제 전송을 태우면 이 스위트가 네트워크와 신원까지 짊어진다.
-var mockServerSync: Record<string, unknown>
-jest.mock('../../server-sync/drop-price-sync', () => {
-  // 위 목들과 같은 이유다. `jest.resetModules` 뒤 다시 require 한 스토어가 **같은 목**을 봐야
-  // 호출을 셀 수 있다. 팩토리에서 바로 만들면 회차마다 새 목이 생겨 호출 수가 늘 0 이다.
-  mockServerSync = mockServerSync ?? { reportDropPrice: jest.fn() }
-  return mockServerSync
-})
-const { reportDropPrice: reportDropPriceMock } = jest.requireMock(
-  '../../server-sync/drop-price-sync',
-) as Record<string, jest.Mock>
 var mockModule1: Record<string, unknown>
 jest.mock('../../../storage/boss-profit', () => {
   // `jest.resetModules` 가 레지스트리를 비워도 **같은 목**을 돌려준다.
@@ -477,7 +465,7 @@ describe('기간을 가리지 않는 판매 · 기록 안함(인벤토리)', () 
     expect(drops[1]).toEqual(expect.objectContaining({ priceState: 'excluded', itemKey: 'restraint_ring' }))
   })
 
-  it('판매는 그 드롭 하나에 값을 매기고 서버로 보낸다', async () => {
+  it('판매는 그 드롭 하나에 값을 매긴다', async () => {
     getBossDropRecordsMock.mockResolvedValue(그룹())
     const { saveDropPriceOf } = require('../drop-price-store') as typeof import('../drop-price-store')
 
@@ -486,7 +474,6 @@ describe('기간을 가리지 않는 판매 · 기록 안함(인벤토리)', () 
     const [, , , , drops] = replaceBossDropRecordsMock.mock.calls[0]
     expect(drops[0]).toEqual(expect.objectContaining({ priceState: 'entered', priceMeso: 900_000_000 }))
     expect(drops[1].priceState).toBeUndefined()
-    expect(reportDropPriceMock).toHaveBeenCalledWith('drop-0', expect.any(Date))
   })
 })
 
@@ -517,8 +504,6 @@ describe('savePrice · excludePrice', () => {
     expect(drops[1]).toEqual(
       expect.objectContaining({ priceState: 'entered', priceMeso: 1_200_000_000, priceShare: 1 }),
     )
-    // 저장이 끝난 뒤 그 한 건을 서버로 보낸다. 식별자만 넘기고 값은 전송 쪽이 다시 읽는다.
-    expect(reportDropPriceMock).toHaveBeenCalledWith('drop-1', expect.any(Date))
     // 가격만 고친다. 다시 쓰면서 key 를 빠뜨리면 그 기록이 그림과 판정을 잃는다.
     expect(drops[0]).toEqual(expect.objectContaining({ itemKey: 'loose_control_machine_mark' }))
     expect(drops[1]).toEqual(
@@ -537,29 +522,6 @@ describe('savePrice · excludePrice', () => {
     const [, , , , drops] = replaceBossDropRecordsMock.mock.calls[0]
     expect(drops[0]).toEqual(expect.objectContaining({ priceSplitMode: 'even', pricePartySize: 3 }))
     expect(drops[0].priceMyShare).toBeUndefined()
-  })
-
-  it('메모리의 드롭에 식별자가 없으면 저장소가 돌려준 식별자로 보낸다', async () => {
-    // 시트에서 방금 기록한 드롭은 식별자가 없다. INSERT 에서 처음 생기므로 저장 뒤 돌려받은 값을 쓴다.
-    getBossDropRecordsMock.mockResolvedValue([
-      record({ dropIndex: 0, itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' }),
-      record({ dropIndex: 1, itemKey: 'restraint_ring', itemName: '리스트레인트 링', boxOriginKey: 'red_boss_ring_box', boxOrigin: '홍옥의 보스 반지 상자', ringLevel: 3 }),
-    ])
-    const { useDropPriceStore } = require('../drop-price-store') as typeof import('../drop-price-store')
-    await useDropPriceStore.getState().load(PERIOD)
-    const groups = useDropPriceStore.getState().groups
-    useDropPriceStore.setState({
-      groups: groups.map((group) => ({
-        ...group,
-        entries: group.entries.map((entry) => ({ ...entry, drop: { ...entry.drop, dropRecordId: null } })),
-      })),
-    })
-    replaceBossDropRecordsMock.mockResolvedValue(['id-0', 'id-1'])
-    const target = useDropPriceStore.getState().groups[0].entries[1]
-
-    await useDropPriceStore.getState().savePrice(target, 1_200_000_000, { mode: 'even' as const, partySize: 1, myShare: 1, sharesTotal: 1 })
-
-    expect(reportDropPriceMock).toHaveBeenCalledWith('id-1', expect.any(Date))
   })
 
   it('저장하면 화면 상태도 즉시 갱신된다. 재조회를 기다리지 않는다', async () => {
