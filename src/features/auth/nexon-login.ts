@@ -29,6 +29,7 @@ import type { MapleAccount } from '../../types'
 import type { Platform as NexonPlatform } from '../../types/auth'
 import { forgetTrackedSelection } from '../character-selection/forget'
 import { fetchUnsavedCharacterList } from '../mvp-grade/character-list'
+import { switchServerSyncOwner } from '../server-sync/owner-switch'
 import { saveNexonLogin } from './prune-covered-keys'
 
 /** 서버가 콜백을 받은 뒤 앱을 돌려보내는 주소. 인증 세션이 이 주소로 돌아올 때만 콜백을 우리에게 준다. */
@@ -74,8 +75,8 @@ async function redeemUntilSettled(redeemKey: string, receipt: string): Promise<s
 
 export interface NexonSignInOptions {
   /**
-   * 참이면 로그인 화면에서 하는 새 로그인이다. 세션을 받은 뒤, 저장하기 전에 앞 로그인의 추적 목록을 비운다. today 의
-   * `넥슨 ID 연동하기` 는 키로 쓰던 사람이 로그인을 붙이는 것이라 비우지 않는다.
+   * 참이면 로그인 화면에서 하는 새 로그인이다. 세션을 받은 뒤, 저장하기 전에 앞 로그인의 추적 목록을 비우고 다른 사람이면 앞 사람의
+   * 기록을 비운다. today 의 `넥슨 ID 연동하기` 는 키로 쓰던 사람이 로그인을 붙이는 것이라 비우지 않는다.
    */
   fresh?: boolean
 }
@@ -107,13 +108,25 @@ export async function signInWithNexon(options?: NexonSignInOptions): Promise<Nex
       return { kind: 'noMapleId' }
     }
 
-    // 로그인 만료는 로그아웃을 거치지 않는다. 그래서 로그아웃이 아니라 여기서 비워야 다른 넥슨 ID 로 들어올 때 앞 목록이
-    // 남지 않는다.
-    if (options?.fresh === true) await forgetTrackedSelection()
-
     // 메이플 ID 가 같은 키를 거두며 로그인이 그 키의 계정 id 를 이어받아 저장된다. 못 적으면 다시
     // 켤 때 로그인 상태가 아니다. 성공이라고 말하면 안 된다. 로그인 화면의 로그인은 새 로그인이라 앞 메인 키를 버린다.
-    await saveNexonLogin(session, { fresh: options?.fresh === true })
+    if (options?.fresh !== true) {
+      await saveNexonLogin(session, { fresh: false })
+      return { kind: 'signedIn', accounts }
+    }
+
+    // 다른 사람이면 앞 사람의 기록을 저장하기 전에 비운다. 올리지 못한 기록이 남았으면 묻는다.
+    const saved = await switchServerSyncOwner({ mapleIds: accounts.map((one) => one.accountId), login: true }, async () => {
+      // 로그인 만료는 로그아웃을 거치지 않는다. 그래서 로그아웃이 아니라 여기서 비워야 다른 넥슨 ID 로 들어올 때 앞 목록이
+      // 남지 않는다.
+      await forgetTrackedSelection()
+      await saveNexonLogin(session, { fresh: true })
+    })
+    // `그만두기` 는 스스로 그만둔 것이다. 받은 세션은 저장하지 않아 거둔다.
+    if (!saved) {
+      await revokeNexonSession(session)
+      return { kind: 'cancelled' }
+    }
     return { kind: 'signedIn', accounts }
   } catch {
     return { kind: 'failed' }

@@ -36,7 +36,7 @@ function setup(options: Setup) {
       order.push('queue')
       return (options.queue ?? []).map(([recordType, recordId]) => ({ recordType, recordId }))
     }),
-    ownerOf: jest.fn(async (_table: string, recordId: string) => owners.get(recordId) ?? { kind: 'unknown' }),
+    ownerOf: jest.fn(async (_table: string, recordId: string): Promise<ServerSyncRecordOwner> => owners.get(recordId) ?? { kind: 'unknown' }),
     previousMapleIds: jest.fn(async () => options.previous),
     loginSubKeyMapleIds: jest.fn(async () => options.subKeys ?? []),
     deviceMapleIds: jest.fn(async () => options.device ?? []),

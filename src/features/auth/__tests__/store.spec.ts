@@ -42,12 +42,7 @@ jest.mock('../../server-sync/forget', () => ({
   clearUnsentUsageEvents: jest.fn(),
 }))
 // 앞 사람의 기록을 가리는 일은 `server-sync/__tests__/owner-switch.spec.ts` 가 본다. 여기서는 저장을 맡기는지만 본다.
-jest.mock('../../server-sync/owner-switch', () => ({
-  switchServerSyncOwner: jest.fn(async (_next: unknown, save: () => Promise<void>) => {
-    await save()
-    return true
-  }),
-}))
+jest.mock('../../server-sync/owner-switch', () => ({ switchServerSyncOwner: jest.fn() }))
 const { switchServerSyncOwner: switchServerSyncOwnerMock } = jest.requireMock('../../server-sync/owner-switch') as Record<string, jest.Mock>
 jest.mock('../nexon-login', () => ({ signInWithNexon: jest.fn() }))
 jest.mock('../current-credential', () => ({ currentCredential: jest.fn() }))
@@ -137,6 +132,11 @@ beforeEach(() => {
   // 판정이 안 서는 것이 통상 경로다. 서는 경우만 그 테스트가 직접 세운다.
   probeApiKeyStageMock.mockResolvedValue('undetermined')
   getAuthConfigMock.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }] })
+  // 앞 사람이 없으면 저장을 그대로 부른다.
+  switchServerSyncOwnerMock.mockImplementation(async (_next: unknown, save: () => Promise<void>) => {
+    await save()
+    return true
+  })
 })
 
 afterEach(() => {

@@ -174,6 +174,7 @@ describe('주인의 기록과 번호 지우기', () => {
   it('비운 메이플 ID 의 번호를 지우고, 사람의 기록을 비우면 사람의 번호도 지운다', async () => {
     await recordCharacterAccounts(account('maple-1', 'ocid-1'), '2026-11-20', 'account-1')
     await insertEntry('entry-1', 'ocid-1')
+    clearQueue()
     await setServerSyncCursors({ nexonAccount: { id: 'person-1', changeSeq: 7 }, mapleIds: { [nexonIdHashHex('maple-1')]: 5, other: 2 } })
 
     await forgetServerSyncOwners({ mapleIds: ['maple-1'], person: true })

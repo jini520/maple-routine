@@ -87,6 +87,8 @@ export type AuthEvent =
   | { type: 'SUBMIT_API_KEY' }
   | { type: 'API_KEY_VERIFIED'; accounts: MapleAccount[] }
   | { type: 'API_KEY_REJECTED'; error: AuthError }
+  // 앞 사람의 올리지 못한 기록을 물었고 `그만두기` 를 골랐다. 키를 저장하지 않고 폼으로 되돌린다.
+  | { type: 'SIGN_IN_CANCELLED' }
   // 키를 다시 받아야 한다는 것을 알리기만 한다. status 는 그대로 두고 모달만 띄운다. 이동은
   // 사용자가 확인을 눌러 로그아웃이 나갈 때 일어난다. 원인(무효 키 · 429)을 싣는다.
   | { type: 'API_KEY_NOTICED'; notice: ApiKeyNotice }
@@ -131,6 +133,14 @@ export function authReducer(state: AuthState, event: AuthEvent): AuthState {
         ...state,
         status: 'signedOut',
         error: event.error,
+      }
+
+    // 폼이 선 상태로 되돌린다. 사용자가 그만둔 것이라 원인을 남기지 않는다.
+    case 'SIGN_IN_CANCELLED':
+      return {
+        ...state,
+        status: 'signedOut',
+        error: null,
       }
 
     // status를 안 바꾸는 이벤트는 이것뿐이다. 뒤에 원래 화면이 그대로 남아

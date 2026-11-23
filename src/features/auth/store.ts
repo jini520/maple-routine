@@ -36,12 +36,16 @@ import {
   type ApiKeyNoticeKind,
   type AuthState,
 } from './state'
-import { clearUnsentServerData, requestAccountDeletion } from '../server-sync/forget'
+import { clearUnsentUsageEvents, requestAccountDeletion, syncBeforeSignOut } from '../server-sync/forget'
+import { switchServerSyncOwner } from '../server-sync/owner-switch'
 import { forgetTrackedSelection } from '../character-selection/forget'
 
 export interface AuthStore extends AuthState {
   restoreFromStorage(): Promise<void>
-  /** 키를 검증하고 저장한다. 앱으로 넘어갈 수 있으면 `true`(화면이 다음 온보딩 화면을 민다). */
+  /**
+   * 키를 검증하고 저장한다. 앱으로 넘어갈 수 있으면 `true`(화면이 다음 온보딩 화면을 민다). 앞 사람의 올리지 못한 기록을 물어 `그만두기`
+   * 면 저장하지 않고 `false` 다.
+   */
   signIn(apiKey: string): Promise<boolean>
   // 개발 단계 키 모달의 확인. 모달만 닫고 저장소는 건드리지 않는다. 아래 confirmApiKeyNotice 와
   // 갈리는 자리다. 저쪽은 저장된 키가 죽은 것이라 지우지만, 이쪽은 새 키를 안 받은 것뿐이다.
@@ -62,8 +66,9 @@ export interface AuthStore extends AuthState {
   /**
    * 429 모달의 `다른 키 입력` 으로 받은 새 키를 메인 키로 바꾼다. 검증과 개발 단계 판정은 로그인과 같다.
    * 앱 안에서 키만 바꾸는 것이라 로그인 상태와 추적 목록은 그대로다. 옛 메인 키는 새 키를 저장할 때 빠진다.
+   * 다른 넥슨 계정의 키면 앞 사람의 올리지 못한 기록을 묻고, `그만두기` 면 바꾸지 않고 `cancelled` 다.
    */
-  replaceMainApiKey(apiKey: string): Promise<'replaced' | 'developmentStage' | 'failed'>
+  replaceMainApiKey(apiKey: string): Promise<'replaced' | 'developmentStage' | 'failed' | 'cancelled'>
   /**
    * 넥슨 로그인 한 번. **끝나면 앱이 열린다.**
    *
@@ -81,7 +86,7 @@ export interface AuthStore extends AuthState {
    * 남은 수단이 있으면 `true` 이고 화면이 그 수단으로 목록을 다시 받는다. 없으면 로그인 화면으로 보내고 `false`.
    */
   leaveEmptyNexonLogin(): Promise<boolean>
-  /** 로그아웃. 넥슨 로그인과 API 키를 모두 뗀다. 앱 데이터와 서버 데이터는 남는다. */
+  /** 로그아웃. 넥슨 로그인과 API 키를 모두 뗀다. 앱 데이터와 서버 데이터, 올리지 못한 기록의 대기 줄은 남는다. */
   signOut(): Promise<void>
   /** 계정 삭제를 서버에 예약하고 로그아웃한다. 서버가 받지 못하면 로그아웃하지 않고 `false` 다. */
   deleteAccount(): Promise<boolean>
@@ -154,12 +159,19 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     // try 밖이면 미처리 rejection 이라 저장이 실패해도 아무 일도 안 일어난 것처럼 보인다.
     try {
-      // 로그인 화면에서 들어온 새 로그인이라 캐릭터를 새로 고른다.
       const reusedId = (await reusableNexonAccountId(accounts)) ?? undefined
-      await forgetTrackedSelection()
-      await setMainApiKey(apiKey, '', reusedId)
-      const saved = (await getAuthConfig())?.apiKeys.find((one) => one.value === apiKey)
-      recordCharacterList(accounts, saved?.id ?? null)
+      // 다른 사람이면 앞 사람의 기록을 저장하기 전에 비운다. 올리지 못한 기록이 남았으면 묻는다.
+      const saved = await switchServerSyncOwner({ mapleIds: accounts.map((one) => one.accountId), login: false }, async () => {
+        // 로그인 화면에서 들어온 새 로그인이라 캐릭터를 새로 고른다.
+        await forgetTrackedSelection()
+        await setMainApiKey(apiKey, '', reusedId)
+        const key = (await getAuthConfig())?.apiKeys.find((one) => one.value === apiKey)
+        recordCharacterList(accounts, key?.id ?? null)
+      })
+      if (!saved) {
+        set((state) => authReducer(state, { type: 'SIGN_IN_CANCELLED' }))
+        return false
+      }
     } catch {
       const authError = { kind: 'storageWriteFailed' } as const
       useToastStore.getState().showError(formatAuthError(authError))
@@ -235,9 +247,13 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     }
     try {
       const reusedId = (await reusableNexonAccountId(accounts)) ?? undefined
-      await setMainApiKey(apiKey, '', reusedId)
-      const saved = (await getAuthConfig())?.apiKeys.find((one) => one.value === apiKey)
-      recordCharacterList(accounts, saved?.id ?? null)
+      // 다른 넥슨 계정의 키면 다른 사람이다. 앞 사람의 기록을 저장하기 전에 비운다.
+      const saved = await switchServerSyncOwner({ mapleIds: accounts.map((one) => one.accountId), login: false }, async () => {
+        await setMainApiKey(apiKey, '', reusedId)
+        const key = (await getAuthConfig())?.apiKeys.find((one) => one.value === apiKey)
+        recordCharacterList(accounts, key?.id ?? null)
+      })
+      if (!saved) return 'cancelled'
     } catch {
       useToastStore.getState().showError(formatAuthError({ kind: 'storageWriteFailed' }))
       return 'failed'
@@ -368,12 +384,14 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   async signOut() {
+    // 남은 기록을 올린다. 세션을 거둔 뒤에는 그 세션으로 올릴 수 없다. 실패해도 로그아웃하고, 남은 줄은 대기 표에 둔다.
+    await syncBeforeSignOut()
     // 로그인이 있었으면 서버의 토큰도 거둔다. **기기에서 지우기 전에** 물어야 세션 값을 아직 들고 있다. 실패해도
     // 진행한다. 기기에서 지우는 일이 본론이고, 서버 쪽은 갱신 토큰 수명이 지나면 정리된다.
     const session = (await getAuthConfig().catch(() => null))?.login?.session
     if (session !== undefined) await revokeNexonSession(session)
 
-    await clearUnsentServerData()
+    await clearUnsentUsageEvents()
     // 넥슨 로그인과 메인 키를 지운다. 부계정 키는 그 로그인에 귀속된 채 남아, 같은 넥슨 ID 로 다시 로그인하면 이어진다.
     await signOutAuth()
     set((state) => authReducer(state, { type: 'SIGNED_OUT' }))

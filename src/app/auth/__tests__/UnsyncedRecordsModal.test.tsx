@@ -5,8 +5,8 @@ import { useUnsyncedPromptStore } from '../../../features/auth/unsynced-prompt'
 import { renderOverlay } from '../../../components/__tests__/render-atom'
 import { UnsyncedRecordsModal } from '../UnsyncedRecordsModal'
 
-afterEach(() => {
-  act(() => useUnsyncedPromptStore.getState().answer(false))
+afterEach(async () => {
+  await act(async () => useUnsyncedPromptStore.getState().answer(false))
 })
 
 it('묻지 않을 때는 그리지 않는다', async () => {
@@ -18,7 +18,7 @@ it('묻지 않을 때는 그리지 않는다', async () => {
 it('앞 사람의 대기 줄 수를 넣어 묻고, `버리고 로그인` 이면 버린다고 답한 뒤 닫는다', async () => {
   const view = await renderOverlay(<UnsyncedRecordsModal />)
   let asking: Promise<boolean> = Promise.resolve(false)
-  act(() => {
+  await act(async () => {
     asking = useUnsyncedPromptStore.getState().ask(3)
   })
 
@@ -38,7 +38,7 @@ it('앞 사람의 대기 줄 수를 넣어 묻고, `버리고 로그인` 이면 
 it('`그만두기` 면 버리지 않는다고 답한다', async () => {
   const view = await renderOverlay(<UnsyncedRecordsModal />)
   let asking: Promise<boolean> = Promise.resolve(true)
-  act(() => {
+  await act(async () => {
     asking = useUnsyncedPromptStore.getState().ask(1)
   })
 

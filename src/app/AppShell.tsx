@@ -42,6 +42,7 @@ import { ServerMaintenanceLock } from './server-maintenance/ServerMaintenanceLoc
 import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
 import { ApiKeyNoticeModal } from './auth/ApiKeyNoticeModal'
 import { AccountDeletionPrompt } from './auth/AccountDeletionPrompt'
+import { UnsyncedRecordsModal } from './auth/UnsyncedRecordsModal'
 import { MvpGradeHost } from './mvp-grade/MvpGradeHost'
 import { TaskHost } from './resumable-task/TaskHost'
 import { prehydrateTabStores } from './prehydrate'
@@ -260,6 +261,8 @@ function ReadyShell(): React.JSX.Element {
           이동한다. 내비게이터 **밖**이라 어느 화면에서 감지되든 뜬다(웹에서 라우트 밖이던 자리). */}
       <ApiKeyNoticeModal />
       <AccountDeletionPrompt />
+      {/* 다른 사람으로 로그인할 때 앞 사람의 올리지 못한 기록을 묻는다. 로그인 화면 · 키 입력 시트 위에 서야 해 키 안내 모달 뒤에 둔다. */}
+      <UnsyncedRecordsModal />
       {/* 토스트는 자기가 놓인 자리에 절대 배치로 그린다. 여기가 `ThemeProvider` 의 화면 채움
           View 직속이라 탭바 위에 뜬다. */}
       <ToastStack hasTabBar={isReady && !isKeyboardVisible} />
