@@ -300,3 +300,27 @@ export const useAccountManageStore = create<AccountManageStore>()((set, get) => 
     return 'removed'
   },
 }))
+
+/**
+ * 다른 기기에서 해제한 부계정을 이 기기에서 뺀다. 동기화의 받기가 응답의 메이플 ID 목록에서 빠진 메이플 ID 를 넘긴다. 그 메이플 ID 를
+ * 든 지금 로그인의 부계정 키를 지우고 그 계정의 추적 캐릭터를 뺀다. 남기면 동기화가 그 키를 다시 등록해 해제를 되돌린다.
+ *
+ * 서버의 등록은 이미 없어 해제를 부르지 않는다. 기록은 이 기기에 남는다.
+ *
+ * @param mapleIdHashes 서버 목록에서 빠진 메이플 ID 해시
+ */
+export async function forgetReleasedSubAccounts(mapleIdHashes: ReadonlySet<string>): Promise<void> {
+  const auth = await loginOf()
+  if (auth === null) return
+  const byAccount = await getMapleIdsByNexonAccount()
+  const released = auth.config.apiKeys.filter(
+    (key) => key.loginId === auth.login.id && (byAccount.get(key.id) ?? []).some((mapleId) => mapleIdHashes.has(nexonIdHashHex(mapleId))),
+  )
+  if (released.length === 0) return
+  for (const key of released) {
+    await removeApiKey(key.value)
+    await unmarkRegistered(auth.login.id, key.value).catch(() => undefined)
+  }
+  await untrackMapleIds(mapleIdHashes)
+  if (useAccountManageStore.getState().view !== null) void useAccountManageStore.getState().load()
+}

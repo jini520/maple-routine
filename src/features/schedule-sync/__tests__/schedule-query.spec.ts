@@ -4,7 +4,9 @@ import {
   onQueryCacheRestored,
   prefetchSchedules,
   refreshSchedules,
+  refreshSchedulesInBackground,
   scheduleRoundOptions,
+  subscribeScheduleRoundReceived,
   syncAddedCharacters,
   type ScheduleRoundResult,
 } from '../schedule-query'
@@ -203,6 +205,37 @@ describe('scheduleRound', () => {
   })
 })
 
+// 회차가 넥슨에서 받을 때마다 서버 기록도 받는다. 받는 때를 따로 두면 새로고침 한 번에 넥슨 데이터만 최신이 된다.
+describe('서버 동기화', () => {
+  it('회차가 넥슨에서 받으면 받은 스케줄을 넣은 뒤 동기화를 깨우고, 회차는 동기화를 기다리지 않는다', async () => {
+    syncSchedulesMock.mockResolvedValue([synced('a'), fallback('b')])
+    const seen: unknown[] = []
+    const stop = subscribeScheduleRoundReceived(() => {
+      seen.push(queryClient.getQueryData(queryKeys.schedule('a')))
+    })
+
+    await refreshSchedules()
+    stop()
+
+    expect(seen).toEqual([{ state: { characterName: 'a' }, syncedAt: NOW.toISOString() }])
+  })
+
+  it('하나도 받지 못한 회차와 OS 가 깨운 배경 실행의 회차는 깨우지 않는다', async () => {
+    const listener = jest.fn()
+    const stop = subscribeScheduleRoundReceived(listener)
+
+    syncSchedulesMock.mockResolvedValue([fallback('a'), fallback('b')])
+    await refreshSchedules()
+    syncSchedulesMock.mockResolvedValue([synced('a'), synced('b')])
+    await refreshSchedulesInBackground()
+    stop()
+    await refreshSchedules()
+
+    expect(syncSchedulesMock).toHaveBeenCalledTimes(3)
+    expect(listener).not.toHaveBeenCalled()
+  })
+})
+
 describe('syncAddedCharacters', () => {
   it('새 캐릭터만 받아 넣고 회차가 덮은 목록에 더한다', async () => {
     syncSchedulesMock.mockResolvedValue([synced('a'), synced('b')])
@@ -311,7 +344,7 @@ describe('onQueryCacheRestored', () => {
     expect(queryClient.getQueryState(queryKeys.scheduleRound())?.isInvalidated).toBe(true)
   })
 
-  it('앱을 켜면 10분 안이어도 한 번 받는다', async () => {
+  it('앱을 켜면 신선해도 한 번 받는다', async () => {
     syncSchedulesMock.mockResolvedValue([synced('a'), synced('b')])
     await prefetchSchedules()
     await prefetchSchedules()

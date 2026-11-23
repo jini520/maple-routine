@@ -113,9 +113,9 @@ zustand 스토어에는 **화면 상태만** 남긴다. 고른 탭 · 보던 기
 - 회차가 실패해도 쿼리는 이전 데이터를 든다. 회차 자체가 던진 실패(키 없음 등)는 쿼리의 `error` 가 되고 화면이
   `toScheduleSyncError` 로 종류를 가른다.
 
-### 결정 4. 신선한 시간은 10분이고, 초기화 시각을 넘으면 바로 만료다
+### 결정 4. 신선한 시간은 5분이고, 초기화 시각을 넘으면 바로 만료다
 
-`staleTime` 은 함수다(`features/query/freshness.ts` 의 `scheduleStaleTime`). 받은 지 10분(`SYNC_TTL_MS`) 안이고, 받은
+`staleTime` 은 함수다(`features/query/freshness.ts` 의 `scheduleStaleTime`). 받은 지 5분(`SYNC_TTL_MS`) 안이고, 받은
 뒤 처음 오는 KST 자정이 아직 안 지났고, 추적 캐릭터를 회차가 전부 덮었을 때만 신선하다. 일간 초기화가 매일 자정이고
 주간(목요일) · 월간(1일) 초기화도 자정이라 자정 하나만 보면 셋을 다 넘긴다. 옛 `isSyncFresh` 는 나이만 봐서, 23:55 에
 받으면 00:05 에도 어제 완료를 신선한 값으로 그렸다.
@@ -132,7 +132,7 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 |---|---|---|
 | 앱 시작 | 저장된 캐시를 복원한 뒤 회차를 만료로 표시한다. 앱을 켜는 것은 지금 상태를 보겠다는 뜻이다 | `onQueryCacheRestored` |
 | 앱 복귀(배경 → 활성) | **신선해도 한 번 받는다**(사용자 지정). `focusManager` 를 `AppState` 에 잇고 넥슨 · 서버 쿼리에 `refetchOnWindowFocus: 'always'` 를 준다 | `features/query/app-focus.ts` |
-| 화면 포커스 | 만료된 쿼리만 받는다. 탭을 오가는 동선은 10분 안이라 캐시로 끝난다. 컨텐츠 · 보스 · 보스 수익 · today 가 건다 | `hooks/useRefetchStaleOnFocus.ts` |
+| 화면 포커스 | 만료된 쿼리만 받는다. 탭을 오가는 동선은 5분 안이라 캐시로 끝난다. 컨텐츠 · 보스 · 보스 수익 · today 가 건다 | `hooks/useRefetchStaleOnFocus.ts` |
 | 당겨서 새로고침 · 다시 시도 | 신선해도 받는다 | `refreshSchedules`. 화면이 `ScreenScroll` 의 `onRefresh` 와 토스트의 다시 시도에 넘긴다 |
 
 - 복귀의 `inactive → active` 는 세지 않는다. iOS 알림 센터를 내렸다 올린 것은 배경에 간 적이 없기 때문이다.
@@ -154,7 +154,7 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
   내린다(`nexonMaintenanceReporter`). 강화 내역 경로만 막혔던 점검은 수익 · 지출 층에 들어갈 때 내려간다.
 - 복귀마다 받으면 호출이 복귀 횟수만큼 는다. 늘어나는 것은 회차 하나(추적 캐릭터 수만큼의 스케줄러 호출)와 공지 · 결산
   조회다. 겹친 복귀는 진행 중인 쿼리를 함께 쓰고, 13일 창은 원장을 보고 부르므로 늘지 않는다.
-- [[ADR-021]] 결정 6 은 이 결정을 가리키고 10분 값과 보스 수익의 옛 게이트만 남겼다.
+- [[ADR-021]] 결정 6 은 이 결정을 가리키고 5분 값과 보스 수익의 옛 게이트만 남겼다.
 
 ### 결정 6. DB 읽기 쿼리는 그 표의 판이 오를 때 무효화된다
 
@@ -303,7 +303,7 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `features/query/__tests__/freshness.spec.ts` | 결정 4: 10분 경계, 받은 뒤 KST 자정이 끼면 자정까지만, 받은 적 없음과 회차가 덮지 않은 추적 캐릭터는 바로 만료 |
+| `features/query/__tests__/freshness.spec.ts` | 결정 4: 5분 경계, 받은 뒤 KST 자정이 끼면 자정까지만, 받은 적 없음과 회차가 덮지 않은 추적 캐릭터는 바로 만료 |
 | `features/query/__tests__/app-focus.spec.ts` | 결정 5: 배경에서 활성으로 돌아올 때만 포커스를 알리고 `inactive → active` 는 안 세는지, 배경에 간 시각이 신호를 받은 시각인지, JS 가 30초 넘게 멈춰 있다가 신호를 받으면 마지막으로 살아 있던 시각인지 |
 | `features/query/__tests__/reset-timer.spec.ts` | 결정 4: KST 자정에 `source: nexon` 쿼리만 무효화하고 틱을 올린 뒤 다음 자정을 다시 거는지 |
 | `features/query/__tests__/persist.spec.ts` | 결정 7: `meta.persist` 가 참이고 성공한 쿼리만 저장하는지, 어댑터가 `storage/query-cache` 를 부르는지, 판과 `maxAge` |
@@ -346,3 +346,4 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
 - ADR-144 (2026-10-31): 프로필 조회의 옛 키 폴백을 되살리고(결정 10), 넥슨 응답 캐시 둘을 쿼리로 옮기고(결정 11), 옛 키 정리를 한 자리로 모으고(결정 12), 복귀 신호를 하나로 줄였다(결정 5)(#819)
 - ADR-229 (2026-11-15): 결정 6 에 표마다 같은 알림 함수 · 같은 작업 안의 표를 한 번에 무효화 · 안 보이는 화면의 구독 끊기를 더했다. 아이폰 계측에서 같은 달 읽기가 897번 돈 것이 계기다(#1026)
 - ADR-275 (2026-11-20): 결정 5 에 배경에 간 시각을 `app-focus.ts` 가 정하고, iOS 에서 신호가 돌아온 뒤에 처리되면 JS 가 마지막으로 살아 있던 시각을 쓴다는 것을 더했다(#1134)
+- (2026-11-23) 결정 4 의 신선한 시간을 10분에서 5분으로 줄였다. 스케줄 회차에 서버 기록 받기를 붙여, 켜 놓고 쓰는 두 기기가 어긋나 있는 시간이 그만큼 줄어든다([[ADR-099]] 결정 9)

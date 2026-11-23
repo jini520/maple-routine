@@ -7,7 +7,7 @@ jest.mock('../../query/persist', () => ({
   },
 }))
 jest.mock('../../schedule-sync/schedule-query', () => ({
-  refreshSchedules: async () => {
+  refreshSchedulesInBackground: async () => {
     mockCalls.push('refresh')
     if (mockRefreshFails) throw new Error('회차 실패')
   },

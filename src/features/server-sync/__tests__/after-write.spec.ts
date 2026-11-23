@@ -1,4 +1,4 @@
-// 기록을 저장하면 곧바로 동기화를 깨운다. 쓰기가 몰리면 한 번으로 모아, 네트워크가 되면 입력 직후에 올라가게 한다.
+// 기록을 저장하거나 스케줄 회차가 넥슨에서 받으면 곧바로 동기화를 깨운다. 쓰기가 몰리면 한 번으로 모아, 네트워크가 되면 입력 직후에 올라가게 한다.
 import { bumpBossProfitRecordsRevision } from '../../../storage/boss-profit'
 import { batchRecordWrites } from '../../../storage/record-revision-batch'
 import { noteRecordsWritten } from '../../../storage/server-sync-queue'
@@ -6,6 +6,13 @@ import { startServerSyncAfterWrites } from '../after-write'
 import { withoutWakingServerSync } from '../wake-guard'
 
 jest.mock('../kick', () => ({ kickServerSync: jest.fn(async () => undefined) }))
+const mockRoundListeners = new Set<() => void>()
+jest.mock('../../schedule-sync/schedule-query', () => ({
+  subscribeScheduleRoundReceived: (listener: () => void) => {
+    mockRoundListeners.add(listener)
+    return () => mockRoundListeners.delete(listener)
+  },
+}))
 const { kickServerSync } = jest.requireMock('../kick') as { kickServerSync: jest.Mock }
 
 let stop: () => void = () => {}
@@ -58,5 +65,14 @@ it('동기화가 화면을 다시 읽으려고 올린 판은 깨우지 않는다
 
   bumpBossProfitRecordsRevision()
   await flush()
+  expect(kickServerSync).toHaveBeenCalledTimes(1)
+})
+
+it('스케줄 회차가 넥슨에서 받으면 동기화를 깨운다', async () => {
+  stop = startServerSyncAfterWrites()
+
+  for (const listener of mockRoundListeners) listener()
+  await flush()
+
   expect(kickServerSync).toHaveBeenCalledTimes(1)
 })

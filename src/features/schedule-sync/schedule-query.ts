@@ -4,7 +4,7 @@
  * 회차 규칙(첫 캐릭터를 먼저 부르고, 전역 실패면 나머지를 캐시로 채운다)은 캐릭터를 따로 부르면 지킬 수 없다. 그래서
  * `scheduleRound()` 쿼리 하나가 `syncSchedules` 를 부르고, 화면은 `schedule(ocid)` · `characterBasic(ocid)` 를 본다.
  *
- * 신선함은 `scheduleStaleTime` 이 정한다(10분 + KST 자정). 자동 진입은 신선하면 캐시로 끝나고, 당김 · 다시 시도는
+ * 신선함은 `scheduleStaleTime` 이 정한다(5분 + KST 자정). 자동 진입은 신선하면 캐시로 끝나고, 당김 · 다시 시도는
  * `refreshSchedules` 로 신선해도 받는다. 앱 복귀는 `refetchOnWindowFocus: 'always'` 로 신선해도 한 번 받는다.
  */
 import { queryOptions, skipToken } from '@tanstack/react-query'
@@ -122,6 +122,30 @@ function previousReceivedAt(): string | null {
   return queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())?.receivedAt ?? null
 }
 
+const roundReceivedListeners = new Set<() => void>()
+
+/** OS 가 깨운 배경 실행의 회차인가. 그 회차는 서버 동기화를 깨우지 않는다. */
+let inBackground = false
+
+/**
+ * 회차가 넥슨에서 실제로 받으면 부를 함수를 건다. 셸이 서버 동기화를 깨우려고 건다. 하나도 받지 못한 회차와 배경 실행의 회차는
+ * 부르지 않는다. 동기화는 화면에 보일 기록을 맞추는 일이고, 배경 실행은 OS 가 주는 시간이 짧다.
+ *
+ * @returns 떼는 함수
+ */
+export function subscribeScheduleRoundReceived(listener: () => void): () => void {
+  roundReceivedListeners.add(listener)
+  return () => {
+    roundReceivedListeners.delete(listener)
+  }
+}
+
+/** 받은 결과가 하나라도 있으면 듣는 쪽을 부른다. 기다리지 않는다. 회차가 받은 스케줄로 화면을 먼저 그린다. */
+function announceReceived(results: readonly CharacterScheduleSync[]): void {
+  if (inBackground || !results.some((result) => !result.isStale && result.syncedAt !== null)) return
+  for (const listener of roundReceivedListeners) listener()
+}
+
 async function runScheduleRound(): Promise<ScheduleRoundResult> {
   const ocids = (await readTrackedOcids()) ?? []
   if (ocids.length === 0) {
@@ -133,6 +157,7 @@ async function runScheduleRound(): Promise<ScheduleRoundResult> {
   const outcomes = distribute(results)
   const stranded = await resolveStrandedCharacters(ocids, results)
   await recordAfterSync(ocids, results, requestedAt)
+  announceReceived(results)
   return {
     fetchedAt: new Date().toISOString(),
     receivedAt: latestReceivedAt(results, previousReceivedAt()),
@@ -162,6 +187,16 @@ export const scheduleRoundOptions = queryOptions({
  */
 export async function refreshSchedules(): Promise<void> {
   await queryClient.fetchQuery({ ...scheduleRoundOptions, staleTime: 0 }).catch(() => undefined)
+}
+
+/** OS 가 깨운 배경 실행의 회차. 신선해도 받고, 서버 동기화는 깨우지 않는다. */
+export async function refreshSchedulesInBackground(): Promise<void> {
+  inBackground = true
+  try {
+    await refreshSchedules()
+  } finally {
+    inBackground = false
+  }
 }
 
 /** 만료됐을 때만 받는다. 예열과 설정 뒤 다시 읽기가 부른다. */
@@ -243,7 +278,7 @@ async function seedQueriesFromLegacyKeys(): Promise<void> {
 
 /**
  * 저장된 캐시를 올린 뒤 한 번 부른다. 옛 캐시를 옮기고, 회차를 만료로 표시한다. 앱을 켜는 것은 지금 상태를 보겠다는
- * 뜻이라 10분 안이어도 첫 진입은 한 번 받는다.
+ * 뜻이라 신선해도 첫 진입은 한 번 받는다.
  */
 export async function onQueryCacheRestored(): Promise<void> {
   await runLegacyCleanupOnce(seedQueriesFromLegacyKeys).catch(() => undefined)
