@@ -41,6 +41,9 @@ module.exports = {
   // 저장소 전체를 훑으면 시작에 10초가 걸린다(ios/build · .claude/worktrees 까지 33만 파일). 테스트와 소스가
   // 있는 세 곳만 훑는다. .claude/worktrees/ 의 사본이 함께 도는 것도 이것으로 막힌다.
   roots: ['<rootDir>/src', '<rootDir>/scripts', '<rootDir>/ota'],
+  // 워커는 끝난 테스트 파일의 vm 컨텍스트를 놓아주지 않아 힙이 파일마다 는다. 한도가 없으면 전체 실행 끝에 워커가
+  // 제때 끝나지 못해 강제 종료된다. 파일을 끝낸 워커의 힙이 이 값을 넘으면 다음 파일 전에 새 워커로 바꾼다.
+  workerIdleMemoryLimit: '512MB',
   // `*.test.*` 와 `*.spec.*` 는 러너가 아니라 테스트의 성격을 나눈 이름이다. `.mjs` 는 `[jt]s` 글롭에
   // 안 걸려서 따로 적는다. `scripts/` 의 **배포 스크립트가 ESM 파일**이다.
   testMatch: ['**/*.test.[jt]s?(x)', '**/*.spec.[jt]s?(x)', '**/*.test.mjs'],
