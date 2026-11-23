@@ -29,14 +29,13 @@ import {
   cancelManualCompletion,
   saveManualCompletion,
 } from '../manual-completion/record'
-import { reportDropPrice, reportDropRemoved } from '../server-sync/drop-price-sync'
 import { readTrackedOcidsSync } from '../schedule-sync/read-schedule'
 import { judgeCrystalLimit } from './crystal-limit-judge'
 import { buildPartyPlans, partyPlanKey, type BossPartyPlan } from './party-plans'
 import { readPeriodSnapshot, refetchPeriod } from './period-query'
 import { resolveDisplayOcids } from './period-snapshot'
 import { resolveNextPeriodKey, resolvePreviousPeriodKey } from './period-navigation'
-import { dropRowKey, matchesRowKey, type BossProfitRow, type BossProfitRowKey } from './rows'
+import { matchesRowKey, type BossProfitRow, type BossProfitRowKey } from './rows'
 import { withSqliteFallback } from './sqlite-guards'
 
 // 행과 소계 타입의 정의 위치는 `rows.ts` · `period-snapshot.ts` 지만 공개 경로는 그대로 둔다. 화면이 여기서 가져온다.
@@ -310,39 +309,20 @@ export const useBossProfitStore = create<BossProfitStore>()((set, get) => ({
   async setBossDrops(rowKey, drops) {
     const { tab, periodKey } = get()
     const row = findRow(tab, periodKey, rowKey, 'setBossDrops')
-    // 저장에서 빠진 드롭을 알려면 쓰기 전의 드롭이 필요하다. 쓰기가 끝나면 쿼리가 다시 읽어 옛 값이 사라진다.
-    const key = dropRowKey(row.ocid, row.bossKey, row.difficulty, row.periodKey)
-    const before = readPeriodSnapshot(tab, periodKey)?.dropsByRowKey[key] ?? []
 
     // 한 보스/기간의 드롭 집합을 통째로 교체한다(replace-all).
-    const now = new Date()
-    const ids = await replaceBossDropRecords(
+    await replaceBossDropRecords(
       row.ocid,
       row.bossKey,
       row.difficulty,
       row.periodKey,
       drops,
-      now.toISOString(),
+      new Date().toISOString(),
       { name: row.world, key: row.worldKey },
     )
 
-    // 저장한 드롭 전부를 서버로 한 건씩 보낸다(시세 표본). 가격이 없는 드롭도 보낸다(서버가 pending · skipped 로 든다).
-    // **기기 저장이 끝난 뒤이고 결과를 안 기다린다.** 식별자는 메모리의 드롭에 없을 수 있어 저장소가 돌려준 값을 쓴다.
-    const saved = drops.map((drop, index) => ({ ...drop, dropRecordId: ids[index] ?? drop.dropRecordId }))
-    for (const drop of saved) {
-      if (drop.dropRecordId === null) continue
-      void reportDropPrice(drop.dropRecordId, now)
-    }
-
-    // 저장에서 빠진 드롭은 기기에서 기록이 사라진 것이다. 서버의 그 줄을 deleted 로 표시하는 요청이다.
-    const savedIds = new Set(saved.map((drop) => drop.dropRecordId))
-    for (const drop of before) {
-      if (drop.dropRecordId === null || savedIds.has(drop.dropRecordId)) continue
-      void reportDropRemoved(drop.dropRecordId, now)
-    }
-
     // 드롭을 전부 뺀 저장은 지우기라 리뷰 요청의 셈에 넣지 않는다.
-    if (saved.length > 0) {
+    if (drops.length > 0) {
       countCoreSave()
       recordUsageAction('drop-save')
     }

@@ -184,4 +184,19 @@ describe('변환 단계', () => {
 
     expect(tableExists('boss_profit_period_checks')).toBe(false)
   })
+
+  // 1.0.15 서버에는 드롭 판매가 경로가 없다. 남기면 동기화의 올리기가 옛 줄의 종류를 모르고, 드롭은 첫 올리기가 모두 올린다.
+  it('1.0.14 가 남긴 대기 줄을 종류와 상관없이 모두 비운다', async () => {
+    const db = await openUnconverted()
+    for (const [recordType, recordId] of [['drop-price', 'drop-1'], ['boss-clear', 'clear-1']]) {
+      await db.run(
+        `INSERT INTO server_sync_queue (id, record_type, record_id, attempts, created_at) VALUES (?, ?, ?, 2, '2026-11-01T00:00:00.000Z')`,
+        [`q-${recordId}`, recordType, recordId],
+      )
+    }
+
+    await runDeviceConversion(db)
+
+    expect(all('SELECT * FROM server_sync_queue')).toEqual([])
+  })
 })

@@ -11,11 +11,6 @@ import { __resetStoragePortsForTest, setSqlitePort } from '../../../storage/port
 import { closeBossProfitDb } from '../../../storage/sqlite/db'
 import { createRealSqlite, type RealSqlite } from '../../../storage/sqlite/__tests__/node-sqlite-port'
 
-jest.mock('../../server-sync/drop-price-sync', () => ({
-  reportDropPrice: jest.fn(),
-  reportDropRemoved: jest.fn(),
-}))
-
 let real: RealSqlite
 
 beforeEach(() => {

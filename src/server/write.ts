@@ -1,5 +1,5 @@
 /**
- * 기록을 우리 서버로 보내는 쓰기 호출의 공용 부분. 드롭 가격 · 강화 상황 알림 · 사용 로그 · 계정 삭제가 함께 쓴다.
+ * 우리 서버로 보내는 쓰기 호출의 공용 부분. 강화 상황 알림 · 사용 로그 · 계정 삭제 · 계정 알리기가 함께 쓴다.
  *
  * | | 시도로 세나 |
  * |---|---|
@@ -8,7 +8,6 @@
  *
  * 세는 쪽이 5회가 되면 그 건을 버린다. 안 세면 비행기 모드로 앱을 다섯 번 켠 사용자가 그동안 쌓인 것을 전부 잃는다.
  */
-import type { BatchItemResult } from '../types/server-records'
 import { API_BASE_URL } from './base-url'
 
 /**
@@ -23,12 +22,6 @@ const TIMEOUT_MS = 10_000
  */
 export type SendResult =
   | { outcome: 'sent' }
-  | { outcome: 'no-response' }
-  | { outcome: 'rejected'; status: number }
-
-/** 묶음 전송의 결과. 보냈으면 건마다의 결과가 함께 온다. */
-export type BatchSendResult =
-  | { outcome: 'sent'; results: BatchItemResult[] }
   | { outcome: 'no-response' }
   | { outcome: 'rejected'; status: number }
 
@@ -78,35 +71,4 @@ export function postRecord(headers: Record<string, string>, path: string, body: 
     headers: { ...headers, 'content-type': 'application/json' },
     body: JSON.stringify(body),
   })
-}
-
-/** 기기에서 그 기록이 사라졌다고 알린다. 서버는 줄을 남기고 지운 것으로 표시한다. */
-export function deleteRecord(headers: Record<string, string>, path: string, recordId: string): Promise<SendResult> {
-  return writeCall(`${path}/${encodeURIComponent(recordId)}`, { method: 'DELETE', headers })
-}
-
-/**
- * 과거 기록 묶음을 올린다. 서버가 건마다 결과를 돌려준다. 본문이 기대한 모양이 아니면 거절로 본다.
- *
- * @param path `/boss-clears` 같은 종류의 경로. 뒤에 `/batch` 가 붙는다
- */
-export async function postBatch(
-  headers: Record<string, string>,
-  path: string,
-  items: readonly unknown[],
-): Promise<BatchSendResult> {
-  const response = await request(`${path}/batch`, {
-    method: 'POST',
-    headers: { ...headers, 'content-type': 'application/json' },
-    body: JSON.stringify({ items }),
-  })
-  if (response === null) return { outcome: 'no-response' }
-  if (!response.ok) return { outcome: 'rejected', status: response.status }
-  try {
-    const body = (await response.json()) as { results?: unknown }
-    if (!Array.isArray(body.results)) return { outcome: 'rejected', status: response.status }
-    return { outcome: 'sent', results: body.results as BatchItemResult[] }
-  } catch {
-    return { outcome: 'rejected', status: response.status }
-  }
 }

@@ -45,7 +45,6 @@ jest.mock('../../../storage/schedule-probe-ledger', () => ({
 }))
 // 서버 전송 · 리뷰 요청은 다른 기능이 소유한다. 여기서는 부르는지만 본다.
 jest.mock('../../app-review/request', () => ({ countCoreSave: jest.fn() }))
-jest.mock('../../server-sync/drop-price-sync', () => ({ reportDropPrice: jest.fn(), reportDropRemoved: jest.fn() }))
 jest.mock('../../mvp-grade/auto-fee', () => ({ lazyAutoFeePercent: () => async () => 3, settingSplitFee: jest.fn() }))
 // 다시 읽기는 쿼리 캐시의 일이라 불리는지만 본다. 나머지는 실물이다.
 jest.mock('../period-query', () => ({
@@ -81,9 +80,6 @@ const { getBossPartySettings: getBossPartySettingsMock } = jest.requireMock('../
 const { getBossPartyPeriodOverrides: getBossPartyPeriodOverridesMock, setBossPartyPeriodOverride: setBossPartyPeriodOverrideMock } =
   jest.requireMock('../../../storage/boss-party-period-overrides') as Record<string, jest.Mock>
 const { countCoreSave: countCoreSaveMock } = jest.requireMock('../../app-review/request') as Record<string, jest.Mock>
-const { reportDropPrice: reportDropPriceMock, reportDropRemoved: reportDropRemovedMock } = jest.requireMock(
-  '../../server-sync/drop-price-sync',
-) as Record<string, jest.Mock>
 const { refetchPeriod: refetchPeriodMock } = jest.requireMock('../period-query') as Record<string, jest.Mock>
 
 const NOT_FAKED = [
@@ -603,7 +599,6 @@ describe('cancelManualCompletion', () => {
 
 describe('setBossDrops', () => {
   const target = row({ bossKey: 'lotus', bossName: '스우', difficulty: 'hard' })
-  const key = `ocid-1|lotus|hard|${WEEK}`
 
   it('그 보스 · 기간의 드롭을 통째로 바꿔 쓴다', async () => {
     seedPeriod('weekly', WEEK, { rows: [target] })
@@ -612,44 +607,6 @@ describe('setBossDrops', () => {
     await store().setBossDrops(target, drops)
 
     expect(replaceBossDropRecordsMock).toHaveBeenCalledWith('ocid-1', 'lotus', 'hard', WEEK, drops, expect.any(String), { name: null, key: null })
-  })
-
-  // 시트에서 기록한 드롭은 식별자가 없다. INSERT 에서 처음 생기므로 저장소가 돌려준 값으로 보낸다. 가격을 안 적은 드롭도
-  // 보낸다. 서버가 pending 으로 든다.
-  it('저장한 드롭 전부를 저장소가 돌려준 식별자로 서버에 보낸다', async () => {
-    seedPeriod('weekly', WEEK, { rows: [target] })
-    replaceBossDropRecordsMock.mockResolvedValue(['id-0', 'id-1'])
-
-    await store().setBossDrops(target, [
-      drop({ itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크', priceState: 'entered', priceMeso: 1_200_000_000 }),
-      drop(),
-    ])
-
-    expect(reportDropPriceMock.mock.calls.map((call) => call[0])).toEqual(['id-0', 'id-1'])
-    expect(reportDropRemovedMock).not.toHaveBeenCalled()
-  })
-
-  it('저장에서 빠진 드롭은 지우기를 보낸다. 기기에서 기록이 사라진 것이다', async () => {
-    const kept = drop({ dropRecordId: 'old-a', itemKey: 'loose_control_machine_mark', itemName: '루즈 컨트롤 머신 마크' })
-    const removed = drop({ dropRecordId: 'old-b', priceState: 'entered', priceMeso: 5 })
-    seedPeriod('weekly', WEEK, { rows: [target], dropsByRowKey: { [key]: [kept, removed] } })
-    replaceBossDropRecordsMock.mockResolvedValue(['old-a'])
-
-    await store().setBossDrops(target, [kept])
-
-    expect(reportDropPriceMock).toHaveBeenCalledTimes(1)
-    expect(reportDropPriceMock).toHaveBeenCalledWith('old-a', expect.any(Date))
-    expect(reportDropRemovedMock).toHaveBeenCalledTimes(1)
-    expect(reportDropRemovedMock).toHaveBeenCalledWith('old-b', expect.any(Date))
-  })
-
-  it('기록 안함도 보낸다. 서버의 그 줄이 skipped 가 된다', async () => {
-    seedPeriod('weekly', WEEK, { rows: [target] })
-    replaceBossDropRecordsMock.mockResolvedValue(['id-0'])
-
-    await store().setBossDrops(target, [drop({ priceState: 'excluded' })])
-
-    expect(reportDropPriceMock).toHaveBeenCalledWith('id-0', expect.any(Date))
   })
 
   // 리뷰 요청은 기록한 저장만 센다. 드롭을 전부 뺀 저장은 지우기다.

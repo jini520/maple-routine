@@ -7,9 +7,9 @@
  */
 import { sweepServerSync, type SweepDeps, type SyncHandler } from '../sweep'
 import { MAX_SYNC_ATTEMPTS, type SyncQueueEntry } from '../../../storage/server-sync-queue'
-import type { SendResult } from '../../../server/drop-price'
+import type { SendResult } from '../../../server/write'
 
-const HEADERS = { 'x-api-key-hash': 'a'.repeat(64) }
+const HEADERS = { 'x-maple-id-hash': 'a'.repeat(64) }
 
 function entry(over: Partial<SyncQueueEntry> = {}): SyncQueueEntry {
   return {

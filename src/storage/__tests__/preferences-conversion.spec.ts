@@ -431,6 +431,15 @@ describe('칸 이름 · 키 이름만 바뀌는 값', () => {
   })
 })
 
+// 과거 드롭을 묶음으로 올리던 진행이다. 1.0.15 에는 그 경로가 없고 읽는 코드도 없어, 남기면 기기에 쓸모없는 값이 남는다.
+it('옛 과거 드롭 올리기의 진행(serverBackfill)을 지운다', async () => {
+  await setJson('serverBackfill', { dropPriceOwner: { after: 'drop-9', done: false } })
+
+  await runPreferencesConversion(db)
+
+  expect(await prefs.get('serverBackfill')).toBeNull()
+})
+
 describe('여러 번 돌리기', () => {
   async function seedLegacy(): Promise<void> {
     await setJson('manualTrackedContent:ocid-1', [{ contentName: '몬스터파크', kind: 'daily' }])
