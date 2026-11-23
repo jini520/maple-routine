@@ -1,8 +1,8 @@
 # 서버 전송
 
-앱이 기기 기록에서 뽑아 서버로 올리는 값을 정리한다. 지금 앱은 사용자의 기록을 서버로 올리지 않는다. 서버가 이 기기의 넥슨
-계정을 알게 하는 일(메이플 ID 알리기 · 부계정 등록과 해제), 강화 합계에서 빠진 줄의 상황 알림([[ADR-102]]), 앱 사용 로그([[ADR-158]])만
-보낸다. 누구의 값으로 받는지는 [[ADR-017]] 에, 사용자가 만든 기록을 서버에 두고 같은 사람의 기기끼리 맞추는 결정은 [[ADR-099]] 에
+앱이 기기 기록에서 뽑아 서버로 올리는 값을 정리한다. 사용자의 기록은 바뀔 때마다 대기 표(`server_sync_queue`)에 들어가지만, 아직
+서버로 올리지 않는다. 올리기는 [[ADR-099]] 결정 67 의 구현 차례 둘째의 나머지다. 지금 보내는 것은 서버가 이 기기의 넥슨 계정을 알게
+하는 일(메이플 ID 알리기 · 부계정 등록과 해제), 강화 합계에서 빠진 줄의 상황 알림([[ADR-102]]), 앱 사용 로그([[ADR-158]])다. 누구의 값으로 받는지는 [[ADR-017]] 에, 사용자가 만든 기록을 서버에 두고 같은 사람의 기기끼리 맞추는 결정은 [[ADR-099]] 에
 있다.
 
 서버로 보내는 넥슨 식별자(ocid · 메이플 ID)는 원문이 아니라 SHA-256 해시다. 서버에는 넥슨 식별자의 원문을 두지 않는다([[ADR-017]]
@@ -32,18 +32,17 @@
 
 | 파일 | 하는 일 |
 |---|---|
-| `features/server-sync/kick.ts` | 전송을 깨운다. 한 번에 한 회차만 돈다 |
-| `features/server-sync/run.ts` | 한 회차. 계정을 서버에 알린 뒤 대기 표를 훑는다(`runServerSync`) |
+| `features/server-sync/kick.ts` | 회차를 깨운다. 한 번에 한 회차만 돈다 |
+| `features/server-sync/run.ts` | 한 회차. 계정을 서버에 알린다(`runServerSync`) |
 | `features/server-sync/accounts.ts` | 메인 신원으로 메이플 ID 알리기 · 지금 로그인의 부계정 키 등록(`prepareServerAccounts`) |
-| `features/server-sync/sweep.ts` | 대기 표를 훑어 보내는 처리. 종류는 구분하지 않고, 레지스트리에 없는 종류의 줄은 지운다 |
-| `features/server-sync/registry.ts` | 종류마다 함수 둘(`read` · `send`)을 모은 표. 지금은 비어 있다 |
 | `features/server-sync/forget.ts` | 계정 삭제를 서버에 보내고, 로그아웃 · 계정 삭제 때 대기 표와 사용 로그 표를 비운다 |
 | `features/account-manage/store.ts` | 부계정 키를 더하거나 바꿀 때 서버에 먼저 등록하고, 지울 때 서버의 등록을 먼저 해제한다 |
 | `features/auth/server-identity.ts` | 메인 신원의 헤더(`serverIdentityHeaders` · `mainServerIdentityOf`) |
 | `lib/crypto/nexon-id-hash.ts` | 넥슨 식별자(메이플 ID · ocid)의 SHA-256 |
 | `storage/character-accounts.ts` | 넥슨 계정마다 본 메이플 ID. 신원은 기기 변환을 기다리지 않는 조회로 읽는다 |
 | `storage/server-accounts.ts` | 서버가 메인 계정에 마지막으로 돌려준 메이플 ID 목록과 등록한 부계정 키(Preferences `serverAccounts`) |
-| `storage/server-sync-queue.ts` | 보낼 것을 담는 대기 표(SQLite `server_sync_queue`) |
+| `storage/server-sync-queue.ts` | 보낼 기록을 담는 대기 표(SQLite `server_sync_queue`). Preferences 기록의 바뀐 항목 넣기(`enqueueChangedPreferenceRecords`) · 넣지 않는 동안(`withServerSyncPaused`) |
+| `storage/sqlite/server-sync-triggers.ts` | SQLite 기록 표의 트리거. 기록이 바뀌면 대기 표에 넣는다 |
 | `server/write.ts` | 쓰기 호출. 결과를 `sent` · `no-response` · `rejected` 로 나눈다 |
 | `server/accounts.ts` | 메이플 ID 알리기 · 부계정 등록과 해제의 서버 경로 |
 | `server/error-codes.ts` | 서버가 거절할 때 주는 `code` 목록. 서버 `common/error-codes.ts` 와 같다 |
@@ -56,14 +55,14 @@
 
 | 사용자 동작 · 앱 일 | 보내는 것 |
 |---|---|
-| 앱을 켬 | 메인 계정의 메이플 ID 를 알리고 지금 로그인의 부계정 키를 등록한 뒤, 대기 표에 남은 줄을 훑는다 |
+| 앱을 켬 | 메인 계정의 메이플 ID 를 알리고 지금 로그인의 부계정 키를 등록한다 |
 | 부계정 키 추가 · 변경 | 저장하기 전에 그 키의 메이플 ID 해시로 부계정을 등록한다 |
 | `API 키 삭제` | 기기에서 지우기 전에 그 계정의 메이플 ID 해시로 부계정 등록을 해제한다 |
 | 로그아웃 | 대기 표와 사용 로그 표를 비운다. 서버에는 알리지 않는다 |
 | 계정 삭제 | 서버에 삭제를 예약하고(30일 뒤 지우고, 보낸 기록은 익명으로 남는다), 대기 표와 사용 로그 표를 비운다 |
 
 - 결과를 기다리지 않는 전송(회차 · 사용 로그)은 실패해도 사용자에게 알리지 않는다. 설정에서 전송을 끌 수는 없다.
-- 대기 표 전송은 한 번에 한 회차만 돈다(`kick.ts`). 두 회차가 겹치면 같은 줄을 두 번 보낸다.
+- 회차는 한 번에 하나만 돈다(`kick.ts`). 올리기가 붙으면 두 회차가 겹칠 때 같은 줄을 두 번 보내기 때문이다.
 
 ## 계정 알리기와 부계정
 
@@ -107,26 +106,29 @@
   요일별 증감을, `사용 로그` 는 방문 · 화면 조회 · 동작 횟수와 화면별 방문자 · 체류 시간을 차트로 보인다. 일별 막대 아래에는
   그 날 보낸 앱 공지 · 게임 알림 수가 놓인다([[ADR-158]] 결정 4 ~ 8).
 
-## 못 보냈을 때
+## 대기 표에 넣기
 
-대기 표(`server_sync_queue`)에는 `record_id` 만 남는다. 전송이 원본의 지금 값을 읽어 보낸다. 원본이 없으면 지우기를 보낸다. 지금은
-레지스트리에 종류가 없어 대기 표에 줄을 넣는 코드가 없다. 기기 간 동기화의 올리기가 이 표를 다시 쓴다([[ADR-099]] 결정 67).
+기록이 바뀌면 대기 표(`server_sync_queue`)에 서버 표 이름(`record_type`, [[ADR-099]] 결정 66)과 기록 id(`record_id`)가 들어간다
+([[ADR-099]] 결정 67). 값은 담지 않는다. 올리기가 원본의 지금 값을 읽고, 원본이 없으면 지우기를 보낸다. 한 기록에 줄은 하나이고, 이미 있으면
+그대로 둔다. 넣은 차례는 표의 rowid 다.
 
-| 결과 | 대기 표 |
-|---|---|
-| 보냈다 | 줄을 지운다 |
-| 응답이 안 왔다 | 그대로 둔다. 횟수를 안 센다 |
-| 응답이 왔고 거절이다 | 횟수를 센다. 다섯 번째면 줄을 버린다 |
-| 신원이 없다 | 그 회차를 건너뛴다 |
-| 레지스트리에 없는 종류다 | 원본을 읽지도 보내지도 않고 줄을 지운다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 · 드롭 판매가 줄이 여기에 든다 |
+| 기록 | 넣는 쪽 | `record_type` | `record_id` |
+|---|---|---|---|
+| SQLite 기록 표 열다섯(보스 셋 · 가계부 여섯 · 인벤토리 · 강화 합계 · 강화 조회 기록 · 강화 레벨 기억 · MVP 등급 · 월드 리프) | 트리거(`storage/sqlite/server-sync-triggers.ts`) | 서버 표 이름. 가계부의 딸린 줄 다섯은 `cashbookEntries`, 강화 조회 기록은 `enhancementSettledDays` | 줄의 id. 가계부의 딸린 줄은 기록의 id |
+| Preferences 의 약속 · 계산기 기록 | 저장 함수 | `partyAppointments` · `bossProfitCalculatorRecords` | 기록의 id |
+| Preferences 의 수동 추적 항목 · 공유 진행 · 메이플 ID 이름 · 추적 캐릭터와 대표 · 대표 캐릭터 동작 | 저장 함수 | `manualTrackedItems` · `sharedContentProgress` · `mapleIdNames` · `trackedCharacters` · `representativeCharacterMotions` | `표 이름:유일 기준의 값`. 값은 `/` 로 잇는다(`manualTrackedItems:{ocid}/{type}/{targetId}`) |
+| Preferences 의 설정 일곱 키 | 저장 함수 | `accountSettings` · `bottomBarSubPageOrders` | `accountSettings:{칸 이름}` · `bottomBarSubPageOrders:{그룹}`. 서버가 실은 칸과 그룹만 고쳐서 칸마다, 그룹마다 넣는다 |
+
+- 트리거는 줄을 넣거나, 서버로 가는 칸의 값을 바꾸거나, 줄을 지울 때 넣는다. 기기만 쓰는 칸(수익 건의 `over_crystal_sale_limit`)만
+  고쳤거나 같은 값을 다시 적은 쓰기는 넣지 않는다. 강화 조회 기록은 굳은 날(`settled` 1)이 된 줄만 넣는다.
+- 트리거는 1.0.15 기기 변환을 마친 DB 에만 있다. 변환이 끝난 직후와 변환을 마친 DB 를 열 때 걸고, 정의가 바뀌었으면 다시 만든다.
+  변환이 옮긴 줄은 처음 동기화가 넣는다.
+- Preferences 기록의 저장 함수는 앞 값과 새 값을 견주어 바뀐 항목만 넣는다. 로그인할 때 추적 목록과 대표를 비우는 일은 넣지 않는다.
+  넣으면 새 기기의 로그인이 서버의 추적 목록을 지운다.
+- 한 줄짜리 표 `server_sync_pause` 에 줄이 있으면 트리거와 Preferences 넣기가 넣지 않는다. `withServerSyncPaused` 가 트랜잭션 안에서
+  그 줄을 넣고 일을 마치면 뺀다. 받은 줄을 넣거나 올리기의 결과로 기기 줄을 고칠 때 쓴다.
+- 데이터 삭제는 기록 그룹을 하나라도 고르면 대기 표를 비운다. 지운 기록의 지우기가 대기 표에 들어가도 함께 비워진다.
+- 로그아웃 · 계정 삭제도 대기 표를 비운다. 누가 만든 줄인지 적혀 있지 않아, 남기면 다음에 다른 키로 로그인한 사람의 신원으로 나간다.
 
 1.0.14 에서 올라온 기기의 대기 표는 기기 변환이 비우고, 과거 드롭을 어디까지 올렸는지 적던 Preferences `serverBackfill` 도
-지운다([[ADR-286]] 결정 8). 응답이 왔는지로 횟수를 가르는 이유는 [[ADR-099]] 결정 10 에 있다.
-
-## 종류를 더할 때
-
-1. `registry.ts` 의 `SyncRecordType` 에 이름을 더한다.
-2. `SYNC_HANDLERS` 에 한 줄을 더한다.
-3. 그 종류의 파일에 `read` · `send` 와 대기 표에 넣는 함수를 만든다. `read` 가 `null` 을 돌려주면 서버에서 지운다.
-4. 대기 표에 줄을 넣는 코드는 `features/server-sync/` 안에만 둔다. `registry.spec.ts` 가 이 디렉터리 밖에서 넣지 않는지 본다. 종류
-   파일은 `kick` 을 가져오지 않는다. `kick → run → registry → 종류` 로 순환해 registry 가 빈 함수를 표에 넣는다.
+지운다([[ADR-286]] 결정 8).

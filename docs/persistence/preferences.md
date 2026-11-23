@@ -27,6 +27,30 @@
 에 적는다. 하단바 순서를 뺀 기록 키의 어댑터는 기기 변환이 끝나기를 기다린다. 옛 모양을 새 코드로 읽고 다시 적으면 읽지 못한
 항목이 사라지기 때문이다. 하단바 순서는 셸이 변환보다 먼저 읽어서 두 모양을 다 읽는다([[ADR-286]] 결정 1).
 
+## 서버로 올리는 기록 키
+
+서버로 올리는 기록 키(약속 · 계산기 기록 · 수동 추적 항목 · 공유 진행 · 메이플 ID 이름 · 추적 목록과 대표 · 대표 캐릭터 동작 · 설정 일곱 키)는
+저장 함수가 앞 값과 새 값을 견주어 바뀐 항목을 SQLite 대기 표 `server_sync_queue` 에 넣는다([[ADR-099]] 결정 8 · 15 · 67). 목록을
+통째로 저장하는 함수가 많아, 견주지 않으면 지운 항목을 알 수 없다. 넣는 함수는 `storage/server-sync-queue.ts` 의
+`enqueueChangedPreferenceRecords` 이고, 항목을 가리키는 값은 `foundation/server-sync.md` 의 `대기 표에 넣기` 에 있다.
+
+| 키 | 서버 표 | 항목 |
+|---|---|---|
+| `partyAppointments` | `partyAppointments` | 약속 하나. uuid 인 id 만 넣는다. 옛 설치본의 id 는 읽을 때 uuid 로 바뀐다 |
+| `bossProfitCalculatorRecords` | `bossProfitCalculatorRecords` | 기록 하나 |
+| `manualTrackedContent:{ocid}` | `manualTrackedItems` | 캐릭터 · 종류 · 대상 하나 |
+| `worldSharedProgress:*` · `accountSharedProgress:*` | `sharedContentProgress` | 메이플 ID · 월드 · 컨텐츠 하나. 계정 공유는 월드가 빈 값이다 |
+| `mapleIdNames` | `mapleIdNames` | 메이플 ID 하나 |
+| `trackedCharacters` · `representativeCharacter` | `trackedCharacters` | 캐릭터 하나. 차례와 대표 표시가 바뀐 캐릭터를 넣는다 |
+| `figureMotions` | `representativeCharacterMotions` | 캐릭터 하나 |
+| `trackingType` · `quickLinks` · `statsCumulativeStartDate` · `isMvpWeeklyCheckOff` · `mvpLastCheckedWeekCode` · `isMvpBulkApplyAsked` | `accountSettings` | 서버 칸 하나. `quickLinks` 는 줄 수와 화면 목록 두 칸이다 |
+| `barOrder` | `accountSettings` · `bottomBarSubPageOrders` | 그룹 목록 칸 하나와 하위 페이지 차례의 그룹 하나 |
+
+- 로그인할 때 추적 목록과 대표를 비우는 일(`clearTrackedCharacterOcids`)은 넣지 않는다. 넣으면 새 기기의 로그인이 서버의 추적 목록을
+  지운다. 대표는 추적 목록 안의 표시라, 목록을 먼저 비운 뒤의 대표 지우기는 바뀐 항목이 없다.
+- 기기 변환(`preferences-conversion.ts`)과 옛 키 합치기는 Preferences 를 직접 써서 넣지 않는다. 변환 전 기록은 처음 동기화가 넣는다.
+- `server_sync_pause` 에 줄이 있는 동안은 넣지 않는다. 받은 값을 저장하는 동안이다.
+
 ## 데이터 삭제와 새 키
 
 데이터 삭제는 그룹마다 적은 키만 지우고, 목록에 없는 키는 어떤 선택에서도 남긴다(`lifecycle.md`). 그래서 새 키는

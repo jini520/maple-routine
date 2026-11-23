@@ -21,6 +21,7 @@
 | `storage/sqlite/convert-cashbook-tables.ts` | 기기 변환의 가계부 단계(`convertCashbookTables`). 주인을 모르는 옛 손입력을 붙인 뒤 가계부 기록 표 여섯 · 인벤토리 · 강화 레벨 기억을 지금 표로 옮기고 옛 표를 지운다([[ADR-286]] 결정 4 · 5 · 9 · 10) |
 | `storage/sqlite/legacy-cashbook-entries.ts` | 변환 전 가계부 표를 쓰는 SQL. 버전 15 가 옮긴 기록을 넣는 일과 가계부 단계가 주인을 모르는 옛 손입력을 붙이는 일이다 |
 | `storage/sqlite/convert-enhancement-tables.ts` | 기기 변환의 강화 합계 · 월드 리프 · MVP 등급 단계(`convertEnhancementTables`). 세 표를 지금 표로 옮기고 옛 표를 지운다([[ADR-286]] 결정 6) |
+| `storage/sqlite/server-sync-triggers.ts` | 기록 표의 트리거. 기록이 바뀌면 대기 표 `server_sync_queue` 에 서버 표 이름과 기록 id 를 넣는다(`ensureServerSyncTriggers`, [[ADR-099]] 결정 67) |
 | `storage/sqlite/transaction.ts` | 쓰기 여럿을 트랜잭션 하나로 묶는 `inTransaction`. 같은 연결의 트랜잭션은 차례로 돈다. 겹쳐 열면 SQLite 가 뒤의 것을 거절하기 때문이다(앱을 켤 때 계정 칸 채우기와 강화 합계 옮기기가 겹쳤다). 그래서 `work` 안에서 다시 부르면 멈춘다. 트랜잭션 안에서 못 도는 `VACUUM` 은 같은 줄 뒤에 세운다(`outsideTransaction`) |
 | `storage/legacy-space.ts` | 옛 표를 다 지운 뒤 한 번 사본 파일을 지우고 `VACUUM` 하는 회수([[ADR-078]] 결정 11) |
 | `storage/sqlite/uuid.ts` | 행 식별자를 SQLite 가 만드는 식(`NEW_UUID_SQL`) |
@@ -51,6 +52,9 @@
 10. 인덱스 `enhancement_totals_date` 를 만든다. 변환 전 표와 지금 표 모두 같은 칸에 건다. 가계부 단계까지 돈 DB 는 `cashbook_entries_date` 를, 그 전 DB 는
     `cashbook_entries_entry_date` 와 유일 인덱스 `inventory_items_owner_item` 을 만든다. 보스 단계 전 DB 에는 `boss_drops_period`
     도 만든다. 변환 뒤의 표에는 옛 인덱스의 칸이 없다.
+11. 기기 변환을 마친 DB 면 대기 표의 트리거를 건다(`ensureServerSyncTriggers`). 이름이 `server_sync_` 로 시작하는 트리거의 정의를
+    견주어 다른 것만 다시 만들어, 정의가 그대로면 한 문장도 내지 않는다. 변환 전 DB 에는 걸지 않는다. 변환 전 표는 칸이 서버와 다르다.
+    변환이 끝나면 `runDeviceConversion` 이 곧바로 건다.
 
 열기는 10초, 닫기(`closeBossProfitDb`)는 5초 상한이 있다. OTA 적용과 데이터 삭제는 리로드 전에 닫는다.
 
@@ -102,7 +106,8 @@
 | `remembered_levels` | `id`(uuid, `(ocid, type, target_id)` 는 UNIQUE) | 캐릭터의 심볼 · 헥사 코어 강화 레벨 기억. 추적을 시작할 때 넥슨 값으로 채우고 기록을 저장 · 고치기 · 지우기 할 때 옮긴다 | `storage/remembered-levels.ts` | 지운다 (가계부) | [[ADR-137]] |
 | `mvp_grade_history` | `id`(uuid, `(account_id, from_date)` 는 UNIQUE) | 메이플 ID 마다 MVP 등급(등급 표의 줄 id)과 시작 날짜 | `storage/mvp-grades.ts` | 남긴다 | `features/mvp-grade.md` |
 | `character_accounts` | `id`(uuid, `(ocid, name, account_id)` 는 UNIQUE) | 캐릭터가 어느 메이플 ID 에 속했는지, 그것을 어느 넥슨 계정의 목록에서 봤는지와 처음 · 마지막으로 본 날 | `storage/character-accounts.ts` | 남긴다 | `features/mvp-grade.md` |
-| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 못 보낸 기록. 지금은 넣는 코드가 없어 비어 있다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 · 드롭 판매가 줄은 1.0.15 기기 변환이 비우고, 남은 줄도 전송이 보내지 않고 지운다(`registry.ts` 에 없는 종류다) | `storage/server-sync-queue.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-099]] 결정 10 · [[ADR-286]] 결정 8 |
+| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 올릴 기록. 서버 표 이름(`record_type`)과 기록 id 만 들고 값은 담지 않는다. 기록 표의 트리거와 Preferences 기록의 저장 함수가 넣는다. 넣은 차례는 rowid 다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 · 드롭 판매가 줄은 1.0.15 기기 변환이 비운다 | `storage/server-sync-queue.ts` · `storage/sqlite/server-sync-triggers.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-099]] 결정 10 · 67 · [[ADR-286]] 결정 8 |
+| `server_sync_pause` | 없음(한 줄) | 줄이 있으면 트리거와 Preferences 넣기가 대기 표에 넣지 않는다. `withServerSyncPaused` 가 트랜잭션 안에서 넣고 빼서 평소에는 비어 있다 | `storage/server-sync-queue.ts` | 남긴다 | [[ADR-099]] 결정 67 |
 | `game_data_sections` | `id`(uuid, `section` 은 UNIQUE) | 게임 데이터 사본의 칸 하나. 서버 응답의 그 칸 JSON 을 그대로 든다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
 | `game_data_meta` | `id`(uuid, `key` 는 UNIQUE) | 사본의 표식(계약 판 · ETag). 칸과 한 트랜잭션으로 쓰고, 있으면 다 받은 사본이다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
 | `usage_events` | `id`(uuid) | 서버로 보낼 사용 로그. 백그라운드로 갈 때와 다음 실행 때 통째로 꺼내 보내고, 꺼낸 줄은 지운다. 신원이 없는 기기에서 끝없이 자라지 않게 500줄까지만 둔다 | `storage/usage-events.ts` | 남긴다 | [[ADR-158]] |
@@ -141,6 +146,7 @@
 | `mvp_grade_history` | `id` NN · `account_id` NN · `from_date` NN · `grade_id`(등급 표의 줄 id. 앱은 빈 줄을 적지 않는다) · `updated_at` NN |
 | `character_accounts` | `id` NN · `ocid` NN · `name` NN · `account_id` NN · `nexon_account_id` · `first_seen_date` NN · `last_seen_date` NN · `world_key` |
 | `server_sync_queue` | `id` NN · `record_type` NN · `record_id` NN UNIQUE · `attempts` NN(기본 0) · `last_error` · `created_at` NN |
+| `server_sync_pause` | `started_at` NN |
 | `game_data_sections` | `id` NN · `section` NN UNIQUE · `body` NN |
 | `game_data_meta` | `id` NN · `key` NN UNIQUE · `value` NN |
 | `usage_events` | `id` NN · `type` NN · `name` NN · `duration_ms` · `occurred_at` NN |
@@ -168,6 +174,30 @@
 기기 변환 전 DB 의 `boss_drops` 에는 `(period_id, sort_order)` 인덱스 `boss_drops_period` 가 있다. 유일 인덱스가 아니다. 그 표를
 쓰던 저장 함수가 한 행씩 고치는 동안 `sort_order` 가 잠깐 겹쳤기 때문이다([[ADR-077]] 결정 8).
 
+## 대기 표의 트리거
+
+기록 표 열다섯에는 줄을 넣고 고치고 지울 때 대기 표 `server_sync_queue` 에 서버 표 이름과 기록 id 를 넣는 트리거가 있다
+([[ADR-099]] 결정 67). 기록을 쓰는 곳이 60군데쯤이고 여러 줄을 한 번에 고치는 쓰기는 바뀐 줄의 id 를 돌려주지 않아, 쓰는 곳마다
+넣게 하면 한 곳을 빠뜨려도 그 기록이 조용히 올라가지 않는다. 이름은 `server_sync_{표}_{insert · update · delete}` 이다.
+
+| 기록 표 | 넣는 `record_type` | 넣는 `record_id` | 넣지 않는 쓰기 |
+|---|---|---|---|
+| `boss_split_settings` · `boss_profit_entries` · `boss_drops` | `bossSplitSettings` · `bossProfitEntries` · `bossDrops` | 줄의 `id` | `created_at` · `updated_at` · 수익 건의 `over_crystal_sale_limit` 만 고친 쓰기 |
+| `cashbook_entries` | `cashbookEntries` | 줄의 `id` | `updated_at` 만 고친 쓰기 |
+| 가계부의 딸린 표 다섯 | `cashbookEntries` | 그 줄의 `entry_id`. 다른 기록으로 옮기면 앞 기록의 id 도 넣는다 | 없다 |
+| `inventory_items` | `inventoryItems` | 줄의 `id` | `created_at` · `updated_at` 만 고친 쓰기 |
+| `enhancement_totals` · `remembered_levels` · `mvp_grade_history` | `enhancementTotals` · `rememberedLevels` · `mvpGradeHistory` | 줄의 `id` | `updated_at` 만 고친 쓰기 |
+| `character_world_leaps` | `characterWorldLeaps` | 줄의 `id` | 없다 |
+| `enhancement_history_checks` | `enhancementSettledDays` | 줄의 `id` | 굳지 않은 줄(`settled` 0)의 쓰기, 커서 · 조회 시각만 고친 쓰기, 지우기. 서버에는 굳은 날만 있고, 굳은 날은 데이터 삭제로만 지운다 |
+
+- 고치는 트리거는 서버로 가는 칸의 앞 값과 새 값을 견준다(`IS NOT`). 같은 값을 다시 적은 쓰기는 넣지 않는다. 강화 합계처럼 받을
+  때마다 같은 값으로 덮는 쓰기가 많다.
+- 한 기록에 대기 줄은 하나다. 트리거는 같은 `record_id` 의 줄이 없을 때만 넣는다. 충돌을 일으켜 막지 않는 것은 바깥 문장의
+  `OR IGNORE` 같은 충돌 처리가 트리거 안의 문장에도 옮겨 붙기 때문이다.
+- 외래키 동작(`ON DELETE CASCADE` · `ON DELETE SET NULL`)으로 지워지거나 고쳐진 줄도 트리거를 부른다. 수익 건을 지우면 그 드롭의
+  지우기가, 인벤토리 줄을 지우면 그 줄을 가리키던 가계부 기록이 함께 들어간다.
+- `server_sync_pause` 에 줄이 있는 동안은 넣지 않는다(`withServerSyncPaused`). 받은 줄을 넣거나 올리기의 결과로 기기 줄을 고칠 때다.
+
 ## 테이블이나 칸을 더할 때
 
 1. `db.ts` 의 `TABLE_DEFINITIONS` 에 넣는다. 이 배열 밖에서 만들면 열 때 만들어지지 않는다. 보스 기록 표와 가계부 기록 표 ·
@@ -180,6 +210,8 @@
 5. 기존 행의 값을 옮겨야 하면 `migrations.ts` 의 `STEPS` 끝에 단계를 더하고 `DB_VERSION` 을 올린다.
 6. 기록을 앱 타입으로 바꾸는 함수(`RecordedDrop` 을 만드는 곳 등)에 새 칸을 빠뜨리면 타입 오류 없이 값만 사라진다.
    이름이 아니라 그 타입을 만드는 곳을 모두 찾아 고친다.
+7. 서버로 올리는 기록 표에 칸을 더하면 `server-sync-triggers.ts` 의 그 표의 칸 목록에도 넣는다. 안 넣으면 그 칸만 고친 쓰기가
+   올라가지 않는다.
 
 ## 버전 이관
 
