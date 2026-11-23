@@ -106,7 +106,7 @@
 | `remembered_levels` | `id`(uuid, `(ocid, type, target_id)` 는 UNIQUE) | 캐릭터의 심볼 · 헥사 코어 강화 레벨 기억. 추적을 시작할 때 넥슨 값으로 채우고 기록을 저장 · 고치기 · 지우기 할 때 옮긴다 | `storage/remembered-levels.ts` | 지운다 (가계부) | [[ADR-137]] |
 | `mvp_grade_history` | `id`(uuid, `(account_id, from_date)` 는 UNIQUE) | 메이플 ID 마다 MVP 등급(등급 표의 줄 id)과 시작 날짜 | `storage/mvp-grades.ts` | 남긴다 | `features/mvp-grade.md` |
 | `character_accounts` | `id`(uuid, `(ocid, name, account_id)` 는 UNIQUE) | 캐릭터가 어느 메이플 ID 에 속했는지, 그것을 어느 넥슨 계정의 목록에서 봤는지와 처음 · 마지막으로 본 날 | `storage/character-accounts.ts` | 남긴다 | `features/mvp-grade.md` |
-| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 올릴 기록. 서버 표 이름(`record_type`)과 기록 id 만 들고 값은 담지 않는다. 기록 표의 트리거와 Preferences 기록의 저장 함수가 넣고, 처음 동기화가 기기의 기록을 모두 넣는다. 넣은 차례는 rowid 다. `created_at` 이 처음 동기화의 넣기를 마친 시각 이하인 줄이 처음 올리기다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 · 드롭 판매가 줄은 1.0.15 기기 변환이 비운다 | `storage/server-sync-queue.ts` · `storage/sqlite/server-sync-triggers.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-099]] 결정 10 · 67 · [[ADR-286]] 결정 8 |
+| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 올릴 기록. 서버 표 이름(`record_type`)과 기록 id 만 들고 값은 담지 않는다. 기록 표의 트리거와 Preferences 기록의 저장 함수가 넣고, 처음 동기화가 기기의 기록을 모두 넣는다. 넣은 차례는 rowid 다. `created_at` 은 그 기록이 마지막으로 바뀌어 넣은 시각이고, 처음 동기화의 넣기를 마친 시각 이하인 줄이 처음 올리기다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 · 드롭 판매가 줄은 1.0.15 기기 변환이 비운다 | `storage/server-sync-queue.ts` · `storage/sqlite/server-sync-triggers.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-099]] 결정 10 · 67 · [[ADR-286]] 결정 8 |
 | `server_sync_pause` | 없음(한 줄) | 줄이 있으면 트리거와 Preferences 넣기가 대기 표에 넣지 않는다. `withServerSyncPaused` 가 트랜잭션 안에서 넣고 빼서 평소에는 비어 있다 | `storage/server-sync-queue.ts` | 남긴다 | [[ADR-099]] 결정 67 |
 | `game_data_sections` | `id`(uuid, `section` 은 UNIQUE) | 게임 데이터 사본의 칸 하나. 서버 응답의 그 칸 JSON 을 그대로 든다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
 | `game_data_meta` | `id`(uuid, `key` 는 UNIQUE) | 사본의 표식(계약 판 · ETag). 칸과 한 트랜잭션으로 쓰고, 있으면 다 받은 사본이다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
@@ -194,6 +194,8 @@
   때마다 같은 값으로 덮는 쓰기가 많다.
 - 한 기록에 대기 줄은 하나다. 트리거는 같은 `record_id` 의 줄이 없을 때만 넣는다. 충돌을 일으켜 막지 않는 것은 바깥 문장의
   `OR IGNORE` 같은 충돌 처리가 트리거 안의 문장에도 옮겨 붙기 때문이다.
+- 줄이 이미 있으면 넣은 시각(`created_at`)만 지금으로 고친다. 거절 횟수와 rowid 는 그대로다. 넣은 시각이 처음 올리기를 가르는 값이라,
+  처음 올리기의 줄을 사용자가 고치면 사용자가 친 값으로 다루려는 것이다([[ADR-099]] 결정 67).
 - 외래키 동작(`ON DELETE CASCADE` · `ON DELETE SET NULL`)으로 지워지거나 고쳐진 줄도 트리거를 부른다. 수익 건을 지우면 그 드롭의
   지우기가, 인벤토리 줄을 지우면 그 줄을 가리키던 가계부 기록이 함께 들어간다.
 - `server_sync_pause` 에 줄이 있는 동안은 넣지 않는다(`withServerSyncPaused`). 받은 줄을 넣거나 올리기의 결과로 기기 줄을 고칠 때다.
