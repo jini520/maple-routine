@@ -9,6 +9,7 @@ import { contentIdOf, contentKeyOfId } from '../lib/scheduler/contents'
 import { preferences } from './ports'
 import { manualTrackedContentKey } from './keys'
 import { whenRecordsReleased } from './record-hold'
+import { enqueueChangedPreferenceRecords, preferenceRecordIdOf } from './server-sync-queue'
 import type { ManualTrackedItem } from '../types/scheduler'
 
 // 타입 선언은 `src/types/scheduler` 에 있다(병합 순수 함수들이 core 에 있어서다. 그쪽 주석 참고).
@@ -55,6 +56,22 @@ function isStoredItem(value: unknown): value is StoredManualTrackedItem {
   )
 }
 
+/** 저장된 그대로의 항목. 없거나 깨졌으면 빈 배열이다. */
+function parseStored(value: string | null): StoredManualTrackedItem[] {
+  if (value === null) return []
+  try {
+    const parsed: unknown = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed.filter(isStoredItem) : []
+  } catch {
+    return []
+  }
+}
+
+/** 캐릭터 · 종류 · 대상마다 대기 줄 하나. */
+function recordsOf(ocid: string, items: readonly StoredManualTrackedItem[]): [string, true][] {
+  return items.map((item) => [preferenceRecordIdOf('manualTrackedItems', [ocid, item.type, item.targetId]), true])
+}
+
 // 저장된 값이 없거나 손상된 JSON이면 빈 배열을 반환한다.
 export async function getManualTrackedContent(ocid: string): Promise<ManualTrackedItem[]> {
   await whenRecordsReleased()
@@ -71,13 +88,17 @@ export async function getManualTrackedContent(ocid: string): Promise<ManualTrack
   }
 }
 
-// 배열 전체를 덮어쓴다. 부분 추가/삭제는 호출부가 배열을 계산해서 넘긴다(setTrackedCharacterOcids와 동일한 패턴).
+// 배열 전체를 덮어쓴다. 부분 추가/삭제는 호출부가 배열을 계산해서 넘긴다(setTrackedCharacterOcids와 동일한 패턴). 더하거나 뺀 항목을
+// 대기 표에 넣는다.
 export async function setManualTrackedContent(
   ocid: string,
   items: ManualTrackedItem[],
 ): Promise<void> {
   await whenRecordsReleased()
-  await preferences.set(manualTrackedContentKey(ocid), JSON.stringify(items.map(storedManualTrackedItemOf)))
+  const before = parseStored(await preferences.get(manualTrackedContentKey(ocid)))
+  const stored = items.map(storedManualTrackedItemOf)
+  await preferences.set(manualTrackedContentKey(ocid), JSON.stringify(stored))
+  await enqueueChangedPreferenceRecords('manualTrackedItems', new Map(recordsOf(ocid, before)), new Map(recordsOf(ocid, stored)))
 }
 
 /** 월드 리프한 캐릭터의 목록을 새 ocid 로 옮기는 함수. 새 캐릭터에 목록이 있으면 리프 뒤에 고른 그 목록을 둔다. */
@@ -85,8 +106,15 @@ export async function moveManualTrackedContentToOcid(fromOcid: string, toOcid: s
   await whenRecordsReleased()
   const value = await preferences.get(manualTrackedContentKey(fromOcid))
   if (value === null) return
-  if ((await preferences.get(manualTrackedContentKey(toOcid))) === null) {
+  const target = await preferences.get(manualTrackedContentKey(toOcid))
+  if (target === null) {
     await preferences.set(manualTrackedContentKey(toOcid), value)
   }
   await preferences.remove(manualTrackedContentKey(fromOcid))
+  const moved = parseStored(value)
+  await enqueueChangedPreferenceRecords(
+    'manualTrackedItems',
+    new Map([...recordsOf(fromOcid, moved), ...recordsOf(toOcid, parseStored(target))]),
+    new Map(recordsOf(toOcid, target === null ? moved : parseStored(target))),
+  )
 }

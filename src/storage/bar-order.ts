@@ -6,6 +6,7 @@
 import type { BarOrder } from '../navigation/bar-groups'
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'
+import { enqueueChangedPreferenceRecords, enqueueChangedSetting, preferenceRecordIdOf } from './server-sync-queue'
 
 /**
  * 저장된 값을 바가 드는 칸 이름으로. 없거나 JSON 이 깨졌으면 `null`. 모양 검사는 스토어가 한다.
@@ -26,6 +27,16 @@ export async function getBarOrder(): Promise<unknown> {
   }
 }
 
+/** 그룹마다 하위 페이지 차례의 대기 줄 하나. */
+function subPageRecordsOf(subs: unknown): Map<string, unknown> {
+  if (typeof subs !== 'object' || subs === null) return new Map()
+  return new Map(Object.entries(subs).map(([group, pages]) => [preferenceRecordIdOf('bottomBarSubPageOrders', [group]), pages]))
+}
+
+/** 서버는 그룹 목록 칸과 하위 페이지 차례의 그룹마다 고친다. 그래서 그 칸과 그룹마다 견주어 바뀐 것을 대기 표에 넣는다. */
 export async function setBarOrder(order: BarOrder): Promise<void> {
+  const before = (await getBarOrder()) as { groups?: unknown; subs?: unknown } | null
   await preferences.set(STORAGE_KEYS.barOrder, JSON.stringify({ groupKeys: order.groups, subPageKeys: order.subs }))
+  await enqueueChangedSetting('barGroupKeys', before?.groups, order.groups)
+  await enqueueChangedPreferenceRecords('bottomBarSubPageOrders', subPageRecordsOf(before?.subs), subPageRecordsOf(order.subs))
 }

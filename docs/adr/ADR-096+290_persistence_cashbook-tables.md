@@ -127,7 +127,7 @@ cashbook_entries               id · ocid · account_id · world_id · category_
 ### 결정 5. 기록 id 는 uuid 이고, 옛 기록의 id 도 uuid 로 바꾼다
 
 새 기록은 `expo-crypto` 의 `randomUUID()` 로 만든다. 옛 `시각 + 난수` id 는 이관할 때 uuid 로 바꾼다(사용자 선택). 지금
-옛 id 를 가리키는 곳은 없다. 서버 동기화 대기 표(`server_sync_queue`)는 드롭 가격만 가리킨다.
+옛 id 를 가리키는 곳은 없다. 이관할 때 서버 동기화 대기 표(`server_sync_queue`)는 드롭 가격만 가리켰다.
 
 ### 결정 6. v1.0.13 스토어 바이너리로 내고, 옛 테이블 둘은 DB 버전 23 이 지운다
 

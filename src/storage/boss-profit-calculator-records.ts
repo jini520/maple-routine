@@ -12,6 +12,7 @@ import { shareOfColumns, splitColumnsOf } from './boss-periods'
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'
 import { whenRecordsReleased } from './record-hold'
+import { enqueueChangedPreferenceRecords } from './server-sync-queue'
 import type { CalculatorBoss } from '../lib/boss/boss-profit-calculator'
 
 export interface BossProfitCalculatorCharacter {
@@ -149,8 +150,27 @@ export async function getBossProfitCalculatorRecords(): Promise<BossProfitCalcul
   }
 }
 
+/** 기록마다 대기 줄 하나. 열쇠는 기록의 id 다. */
+function recordsOf(stored: readonly unknown[]): Map<string, unknown> {
+  return new Map(stored.flatMap((one) => (isRecord(one) && typeof one.id === 'string' ? [[one.id, one] as const] : [])))
+}
+
+/** 저장된 그대로의 목록. 없거나 깨졌으면 빈 목록이다. */
+async function readStored(): Promise<unknown[]> {
+  const raw = await preferences.get(STORAGE_KEYS.bossProfitCalculatorRecords)
+  if (raw === null) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+/** 더하거나 고치거나 지운 기록을 대기 표에 넣는다. */
 export async function setBossProfitCalculatorRecords(records: readonly BossProfitCalculatorRecord[]): Promise<void> {
   await whenRecordsReleased()
+  const before = await readStored()
   const stored: StoredCalculatorRecord[] = records.map((record) => ({
     id: record.id,
     savedAt: record.savedAt,
@@ -160,6 +180,7 @@ export async function setBossProfitCalculatorRecords(records: readonly BossProfi
     })),
   }))
   await preferences.set(STORAGE_KEYS.bossProfitCalculatorRecords, JSON.stringify(stored))
+  await enqueueChangedPreferenceRecords('bossProfitCalculatorRecords', recordsOf(before), recordsOf(stored))
 }
 
 /**

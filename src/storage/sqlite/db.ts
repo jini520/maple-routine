@@ -52,6 +52,7 @@ import { QUERY_CACHE_BODY } from './query-cache-tables'
 import { INCOME_RECORDS_BODY, LEGACY_TABLE_DEFINITIONS } from './legacy-tables'
 import { LEGACY_TABLES_DROPPED_AT, isMigrationCeilingSet, runVersionedMigrations, userVersionOf } from './migrations'
 import { REMEMBERED_LEVELS_BODY, UNCONVERTED_REMEMBERED_LEVELS_BODY } from './remembered-level-tables'
+import { SERVER_SYNC_PAUSE_BODY, ensureServerSyncTriggers } from './server-sync-triggers'
 import {
   CHARACTER_ACCOUNTS_BODY,
   CHARACTER_PROFILES_BODY,
@@ -222,18 +223,16 @@ const TABLE_DEFINITIONS = [
     PRIMARY KEY (id)
 )`,
   },
-  // 서버로 못 보낸 것만 든다. 평소에 비어 있다 - 전송은 사용자가 값을 저장하는 그 자리에서
-  // 한 건 나가고, 실패한 것만 여기 줄이 남는다. 할 일만 들어서 표 자체가 목록이 된다.
+  // 서버로 올릴 기록. 기록 표의 트리거와 Preferences 기록의 저장 함수가 넣는다. 할 일만 들어서 표 자체가 목록이 된다.
   //
-  // **데이터 삭제가 어떤 그룹을 골라도 비운다.** 남기면 방금 지운 기록마다 서버로 지우기 요청이
-  // 간다. 아직 못 보낸 것도 사라지는데, 서버가 값을 모으는 목적이 통계라 한두 건이 빠지는 것은 문제가 아니다.
+  // **데이터 삭제가 기록 그룹을 하나라도 고르면 비운다.** 남기면 방금 지운 기록마다 서버로 지우기 요청이 간다.
   {
     name: 'server_sync_queue',
     createSql: `CREATE TABLE IF NOT EXISTS server_sync_queue (
     id TEXT NOT NULL,
-    -- 어느 종류의 기록인가. **파생되지 않는다** - uuid 만 보고는 어느 표를 열어야 하는지 모른다.
+    -- 서버 표 이름을 낙타 표기로 쓴 것. uuid 만 보고는 어느 표를 열어야 하는지 모른다.
     record_type TEXT NOT NULL,
-    -- 그 기록의 uuid. 한 기록에 줄은 하나다(같은 것을 여러 번 고쳐도).
+    -- 기록 id. id 가 없는 Preferences 항목은 '표 이름:유일 기준의 값' 이다. 한 기록에 줄은 하나다(같은 것을 여러 번 고쳐도).
     record_id TEXT NOT NULL UNIQUE,
     -- 응답을 받은 횟수. 5 가 되면 버린다. **네트워크가 없으면 안 오른다.**
     attempts INTEGER NOT NULL DEFAULT 0,
@@ -241,6 +240,11 @@ const TABLE_DEFINITIONS = [
     created_at TEXT NOT NULL,
     PRIMARY KEY (id)
 )`,
+  },
+  // 줄이 있으면 기록 표의 트리거와 Preferences 넣기가 대기 표에 넣지 않는다. 트랜잭션 안에서만 줄이 있어 평소에 비어 있다.
+  {
+    name: 'server_sync_pause',
+    createSql: `CREATE TABLE IF NOT EXISTS server_sync_pause ${SERVER_SYNC_PAUSE_BODY}`,
   },
   // 캐릭터의 메이플 ID 소속. 스타포스 줄은 이름만 들어 옛 이름을 지우면 안 된다.
   // 옛 이름과 지운 캐릭터는 다시 받을 수 없어 데이터 삭제가 지우지 않는다.
@@ -587,6 +591,8 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
     await db.execute(CASHBOOK_ENTRIES_DATE_INDEX)
   }
   await db.execute(ENHANCEMENT_TOTALS_DATE_INDEX)
+  // 변환 전 표는 칸이 서버와 달라 트리거를 걸지 않는다. 변환이 끝나면 변환이 건다.
+  if (converted >= DEVICE_CONVERSION_VERSION) await ensureServerSyncTriggers(db)
 
   return db
 }

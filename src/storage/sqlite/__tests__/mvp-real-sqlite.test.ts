@@ -100,6 +100,51 @@ describe('mvp_grade_history', () => {
   })
 })
 
+// 이력을 통째로 받지만 지우고 다시 넣으면 저장할 때마다 그 메이플 ID 의 모든 줄이 지우기와 새 줄로 서버에 올라간다.
+describe('다시 저장할 때의 줄 id', () => {
+  type IdRow = { id: string; from_date: string }
+  const ids = (): IdRow[] =>
+    real.inspect((db) => db.prepare('SELECT id, from_date FROM mvp_grade_history ORDER BY from_date').all() as IdRow[])
+  const queued = (): string[] =>
+    real.inspect((db) =>
+      (db.prepare('SELECT record_id FROM server_sync_queue ORDER BY rowid').all() as { record_id: string }[]).map((row) => row.record_id),
+    )
+
+  it('시작 날짜가 같은 줄은 id 를 남기고, 등급이 그대로인 줄은 대기 표에 넣지 않는다', async () => {
+    await replaceMvpGradeHistory('A', [
+      { startDate: '2026-06-11', grade: 'silver' },
+      { startDate: '2026-07-30', grade: 'gold' },
+    ], '2026-09-22T00:00:00.000Z')
+    const [silver, gold] = ids()
+    real.inspect((db) => db.exec('DELETE FROM server_sync_queue'))
+
+    await replaceMvpGradeHistory('A', [
+      { startDate: '2026-06-11', grade: 'silver' },
+      { startDate: '2026-07-30', grade: 'diamond' },
+      { startDate: '2026-09-17', grade: 'red' },
+    ], '2026-09-23T00:00:00.000Z')
+
+    const [keptSilver, keptGold, added] = ids()
+    expect(keptSilver).toEqual(silver)
+    expect(keptGold).toEqual(gold)
+    expect(queued()).toEqual([gold!.id, added!.id])
+  })
+
+  it('빠진 시작 날짜의 줄만 지운다', async () => {
+    await replaceMvpGradeHistory('A', [
+      { startDate: '2026-06-11', grade: 'silver' },
+      { startDate: '2026-07-30', grade: 'gold' },
+    ], '2026-09-22T00:00:00.000Z')
+    const [silver, gold] = ids()
+    real.inspect((db) => db.exec('DELETE FROM server_sync_queue'))
+
+    await replaceMvpGradeHistory('A', [{ startDate: '2026-07-30', grade: 'gold' }], '2026-09-23T00:00:00.000Z')
+
+    expect(ids()).toEqual([gold])
+    expect(queued()).toEqual([silver!.id])
+  })
+})
+
 describe('character_accounts', () => {
   const accounts = (name: string) => [
     { accountId: 'A', characters: [{ ocid: 'x', name, world: '스카니아', worldKey: 'scania', jobClass: '비숍', level: 280 }] },

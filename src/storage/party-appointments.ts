@@ -13,6 +13,7 @@ import { randomUuid } from '../native/uuid'
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'
 import { whenRecordsReleased } from './record-hold'
+import { enqueueChangedPreferenceRecords } from './server-sync-queue'
 import type {
   PartyAppointment,
   PartyAppointmentBoss,
@@ -237,9 +238,35 @@ export async function getPartyAppointments(): Promise<PartyAppointment[]> {
   return upgraded
 }
 
+/**
+ * 약속마다 대기 줄 하나. uuid 인 id 만 넣는다. 서버 줄 id 는 uuid 라서, 옛 설치본의 id 를 올리면 거절만 다섯 번 받는다. 옛 id 는
+ * 읽을 때 uuid 로 바뀐다.
+ */
+function recordsOf(stored: readonly unknown[]): Map<string, unknown> {
+  return new Map(
+    stored.flatMap((one) => (isRecord(one) && typeof one.id === 'string' && UUID.test(one.id) ? [[one.id, one] as const] : [])),
+  )
+}
+
+/** 저장된 그대로의 목록. 없거나 깨졌으면 빈 목록이다. */
+async function readStored(): Promise<unknown[]> {
+  const raw = await preferences.get(STORAGE_KEYS.partyAppointments)
+  if (raw === null) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+/** 더하거나 고치거나 지운 약속을 대기 표에 넣는다. */
 export async function setPartyAppointments(appointments: readonly PartyAppointment[]): Promise<void> {
   await whenRecordsReleased()
-  await preferences.set(STORAGE_KEYS.partyAppointments, JSON.stringify(appointments.map(storedPartyAppointmentOf)))
+  const before = await readStored()
+  const stored = appointments.map(storedPartyAppointmentOf)
+  await preferences.set(STORAGE_KEYS.partyAppointments, JSON.stringify(stored))
+  await enqueueChangedPreferenceRecords('partyAppointments', recordsOf(before), recordsOf(stored))
 }
 
 /**
