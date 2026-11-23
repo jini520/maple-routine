@@ -58,7 +58,7 @@ docs/
 | `error-resilience` | [foundation/error-resilience.md](./foundation/error-resilience.md) | 실패 처리 · 이어서 하는 작업 · 서버 점검 잠금 | [[ADR-022]] · [[ADR-023]] · [[ADR-261]] |
 | `game-data` | [foundation/game-data.md](./foundation/game-data.md) | 보스 · 드롭 · 지출 목록 같은 게임 수치와 화면 FAQ 문구 | [[ADR-019]] · [[ADR-020]] · [[ADR-150]] · [[ADR-187]] |
 | `server` | [foundation/server.md](./foundation/server.md) | 우리 서버의 경로와 인증 · 드롭 시세 · MASPI | [[ADR-016]] · [[ADR-017]] · [[ADR-071]] |
-| `server-sync` | [foundation/server-sync.md](./foundation/server-sync.md) | 앱이 서버로 올리는 값 · 신원 · 부계정 등록 · 기록이 바뀌면 대기 표에 넣기 · 올리기 · 거절 알림 | [[ADR-018]] · [[ADR-099]] · [[ADR-102]] · [[ADR-158]] |
+| `server-sync` | [foundation/server-sync.md](./foundation/server-sync.md) | 앱이 서버로 올리는 값 · 신원 · 부계정 등록 · 기록이 바뀌면 대기 표에 넣기 · 올리기 · 거절 알림 · 받기와 받은 줄 넣기 · 주인의 기록 비우기 | [[ADR-018]] · [[ADR-099]] · [[ADR-102]] · [[ADR-158]] |
 | `persistence` | [persistence/README.md](./persistence/README.md) | 기기 저장소 · SQLite 스키마 · 데이터 수명 · 1.0.15 기기 변환 | [[ADR-007]] · [[ADR-078]] · [[ADR-096]] · [[ADR-286]] |
 | `release` | [foundation/release.md](./foundation/release.md) | 스토어 빌드 · 서명 · 버전 · 브랜치 | [[ADR-008]] · [[ADR-009]] · [[ADR-010]] · [[ADR-188]] |
 | `docs` | [foundation/writing.md](./foundation/writing.md) | 문서 · 주석 · 앱 문구 쓰는 규칙 | [[ADR-003]] |

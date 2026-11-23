@@ -197,6 +197,9 @@
 - 외래키 동작(`ON DELETE CASCADE` · `ON DELETE SET NULL`)으로 지워지거나 고쳐진 줄도 트리거를 부른다. 수익 건을 지우면 그 드롭의
   지우기가, 인벤토리 줄을 지우면 그 줄을 가리키던 가계부 기록이 함께 들어간다.
 - `server_sync_pause` 에 줄이 있는 동안은 넣지 않는다(`withServerSyncPaused`). 받은 줄을 넣거나 올리기의 결과로 기기 줄을 고칠 때다.
+- 동기화의 받기가 넣은 줄의 ocid · 메이플 ID 칸(`ocid` · `previous_ocid` · `receiver_ocid` · `account_id`)은 이 기기의
+  `character_accounts` 에 짝이 없으면 원문 대신 `#` 를 붙인 해시다(`storage/server-sync-pull.ts`, [[ADR-099]] 결정 12 · 67). 그
+  캐릭터는 알 수 없는 캐릭터로 보이고 금액에는 들어간다. 넥슨을 부를 자격이 없어 넥슨에 보내지 않는다.
 
 ## 테이블이나 칸을 더할 때
 
