@@ -7,6 +7,7 @@
  * @see docs/persistence/sqlite.md `character_world_leaps`
  */
 import { getBossProfitDb } from './sqlite/db'
+import { noteRecordsWritten } from './server-sync-queue'
 
 export interface CharacterWorldLeap {
   /** 리프 전의 옛 ocid. 표의 `previous_ocid` */
@@ -27,6 +28,7 @@ export async function linkCharacterWorldLeap(fromOcid: string, toOcid: string): 
     return false
   }
   await db.run(`INSERT INTO character_world_leaps (previous_ocid, ocid) VALUES (?, ?)`, [fromOcid, toOcid])
+  noteRecordsWritten()
   return true
 }
 
@@ -44,4 +46,5 @@ export async function getCharacterWorldLeaps(): Promise<CharacterWorldLeap[]> {
 export async function moveWorldLeapsToOcid(fromOcid: string, toOcid: string): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(`UPDATE character_world_leaps SET ocid = ? WHERE ocid = ? AND previous_ocid <> ?`, [toOcid, fromOcid, toOcid])
+  noteRecordsWritten()
 }

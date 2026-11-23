@@ -1,6 +1,7 @@
 import { bossDifficultyOfId } from '../lib/boss/bosses'
 import { SPLIT_COLUMN_NAMES, bossDifficultyIdFor, shareOf, splitValues } from './boss-periods'
 import { getBossProfitDb } from './sqlite/db'
+import { noteRecordsWritten } from './server-sync-queue'
 import { NEW_UUID_SQL } from './sqlite/uuid'
 
 /** 결정석 비율과 송금 수수료 칸. 비율이 `null` 이면 파티 인원으로 균등 분배다. 아이템 비율은 이 표에 없다 */
@@ -50,6 +51,7 @@ export async function setBossPartySetting(setting: BossPartySetting): Promise<vo
     setting.updatedAt,
     setting.updatedAt,
   ])
+  noteRecordsWritten()
 }
 
 /** 줄을 설정으로. 게임 데이터에 없는 난이도 줄이면 `null` 이다. */
@@ -101,6 +103,7 @@ export async function copyMissingBossPartySettings(
      ON CONFLICT (ocid, boss_difficulty_id) DO NOTHING`,
     [toOcid, updatedAt, updatedAt, fromOcid],
   )
+  noteRecordsWritten()
 }
 
 export async function getBossPartySettings(ocids: string[]): Promise<BossPartySetting[]> {

@@ -6,6 +6,7 @@
 import { findMvpGrade, findMvpGradeById } from '../lib/mvp/grades'
 import type { MvpGradeEntry } from '../lib/mvp/history'
 import { getBossProfitDb } from './sqlite/db'
+import { noteRecordsWritten } from './server-sync-queue'
 import { inTransaction } from './sqlite/transaction'
 
 /** ID 마다 시작 날짜 오름차순의 이력. 표가 작아 한 번에 읽는다. */
@@ -59,6 +60,7 @@ export async function replaceMvpGradeHistory(
       )
     }
   })
+  noteRecordsWritten()
 }
 
 /** 등급이 빈 줄을 지운다. 지운 수를 돌려준다. 앱은 빈 줄을 적지 않지만 칸은 서버처럼 비울 수 있다. */

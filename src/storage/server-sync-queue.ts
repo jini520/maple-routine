@@ -6,6 +6,7 @@
  *
  * @see docs/foundation/server-sync.md `대기 표에 넣기`
  */
+import { notifyAfterBatch } from './record-revision-batch'
 import { getBossProfitDb } from './sqlite/db'
 import { inTransaction } from './sqlite/transaction'
 import { NEW_UUID_SQL } from './sqlite/uuid'
@@ -50,6 +51,29 @@ export interface SyncQueueEntry {
   attempts: number
   lastError: string | null
   createdAt: string
+}
+
+const writeListeners = new Set<() => void>()
+
+/** 구독자를 부르는 함수. `notifyAfterBatch` 가 같은 함수로 알아봐 반복 끝에 한 번만 부르도록 모듈에 하나만 둔다. */
+function notifyWriteListeners(): void {
+  for (const listener of writeListeners) listener()
+}
+
+/**
+ * 서버로 올리는 기록을 쓴 저장 함수가 부른다. 반복 쓰기(`batchRecordWrites`) 안이면 반복이 끝날 때 한 번 알린다. 셸이 이 알림으로
+ * 회차를 깨워 입력 직후에 올린다. 판을 올리는 저장 함수는 판 알림으로 대신한다.
+ */
+export function noteRecordsWritten(): void {
+  notifyAfterBatch(notifyWriteListeners)
+}
+
+/** 기록을 쓸 때 부를 함수를 건다. 풀 함수를 돌려준다. */
+export function subscribeRecordsWritten(listener: () => void): () => void {
+  writeListeners.add(listener)
+  return () => {
+    writeListeners.delete(listener)
+  }
 }
 
 /** 표에 든 것 전부. 넣은 차례(rowid)다. 한 밀리초 안에 여러 줄이 들어가 시각으로는 차례를 가를 수 없다. */
@@ -157,6 +181,7 @@ export async function enqueueChangedPreferenceRecords(
     const db = await getBossProfitDb()
     const now = new Date().toISOString()
     for (const recordId of changed) await db.run(ENQUEUE_SQL, [table, recordId, now, recordId])
+    noteRecordsWritten()
   } catch {
     // 기록은 이미 저장됐다.
   }
