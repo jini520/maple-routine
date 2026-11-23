@@ -2,8 +2,10 @@
  * 다른 기기가 올린 기록을 `POST /v1/sync/pull` 로 받아 기기에 넣는 동기화의 한 부분. 올리기 다음에 돈다.
  *
  * ```
+ * 짝이 생긴 `#` 값을 원문으로 바꾼다
  * 기억한 번호를 보낸다
  *   응답 없음 · 요청 전체의 거절 → 번호를 두고 멈춘다
+ *   첫 응답의 메이플 ID 목록에서 앞 목록에 있던 메이플 ID 가 빠졌다 → 다른 기기가 해제한 부계정을 이 기기에서 뺀다
  *   번호가 0 보다 크고 가장 오래된 삭제 표식보다 작은 주인 → 그 주인의 기록을 비우고 번호를 0 으로 적어 다시 받는다
  *   받은 줄을 표 차례로 기기 칸으로 바꿔 넣는다. 넣지 못한 줄은 건너뛴다
  *   응답의 번호를 적는다. `hasMore` 면 이어 받는다. 번호가 그대로면 멈춘다
@@ -25,9 +27,11 @@ import {
   type ServerSyncOwners,
 } from '../../storage/server-sync-pull'
 import { applyPulledPreferenceRecords, type PulledPreferenceRecord } from '../../storage/server-sync-pull-preferences'
+import { replaceMatchedNexonIds } from '../../storage/server-sync-unmatched'
 import { SERVER_SYNC_TABLES, type ServerSyncTable } from '../../storage/server-sync-queue'
 import { whenRecordsReleased } from '../../storage/record-hold'
 import { unmatchedNexonIdOf } from '../../lib/crypto/nexon-id-hash'
+import { forgetReleasedSubAccounts } from '../account-manage/store'
 import { serverIdentityHeaders } from '../auth/server-identity'
 import { pulledRecordOf, type NexonIdResolver } from './pull-records'
 import { refreshAfterServerSync } from './refresh'
@@ -47,6 +51,10 @@ export interface PullDeps {
   applySettledDay(record: PulledSettledDay): Promise<boolean>
   applyPreferences(records: readonly PulledPreferenceRecord[]): Promise<void>
   clearOwners(owners: ServerSyncOwners): Promise<void>
+  /** 짝이 생긴 `#` 값을 원문으로 바꾸고 바꾼 표를 돌려준다 */
+  replaceMatched(lookup: NexonIdLookup): Promise<Set<ServerSyncTable>>
+  /** 다른 기기가 해제한 부계정을 이 기기에서 뺀다 */
+  forgetReleasedSubAccounts(mapleIdHashes: ReadonlySet<string>): Promise<void>
   /** 기기 줄을 고치거나 지운 표. 그 표를 읽는 화면이 다시 읽게 한다 */
   afterRecordsChanged(tables: ReadonlySet<ServerSyncTable>): void
 }
@@ -61,6 +69,8 @@ const DEFAULT_DEPS: PullDeps = {
   applySettledDay: applyPulledSettledDay,
   applyPreferences: applyPulledPreferenceRecords,
   clearOwners: clearServerSyncOwners,
+  replaceMatched: replaceMatchedNexonIds,
+  forgetReleasedSubAccounts,
   afterRecordsChanged: refreshAfterServerSync,
 }
 
@@ -96,6 +106,17 @@ function staleOwnersOf(sent: ServerSyncCursors, response: SyncPullResponse): { m
     mapleIdHashes: response.mapleIds.filter((hash) => stale(sent.mapleIds[hash] ?? 0)),
     person: account !== null && account.id === response.cursors.nexonAccount.id && stale(account.changeSeq),
   }
+}
+
+/**
+ * 다른 기기에서 해제한 부계정의 메이플 ID. 앞 받기의 목록(번호의 메이플 ID 열쇠)에 있다 빠진 것이다. 서버는 이 신원이 쓸 수 있는
+ * 메이플 ID 마다 번호를 돌려준다. 번호의 넥슨 계정 줄이 응답과 다르면(다른 사람의 로그인 · 합쳐진 줄) 목록이 바뀌는 것이 해제가
+ * 아니라 견주지 않는다.
+ */
+function releasedMapleIdHashesOf(sent: ServerSyncCursors, response: SyncPullResponse): Set<string> {
+  if (sent.nexonAccount === null || sent.nexonAccount.id !== response.cursors.nexonAccount.id) return new Set()
+  const owned = new Set(response.mapleIds)
+  return new Set(Object.keys(sent.mapleIds).filter((hash) => !owned.has(hash)))
 }
 
 function sameCursors(left: ServerSyncCursors, right: SyncPullResponse['cursors']): boolean {
@@ -153,8 +174,10 @@ export async function pullServerSync(deps: PullDeps = DEFAULT_DEPS): Promise<Pul
   // 기기 변환 전의 기록은 칸이 서버와 달라 넣을 수 없다.
   await whenRecordsReleased()
 
-  const resolver = resolverOf(await deps.lookup())
-  const changed = new Set<ServerSyncTable>()
+  const lookup = await deps.lookup()
+  const resolver = resolverOf(lookup)
+  // 받은 줄의 유일 기준이 기기 줄과 맞도록 먼저 바꾼다.
+  const changed = await deps.replaceMatched(lookup)
   try {
     for (let page = 0; page < MAX_PAGES; page += 1) {
       const sent = await deps.getCursors()
@@ -165,6 +188,10 @@ export async function pullServerSync(deps: PullDeps = DEFAULT_DEPS): Promise<Pul
       }
       summary.pages += 1
       const response = outcome.response
+      if (page === 0) {
+        const released = releasedMapleIdHashesOf(sent, response)
+        if (released.size > 0) await deps.forgetReleasedSubAccounts(released)
+      }
 
       const stale = staleOwnersOf(sent, response)
       if (stale.mapleIdHashes.length > 0 || stale.person) {

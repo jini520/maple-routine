@@ -7,6 +7,7 @@
 import { nexonIdHashHex } from '../../../lib/crypto/nexon-id-hash'
 import type { SyncPullCursors, SyncPullOutcome, SyncPullResponse } from '../../../server/sync'
 import type { ServerSyncCursors } from '../../../storage/server-sync-cursors'
+import type { ServerSyncTable } from '../../../storage/server-sync-queue'
 import { pullServerSync, type PullDeps } from '../pull'
 
 const HEADERS = { 'x-maple-id-hash': 'h' }
@@ -65,6 +66,13 @@ function setup(outcomes: SyncPullOutcome[], stored: ServerSyncCursors = { nexonA
     clearOwners: jest.fn(async (owners) => {
       events.push(`clear ${JSON.stringify(owners)}`)
     }),
+    replaceMatched: jest.fn(async () => {
+      events.push('replace matched')
+      return new Set<ServerSyncTable>()
+    }),
+    forgetReleasedSubAccounts: jest.fn(async (hashes: ReadonlySet<string>) => {
+      events.push(`released ${[...hashes].join(',')}`)
+    }),
     afterRecordsChanged: jest.fn(),
   }
   return { deps, events, sent, current: () => cursors }
@@ -101,6 +109,7 @@ it('기억한 번호를 보내고, 받은 줄을 표 차례로 다 넣은 뒤에
 
   expect(sent).toEqual([stored])
   expect(events).toEqual([
+    'replace matched',
     'sqlite bossProfitEntries entry-1',
     'sqlite bossDrops drop-1',
     'settled 2026-11-20',
@@ -184,7 +193,7 @@ describe('가장 오래된 삭제 표식', () => {
 
     await pullServerSync(deps)
 
-    expect(events[0]).toBe(`clear ${JSON.stringify({ mapleIds: [MAPLE], person: false })}`)
+    expect(events[1]).toBe(`clear ${JSON.stringify({ mapleIds: [MAPLE], person: false })}`)
     expect(sent[1]).toEqual({ nexonAccount: { id: 'account-1', changeSeq: 50 }, mapleIds: { [MAPLE_HASH]: 0, [OTHER_HASH]: 0 } })
     expect(events).not.toContain('sqlite mvpGradeHistory mvp-old')
     expect(events).toContain('sqlite mvpGradeHistory mvp-1')
@@ -227,4 +236,45 @@ it('받은 줄의 해시를 원문으로 바꿔 넣는다', async () => {
   await pullServerSync(deps)
 
   expect(deps.applySqlite).toHaveBeenCalledWith(expect.objectContaining({ id: 'split-1', row: expect.objectContaining({ ocid: 'ocid-1' }) }))
+})
+
+// 짝이 생긴 `#` 를 먼저 원문으로 바꿔야 받은 줄의 유일 기준이 기기 줄과 맞는다.
+it('받기 전에 짝이 생긴 `#` 를 원문으로 바꾸고, 바꾼 표의 화면을 다시 읽는다', async () => {
+  const { deps, events } = setup([answered(response())])
+  ;(deps.replaceMatched as jest.Mock).mockImplementation(async () => {
+    events.push('replace matched')
+    return new Set(['bossProfitEntries'])
+  })
+
+  await pullServerSync(deps)
+
+  expect(events[0]).toBe('replace matched')
+  expect(deps.afterRecordsChanged).toHaveBeenCalledWith(new Set(['bossProfitEntries']))
+})
+
+describe('다른 기기의 부계정 해제', () => {
+  it('앞 받기의 목록에 있던 메이플 ID 가 빠지면 그 부계정을 이 기기에서 뺀다. 이어 받는 쪽에서는 다시 보지 않는다', async () => {
+    const stored = { nexonAccount: { id: 'account-1', changeSeq: 9 }, mapleIds: { [MAPLE_HASH]: 9, [OTHER_HASH]: 9 } }
+    const first = response({ hasMore: true, cursors: { nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 10 } } })
+    const { deps } = setup([answered(first), answered(response())], stored)
+
+    await pullServerSync(deps)
+
+    expect(deps.forgetReleasedSubAccounts).toHaveBeenCalledTimes(1)
+    expect(deps.forgetReleasedSubAccounts).toHaveBeenCalledWith(new Set([OTHER_HASH]))
+  })
+
+  // 다른 사람으로 로그인했거나 넥슨 계정 줄이 합쳐졌으면 목록이 바뀌는 것이 해제가 아니다.
+  it('넥슨 계정 줄이 바뀌었거나 앞 목록이 없으면 견주지 않는다', async () => {
+    const moved = setup(
+      [answered(response())],
+      { nexonAccount: { id: 'account-2', changeSeq: 9 }, mapleIds: { [OTHER_HASH]: 9 } },
+    )
+    await pullServerSync(moved.deps)
+    expect(moved.deps.forgetReleasedSubAccounts).not.toHaveBeenCalled()
+
+    const fresh = setup([answered(response())])
+    await pullServerSync(fresh.deps)
+    expect(fresh.deps.forgetReleasedSubAccounts).not.toHaveBeenCalled()
+  })
 })

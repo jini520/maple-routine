@@ -274,3 +274,32 @@ describe('삭제', () => {
     expect(mockResolveFromStorage).toHaveBeenCalled()
   })
 })
+
+// 해제는 서버가 기준이다. 남기면 동기화가 그 키를 다시 등록해 다른 기기의 해제를 되돌린다.
+describe('다른 기기가 해제한 부계정', () => {
+  const { forgetReleasedSubAccounts } = require('../store') as typeof import('../store')
+
+  it('빠진 메이플 ID 를 든 부계정 키를 지우고 그 계정의 추적 캐릭터를 빼며, 서버 해제는 부르지 않는다', async () => {
+    selection.getTrackedCharacterOcids.mockResolvedValue(['o-main', 'o-sub'])
+    owners.getCharacterAccountSightings.mockResolvedValue([
+      { ocid: 'o-main', name: '본캐', accountId: 'm-main', firstSeenOn: '2026-11-01', lastSeenOn: '2026-11-11' },
+      { ocid: 'o-sub', name: '부캐', accountId: 'm-sub', firstSeenOn: '2026-11-01', lastSeenOn: '2026-11-11' },
+    ])
+
+    await forgetReleasedSubAccounts(new Set([h('m-sub')]))
+
+    expect(server.unregisterSubAccountOnServer).not.toHaveBeenCalled()
+    expect(apiKeyStore.removeApiKey).toHaveBeenCalledWith('부-키')
+    expect(serverState.setServerAccounts).toHaveBeenCalledWith({ reported: {}, registered: [] })
+    expect(selection.setTrackedCharacterOcids).toHaveBeenCalledWith(['o-main'])
+  })
+
+  it('빠진 메이플 ID 를 든 키가 없거나 다른 로그인의 키면 아무것도 지우지 않는다', async () => {
+    apiKeyStore.getAuthConfig.mockResolvedValue(설정({ ...부계정키, loginId: 'login-2' }))
+
+    await forgetReleasedSubAccounts(new Set([h('m-sub'), h('m-other')]))
+
+    expect(apiKeyStore.removeApiKey).not.toHaveBeenCalled()
+    expect(selection.setTrackedCharacterOcids).not.toHaveBeenCalled()
+  })
+})
