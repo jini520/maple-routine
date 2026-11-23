@@ -2913,25 +2913,27 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
 | (서버 테스트를 더한다) | 결정 30: 시세가 따로 둔 줄의 판매가를 원래 아이템으로 모으는지 |
 | (구현 때 더한다) | 결정 30: 연결이 두 번 이어지는 줄을 받지 않는지 |
 | (구현 때 더한다) | 결정 31: 처치한 난이도에서 얻을 수 있는 드롭이 남고 못 얻는 드롭이 지워지는지, 경로만 다른 연마석이 같은 물건의 다른 줄로 바뀌는지 |
-| (구현 때 더한다) | 결정 34: 컨텐츠의 `check_type` 과 완료 횟수로 완료를 세는지, 카드와 진행 링 · 남은 스케줄이 같은 조건을 쓰는지, 완료 횟수가 `count_only` 가 아닌 줄에 들어가지 않는지 |
+| `features/content-scheduler/__tests__/content-completion.test.ts` · `app/content-scheduler/__tests__/ContentCards.test.tsx`(완료 배지) · `features/remaining-schedule/__tests__/remaining-schedule.spec.ts`(카드와 같은 완료 판정) · 서버 `contents/contents.repository.spec.ts` | 결정 34: 컨텐츠의 `check_type` 과 완료 횟수로 완료를 세는지, 카드의 완료 배지와 진행 링 · 남은 스케줄이 같은 조건으로 완료를 가르는지, 완료 횟수가 `count_only` 가 아닌 줄에 들어가지 않는지(서버 DB 의 `CHECK`) 본다 |
 | `lib/__tests__/hexa-matrix.test.ts` | 결정 35: 한 직업의 코어 목록에 공용 코어가 들어가고 종류의 차례가 지금과 같은지 본다 |
 | (구현 때 더한다) | 결정 35: 이름이 같고 그림이 다른 코어가 직업마다 제 그림으로 나오는지. 가계부 행 아이콘(`features/cashbook/row-icon.ts`)은 아직 코어를 이름으로 찾는다 |
-| (구현 때 더한다) | 결정 37: 장비 표에 있는 장비와 없는 장비가 모두 이름으로 한 줄씩 묶이는지, 읽을 때 이름으로 장비 그림을 찾는지, 기기 변환 뒤에 같은 날을 다시 받아도 줄이 늘지 않는지 |
+| `features/enhancement-history/__tests__/spending.spec.ts` · `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` · `features/cashbook/__tests__/records.spec.ts` · `features/cashbook/__tests__/row-icon.spec.ts` · `storage/sqlite/__tests__/convert-enhancement-tables-real-sqlite.test.ts`(다시 받기) | 결정 37: 장비 표에 있는 장비와 없는 장비가 모두 이름으로 한 줄씩 묶이는지, 읽을 때 이름으로 장비 그림을 찾는지, 기기 변환 뒤에 같은 날을 다시 받아도 줄이 늘지 않고 변환한 줄의 id 를 지키는지 본다 |
 | `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` · `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(기억한 레벨) · `lib/__tests__/cashbook-entry-ids.spec.ts` | 결정 38: 종류와 줄 id 로 기억을 읽고 쓰는지(변환이 대상 줄 id 로 옮기는 것 포함), 이름이 같은 코어가 직업마다 다른 줄로 기억되는지 본다 |
 | (서버 테스트를 더한다) | 결정 38: 종류가 말하는 표에 없는 id 를 받지 않는지 |
 | `lib/__tests__/scheduler-content-scope.spec.ts` · `app/today/__tests__/view-model.test.ts` · `lib/__tests__/scheduler-activity.spec.ts` | 결정 42: 드래곤 퇴치 둘이 등록돼 있어도 공유 컨텐츠 위젯에 나오지 않는지, 점수 컨텐츠만 한 캐릭터가 활동한 캐릭터로 잡히지 않는지 본다 |
-| (구현 때 더한다) | 결정 44: 기기 변환이 분류와 `hexa_activation` 으로 종류를 정하고 key 와 코어 이름을 줄 id 로 바꾸는지, 줄 id 를 찾지 못한 헥사 스킬 품목이 이름과 금액을 지닌 채 남는지, 종류가 말하는 표에 없는 id 를 받지 않는지 |
-| (구현 때 더한다) | 결정 45: 기기 변환이 수입 · 지출과 분류 key 의 조합을 분류 줄 id 로 바꾸는지, 수입과 지출 양쪽에 있는 기타가 제 줄로 가는지, 수입 전체와 지출 전체를 읽는 조회가 변환 전과 같은 기록을 내는지 |
-| (구현 때 더한다) | 결정 46: 장비가 아닌 아이템을 같은 메이플 ID · 월드에 두 번 넣으면 한 줄로 합쳐지고 장비는 줄이 따로 생기는지, 아이템 표와 종류가 다른 기록이 변환 뒤에도 적힌 종류로 열리는지 |
+| `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(분류와 품목의 대상) · `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` | 결정 44: 기기 변환이 분류와 `hexa_activation` 으로 종류를 정하고 key 와 코어 이름을 줄 id 로 바꾸는지, 줄 id 를 찾지 못한 헥사 스킬 품목이 이름 · 금액 · 레벨 · 조각을 지닌 채 남아 코어 이름으로 읽히는지 본다 |
+| (구현 때 더한다) | 결정 44: 서버가 종류가 말하는 표에 없는 품목 id 를 받지 않는지. 서버의 가계부 올리기는 아직 품목의 대상을 검사하지 않는다 |
+| `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(분류와 품목의 대상 · 변환한 기록 읽기) · `lib/__tests__/cashbook-entry-ids.spec.ts` | 결정 45: 기기 변환이 수입 · 지출과 분류 key 의 조합을 분류 줄 id 로 바꾸는지, 수입과 지출 양쪽에 있는 기타가 제 줄로 가는지, 수입 전체와 지출 전체를 읽는 조회가 변환한 기록을 빠짐없이 섞지 않고 내는지 본다 |
+| `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` · `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(변환한 기록 읽기) · 서버 `database/record-tables.spec.ts` · `sync/push.repository.spec.ts`(인벤토리) | 결정 46: 장비가 아닌 아이템을 같은 메이플 ID · 월드에 두 번 넣으면 한 줄로 합쳐지고 장비는 줄이 따로 생기는지, 아이템 표와 종류가 다른 기록이 변환 뒤에도 적힌 종류로 열리는지 본다 |
 | `storage/__tests__/manual-tracked-content.spec.ts` · `storage/__tests__/preferences-conversion.spec.ts` · 서버 `sync/push.repository.spec.ts`(id 가 없는 표) | 결정 47: 컨텐츠 항목과 보스 항목이 종류와 줄 id 로 저장되고 읽히는지, 같은 캐릭터가 같은 대상을 두 번 넣지 못하는지(변환은 앞의 것만 남기고 서버는 유일 기준으로 덮는다), 서버가 종류가 말하는 표에 없는 id 를 받지 않는지 본다 |
 | 서버 `sync/push.repository.spec.ts` · `sync/pull.repository.spec.ts` · `users/maple-id-ownership.spec.ts` · `users/nexon-accounts.repository.spec.ts` | 결정 48: 올린 해시로 메이플 ID 줄을 찾아 캐릭터 줄에 줄 id 로 적고 내려줄 때 해시로 푸는지, 남의 메이플 ID 해시를 실은 올리기를 받지 않는지, 넥슨 계정 줄이 합쳐져도 기록이 같은 메이플 ID 줄을 가리키는지 본다 |
 | (서버 테스트를 더한다) | 결정 48: 메이플 ID 를 바로 가리키는 기록 표(가계부 기록 · 인벤토리 · MVP 등급 · 메이플 ID 이름 · 공유 진행)도 줄 id 로 적고 받기의 응답에 해시로 내는지 |
-| (구현 때 더한다) | 결정 49: 캐릭터 기록을 올리면 서버가 그 캐릭터의 메이플 ID 를 채우는지, 캐릭터와 메이플 ID 가 어긋난 줄을 받지 않는지, 묶음으로 올린 같은 날 기록이 받은 기기에서 저장한 시각 차례로 서는지, 메모가 다른 기기에서 보이는지 |
-| (구현 때 더한다) | 결정 52: 넥슨이 최대 횟수를 0 으로 줘도 표의 `max_count` 로 완료와 분모를 정하는지, `count_only` 가 아닌 줄에 `max_count` 가 들어가지 않는지, 표에 없는 컨텐츠가 넥슨의 `type` 으로 판정되는지 |
-| (구현 때 더한다) | 결정 53: 추가 리워드를 두 종류로 받은 기록의 품목이 종류의 차례로 읽히는지, 한 기록에 같은 종류의 품목을 두 줄 받지 않는지 |
-| (구현 때 더한다) | 결정 54: 기기 변환 뒤에 기타 조각의 남은 개수가 변환 전과 같은지, 한 기록이 같은 보관에서 두 줄로 가져가지 못하는지, 켠 효과가 적힌 차례와 상관없이 같은 칸으로 옮겨지는지 |
+| `features/server-sync/__tests__/push-records.spec.ts`(가계부) · `features/server-sync/__tests__/pull-records.spec.ts`(가계부) · `storage/sqlite/__tests__/server-sync-pull-real-sqlite.test.ts`(같은 날 기록) · 서버 `sync/push.repository.spec.ts`(다른 메이플 ID 아래의 ocid) | 결정 49: 캐릭터 기록을 올릴 때 앱이 그 캐릭터의 메이플 ID 를 찾아 싣고 모르면 보내지 않는지, 서버가 캐릭터와 메이플 ID 가 어긋난 줄을 받지 않는지(강화 합계로 본다), 받은 같은 날 기록이 저장한 시각 차례로 서는지, 메모와 저장한 시각이 서버 칸으로 오가는지 본다 |
+| (서버 테스트를 더한다) | 결정 49: 가계부 기록에서 캐릭터와 메이플 ID 가 어긋나면 거절하는지, 올린 메모와 저장한 시각이 받기의 응답에 그대로 오는지 |
+| `lib/__tests__/scheduler-merge.spec.ts` · `features/content-scheduler/__tests__/content-completion.test.ts` · 서버 `contents/contents.repository.spec.ts` | 결정 52: 넥슨이 최대 횟수를 0 으로 줘도 표의 `max_count` 로 완료와 분모를 정하는지, `count_only` 가 아닌 줄에 `max_count` 가 들어가지 않는지, 표에 없는 컨텐츠가 넥슨의 `type` 으로 판정되는지 본다 |
+| `storage/__tests__/spend.spec.ts`(품목 차례) · `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(같은 종류 품목) · 서버 `sync/push.repository.spec.ts`(딸린 줄) | 결정 53: 추가 리워드를 두 종류로 받은 기록의 품목이 들어간 차례와 상관없이 종류의 차례로 읽히는지, 한 기록에 같은 종류의 품목을 두 줄 받지 않는지 본다 |
+| `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(기타 조각 · 딸린 입력) · `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` · `storage/__tests__/income.spec.ts` · 서버 `sync/push.repository.spec.ts`(딸린 줄) | 결정 54: 기기 변환 뒤에 기타 조각의 남은 개수가 변환 전과 같은지, 한 기록이 같은 보관에서 두 줄로 가져가지 못하는지, 켠 효과가 적힌 차례와 상관없이 같은 칸으로 옮겨지는지 본다 |
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` · 서버 `users/nexon-accounts.repository.spec.ts` | 결정 55: 다시 받은 날의 줄을 분류로 갈아 끼워도 다른 API 종류의 줄이 지워지지 않는지, 넥슨 계정 줄을 합칠 때 굳은 날이 한 줄로 남는지 본다 |
-| (구현 때 더한다) | 결정 57: 기기 변환 뒤에 약속의 주차 값과 보스 줄 id 로 같은 주에 같은 회차가 펼쳐지는지, 계산기 기록이 변환 전과 같은 금액으로 열리는지, 넥슨 계정 줄을 합칠 때 설정이 한 줄로 남는지 |
+| `storage/__tests__/preferences-conversion.spec.ts`(약속 · 계산기 기록) · `storage/__tests__/party-appointments.spec.ts` · 서버 `users/nexon-accounts.repository.spec.ts` | 결정 57: 기기 변환 뒤에 약속이 주차 값과 난이도 줄 id 로 적히고 변환 전 모양으로 되읽히는지, 균등 분배와 % 로 나눠떨어지는 비율의 계산기 기록이 변환 전과 같은 금액으로 열리는지, 넥슨 계정 줄을 합칠 때 설정이 한 줄로 남는지 본다 |
 | 서버 `boss-drops/boss-drops.repository.spec.ts` | 결정 58: 한 난이도의 같은 아이템을 분류만 달리해 두 줄로 넣지 못하는지 본다 |
 | 서버 `cli/move-old-db.spec.ts`(심볼 · 사냥터 · 강화 비용 · MVP) · `lib/__tests__/symbol-costs.test.ts` · `lib/__tests__/hunting-grounds.spec.ts` · `lib/enhancement/__tests__/cost.spec.ts` · `lib/game-data/__tests__/sections.spec.ts` | 결정 59: 이름을 바꾼 칸의 값이 옮긴 뒤에도 같은지, 응답의 배열 이름과 줄 id 로 앱이 심볼 · 사냥터 · 강화 비용을 지금과 같이 읽는지 본다 |
 | 서버 `cli/move-old-db.spec.ts`(컨텐츠 · 가계부 기준 표) · `app/today/__tests__/view-model.test.ts` · `features/remaining-schedule/__tests__/remaining-schedule.spec.ts` | 결정 60: 옮긴 뒤 공유 컨텐츠 위젯과 남은 스케줄의 줄인 이름이 옮기기 전과 같은지(서버는 공유 줄의 짧은 이름을 위젯 글자로 옮기고 앱은 표의 짧은 이름을 그린다), 지역 아이콘을 쓰던 타일의 그림 두 칸이 한 칸으로 옮겨지는지 본다 |
@@ -3032,3 +3034,5 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
   한 쪽 기다린다. 결정 67 에 그 받기와 깨운 뒤에 시작한 회차를 기다리는 깨우기를 적었다. 모두 결정 14 · 15 에서 따라 나와 Claude 가 정했다
 - (2026-11-24) 결정 64 의 기기 변환 쪽을 구현했다. 돌 단계가 남았을 때만 점검을 다시 묻고, 점검 중이면 잠금이 풀릴 때까지 기다린다.
   묻는 때와 기다리는 동안의 화면은 [[ADR-286]] 결정 1 에 적었다. 결정 64 · 67 과 [[ADR-261]] 결정 5 에서 따라 나와 Claude 가 정했다
+- (2026-11-24) 테스트 표의 `(구현 때 더한다)` 행을 실제 테스트로 채웠다. 확인하지 못한 몫은 서버에 테스트를 더할 행과 구현 때 더할 행으로
+  나눠 남겼다. 결정 34 · 42 · 45 · 48 · 49 · 52 · 62 에 남아 있던 설계 때의 `지금은` 문장을 구현된 코드에 맞췄다
