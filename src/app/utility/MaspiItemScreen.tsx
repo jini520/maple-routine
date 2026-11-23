@@ -48,10 +48,10 @@ export function MaspiItemScreen(props: { route?: { params?: Partial<MarketItemPa
   const faq = useFaqSheet('utility-maspi')
   const params = props.route?.params
   // 목록의 줄만 이 화면을 열어 값이 늘 있다. 스택이 파라미터 없이 되살린 경우에는 빈 key 로 불러 빈 상태가 선다.
-  const target: MarketItemParams = { itemKey: params?.itemKey ?? '', ringLevel: params?.ringLevel ?? null, world: params?.world ?? 'general' }
+  const target: MarketItemParams = { itemKey: params?.itemKey ?? '', world: params?.world ?? 'general' }
   const market = useMarketItem(target)
   const [period, setPeriod] = useState<MarketPeriod>('30일')
-  const face = marketItemFace(target.itemKey, target.ringLevel)
+  const face = marketItemFace(target.itemKey)
 
   return (
     <ScreenScroll

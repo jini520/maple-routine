@@ -66,7 +66,7 @@ export function marketItemsOptions(world: string) {
 }
 
 export function marketItemOptions(target: MarketItemTarget) {
-  const queryKey = queryKeys.marketItem(target.itemKey, target.ringLevel, target.world)
+  const queryKey = queryKeys.marketItem(target.itemKey, target.world)
   return queryOptions<StoredMarket<MarketItemResponse>>({
     queryKey,
     queryFn: () => receive(queryKey, (etag) => fetchMarketItem(target, etag)),

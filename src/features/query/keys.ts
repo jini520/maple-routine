@@ -55,7 +55,6 @@ export const queryKeys = {
   marketMaspi: () => ['market-maspi'] as const,
   /** 장비 신뢰 시세와 그 월드의 소비 신뢰 시세. */
   marketItems: (world: string) => ['market-items', world] as const,
-  /** 시세 하나의 날마다 값. 반지가 아니면 둘째 칸이 빈 글자다. */
-  marketItem: (itemKey: string, ringLevel: number | null, world: string) =>
-    ['market-item', itemKey, ringLevel === null ? '' : String(ringLevel), world] as const,
+  /** 시세 하나의 날마다 값. 반지는 레벨 줄의 key 다. */
+  marketItem: (itemKey: string, world: string) => ['market-item', itemKey, world] as const,
 }

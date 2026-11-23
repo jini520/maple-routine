@@ -1,14 +1,15 @@
 /**
  * 서버가 연 보스가 **이 기간에도 열려 있는가**.
  *
- * 서버는 보스 key 와 여는 날만 든다. 그 날이 주차인지 달인지, 지금 보는 기간이 그 뒤인지는 앱이
+ * 서버는 보스 줄 id 와 여는 날만 든다. 그 날이 주차인지 달인지, 지금 보는 기간이 그 뒤인지는 앱이
  * 판정한다. 서버가 앱의 기간 축을 알 필요가 없고, 알게 하면 같은 규칙이 두 저장소에 생긴다.
  *
  * @see docs/features/boss-profit.md 직접 완료로 기록한다
  */
 import type { BossCycle } from '../../types'
-import type { ManualCompletionBoss } from '../../types/manual-completion'
+import type { ManualCompletionPeriod } from '../../types/manual-completion'
 import { getPeriodDateKeys } from './boss-profit-period'
+import { findBoss } from './bosses'
 
 /** 어느 보스의 어느 기간을 묻는가. */
 export interface ManualCompletionTarget {
@@ -31,17 +32,18 @@ function isDateKey(value: string): boolean {
  * @param opened 서버가 준 목록. 못 받았으면 `null` 이고 그때는 아무것도 안 연다
  */
 export function isManualCompletionOpen(
-  opened: readonly ManualCompletionBoss[] | null,
+  opened: readonly ManualCompletionPeriod[] | null,
   target: ManualCompletionTarget,
 ): boolean {
-  const entry = opened?.find((one) => one.boss === target.bossKey)
-  if (entry === undefined || !isDateKey(entry.from)) {
+  const bossId = findBoss(target.bossKey)?.id
+  const entry = bossId === undefined ? undefined : opened?.find((one) => one.bossId === bossId)
+  if (entry === undefined || !isDateKey(entry.fromDate)) {
     return false
   }
 
   const days = getPeriodDateKeys(target.cycle, target.periodKey)
   const lastDay = days[days.length - 1]
-  return lastDay !== undefined && lastDay >= entry.from
+  return lastDay !== undefined && lastDay >= entry.fromDate
 }
 
 /** 기록 한 줄을 표시 판정에서 찾는 열쇠. 보스 key 와 난이도 key 를 잇는다. */

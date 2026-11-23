@@ -54,7 +54,7 @@ export interface SpendCatalogItem extends EffectivePeriod {
   readonly tile: string
   /** 원본 이름. 하루 목록 카드에도 선다. */
   readonly name: string
-  readonly currency: 'meso' | 'point'
+  readonly currency: 'meso' | 'maple_point'
   /** `null` 은 경매장 값이라 매번 다른 항목이고, 적을 때 개당 가격을 친다. */
   readonly unitPrice: number | null
   /** 가격 하나가 무엇 하나의 값인가. 회 · 개 · 포인트 · 시간. 수량 칸의 라벨이 된다. */
@@ -120,7 +120,7 @@ export interface SpendCatalogGroup {
   readonly choices: readonly SpendCatalogChoice[]
 }
 
-const CURRENCIES = ['point', 'meso'] as const
+const CURRENCIES = ['maple_point', 'meso'] as const
 
 function toRewardType(row: Row): SpendRewardTypeRow | null {
   if (!isNonEmptyString(row.id) || !isOneOf(row.key, SPEND_FORM_KEYS) || !isNonEmptyString(row.name)) return null

@@ -7,7 +7,7 @@
  *
  * 계약은 서버 저장소와 나눠 갖는다. 필드를 더할 때 양쪽을 함께 본다.
  */
-import type { ManualCompletionBoss } from '../types/manual-completion'
+import type { ManualCompletionPeriod } from '../types/manual-completion'
 import { API_BASE_URL } from './base-url'
 
 /**
@@ -18,17 +18,17 @@ import { API_BASE_URL } from './base-url'
 const TIMEOUT_MS = 4_000
 
 /** 계약을 지킨 줄만 통과시킨다. 깨진 줄은 그 줄만 버린다. */
-function toBoss(value: unknown): ManualCompletionBoss | null {
+function toPeriod(value: unknown): ManualCompletionPeriod | null {
   if (typeof value !== 'object' || value === null) return null
   const one = value as Record<string, unknown>
 
-  if (typeof one.boss !== 'string' || one.boss === '') return null
-  if (typeof one.from !== 'string' || one.from === '') return null
-  return { boss: one.boss, from: one.from }
+  if (typeof one.bossId !== 'string' || one.bossId === '') return null
+  if (typeof one.fromDate !== 'string' || one.fromDate === '') return null
+  return { bossId: one.bossId, fromDate: one.fromDate }
 }
 
 /** 못 받았거나 계약을 어겼으면 `null`. 빈 배열은 **아무것도 안 열렸다**는 사실이다. */
-export async function fetchManualCompletionBosses(): Promise<ManualCompletionBoss[] | null> {
+export async function fetchManualCompletionBosses(): Promise<ManualCompletionPeriod[] | null> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
@@ -38,10 +38,10 @@ export async function fetchManualCompletionBosses(): Promise<ManualCompletionBos
 
     const body = (await response.json()) as unknown
     if (typeof body !== 'object' || body === null) return null
-    const bosses = (body as Record<string, unknown>).bosses
-    if (!Array.isArray(bosses)) return null
+    const periods = (body as Record<string, unknown>).bossManualCompletionPeriods
+    if (!Array.isArray(periods)) return null
 
-    return bosses.map(toBoss).filter((boss): boss is ManualCompletionBoss => boss !== null)
+    return periods.map(toPeriod).filter((period): period is ManualCompletionPeriod => period !== null)
   } catch {
     return null
   } finally {

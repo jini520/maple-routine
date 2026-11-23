@@ -131,6 +131,12 @@ export interface CashbookParams {
   trade?: CashbookTradeTarget
 }
 
+/** MASPI 상세 하나. 반지는 레벨 줄의 key 이고, 장비는 서버가 월드를 보지 않아 `general` 로 연다 */
+export interface MarketItemParams {
+  itemKey: string
+  world: string
+}
+
 /**
  * 아이템 가격 입력이 여는 주기와 기간.
  *
@@ -138,13 +144,6 @@ export interface CashbookParams {
  * 주간 · 이번 주를 센다. 보스 수익 스토어의 `periodKey` 를 읽지 않는 것은 그 값이 계산해 둔 날짜
  * 글자라 보스 수익 화면이 없을 때 낡을 수 있어서다.
  */
-/** MASPI 상세 하나. 장비는 서버가 월드를 보지 않아 `general` 로 연다 */
-export interface MarketItemParams {
-  itemKey: string
-  ringLevel: number | null
-  world: string
-}
-
 export interface DropPriceParams {
   cycle: BossCycle
   periodKey: string

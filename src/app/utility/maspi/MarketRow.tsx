@@ -30,7 +30,7 @@ export function MarketItemIcon(props: { iconAssetId: string | null }): React.JSX
 export function MarketRow(props: { entry: MarketEntry; onPress: () => void }): React.JSX.Element {
   const { definition } = useThemeAppearance()
   const { entry } = props
-  const face = marketItemFace(entry.itemKey, entry.ringLevel)
+  const face = marketItemFace(entry.itemKey)
 
   return (
     <Pressable

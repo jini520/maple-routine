@@ -160,16 +160,19 @@ const index = derive(hexaMatrixTable, (table) => {
     })
     coresByJob.set(job.name, rows.flatMap((row) => coreOf(row) ?? []))
   }
+  const coresById = new Map<string, HexaCore>()
   const coresByName = new Map<string, HexaCore>()
   for (const row of table.hexaCores) {
     const core = coreOf(row)
-    // 여러 직업이 가진 같은 이름의 코어는 그림이 다를 수 있다. 직업을 모를 때는 먼저 선 줄로 충분하다.
-    if (core !== null && !coresByName.has(row.name)) coresByName.set(row.name, core)
+    if (core === null) continue
+    coresById.set(row.id, core)
+    // 여러 직업이 가진 같은 이름의 코어는 그림이 다를 수 있다. 이름으로는 직업을 모를 때만 찾으므로 먼저 선 줄로 둔다.
+    if (!coresByName.has(row.name)) coresByName.set(row.name, core)
   }
   const costs = new Map<string, HexaCoreLevelCostRow>(
     table.hexaCoreLevelCosts.map((row) => [`${typeById.get(row.typeId)?.key}|${row.fromLevel}`, row]),
   )
-  return { kinds, coresByJob, coresByName, costs, stats: table.hexaStats }
+  return { kinds, coresByJob, coresById, coresByName, costs, stats: table.hexaStats }
 })
 
 /** 그 직업의 코어 전부. 종류의 차례, 같은 종류 안에서는 코어의 차례다. 활성화하지 않은 코어는 넥슨이 안 주므로 이 표가 목록이다. */
@@ -177,7 +180,12 @@ export function hexaJobCores(job: string): readonly HexaCore[] {
   return index().coresByJob.get(job) ?? []
 }
 
-/** 기록의 key(코어 이름)로 코어를 되짚는다. 직업을 몰라도 된다. */
+/** 코어 줄 id 로 찾은 코어. 이름이 같은 코어도 직업마다 줄이 따로라 그림이 갈린다. 모르는 줄이면 `null` */
+export function findHexaCoreById(id: string | null | undefined): HexaCore | null {
+  return id == null ? null : (index().coresById.get(id) ?? null)
+}
+
+/** 기록의 key(코어 이름)로 코어를 되짚는다. 이름이 같은 코어가 여럿이면 표에 먼저 선 줄이라, 직업을 모를 때만 쓴다. */
 export function findHexaCore(name: string | null): HexaCore | null {
   if (name === null) return null
   return index().coresByName.get(trimmed(name)) ?? null
