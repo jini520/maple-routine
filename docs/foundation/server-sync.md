@@ -34,7 +34,8 @@
 | 파일 | 하는 일 |
 |---|---|
 | `features/server-sync/kick.ts` | 동기화를 깨운다. 한 번에 하나만 돌고, 깨운 동기화는 깨운 뒤에 시작한 회차가 끝나야 끝난다. 데이터 삭제와 로그인 뒤 받기 동안 멈춘다(`holdServerSync`) |
-| `features/server-sync/run.ts` | 한 번의 동기화. 계정을 서버에 알린 뒤 대기 표를 올리고 받는다. 처음이면 기기의 기록을 모두 대기 표에 넣고 받기를 먼저 끝낸다(`runServerSync`). 로그인 화면의 로그인 뒤 받기 한 쪽(`pullAfterSignIn`) |
+| `features/server-sync/run.ts` | 한 번의 동기화. 계정을 서버에 알린 뒤 대기 표를 올리고 받는다. 처음이면 기기의 기록을 모두 대기 표에 넣고 받기를 먼저 끝낸다(`runServerSync`) |
+| `features/server-sync/sign-in-pull.ts` | 로그인 화면의 로그인 뒤 받기 한 쪽. 계정을 알린 뒤 받고 올리지 않는다(`pullAfterSignIn`) |
 | `features/server-sync/accounts.ts` | 메인 신원으로 메이플 ID 알리기 · 지금 로그인의 부계정 키 등록(`prepareServerAccounts`) |
 | `features/server-sync/push.ts` | 올리기. 대기 표를 묶어 보내고 결과마다 대기 줄과 기기 줄을 다룬다(`pushServerSync`) |
 | `features/server-sync/push-records.ts` | 표마다 기기 값을 서버 칸으로 바꾼다. 넥슨 식별자의 해시 · 참 거짓 · 메이플 ID 찾기(`pushRecordOf`) |
