@@ -2699,7 +2699,7 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
 | `storage/__tests__/server-sync-preferences.spec.ts` | 결정 67: Preferences 기록의 저장 함수가 바뀐 항목만 넣는지, id 가 없는 항목을 유일 기준의 값으로 가리키는지, 설정은 칸마다 넣는지, 로그인할 때 비우는 추적 목록은 넣지 않는지 본다 |
 | `storage/sqlite/__tests__/mvp-real-sqlite.test.ts` | 결정 67: MVP 등급 이력을 다시 저장해도 시작 날짜가 같은 줄의 id 가 그대로이고, 등급이 그대로인 줄은 대기 표에 들어가지 않는지 본다 |
 | `storage/sqlite/__tests__/server-sync-unmatched-real-sqlite.test.ts` | 결정 12 · 67: `#` 를 붙여 넣은 값 가운데 `character_accounts` 에 짝이 생긴 것을 SQLite 기록 표와 Preferences 기록(키 · 열쇠 · 약속 · 계산기 기록)에서 원문으로 바꾸고 대기 표에 넣지 않는지, 짝이 없는 값과 유일 기준이 겹치는 줄은 두는지 본다 |
-| `features/server-sync/__tests__/released-sub-accounts.spec.ts` | 결정 67 · [[ADR-101]] 결정 6: 앞 받기의 목록에 있던 메이플 ID 가 빠지면 그 메이플 ID 를 든 부계정 키를 지우고 그 계정의 캐릭터를 추적에서 빼며 서버 해제를 부르지 않는지, 넥슨 계정 줄이 바뀌었거나 앞 목록이 없으면 견주지 않는지 본다 |
+| `features/server-sync/__tests__/pull.spec.ts`(해제) · `features/account-manage/__tests__/store.spec.ts`(해제) | 결정 67 · [[ADR-101]] 결정 6: 앞 받기의 목록에 있던 메이플 ID 가 빠지면 그 메이플 ID 를 든 부계정 키를 지우고 그 계정의 캐릭터를 추적에서 빼며 서버 해제를 부르지 않는지, 넥슨 계정 줄이 바뀌었거나 앞 목록이 없으면 견주지 않는지 본다 |
 | `features/schedule-sync/__tests__/schedule-query.spec.ts`(동기화) | 결정 9 · 67: 회차가 넥슨에서 받으면 동기화를 깨우고, 하나도 받지 못한 회차와 배경 실행의 회차는 깨우지 않는지 본다 |
 | (구현 때 더한다) | 결정 28: 드롭의 상자를 수익 건의 난이도와 아이템으로 드롭 표에서 찾는지, 직접 떨어진 연마석과 상자에서 나온 연마석이 한 수익 건에 함께 들어가는지 |
 | (구현 때 더한다) | 결정 30: 시세가 따로 둔 줄의 판매가를 원래 아이템으로 모으는지, 연결이 두 번 이어지는 줄을 받지 않는지 |
