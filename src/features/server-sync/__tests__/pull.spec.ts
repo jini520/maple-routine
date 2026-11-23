@@ -363,10 +363,36 @@ describe('로그인 뒤 첫 받기', () => {
 
     await pullServerSync({}, deps)
 
-    expect(events).toContain(`clear ${JSON.stringify({ mapleIds: [], person: true })}`)
+    // 다른 사람이면 `#` 로 적은 캐릭터의 기록과 맞추는 설정도 앞 사람의 것이다.
+    expect(events).toContain(`clear ${JSON.stringify({ mapleIds: [], person: true, anotherPerson: true })}`)
     expect(sent[1]).toEqual({ nexonAccount: null, mapleIds: { [MAPLE_HASH]: 5 } })
     expect(deps.applyPreferences).not.toHaveBeenCalled()
     expect(deps.getSignIn).toHaveBeenCalledTimes(1)
+  })
+
+  // 로그인 화면의 로그인은 한 쪽만 기다린다. 비우고 다시 받는 요청을 세면 아무것도 넣지 못한 채 끝나 캐릭터 설정으로 간다.
+  it('한 쪽만 받을 때 사람의 기록을 비우고 다시 받는 요청은 세지 않는다', async () => {
+    const { deps } = setup(
+      [answered(response({ hasMore: true })), answered(response({ hasMore: true, records: { partyAppointments: [{ id: 'appointment-1' }] } }))],
+      { nexonAccount: { id: 'account-1', changeSeq: 3 }, mapleIds: { [MAPLE_HASH]: 5 } },
+      { previousMapleIds: [OTHER_HASH] },
+      [MAPLE],
+    )
+
+    const summary = await pullServerSync({ maxPages: 1 }, deps)
+
+    expect(deps.pull).toHaveBeenCalledTimes(2)
+    expect(deps.applyPreferences).toHaveBeenCalledTimes(1)
+    expect(summary.finished).toBe(false)
+  })
+
+  it('한 쪽만 받으면 `hasMore` 여도 더 받지 않는다', async () => {
+    const { deps } = setup([answered(response({ hasMore: true })), answered(response())])
+
+    const summary = await pullServerSync({ maxPages: 1 }, deps)
+
+    expect(deps.pull).toHaveBeenCalledTimes(1)
+    expect(summary.finished).toBe(false)
   })
 
   it('표시가 없으면 비우지 않는다', async () => {

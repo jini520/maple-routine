@@ -263,7 +263,7 @@ describe('주인 바꾸기', () => {
   it('새 로그인은 받은 목록의 메이플 ID 와 저장을 맡긴다. 귀속된 부계정 키도 본다', async () => {
     await signInWithNexon({ fresh: true })
 
-    expect(switchServerSyncOwner).toHaveBeenCalledWith({ mapleIds: ['메이플ID'], login: true }, expect.any(Function))
+    expect(switchServerSyncOwner).toHaveBeenCalledWith({ mapleIds: ['메이플ID'], login: true, fresh: true }, expect.any(Function))
     expect(saveNexonLogin).toHaveBeenCalledWith('받은세션', { fresh: true })
   })
 

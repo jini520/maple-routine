@@ -53,6 +53,12 @@ function setup(options: Setup) {
     markSignIn: jest.fn(async (previous: readonly string[]) => {
       order.push(`mark ${previous.join(',')}`)
     }),
+    resetPersonCursor: jest.fn(async () => {
+      order.push('reset person cursor')
+    }),
+    afterRecordsChanged: jest.fn(() => {
+      order.push('refresh')
+    }),
   }
   return { deps, order, save }
 }
@@ -69,10 +75,16 @@ it('같은 사람이면 묻지 않고, 새 계정에 없는 메이플 ID 의 기
     device: ['maple-1', 'maple-old', '#hash-sub'],
   })
 
-  expect(await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false }, save, deps)).toBe(true)
+  expect(await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false, fresh: false }, save, deps)).toBe(true)
 
   // `#` 메이플 ID 는 다른 기기에서 등록한 부계정일 수 있어 같은 사람이면 서버의 목록을 기다린다.
-  expect(order).toEqual(['queue', `forget ${JSON.stringify({ mapleIds: ['maple-old'], person: false })}`, 'save', `mark ${h('maple-1')}`])
+  expect(order).toEqual([
+    'queue',
+    `forget ${JSON.stringify({ mapleIds: ['maple-old'], person: false, anotherPerson: false })}`,
+    'refresh',
+    'save',
+    `mark ${h('maple-1')}`,
+  ])
   expect(deps.ask).not.toHaveBeenCalled()
 })
 
@@ -89,13 +101,15 @@ it('다른 사람이면 앞 사람의 대기 줄 수로 묻고, 버리면 그 �
     device: ['maple-old', 'maple-new', '#hash-x'],
   })
 
-  expect(await switchServerSyncOwner({ mapleIds: ['maple-new'], login: false }, save, deps)).toBe(true)
+  expect(await switchServerSyncOwner({ mapleIds: ['maple-new'], login: false, fresh: false }, save, deps)).toBe(true)
 
   expect(order).toEqual([
     'queue',
     'ask 4',
     'discard entry-old,appointment-1,cash-gone,cash-marked',
-    `forget ${JSON.stringify({ mapleIds: ['maple-old', '#hash-x'], person: true })}`,
+    // `#` 로 적은 캐릭터의 기록과 맞추는 설정도 앞 사람의 것이다. 메모리의 설정도 다시 읽게 한다.
+    `forget ${JSON.stringify({ mapleIds: ['maple-old', '#hash-x'], person: true, anotherPerson: true })}`,
+    'refresh',
     'save',
     `mark ${h('maple-old')}`,
   ])
@@ -110,7 +124,7 @@ it('`그만두기` 면 아무것도 버리거나 비우지 않고 저장하지 �
     discard: false,
   })
 
-  expect(await switchServerSyncOwner({ mapleIds: ['maple-new'], login: false }, save, deps)).toBe(false)
+  expect(await switchServerSyncOwner({ mapleIds: ['maple-new'], login: false, fresh: false }, save, deps)).toBe(false)
 
   expect(order).toEqual(['queue', 'ask 1'])
 })
@@ -121,7 +135,7 @@ it('같은 사람이어도 새 계정에 없는 메이플 ID 의 대기 줄은 �
     queue: [['bossProfitEntries', 'entry-9', { kind: 'mapleId', mapleId: 'maple-9' }]],
   })
 
-  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false }, save, deps)
+  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false, fresh: false }, save, deps)
 
   expect(deps.ask).toHaveBeenCalledWith(1)
 })
@@ -135,7 +149,7 @@ it('넥슨 로그인은 그 로그인에 귀속된 부계정 키의 메이플 ID
     subKeys: ['maple-sub'],
   })
 
-  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: true }, save, deps)
+  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: true, fresh: false }, save, deps)
 
   expect(deps.loginSubKeyMapleIds).toHaveBeenCalledWith(['maple-1'])
   expect(deps.ask).not.toHaveBeenCalled()
@@ -145,7 +159,7 @@ it('넥슨 로그인은 그 로그인에 귀속된 부계정 키의 메이플 ID
 it('API 키 로그인은 부계정 키를 보지 않는다', async () => {
   const { deps, save } = setup({ previous: [] })
 
-  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false }, save, deps)
+  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false, fresh: false }, save, deps)
 
   expect(deps.loginSubKeyMapleIds).not.toHaveBeenCalled()
 })
@@ -154,7 +168,7 @@ it('API 키 로그인은 부계정 키를 보지 않는다', async () => {
 it('처음 동기화가 기록을 넣지 않았으면 대기 표를 읽기 전에 넣는다', async () => {
   const { deps, order, save } = setup({ first: null, previous: [] })
 
-  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false }, save, deps)
+  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false, fresh: false }, save, deps)
 
   expect(order.slice(0, 2)).toEqual(['enqueue', 'queue'])
 })
@@ -167,8 +181,19 @@ it('앞 계정의 메이플 ID 를 모르면 같은 사람으로 본다', async 
     device: ['#hash-x'],
   })
 
-  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false }, save, deps)
+  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false, fresh: false }, save, deps)
 
   expect(deps.ask).not.toHaveBeenCalled()
   expect(deps.forgetOwners).not.toHaveBeenCalled()
+})
+
+// 번호가 이어지면 서버가 번호 뒤의 줄만 주어, 비운 추적 목록이 다시 오지 않는다.
+it('로그인 화면의 로그인은 같은 사람이어도 사람의 번호를 지운다. 메인 키 바꾸기는 지우지 않는다', async () => {
+  const fresh = setup({ previous: [h('maple-1')] })
+  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false, fresh: true }, fresh.save, fresh.deps)
+  expect(fresh.order).toEqual(['queue', 'reset person cursor', 'save', `mark ${h('maple-1')}`])
+
+  const replaced = setup({ previous: [h('maple-1')] })
+  await switchServerSyncOwner({ mapleIds: ['maple-1'], login: false, fresh: false }, replaced.save, replaced.deps)
+  expect(replaced.deps.resetPersonCursor).not.toHaveBeenCalled()
 })

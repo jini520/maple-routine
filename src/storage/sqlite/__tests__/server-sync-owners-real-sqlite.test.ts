@@ -206,6 +206,45 @@ describe('주인의 기록과 번호 지우기', () => {
     expect(await getServerSyncCursors()).toEqual({ nexonAccount: { id: 'person-1', changeSeq: 7 }, mapleIds: {} })
   })
 
+  // `#` 의 기록은 앞 신원으로 받은 것이라 다른 사람이면 모두 앞 사람의 것이다. 설정을 남기면 새 사람의 기기만 앞 사람의 값을 보인다.
+  it('다른 사람의 비우기는 `#` 로 적은 캐릭터의 기록과 맞추는 설정도 비우고, 대기 중인 설정 칸과 맞추지 않는 설정은 둔다', async () => {
+    await insertEntry('entry-marked', '#hash-ocid')
+    await insertCashbook('cash-marked', { ocid: '#hash-ocid' })
+    await prefs.set('manualTrackedContent:#hash-ocid', JSON.stringify([{ type: 'weekly', targetId: 'c' }]))
+    await prefs.set('figureMotions', JSON.stringify({ '#hash-ocid': { actions: [] } }))
+    const synced = ['trackingType', 'barOrder', 'statsCumulativeStartDate', 'isMvpWeeklyCheckOff', 'mvpLastCheckedWeekCode', 'isMvpBulkApplyAsked']
+    for (const key of synced) await prefs.set(key, key === 'trackingType' ? 'manual' : 'true')
+    await prefs.set('quickLinks', JSON.stringify({ rowCount: 2, keys: ['a'] }))
+    await prefs.set('theme', 'dark')
+    await prefs.set('lastHunts', '[]')
+    clearQueue()
+    // 새 사람이 저장하고 아직 못 올린 칸이다.
+    await enqueue('accountSettings', 'accountSettings:quickLinkKeys')
+
+    await clearServerSyncOwners({ mapleIds: [], person: true, anotherPerson: true })
+
+    expect(rows('SELECT id FROM boss_profit_entries')).toEqual([])
+    expect(rows('SELECT id FROM cashbook_entries')).toEqual([])
+    await expect(prefs.get('manualTrackedContent:#hash-ocid')).resolves.toBeNull()
+    expect(JSON.parse((await prefs.get('figureMotions'))!)).toEqual({})
+    for (const key of synced) await expect(prefs.get(key)).resolves.toBeNull()
+    await expect(prefs.get('quickLinks')).resolves.not.toBeNull()
+    await expect(prefs.get('theme')).resolves.toBe('dark')
+    await expect(prefs.get('lastHunts')).resolves.toBe('[]')
+  })
+
+  // 메이플 ID 마다 비울 때(부계정 해제 · 오래된 주인)는 `#` 캐릭터의 메이플 ID 를 몰라 두고, 설정은 삭제 표식이 없어 놓칠 지우기가 없다.
+  it('사람만 비우면 `#` 로 적은 캐릭터의 기록과 설정을 둔다', async () => {
+    await insertEntry('entry-marked', '#hash-ocid')
+    await prefs.set('trackingType', 'manual')
+    clearQueue()
+
+    await clearServerSyncOwners({ mapleIds: [], person: true })
+
+    expect(rows('SELECT id FROM boss_profit_entries')).toEqual([{ id: 'entry-marked' }])
+    await expect(prefs.get('trackingType')).resolves.toBe('manual')
+  })
+
   it('대기 중인 기록까지 비우지 않으면 대기 중인 기록과 그 대기 줄을 남긴다', async () => {
     await recordCharacterAccounts(account('maple-1', 'ocid-1'), '2026-11-20', 'account-1')
     await insertEntry('entry-queued', 'ocid-1')

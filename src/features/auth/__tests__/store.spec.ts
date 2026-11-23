@@ -43,6 +43,8 @@ jest.mock('../../server-sync/forget', () => ({
 }))
 // 앞 사람의 기록을 가리는 일은 `server-sync/__tests__/owner-switch.spec.ts` 가 본다. 여기서는 저장을 맡기는지만 본다.
 jest.mock('../../server-sync/owner-switch', () => ({ switchServerSyncOwner: jest.fn() }))
+jest.mock('../../server-sync/sign-in-pull', () => ({ pullAfterSignIn: jest.fn() }))
+const { pullAfterSignIn: pullAfterSignInMock } = jest.requireMock('../../server-sync/sign-in-pull') as Record<string, jest.Mock>
 const { switchServerSyncOwner: switchServerSyncOwnerMock } = jest.requireMock('../../server-sync/owner-switch') as Record<string, jest.Mock>
 jest.mock('../nexon-login', () => ({ signInWithNexon: jest.fn() }))
 jest.mock('../current-credential', () => ({ currentCredential: jest.fn() }))
@@ -132,6 +134,7 @@ beforeEach(() => {
   // 판정이 안 서는 것이 통상 경로다. 서는 경우만 그 테스트가 직접 세운다.
   probeApiKeyStageMock.mockResolvedValue('undetermined')
   getAuthConfigMock.mockResolvedValue({ login: null, mainKeyId: 'account-key', apiKeys: [{ type: 'key', id: 'account-key', label: '', value: 'key-1', loginId: null }] })
+  pullAfterSignInMock.mockResolvedValue(undefined)
   // 앞 사람이 없으면 저장을 그대로 부른다.
   switchServerSyncOwnerMock.mockImplementation(async (_next: unknown, save: () => Promise<void>) => {
     await save()
@@ -960,9 +963,55 @@ describe('주인 바꾸기', () => {
   it('키 입력이 받은 목록의 메이플 ID 와 추적 목록 비우기 · 저장을 주인 바꾸기에 맡긴다', async () => {
     await useAuthStore.getState().signIn('key-1')
 
-    expect(switchServerSyncOwnerMock).toHaveBeenCalledWith({ mapleIds: ['acc-1'], login: false }, expect.any(Function))
+    expect(switchServerSyncOwnerMock).toHaveBeenCalledWith({ mapleIds: ['acc-1'], login: false, fresh: true }, expect.any(Function))
     expect(forgetTrackedSelectionMock).toHaveBeenCalledTimes(1)
     expect(setMainApiKeyMock).toHaveBeenCalledTimes(1)
+  })
+
+  // 비운 추적 목록을 서버 것으로 채운다. 받기는 소속으로 받은 해시를 원문으로 바꾸어, 소속을 먼저 적어야 추적 캐릭터가 짝을 찾는다.
+  it('키 입력은 저장하고 소속을 적은 뒤, 진입 단계를 정하기 전에 받기 한 쪽을 기다린다', async () => {
+    const order: string[] = []
+    setMainApiKeyMock.mockImplementation(async () => {
+      order.push('save')
+    })
+    recordCharacterAccountsMock.mockImplementation(async () => {
+      order.push('accounts')
+    })
+    pullAfterSignInMock.mockImplementation(async () => {
+      order.push('pull')
+      // 기다리는 동안 키 입력 시트의 제출 버튼이 대기 상태로 남는다.
+      expect(useAuthStore.getState().status).toBe('verifying')
+    })
+    resolveAfterSignInMock.mockImplementation(async () => {
+      order.push('stage')
+    })
+
+    await useAuthStore.getState().signIn('key-1')
+
+    expect(order).toEqual(['save', 'accounts', 'pull', 'stage'])
+  })
+
+  it('넥슨 로그인은 로그인 화면에서만 받기 한 쪽을 기다린다', async () => {
+    signInWithNexonMock.mockResolvedValue({ kind: 'signedIn', accounts: [account('acc-1')] })
+    currentCredentialMock.mockResolvedValue({ type: 'login', value: '토큰', accountId: 'login-id' })
+    const order: string[] = []
+    recordCharacterAccountsMock.mockImplementation(async () => {
+      order.push('accounts')
+    })
+    pullAfterSignInMock.mockImplementation(async () => {
+      order.push('pull')
+    })
+    resolveAfterSignInMock.mockImplementation(async () => {
+      order.push('stage')
+    })
+
+    await useAuthStore.getState().signInWithNexonAccount({ fresh: true })
+    expect(order).toEqual(['accounts', 'pull', 'stage'])
+
+    // today 의 연동은 추적 목록을 비우지 않는다.
+    pullAfterSignInMock.mockClear()
+    await useAuthStore.getState().signInWithNexonAccount()
+    expect(pullAfterSignInMock).not.toHaveBeenCalled()
   })
 
   it('키 입력에서 `그만두기` 면 저장하지 않고 폼에 남는다', async () => {
@@ -982,9 +1031,16 @@ describe('주인 바꾸기', () => {
 
     await expect(useAuthStore.getState().replaceMainApiKey('new-key')).resolves.toBe('cancelled')
 
-    expect(switchServerSyncOwnerMock).toHaveBeenCalledWith({ mapleIds: ['acc-1'], login: false }, expect.any(Function))
+    expect(switchServerSyncOwnerMock).toHaveBeenCalledWith({ mapleIds: ['acc-1'], login: false, fresh: false }, expect.any(Function))
     expect(setMainApiKeyMock).not.toHaveBeenCalled()
     expect(showSuccessMock).not.toHaveBeenCalled()
+  })
+
+  // 메인 키 바꾸기는 추적 목록을 비우지 않는다.
+  it('메인 키 바꾸기는 받기를 기다리지 않는다', async () => {
+    await useAuthStore.getState().replaceMainApiKey('new-key')
+
+    expect(pullAfterSignInMock).not.toHaveBeenCalled()
   })
 })
 

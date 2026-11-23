@@ -66,6 +66,26 @@ describe('syncBeforeSignOut', () => {
     expect(kickServerSync).toHaveBeenCalledTimes(1)
   })
 
+  // 처음 동기화의 받기 중이면 100쪽까지 받아 로그아웃이 오래 멈춘다. 남은 줄은 대기 표에 남는다.
+  it('10초가 지나면 동기화를 더 기다리지 않는다', async () => {
+    jest.useFakeTimers()
+    try {
+      kickServerSync.mockReturnValue(new Promise<void>(() => {}))
+      let done = false
+
+      const syncing = syncBeforeSignOut().then(() => {
+        done = true
+      })
+      await jest.advanceTimersByTimeAsync(9_999)
+      expect(done).toBe(false)
+      await jest.advanceTimersByTimeAsync(1)
+      await syncing
+      expect(done).toBe(true)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
   it('동기화가 터져도 던지지 않는다. 로그아웃을 막지 않는다', async () => {
     kickServerSync.mockRejectedValue(new Error('저장소가 안 열렸다'))
 
