@@ -6,6 +6,7 @@
 import { findMvpGrade, findMvpGradeById } from '../lib/mvp/grades'
 import type { MvpGradeEntry } from '../lib/mvp/history'
 import { getBossProfitDb } from './sqlite/db'
+import { inTransaction } from './sqlite/transaction'
 
 /** ID 마다 시작 날짜 오름차순의 이력. 표가 작아 한 번에 읽는다. */
 export async function getMvpGradeHistories(): Promise<Map<string, MvpGradeEntry[]>> {
@@ -26,29 +27,38 @@ export async function getMvpGradeHistories(): Promise<Map<string, MvpGradeEntry[
   return histories
 }
 
-/** 그 ID 의 이력을 통째로 바꾼다. `lib/mvp/history` 의 함수가 고친 이력 전체를 넘긴다. 표에 없는 등급이 있으면 던진다. */
+/**
+ * 그 ID 의 이력을 통째로 바꾼다. `lib/mvp/history` 의 함수가 고친 이력 전체를 넘긴다. 표에 없는 등급이 있으면 던진다.
+ *
+ * 시작 날짜가 같은 줄은 id 를 남기고 등급이 바뀔 때만 고친다. 지우고 다시 넣으면 저장할 때마다 그 ID 의 모든 줄이 서버에 지우기와 새
+ * 줄로 올라간다.
+ */
 export async function replaceMvpGradeHistory(
   accountId: string,
   entries: readonly MvpGradeEntry[],
   updatedAt: string,
 ): Promise<void> {
+  const rows = entries.map((entry) => {
+    const grade = findMvpGrade(entry.grade)
+    if (grade === null) throw new Error(`MVP 등급 표에 없는 등급이다: ${entry.grade}`)
+    return { fromDate: entry.startDate, gradeId: grade.id }
+  })
   const db = await getBossProfitDb()
-  await db.execute('BEGIN')
-  try {
-    await db.run(`DELETE FROM mvp_grade_history WHERE account_id = ?`, [accountId])
-    for (const entry of entries) {
-      const grade = findMvpGrade(entry.grade)
-      if (grade === null) throw new Error(`MVP 등급 표에 없는 등급이다: ${entry.grade}`)
+  await inTransaction(db, async () => {
+    const kept = rows.map((row) => row.fromDate)
+    await db.run(
+      `DELETE FROM mvp_grade_history WHERE account_id = ? AND from_date NOT IN (${kept.map(() => '?').join(', ')})`,
+      [accountId, ...kept],
+    )
+    for (const row of rows) {
       await db.run(
-        `INSERT INTO mvp_grade_history (account_id, from_date, grade_id, updated_at) VALUES (?, ?, ?, ?)`,
-        [accountId, entry.startDate, grade.id, updatedAt],
+        `INSERT INTO mvp_grade_history (account_id, from_date, grade_id, updated_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT (account_id, from_date) DO UPDATE SET grade_id = excluded.grade_id, updated_at = excluded.updated_at
+          WHERE grade_id IS NOT excluded.grade_id`,
+        [accountId, row.fromDate, row.gradeId, updatedAt],
       )
     }
-    await db.execute('COMMIT')
-  } catch (error: unknown) {
-    await db.execute('ROLLBACK')
-    throw error
-  }
+  })
 }
 
 /** 등급이 빈 줄을 지운다. 지운 수를 돌려준다. 앱은 빈 줄을 적지 않지만 칸은 서버처럼 비울 수 있다. */

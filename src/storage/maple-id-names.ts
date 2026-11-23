@@ -5,6 +5,7 @@
  */
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'
+import { enqueueChangedPreferenceRecords, preferenceRecordIdOf } from './server-sync-queue'
 
 export async function getMapleIdNames(): Promise<Record<string, string>> {
   const raw = await preferences.get(STORAGE_KEYS.mapleIdNames)
@@ -20,6 +21,14 @@ export async function getMapleIdNames(): Promise<Record<string, string>> {
   }
 }
 
+/** 메이플 ID 마다 대기 줄 하나. */
+function recordsOf(names: Readonly<Record<string, string>>): Map<string, string> {
+  return new Map(Object.entries(names).map(([mapleId, name]) => [preferenceRecordIdOf('mapleIdNames', [mapleId]), name]))
+}
+
+/** 바꾸거나 지운 메이플 ID 의 이름을 대기 표에 넣는다. */
 export async function setMapleIdNames(names: Readonly<Record<string, string>>): Promise<void> {
+  const before = await getMapleIdNames()
   await preferences.set(STORAGE_KEYS.mapleIdNames, JSON.stringify(names))
+  await enqueueChangedPreferenceRecords('mapleIdNames', recordsOf(before), recordsOf(names))
 }

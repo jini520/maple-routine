@@ -206,10 +206,12 @@ describe('clearCacheData', () => {
   // 기록이 그대로라 지우기 요청이 생기지 않는다. 비우면 아직 못 보낸 드롭 시세가 사라진다.
   it('캐시만 고르면 서버 전송 대기 표를 남긴다', async () => {
     await seedAll()
+    const queued = count('server_sync_queue')
+    expect(queued).toBeGreaterThan(0)
 
     await clearCacheData({ ...NONE, cache: true })
 
-    expect(count('server_sync_queue')).toBe(1)
+    expect(count('server_sync_queue')).toBe(queued)
   })
 
   describe('옛 프로필', () => {

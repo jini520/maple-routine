@@ -7,6 +7,7 @@ import type { FigureMotion } from '../types/figure-motion'
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'
 import { whenRecordsReleased } from './record-hold'
+import { enqueueChangedPreferenceRecords, preferenceRecordIdOf } from './server-sync-queue'
 
 async function readObject(): Promise<Record<string, unknown> | null> {
   await whenRecordsReleased()
@@ -33,12 +34,22 @@ export async function getFigureMotions(): Promise<unknown> {
   )
 }
 
+/** 캐릭터마다 대기 줄 하나. */
+function recordsOf(stored: Readonly<Record<string, unknown>> | null): Map<string, unknown> {
+  return new Map(
+    Object.entries(stored ?? {}).map(([ocid, motion]) => [preferenceRecordIdOf('representativeCharacterMotions', [ocid]), motion]),
+  )
+}
+
+/** 바꾸거나 지운 캐릭터의 동작을 대기 표에 넣는다. */
 export async function setFigureMotions(motions: Readonly<Record<string, FigureMotion>>): Promise<void> {
   await whenRecordsReleased()
+  const before = await readObject()
   const stored = Object.fromEntries(
     Object.entries(motions).map(([ocid, { rest, ...motion }]) => [ocid, { ...motion, restsBetweenActions: rest }]),
   )
   await preferences.set(STORAGE_KEYS.figureMotions, JSON.stringify(stored))
+  await enqueueChangedPreferenceRecords('representativeCharacterMotions', recordsOf(before), recordsOf(stored))
 }
 
 /** 월드 리프한 캐릭터의 값을 새 ocid 로 옮기는 함수. 새 ocid 몫이 있으면 리프 뒤에 고른 그 값을 둔다. */
@@ -46,5 +57,7 @@ export async function moveFigureMotionToOcid(fromOcid: string, toOcid: string): 
   const current = await readObject()
   if (current === null || !(fromOcid in current)) return
   const { [fromOcid]: moved, ...rest } = current
-  await preferences.set(STORAGE_KEYS.figureMotions, JSON.stringify({ [toOcid]: moved, ...rest }))
+  const next = { [toOcid]: moved, ...rest }
+  await preferences.set(STORAGE_KEYS.figureMotions, JSON.stringify(next))
+  await enqueueChangedPreferenceRecords('representativeCharacterMotions', recordsOf(current), recordsOf(next))
 }

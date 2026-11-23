@@ -8,6 +8,7 @@ import type { SqliteDbConnection } from '../ports'
 import { convertBossTables } from './convert-boss-tables'
 import { convertCashbookTables } from './convert-cashbook-tables'
 import { convertEnhancementTables } from './convert-enhancement-tables'
+import { ensureServerSyncTriggers } from './server-sync-triggers'
 import { inTransaction } from './transaction'
 
 /**
@@ -112,6 +113,7 @@ export interface DeviceConversionOptions {
 /**
  * 아직 안 돈 단계를 모두 한 트랜잭션으로 돌리고 같은 트랜잭션에 마친 번호를 적는다. 던지면 그 안의 변경과 번호가 함께
  * 되돌아가고 `DeviceConversionError` 로 던진다. 돌 단계가 있으면 먼저 사본을 뜬다. 트랜잭션 안에서는 `VACUUM` 이 돌지 않는다.
+ * 끝나면 대기 표의 트리거를 건다.
  */
 export async function runDeviceConversion(db: SqliteDbConnection, options: DeviceConversionOptions = {}): Promise<void> {
   const steps = options.steps ?? STEPS
@@ -133,4 +135,6 @@ export async function runDeviceConversion(db: SqliteDbConnection, options: Devic
     await db.execute('DELETE FROM device_conversion')
     await db.run('INSERT INTO device_conversion (version) VALUES (?)', [steps.length])
   })
+  // 변환이 옮긴 줄은 처음 동기화가 대기 표에 넣는다. 트리거를 변환 뒤에 걸어야 변환의 쓰기가 들어가지 않는다.
+  if (steps === STEPS) await ensureServerSyncTriggers(db)
 }

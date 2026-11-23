@@ -1,5 +1,6 @@
 import { preferences } from './ports'
 import { lastSelectedCharacterKey, representativeCharacterKey, trackedCharactersKey } from './keys'
+import { enqueueChangedPreferenceRecords, preferenceRecordIdOf } from './server-sync-queue'
 
 const LEGACY_TRACKED_KEYS = [
   'trackedCharacters:content',
@@ -97,11 +98,33 @@ async function pruneDanglingRepresentative(ocids: string[]): Promise<void> {
   }
 }
 
-export async function setTrackedCharacterOcids(ocids: string[]): Promise<void> {
-  await preferences.set(trackedCharactersKey(), JSON.stringify(ocids))
-  await pruneDanglingRepresentative(ocids)
+/** 추적 캐릭터마다 대기 줄 하나. 서버 줄은 차례와 대표 표시를 든다. 대표를 고르지 않았으면 모두 대표가 아니다. */
+async function trackedRecords(): Promise<Map<string, unknown>> {
+  const ocids = parseOcids(await preferences.get(trackedCharactersKey())) ?? []
+  const representative = await preferences.get(representativeCharacterKey())
+  return new Map(
+    ocids.map((ocid, index) => [
+      preferenceRecordIdOf('trackedCharacters', [ocid]),
+      { sortOrder: index, isRepresentative: ocid === representative },
+    ]),
+  )
 }
 
+/** 추적 목록이나 대표를 바꾸는 쓰기. 차례나 대표 표시가 바뀐 캐릭터를 대기 표에 넣는다. */
+async function withTrackedRecords(write: () => Promise<void>): Promise<void> {
+  const before = await trackedRecords()
+  await write()
+  await enqueueChangedPreferenceRecords('trackedCharacters', before, await trackedRecords())
+}
+
+export async function setTrackedCharacterOcids(ocids: string[]): Promise<void> {
+  await withTrackedRecords(async () => {
+    await preferences.set(trackedCharactersKey(), JSON.stringify(ocids))
+    await pruneDanglingRepresentative(ocids)
+  })
+}
+
+/** 로그인할 때 앞 로그인의 목록을 비운다. 대기 표에 넣지 않는다. 넣으면 새 기기의 로그인이 서버의 추적 목록을 지운다. */
 export async function clearTrackedCharacterOcids(): Promise<void> {
   await preferences.remove(trackedCharactersKey())
 }
@@ -208,11 +231,12 @@ export async function getRepresentativeCharacter(): Promise<string | null> {
 }
 
 export async function setRepresentativeCharacter(ocid: string): Promise<void> {
-  await preferences.set(representativeCharacterKey(), ocid)
+  await withTrackedRecords(() => preferences.set(representativeCharacterKey(), ocid))
 }
 
+/** 목록을 먼저 비운 로그인에서는 바뀐 캐릭터가 없어 대기 표에 넣지 않는다. */
 export async function clearRepresentativeCharacter(): Promise<void> {
-  await preferences.remove(representativeCharacterKey())
+  await withTrackedRecords(() => preferences.remove(representativeCharacterKey()))
 }
 
 export async function getLastSelectedCharacter(): Promise<string | null> {

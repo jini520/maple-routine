@@ -1,6 +1,7 @@
 import { preferences } from './ports'
 import { STORAGE_KEYS } from './keys'
 import { whenRecordsReleased } from './record-hold'
+import { enqueueChangedSetting } from './server-sync-queue'
 
 export type TrackingMode = 'auto' | 'manual'
 
@@ -21,5 +22,7 @@ export async function getTrackingMode(): Promise<TrackingMode | null> {
 
 export async function setTrackingMode(mode: TrackingMode): Promise<void> {
   await whenRecordsReleased()
+  const before = await preferences.get(STORAGE_KEYS.trackingType)
   await preferences.set(STORAGE_KEYS.trackingType, mode)
+  await enqueueChangedSetting('trackingType', before, mode)
 }

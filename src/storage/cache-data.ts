@@ -91,8 +91,8 @@ function statementsFor(selection: CacheDataSelection): string[] {
     ...(selection.boss ? CLEAR_BOSS_RECORDS : []),
     ...(selection.manual ? CLEAR_BOSS_SPLITS : []),
     ...(selection.cache ? ['DELETE FROM query_cache'] : []),
-    // 대기 표가 남으면 방금 지운 기록마다 서버로 지우기 요청이 간다. 서버 사본은 남긴다. 캐시만 지우면 기록이 그대로라
-    // 비우지 않는다. 비우면 아직 못 보낸 드롭 시세가 사라진다.
+    // 대기 표가 남으면 방금 지운 기록마다 서버로 지우기 요청이 간다. 트리거가 넣은 지우기도 여기서 함께 비운다. 서버 사본은
+    // 남긴다. 캐시만 지우면 기록이 그대로라 비우지 않는다. 비우면 아직 못 올린 기록이 사라진다.
     ...(RECORD_GROUPS.some((group) => selection[group]) ? ['DELETE FROM server_sync_queue'] : []),
   ]
 }

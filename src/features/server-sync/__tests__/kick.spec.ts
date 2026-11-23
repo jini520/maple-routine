@@ -1,4 +1,4 @@
-// 대기 표 전송은 한 번에 한 회차만 돈다. 두 회차가 겹치면 같은 줄을 두 번 보낸다.
+// 회차는 한 번에 하나만 돈다. 올리기가 붙으면 두 회차가 겹칠 때 같은 줄을 두 번 보낸다.
 import { kickServerSync } from '../kick'
 
 jest.mock('../run', () => ({ runServerSync: jest.fn() }))

@@ -10,6 +10,7 @@ import { contentIdOf, contentKeyOfId, contentSectionOf, findContent } from '../l
 import { findWorld } from '../lib/world/worlds'
 import { preferences } from './ports'
 import { whenRecordsReleased } from './record-hold'
+import { enqueueChangedPreferenceRecords, preferenceRecordIdOf } from './server-sync-queue'
 import type { SharedProgressEntry } from '../types'
 import { accountSharedProgressKey, worldSharedProgressKey } from './keys'
 
@@ -102,32 +103,40 @@ async function getSharedProgress(key: string): Promise<SharedProgressMap> {
  * 던지면 그 캐릭터의 회차 전체가 실패로 떨어진다. 읽기도 그런 항목을 버린다.
  */
 async function setSharedProgressEntry(
-  key: string,
+  ledger: { key: string; accountId: string; worldId: string | null },
   contentKey: string,
   entry: SharedProgressEntry,
 ): Promise<void> {
   await whenRecordsReleased()
   const stored = storedSharedProgressEntryOf(contentKey, entry)
   if (stored === null) return
-  const current = await readStoredSharedProgress(key)
+  const current = await readStoredSharedProgress(ledger.key)
+  const before = current[stored.contentId]
   current[stored.contentId] = stored.stored
-  await preferences.set(key, JSON.stringify(current))
+  await preferences.set(ledger.key, JSON.stringify(current))
+  // 회차마다 같은 값으로 다시 적어서, 값이 바뀐 진행만 넣는다. 계정 공유는 월드가 빈 값이다.
+  const recordId = preferenceRecordIdOf('sharedContentProgress', [ledger.accountId, ledger.worldId ?? '', stored.contentId])
+  await enqueueChangedPreferenceRecords(
+    'sharedContentProgress',
+    new Map(before === undefined ? [] : [[recordId, before]]),
+    new Map([[recordId, stored.stored]]),
+  )
 }
 
-/** 월드 key 의 원장 키. 표에 없는 월드면 `null` 이다. */
-function worldLedgerKeyOf(accountId: string, worldKey: string): string | null {
+/** 월드 key 의 원장. 표에 없는 월드면 `null` 이다. */
+function worldLedgerOf(accountId: string, worldKey: string): { key: string; accountId: string; worldId: string } | null {
   const world = findWorld(worldKey)
-  return world === null ? null : worldSharedProgressKey(accountId, world.id)
+  return world === null ? null : { key: worldSharedProgressKey(accountId, world.id), accountId, worldId: world.id }
 }
 
 /** 메이플 ID 와 월드의 원장. 같은 월드라도 메이플 ID 가 다르면 따로다. 표에 없는 월드는 빈 원장이다. */
 export async function getWorldSharedProgress(accountId: string, worldKey: string): Promise<SharedProgressMap> {
-  const key = worldLedgerKeyOf(accountId, worldKey)
-  if (key === null) {
+  const ledger = worldLedgerOf(accountId, worldKey)
+  if (ledger === null) {
     await whenRecordsReleased()
     return {}
   }
-  return getSharedProgress(key)
+  return getSharedProgress(ledger.key)
 }
 
 /** 표에 없는 월드는 원장을 가리킬 수 없어 건너뛴다. 읽기도 그 월드를 빈 원장으로 읽는다. */
@@ -137,12 +146,12 @@ export async function setWorldSharedProgressEntry(
   contentKey: string,
   entry: SharedProgressEntry,
 ): Promise<void> {
-  const key = worldLedgerKeyOf(accountId, worldKey)
-  if (key === null) {
+  const ledger = worldLedgerOf(accountId, worldKey)
+  if (ledger === null) {
     await whenRecordsReleased()
     return
   }
-  await setSharedProgressEntry(key, contentKey, entry)
+  await setSharedProgressEntry(ledger, contentKey, entry)
 }
 
 export async function getAccountSharedProgress(accountId: string): Promise<SharedProgressMap> {
@@ -154,5 +163,5 @@ export async function setAccountSharedProgressEntry(
   contentKey: string,
   entry: SharedProgressEntry,
 ): Promise<void> {
-  await setSharedProgressEntry(accountSharedProgressKey(accountId), contentKey, entry)
+  await setSharedProgressEntry({ key: accountSharedProgressKey(accountId), accountId, worldId: null }, contentKey, entry)
 }
