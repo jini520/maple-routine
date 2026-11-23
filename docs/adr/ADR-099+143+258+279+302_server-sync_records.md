@@ -1,7 +1,7 @@
 # ADR-099+143+258+279+302 사용자가 만든 기록은 서버에 두고 같은 사람의 기기끼리 맞춘다. 과거 드롭도 묶음으로 올린다
 
 > ⚪ 미구현
-> 관련 소스: `features/server-sync/*` · `storage/cache-data.ts` · `app/settings/SettingsAboutScreen.tsx` · `features/auth/server-identity.ts` · `features/auth/store.ts` · `features/auth/nexon-login.ts` · `features/auth/unsynced-prompt.ts` · `app/auth/UnsyncedRecordsModal.tsx` · `storage/server-sync-owners.ts` · `features/account-manage/store.ts` · `server/accounts.ts` · `server/error-codes.ts` · `server/write.ts` · `storage/server-sync-queue.ts` · `storage/server-sync-records.ts` · `storage/server-sync-pull.ts` · `storage/server-sync-pull-preferences.ts` · `storage/server-sync-cursors.ts` · `storage/server-sync-first.ts` · `storage/sqlite/server-sync-triggers.ts` · `storage/sqlite/device-conversion.ts` · `storage/preferences-conversion.ts` · 서버 `modules/users` · `modules/identity` · `modules/sync` · `common/error-codes.ts`
+> 관련 소스: `features/server-sync/*` · `storage/cache-data.ts` · `app/settings/SettingsAboutScreen.tsx` · `features/auth/server-identity.ts` · `features/auth/store.ts` · `features/auth/nexon-login.ts` · `features/auth/unsynced-prompt.ts` · `app/auth/UnsyncedRecordsModal.tsx` · `storage/server-sync-owners.ts` · `features/account-manage/store.ts` · `server/accounts.ts` · `server/error-codes.ts` · `server/write.ts` · `storage/server-sync-queue.ts` · `storage/server-sync-records.ts` · `storage/server-sync-pull.ts` · `storage/server-sync-pull-preferences.ts` · `storage/server-sync-cursors.ts` · `storage/server-sync-first.ts` · `storage/sqlite/server-sync-triggers.ts` · `storage/sqlite/device-conversion.ts` · `storage/preferences-conversion.ts` · `features/device-conversion/run.ts` · 서버 `modules/users` · `modules/identity` · `modules/sync` · `common/error-codes.ts`
 
 ## 배경
 
@@ -22,7 +22,8 @@
 수만큼 쌓였기 때문이다. 결정 8 이 넥슨이 준 값으로 줄을 가려 이 문제를 없앤 뒤 다시 보낸다([[ADR-101]] 결정 19 · 26).
 
 앱에 구현된 것은 결정 4 의 대기 표 회차와 결정 6, 결정 67 의 신원 · 부계정 등록과 해제 · 거절 코드 목록 · 대기 표에 넣기 · 올리기 ·
-거절 알림 · 받기 · 처음 동기화 · 데이터 삭제 · 다른 사람으로 로그인 · 로그아웃 · 부계정 해제다. 앱은 드롭 판매가를 따로 보내지 않는다(결정 2). 서버는 develop 에 새 표(결정 19 ~ 63)와
+거절 알림 · 받기 · 처음 동기화 · 데이터 삭제 · 다른 사람으로 로그인 · 로그아웃 · 부계정 해제와, 결정 64 의 점검이 풀린 뒤에 기기 변환과
+처음 동기화를 시작하는 것이다. 앱은 드롭 판매가를 따로 보내지 않는다(결정 2). 서버는 develop 에 새 표(결정 19 ~ 63)와
 동기화의 받기 · 올리기 · 데이터 삭제 경로(결정 9 · 10 · 16 · 18, 만든 모양은 결정 66)를 갖췄다. 앱이 그 경로를 부르는 방법은 결정
 67 에 있다.
 
@@ -2090,7 +2091,8 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
   까지의 바이너리는 지문으로 막힌다.
 - 1.0.15 바이너리가 보는 `api` 주소에도 같은 점검 설정을 둔다. 주소를 나눌 때 함께 넣는다([[ADR-016]] 결정 14).
 - 1.0.15 의 앱은 점검 잠금이 풀린 뒤에 기기 변환(결정 19)과 첫 동기화를 시작한다. 점검 중에는 새 서버가 아직 없다. 첫 동기화는
-  시작하기 전에 점검을 다시 묻는다(결정 67).
+  시작하기 전에 점검을 다시 묻는다(결정 67). 기기 변환은 돌 단계가 남았을 때만 다시 묻고, 점검 중이면 잠금이 풀릴 때까지 기다린다.
+  묻는 때와 기다리는 동안의 화면은 [[ADR-286]] 결정 1 에 있다.
 
 ### 결정 65. 서버의 새 표는 서버 develop 에서 표 묶음마다 바꾸고, 그동안 운영 서버의 고침은 hotfix 로 낸다 (사용자 선택 2026-11-20)
 
@@ -2933,7 +2935,7 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
 | (구현 때 더한다) | 결정 61: 크롭 숫자 셋으로 그린 자리가 옮기기 전과 같은지, 규칙 아홉의 값이 옮기기 전과 같은지, FAQ 답의 문단 수가 같은지 |
 | (구현 때 더한다) | 결정 62: 메이플 ID 해시로 온 요청이 같은 넥슨 계정 줄을 찾는지, 세션으로 요청이 오면 `last_used_at` 이 밀리는지 |
 | (구현 때 더한다) | 결정 63: 옮긴 뒤 시세마다 줄 수와 기준가가 같은지, 거래권으로 재던 소비 아이템의 지난 줄이 거래권 줄을 가리키는지, 응답의 전일 대비가 두 종가의 차이와 같은지 |
-| (구현 때 더한다) | 결정 64: 점검 중이면 1.0.15 앱이 기기 변환을 시작하지 않는지. 첫 동기화는 `run.spec.ts` 가 본다 |
+| `features/device-conversion/__tests__/run.spec.ts`(점검) · `features/server-maintenance/__tests__/store.spec.ts`(풀리기 기다리기) · `__tests__/boot-order.test.tsx`(점검을 기다리는 변환) | 결정 64: 돌 단계가 남았으면 점검 잠금이 풀린 뒤에 기기 변환을 시작하고 그동안 기록 접근도 기다리는지, 돌 것이 없으면 점검을 묻지 않는지, 잠금이 풀리기를 기다리는 약속이 답을 못 받으면 지금 상태를 따르는지, 변환이 점검을 기다리는 동안 시작 화면이 점검 잠금 화면을 덮지 않는지 본다. 첫 동기화는 `features/server-sync/__tests__/run.spec.ts` 가 본다 |
 | (구현 때 더한다) | 결정 65: 운영 덤프를 새 표로 옮긴 뒤 표마다 줄 수가 결정들이 적은 대로인지 |
 | 서버 `cli/move-old-db.spec.ts` | 결정 19 · 61 · 65: 옮긴 그림의 분류 · 파일 이름 · 확장자를 이으면 옛 경로의 파일 이름이 되고 줄 id 가 그대로인지, 시즌 보스는 표시가 켜지고 난이도의 주기가 주간으로, 월간 보스는 난이도의 주기가 월간으로 옮겨지는지, 폴더를 분류로 읽지 못하는 그림이 있거나 새 DB 의 옮길 표에 줄이 있으면 아무것도 옮기지 않는지 |
 | 서버 `cli/move-old-db.spec.ts` | 결정 28 · 30 · 41 · 63: 아이템 · 묶음 · 월드 줄 id 를 그대로 두고 묶음 key 를 묶음 줄 id 로 바꾸는지, 레벨 범위가 있는 상자의 장신구만 레벨마다 줄을 더하고 연마석은 같은 물건 줄을 하나 더하는지, 거래권 글자를 이름이 있는 거래권 줄로 만들고 이름을 정하지 않은 거래권이면 멈추는지, 다시 돌리면 옮길 표를 비우고 다시 채우는지, 옛 DB 와 새 DB 를 바꿔 넣으면 멈추는지 |
@@ -3022,3 +3024,5 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
 - (2026-11-24) 결정 14 에 다른 사람이면 `#` 로 적은 캐릭터의 기록과 맞추는 설정도 비우는 것과, 로그아웃이 남은 기록을 올리는 동기화를
   10초까지 기다리는 것을 더했다. 결정 15 의 로그인 뒤 추적 목록 채우기를 구현했다. 로그인 화면의 로그인은 사람의 번호를 지우고 받기를
   한 쪽 기다린다. 결정 67 에 그 받기와 깨운 뒤에 시작한 회차를 기다리는 깨우기를 적었다. 모두 결정 14 · 15 에서 따라 나와 Claude 가 정했다
+- (2026-11-24) 결정 64 의 기기 변환 쪽을 구현했다. 돌 단계가 남았을 때만 점검을 다시 묻고, 점검 중이면 잠금이 풀릴 때까지 기다린다.
+  묻는 때와 기다리는 동안의 화면은 [[ADR-286]] 결정 1 에 적었다. 결정 64 · 67 과 [[ADR-261]] 결정 5 에서 따라 나와 Claude 가 정했다
