@@ -1,6 +1,6 @@
 /**
- * 1.0.15 기기 변환을 부팅에서 한 번 돌리는 흐름. 새 게임 데이터가 준비되면 변환을 돌리고, 끝날 때까지 기록 표와 Preferences 에
- * 든 기록의 접근을 막는다.
+ * 1.0.15 기기 변환을 부팅에서 한 번 돌리는 흐름. 새 게임 데이터가 준비되고 점검 잠금이 풀려 있으면 변환을 돌리고, 끝날 때까지
+ * 기록 표와 Preferences 에 든 기록의 접근을 막는다.
  *
  * 화면은 `useDeviceConversionStatus` 를 구독해 끝나기 전에는 앱을 열지 않는다. 새 앱 코드는 옛 모양의 기록을 읽지 못한다.
  */
@@ -9,19 +9,27 @@ import { useSyncExternalStore } from 'react'
 import { mainNexonAccountIdOf } from '../../lib/nexon-credential'
 import { getAuthConfig } from '../../storage/api-key'
 import { getRepresentativeCharacter, getTrackedCharacterOcids } from '../../storage/character-selection'
-import { PreferencesConversionError, runPreferencesConversion } from '../../storage/preferences-conversion'
+import {
+  isPreferencesConversionDone,
+  PreferencesConversionError,
+  runPreferencesConversion,
+} from '../../storage/preferences-conversion'
 import { holdRecordsUntil } from '../../storage/record-hold'
+import type { SqliteDbConnection } from '../../storage/ports'
 import { getBossProfitDbUngated } from '../../storage/sqlite/db'
 import {
+  DEVICE_CONVERSION_VERSION,
   DeviceConversionError,
+  deviceConversionVersionOf,
   runDeviceConversion,
   type DeviceConversionContext,
 } from '../../storage/sqlite/device-conversion'
 import { resolveDisplayRepresentative } from '../character-manage/derivations'
 import { whenGameDataReady } from '../game-data/sync'
+import { whenServerMaintenanceUnlocked } from '../server-maintenance/store'
 import { reportUsageActionNow } from '../usage-log/flush'
 
-/** `running` 은 게임 데이터를 기다리거나 변환하는 중이다. `failed` 면 `다시 시도` 를 기다린다. */
+/** `running` 은 게임 데이터나 점검이 풀리기를 기다리거나 변환하는 중이다. `failed` 면 `다시 시도` 를 기다린다. */
 export type DeviceConversionPhase = 'running' | 'failed' | 'done'
 
 let phase: DeviceConversionPhase = 'running'
@@ -66,6 +74,12 @@ async function conversionContextOf(): Promise<DeviceConversionContext> {
   }
 }
 
+/** 돌 것이 남았는가. SQLite 단계와 Preferences 변환 가운데 하나라도 안 돌았으면 참. */
+async function hasPendingConversion(db: SqliteDbConnection): Promise<boolean> {
+  if ((await deviceConversionVersionOf(db)) < DEVICE_CONVERSION_VERSION) return true
+  return !(await isPreferencesConversionDone())
+}
+
 /** 사용 로그에 적는 멈춘 단계. SQLite 단계는 번호, Preferences 단계는 `preferences`, 그 밖(사본 · DB 열기)은 0 이다. */
 function failedStepOf(error: unknown): number | 'preferences' {
   if (error instanceof DeviceConversionError) return error.step
@@ -75,14 +89,18 @@ function failedStepOf(error: unknown): number | 'preferences' {
 /**
  * 겹쳐 부르면 도는 것을 기다린다. SQLite 변환이 끝난 뒤 Preferences 변환을 돈다. 실패하면 멈춘 단계를 사용 로그로 곧바로 보낸다.
  * 던지지 않는다.
+ *
+ * 돌 것이 남았으면 점검 잠금이 풀리기를 기다린다. 점검 중에는 새 서버가 아직 없다. 돌 것이 없으면 묻지 않는다. 부팅마다 점검의
+ * 답을 기다리면 느린 망에서 모든 부팅이 늦어진다.
  */
 function convert(): Promise<void> {
   attempt ??= (async () => {
     setPhase('running')
     try {
       await whenGameDataReady()
-      const context = await conversionContextOf()
       const db = await getBossProfitDbUngated()
+      if (await hasPendingConversion(db)) await whenServerMaintenanceUnlocked()
+      const context = await conversionContextOf()
       await runDeviceConversion(db, { context })
       await runPreferencesConversion(db)
       setPhase('done')
@@ -98,8 +116,8 @@ function convert(): Promise<void> {
 }
 
 /**
- * 부팅에서 한 번. 기록 접근을 막고, 게임 데이터가 준비되면 변환을 돌린다. 저장소를 건드리는 어떤 부팅 단계보다 먼저 부른다.
- * 결과를 안 기다린다.
+ * 부팅에서 한 번. 기록 접근을 막고, 게임 데이터가 준비되고 점검 잠금이 풀려 있으면 변환을 돌린다. 저장소를 건드리는 어떤 부팅
+ * 단계보다 먼저 부른다. 결과를 안 기다린다.
  *
  * @example startDeviceConversion()
  */

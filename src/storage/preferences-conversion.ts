@@ -532,6 +532,11 @@ async function convertSettingKeys(): Promise<void> {
   }
 }
 
+/** 표식이 이 판인가. */
+export async function isPreferencesConversionDone(): Promise<boolean> {
+  return Number(await preferences.get(STORAGE_KEYS.preferencesConversion)) >= PREFERENCES_CONVERSION_VERSION
+}
+
 /**
  * Preferences 의 기록을 새 모양으로 바꾸고 표식을 적는다. 표식이 이 판이면 돌지 않는다. 던지면 `PreferencesConversionError` 다.
  *
@@ -540,7 +545,7 @@ async function convertSettingKeys(): Promise<void> {
  * @param db 기다리지 않는 연결. 옛 원장을 베낄 메이플 ID 와 월드를 소속 기록 · 프로필에서 찾는다
  */
 export async function runPreferencesConversion(db: SqliteDbConnection): Promise<void> {
-  if (Number(await preferences.get(STORAGE_KEYS.preferencesConversion)) >= PREFERENCES_CONVERSION_VERSION) return
+  if (await isPreferencesConversionDone()) return
   try {
     await convertManualTrackedContent()
     await convertSharedProgress()

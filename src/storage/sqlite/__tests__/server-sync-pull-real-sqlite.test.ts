@@ -5,10 +5,12 @@
  * 받은 줄이 트리거로 대기 표에 들어가면 서버로 되돌아가고, 외래키가 켜져 있어 id 를 바꾸는 차례가 틀리면 드롭이 걸린다. 둘 다 엔진에서만
  * 드러난다.
  */
+import { cashbookCategoryIdOf } from '../../../lib/cashbook/entry-ids'
 import { nexonIdHashHex } from '../../../lib/crypto/nexon-id-hash'
 import type { MapleAccount } from '../../../types'
 import { installFakePreferences, type FakePreferences } from '../../__tests__/fake-preferences'
 import { recordCharacterAccounts } from '../../character-accounts'
+import { getIncomeRecordsBetween } from '../../income'
 import { __resetStoragePortsForTest, setSqlitePort, type SqliteDbConnection } from '../../ports'
 import {
   applyPulledSettledDay,
@@ -285,6 +287,27 @@ describe('가계부 기록', () => {
     expect(rows('SELECT typed_meso FROM cashbook_entry_hunt_inputs')).toEqual([{ typed_meso: 100 }])
     expect(rows('SELECT ocid, fragment_quantity FROM cashbook_entry_fragment_uses')).toEqual([{ ocid: 'ocid-2', fragment_quantity: 3 }])
     expect(queue()).toEqual([])
+  })
+
+  // 기기는 같은 날의 기록을 저장한 시각 차례로 보인다. 받은 차례나 id 차례로 놓이면 같은 날 기록의 차례가 기기마다 갈린다.
+  it('같은 날 받은 두 기록은 받은 차례와 id 차례가 아니라 저장한 시각 차례로 읽힌다', async () => {
+    const received = (id: string, recordedAt: string): PulledSqliteRecord => ({
+      table: 'cashbookEntries',
+      id,
+      deleted: false,
+      row: { ...head, id, category_id: cashbookCategoryIdOf('income', 'etc'), recorded_at: recordedAt, updated_at: recordedAt },
+      children: { items: [{ item_name: id, amount_meso: 1_000 }], huntInput: null, transferInput: null, exchangeInput: null, fragmentUses: [] },
+    })
+    // 늦게 저장한 기록을 먼저 받고, 그 기록의 id 가 앞선다.
+    await applyPulledSqliteRecord(received('cash-a', '2026-11-20T10:00:00.000Z'))
+    await applyPulledSqliteRecord(received('cash-b', '2026-11-20T09:00:00.000Z'))
+
+    const records = await getIncomeRecordsBetween('2026-11-20', '2026-11-20')
+
+    expect(records.map((record) => [record.id, record.recordedAt])).toEqual([
+      ['cash-b', '2026-11-20T09:00:00.000Z'],
+      ['cash-a', '2026-11-20T10:00:00.000Z'],
+    ])
   })
 })
 

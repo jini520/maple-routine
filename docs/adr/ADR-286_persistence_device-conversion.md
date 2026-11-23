@@ -1,7 +1,7 @@
 # ADR-286 1.0.15 기기 변환: 기기의 기록을 서버 표와 같은 모양으로 한 번 바꾼다
 
 > 🟢 유효
-> 관련 소스: `storage/sqlite/device-conversion.ts` · `features/device-conversion/run.ts` · `app/device-conversion/DeviceConversionFailed.tsx` · `app/AppShell.tsx` · `boot.ts` · `storage/sqlite/db.ts` · `storage/sqlite/convert-boss-tables.ts` · `storage/sqlite/convert-cashbook-tables.ts` · `storage/sqlite/legacy-cashbook-entries.ts` · `storage/sqlite/boss-tables.ts` · `storage/sqlite/cashbook-tables.ts` · `storage/sqlite/record-key-tables.ts` · `storage/sqlite/enhancement-tables.ts` · `storage/sqlite/remembered-level-tables.ts` · `storage/sqlite/migrations.ts` · `storage/keys.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `lib/cashbook/entry-ids.ts` · `storage/cashbook-entries.ts` · `storage/inventory.ts` · `storage/remembered-levels.ts` · `app/inventory/InventorySaleSheet.tsx` · `storage/sqlite/convert-enhancement-tables.ts` · `storage/enhancement-totals.ts` · `storage/character-world-leaps.ts` · `storage/mvp-grades.ts` · `features/enhancement-history/legacy-totals.ts` · `features/enhancement-history/spending.ts` · `features/cashbook/records.ts` · `features/boss-profit/world-leap-moves.ts` · `features/mvp-grade/empty-rows.ts` · `storage/preferences-conversion.ts` · `storage/record-hold.ts` · `lib/boss/period-code.ts` · `lib/scheduler/contents.ts` · `storage/manual-tracked-content.ts` · `storage/shared-progress-cache.ts` · `storage/party-appointments.ts` · `storage/boss-profit-calculator-records.ts` · `storage/quick-links.ts` · `storage/bar-order.ts` · `storage/figure-motions.ts` · `storage/tracking-mode.ts` · `storage/stats-cumulative-start.ts` · `storage/mvp-grade-prefs.ts`
+> 관련 소스: `storage/sqlite/device-conversion.ts` · `features/device-conversion/run.ts` · `features/server-maintenance/store.ts` · `app/device-conversion/DeviceConversionFailed.tsx` · `app/AppShell.tsx` · `boot.ts` · `storage/sqlite/db.ts` · `storage/sqlite/convert-boss-tables.ts` · `storage/sqlite/convert-cashbook-tables.ts` · `storage/sqlite/legacy-cashbook-entries.ts` · `storage/sqlite/boss-tables.ts` · `storage/sqlite/cashbook-tables.ts` · `storage/sqlite/record-key-tables.ts` · `storage/sqlite/enhancement-tables.ts` · `storage/sqlite/remembered-level-tables.ts` · `storage/sqlite/migrations.ts` · `storage/keys.ts` · `features/game-data/sync.ts` · `app/game-data/GameDataLock.tsx` · `lib/cashbook/entry-ids.ts` · `storage/cashbook-entries.ts` · `storage/inventory.ts` · `storage/remembered-levels.ts` · `app/inventory/InventorySaleSheet.tsx` · `storage/sqlite/convert-enhancement-tables.ts` · `storage/enhancement-totals.ts` · `storage/character-world-leaps.ts` · `storage/mvp-grades.ts` · `features/enhancement-history/legacy-totals.ts` · `features/enhancement-history/spending.ts` · `features/cashbook/records.ts` · `features/boss-profit/world-leap-moves.ts` · `features/mvp-grade/empty-rows.ts` · `storage/preferences-conversion.ts` · `storage/record-hold.ts` · `lib/boss/period-code.ts` · `lib/scheduler/contents.ts` · `storage/manual-tracked-content.ts` · `storage/shared-progress-cache.ts` · `storage/party-appointments.ts` · `storage/boss-profit-calculator-records.ts` · `storage/quick-links.ts` · `storage/bar-order.ts` · `storage/figure-motions.ts` · `storage/tracking-mode.ts` · `storage/stats-cumulative-start.ts` · `storage/mvp-grade-prefs.ts`
 
 ## 배경
 
@@ -21,8 +21,16 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 
 - 게임 데이터 잠금 화면(`GameDataLock`)이 새 계약의 게임 데이터를 다 받은 뒤에 돈다. 줄 id 가 그 데이터에 있기 때문이다. 그래서 DB
   버전 단계(`DB_VERSION`)에서는 돌릴 수 없다. DB 버전 단계는 서버 값을 읽지 못한다.
-- 새 계약의 게임 데이터는 점검이 풀린 새 서버에서만 받으므로 변환은 점검 잠금이 풀린 뒤에 돈다([[ADR-099]] 결정 64). 첫 받기와
-  기기 기록의 첫 올리기([[ADR-099]] 결정 13)보다 앞이다.
+- 변환은 점검 잠금이 풀린 뒤에 돈다([[ADR-099]] 결정 64). 첫 받기와 기기 기록의 첫 올리기([[ADR-099]] 결정 13)보다 앞이다.
+  - 새 계약의 게임 데이터는 점검이 풀린 새 서버에서만 받는다. 그래도 기기에 새 계약의 사본이 있으면(변환이 실패한 채 껐거나 단계가
+    더해진 번들을 받은 기기) 켜자마자 게임 데이터가 준비된다. 부팅의 점검 확인은 답을 기다리지 않아서, 그대로 두면 점검 중에
+    변환이 시작된다.
+  - 그래서 게임 데이터가 준비된 뒤 돌 것(SQLite 단계나 Preferences 변환)이 남았으면 점검을 다시 묻고, 점검 중이면 잠금이 풀릴
+    때까지 기다린다(`whenServerMaintenanceUnlocked`). 그동안 기록 접근도 함께 기다린다. 답을 받지 못하면 지금 상태를 따른다. 켠 뒤
+    한 번도 잠긴 적이 없으면 점검이 아닌 것으로 보고 돈다. 첫 동기화와 같다([[ADR-099]] 결정 67).
+  - 돌 것이 없으면 묻지 않는다. 변환은 부팅마다 불리는데, 부팅마다 점검의 답을 기다리면 느린 망에서 모든 부팅이 늦어진다
+    ([[ADR-261]] 결정 5).
+  - 새로 설치한 기기가 DB 를 처음 열 때 도는 단계(아래)는 점검과 상관없이 돈다. 바꿀 줄이 없어 게임 데이터도 서버도 쓰지 않는다.
 - 변환은 단계 여럿의 목록이다(`storage/sqlite/device-conversion.ts`). 마친 단계의 번호를 한 줄짜리 표 `device_conversion` 의
   `version` 칸에 적는다. 아직 안 돈 단계를 모두 한 트랜잭션으로 돌리고, 같은 트랜잭션 안에서 번호를 적는다. 도중에 앱이 꺼지거나
   단계가 던지면 아무것도 바뀌지 않은 채로 남고 다음에 켤 때 처음부터 돈다. 반만 바뀐 표가 남으면 key 로 읽는 코드와 id 로 읽는
@@ -62,6 +70,8 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 - 변환이 도는 동안 새 문구를 띄우지 않는다(사용자 선택 2026-11-21). 게임 데이터를 받은 실행이면 잠금 화면의 진행 패널을 다 받은
   모습 그대로 두고, 받을 것이 없던 실행이면 시작 화면(`BootSplash`)을 붙든다. 2026-11-20 기기 백업 기준 기록이 3,000줄쯤이라
   대개 1초 안팎에 끝난다.
+  - 점검이 풀리기를 기다리는 동안은 점검 잠금 화면이 서고, 시작 화면을 붙들지 않는다. 시작 화면은 셸의 맨 위에 그려져서, 붙들면
+    상한(20초)까지 점검 잠금 화면을 덮는다.
 - 변환이 던지면 잠금 화면과 같은 패널에 `기록을 옮기지 못했습니다` · `기기에 저장된 기록은 그대로입니다. 다시 시도해주세요.` ·
   `다시 시도` 를 띄운다(사용자 선택 2026-11-21). 새 앱 코드는 옛 모양의 표를 읽지 못해서 변환 없이 화면을 열지 않는다. 변환 코드의
   잘못을 OTA 로 고칠 수 있게 업데이트 모달은 이 패널 위에도 뜬다.
@@ -390,10 +400,11 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 | `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts` | 결정 4: 분류 · 품목 key 를 줄 id 로 옮기는지, 헥사 코어를 직업과 `전직업` 에서 찾고 못 찾으면 이름을 `item_name` 으로 옮기는지, 사냥 효과를 두 칸으로 나누는지, 모르는 분류 · 품목의 기록을 지우는지 본다. 결정 5: 인벤토리를 줄 id 로 옮기고 못 찾은 줄을 지우면 품목의 인벤토리 칸을 비우는지, 기억한 레벨을 대상 줄 id 로 옮기는지 본다. 결정 9: 기타 조각 사용 줄의 월드를 기록으로 옮기는지 본다. 결정 10: 옛 손입력을 메이플 ID · 대표 캐릭터에게 붙이고 붙일 곳 없는 기록을 지우는지 본다 |
 | `lib/__tests__/cashbook-entry-ids.spec.ts` | 결정 4: 분류 key · 품목 key 와 줄 id 가 서로 오가는지, 헥사 코어를 직업과 `전직업` 에서 찾는지 본다 |
 | `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` | 결정 4: 저장한 기록을 key 모양으로 되읽는지, 표에 없는 key 를 적으면 던지는지, 헥사 코어를 못 찾은 기록을 코어 이름으로 되읽는지 본다 |
-| `features/device-conversion/__tests__/run.spec.ts` | 결정 1: 게임 데이터가 준비되기 전에는 돌지 않고 기록 표 접근이 기다리는지, 끝나면 풀리는지, 실패하면 기록 표를 막은 채 사용 로그를 적어 보내고 `다시 시도` 로 이어 가는지, Preferences 의 메인 넥슨 계정과 대표 캐릭터를 변환 맥락으로 넘기는지, SQLite 변환 뒤에 Preferences 변환을 부르고 그것이 던지면 `preferences` 로 알리는지 본다 |
-| `__tests__/boot-order.test.tsx` | 결정 1: 변환이 끝나기 전에는 앱의 나머지를 마운트하지 않고 받은 실행이면 잠금 화면을 그대로 두는지, 실패하면 실패 패널과 업데이트 모달이 서는지 본다 |
+| `features/device-conversion/__tests__/run.spec.ts` | 결정 1: 게임 데이터가 준비되기 전에는 돌지 않고 기록 표 접근이 기다리는지, 끝나면 풀리는지, 돌 것이 남았으면 점검 잠금이 풀리기를 기다린 뒤에 돌고 돌 것이 없으면 점검을 묻지 않는지, 실패하면 기록 표를 막은 채 사용 로그를 적어 보내고 `다시 시도` 로 이어 가는지, Preferences 의 메인 넥슨 계정과 대표 캐릭터를 변환 맥락으로 넘기는지, SQLite 변환 뒤에 Preferences 변환을 부르고 그것이 던지면 `preferences` 로 알리는지 본다 |
+| `__tests__/boot-order.test.tsx` | 결정 1: 변환이 끝나기 전에는 앱의 나머지를 마운트하지 않고 받은 실행이면 잠금 화면을 그대로 두는지, 받을 것이 없던 실행이면 시작 화면을 붙들되 점검을 기다리는 동안은 붙들지 않는지, 실패하면 실패 패널과 업데이트 모달이 서는지 본다 |
 | `storage/__tests__/preferences-conversion.spec.ts` | 결정 7: 키마다 새 모양으로 바뀌는지, 두 번 돌려도 같은지, 못 찾은 항목만 빠지는지, 이름으로 적힌 옛 수동 추적 항목을 줄 id 로 옮기는지 본다. 결정 8: `serverBackfill` 을 지우는지 본다. 결정 1: 옛 월드 공유 원장을 `character_accounts` · `character_profiles` 로 찾은 메이플 ID 와 월드로 나눠 새 모양으로 적는지, 못 찾은 추적 캐릭터가 있으면 옛 원장을 남기는지, 표식이 있으면 다시 돌지 않는지 본다 |
 | `storage/__tests__/manual-tracked-content.spec.ts` · `shared-progress-cache.spec.ts` · `party-appointments.spec.ts` · `boss-profit-calculator-records.spec.ts` · `figure-motions.spec.ts` · `mvp-grade-prefs.spec.ts` | 결정 7: 저장소가 새 모양으로 적고 화면이 드는 모양으로 되읽는지, 게임 데이터에 없는 줄 id 의 항목을 건너뛰는지, 표에 없는 key 를 적으면 던지는지 본다 |
+| `features/server-maintenance/__tests__/store.spec.ts`(풀리기 기다리기) | 결정 1: 잠금이 풀리기를 기다리는 약속이 다시 묻고, 점검 중이면 풀릴 때 끝나며, 답을 못 받으면 지금 상태를 따르는지 본다 |
 | `storage/__tests__/record-hold.spec.ts` | 결정 1: 변환한 키를 읽고 쓰는 저장소가 변환이 끝나기를 기다리는지, 하단바 순서는 기다리지 않고 두 모양을 다 읽는지 본다 |
 | `storage/sqlite/__tests__/character-owners-real-sqlite.test.ts` | 결정 1: 서버 신원이 읽는 메인 키의 메이플 ID 를 기기 변환이 기록을 막는 동안에도 읽는지 본다 |
 | `lib/__tests__/contents.spec.ts` | 결정 7: 컨텐츠 key 와 줄 id 가 서로 오가는지 본다 |
@@ -412,3 +423,5 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
   기기에만 있던 칸 넷(결정 10)은 사용자가 골랐다(#947)
 - (2026-11-23) 결정 8 의 대기 표 비우기와 `serverBackfill` 지우기를 드롭 판매가 경로를 걷는 작업과 함께 구현했다([[ADR-099]] 결정 67).
   모든 결정을 구현해 🟢 로 바꿨다. 결정 1 에 서버 신원의 메이플 ID 를 기다리지 않고 읽는 것을 적었다
+- (2026-11-24) 결정 1 에 점검 중이면 변환을 시작하지 않고 잠금이 풀릴 때까지 기다리는 것, 돌 것이 없으면 점검을 묻지 않는 것,
+  기다리는 동안 시작 화면을 붙들지 않는 것을 적고 구현했다. [[ADR-099]] 결정 64 와 [[ADR-261]] 결정 5 에서 따라 나와 Claude 가 정했다

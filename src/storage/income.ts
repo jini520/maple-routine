@@ -57,7 +57,7 @@ export interface IncomeRecord {
   /**
    * 메포로 들어온 수입. 이벤트 보상이 그렇다.
    *
-   * **칸 이름을 지출과 같게 쓴다**(`point_amount`·`point_per_100m_meso`·`cash_amount`). 그래야
+   * **칸 이름을 지출과 같게 쓴다**(`amount_maple_point`·`maple_point_per_100m_meso`·`amount_cash`). 그래야
    * 집계가 한 모양으로 접힌다(`incomeMesoOf` 는 `spendMesoOf` 와 같은 식이다).
    */
   pointAmount: number | null

@@ -152,7 +152,7 @@ export function ContentScreen(): React.JSX.Element {
     unavailable: character.error?.kind === 'characterUnavailable',
     rings: [
       // 링이 세는 것도 요구 레벨을 탄다. 링·카드 목록·today 가 같은 판정을
-      // 봐야 이 성립한다.
+      // 봐야 셋의 숫자가 맞는다.
       { label: '일간', ...dailyContentProgress(dailyContentsOf(character), character.level ?? null) },
       {
         label: '주간',

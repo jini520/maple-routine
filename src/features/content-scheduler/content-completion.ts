@@ -16,7 +16,7 @@ export type ContentCompletion = 'complete' | 'incomplete'
 
 /**
  * 횟수. 지금 횟수가 최대 횟수에 닿으면 완료다. 최대 횟수는 표에 있으면 표의 값이고(병합이 덮는다), 없으면 넥슨 값이다.
- * `maxCount` 가 0이면 채울 것이 없다 라 완료로 치지 않는다(0/0을 100%로 읽지 않는다).
+ * `maxCount` 가 0이면 채울 것이 없어서 완료로 치지 않는다(0/0을 100%로 읽지 않는다).
  */
 function byCount(content: { nowCount: number; maxCount: number }): ContentCompletion {
   if (content.maxCount <= 0) return 'incomplete'
@@ -74,7 +74,7 @@ function tally(completions: ContentCompletion[]): ContentProgress {
  *
  * 남겨 두면 그 캐릭터의 링이 100%에 **절대 도달하지 못하고**, today 남은 스케줄의 숫자도 영원히
  * 안 줄어든다. 판정은 `lib/scheduler/required-level` 한 곳이 갖는다. 이 화면과 today 가 **같은 함수**를
- * 봐야(*"한 글자도 다르면 안 된다"*)이 성립한다.
+ * 봐야 링과 남은 스케줄의 숫자가 맞는다.
  */
 function progressible<T extends { contentKey: string | null }>(contents: T[], characterLevel: number | null): T[] {
   return contents.filter((content) => !isContentBlocked(characterLevel, content.contentKey))
