@@ -1,7 +1,7 @@
 # ADR-099+143+258+279+302 사용자가 만든 기록은 서버에 두고 같은 사람의 기기끼리 맞춘다. 과거 드롭도 묶음으로 올린다
 
 > ⚪ 미구현
-> 관련 소스: `features/server-sync/*` · `features/auth/server-identity.ts` · `features/account-manage/store.ts` · `server/accounts.ts` · `server/error-codes.ts` · `server/write.ts` · `storage/server-sync-queue.ts` · `storage/server-sync-records.ts` · `storage/server-sync-pull.ts` · `storage/server-sync-pull-preferences.ts` · `storage/server-sync-cursors.ts` · `storage/server-sync-first.ts` · `storage/sqlite/server-sync-triggers.ts` · `storage/sqlite/device-conversion.ts` · `storage/preferences-conversion.ts` · 서버 `modules/users` · `modules/identity` · `modules/sync` · `common/error-codes.ts`
+> 관련 소스: `features/server-sync/*` · `storage/cache-data.ts` · `app/settings/SettingsAboutScreen.tsx` · `features/auth/server-identity.ts` · `features/account-manage/store.ts` · `server/accounts.ts` · `server/error-codes.ts` · `server/write.ts` · `storage/server-sync-queue.ts` · `storage/server-sync-records.ts` · `storage/server-sync-pull.ts` · `storage/server-sync-pull-preferences.ts` · `storage/server-sync-cursors.ts` · `storage/server-sync-first.ts` · `storage/sqlite/server-sync-triggers.ts` · `storage/sqlite/device-conversion.ts` · `storage/preferences-conversion.ts` · 서버 `modules/users` · `modules/identity` · `modules/sync` · `common/error-codes.ts`
 
 ## 배경
 
