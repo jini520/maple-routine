@@ -45,13 +45,17 @@ export async function clearCacheDataAndReload(
 
   // 실패를 삼키지 않는다. 다만 리로드가 화면 신호를 파괴하므로 여기서 토스트를 띄울 수 없다.
   // 플래그를 남기고 부팅 후에 띄운다. 타임아웃(응답 없음)도 삭제됐는지 알 수 없으므로 같이 알린다.
+  let timer: ReturnType<typeof setTimeout> | undefined
   const outcome = await Promise.race([
     clearCacheData(selection).then(
       () => 'ok' as const,
       () => 'failed' as const,
     ),
-    new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), CLEAR_TIMEOUT_MS)),
+    new Promise<'timeout'>((resolve) => {
+      timer = setTimeout(() => resolve('timeout'), CLEAR_TIMEOUT_MS)
+    }),
   ])
+  clearTimeout(timer)
   if (outcome !== 'ok') {
     await setPendingNotice('cacheClearFailed')
   }

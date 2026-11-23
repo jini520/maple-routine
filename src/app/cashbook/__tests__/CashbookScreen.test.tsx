@@ -244,7 +244,8 @@ function 하루읽은날(): string[] {
 let queryClient = new QueryClient()
 
 async function 그리기(): Promise<Rendered> {
-  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  // 쿼리를 지우는 타이머(기본 5분)가 남으면 테스트가 끝나도 jest 작업 프로세스가 끝나지 않는다. `afterEach` 의 `clear()` 만으로는 남는다.
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Number.POSITIVE_INFINITY } } })
   const view = await renderOverlay(
     <QueryClientProvider client={queryClient}>
       <CashbookScreen />
