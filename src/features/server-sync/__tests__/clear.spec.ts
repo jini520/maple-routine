@@ -18,7 +18,7 @@ function setup(options: { server?: SendResult; identity?: Record<string, string>
       return () => order.push('release')
     }),
     identity: jest.fn(async () => (options.identity === undefined ? IDENTITY : options.identity)),
-    clearOnServer: jest.fn(async (_headers, groups) => {
+    clearOnServer: jest.fn(async (_headers, groups): Promise<SendResult> => {
       order.push(`server ${groups.join(',')}`)
       return options.server ?? { outcome: 'sent' }
     }),
