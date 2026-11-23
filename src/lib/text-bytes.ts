@@ -11,6 +11,21 @@ export function textBytes(text: string): number {
 }
 
 /**
+ * UTF-8 로 적었을 때의 바이트. 서버가 본문 크기를 이 값으로 잰다. 한글은 3, 이모지는 4 다.
+ *
+ * @example
+ * utf8Bytes('본캐A') // 7
+ */
+export function utf8Bytes(text: string): number {
+  let bytes = 0
+  for (const char of text) {
+    const code = char.codePointAt(0)!
+    bytes += code <= 0x7f ? 1 : code <= 0x7ff ? 2 : code <= 0xffff ? 3 : 4
+  }
+  return bytes
+}
+
+/**
  * 칸의 글자가 `previous` 에서 `next` 로 바뀔 때 `maxBytes` 안에서 받는 글자. 새로 들어온 글자는 넘지 않는 데까지만 받고,
  * 지우기는 언제나 받는다.
  *

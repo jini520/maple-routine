@@ -1,4 +1,6 @@
-import { fitToBytes, textBytes } from '../text-bytes'
+import { utf8ToBytes } from '@noble/hashes/utils.js'
+
+import { fitToBytes, textBytes, utf8Bytes } from '../text-bytes'
 
 describe('textBytes', () => {
   it('영문 · 숫자 · 공백 · 기본 기호는 1바이트, 한글은 2바이트로 센다', () => {
@@ -11,6 +13,15 @@ describe('textBytes', () => {
   it('ASCII 밖의 기호와 이모지도 2바이트다. 이모지는 UTF-16 두 칸이어도 한 글자로 센다', () => {
     expect(textBytes('★')).toBe(2)
     expect(textBytes('😀')).toBe(2)
+  })
+})
+
+// 서버는 본문을 UTF-8 바이트로 재어 256KB 를 넘으면 요청 전체를 거절한다. 적게 세면 그 요청이 통째로 막힌다.
+describe('utf8Bytes', () => {
+  it('UTF-8 로 적은 바이트와 같다', () => {
+    for (const text of ['Ab 1!-', '본캐', 'é', '★', '😀', '{"memo":"가나다😀"}']) {
+      expect(utf8Bytes(text)).toBe(utf8ToBytes(text).length)
+    }
   })
 })
 
