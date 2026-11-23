@@ -27,6 +27,7 @@ import {
   shownMaintenanceUntil,
   useServerMaintenanceStore,
   watchServerMaintenance,
+  whenServerMaintenanceUnlocked,
 } from '../store'
 
 const 조회 = fetchServerMaintenance as jest.MockedFunction<typeof fetchServerMaintenance>
@@ -110,6 +111,46 @@ describe('잠그고 푼다', () => {
     await Promise.all([checkServerMaintenance(), checkServerMaintenance()])
 
     expect(조회).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('잠금이 풀리기를 기다린다', () => {
+  /** 약속이 끝났는지 본다. 끝나지 않은 일이 한 바퀴 돈 뒤에 읽는다. */
+  function watch(promise: Promise<void>): () => Promise<boolean> {
+    let done = false
+    void promise.then(() => {
+      done = true
+    })
+    return async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      return done
+    }
+  }
+
+  // 부팅의 확인은 답을 기다리지 않는다. 점검 중에 시작하면 안 되는 일은 시작하기 전에 답을 받아야 한다.
+  it('다시 묻고, 점검 중이면 풀리는 답을 받을 때 끝난다', async () => {
+    조회.mockResolvedValueOnce(점검중()).mockResolvedValueOnce(점검중()).mockResolvedValueOnce(점검아님)
+
+    const done = watch(whenServerMaintenanceUnlocked())
+    expect(await done()).toBe(false)
+    expect(조회).toHaveBeenCalledTimes(1)
+
+    await checkServerMaintenance()
+    expect(await done()).toBe(false)
+
+    await checkServerMaintenance()
+    expect(await done()).toBe(true)
+  })
+
+  // 오프라인에서도 앱을 쓸 수 있어야 한다. 처음 동기화도 같은 규칙이다.
+  it('답을 못 받으면 지금 상태를 따른다. 잠긴 적이 없으면 곧바로 끝나고, 잠겨 있으면 기다린다', async () => {
+    조회.mockResolvedValue(모름)
+    await expect(whenServerMaintenanceUnlocked()).resolves.toBeUndefined()
+
+    useServerMaintenanceStore.setState({ locked: true, until: null, checkedAt: 1 })
+    const done = watch(whenServerMaintenanceUnlocked())
+    expect(await done()).toBe(false)
+    expect(조회).toHaveBeenCalledTimes(2)
   })
 })
 

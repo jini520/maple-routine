@@ -3,6 +3,10 @@ jest.mock('../../game-data/sync', () => ({
   __esModule: true,
   whenGameDataReady: jest.fn(),
 }))
+jest.mock('../../server-maintenance/store', () => ({
+  __esModule: true,
+  whenServerMaintenanceUnlocked: jest.fn(),
+}))
 jest.mock('../../usage-log/flush', () => ({
   __esModule: true,
   reportUsageActionNow: jest.fn(async () => {}),
@@ -25,15 +29,26 @@ jest.mock('../../../storage/preferences-conversion', () => {
   return { __esModule: true, ...actual, runPreferencesConversion: jest.fn() }
 })
 
+import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { getAuthConfig } from '../../../storage/api-key'
 import { getRepresentativeCharacter, getTrackedCharacterOcids } from '../../../storage/character-selection'
-import { __resetStoragePortsForTest, setSqlitePort } from '../../../storage/ports'
-import { closeBossProfitDb, getBossProfitDb } from '../../../storage/sqlite/db'
+import { STORAGE_KEYS } from '../../../storage/keys'
+import { __resetStoragePortsForTest, preferences, setSqlitePort } from '../../../storage/ports'
+import { closeBossProfitDb, getBossProfitDb, getBossProfitDbUngated } from '../../../storage/sqlite/db'
 import { __setMigrationCeilingForTest, DB_VERSION } from '../../../storage/sqlite/migrations'
-import { DeviceConversionError, runDeviceConversion } from '../../../storage/sqlite/device-conversion'
-import { PreferencesConversionError, runPreferencesConversion } from '../../../storage/preferences-conversion'
+import {
+  DEVICE_CONVERSION_VERSION,
+  DeviceConversionError,
+  runDeviceConversion,
+} from '../../../storage/sqlite/device-conversion'
+import {
+  PREFERENCES_CONVERSION_VERSION,
+  PreferencesConversionError,
+  runPreferencesConversion,
+} from '../../../storage/preferences-conversion'
 import { createRealSqlite, type RealSqlite } from '../../../storage/sqlite/__tests__/node-sqlite-port'
 import { whenGameDataReady } from '../../game-data/sync'
+import { whenServerMaintenanceUnlocked } from '../../server-maintenance/store'
 import { reportUsageActionNow } from '../../usage-log/flush'
 import {
   __resetDeviceConversionForTest,
@@ -45,6 +60,7 @@ import {
 const run = jest.mocked(runDeviceConversion)
 const runPreferences = jest.mocked(runPreferencesConversion)
 const gameDataReady = jest.mocked(whenGameDataReady)
+const maintenanceUnlocked = jest.mocked(whenServerMaintenanceUnlocked)
 const report = jest.mocked(reportUsageActionNow)
 
 let real: RealSqlite
@@ -69,7 +85,9 @@ beforeEach(() => {
   __setMigrationCeilingForTest(DB_VERSION)
   real = createRealSqlite()
   setSqlitePort(real.port)
+  installFakePreferences()
   gameDataReady.mockResolvedValue()
+  maintenanceUnlocked.mockResolvedValue()
   run.mockResolvedValue()
   runPreferences.mockResolvedValue()
 })
@@ -147,6 +165,54 @@ describe('기기 변환을 돌리는 때', () => {
 
     expect(getDeviceConversionPhase()).toBe('failed')
     expect(report).toHaveBeenCalledWith('device-conversion-failed:0')
+  })
+})
+
+describe('점검', () => {
+  // 점검 중에는 새 서버가 아직 없다. 새 계약의 사본이 있는 기기는 켜자마자 게임 데이터가 준비되고, 부팅의 점검 확인은 답을
+  // 기다리지 않는다.
+  it('돌 것이 남았으면 점검 잠금이 풀린 뒤에 변환하고, 그동안 기록 표 접근도 기다린다', async () => {
+    let unlock: () => void = () => {}
+    maintenanceUnlocked.mockReturnValue(new Promise<void>((resolve) => (unlock = resolve)))
+
+    startDeviceConversion()
+    const tables = watchRecordTables()
+    await settle()
+
+    expect(maintenanceUnlocked).toHaveBeenCalledTimes(1)
+    expect(run).not.toHaveBeenCalled()
+    expect(runPreferences).not.toHaveBeenCalled()
+    expect(tables.opened()).toBe(false)
+    expect(getDeviceConversionPhase()).toBe('running')
+
+    unlock()
+    await settle()
+
+    expect(run).toHaveBeenCalledTimes(1)
+    expect(getDeviceConversionPhase()).toBe('done')
+    expect(tables.opened()).toBe(true)
+  })
+
+  // 변환은 부팅마다 불린다. 부팅마다 점검의 답을 기다리면 느린 망에서 모든 부팅이 늦어진다.
+  it('SQLite 단계와 Preferences 변환이 다 끝났으면 점검을 묻지 않고, 하나라도 남았으면 묻는다', async () => {
+    const db = await getBossProfitDbUngated()
+    await db.run('INSERT INTO device_conversion (version) VALUES (?)', [DEVICE_CONVERSION_VERSION])
+    await preferences.set(STORAGE_KEYS.preferencesConversion, String(PREFERENCES_CONVERSION_VERSION))
+
+    startDeviceConversion()
+    await settle()
+
+    expect(maintenanceUnlocked).not.toHaveBeenCalled()
+    expect(getDeviceConversionPhase()).toBe('done')
+
+    await preferences.remove(STORAGE_KEYS.preferencesConversion)
+    await retryDeviceConversion()
+    expect(maintenanceUnlocked).toHaveBeenCalledTimes(1)
+
+    await preferences.set(STORAGE_KEYS.preferencesConversion, String(PREFERENCES_CONVERSION_VERSION))
+    await db.execute('DELETE FROM device_conversion')
+    await retryDeviceConversion()
+    expect(maintenanceUnlocked).toHaveBeenCalledTimes(2)
   })
 })
 

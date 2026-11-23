@@ -211,6 +211,7 @@ jest.mock('../features/server-maintenance/store', () => ({
 }))
 
 import { AppShell } from '../app/AppShell'
+import { BOOT_SPLASH_HOLD_MS } from '../app/BootSplash'
 import { renderOverlay } from '../components/__tests__/render-atom'
 import { installAppStateFocus } from '../features/query/app-focus'
 
@@ -230,6 +231,16 @@ describe('① 셸이 무엇을 언제 하는가', () => {
   afterEach(() => {
     jest.useRealTimers()
   })
+
+  /** 2겹이 그려지고 최소 표시 시간이 지난 때로 보낸다. 붙들지 않으면 이때 걷힌다. */
+  async function passBootSplashHold(view: Awaited<ReturnType<typeof renderOverlay>>): Promise<void> {
+    await fireEvent(view.getByTestId('boot-splash'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 844 } },
+    })
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(BOOT_SPLASH_HOLD_MS * 2)
+    })
+  }
 
   async function mountShell(): Promise<void> {
     await renderOverlay(<AppShell />)
@@ -318,6 +329,23 @@ describe('① 셸이 무엇을 언제 하는가', () => {
 
     expect(view.queryByTestId('game-data-lock')).toBeNull()
     expect(view.queryByText('navigation')).toBeNull()
+  })
+
+  // 시작 화면은 셸의 맨 위에 그려진다. 변환이 점검이 풀리기를 기다리는 동안 붙들면 상한(20초)까지 점검 잠금 화면을 덮는다.
+  it('받을 것이 없던 실행이면 기기 변환 동안 시작 화면을 붙들고, 변환이 점검을 기다리는 동안은 붙들지 않는다', async () => {
+    mockConversion.phase = 'running'
+    const converting = await renderOverlay(<AppShell />)
+    await passBootSplashHold(converting)
+
+    expect(converting.queryByTestId('boot-splash')).not.toBeNull()
+    await converting.unmount()
+
+    mockMaintenance.locked = true
+    const waiting = await renderOverlay(<AppShell />)
+    await passBootSplashHold(waiting)
+
+    expect(waiting.queryByTestId('boot-splash')).toBeNull()
+    expect(waiting.getByTestId('server-maintenance-lock')).toBeTruthy()
   })
 
   // 변환 코드의 잘못을 OTA 로 고칠 수 있어야 한다. 실패 패널 위에 모달이 없으면 고친 번들을 받을 길이 없다.
