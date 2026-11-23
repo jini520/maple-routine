@@ -21,7 +21,7 @@
 | `storage/sqlite/convert-cashbook-tables.ts` | 기기 변환의 가계부 단계(`convertCashbookTables`). 주인을 모르는 옛 손입력을 붙인 뒤 가계부 기록 표 여섯 · 인벤토리 · 강화 레벨 기억을 지금 표로 옮기고 옛 표를 지운다([[ADR-286]] 결정 4 · 5 · 9 · 10) |
 | `storage/sqlite/legacy-cashbook-entries.ts` | 변환 전 가계부 표를 쓰는 SQL. 버전 15 가 옮긴 기록을 넣는 일과 가계부 단계가 주인을 모르는 옛 손입력을 붙이는 일이다 |
 | `storage/sqlite/convert-enhancement-tables.ts` | 기기 변환의 강화 합계 · 월드 리프 · MVP 등급 단계(`convertEnhancementTables`). 세 표를 지금 표로 옮기고 옛 표를 지운다([[ADR-286]] 결정 6) |
-| `storage/sqlite/server-sync-triggers.ts` | 기록 표의 트리거. 기록이 바뀌면 대기 표 `server_sync_queue` 에 서버 표 이름과 기록 id 를 넣는다(`ensureServerSyncTriggers`, [[ADR-099]] 결정 67) |
+| `storage/sqlite/server-sync-triggers.ts` | 기록 표의 트리거. 기록이 바뀌면 대기 표 `server_sync_queue` 에 서버 표 이름과 기록 id 를 넣는다(`ensureServerSyncTriggers`). 처음 동기화가 같은 표 · 같은 조건의 줄을 모두 넣는다(`enqueueAllRecordRows`, [[ADR-099]] 결정 13 · 67) |
 | `storage/sqlite/transaction.ts` | 쓰기 여럿을 트랜잭션 하나로 묶는 `inTransaction`. 같은 연결의 트랜잭션은 차례로 돈다. 겹쳐 열면 SQLite 가 뒤의 것을 거절하기 때문이다(앱을 켤 때 계정 칸 채우기와 강화 합계 옮기기가 겹쳤다). 그래서 `work` 안에서 다시 부르면 멈춘다. 트랜잭션 안에서 못 도는 `VACUUM` 은 같은 줄 뒤에 세운다(`outsideTransaction`) |
 | `storage/legacy-space.ts` | 옛 표를 다 지운 뒤 한 번 사본 파일을 지우고 `VACUUM` 하는 회수([[ADR-078]] 결정 11) |
 | `storage/sqlite/uuid.ts` | 행 식별자를 SQLite 가 만드는 식(`NEW_UUID_SQL`) |
@@ -106,7 +106,7 @@
 | `remembered_levels` | `id`(uuid, `(ocid, type, target_id)` 는 UNIQUE) | 캐릭터의 심볼 · 헥사 코어 강화 레벨 기억. 추적을 시작할 때 넥슨 값으로 채우고 기록을 저장 · 고치기 · 지우기 할 때 옮긴다 | `storage/remembered-levels.ts` | 지운다 (가계부) | [[ADR-137]] |
 | `mvp_grade_history` | `id`(uuid, `(account_id, from_date)` 는 UNIQUE) | 메이플 ID 마다 MVP 등급(등급 표의 줄 id)과 시작 날짜 | `storage/mvp-grades.ts` | 남긴다 | `features/mvp-grade.md` |
 | `character_accounts` | `id`(uuid, `(ocid, name, account_id)` 는 UNIQUE) | 캐릭터가 어느 메이플 ID 에 속했는지, 그것을 어느 넥슨 계정의 목록에서 봤는지와 처음 · 마지막으로 본 날 | `storage/character-accounts.ts` | 남긴다 | `features/mvp-grade.md` |
-| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 올릴 기록. 서버 표 이름(`record_type`)과 기록 id 만 들고 값은 담지 않는다. 기록 표의 트리거와 Preferences 기록의 저장 함수가 넣는다. 넣은 차례는 rowid 다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 · 드롭 판매가 줄은 1.0.15 기기 변환이 비운다 | `storage/server-sync-queue.ts` · `storage/sqlite/server-sync-triggers.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-099]] 결정 10 · 67 · [[ADR-286]] 결정 8 |
+| `server_sync_queue` | `id`(`record_id` 는 UNIQUE) | 서버로 올릴 기록. 서버 표 이름(`record_type`)과 기록 id 만 들고 값은 담지 않는다. 기록 표의 트리거와 Preferences 기록의 저장 함수가 넣고, 처음 동기화가 기기의 기록을 모두 넣는다. 넣은 차례는 rowid 다. `created_at` 이 처음 동기화의 넣기를 마친 시각 이하인 줄이 처음 올리기다. 옛 앱이 넣은 처치 · 가계부 · 강화 합계 · 드롭 판매가 줄은 1.0.15 기기 변환이 비운다 | `storage/server-sync-queue.ts` · `storage/sqlite/server-sync-triggers.ts` | 비운다 (어느 그룹을 골라도) | [[ADR-099]] 결정 10 · 67 · [[ADR-286]] 결정 8 |
 | `server_sync_pause` | 없음(한 줄) | 줄이 있으면 트리거와 Preferences 넣기가 대기 표에 넣지 않는다. `withServerSyncPaused` 가 트랜잭션 안에서 넣고 빼서 평소에는 비어 있다 | `storage/server-sync-queue.ts` | 남긴다 | [[ADR-099]] 결정 67 |
 | `game_data_sections` | `id`(uuid, `section` 은 UNIQUE) | 게임 데이터 사본의 칸 하나. 서버 응답의 그 칸 JSON 을 그대로 든다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
 | `game_data_meta` | `id`(uuid, `key` 는 UNIQUE) | 사본의 표식(계약 판 · ETag). 칸과 한 트랜잭션으로 쓰고, 있으면 다 받은 사본이다 | `storage/game-data-copy.ts` | 남긴다 | [[ADR-020]] |
@@ -201,6 +201,9 @@
   `character_accounts` 에 짝이 없으면 원문 대신 `#` 를 붙인 해시다(`storage/server-sync-pull.ts`, [[ADR-099]] 결정 12 · 67). 그
   캐릭터는 알 수 없는 캐릭터로 보이고 금액에는 들어간다. 넥슨을 부를 자격이 없어 넥슨에 보내지 않는다. 짝이 생기면 받기가 대기 표에
   넣지 않고 원문으로 바꾼다(`storage/server-sync-unmatched.ts`).
+- 기기 변환이 옮긴 줄은 트리거를 거치지 않아 대기 표에 없다. 처음 동기화가 이 표에서 같은 조건의 줄을 모두 넣는다
+  (`enqueueAllRecordRows`). 가계부의 딸린 줄은 기록의 id 로, 강화 조회 기록은 굳은 줄만 넣는다. 표 목록이 하나라 트리거를 건 표와
+  처음 동기화가 넣는 표가 갈리지 않는다.
 
 ## 테이블이나 칸을 더할 때
 
