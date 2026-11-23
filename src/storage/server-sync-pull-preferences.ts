@@ -137,7 +137,7 @@ interface FirstTrackedAlignment {
  *
  * 처음 동기화의 받기는 목록 단위로 서버에 맞춘다. 서버에 없는 기기 캐릭터를 서버 캐릭터 뒤에 둔다. 서버 차례 값과 기기 자리를 같은
  * 칸에 견주면 같은 값이 둘 생겨 기기마다 차례가 갈린다. 서버 대표가 이 기기에 짝이 없으면 그 기기 캐릭터의 대표를 지운다. 남기면
- * 기기 쪽 대표가 올라가 서버에 대표가 둘이 된다.
+ * 기기 쪽 대표가 올라가, 서버가 넥슨 계정마다 하나인 대표를 그것으로 바꾼다.
  */
 async function applyTrackedCharacters(
   records: readonly Pulled<'trackedCharacters'>[],

@@ -275,7 +275,7 @@ describe('처음 동기화의 받기', () => {
     expect(queue()).toEqual(['trackedCharacters:z', 'trackedCharacters:y'])
   })
 
-  // 남기면 기기 쪽 대표가 올라가 서버에 대표가 둘이 된다.
+  // 남기면 기기 쪽 대표가 올라가, 서버가 넥슨 계정마다 하나인 대표를 그것으로 바꾼다.
   it('서버 목록의 대표가 이 기기에 짝이 없으면 서버에 없는 기기 캐릭터의 대표 표시를 지운다', async () => {
     await prefs.set('trackedCharacters', JSON.stringify(['z']))
     await prefs.set('representativeCharacter', 'z')

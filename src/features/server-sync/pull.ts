@@ -147,7 +147,7 @@ async function applyPage(
   changed: Set<ServerSyncTable>,
 ): Promise<void> {
   const preferences: PulledPreferenceRecord[] = []
-  // 처음 동기화는 추적 목록의 대표를 서버에 맞춘다. 짝이 없는 대표를 모르면 기기 쪽 대표가 올라가 서버에 대표가 둘이 된다.
+  // 처음 동기화는 추적 목록의 대표를 서버에 맞춘다. 짝이 없는 대표를 모르면 기기 쪽 대표가 올라가 서버가 그 대표를 내린다.
   let unpairedRepresentative = false
   for (const table of SERVER_SYNC_TABLES) {
     for (const row of records[table] ?? []) {

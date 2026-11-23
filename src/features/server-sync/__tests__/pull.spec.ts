@@ -145,7 +145,7 @@ it('넣지 못한 줄과 대기 중이라 건너뛴 줄은 세고 나머지를 �
   expect(deps.applyPreferences).not.toHaveBeenCalled()
 })
 
-// 처음 동기화의 받기만 id 없는 Preferences 기록의 서버 값을 남긴다. 짝이 없는 대표를 모르면 기기 쪽 대표가 올라가 서버에 대표가 둘이 된다.
+// 처음 동기화의 받기만 id 없는 Preferences 기록의 서버 값을 남긴다. 짝이 없는 대표를 모르면 기기 쪽 대표가 올라가 서버가 그 대표를 내린다.
 it('처음 동기화의 받기는 넣기를 마친 시각과 서버 대표가 짝이 없는 캐릭터인지를 Preferences 넣기에 넘긴다', async () => {
   const records = {
     trackedCharacters: [
