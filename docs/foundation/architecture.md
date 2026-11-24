@@ -25,7 +25,7 @@ android/ · ios/   커밋된 네이티브 프로젝트. expo prebuild 를 돌리
 ota/              Capacitor 앱 사용자를 스토어로 보내는 매니페스트(ADR-005 결정 6)
 scripts/          에셋 목록 생성 · OTA 발행 · 게임 데이터 동기화 · 안내 사이트 빌드
 workers/          Cloudflare Worker(OTA 매니페스트)
-site/             안내 사이트(mapleroutine.store)
+site/             안내 사이트(mapleroutine.store · info.mapleroutine.store)
 src/
 ├── app/          화면. 기능별 디렉터리와 AppShell · prehydrate
 ├── navigation/   react-navigation 배선. 루트 스택 · 탭 · 하단바 그룹 표 · 라우트 표
@@ -36,7 +36,7 @@ src/
 ├── constants/    domain(게임 규칙 상수) · style(스타일 상수)
 ├── lib/          범용 함수. 화면 상태를 갖지 않는다
 ├── nexon/        넥슨 Open API 클라이언트와 응답 정규화
-├── server/       우리 서버(mapleroutine.store/v1) 클라이언트
+├── server/       우리 서버(api.mapleroutine.store/v1) 클라이언트
 ├── storage/      기기 저장소 어댑터. ports.ts · adapters/ · sqlite/
 ├── native/       네이티브 기능 어댑터. ports.ts · adapters/
 ├── data/         게임 레퍼런스 데이터(JSON) · 릴리스 노트

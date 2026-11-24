@@ -271,6 +271,15 @@ iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다
 `latest-<platform>.json` 의 `acceptedRuntimeVersions` 에 없으면 닫을 수 없는 스토어 업데이트 모달로 막는다. 1.0.14 는
 심사 제출 때까지 미뤘다가 TestFlight 로 받은 앱이 켜자마자 막혔다(#1086).
 
+목록은 그 바이너리가 묻는 주소의 박스에 있다. 1.0.14 까지의 바이너리는 루트 주소로 묻고 목록이 앱 박스(`ubuntu@158.179.175.230`)에
+있다. 1.0.15 바이너리는 api 주소로 묻고, 목록이 전환까지 DB 박스(`ubuntu@152.69.225.126`)에 있다([[ADR-099]] 결정 43). 아래
+2번의 박스와 3번의 주소를 그 바이너리에 맞춰 쓴다. 다른 박스에 넣으면 TestFlight 와 심사의 앱이 켜자마자 막힌다.
+
+| 업로드한 바이너리 | 2번의 박스 | 3번의 주소 |
+|---|---|---|
+| 1.0.14 까지 | `ubuntu@158.179.175.230`(앱 박스) | `https://mapleroutine.store` |
+| 1.0.15 (전환까지) | `ubuntu@152.69.225.126`(DB 박스) | `https://api.mapleroutine.store` |
+
 1. 바이너리에서 지문을 읽는다. 빌드하기 전에 적어 둔 값과 같아야 한다.
 
    ```bash
@@ -305,11 +314,16 @@ iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다
    curl -s "https://mapleroutine.store/v1/ota/latest?platform=android&t=$(date +%s)"
    ```
 
+   1.0.15 를 올렸으면 주소를 `https://api.mapleroutine.store` 로 바꿔 묻는다. DB 박스의 목록에는 1.0.14 의 지문이 앞의 지문으로
+   들어 있다. 1.0.14 는 api 를 묻지 않으므로 그 지문은 남아도 된다.
+
 4. 같은 값을 `scripts/ota-runtime-version.mjs` 의 `IN_REVIEW_RUNTIME_VERSIONS` 에 넣고, 그 테스트
    (`scripts/__tests__/ota-runtime-version.test.mjs`)도 고친다. 발행 스크립트가 발행할 때마다 목록을 통째로 다시 쓰므로,
    상수에 없으면 다음 OTA 발행이 2번에서 더한 값을 지운다. 이 커밋은 다음 OTA 를 발행할 트리에 들어가야 해서 그 버전의
    핫픽스 기준 트리에서 딴 `hotfix/<slug>` 로 main 에 넣고, 곧바로 main 을 develop 에 머지한다. 기준 트리가 main 의 끝이
-   아니면 핫픽스 기준 커밋을 이 커밋으로 옮긴다(`CLAUDE.md` · [[ADR-188]] 결정 6).
+   아니면 핫픽스 기준 커밋을 이 커밋으로 옮긴다(`CLAUDE.md` · [[ADR-188]] 결정 6). 1.0.15 를 올렸으면 DB 박스에 발행하는
+   트리에도 이 값이 있어야 한다. 그 트리의 발행이 DB 박스의 목록을 다시 쓰고, 앱 박스에 발행하는 hotfix 트리는 그 목록을
+   건드리지 않기 때문이다.
 
 심사에서 반려돼 네이티브를 고쳐 다시 구우면 지문이 바뀐다. 그때는 2번과 4번을 새 지문으로 다시 한다. 게시를 확인하면 이 값을
 비우는 절차는 `features/live-update.md` 의 `스토어 게시 뒤 옛 바이너리 잠그기` 에 있다.
@@ -318,8 +332,9 @@ iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다
 
 ### 개인정보 처리방침
 
-- 처리방침 원본은 `PRIVACY.md` 이고 `https://mapleroutine.store/privacy` 에 게시한다. 앱 안에서는 설정의
-  앱 정보 화면(`SettingsAboutScreen`)의 행이 인앱 브라우저로 연다.
+- 처리방침 원본은 `PRIVACY.md` 이고 `https://mapleroutine.store/privacy` 와 `https://info.mapleroutine.store/privacy` 에 같은
+  페이지로 게시한다. 스토어 등록정보는 루트 주소다. 앱 안에서는 설정의 앱 정보 화면(`SettingsAboutScreen`)의 행이 인앱 브라우저로
+  연다. 1.0.14 까지의 앱은 루트 주소를, 1.0.15 부터는 info 주소를 연다([[ADR-015]] 결정 11).
 - 문의 주소는 `https://mapleroutine.store/support` 다.
 
 ### 수집 신고(Play 데이터 안전 · App Store 개인정보 라벨)

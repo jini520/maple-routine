@@ -38,12 +38,12 @@ beforeEach(() => {
 describe('SettingsLinkRow', () => {
   it('label을 링크 역할로 렌더링하고 누르면 그 주소를 연다', async () => {
     const view = await renderAtom(
-      <SettingsLinkRow label="개인정보 처리방침" href="https://mapleroutine.store/privacy" />,
+      <SettingsLinkRow label="개인정보 처리방침" href="https://info.mapleroutine.store/privacy" />,
     )
 
     fireEvent.press(linkOf(view, '개인정보 처리방침'))
 
-    expect(openURL).toHaveBeenCalledWith('https://mapleroutine.store/privacy')
+    expect(openURL).toHaveBeenCalledWith('https://info.mapleroutine.store/privacy')
   })
 
   // `문의 · 버그 제보` 는 고르는 모달을 먼저 연다. 어느 칸을 골라도 앱을 떠나서 외부 링크 아이콘은 그대로다.

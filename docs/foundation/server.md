@@ -1,7 +1,9 @@
 # 서버
 
-앱이 부르는 우리 서버(`https://mapleroutine.store`)를 앱 쪽에서 정리한다. 어느 경로를 부르고, 무엇을 싣고, 무엇을
-받는지와 실패하면 어떻게 하는지를 적는다. 서버를 어디에 어떤 구조로 두었는지는 [[ADR-016]], 서버가 사용자를 어떻게
+앱이 부르는 우리 서버(`https://api.mapleroutine.store`)를 앱 쪽에서 정리한다. 어느 경로를 부르고, 무엇을 싣고, 무엇을
+받는지와 실패하면 어떻게 하는지를 적는다. 주소는 `server/base-url.ts` 의 `SERVER_ORIGIN` 하나이고 그림 주소도 이 값에서 만든다.
+1.0.14 까지의 앱은 루트 주소(`https://mapleroutine.store`)를 부른다. 지금 루트는 운영 서버로, api 는 DB 박스의 서버 develop 으로
+가고, 1.0.15 로 전환하면 둘 다 새 서버로 간다([[ADR-016]] 결정 14 · [[ADR-099]] 결정 43). 서버를 어디에 어떤 구조로 두었는지는 [[ADR-016]], 서버가 사용자를 어떻게
 구분하는지는 [[ADR-017]], 기록을 서버에 두고 기기끼리 맞추는 일은 [[ADR-099]], 게임 데이터 표는 [[ADR-020]] 에 이유가 있다.
 
 서버 코드는 별도 저장소 `maple-routine-server` 에 있다. 요청과 응답의 형식은 두 저장소에 따로 정의되어 있으므로, 칸을
@@ -11,10 +13,11 @@
 
 | 파일 | 하는 일 |
 |---|---|
+| `server/base-url.ts` | 서버 주소(`SERVER_ORIGIN`)와 경로 앞부분(`API_BASE_URL`). 서버를 부르는 `server/*.ts` 가 이 값을 쓴다 |
 | `server/notices.ts` | 공지 목록 · 공지 하나 조회 |
 | `server/settlement.ts` | 넥슨 결산 중인지 조회 |
 | `server/manual-completion.ts` | 직접 완료를 열어 둔 보스 조회 |
-| `server/game-data.ts` | 게임 데이터 열세 칸 조회 |
+| `server/game-data.ts` | 게임 데이터 스무 칸 조회 |
 | `server/account-deletion.ts` | 계정 삭제 예약 · 예약 확인 · 취소 |
 | `server/nexon-auth.ts` | 넥슨 로그인 시작 · 세션 받기 · 세션 거두기 |
 | `server/friends-stream.ts` | 로그인 사용자의 프렌즈 조회 스트림 |
@@ -36,8 +39,8 @@
 | `GET /v1/notices/:id` | 없음 | | 공지 하나 | 8초 |
 | `GET /v1/settlement` | 없음 | | `{ settling, startedAt }` | 4초 |
 | `GET /v1/manual-completion` | 없음 | | `{ bosses: [{ boss, from }] }` | 4초 |
-| `GET /v1/game-data` | 없음 | | 열세 칸. 칸마다 `updatedAt` | 4초 |
-| `GET /v1/maintenance` | 없음 | | 점검 중이면 200 과 `{ maintenance: true, until }`, 아니면 204. 서버가 아니라 nginx 가 답한다([[ADR-261]] 결정 3) | 4초 |
+| `GET /v1/game-data` | 없음 | | 스무 칸. 칸마다 `updatedAt` | 4초 |
+| `GET /v1/maintenance` | 없음 | | 점검 중이면 200 과 `{ maintenance: true, until }`, 아니면 204. 서버가 아니라 nginx 가 그 주소의 점검 파일로 답한다([[ADR-261]] 결정 3) | 4초 |
 | `DELETE /v1/me` | 세션 또는 메이플 ID 해시 | | 204 | 10초 |
 | `PUT /v1/me/maple-ids` | 세션 또는 메이플 ID 해시 | `{ mapleIds }`. 메인 계정의 메이플 ID 해시 | `{ mapleIds }`. 그 넥슨 계정이 가진 메이플 ID 해시 전부 | 10초 |
 | `POST /v1/me/sub-accounts` | 세션 | `{ mapleIds }`. 부계정의 메이플 ID 해시 | 204. 거절은 409 와 `code`(`same_account` · `registered_elsewhere` · `has_sub_accounts` · `login_is_sub_account`) | 10초 |
@@ -94,15 +97,20 @@ API 키 원문은 서버로 가지 않는다.
 | 결산 감시 | KST 00:00:01 ~ 06:00:01 에 10분마다([[ADR-016]] 결정 11) | `GET /v1/settlement` |
 | 로그인 짝 · 고아 세션 · 만료 세션 청소 | 1분 | 없음 |
 
-운영자는 관리 화면(`https://admin.mapleroutine.store/admin`, nginx basic auth)에서 공지 · 직접 완료 보스 · 게임 데이터 표를 고치고 드롭 가격을 본다.
+운영자는 관리 화면(`https://admin.mapleroutine.store/`, nginx basic auth)에서 공지 · 직접 완료 보스 · 게임 데이터 표를 고치고 드롭 가격을 본다.
+화면 주소에는 `/admin` 접두가 없다(`/notices` · `/bosses` 처럼). 하위 도메인이 이미 관리 화면이라는 뜻이기 때문이다. 관리 경로는
+nginx 가 디스크에서 내는 `/assets/` · `/ota/files/` 와 api 주소가 인증 없이 넘기는 `/v1/` 을 피한다. 그래서 그림 화면은 `/images` 다.
+지금 운영 서버의 관리 화면은 아직 `/admin` 아래이고, 1.0.15 서버를 운영에 올릴 때 nginx 와 함께 바뀐다([[ADR-016]] 결정 14).
 공지는 마크다운으로 쓰고 그림을 올려 넣으며, 서버가 저장할 때 앱이 그리는 블록으로 바꾼다([[ADR-057]] 결정 13).
 사용자 수와 사용 로그는 `로그` 묶음의 `사용자` · `사용 로그` 대시보드에서 본다([[ADR-158]]). 관리 화면도 앱처럼 테두리와
 구분선을 쓰지 않는다([[ADR-016]] 결정 13).
-드롭 시세는 장비는 거래권마다, 소비 아이템은 월드마다 `/admin/drop-market` 에서 본다. 관리 화면은 줄마다 하루 작업이 남긴 그날 울타리와 비교해 잘못 적은 값을 뺀다.
+드롭 시세는 장비는 거래권마다, 소비 아이템은 월드마다 `/drop-market` 에서 본다. 관리 화면은 줄마다 하루 작업이 남긴 그날 울타리와 비교해 잘못 적은 값을 뺀다.
 일일 기준가와 드롭 시세 지수 MASPI 는 하루 작업(KST 00:05)이 사람마다 하루 한 표로 계산해 남기고, 앱에 줄 응답을 만들어 저장한다.
 앱은 `GET /v1/market/maspi` · `/v1/market/items?world=` · `/v1/market/items/{itemKey}?world=` 로 그 응답을 그대로 받는다(ETag · 304).
 처음 채우기는 2026-11-16 에 `node dist/cli/market-backfill.js` 로 한 번 했다([[ADR-071]]).
-왼쪽 메뉴는 공지 · 게임데이터(보스 · 가계부 · 기타) · 로그 · 임시 기능으로 묶여 있고, 묶음마다 접고 펼 수 있다.
-지금 보는 화면이 든 묶음만 펼친 채로 열린다. 화면이 열일곱이라 다 펼쳐 두면 찾기 어렵기 때문이다.
-홈 화면의 카드도 같은 묶음 제목 아래 나뉘어 있다.
+왼쪽 메뉴는 공지 · FAQ · 게임데이터(보스 · 가계부 · 기타) · 로그 · 임시 기능으로 묶여 있고, 묶음마다 접고 펼 수 있다.
+지금 보는 화면이 든 묶음만 펼친 채로 열린다. 메뉴의 화면이 스물넷이라 다 펼쳐 두면 찾기 어렵기 때문이다.
+홈 화면의 카드도 같은 묶음 제목 아래 나뉘어 있고, 묶음을 단으로 나란히 놓아 한 화면에 들어온다.
+화면마다 하는 일을 나누고, 스크롤 없이 한 화면에 들어오게 하며, 값은 칸에서 바로 고친다([[ADR-016]] 결정 15).
+보스 직접 완료는 열린 보스와 닫은 이력을 표 하나에 두고, 보스를 열 때만 작은 창을 띄운다.
 `GET /healthz` 는 서버 상태 확인용이다.

@@ -31,9 +31,9 @@ describe('openInAppBrowser', () => {
     const open = jest.fn(async () => {})
     setBrowserPort({ open, openAuthSession: noAuthSession })
 
-    openInAppBrowser('https://mapleroutine.store/privacy')
+    openInAppBrowser('https://info.mapleroutine.store/privacy')
 
-    expect(open).toHaveBeenCalledWith('https://mapleroutine.store/privacy', {
+    expect(open).toHaveBeenCalledWith('https://info.mapleroutine.store/privacy', {
       toolbarColor: definition.bg,
       controlsColor: definition.primaryInk,
     })

@@ -142,7 +142,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-013+151+232](./adr/ADR-013+151+232_splash_boot.md) | 🟢 | splash | 스플래시와 앱 아이콘 |
 | [ADR-014](./adr/ADR-014_ads_inline.md) | 🟢 | ads | 광고 배선 |
 | [ADR-015+156+265](./adr/ADR-015+156+265_site_guide.md) | ⚪ | site | 안내 사이트와 홍보 첫 화면 |
-| [ADR-016+167+181+197+264+266+280](./adr/ADR-016+167+181+197+264+266+280_server_platform.md) | ⚪ | server | 서버 구성 · 관리 화면 짜임 |
+| [ADR-016+167+181+197+264+266+280+304](./adr/ADR-016+167+181+197+264+266+280+304_server_platform.md) | ⚪ | server | 서버 구성 · 관리 화면 짜임 |
 | [ADR-017+159+172+185+194](./adr/ADR-017+159+172+185+194_server_users.md) | 🟢 | server | 서버의 사용자와 신원 · 로그아웃과 계정 삭제 · 키 사용자 합치기 · 추천인 코드 |
 | [ADR-018](./adr/ADR-018_server-sync_drop-price.md) | 🟢 | server-sync | 드롭 기록의 id 와 월드 |
 | [ADR-019](./adr/ADR-019_game-data_reference.md) | 🟢 | game-data | 게임 데이터의 규칙 |
@@ -200,7 +200,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-078+254+287](./adr/ADR-078+254+287_persistence_boss-tables.md) | 🟢 | persistence | 보스 기록 테이블 재설계 |
 | [ADR-096+290](./adr/ADR-096+290_persistence_cashbook-tables.md) | 🟢 | persistence | 가계부 기록 테이블 재설계 |
 | [ADR-098+173](./adr/ADR-098+173_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |
-| [ADR-099+143+258+279+302](./adr/ADR-099+143+258+279+302_server-sync_records.md) | ⚪ | server-sync | 사용자가 만든 기록을 서버에 두고 기기끼리 맞추기 · 과거 드롭 올리기 |
+| [ADR-099+143+258+279+302+305](./adr/ADR-099+143+258+279+302+305_server-sync_records.md) | ⚪ | server-sync | 사용자가 만든 기록을 서버에 두고 기기끼리 맞추기 · 과거 드롭 올리기 |
 | [ADR-100+174+189+234+295](./adr/ADR-100+174+189+234+295_cashbook_enhancement-totals.md) | 🟢 | cashbook | 강화 합계 저장과 재계산 요청 · 스타포스 첫 성과 끝 성 · 이벤트 월드 판정과 월드 기간 · 슈페리얼 장비 스타포스 비용 |
 | [ADR-101+186+193+201+259+277+285+294+297](./adr/ADR-101+186+193+201+259+277+285+294+297_auth_multi-account.md) | ⚪ | auth | 다계정 |
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |
@@ -220,5 +220,5 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-209+291](./adr/ADR-209+291_inventory_items.md) | 🟢 | inventory | 인벤토리 |
 | [ADR-228](./adr/ADR-228_trade-history_page.md) | 🟢 | trade-history | 거래 내역 |
 | [ADR-250](./adr/ADR-250_design-system_press-feedback.md) | 🟢 | design-system | 누를 때 흐려지지 않는다 |
-| [ADR-261](./adr/ADR-261_error-resilience_server-maintenance.md) | 🟢 | error-resilience | 서버 점검 잠금 |
+| [ADR-261+306](./adr/ADR-261+306_error-resilience_server-maintenance.md) | 🟢 | error-resilience | 서버 점검 잠금 |
 | [ADR-286](./adr/ADR-286_persistence_device-conversion.md) | 🟢 | persistence | 1.0.15 기기 변환 |

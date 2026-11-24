@@ -2,7 +2,7 @@
 
 > ⚪ 미구현
 > 옛 번호: ADR-110 · ADR-229
-> 관련 소스: `site/` · `site/index.html` · `site/home.css` · `site/home.js` · `site/images/home/` · `site/robots.txt` · `site/sitemap.xml` · `PRIVACY.md` · `scripts/build-site.mjs` · `scripts/deploy-site.sh` · `app/auth/api-key-links.ts`
+> 관련 소스: `site/` · `site/index.html` · `site/home.css` · `site/home.js` · `site/images/home/` · `site/robots.txt` · `site/sitemap.xml` · `PRIVACY.md` · `scripts/build-site.mjs` · `scripts/deploy-site.sh` · `app/auth/api-key-links.ts` · `app/settings/SettingsAboutScreen.tsx`
 
 ## 배경
 
@@ -162,13 +162,21 @@ App Store 부터 놓으라고 정한다. Google Play 배지는 검정 바탕뿐�
   같은 사이트를 루트와 info 에 함께 올린다.
 - 1.0.15 앱이 여는 처리방침 · 키 가이드 주소(`PRIVACY_URL` · `GUIDE_URL`)는 info 로 바꾼다. 앱의 다른 주소와 같은 바이너리에서
   바꾼다([[ADR-016]] 결정 14). 루트의 주소를 어떻게 정하든 info 에는 이 페이지들이 있다.
-- info 도 결정 6 대로 서버 앱을 거치지 않고 nginx 가 디스크에서 바로 낸다.
+  - 2026-11-24 에 develop 에서 `https://info.mapleroutine.store/privacy` · `/api-key` 로 바꿨다. 두 주소는 루트와 같이 끝에 `/` 를
+    붙인 주소로 301 하고 그 주소가 200 이다. 내용은 루트의 같은 페이지와 같다.
+- info 도 결정 6 대로 서버 앱을 거치지 않고 nginx 가 디스크에서 바로 낸다. 루트와 info 는 같은 디렉터리(`/var/www/mapleroutine`)를
+  낸다. 그래서 지금 배포 한 번으로 두 주소에 함께 올라간다.
+- 대표 주소 · 사이트맵은 아직 루트를 가리키고 루트 `/` 도 301 하지 않는다. 사용자가 사이트를 옮기자고 할 때 함께 바꾼다.
 
 ## 테스트
 
-이 결정들을 확인하는 자동 테스트는 없다. 배포 스크립트가 끝에 일곱 경로(`/` · `/privacy` · `/support` ·
+사이트 자체를 확인하는 자동 테스트는 없다. 배포 스크립트가 끝에 일곱 경로(`/` · `/privacy` · `/support` ·
 `/api-key` · `/app-ads.txt` · `/robots.txt` · `/sitemap.xml`)의 응답 코드를 출력하므로, 배포할 때마다 그 출력을
 눈으로 확인한다.
+
+| 파일 | 확인하는 것 |
+|---|---|
+| `__tests__/server-domain-policy.test.ts` | 결정 11: 앱 소스(`src/`)에 루트 주소가 없는지 본다. 앱이 여는 처리방침 · 키 가이드 주소가 루트로 돌아가면 실패한다 |
 
 ## 번호 기록
 
@@ -176,3 +184,5 @@ App Store 부터 놓으라고 정한다. Google Play 배지는 검정 바탕뿐�
 - ADR-156 (2026-11-04): 첫 화면을 홍보 페이지로 바꾸고(결정 8), 스토어 배지 규칙(결정 9)과 검색엔진 정보(결정 10)를 더했다
 - ADR-265 (2026-11-20): 결정 11 을 더했다. 안내 사이트를 `info.mapleroutine.store` 로 옮기고, PC 버전 전까지 루트 `/` 는 info 로
   301 한다. 루트의 문서 주소와 `app-ads.txt` 는 둘 곳을 정할 때까지 그대로 낸다(#1090)
+- (2026-11-24) 결정 11 의 앱 주소(`PRIVACY_URL` · `GUIDE_URL`)를 develop 에서 info 로 바꾼 것과, 루트와 info 가 같은 디렉터리를
+  내는 것을 적었다. 결정은 그대로다(#1090)
