@@ -36,7 +36,7 @@
     "@gorhom/portal": "^1.0.14",
     "@noble/hashes": "^2.4.0",
     "@notifee/react-native": "^9.1.8",
-    "@op-engineering/op-sqlite": "^17.1.5",
+    "@op-engineering/op-sqlite": "^19.0.6",
     "@quidone/react-native-wheel-picker": "1.7.1",
     "@react-native-firebase/app": "^26.4.0",
     "@react-native-firebase/messaging": "^26.4.0",
