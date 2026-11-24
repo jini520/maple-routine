@@ -115,7 +115,7 @@ Metro 는 사이클을 찾으면 `Require cycle: …` 경고를 내고, 그 경�
 apps/mobile/      지금 RN 앱. app.json · index.ts · ios/ · android/ · 화면 · 저장소와 네이티브 어댑터
 apps/web/         Next.js 웹
 packages/core/    features · lib · storage · nexon · server 와 이들이 쓰는 타입 · 상수
-packages/tokens/  테마 색 · 글자 역할표
+packages/tokens/  글자 역할표. 색은 앱(직업 테마)과 웹(라이트 · 다크)이 따로다
 ```
 
 - `packages/core` 에는 플랫폼 라이브러리를 들이지 않는다. 웹 번들에 RN 이 딸려 오면 웹에서 돌지 않기 때문이다. 2026-11-24 에 로직 파일
