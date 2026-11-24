@@ -652,32 +652,19 @@ export function getBossProfitDbUngated(): Promise<SqliteDbConnection> {
   return dbPromise
 }
 
-// JS 컨텍스트를 파괴하는 리로드 직전에 호출한다. 이 커넥션이 아직 살아 있는 시점에 정상
-// 종료해 두지 않으면 리로드로 dbPromise 만 초기화되고 네이티브 쪽 커넥션은 그대로 남는다.
-// 그 상태에서 새 JS 컨텍스트의 openBossProfitDb 가 닫고 새로 생성 으로 복구하려 시도하지만,
-// 이마저 실기기에서 실패해 첫 쿼리가 응답 없이 멈추는 사례가 있었다. 아직 멀쩡할 때 미리
-// 닫아 두면 네이티브 쪽에 아무것도 안 남으므로 이 문제 자체가 생기지 않는다.
-//
-// 실패해도 곧 리로드될 것이므로 조용히 무시한다. openBossProfitDb 의 stale 감지 로직이
-// 최후의 폴백으로 남아 있다.
+/**
+ * 다시 불러오기(OTA 적용 · 데이터 삭제) 직전에 커넥션을 닫는 함수. 닫지 않으면 `dbPromise` 만 비고 네이티브 커넥션이 남아,
+ * 새 JS 의 첫 쿼리가 응답 없이 멈춘 적이 있다. 실패해도 던지지 않는다. 남은 커넥션은 `openBossProfitDb` 가 닫고 새로 연다.
+ */
 export async function closeBossProfitDb(): Promise<void> {
   if (dbPromise === null) {
     return
   }
   const pending = dbPromise
-  // 닫는 도중에도 dbPromise를 계속 살려둔다. 먼저 null로 비우면, 그 사이 다른 곳에서
-  // getBossProfitDb()를 동시에 호출했을 때 "아직 안 닫힌" 커넥션을 못 보고 새로 openBossProfitDb를
-  // 시작해버린다. 그 경쟁 상태에서 이 함수의 closeConnection과 그 호출의 createConnection이
-  // 뒤엉키면 네이티브에서 "Connection boss_profit already exists"가 날 수 있다(안드로이드
-  // CapacitorSQLite.createConnection이 dbDict에 이미 등록돼 있으면 던지는 에러). 닫기가 끝난
-  // 뒤(성공이든 실패든)에만 dbPromise를 비워, 그 전까지는 동시 호출도 이 커넥션을 그대로 재사용하게 한다.
+  // 닫기가 끝난 뒤에만 dbPromise 를 비운다. 먼저 비우면 그 사이의 getBossProfitDb() 가 새로 열어, 닫기와 열기가 겹친다.
   try {
-    // 닫기가 응답하지 않으면 이 함수는 영원히 resolve하지 않고, 호출부 둘(OTA 적용의
-    // CapacitorUpdater.set·데이터 삭제의 reload)이 **그 뒤에 화면을 되살리는 일을 하므로** 그 리로드에
-    // 영영 도달하지 못한다. 커버만 남는 "주황 스플래시 무한"이 그것이다. 대기 구간
-    // 전체(dbPromise 대기 + closeConnection)를 한 번에 감싼다. 여는 쪽이 매달리면 닫기도 그 앞에서
-    // 매달리므로 closeConnection만 감싸면 상한이 보장되지 않는다.
-    // 타임아웃이 바꾸는 것은 "실패로 끝난다"가 아니라 **"끝난다"** 이다. 아래 catch가 그대로 삼킨다.
+    // 닫기가 응답하지 않으면 호출부 둘(OTA 적용의 Updates.reloadAsync · 데이터 삭제의 다시 불러오기)이 끝내 그 단계에
+    // 닿지 못하고 스플래시 커버만 남는다. 여는 쪽이 매달리면 닫기도 그 앞에서 매달리므로 열기 대기까지 한 번에 감싼다.
     await withTimeout(
       (async () => {
         await pending
