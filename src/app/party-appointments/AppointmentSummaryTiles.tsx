@@ -5,7 +5,7 @@
  */
 import { View } from 'react-native'
 
-import { BellIcon, RepeatIcon, Text } from '../../components/atoms'
+import { BellIcon, IconBadge, RepeatIcon, Text } from '../../components/atoms'
 import { formatLead } from '../../features/party-appointments/draft'
 
 function Tile(props: {
@@ -14,18 +14,9 @@ function Tile(props: {
   value: string
   on: boolean
 }): React.JSX.Element {
-  const Icon = props.icon
   return (
     <View className="flex-1 flex-row items-center gap-2.5 rounded-xl bg-surface px-3 py-2.5">
-      <View
-        className={`h-[30px] w-[30px] items-center justify-center rounded-full ${props.on ? 'bg-primary-tint' : 'bg-surface-2'}`}
-      >
-        <Icon
-          className={`h-[15px] w-[15px] ${props.on ? 'text-primary-ink' : 'text-text-disabled'}`}
-          strokeWidth={2}
-          aria-hidden
-        />
-      </View>
+      <IconBadge icon={props.icon} size={32} tone={props.on ? 'primary' : 'muted'} />
       <View className="shrink">
         <Text className="text-xs text-text-muted">{props.label}</Text>
         <Text className={`text-sm ${props.on ? 'font-semibold text-text' : 'text-text-disabled'}`} numberOfLines={1}>

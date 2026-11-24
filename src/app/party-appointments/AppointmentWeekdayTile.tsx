@@ -15,7 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 
-import { RepeatIcon, Text } from '../../components/atoms'
+import { IconBadge, RepeatIcon, Text } from '../../components/atoms'
 import { RESET_WEEKDAYS } from '../../features/party-appointments/draft'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
 import { useThemeAppearance } from '../../theme/context'
@@ -98,9 +98,7 @@ export function AppointmentWeekdayTile(props: AppointmentWeekdayTileProps): Reac
   return (
     <View className="flex-1 gap-2 rounded-xl bg-surface px-3 pb-3 pt-2.5">
       <View className="flex-row items-center gap-2.5">
-        <View className="h-[30px] w-[30px] items-center justify-center rounded-full bg-primary-tint">
-          <RepeatIcon className="h-[15px] w-[15px] text-primary-ink" strokeWidth={2} aria-hidden />
-        </View>
+        <IconBadge icon={RepeatIcon} size={32} />
         <View>
           <Text className="text-xs text-text-muted">요일</Text>
           <Text className="text-sm font-semibold text-primary-ink">{value}</Text>

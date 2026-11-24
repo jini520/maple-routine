@@ -12,7 +12,7 @@
 import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { CalendarPlusIcon, ChevronRightIcon, RepeatIcon, Text } from '../../../components/atoms'
+import { CalendarPlusIcon, ChevronRightIcon, IconBadge, RepeatIcon, Text } from '../../../components/atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { remainingLabelOf } from '../../../features/party-appointments/agenda'
 import { usePartyAppointmentOpenStore, type PartyAppointmentCreateKind } from '../../../features/party-appointments/open-request'
@@ -58,9 +58,7 @@ function CreateCells(): React.JSX.Element {
             onPress={() => usePartyAppointmentOpenStore.getState().openCreate(kind)}
             className="min-w-0 flex-1 flex-row items-center gap-2 rounded-[10px] bg-card-inset p-2.5"
           >
-            <View className="h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-primary-tint">
-              <Icon className="h-[15px] w-[15px] text-primary-ink" strokeWidth={2.2} aria-hidden />
-            </View>
+            <IconBadge icon={Icon} size={32} className="shrink-0" />
             <View className="min-w-0 flex-1">
               <Text numberOfLines={1} className="text-xs font-semibold text-text">
                 {label}

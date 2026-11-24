@@ -19,6 +19,7 @@ import {
   Button,
   ChevronDownIcon,
   ChevronUpIcon,
+  IconBadge,
   MegaphoneIcon,
   Text,
 } from '../../components/atoms'
@@ -53,9 +54,7 @@ export function NoticeBanner(): React.JSX.Element | null {
         onPress={() => setExpandedId(expanded ? null : notice.id)}
         className="flex-row items-center gap-2.5"
       >
-        <View className="h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint">
-          <MegaphoneIcon className="h-4 w-4 text-primary-ink" strokeWidth={1.75} aria-hidden />
-        </View>
+        <IconBadge icon={MegaphoneIcon} size={32} className="shrink-0" />
 
         <View className="shrink grow">
           <View className="flex-row items-center gap-1.5">

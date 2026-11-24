@@ -10,7 +10,7 @@
  */
 import { View } from 'react-native'
 
-import { AlertTriangleIcon, Badge, KeyRoundIcon, Text } from '../../components/atoms'
+import { AlertTriangleIcon, Badge, IconBadge, KeyRoundIcon, Text } from '../../components/atoms'
 import { TopSheet } from '../../components/organisms/TopSheet/TopSheet'
 import { NEXON_LOGIN_ENABLED } from '../../features/auth/nexon-login-enabled'
 import { ApiKeyForm } from './ApiKeyForm'
@@ -39,9 +39,7 @@ export function ApiKeySheet(props: {
     <TopSheet label={title} testId="api-key-sheet" onClose={props.onClose}>
       <View className="gap-4">
         <View className="flex-row items-center gap-2.5">
-          <View className="h-8 w-8 items-center justify-center rounded-full bg-primary-tint">
-            <KeyRoundIcon className="h-4 w-4 text-primary-ink" strokeWidth={1.75} aria-hidden />
-          </View>
+          <IconBadge icon={KeyRoundIcon} size={32} />
           <Text className="flex-1 text-base font-bold text-text">{title}</Text>
           {/* 넥슨 로그인보다 제한된 경로라는 표시라, 넥슨 로그인이 없으면 무엇에 비해 제한되는지 말이 안 된다. 이미 키로 쓰는 중에
               키만 바꾸는 자리에서도 할 말이 아니다. */}
