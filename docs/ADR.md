@@ -190,9 +190,9 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-058+087+176+179+248](./adr/ADR-058+087+176+179+248_today_widgets.md) | 🟢 | today | today 위젯 격자 · MASPI 위젯 |
 | [ADR-089+218+249](./adr/ADR-089+218+249_today_quick-links.md) | 🟢 | today | today 빠른 이동 · 가계부 분류 칸 · MASPI · 거래 내역 칸 |
 | [ADR-059+136+224](./adr/ADR-059+136+224_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
-| [ADR-060+073+079+085+088+107+109+130+133](./adr/ADR-060+073+079+085+088+107+109+130+133_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
-| [ADR-061+149](./adr/ADR-061+149_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 · 토스트 표시 |
-| [ADR-062+082+091+106+119+123+129+131+134+141+148+240](./adr/ADR-062+082+091+106+119+123+129+131+134+141+148+240_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 |
+| [ADR-060+073+079+085+088+107+109+130+133+314](./adr/ADR-060+073+079+085+088+107+109+130+133+314_design-system_components.md) | ⚪ | design-system | 공용 부품의 계층과 기본 부품 |
+| [ADR-061+149+315](./adr/ADR-061+149+315_design-system_states.md) | ⚪ | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 · 토스트 · 안내 띠 표시 |
+| [ADR-062+082+091+106+119+123+129+131+134+141+148+240+316](./adr/ADR-062+082+091+106+119+123+129+131+134+141+148+240+316_design-system_sheets.md) | ⚪ | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 · ＋ 버튼 · 드롭다운 |
 | [ADR-063+080+113+116+146+184+223+268](./adr/ADR-063+080+113+116+146+184+223+268_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 체계 · 화면 배율 · 글자 크기 페이지 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
 | [ADR-071+205+243+251](./adr/ADR-071+205+243+251_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
@@ -205,7 +205,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-101+186+193+201+259+277+285+294+297](./adr/ADR-101+186+193+201+259+277+285+294+297_auth_multi-account.md) | ⚪ | auth | 다계정 |
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
-| [ADR-086](./adr/ADR-086_design-system_figma-library.md) | 🟢 | design-system | Figma 디자인 시스템 파일 |
+| [ADR-086+317](./adr/ADR-086+317_design-system_figma-library.md) | ⚪ | design-system | Figma 디자인 시스템 파일 · 앱과 웹 |
 | [ADR-137+168+292](./adr/ADR-137+168+292_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
 | [ADR-142+144+229+275](./adr/ADR-142+144+229+275_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
 | [ADR-147+252](./adr/ADR-147+252_design-system_round-entry-buttons.md) | 🟢 | design-system | 진입 버튼과 대표 캐릭터의 움직임 · 고른 동작 |
