@@ -28,6 +28,10 @@ describe('Figma 기록 정책', () => {
     expect(result.invalid).toEqual([])
   })
 
+  it('모든 항목이 Figma 에 맞춰져 있다. 처음 옮기기(#1215)가 끝나 아직 안 옮긴 항목(pending)을 받지 않는다', () => {
+    expect(result.pending).toEqual([])
+  })
+
   it('부품 폴더를 실제로 읽는다', () => {
     expect(listComponentKeys(ROOT).length).toBeGreaterThan(60)
     expect(Object.keys(record.entries)).toContain(FOUNDATIONS)
@@ -150,21 +154,24 @@ describe('기록 대조', () => {
     expect(listComponentKeys(root)).toEqual(['atoms/Chip', 'molecules/Row'])
   })
 
-  it('빠진 항목 · 남은 항목 · 낡은 해시 · 잘못된 노드 id 를 가른다', () => {
+  it('빠진 항목 · 남은 항목 · 안 옮긴 항목 · 낡은 해시 · 잘못된 노드 id 를 가른다', () => {
     const fresh = hashComponent(root, 'atoms/Chip')
+    const foundations = { node: '1:2', hash: hashComponent(root, FOUNDATIONS) }
     const result = checkRecord(root, {
       entries: {
-        [FOUNDATIONS]: 'pending',
+        [FOUNDATIONS]: foundations,
         'atoms/Chip': { node: '12:3', hash: fresh },
-        'organisms/Gone': 'pending',
+        'organisms/Gone': { node: '9:9', hash: 'x' },
+        'molecules/Row': 'pending',
       },
     })
-    expect(result).toEqual({ missing: ['molecules/Row'], extra: ['organisms/Gone'], stale: [], invalid: [] })
+    expect(result).toEqual({ missing: [], extra: ['organisms/Gone'], pending: ['molecules/Row'], stale: [], invalid: [] })
 
     writeFileSync(join(root, 'src', 'components', 'atoms', 'Chip', 'Chip.tsx'), 'export const Chip = 2\n')
     const changed = checkRecord(root, {
-      entries: { [FOUNDATIONS]: 'pending', 'atoms/Chip': { node: '12:3', hash: fresh }, 'molecules/Row': { node: 'Row', hash: 'x' } },
+      entries: { [FOUNDATIONS]: foundations, 'atoms/Chip': { node: '12:3', hash: fresh }, 'molecules/Row': { node: 'Row', hash: 'x' } },
     })
+    expect(changed.missing).toEqual([])
     expect(changed.stale).toEqual(['atoms/Chip', 'molecules/Row'])
     expect(changed.invalid).toEqual(['molecules/Row'])
   })
