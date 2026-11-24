@@ -1,7 +1,9 @@
 # 서버
 
-앱이 부르는 우리 서버(`https://mapleroutine.store`)를 앱 쪽에서 정리한다. 어느 경로를 부르고, 무엇을 싣고, 무엇을
-받는지와 실패하면 어떻게 하는지를 적는다. 서버를 어디에 어떤 구조로 두었는지는 [[ADR-016]], 서버가 사용자를 어떻게
+앱이 부르는 우리 서버(`https://api.mapleroutine.store`)를 앱 쪽에서 정리한다. 어느 경로를 부르고, 무엇을 싣고, 무엇을
+받는지와 실패하면 어떻게 하는지를 적는다. 주소는 `server/base-url.ts` 의 `SERVER_ORIGIN` 하나이고 그림 주소도 이 값에서 만든다.
+1.0.14 까지의 앱은 루트 주소(`https://mapleroutine.store`)를 부른다. 지금 루트는 운영 서버로, api 는 DB 박스의 서버 develop 으로
+가고, 1.0.15 로 전환하면 둘 다 새 서버로 간다([[ADR-016]] 결정 14 · [[ADR-099]] 결정 43). 서버를 어디에 어떤 구조로 두었는지는 [[ADR-016]], 서버가 사용자를 어떻게
 구분하는지는 [[ADR-017]], 기록을 서버에 두고 기기끼리 맞추는 일은 [[ADR-099]], 게임 데이터 표는 [[ADR-020]] 에 이유가 있다.
 
 서버 코드는 별도 저장소 `maple-routine-server` 에 있다. 요청과 응답의 형식은 두 저장소에 따로 정의되어 있으므로, 칸을
@@ -11,6 +13,7 @@
 
 | 파일 | 하는 일 |
 |---|---|
+| `server/base-url.ts` | 서버 주소(`SERVER_ORIGIN`)와 경로 앞부분(`API_BASE_URL`). 서버를 부르는 `server/*.ts` 가 이 값을 쓴다 |
 | `server/notices.ts` | 공지 목록 · 공지 하나 조회 |
 | `server/settlement.ts` | 넥슨 결산 중인지 조회 |
 | `server/manual-completion.ts` | 직접 완료를 열어 둔 보스 조회 |
@@ -36,8 +39,8 @@
 | `GET /v1/notices/:id` | 없음 | | 공지 하나 | 8초 |
 | `GET /v1/settlement` | 없음 | | `{ settling, startedAt }` | 4초 |
 | `GET /v1/manual-completion` | 없음 | | `{ bosses: [{ boss, from }] }` | 4초 |
-| `GET /v1/game-data` | 없음 | | 열세 칸. 칸마다 `updatedAt` | 4초 |
-| `GET /v1/maintenance` | 없음 | | 점검 중이면 200 과 `{ maintenance: true, until }`, 아니면 204. 서버가 아니라 nginx 가 답한다([[ADR-261]] 결정 3) | 4초 |
+| `GET /v1/game-data` | 없음 | | 스무 칸. 칸마다 `updatedAt` | 4초 |
+| `GET /v1/maintenance` | 없음 | | 점검 중이면 200 과 `{ maintenance: true, until }`, 아니면 204. 서버가 아니라 nginx 가 그 주소의 점검 파일로 답한다([[ADR-261]] 결정 3) | 4초 |
 | `DELETE /v1/me` | 세션 또는 메이플 ID 해시 | | 204 | 10초 |
 | `PUT /v1/me/maple-ids` | 세션 또는 메이플 ID 해시 | `{ mapleIds }`. 메인 계정의 메이플 ID 해시 | `{ mapleIds }`. 그 넥슨 계정이 가진 메이플 ID 해시 전부 | 10초 |
 | `POST /v1/me/sub-accounts` | 세션 | `{ mapleIds }`. 부계정의 메이플 ID 해시 | 204. 거절은 409 와 `code`(`same_account` · `registered_elsewhere` · `has_sub_accounts` · `login_is_sub_account`) | 10초 |

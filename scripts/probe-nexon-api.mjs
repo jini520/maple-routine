@@ -168,23 +168,23 @@ async function probeShape(name) {
 // 앱의 lib/scheduler/scheduler-activity.ts와 **같은 규칙**을 wire 위에서 다시 구현한다. 앱 코드를
 // import하지 않는 이유는 이 스크립트가 빌드 없이 도는 독립 도구이기 때문이고, 그래서 규칙이 갈라지면
 // 여기가 먼저 틀린다. 규칙을 고칠 때 두 곳을 같이 본다.
-// 공유 · 누적 판정은 앱과 같은 표를 읽는다. 서버 게임 데이터 `contents` 칸의 `shareScope` · `cumulativeScore` 다.
-const GAME_DATA_URL = 'https://mapleroutine.store/v1/game-data'
+// 공유 · 점수 판정은 앱과 같은 표를 읽는다. 앱이 부르는 서버(api 주소) 게임 데이터 `contents` 칸의 `shareScope` · `checkType` 다.
+const GAME_DATA_URL = 'https://api.mapleroutine.store/v1/game-data'
 const contentRows = (await (await fetch(GAME_DATA_URL)).json()).contents.contents
 const stripSpaces = (value) => value.replace(/\s+/g, '')
 const SHARED_NAMES = new Set(
   contentRows.filter((row) => row.shareScope !== 'character').map((row) => stripSpaces(row.apiName)),
 )
 const shareScope = (name) => (SHARED_NAMES.has(stripSpaces(name)) ? 'shared' : 'character')
-// 리셋 없이 누적되는 개인 점수는 자격 판정에서 뺀다. 한 번 해 본 적만 있어도 최근 14일에 한 것으로 읽힌다.
-const CUMULATIVE_NAMES = new Set(contentRows.filter((row) => row.cumulativeScore).map((row) => stripSpaces(row.apiName)))
-const isCumulative = (name) => CUMULATIVE_NAMES.has(stripSpaces(name))
+// 점수로 완료를 가르는 항목은 자격 판정에서 뺀다. 점수가 리셋을 넘어서도 줄지 않아, 한 번 해 본 적만 있어도 최근 14일에 한 것으로 읽힌다.
+const SCORE_NAMES = new Set(contentRows.filter((row) => row.checkType === 'score').map((row) => stripSpaces(row.apiName)))
+const isScore = (name) => SCORE_NAMES.has(stripSpaces(name))
 
-// 앱: nowCount > 0 || questState === 2 (누적 점수 항목 제외)
+// 앱: nowCount > 0 || questState === 2 (점수 항목 제외)
 function contentTriggers(wire, section) {
   return (wire ?? [])
     .filter((item) => shareScope(item.content_name) === 'character')
-    .filter((item) => !isCumulative(item.content_name))
+    .filter((item) => !isScore(item.content_name))
     .filter((item) => item.now_count > 0 || Number(item.quest_state) === 2)
     .map(
       (item) =>
@@ -227,7 +227,7 @@ async function probeItems(name) {
   const character = await findOcid(name)
   console.log(`${character.character_name}(${character.world_name} Lv.${character.character_level})`)
   console.log(`게임 데이터 공유 항목: ${[...SHARED_NAMES].join(' · ')}`)
-  console.log(`게임 데이터 누적 점수: ${[...CUMULATIVE_NAMES].join(' · ') || '(없음)'}\n`)
+  console.log(`게임 데이터 점수 항목: ${[...SCORE_NAMES].join(' · ') || '(없음)'}\n`)
 
   const seen = new Map()
   for (const date of [null, kstDateKey(-2), kstDateKey(-8)]) {
@@ -251,8 +251,8 @@ async function probeItems(name) {
 
   console.log('구분     현재분류    항목명')
   for (const entry of [...seen.values()].sort((a, b) => a.section.localeCompare(b.section))) {
-    const label = isCumulative(entry.name)
-      ? '누적'
+    const label = isScore(entry.name)
+      ? '점수'
       : shareScope(entry.name) === 'shared'
         ? '공유'
         : '캐릭터'

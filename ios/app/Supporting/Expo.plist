@@ -13,6 +13,6 @@
     <key>EXUpdatesRuntimeVersion</key>
     <string>file:fingerprint</string>
     <key>EXUpdatesURL</key>
-    <string>https://mapleroutine.store/v1/ota/manifest</string>
+    <string>https://api.mapleroutine.store/v1/ota/manifest</string>
   </dict>
 </plist>

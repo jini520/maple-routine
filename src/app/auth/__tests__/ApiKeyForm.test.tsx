@@ -120,7 +120,7 @@ describe('ApiKeyForm', () => {
 
     await fireEvent.press(pressableOf(view.getByText('API 키 발급 방법 보기'), 'link'))
 
-    expect(openBrowser).toHaveBeenCalledWith('https://mapleroutine.store/api-key')
+    expect(openBrowser).toHaveBeenCalledWith('https://info.mapleroutine.store/api-key')
   })
 
   // 이미 키를 발급받은 사용자에게 7단계 안내를 경유시키지 않는다. 가이드와 별개의 진입점.

@@ -10,7 +10,7 @@
       "policy": "fingerprint"
     },
     "updates": {
-      "url": "https://mapleroutine.store/v1/ota/manifest",
+      "url": "https://api.mapleroutine.store/v1/ota/manifest",
       "enabled": true,
       "checkAutomatically": "NEVER",
       "fallbackToCacheTimeout": 0

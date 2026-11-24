@@ -1,4 +1,4 @@
-# ADR-099+143+258+279+302 사용자가 만든 기록은 서버에 두고 같은 사람의 기기끼리 맞춘다. 과거 드롭도 묶음으로 올린다
+# ADR-099+143+258+279+302+305 사용자가 만든 기록은 서버에 두고 같은 사람의 기기끼리 맞춘다. 과거 드롭도 묶음으로 올린다
 
 > ⚪ 미구현
 > 관련 소스: `features/server-sync/*` · `storage/cache-data.ts` · `app/settings/SettingsAboutScreen.tsx` · `features/auth/server-identity.ts` · `features/auth/store.ts` · `features/auth/nexon-login.ts` · `features/auth/unsynced-prompt.ts` · `app/auth/UnsyncedRecordsModal.tsx` · `storage/server-sync-owners.ts` · `features/account-manage/store.ts` · `server/accounts.ts` · `server/error-codes.ts` · `server/write.ts` · `storage/server-sync-queue.ts` · `storage/server-sync-records.ts` · `storage/server-sync-pull.ts` · `storage/server-sync-pull-preferences.ts` · `storage/server-sync-cursors.ts` · `storage/server-sync-first.ts` · `storage/sqlite/server-sync-triggers.ts` · `storage/sqlite/device-conversion.ts` · `storage/preferences-conversion.ts` · `features/device-conversion/run.ts` · `lib/boss/drop-item-ids.ts` · `storage/boss-drops.ts` · `features/boss-profit/drops-loader.ts` · 서버 `modules/users` · `modules/identity` · `modules/sync` · `common/error-codes.ts`
@@ -1405,6 +1405,14 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   - `api` 는 2026-11-21 부터 운영 사본으로 도는 DB 박스의 서버를 가리킨다(아래). 그래서 1.0.15 를 출시하기 전에 `api` 에 먼저
     점검 잠금을 건다. 그러지 않으면 출시와 전환 사이에 1.0.15 로 올린 사용자가 사본에 기록을 적는다. 루트는 1.0.14 까지의 앱이
     보므로 잠금은 1.0.15 가 스토어에 나온 뒤에 건다(결정 64). 이 줄은 Claude 가 적었다.
+  - 그래서 점검 파일을 주소마다 따로 두고 잠금을 따로 건다([[ADR-261]] 결정 3). 파일이 하나면 `api` 를 잠그는 순간 1.0.14
+    사용자도 1.0.15 가 나오기 전부터 잠긴다. 이 줄은 Claude 가 적었다.
+  - 전환할 때 upstream 을 앱 박스로 바꾸기 전에 DB 박스의 1.0.15 OTA(`latest-<platform>.json` · 1.0.15 지문의 매니페스트 ·
+    `files/`)를 앱 박스의 `/srv/maple-routine-ota` 로 옮기고, 발행 스크립트의 `OTA_HOST` 를 앱 박스로 바꾼다. 바꾼 뒤에는 `api` 의
+    OTA 확인이 앱 박스의 목록을 읽는다. 그 목록에 1.0.15 의 지문이 없으면 1.0.15 사용자가 스토어 업데이트 모달에 막힌다. 옮긴
+    목록은 루트로 묻는 1.0.14 사용자도 받으므로, 1.0.15 가 스토어에 나온 뒤 루트를 잠글 때 옮기고 1.0.14 까지의 지문이 남아
+    있으면 뺀다(결정 64). 앱 박스의 `files/` 는 지우지 않는다. 절차는 서버 저장소 `README.md` 의 OTA 에 있다. 이 줄은 Claude 가
+    적었다.
 - 지금 앱에는 서버의 점검으로 앱을 잠그는 화면이 없다. 넥슨이 점검 중일 때 머리글 아래에 서는 띠(`NexonMaintenanceBanner`)만
   있다. 점검 잠금은 1.0.14+1 로 먼저 낸다(사용자 지정 2026-11-19, #1093). 화면과 문구, 잠금을 켜고 끄는 방법은 그 이슈에서
   정했다. 전환에서 그 잠금을 쓰는 방법은 결정 64 에 있다.
@@ -1424,6 +1432,11 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
     세션 암호 키는 운영과 다르다.
   - DB 박스에는 도커를 두지 않는다. 서버는 systemd 로, 그림 · OTA 파일은 nginx 로 낸다. 새 운영 서버도 같은 방법으로 돈다
     ([[ADR-016]] 결정 3).
+  - 1.0.15 의 OTA 는 전환까지 DB 박스에 둔다. 매니페스트가 읽는 `latest-<platform>.json` 과 받는 지문 목록, `/ota/files` 의
+    번들과 에셋이다. `api` 의 `/v1/ota/` 와 `/ota/files/` 가 upstream 을 따라 이 박스로 오기 때문이다. 그래서 develop 의 발행
+    스크립트(`scripts/publish-rn-ota.mjs` 의 `OTA_HOST`)는 DB 박스에 올리고, 1.0.15 바이너리(TestFlight 포함)를 업로드하면 그
+    지문을 DB 박스의 목록에 넣는다. 1.0.14 까지의 OTA 는 patch · hotfix 트리의 스크립트가 지금처럼 앱 박스에 올린다. 그래서
+    develop 에서 발행해도 앱 박스의 `latest-<platform>.json` 을 덮어 1.0.14 사용자를 막는 일이 없다. 이 줄은 Claude 가 적었다.
   - 심사용 서버는 앱이 `release/1.0.15` 를 딸 때 서버 develop 에서 딴 `release/1.0.15` 로 띄운다([[ADR-188]] 결정 9 · 결정 65).
 - 전환한 뒤에도 루트 주소의 `/v1` · `/assets` · `/ota/files` 는 api 와 같은 서버로 넘긴다. 1.0.14 까지의 앱은 루트 주소
   (`mapleroutine.store/v1`)를 보고, 그 앱이 업데이트 안내를 받으려면 루트의 OTA 확인 경로(`/v1/ota/latest` ·
@@ -2153,9 +2166,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 점검 잠금의 화면 · 문구 · 켜고 끄는 방법은 #1093 에서 정했다(사용자 선택 2026-11-20). 그 결정은 1.0.14 의 핫픽스 브랜치에 있는
 ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것만 적는다. 이 결정은 Claude 가 적었다.
 
-- 점검 상태는 앱 박스의 파일 하나이고 nginx 가 낸다. 맥에서 스크립트로 켜고 끈다. 서버 컨테이너를 내려도 nginx 는 떠 있어서
-  앱이 점검 중인 것을 안다.
-- 잠금을 켜면 nginx 가 `/v1/` 요청을 서버로 넘기지 않는다. 그래서 잠금 코드가 없는 번들도 옛 DB 에 쓰지 못하고, 옮긴 뒤에 옛
+- 점검 상태는 주소(루트 · `api`)마다 앱 박스의 파일 하나이고 nginx 가 낸다([[ADR-261]] 결정 3). 맥에서 스크립트로 대상을 골라
+  켜고 끈다. 서버 컨테이너를 내려도 nginx 는 떠 있어서 앱이 점검 중인 것을 안다.
+- 한 주소의 잠금을 켜면 nginx 가 그 주소의 `/v1/` 요청을 서버로 넘기지 않는다. 그래서 잠금 코드가 없는 번들도 옛 DB 에 쓰지 못하고, 옮긴 뒤에 옛
   DB 에 적힌 줄을 다시 합칠 일이 없다(결정 43).
 - 앱은 쓰는 동안 5분마다 점검을 묻는다. 잠금을 켠 뒤 5분을 기다리면 켜져 있던 앱도 잠긴다. 옛 DB 를 옮기는 것은 그 뒤에
   시작한다.
@@ -2168,7 +2181,9 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
     새 서버이기 때문이다. 이 줄은 Claude 가 적었다.
 - 잠금이 풀리는 조건에 번들 버전을 넣지 않는다. 1.0.15 는 OTA 가 아니라 주소가 다른 스토어 바이너리다(결정 43). 1.0.14
   까지의 바이너리는 지문으로 막힌다.
-- 1.0.15 바이너리가 보는 `api` 주소에도 같은 점검 설정을 둔다. 주소를 나눌 때 함께 넣는다([[ADR-016]] 결정 14).
+- 1.0.15 바이너리가 보는 `api` 주소에도 같은 점검 설정을 둔다. 주소를 나눌 때 함께 넣었다([[ADR-016]] 결정 14). 파일은
+  루트와 따로다. `api` 가 자기 파일을 읽게 하는 nginx 변경은 출시 준비 때 사용자 승인을 받고 한다(서버 저장소 `README.md` 의
+  점검 잠금). 그 전까지는 `api` 도 루트의 파일을 읽는다.
 - 1.0.15 의 앱은 점검 잠금이 풀린 뒤에 기기 변환(결정 19)과 첫 동기화를 시작한다. 점검 중에는 새 서버가 아직 없다. 첫 동기화는
   시작하기 전에 점검을 다시 묻는다(결정 67). 기기 변환은 돌 단계가 남았을 때만 다시 묻고, 점검 중이면 잠금이 풀릴 때까지 기다린다.
   묻는 때와 기다리는 동안의 화면은 [[ADR-286]] 결정 1 에 있다.
@@ -3147,3 +3162,5 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
   구현하고 검사하는 때와 기간을 보지 않는 것을 적었다. 모두 Claude 가 정했다
 - (2026-11-24) 결정 43 에서 앞당겨 띄운 서버의 알림을 끄는 이유를 고쳤다. 서버는 기기의 푸시 토큰을 갖지 않고 토픽으로만 보낸다.
   사본이 운영 서버와 같은 공지를 같은 토픽으로 보내 알림이 두 번 가기 때문이다
+- ADR-305 (2026-11-24): 결정 43 에 1.0.15 의 OTA 를 전환까지 DB 박스에 두고 전환 때 앱 박스로 옮기는 것을, 결정 43 · 64 에
+  `api` 와 루트의 점검 파일을 나눠 잠금을 따로 거는 것을 더했다(#1090)
