@@ -14,7 +14,7 @@ describe('LoadingState', () => {
   it('page 변형은 32px 스피너로 커지고 최소 높이를 갖는다', async () => {
     const { getByTestId } = await renderAtom(<LoadingState message="불러오고 있어요" size="page" />)
 
-    expect(getByTestId('maple-sweep-spinner', { includeHiddenElements: true }).props.width).toBe(32)
+    expect(flattenStyle(getByTestId('spinner', { includeHiddenElements: true }).props.style).width).toBe(32)
     expect(flattenStyle(getByTestId('loading-state').props.style).minHeight).toBe(132)
   })
 

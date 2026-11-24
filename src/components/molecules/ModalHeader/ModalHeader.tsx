@@ -1,6 +1,6 @@
 import { View } from 'react-native'
 
-import { RingSpinner, Text } from '../../atoms'
+import { Spinner, Text } from '../../atoms'
 
 /** 배지에 드는 아이콘. lucide 와 커스텀 아이콘이 함께 통하는 프롭만 받는다. */
 export type ModalIcon = React.ComponentType<{
@@ -51,7 +51,7 @@ export function ModalHeader(props: ModalHeaderProps): React.JSX.Element {
           className={`h-10 w-10 items-center justify-center rounded-full ${tone.bg}`}
         >
           {props.busy === true ? (
-            <RingSpinner size={20} />
+            <Spinner size={20} />
           ) : (
             Icon !== undefined && <Icon className={`h-5 w-5 ${tone.ink}`} strokeWidth={1.75} aria-hidden />
           )}

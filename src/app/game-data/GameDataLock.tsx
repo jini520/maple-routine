@@ -9,7 +9,7 @@
  */
 import { View } from 'react-native'
 
-import { Button, CheckIcon, CloudDownloadIcon, ProgressBar, RingSpinner, Text } from '../../components/atoms'
+import { Button, CheckIcon, CloudDownloadIcon, ProgressBar, Spinner, Text } from '../../components/atoms'
 import { ErrorState } from '../../components/molecules/ErrorState/ErrorState'
 import { InsetRow } from '../../components/molecules/InsetRow/InsetRow'
 import { ModalHeader } from '../../components/molecules/ModalHeader/ModalHeader'
@@ -39,7 +39,7 @@ function StepRow(props: { id: string; label: string; state: StepState; right?: s
             <CheckIcon className="h-3 w-3 text-on-primary" strokeWidth={2.5} aria-hidden />
           </View>
         ) : props.state === 'run' ? (
-          <RingSpinner size={18} />
+          <Spinner size={18} />
         ) : (
           <View className="h-[18px] w-[18px] rounded-full border-2 border-border" />
         )
@@ -65,7 +65,7 @@ function SizeRow(props: { label: string; bytes: number | null }): React.JSX.Elem
   return (
     <InsetRow
       label={props.label}
-      trailing={props.bytes === null ? <RingSpinner size={14} /> : undefined}
+      trailing={props.bytes === null ? <Spinner size={14} /> : undefined}
       value={props.bytes === null ? undefined : `${mb(props.bytes)}MB`}
     />
   )

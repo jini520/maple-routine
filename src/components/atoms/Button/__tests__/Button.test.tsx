@@ -85,8 +85,8 @@ describe('Button: busy', () => {
     expect(대기.fontWeight).toBe(평소.fontWeight)
   })
 
-  // 호출부가 색을 안 주면 스피너가 검정으로 떨어진다.
-  it('스피너 색이 variant 의 라벨 색과 같다', async () => {
+  // 호출부가 색을 안 주면 스피너가 검정으로 떨어진다. 트랙도 같은 색이라야 버튼 바탕 위에 회색 얼룩이 남지 않는다.
+  it('스피너의 호와 트랙이 variant 의 라벨 색이고, 트랙만 30% 로 흐리다', async () => {
     const cases = [
       ['primary', 기본테마.onPrimary],
       ['soft', 기본테마.primaryInk],
@@ -102,9 +102,11 @@ describe('Button: busy', () => {
           </Button>,
         )
       ).toJSON()
-      const [spinner] = findAllOfType(tree, 'RNSVGSvgView')
+      const [track, arc] = findAllOfType(tree, 'RNSVGSvgView')
+      const [trackCircle] = findAllOfType(tree, 'RNSVGCircle')
 
-      expect(spinner?.props.color).toBe(color)
+      expect([track?.props.color, arc?.props.color]).toEqual([color, color])
+      expect(trackCircle?.props.strokeOpacity).toBe(0.3)
     }
   })
 

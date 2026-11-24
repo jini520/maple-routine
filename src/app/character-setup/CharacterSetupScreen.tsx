@@ -31,7 +31,7 @@ import { useApiKeyNotice } from '../../features/auth/use-api-key-notice'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 
-import { Button, MapleSweepSpinner, Text } from '../../components/atoms'
+import { Button, Spinner, Text } from '../../components/atoms'
 import { CharacterManageBody } from '../../components/organisms/CharacterManage/CharacterManageBody'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { EntryScroll } from '../../components/templates/EntryScroll/EntryScroll'
@@ -74,14 +74,13 @@ export function CharacterSetupScreen(): React.JSX.Element {
   }
 
   // 시드가 끝날 때까지 화면 전체가 대기다(진행률 숫자 없음. 템플릿 기본값으로 먼저 그리지 않고
-  // 최종 값이 확정될 때까지 로딩만 유지). 화면 전체 대기라 셸 승계 카드를 씌우지 않고, 24px 이상
-  // 자리이므로 스피너는 스윕이다.
+  // 최종 값이 확정될 때까지 로딩만 유지). 화면 전체 대기라 셸 승계 카드를 씌우지 않는다.
   if (phase === 'seeding') {
     return (
       <View testID="screen-CharacterSetup" className="flex-1">
         <EntryScroll center>
           <View className="items-center gap-3" role="status" aria-busy>
-            <MapleSweepSpinner size={32} className="text-primary" />
+            <Spinner size={32} />
             <Text className="text-sm text-text-muted">체크리스트를 준비하고 있어요</Text>
           </View>
         </EntryScroll>

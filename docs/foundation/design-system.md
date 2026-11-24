@@ -80,7 +80,7 @@
 | `ProgressBar` | 결정형 진행률 바. 두께 기본(`h-1.5`) · `thin`(`h-1`) |
 | `ProgressRing` | 진행률 링. 캐릭터 초상화가 쓴다([[ADR-031]]) |
 | `Skeleton` | 결과가 들어올 곳과 같은 크기의 회색 펄스 상자 |
-| `Spinner` | `MapleSpinner`(버튼 안 16px) · `MapleSweepSpinner`(영역 · 화면) · `RingSpinner`(가운데 모달 · 잠금 화면) |
+| `Spinner` | 트랙 있는 링 하나. 크기만 쓰는 곳마다 다르고(버튼 안 16 · 모달 18~20 · 영역과 화면 24 · 32), 버튼 안에서는 트랙도 라벨 색의 30% 다([[ADR-061]] 결정 13) |
 | `AnimatedNumber` | 값이 바뀌면 목표까지 굴러가는 숫자 |
 | `Icon` | 커스텀 아이콘(`ProfitIcon` · `GearIcon` · `MapleLeaf` · `BackpackIcon`)과 lucide 아이콘 등록(`lucide.ts`). `KakaoTalkIcon` 은 카카오 공식 파일 그대로라 색을 받지 않는다. 상표 변형이 금지돼서다([[ADR-052]] 결정 9) |
 
@@ -218,7 +218,7 @@
 |---|---|---|
 | 캐릭터를 고르지 않은 화면 | `EmptyState` `page` | 64px 배지에 단풍잎, 카드 없음 |
 | 목록이 비었다 | `EmptyState` `inline` | 카드 안 48px 배지에 내용 아이콘. 갈 곳이 앱 안에 있을 때만 CTA |
-| 목록 · 카드를 기다린다 | `LoadingState` | 결과와 같은 카드 안에 스윕 스피너와 `~하고 있어요` |
+| 목록 · 카드를 기다린다 | `LoadingState` | 결과와 같은 카드 안에 스피너와 `~하고 있어요` |
 | 버튼 동작을 기다린다 | `Button` `busy` | 라벨을 가리고 16px 스피너를 겹친다 |
 | 몇 개 중 몇 개를 끝냈다 | `ProgressBar` | 얇은 바 하나 |
 | 받아 오지 못했다(대신 보여 줄 내용 없음) | `ErrorState` | 경고 아이콘 · 제목 · 설명 · 원인을 푸는 버튼 |
