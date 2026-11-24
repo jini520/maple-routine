@@ -98,6 +98,22 @@ async function getSharedProgress(key: string): Promise<SharedProgressMap> {
   return toMap(await readStoredSharedProgress(key))
 }
 
+/** 원장 쓰기를 잇는 줄. */
+let ledgerWrites: Promise<unknown> = Promise.resolve()
+
+/**
+ * 원장을 읽고 고쳐 쓰는 일을 차례로 돌리는 함수. 회차는 컨텐츠마다 · 캐릭터마다 저장을 함께 부르고, 받기는 그 사이에 같은 키를
+ * 적는다. 겹치면 앞 쓰기가 읽은 원장으로 뒤 쓰기의 항목을 덮고, 덮인 항목은 다음 저장이 새 항목으로 대기 표에 넣어 올리기가 지우기를
+ * 보낸다. `work` 안에서 다시 부르면 자기 차례를 기다리며 멈춘다.
+ *
+ * @example await writeSharedProgressLedgers(async () => preferences.set(key, JSON.stringify(ledger)))
+ */
+export function writeSharedProgressLedgers<T>(work: () => Promise<T>): Promise<T> {
+  const run = ledgerWrites.then(work)
+  ledgerWrites = run.catch(() => undefined)
+  return run
+}
+
 /**
  * 진행 하나를 적는다. 표에 없는 컨텐츠이거나 넥슨이 표와 다른 주기로 준 값은 기간 값으로 적을 수 없어 그 항목만 건너뛴다.
  * 던지면 그 캐릭터의 회차 전체가 실패로 떨어진다. 읽기도 그런 항목을 버린다.
@@ -110,17 +126,19 @@ async function setSharedProgressEntry(
   await whenRecordsReleased()
   const stored = storedSharedProgressEntryOf(contentKey, entry)
   if (stored === null) return
-  const current = await readStoredSharedProgress(ledger.key)
-  const before = current[stored.contentId]
-  current[stored.contentId] = stored.stored
-  await preferences.set(ledger.key, JSON.stringify(current))
-  // 회차마다 같은 값으로 다시 적어서, 값이 바뀐 진행만 넣는다. 계정 공유는 월드가 빈 값이다.
-  const recordId = preferenceRecordIdOf('sharedContentProgress', [ledger.accountId, ledger.worldId ?? '', stored.contentId])
-  await enqueueChangedPreferenceRecords(
-    'sharedContentProgress',
-    new Map(before === undefined ? [] : [[recordId, before]]),
-    new Map([[recordId, stored.stored]]),
-  )
+  await writeSharedProgressLedgers(async () => {
+    const current = await readStoredSharedProgress(ledger.key)
+    const before = current[stored.contentId]
+    current[stored.contentId] = stored.stored
+    await preferences.set(ledger.key, JSON.stringify(current))
+    // 회차마다 같은 값으로 다시 적어서, 값이 바뀐 진행만 넣는다. 계정 공유는 월드가 빈 값이다.
+    const recordId = preferenceRecordIdOf('sharedContentProgress', [ledger.accountId, ledger.worldId ?? '', stored.contentId])
+    await enqueueChangedPreferenceRecords(
+      'sharedContentProgress',
+      new Map(before === undefined ? [] : [[recordId, before]]),
+      new Map([[recordId, stored.stored]]),
+    )
+  })
 }
 
 /** 처음 동기화가 넣는 대기 줄 id. 저장 함수가 넣는 것과 같다. */

@@ -20,7 +20,7 @@ import type { StoredCalculatorRecord } from './boss-profit-calculator-records'
 import type { StoredPartyAppointment } from './party-appointments'
 import { preferences } from './ports'
 import { isServerSyncQueued, preferenceRecordIdOf, removeServerSync, serverSyncQueuedAt } from './server-sync-queue'
-import { readStoredSharedProgress, type StoredSharedProgressEntry } from './shared-progress-cache'
+import { readStoredSharedProgress, writeSharedProgressLedgers, type StoredSharedProgressEntry } from './shared-progress-cache'
 
 /** 받은 Preferences 기록 하나. 칸 이름은 그 키에 저장하는 꼴이다. */
 export type PulledPreferenceRecord =
@@ -103,14 +103,17 @@ function sharedProgressKeyOf(record: Pulled<'sharedContentProgress'>): string {
 }
 
 async function applySharedProgress(records: readonly Pulled<'sharedContentProgress'>[]): Promise<void> {
-  for (const key of new Set(records.map(sharedProgressKeyOf))) {
-    const ledger: Row = { ...(await readStoredSharedProgress(key)) }
-    for (const record of records.filter((one) => sharedProgressKeyOf(one) === key)) {
-      if (record.deleted) delete ledger[record.contentId]
-      else ledger[record.contentId] = record.entry
+  if (records.length === 0) return
+  await writeSharedProgressLedgers(async () => {
+    for (const key of new Set(records.map(sharedProgressKeyOf))) {
+      const ledger: Row = { ...(await readStoredSharedProgress(key)) }
+      for (const record of records.filter((one) => sharedProgressKeyOf(one) === key)) {
+        if (record.deleted) delete ledger[record.contentId]
+        else ledger[record.contentId] = record.entry
+      }
+      await writeJson(key, ledger)
     }
-    await writeJson(key, ledger)
-  }
+  })
 }
 
 /** 열쇠마다 값 하나인 객체(메이플 ID 이름 · 대표 캐릭터 동작). */
@@ -341,23 +344,25 @@ export async function clearServerSyncOwnerPreferences(owners: {
   }
 
   const keys = await preferences.keys()
-  for (const mapleId of owners.mapleIds) {
-    const ledgers = [
-      { key: accountSharedProgressKey(mapleId), worldId: '' },
-      ...keys
-        .filter((key) => key.startsWith(worldSharedProgressKey(mapleId, '')))
-        .map((key) => ({ key, worldId: key.slice(worldSharedProgressKey(mapleId, '').length) })),
-    ]
-    for (const ledger of ledgers) {
-      const stored = await readStoredSharedProgress(ledger.key)
-      const left: Row = {}
-      for (const [contentId, entry] of Object.entries(stored)) {
-        if (!(await notQueued('sharedContentProgress', [mapleId, ledger.worldId, contentId]))) left[contentId] = entry
+  await writeSharedProgressLedgers(async () => {
+    for (const mapleId of owners.mapleIds) {
+      const ledgers = [
+        { key: accountSharedProgressKey(mapleId), worldId: '' },
+        ...keys
+          .filter((key) => key.startsWith(worldSharedProgressKey(mapleId, '')))
+          .map((key) => ({ key, worldId: key.slice(worldSharedProgressKey(mapleId, '').length) })),
+      ]
+      for (const ledger of ledgers) {
+        const stored = await readStoredSharedProgress(ledger.key)
+        const left: Row = {}
+        for (const [contentId, entry] of Object.entries(stored)) {
+          if (!(await notQueued('sharedContentProgress', [mapleId, ledger.worldId, contentId]))) left[contentId] = entry
+        }
+        if (Object.keys(left).length === 0) await preferences.remove(ledger.key)
+        else await writeJson(ledger.key, left)
       }
-      if (Object.keys(left).length === 0) await preferences.remove(ledger.key)
-      else await writeJson(ledger.key, left)
     }
-  }
+  })
 
   const names = await readObject(STORAGE_KEYS.mapleIdNames)
   for (const mapleId of owners.mapleIds) if (await notQueued('mapleIdNames', [mapleId])) delete names[mapleId]

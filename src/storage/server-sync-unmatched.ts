@@ -12,6 +12,7 @@ import { accountSharedProgressKey, manualTrackedContentKey, STORAGE_KEYS, worldS
 import { preferences } from './ports'
 import type { NexonIdLookup } from './server-sync-pull'
 import { withServerSyncPaused, type ServerSyncTable } from './server-sync-queue'
+import { writeSharedProgressLedgers } from './shared-progress-cache'
 import { getBossProfitDb } from './sqlite/db'
 
 type Row = Record<string, unknown>
@@ -154,28 +155,31 @@ async function replaceInPreferences(lookup: NexonIdLookup, changed: Set<ServerSy
 
   const accountPrefix = accountSharedProgressKey('')
   const worldPrefix = worldSharedProgressKey('', '').slice(0, -1)
-  const movedAccount = await moveMarkedKeys(
-    keys,
-    (key) => (key.startsWith(accountPrefix) ? { marked: key.slice(accountPrefix.length), to: accountSharedProgressKey } : null),
-    'mapleId',
-    lookup,
-    mergeObjects,
-  )
-  const movedWorld = await moveMarkedKeys(
-    keys,
-    (key) => {
-      if (!key.startsWith(worldPrefix)) return null
-      const rest = key.slice(worldPrefix.length)
-      const at = rest.indexOf(':')
-      if (at < 0) return null
-      const worldId = rest.slice(at + 1)
-      return { marked: rest.slice(0, at), to: (mapleId) => worldSharedProgressKey(mapleId, worldId) }
-    },
-    'mapleId',
-    lookup,
-    mergeObjects,
-  )
-  if (movedAccount || movedWorld) changed.add('sharedContentProgress')
+  const movedLedgers = await writeSharedProgressLedgers(async () => {
+    const movedAccount = await moveMarkedKeys(
+      keys,
+      (key) => (key.startsWith(accountPrefix) ? { marked: key.slice(accountPrefix.length), to: accountSharedProgressKey } : null),
+      'mapleId',
+      lookup,
+      mergeObjects,
+    )
+    const movedWorld = await moveMarkedKeys(
+      keys,
+      (key) => {
+        if (!key.startsWith(worldPrefix)) return null
+        const rest = key.slice(worldPrefix.length)
+        const at = rest.indexOf(':')
+        if (at < 0) return null
+        const worldId = rest.slice(at + 1)
+        return { marked: rest.slice(0, at), to: (mapleId) => worldSharedProgressKey(mapleId, worldId) }
+      },
+      'mapleId',
+      lookup,
+      mergeObjects,
+    )
+    return movedAccount || movedWorld
+  })
+  if (movedLedgers) changed.add('sharedContentProgress')
 
   if (await renameMarkedFields(STORAGE_KEYS.mapleIdNames, 'mapleId', lookup)) changed.add('mapleIdNames')
   if (await renameMarkedFields(STORAGE_KEYS.figureMotions, 'ocid', lookup)) changed.add('representativeCharacterMotions')
