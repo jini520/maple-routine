@@ -286,7 +286,8 @@ v1.0.13 은 이 절차를 건너뛰었다. 서버의 `latest-<platform>.json` �
 
 `workers/ota-manifest/` 는 1.0.12 바이너리만 묻는다. 같은 두 경로(`/manifest` · `/latest`)를 GitHub Releases
 `live-update-rn` 에서 읽어 준다. 발행 스크립트는 더 이상 그쪽에 쓰지 않는다. 1.0.12 는 2026-11-06 에 잠갔고(그 릴리스의
-`latest-<platform>.json` 이 v1.0.13 의 지문만 받는다), Worker 와 릴리스를 걷는 일은 이슈 #810 2단계에 있다.
+`latest-<platform>.json` 이 v1.0.13 의 지문만 받는다). Worker 나 릴리스를 지우면 1.0.12 의 잠금이 풀리므로, Worker 요청이
+끊긴 뒤에 걷는다([[ADR-011]] 결정 2, 이슈 #810 2단계).
 
 매니페스트 주소(`app.json` 의 `expo.updates.url`)는 네이티브 설정이라, 바꾸면 스토어 바이너리를 새로 빌드해야 한다.
 `ios/app/Supporting/Expo.plist` 의 `EXUpdatesURL` 과 `AndroidManifest.xml` 의 `EXPO_UPDATE_URL` 도 같은 값이어야 한다.
