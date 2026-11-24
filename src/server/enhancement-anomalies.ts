@@ -4,7 +4,10 @@
 import type { EnhancementAnomaly } from '../types/server-records'
 import { postRecord, type SendResult } from './write'
 
-/** 상황 여럿을 한 번에 보낸다. 서버는 같은 날 · 종류 · 이유 · 장비의 줄을 덮는다. */
+/**
+ * 상황 여럿을 한 번에 보내는 요청. 서버는 상황마다 실은 메이플 ID 가 달린 넥슨 계정의 줄에 적고, 같은 넥슨 계정 · 날 · 종류 ·
+ * 이유 · 장비 · 상세의 줄은 받은 수로 덮는다.
+ */
 export function sendEnhancementAnomalies(
   headers: Record<string, string>,
   items: readonly EnhancementAnomaly[],

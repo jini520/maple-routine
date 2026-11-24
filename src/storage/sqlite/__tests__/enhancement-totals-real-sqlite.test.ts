@@ -35,6 +35,10 @@ const { readEventWorldNames } = jest.requireMock('../../../features/enhancement-
   string,
   jest.Mock
 >
+const { reportEnhancementAnomalies } = jest.requireMock('../../../features/enhancement-history/anomalies') as Record<
+  string,
+  jest.Mock
+>
 const moved = jest.requireMock('../../enhancement-totals-moved') as Record<string, jest.Mock>
 const { reclaimLegacySpaceOnce } = jest.requireMock('../../legacy-space') as Record<string, jest.Mock>
 
@@ -48,6 +52,7 @@ beforeEach(() => {
   readEventWorldNames.mockReturnValue(new Set(['머리맨들맨둘']))
   moved.isEnhancementTotalsMoved.mockResolvedValue(false)
   moved.markEnhancementTotalsMoved.mockReset().mockResolvedValue(undefined)
+  reportEnhancementAnomalies.mockClear()
 })
 
 afterEach(async () => {
@@ -310,6 +315,18 @@ describe('옛 원본을 합계로 옮기기', () => {
     expect((await loadEnhancementTotals('2026-10-01', '2026-10-01')).map((total) => total.ocid)).toEqual(['o-낟낟'])
     expect(real.inspect((db) => db.prepare('SELECT nexon_account_id, enhancement_type, history_date FROM enhancement_refetches').all())).toEqual([
       { nexon_account_id: 'account-main', enhancement_type: 'cube', history_date: '2026-10-01' },
+    ])
+  })
+
+  // 옛 원본은 메인 계정의 자격으로 받은 것이다. 서버가 메인 계정의 줄에 적도록 메인 계정에서 받은 상황으로 알린다.
+  it('옮기며 빠진 줄을 메인 계정에서 받은 상황으로 알린다', async () => {
+    await seenAs('o-낟낟', '낟낟', 'elysium')
+    await seedHistory([{ id: 'a', kind: 'cube', date: '2026-10-01', name: '낟낟', level: null }])
+
+    await ensureEnhancementTotals()
+
+    expect(reportEnhancementAnomalies).toHaveBeenCalledWith([
+      expect.objectContaining({ nexonAccountId: 'account-main', historyDate: '2026-10-01', apiType: 'cube', reason: 'no_level' }),
     ])
   })
 

@@ -6,8 +6,10 @@
  */
 import type { EventWorldJudgment } from '../../lib/enhancement/world'
 import { sendEnhancementAnomalies } from '../../server/enhancement-anomalies'
+import { mapleIdOfNexonAccount } from '../../storage/server-sync-records'
 import type { EnhancementAnomaly } from '../../types/server-records'
 import { serverIdentityHeaders } from '../auth/server-identity'
+import { nexonIdHashOf } from '../server-sync/push-records'
 import {
   starOf,
   unpricedReasonOf,
@@ -19,11 +21,20 @@ import {
 /** 한 번에 보내는 상황 수. 옛 원본을 옮길 때는 날짜가 수백이라 나눠 보낸다. */
 const SEND_CHUNK = 500
 
-/** 실패 이유 글자의 길이 상한. 서버 칸의 상한과 같다. */
+/** 상세 글자의 길이 상한. 서버 칸의 상한과 같다. */
 const DETAIL_MAX = 200
 
 /** 장비 표에 없는 장비의 스타포스를 세는 시도 뒤 최소 성수. 운영자는 이 성수 이상으로 올린 장비만 본다. */
 const NO_LEVEL_STARFORCE_MIN_STAR = 10
+
+/** 줄들에서 센 상황. 어느 계정에서 받았는지는 부르는 쪽이 붙인다. */
+type AnomalyCount = Omit<EnhancementAnomaly, 'mapleId'>
+
+/** 넥슨 계정 하나에서 받은 상황. 보낼 때 계정 id 를 그 계정의 메이플 ID 해시로 바꾼다. */
+export interface AccountAnomaly extends AnomalyCount {
+  /** 강화 내역을 받은 기기의 넥슨 계정 id */
+  nexonAccountId: string
+}
 
 /** 장비 표에 없는 장비의 스타포스인데 시도 뒤 성수가 기준에 못 미치거나 없는 줄. */
 function isUnwatchedNoLevel(entry: EnhancementSource, reason: UnpricedReason): boolean {
@@ -41,9 +52,9 @@ function isUnwatchedNoLevel(entry: EnhancementSource, reason: UnpricedReason): b
 export function enhancementAnomaliesOf(
   entries: readonly EnhancementSource[],
   judgmentOf: (entry: EnhancementSource) => EventWorldJudgment | null,
-): EnhancementAnomaly[] {
-  const counted = new Map<string, EnhancementAnomaly>()
-  const count = (entry: EnhancementSource, reason: EnhancementAnomaly['reason'], itemName: string, detail: string | null) => {
+): AnomalyCount[] {
+  const counted = new Map<string, AnomalyCount>()
+  const count = (entry: EnhancementSource, reason: AnomalyCount['reason'], itemName: string, detail: string | null) => {
     const key = [entry.dateKey, entry.kind, reason, itemName, detail ?? ''].join('|')
     const existing = counted.get(key)
     if (existing !== undefined) {
@@ -76,16 +87,33 @@ export function enhancementAnomaliesOf(
 /**
  * 상황을 서버로 보낸다. **던지지 않고, 실패하면 버린다.** 운영자가 양과 모양을 보는 값이라 몇 건을 놓쳐도 된다. 신원이 없으면
  * 보내지 않는다.
+ *
+ * 요청은 메인 신원 하나로 가고, 상황마다 받은 계정의 메이플 ID 해시를 싣는다. 서버가 그 메이플 ID 의 넥슨 계정 줄에 적어야
+ * 부계정의 상황이 메인의 같은 상황을 덮지 않는다. 메이플 ID 를 모르는 계정의 상황은 보내지 않는다.
  */
-export async function reportEnhancementAnomalies(items: readonly EnhancementAnomaly[]): Promise<void> {
+export async function reportEnhancementAnomalies(items: readonly AccountAnomaly[]): Promise<void> {
   if (items.length === 0) return
   try {
     const headers = await serverIdentityHeaders()
     if (headers === null) return
-    for (let start = 0; start < items.length; start += SEND_CHUNK) {
-      await sendEnhancementAnomalies(headers, items.slice(start, start + SEND_CHUNK))
+    const sending = await withMapleIds(items)
+    for (let start = 0; start < sending.length; start += SEND_CHUNK) {
+      await sendEnhancementAnomalies(headers, sending.slice(start, start + SEND_CHUNK))
     }
   } catch {
     // 진단 값이라 다시 보내지 않는다.
   }
+}
+
+/** 계정 id 를 그 계정의 메이플 ID 해시로 바꾼 상황들. 강화 내역을 다 받은 날을 올릴 때와 같은 메이플 ID 다. */
+async function withMapleIds(items: readonly AccountAnomaly[]): Promise<EnhancementAnomaly[]> {
+  const mapleIds = new Map<string, string | null>()
+  for (const nexonAccountId of new Set(items.map((item) => item.nexonAccountId))) {
+    const mapleId = await mapleIdOfNexonAccount(nexonAccountId)
+    mapleIds.set(nexonAccountId, mapleId === null ? null : nexonIdHashOf(mapleId))
+  }
+  return items.flatMap(({ nexonAccountId, ...item }) => {
+    const mapleId = mapleIds.get(nexonAccountId) ?? null
+    return mapleId === null ? [] : [{ ...item, mapleId }]
+  })
 }

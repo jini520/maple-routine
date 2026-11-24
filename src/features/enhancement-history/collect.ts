@@ -20,8 +20,7 @@ import { checkKey, loadEnhancementChecks, markEnhancementChecked } from '../../s
 import { loadEnhancementRefetches, removeEnhancementRefetch } from '../../storage/enhancement-refetches'
 import { findPreLeapWorldKey, replaceEnhancementTotals } from '../../storage/enhancement-totals'
 import { eventWorldOf, hasSuperiorItem, summarizeEnhancement, type EnhancementSource, type EntryOwner } from './spending'
-import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
-import type { EnhancementAnomaly } from '../../types/server-records'
+import { enhancementAnomaliesOf, reportEnhancementAnomalies, type AccountAnomaly } from './anomalies'
 import { saveEventWorldNames } from './event-world-names'
 import { eventWorldCharacterNames } from '../../lib/enhancement/world'
 import { createOwnerResolver, type LineOwner, type OwnerResult } from './owners'
@@ -318,7 +317,7 @@ export async function collectEnhancementHistory(
     onProgress?.(done, total)
   }
   // 회차가 끝날 때 한 번에 보낸다. 날마다 보내면 로그인 자격이 날들을 한꺼번에 받을 때 요청이 같은 순간에 몰린다.
-  const anomalies: EnhancementAnomaly[] = []
+  const anomalies: AccountAnomaly[] = []
   // 한 회차의 쓰기를 한 묶음으로. 판 알림이 끝날 때 한 번이라 첫 수집의 93칸이 가계부를 93번 다시 읽게 하지 않는다.
   // 넥슨 계정끼리는 나란히 받는다. 한 계정의 실패는 그 계정의 날만 굳히지 않는다.
   const results = await batchRecordWrites(() =>
@@ -368,7 +367,7 @@ async function runRefetches(now: Date): Promise<void> {
     if (left >= lastLeft) return
     lastLeft = left
 
-    const anomalies: EnhancementAnomaly[] = []
+    const anomalies: AccountAnomaly[] = []
     await batchRecordWrites(() =>
       Promise.all(plans.map((plan) => collectAccount(plan, todayDateKey, now, anomalies, () => undefined))),
     )
@@ -387,7 +386,7 @@ async function collectAccount(
   plan: AccountPlan,
   todayDateKey: string,
   now: Date,
-  anomalies: EnhancementAnomaly[],
+  anomalies: AccountAnomaly[],
   advance: () => void,
 ): Promise<(boolean | undefined)[]> {
   const { credential, accountId, jobs } = plan
@@ -424,12 +423,12 @@ async function collectAccount(
         return owner === undefined || typeof owner === 'string' ? null : owner
       }
       const totals = summarizeEnhancement(sources, ownerOfEntry)
-      anomalies.push(
-        ...enhancementAnomaliesOf(sources, (entry) => {
-          const owner = ownerOfEntry(entry)
-          return owner === null ? null : eventWorldOf(entry, owner)
-        }),
-      )
+      const counts = enhancementAnomaliesOf(sources, (entry) => {
+        const owner = ownerOfEntry(entry)
+        return owner === null ? null : eventWorldOf(entry, owner)
+      })
+      // 서버가 그 계정의 줄에 적도록 받은 계정을 붙인다.
+      anomalies.push(...counts.map((count) => ({ ...count, nexonAccountId: accountId })))
       await replaceEnhancementTotals(accountId, job.kind, job.dateKey, totals, now, accountOcids)
       // 표에 없는 월드의 줄이 있으면 굳히지 않는다. 운영자가 월드 표에 넣으면 다음 회차가 다시 받아 판정을 채운다.
       const settled = job.dateKey < todayDateKey && totals.every((total) => total.eventWorld !== null)
