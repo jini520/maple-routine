@@ -160,11 +160,11 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-031+155+177+219](./adr/ADR-031+155+177+219_character_portrait.md) | 🟢 | character | 캐릭터 초상화 |
 | [ADR-032+204+299](./adr/ADR-032+204+299_content-scheduler_cache.md) | 🟢 | content-scheduler | 스케줄러 응답 병합과 캐시 |
 | [ADR-033+274](./adr/ADR-033+274_content-scheduler_cards.md) | 🟢 | content-scheduler | 컨텐츠 카드와 완료 판정 |
-| [ADR-034+175+298](./adr/ADR-034+175+298_content-scheduler_tracking-mode.md) | 🟢 | content-scheduler | 자동 · 수동 추적 모드와 컨텐츠 관리 |
+| [ADR-034+175+298+311](./adr/ADR-034+175+298+311_content-scheduler_tracking-mode.md) | ⚪ | content-scheduler | 자동 · 수동 추적 모드와 컨텐츠 관리 · 두 관리 화면의 `저장` |
 | [ADR-035](./adr/ADR-035_content-scheduler_layout.md) | 🟢 | content-scheduler | 스케줄러 화면의 레일 아래 간격 |
-| [ADR-036](./adr/ADR-036_boss-scheduler_boss-list.md) | 🟢 | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 |
+| [ADR-036+312](./adr/ADR-036+312_boss-scheduler_boss-list.md) | ⚪ | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 · 보스 관리의 초안과 `저장` |
 | [ADR-037](./adr/ADR-037_boss-scheduler_completion.md) | 🟢 | boss-scheduler | 보스 완료 판정과 주간 한도 |
-| [ADR-038+220+238+288](./adr/ADR-038+220+238+288_boss-scheduler_party.md) | 🟢 | boss-scheduler | 보스 파티 인원과 결정석 분배 비율 · 결정석을 팔지 않은 처치의 `제외` · 비율 % 입력과 받는 금액 |
+| [ADR-038+220+238+288+313](./adr/ADR-038+220+238+288+313_boss-scheduler_party.md) | ⚪ | boss-scheduler | 보스 파티 인원과 결정석 분배 비율 · 결정석을 팔지 않은 처치의 `제외` · 비율 % 입력과 받는 금액 |
 | [ADR-039+242](./adr/ADR-039+242_boss-scheduler_card.md) | 🟢 | boss-scheduler | 보스 카드 |
 | [ADR-093+121](./adr/ADR-093+121_boss-scheduler_manage-redesign.md) | 🟢 | boss-scheduler | 보스 관리 화면 리디자인과 난이도 고르개 통일 |
 | [ADR-040+208](./adr/ADR-040+208_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
