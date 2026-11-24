@@ -1,21 +1,66 @@
 {
   "file": "oq5yRBOIb81394vTeLMqrP",
   "entries": {
-    "Foundations": "pending",
-    "atoms/AnimatedNumber": "pending",
-    "atoms/Badge": "pending",
-    "atoms/Button": "pending",
-    "atoms/Card": "pending",
-    "atoms/CheckBox": "pending",
-    "atoms/Icon": "pending",
-    "atoms/IconBadge": "pending",
-    "atoms/ProgressBar": "pending",
-    "atoms/ProgressRing": "pending",
-    "atoms/Skeleton": "pending",
-    "atoms/Spinner": "pending",
-    "atoms/Switch": "pending",
-    "atoms/Text": "pending",
-    "atoms/TextInput": "pending",
+    "Foundations": {
+      "node": "17:2",
+      "hash": "63f4fbf99f7cb600"
+    },
+    "atoms/AnimatedNumber": {
+      "node": "85:66",
+      "hash": "179a1959554624ab"
+    },
+    "atoms/Badge": {
+      "node": "86:255",
+      "hash": "7b4b5cf79ea640ec"
+    },
+    "atoms/Button": {
+      "node": "83:106",
+      "hash": "29da64886b65a1b4"
+    },
+    "atoms/Card": {
+      "node": "85:57",
+      "hash": "407ca88e8b9b9bf3"
+    },
+    "atoms/CheckBox": {
+      "node": "85:47",
+      "hash": "bdfb0def1abf66fb"
+    },
+    "atoms/Icon": {
+      "node": "17:3",
+      "hash": "713eafc7949f5300"
+    },
+    "atoms/IconBadge": {
+      "node": "87:219",
+      "hash": "5f7e2e6f7bfa1893"
+    },
+    "atoms/ProgressBar": {
+      "node": "85:76",
+      "hash": "4d7ceae00ec0cb46"
+    },
+    "atoms/ProgressRing": {
+      "node": "87:234",
+      "hash": "9d12abdaace97582"
+    },
+    "atoms/Skeleton": {
+      "node": "85:58",
+      "hash": "9a1b3473d41390b1"
+    },
+    "atoms/Spinner": {
+      "node": "83:35",
+      "hash": "1d9cb4df1dc72f07"
+    },
+    "atoms/Switch": {
+      "node": "85:56",
+      "hash": "c54156999308b20c"
+    },
+    "atoms/Text": {
+      "node": "85:59",
+      "hash": "8c09dd6df6ce00a6"
+    },
+    "atoms/TextInput": {
+      "node": "85:65",
+      "hash": "120fb14bea5a1843"
+    },
     "molecules/AmountFigure": "pending",
     "molecules/ApiKeyLoginButton": "pending",
     "molecules/AuroraText": "pending",
