@@ -120,25 +120,19 @@ describe('filterUnobtainableConfirmedDrops', () => {
     ])
   })
 
-  it('상자 개봉 결과는 상자명(boxOrigin) 기준으로 판정한다', () => {
+  // 아이템으로 가린다. 상자로 가리면 다른 난이도의 상자에서 적힌 반지가, 처치 난이도가 주는 상자에도 들어 있는데 지워진다.
+  it('상자 개봉 결과는 상자가 아니라 아이템으로 판정한다', () => {
     const records = [
       record({
         itemKey: 'restraint_ring',
         itemName: '리스트레인트 링',
         dropRecordId: null,
         category: 'consumable',
-        boxOriginKey: 'red_boss_ring_box',
-        boxOrigin: '홍옥의 보스 반지 상자', // 하드 → 유지
-        ringLevel: 3,
-      }),
-      record({
-        itemKey: null,
-        itemName: '아무 반지',
-        dropRecordId: null,
-        category: 'consumable',
         boxOriginKey: 'white_boss_ring_box',
-        boxOrigin: '백옥의 보스 반지 상자', // 익스 전용 → 제거
+        boxOrigin: '백옥의 보스 반지 상자', // 익스트림 상자지만 하드의 홍옥 상자에도 든다 → 유지
+        ringLevel: 4,
       }),
+      record({ itemKey: 'complete_under_control', itemName: '컴플리트 언더컨트롤' }), // 익스 전용 → 제거
     ]
 
     expect(filterUnobtainableConfirmedDrops(records, confirmed).map((entry) => entry.itemName)).toEqual([

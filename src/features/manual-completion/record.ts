@@ -12,6 +12,7 @@ import { NO_WORLD, getBossDropRecords, replaceBossDropRecords } from '../../stor
 import { getBossPartySize } from '../../storage/boss-party-settings'
 import { getBossPartyPeriodOverride } from '../../storage/boss-party-period-overrides'
 import {
+  changeBossProfitRecordDifficulty,
   deleteBossProfitRecord,
   setBossProfitDefeatedOn,
   upsertBossProfitRecord,
@@ -78,8 +79,8 @@ export class UnpricedBossError extends Error {
 /**
  * 직접 적은 완료 한 줄을 쓴다. 이미 있으면 그 줄을 고친다.
  *
- * 난이도를 바꾸면 기록 키가 바뀌므로 **옛 줄을 지우고** 드롭을 새 키로 옮긴다. 드롭 이관은 난이도가
- * 확정될 때 쓰는 그 함수라, 새 난이도에서 못 얻는 아이템은 그쪽이 거른다.
+ * 난이도를 바꾸면 기록 키가 바뀌므로 **옛 줄의 처치를 걷고** 새 키에 처치를 쓴 뒤 드롭을 새 키로 옮긴다. 옛 줄은
+ * 지우지 않는다. 드롭 이관은 난이도가 확정될 때 쓰는 그 함수라, 새 난이도에서 못 얻는 아이템은 그쪽이 거른다.
  */
 export async function saveManualCompletion(input: ManualCompletionInput, now: Date): Promise<void> {
   const price = findPriceEntry(input.bossKey, input.difficulty, input.periodKey, now)
@@ -95,7 +96,7 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
     ? { ...input.shares, splitFeePercent: await lazyAutoFeePercent()(input.ocid, input.defeatedOn) }
     : input.shares
 
-  await upsertBossProfitRecord({
+  const record = {
     ocid: input.ocid,
     bossKey: input.bossKey,
     boss: input.bossName,
@@ -113,8 +114,18 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
     recordedAt: now.toISOString(),
     world: input.world,
     worldKey: input.worldKey,
-    source: 'manual',
-  })
+    source: 'manual' as const,
+  }
+  const previous: BossProfitRecordKey = {
+    ocid: input.ocid,
+    bossKey: input.bossKey,
+    difficulty: input.previousDifficulty as BossDifficulty,
+    periodKey: input.periodKey,
+  }
+  // 옛 처치를 걷는 쓰기가 서버에 먼저 닿아야 새 처치가 같은 기간 · 보스의 처치로 거절되지 않는다. 옛 줄을 지우면 그 지우기가
+  // 서버가 아직 옮기지 않은 드롭을 함께 지운다. 두 쓰기는 한 트랜잭션이라 사이에 앱이 꺼져도 기록이 사라지지 않는다.
+  if (changedDifficulty) await changeBossProfitRecordDifficulty(previous, record)
+  else await upsertBossProfitRecord(record)
   await setBossProfitDefeatedOn(
     {
       ocid: input.ocid,
@@ -127,8 +138,7 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
   countCoreSave()
 
   if (changedDifficulty) {
-    // 옛 난이도의 드롭을 새 키로 옮긴 뒤에 옛 줄을 지운다. 순서를 바꾸면 그 사이에 앱이 죽었을 때
-    // 드롭만 남고 기록이 사라진다.
+    // 옛 줄은 처치를 걷어 처치 전 수익 건으로 남는다. 드롭을 옮겨 비어도 대기 줄이 있는 동안 남고, 서버가 지운 결과를 받기로 받는다.
     const drops = await getBossDropRecords([input.ocid], [input.periodKey])
     await migrateDropsToConfirmedDifficulty(
       {
@@ -140,13 +150,6 @@ export async function saveManualCompletion(input: ManualCompletionInput, now: Da
       drops,
       now,
     )
-    const previous: BossProfitRecordKey = {
-      ocid: input.ocid,
-      bossKey: input.bossKey,
-      difficulty: input.previousDifficulty as BossDifficulty,
-      periodKey: input.periodKey,
-    }
-    await deleteBossProfitRecord(previous)
   }
   await judgeCrystalLimit([input.periodKey])
 }

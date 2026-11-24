@@ -26,6 +26,7 @@ function dropRecord(overrides: Partial<BossDropRecord>): BossDropRecord {
     difficulty: 'hard',
     periodKey: '2026-07-09',
     dropIndex: 0,
+    itemId: 'item-1',
     dropRecordId: 'drop-1',
     world: null,
     worldKey: null,

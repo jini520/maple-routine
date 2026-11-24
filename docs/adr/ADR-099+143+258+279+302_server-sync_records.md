@@ -1,7 +1,7 @@
 # ADR-099+143+258+279+302 사용자가 만든 기록은 서버에 두고 같은 사람의 기기끼리 맞춘다. 과거 드롭도 묶음으로 올린다
 
 > ⚪ 미구현
-> 관련 소스: `features/server-sync/*` · `storage/cache-data.ts` · `app/settings/SettingsAboutScreen.tsx` · `features/auth/server-identity.ts` · `features/auth/store.ts` · `features/auth/nexon-login.ts` · `features/auth/unsynced-prompt.ts` · `app/auth/UnsyncedRecordsModal.tsx` · `storage/server-sync-owners.ts` · `features/account-manage/store.ts` · `server/accounts.ts` · `server/error-codes.ts` · `server/write.ts` · `storage/server-sync-queue.ts` · `storage/server-sync-records.ts` · `storage/server-sync-pull.ts` · `storage/server-sync-pull-preferences.ts` · `storage/server-sync-cursors.ts` · `storage/server-sync-first.ts` · `storage/sqlite/server-sync-triggers.ts` · `storage/sqlite/device-conversion.ts` · `storage/preferences-conversion.ts` · `features/device-conversion/run.ts` · 서버 `modules/users` · `modules/identity` · `modules/sync` · `common/error-codes.ts`
+> 관련 소스: `features/server-sync/*` · `storage/cache-data.ts` · `app/settings/SettingsAboutScreen.tsx` · `features/auth/server-identity.ts` · `features/auth/store.ts` · `features/auth/nexon-login.ts` · `features/auth/unsynced-prompt.ts` · `app/auth/UnsyncedRecordsModal.tsx` · `storage/server-sync-owners.ts` · `features/account-manage/store.ts` · `server/accounts.ts` · `server/error-codes.ts` · `server/write.ts` · `storage/server-sync-queue.ts` · `storage/server-sync-records.ts` · `storage/server-sync-pull.ts` · `storage/server-sync-pull-preferences.ts` · `storage/server-sync-cursors.ts` · `storage/server-sync-first.ts` · `storage/sqlite/server-sync-triggers.ts` · `storage/sqlite/device-conversion.ts` · `storage/preferences-conversion.ts` · `features/device-conversion/run.ts` · `lib/boss/drop-item-ids.ts` · `storage/boss-drops.ts` · `features/boss-profit/drops-loader.ts` · 서버 `modules/users` · `modules/identity` · `modules/sync` · `common/error-codes.ts`
 
 ## 배경
 
@@ -23,9 +23,9 @@
 
 앱에 구현된 것은 결정 4 의 대기 표 회차와 결정 6, 결정 67 의 신원 · 부계정 등록과 해제 · 거절 코드 목록 · 대기 표에 넣기 · 올리기 ·
 거절 알림 · 받기 · 처음 동기화 · 데이터 삭제 · 다른 사람으로 로그인 · 로그아웃 · 부계정 해제와, 결정 64 의 점검이 풀린 뒤에 기기 변환과
-처음 동기화를 시작하는 것이다. 앱은 드롭 판매가를 따로 보내지 않는다(결정 2). 서버는 develop 에 새 표(결정 19 ~ 63)와
-동기화의 받기 · 올리기 · 데이터 삭제 경로(결정 9 · 10 · 16 · 18, 만든 모양은 결정 66)를 갖췄다. 앱이 그 경로를 부르는 방법은 결정
-67 에 있다.
+처음 동기화를 시작하는 것이다. 결정 31 의 처치한 수익 건으로 드롭을 모으는 일은 앱과 서버에 모두 구현했다. 앱은 드롭 판매가를
+따로 보내지 않는다(결정 2). 서버는 develop 에 새 표(결정 19 ~ 63)와 동기화의 받기 · 올리기 · 데이터 삭제 경로(결정 9 · 10 · 16 ·
+18, 만든 모양은 결정 66)를 갖췄다. 앱이 그 경로를 부르는 방법은 결정 67 에 있다.
 
 ## 결정
 
@@ -825,9 +825,17 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
     있으면 안 되고, 한 보스 난이도의 두 상자에 같은 아이템 줄이 들어 있으면 안 된다. DB 의 유일 기준으로는 걸 수 없어 관리 화면이
     드롭 표를 저장할 때 검사한다. 직접도 떨어지고 상자에서도 나오는 아이템이 새로 생기면 아이템 줄과 `same_item_links` 줄을
     하나씩 더한다.
+    - 검사하는 때는 드롭 표에 줄을 더할 때와 상자에 내용물을 더할 때다(서버 `boss-drops/drop-box-rules.ts`). 어기면 저장하지 않고
+      409 로 막는다. 개수 · 기간 · 차례만 고치는 저장, 내용물을 빼는 저장, 빈 상자를 만드는 저장은 두 가지를 어길 수 없어 보지
+      않는다.
+    - 드롭 표 줄의 기간은 보지 않는다(Claude 가 정했다 2026-11-24). 이 결정이 기간을 말하지 않고, 앱의 게임 데이터
+      fixture(`src/__fixtures__/game-data`)로 재 보면 두 가지를 어기는 난이도가 없다. 기간을 나눠 같은 아이템을 직접에서 상자로
+      옮기는 패치가 생기면 그때 다시 정한다.
 - 기록이 가리키는 `items` 줄은 지울 수 없다. 지난 드롭의 상자는 그 기간의 드롭 표로 찾으므로, 보스가 주는 상자가 바뀌면 드롭 표의
-  줄을 지우지 않고 기간(`valid_from` · `valid_until`, 결정 23)으로 끝낸다. 상자의 내용물에서 아이템이 빠지는 일이 생기면 그때
-  내용물 표에 기간 칸을 더한다. 지금은 두지 않는다(결정 27).
+  줄을 지우지 않고 기간(`valid_from` · `valid_until`, 결정 23)으로 끝낸다. 그래서 관리 화면의 드롭 표(서버
+  `admin/views/boss-drops.ts`)에는 줄을 지우는 버튼과 경로를 두지 않는다. 줄을 지우면 그 아이템의 지난 드롭을 올리기가 그 보스에서
+  얻을 수 없는 아이템으로 거절한다. 상자의 내용물에서 아이템이 빠지는 일이 생기면 그때 내용물 표에 기간 칸을 더한다. 지금은 두지
+  않는다(결정 27).
 - 기기 표도 `item_key` · `box_origin_key` · `ring_level` 세 칸 대신 `item_id` 한 칸을 쓴다. 아이템 줄의 id 와 `ring_level_items` ·
   `same_item_links` 는 새 게임 데이터에 실려 오므로 1.0.15 의 기기 변환(결정 19)에서 함께 바꾼다. 레벨이 있는 반지 기록은 레벨
   줄로 바꾼다. 생명의 연마석 기록은 서버 이관과 같은 규칙으로 보스 난이도로 정한다. 같은 드롭의 기기 기록과 서버 판매가 줄이 다른
@@ -868,8 +876,10 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   상자나 드롭을 넣지 않았다. 줄을 왜 나눴는지도 이 표에 적지 않는다. 그 줄을 쓰는 표가 안다. 상자에서 나온 줄이라는 것은 상자의
   내용물 표가 그 줄을 가리키는 것으로 안다.
 - 원래 아이템 하나에 따로 둔 줄이 여럿 있을 수 있다. 원래 아이템 줄은 다른 줄의 따로 둔 줄이 될 수 없다. 연결이 두 번 이어지면
-  원래 아이템을 찾을 때마다 끝까지 따라가야 하기 때문이다. 자기 자신을 가리키는 줄은 `CHECK` 로 막고, 두 번 이어지는 줄은 연결을
-  고치는 관리 화면을 만들 때 그 화면이 저장할 때 막는다.
+  원래 아이템을 찾을 때마다 끝까지 따라가야 하기 때문이다. 자기 자신을 가리키는 줄은 `CHECK` 로 막고, 두 번 이어지는 줄은 서버
+  마이그레이션 0068 의 트리거(`same_item_links_one_hop`)가 줄을 넣고 고칠 때 막는다. 다른 줄과 견줘야 해서 `CHECK` 로는 걸 수
+  없다. 두 방향을 다 막는다. 이미 따로 둔 줄인 아이템을 원래 줄로 삼지 못하고, 이미 원래 줄인 아이템을 따로 둔 줄로 넣지 못한다.
+  원래 줄 하나에 따로 둔 줄을 여럿 두는 것은 받는다.
 - 읽는 규칙은 둘이다.
   - 기록은 따로 둔 줄을 그대로 가리킨다. 드롭 기록과 드롭 판매가가 그렇다. 원래 줄로 바꿔 적으면 직접 떨어진 것과 상자에서 나온
     것을 가를 수 없다.
@@ -889,29 +899,73 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
 ### 결정 31. 처치 난이도가 정해지면 그 난이도에서 얻을 수 있는 드롭은 남기고, 가리는 일은 서버가 한다 (사용자 지정 2026-11-18)
 
 - 드롭을 처치 전에 적으면 실제 처치 난이도와 다른 난이도의 수익 건에 적힐 수 있다. 노말로 등록하고 드롭을 적었는데 카오스를
-  잡은 경우다. 드롭 시트가 처치 전 줄에서 난이도를 바꿔 보여 줄 때도 저장은 그 줄의 난이도로 한다([[ADR-044]] 결정 2).
-- 지금 앱은 처치 난이도가 정해지면 드롭을 그 난이도로 옮기고 그 난이도에서 못 얻는 드롭을 지운다([[ADR-040]] 결정 7,
-  [[ADR-044]] 결정 8). 상자에서 나온 드롭은 상자로 가린다. 그래서 감시자 칼로스 노말의 백옥 상자에서 나온 리스트레인트 링 lv.4 는
-  실제 처치가 카오스면 지워진다. 카오스는 백옥 상자를 주지 않기 때문이다. 그 반지는 카오스가 주는 생명 상자에서도 나온다.
-- 1.0.15 부터는 아이템으로 가린다(사용자 지정 2026-11-18). 기록에 상자가 없으므로(결정 28) 보는 것은 하나다. 그 아이템을 처치한
-  난이도에서 얻을 수 있는가다.
+  잡은 경우다. 드롭 시트가 처치 전 줄에서 난이도를 바꿔 보여 줄 때도 저장은 그 줄의 난이도로 한다([[ADR-044]] 결정 2). 그래서
+  처치한 수익 건이 생기면 같은 캐릭터 · 보스 · 기간의 다른 난이도 수익 건에 달린 드롭을 처치한 수익 건으로 옮기고, 처치한 수익
+  건에 있던 드롭과 함께 아래 표대로 가린다([[ADR-040]] 결정 7, [[ADR-044]] 결정 8).
+- 아이템으로 가린다(사용자 지정 2026-11-18). 기록에 상자가 없으므로(결정 28) 보는 것은 하나다. 그 아이템을 처치한 난이도에서 그
+  기간에 얻을 수 있는가다. 상자로 가리면 감시자 칼로스 노말의 백옥 상자에서 나온 리스트레인트 링 lv.4 가 실제 처치가 카오스일 때
+  지워진다. 카오스는 백옥 상자를 주지 않지만, 그 반지는 카오스가 주는 생명 상자에서도 나온다.
 
   | 경우 | 예 | 처리 |
   |---|---|---|
   | 처치한 난이도에서도 얻을 수 있다 | 위의 리스트레인트 링 lv.4 | 남긴다. 상자는 처치한 난이도로 찾으므로(결정 28) 고쳐 적을 값이 없다 |
-  | 처치한 난이도에서 못 얻는다 | 같은 수익 건에 적은 얼티메이덤 링 lv.4. 생명 상자에 없는 반지다 | 지운다. 지금과 같다 |
+  | 처치한 난이도에서 못 얻는다 | 같은 수익 건에 적은 얼티메이덤 링 lv.4. 생명 상자에 없는 반지다 | 지운다 |
   | 같은 물건을 다른 경로로만 얻을 수 있다 | 벨로나 노말에 직접 떨어진 생명의 연마석을 적었는데 하드를 잡았다. 하드에서는 생명 상자에서만 나온다 | 남기고, 아이템 줄을 같은 물건의 다른 줄로 바꾼다(결정 30) |
 
-- 두 경로가 다 있는 난이도면 적힌 줄을 그대로 둔다. 감시자 칼로스 카오스는 생명의 연마석을 직접도 떨구고 상자로도 준다.
-  2026-11-18 운영에서 생명의 연마석을 주는 방법이 난이도마다 갈리는 보스는 감시자 칼로스 · 벨로나 · 찬란한 흉성 · 최초의 대적자 ·
-  카링이다.
-- 옮기고 지우고 바꾸는 일은 서버가 한다(사용자 지정 2026-11-18). 처치한 수익 건을 받으면 같은 캐릭터 · 보스 · 기간의 다른 난이도
-  수익 건에 달린 드롭을 처치한 수익 건으로 옮기고, 위 표대로 가린다. 기기는 그 결과를 받는다(결정 9). 지금은 기기가 옮기고 지운
-  뒤 서버에 지우기를 보낸다. 기기가 여럿이면 각자 고쳐 올린 줄이 서로를 덮으므로 한곳에서 한다.
-- 처치한 수익 건에 이미 있는 드롭은 그대로 두고 같은 드롭은 옮기지 않는다. 같은 드롭은 지금처럼 가린다([[ADR-040]] 결정 7).
-  보스가 직접 떨군 것이면 아이템이 같은 것이고, 상자에서 나온 것이면 찾은 상자가 같은 것이다. 드롭 시트가 상자 하나에 결과를
-  하나만 두기 때문이다.
-- 서버의 결과를 받기 전에 기기 화면이 그 드롭을 어떻게 보일지는 구현 전에 정한다.
+- 얻을 수 있다는 것은 처치한 난이도의 드롭 표(`boss_difficulty_rewards`)가 그 아이템 줄을 직접 주거나, 그 난이도가 주는 상자의
+  내용물(`drop_box_contents`)에 그 아이템 줄이 든 것이다. 반지 레벨 줄은 원래 반지가 내용물에 있고 레벨이 상자의 레벨 범위 안이면
+  얻을 수 있다. 드롭 표 줄의 기간(`valid_from` · `valid_until`)은 그 기간 어느 때라도 유효했으면 든 것으로 본다([[ADR-019]] 결정 8).
+  패치로 빠진 아이템을 패치 전에 먹은 기록이 지워지면 안 되기 때문이다. 고정 보상(`fixed`)으로 적힌 옛 기록은 가리지 않고 둔다.
+- 적힌 아이템 줄로 못 얻으면 같은 물건의 다른 줄을 `same_item_links` 에서 찾아 본다. 원래 줄을 먼저 보고, 따로 둔 줄은 줄 id
+  차례로 본다. 두 경로가 다 있는 난이도면 적힌 줄을 그대로 둔다. 감시자 칼로스 카오스는 생명의 연마석을 직접도 떨구고 상자로도
+  준다. 2026-11-18 운영에서 생명의 연마석을 주는 방법이 난이도마다 갈리는 보스는 감시자 칼로스 · 벨로나 · 찬란한 흉성 · 최초의
+  대적자 · 카링이다.
+- 같은 드롭은 하나만 남긴다([[ADR-040]] 결정 7). 보스가 직접 떨군 것이면 아이템이 같은 것이고, 상자에서 나온 것이면 처치한
+  난이도에서 찾은 상자가 같은 것이다. 드롭 시트가 상자 하나에 결과를 하나만 두기 때문이다. 처치한 수익 건에 있던 드롭이 먼저
+  남고, 옮겨 오는 드롭은 난이도 차례(이지 · 노말 · 하드 · 카오스 · 익스트림)로, 같은 수익 건 안에서는 드롭 id 차례로 남는다. 기기와
+  서버가 같은 드롭을 남기려면 둘 다 가진 값으로 차례를 정해야 해서, 기기에만 있는 드롭 시트의 차례는 쓰지 않는다.
+- 처치한 수익 건이 있는 묶음에서 처치도 분배도 드롭도 없는 다른 난이도의 수익 건은 지운다. 기기가 빈 수익 건을 지우는
+  규칙(`deleteEntryIfEmpty`)과 같다.
+- 옮기고 지우고 바꾸는 일은 서버가 한다(사용자 지정 2026-11-18). 기기가 여럿이면 각자 고쳐 올린 줄이 서로를 덮으므로 한곳에서 한다.
+  - 서버는 처치한 수익 건이 있는 묶음(캐릭터 · 보스 · 기간)의 수익 건이나 드롭을 받을 때마다 그 묶음을 이 규칙으로
+    맞춘다(서버 `modules/sync/tables/cleared-drops.ts`). 처치 전 수익 건과 드롭을 받을 때도 맞추는 것은, 처치를 아직 받지 못한
+    기기가 나중에 올린 수익 건과 드롭이 다른 난이도에 남지 않게 하려는 것이다.
+  - 그렇게 비운 수익 건을 뒤에 온 드롭이 가리키면 지운 기록의 수정(`record_deleted`)으로 거절하지 않고 처치한 수익 건으로 받는다.
+    앱은 드롭을 한 건씩 올려 같은 요청의 첫 드롭을 옮기며 비운 수익 건을 다음 드롭이 가리킨다. 거절하면 앱이 그 드롭을 지운다.
+  - 그 기록을 적는 트랜잭션 안, 같은 주인(메이플 ID)의 잠금 안에서 맞춘다. 옮기고 바꾸고 지운 줄은 변경 번호가 올라 다른 기기도
+    받기로 받는다(결정 9). 아이템 줄을 바꾼 드롭은 판매가 줄의 아이템도 바꾸고, 지운 드롭의 판매가 줄은 지운다(결정 26).
+- 기기는 서버의 결과를 받기 전에도 같은 규칙으로 그 자리에서 옮기고 지운다(사용자 선택 2026-11-24). 화면은 지금처럼 바로 바뀌고,
+  오프라인에서도 같다. 쓰기는 `settleClearedBossDrops`(`storage/boss-drops.ts`)가 하고, 가리는 계산은 `planClearedDrops`
+  (`lib/boss/drop-item-ids.ts`)가 한다.
+  - 처치한 수익 건이 기기에 있으면 이 쓰기를 대기 표에 넣지 않는다(`withServerSyncPaused`). 서버가 같은 일을 하므로 보내지 않고,
+    받기가 서버의 결과로 맞춘다.
+  - 비운 수익 건은 대기 줄이 남아 있으면 그 자리에서 지우지 않고 대기 줄도 둔다(Claude 가 정했다 2026-11-24). 그 수익 건의 아직
+    올리지 않은 쓰기(직접 완료의 처치를 걷는 쓰기 같은)가 서버에 닿아야 서버가 같은 순서로 맞출 수 있다. 지우면 그 쓰기 대신
+    지우기가 가서, 서버가 아직 옮기지 않은 드롭을 수익 건과 함께 지운다. 서버가 그 수익 건을 지운 결과는 받기로 온다. 대기 줄이
+    없는 수익 건은 그 자리에서 지우고, 넣지 않는 동안이라 지우기도 서버로 가지 않는다. 빈 처치 전 수익 건은 처치 · 그 기간 값 ·
+    드롭을 읽는 어느 화면에도 나오지 않는다.
+  - 처치한 수익 건이 없어 대기 표로 올리는 쓰기에서는 드롭을 옮겨 비운 수익 건을 지우지 않는다. 수익 건은 드롭보다 먼저 올라가서,
+    지우기가 먼저 닿으면 서버가 드롭을 수익 건과 함께 지우고 뒤에 온 드롭의 옮기기를 `record_deleted` 로 거절한다.
+  - 처치한 수익 건은 정해진 난이도의 수익 건이 처치한 것이면 그것이고, 아니면 그 묶음에서 처치한 수익 건이다. 서버와 같은 수익
+    건으로 모아야 서로 옮긴 것을 되돌리지 않는다.
+  - 처치는 정해졌지만 처치 기록을 적지 못해 처치한 수익 건이 없으면(결정석 가격을 모르는 보스) 서버는 옮기지 않는다. 이때는 정해진
+    난이도의 수익 건으로 옮기고 그 쓰기를 대기 표로 올린다.
+  - 기기가 하는 때는 처치 기록을 적은 뒤(자동 기록 · 스케줄 창의 기록 · 직접 완료)와 기간을 읽을 때다. 기간을 읽을 때는 완료 행의
+    수익 건에 있는 드롭만 가리고 다른 수익 건의 드롭은 옮기지 않는다. 그 행이 낡은 캐시에서 나왔을 수 있기 때문이다([[ADR-040]]
+    결정 7).
+  - 기기의 게임 데이터에 처치한 난이도의 드롭 표 줄이 하나도 없으면 가리지 않고, 아이템 표에 없는 아이템 줄의 드롭은 건드리지
+    않는다. 게임 데이터를 받기 전에 가리면 모든 드롭이 못 얻는 것으로 지워진다. 그런 드롭은 서버가 맞춘 결과가 받기로 온다.
+  - 받기는 대기 줄이 있는 기록을 건너뛴다(결정 67). 기기가 같은 규칙으로 먼저 고쳤으므로, 그 기록은 다음 올리기에서 기기의 값으로
+    서버에 간다.
+- 직접 완료의 난이도를 바꿀 때는 옛 처치 기록을 지우지 않고, 처치만 걷는 쓰기(처치 칸과 분배를 비움)를 먼저 한 뒤 새 난이도의
+  처치를 쓴다(Claude 가 정했다 2026-11-24, [[ADR-037]] 결정 13). 두 쓰기는 한 트랜잭션이고, 그 뒤에 드롭을 새 수익 건으로 모은다.
+  - 올리기는 대기 줄을 넣은 차례(rowid)로 보내서 서버가 옛 수익 건의 처치를 걷는 쓰기를 먼저 받는다. 새 수익 건의 대기 줄이 이미
+    앞에 있었으면 옛 수익 건 뒤로 옮긴다. 넣은 시각은 처음 올리기를 가르는 값이라 차례를 정하지 못한다.
+  - 서버는 옛 수익 건을 처치 전 수익 건으로 받고, 새 처치를 받을 때 이 결정대로 드롭을 옮긴 뒤 빈 옛 수익 건을 지운다. 새 처치가
+    먼저 닿으면 옛 처치와 같은 기간 · 보스의 처치라 `duplicate_record` 로 거절되고(결정 10), 앱이 새 기록을 지운다. 옛 기록을 먼저
+    지우면 그 지우기가 아직 옮기지 않은 드롭을 함께 지운다.
+  - 옛 처치가 아직 서버에 없어도 같다. 옛 수익 건은 처치 전 수익 건으로 들어갔다가, 새 처치를 받을 때 빈 수익 건으로 지워진다.
+  - 두 기기가 같은 기간 · 보스를 다른 난이도로 처치했다고 적으면 지금처럼 뒤에 온 처치가 `duplicate_record` 다(결정 10).
 
 ### 결정 32. 종류를 가르는 enum 과 칸은 `_type` 으로 끝내고, 서버의 모든 표를 함께 정리한다 (사용자 지정 2026-11-18)
 
@@ -2015,8 +2069,10 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   | `referrals.referred_account_id` · `referrer_account_id` | `referred_nexon_account_id` · `referrer_nexon_account_id` | 위와 같다 |
 
 - `nexon_sessions.last_used_at` 은 두고, 세션으로 요청이 올 때마다 시각을 고친다(사용자 선택). 1.0.14 의 운영 서버는 고치는
-  함수(`touch`)를 부르지 않아 값이 늘 만든 시각이다. 2026-11-20 운영 934줄이 모두 `created_at` 과 같다. 서버 develop 은 신원 가드
-  (`IdentityGuard`)가 세션을 쓸 때 고친다. 오래 쓰지 않은 세션을 운영에서 조사할 수 있게 된다. 요청마다 쓰기가 한 번 늘어난다.
+  함수(`touch`)를 부르지 않아 값이 늘 만든 시각이다. 2026-11-20 운영 934줄이 모두 `created_at` 과 같다. 서버 develop 은 세션을
+  쓰는 두 가드(`IdentityGuard` · `SessionGuard`)가 세션을 찾으면 고친다. 세션 가드만 거치는 스트림(`POST /v1/friends/stream`)은
+  자리가 다 차 503 으로 답할 때도 고친다. 가드가 경로보다 먼저 돌기 때문이다. 오래 쓰지 않은 세션을 운영에서 조사할 수 있게 된다.
+  요청마다 쓰기가 한 번 늘어난다.
 - 추천 표(`referrals`)와 추천인 코드(`nexon_accounts.referral_code`)는 그대로 둔다. 코드를 만들어 저장만 하고 표는 비워 두기로
   했다([[ADR-017]] 결정 10). 운영에 추천 줄은 없고 코드는 로그인 계정 885개에 있다.
 - 부계정 등록은 메이플 ID 로 하고 다른 로그인에 등록된 계정은 거절한다([[ADR-101]] 결정 6). 표의 칸은 그대로다.
@@ -2934,28 +2990,36 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
 | `features/schedule-sync/__tests__/schedule-query.spec.ts`(동기화) | 결정 9 · 67: 회차가 넥슨에서 받으면 동기화를 깨우고, 하나도 받지 못한 회차와 배경 실행의 회차는 깨우지 않는지 본다 |
 | `lib/__tests__/boss-profit-calculator.spec.ts` · `app/utility/__tests__/BossProfitCalculatorScreen.test.tsx` · `features/boss-profit-calculator/__tests__/store.spec.ts` | 결정 25: 계산기에서 요율이 빈 보스는 넘긴 등급 요율로, 요율이 있는 보스는 그 요율로 세는지, 화면의 보스 줄 · 캐릭터 합계가 그 캐릭터의 오늘 등급 요율로 세는지, 파티 모달이 오늘 등급의 `자동` 으로 열리고 `자동` 으로 적용하면 요율을 비워 두는지, 보스 관리의 자동 설정을 가져오면 요율을 비우는지 본다 |
 | `lib/__tests__/drop-item-ids.spec.ts` · `storage/sqlite/__tests__/convert-boss-tables-real-sqlite.test.ts` · `storage/sqlite/__tests__/drop-record-id-real-sqlite.test.ts` · 서버 `drop-prices/drop-prices.repository.spec.ts` | 결정 28: 드롭의 상자를 수익 건의 난이도와 아이템으로 드롭 표에서 찾는지(기기가 아이템 줄 id 를 되짚을 때와 관리 화면의 획득처), 직접 떨어진 연마석과 상자에서 나온 연마석이 한 수익 건에 함께 들어가는지 본다 |
-| (서버 테스트를 더한다) | 결정 30: 시세가 따로 둔 줄의 판매가를 원래 아이템으로 모으는지 |
-| (구현 때 더한다) | 결정 30: 연결이 두 번 이어지는 줄을 받지 않는지 |
-| (구현 때 더한다) | 결정 31: 처치한 난이도에서 얻을 수 있는 드롭이 남고 못 얻는 드롭이 지워지는지, 경로만 다른 연마석이 같은 물건의 다른 줄로 바뀌는지 |
+| 서버 `sync/push.repository.spec.ts`(얻을 수 있는 아이템) | 결정 28: 드롭은 그 보스에서 얻을 수 있는 아이템만 받는지 본다. 다른 난이도의 드롭 · 상자의 내용물 · 레벨 범위 안의 반지 레벨 줄은 받고, 다른 보스의 아이템 · 드롭 표에 없는 아이템 · 범위 밖의 레벨 줄은 코드 없이 거절한다 |
+| 서버 `boss-drops/boss-drops.repository.spec.ts` · `admin/admin.controller.spec.ts`(드롭 표) | 결정 28: 드롭 표 줄을 지우는 함수와 경로가 없어 줄을 기간으로만 끝내는지 본다 |
+| 서버 `boss-drops/drop-box-rules.spec.ts` · `admin/admin.controller.spec.ts`(상자가 하나로 정해지지 않는 저장) | 결정 28: 같은 난이도가 직접 주는 아이템을 그 난이도의 상자에 넣거나 한 난이도의 두 상자에 같은 아이템을 넣는 저장을, 드롭 표에 줄을 더할 때와 상자에 내용물을 더할 때 모두 409 로 막고 아무것도 적지 않는지 본다 |
+| 서버 `drop-market/drop-market.repository.spec.ts`(같은 물건) | 결정 30: 따로 둔 줄의 판매가를 화면의 시세(`rows`)와 날마다 도는 일(`rowsBetween`) 둘 다에서 원래 아이템의 시세로 세는지 본다 |
+| 서버 `items/items.repository.spec.ts`(같은 물건 연결) | 결정 30: 두 번 이어지는 연결을 어느 방향이든 트리거가 거절하고, 원래 줄 하나에 따로 둔 줄을 여럿 두는 것은 받는지 본다 |
+| `lib/__tests__/drop-item-ids.spec.ts`(처치한 수익 건으로 모으기) · 서버 `sync/push.repository.spec.ts`(처치 난이도) | 결정 31: 같은 세 예(칼로스 노말 백옥 상자의 리스트레인트 링 lv.4 · 얼티메이덤 링 lv.4 를 적고 카오스를 잡음, 벨로나 노말에 직접 떨어진 생명의 연마석을 적고 하드를 잡음)에서 기기와 서버가 남기고 지우고 상자용 연마석 줄로 바꾸는지, 처치한 수익 건에 있던 같은 드롭이 남고 옮겨 오는 쪽이 지워지는지, 옮겨 오는 드롭끼리 겹치면 난이도 차례 · 드롭 id 차례로 남는지, 드롭 표 줄의 기간을 그 기간 어느 때로 보는지, 고정 보상 기록은 두는지 본다 |
+| 서버 `sync/push.repository.spec.ts`(처치 난이도) · `sync/pull.repository.spec.ts`(처치 난이도) | 결정 31: 처치한 수익 건을 받으면 다른 난이도 수익 건의 드롭을 옮기고 빈 수익 건을 지우는지, 처치를 받은 뒤 다른 난이도에 올라온 드롭도 옮기고 그러다 비운 수익 건을 가리키는 뒤 드롭도 받는지, 바꾼 드롭의 판매가 줄 아이템을 바꾸고 지운 드롭의 판매가 줄을 지우는지, 옮기고 지운 줄의 변경 번호가 올라 다른 기기의 받기에 오는지 본다 |
+| `features/boss-profit/__tests__/drop-moves-real-sqlite.test.ts` | 결정 31: 처치 기록이 있으면 옮기고 지우고 바꾸는 쓰기가 대기 표에 들어가지 않는지, 대기 줄이 남은 비운 수익 건은 지우지 않고 대기 줄이 없는 것만 지우는지, 처치 기록이 없으면 대기 표로 올리고 드롭을 옮겨 비운 수익 건은 남기는지, 기간을 읽을 때는 완료 행의 수익 건만 가리는지, 대기 줄이 있는 드롭은 받기가 건너뛰고 기기의 값이 남는지 본다 |
+| 서버 `sync/push.repository.spec.ts`(직접 완료의 난이도 바꾸기) | 결정 31: 한 요청에 옛 수익 건의 처치를 걷는 쓰기와 새 난이도의 처치를 차례로 받으면 드롭이 새 수익 건으로 옮겨 가고 빈 옛 수익 건이 지워지며 `duplicate_record` 가 나지 않는지, 옛 처치가 서버에 없어도 같은지, 다른 기기가 다른 난이도의 처치를 올리면 `duplicate_record` 인지 본다 |
+| `features/boss-profit/__tests__/drop-moves-real-sqlite.test.ts`(직접 완료) | 결정 31: 직접 완료의 난이도를 바꾸면 옛 수익 건의 처치를 걷는 대기 줄이 새 처치보다 앞에 서고 옛 수익 건을 먼저 지우지 않는지, 새 수익 건의 대기 줄이 앞에 있었으면 뒤로 옮기는지, 빈 옛 수익 건이 처치 · 그 기간 값 · 드롭을 읽는 곳에 나오지 않는지 본다 |
 | `features/content-scheduler/__tests__/content-completion.test.ts` · `app/content-scheduler/__tests__/ContentCards.test.tsx`(완료 배지) · `features/remaining-schedule/__tests__/remaining-schedule.spec.ts`(카드와 같은 완료 판정) · 서버 `contents/contents.repository.spec.ts` | 결정 34: 컨텐츠의 `check_type` 과 완료 횟수로 완료를 세는지, 카드의 완료 배지와 진행 링 · 남은 스케줄이 같은 조건으로 완료를 가르는지, 완료 횟수가 `count_only` 가 아닌 줄에 들어가지 않는지(서버 DB 의 `CHECK`) 본다 |
 | `lib/__tests__/hexa-matrix.test.ts` | 결정 35: 한 직업의 코어 목록에 공용 코어가 들어가고 종류의 차례가 지금과 같은지 본다 |
 | `features/cashbook/__tests__/row-icon.spec.ts` · `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts`(코어 줄 id) | 결정 35: 이름이 같고 그림이 다른 코어가 코어 줄 id 로 직업마다 제 그림으로 나오고 줄 id 가 없는 품목은 이름으로 찾는지, 헥사 스킬 기록을 읽으면 저장할 때 캐릭터의 직업으로 고른 코어 줄 id 가 함께 오는지 본다 |
 | `features/enhancement-history/__tests__/spending.spec.ts` · `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` · `features/cashbook/__tests__/records.spec.ts` · `features/cashbook/__tests__/row-icon.spec.ts` · `storage/sqlite/__tests__/convert-enhancement-tables-real-sqlite.test.ts`(다시 받기) | 결정 37: 장비 표에 있는 장비와 없는 장비가 모두 이름으로 한 줄씩 묶이는지, 읽을 때 이름으로 장비 그림을 찾는지, 기기 변환 뒤에 같은 날을 다시 받아도 줄이 늘지 않고 변환한 줄의 id 를 지키는지 본다 |
 | `storage/sqlite/__tests__/hexa-spend-real-sqlite.test.ts` · `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(기억한 레벨) · `lib/__tests__/cashbook-entry-ids.spec.ts` | 결정 38: 종류와 줄 id 로 기억을 읽고 쓰는지(변환이 대상 줄 id 로 옮기는 것 포함), 이름이 같은 코어가 직업마다 다른 줄로 기억되는지 본다 |
-| (서버 테스트를 더한다) | 결정 38: 종류가 말하는 표에 없는 id 를 받지 않는지 |
+| 서버 `sync/push.repository.spec.ts`(기억한 레벨의 대상) | 결정 38: 기억한 레벨의 대상 id 가 종류가 말하는 표에 없으면 거절하는지 본다 |
 | `lib/__tests__/scheduler-content-scope.spec.ts` · `app/today/__tests__/view-model.test.ts` · `lib/__tests__/scheduler-activity.spec.ts` | 결정 42: 드래곤 퇴치 둘이 등록돼 있어도 공유 컨텐츠 위젯에 나오지 않는지, 점수 컨텐츠만 한 캐릭터가 활동한 캐릭터로 잡히지 않는지 본다 |
 | `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(분류와 품목의 대상) · `storage/sqlite/__tests__/cashbook-entries-real-sqlite.test.ts` | 결정 44: 기기 변환이 분류와 `hexa_activation` 으로 종류를 정하고 key 와 코어 이름을 줄 id 로 바꾸는지, 줄 id 를 찾지 못한 헥사 스킬 품목이 이름 · 금액 · 레벨 · 조각을 지닌 채 남아 코어 이름으로 읽히는지 본다 |
-| (구현 때 더한다) | 결정 44: 서버가 종류가 말하는 표에 없는 품목 id 를 받지 않는지. 서버의 가계부 올리기는 아직 품목의 대상을 검사하지 않는다 |
+| 서버 `sync/push.repository.spec.ts`(가계부 품목의 대상) | 결정 44: 품목의 대상 id 가 `target_type` 이 말하는 표에 없으면 거절하고 그 기록을 적지 않는지 본다 |
 | `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(분류와 품목의 대상 · 변환한 기록 읽기) · `lib/__tests__/cashbook-entry-ids.spec.ts` | 결정 45: 기기 변환이 수입 · 지출과 분류 key 의 조합을 분류 줄 id 로 바꾸는지, 수입과 지출 양쪽에 있는 기타가 제 줄로 가는지, 수입 전체와 지출 전체를 읽는 조회가 변환한 기록을 빠짐없이 섞지 않고 내는지 본다 |
 | `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` · `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(변환한 기록 읽기) · 서버 `database/record-tables.spec.ts` · `sync/push.repository.spec.ts`(인벤토리) | 결정 46: 장비가 아닌 아이템을 같은 메이플 ID · 월드에 두 번 넣으면 한 줄로 합쳐지고 장비는 줄이 따로 생기는지, 아이템 표와 종류가 다른 기록이 변환 뒤에도 적힌 종류로 열리는지 본다 |
 | `storage/__tests__/manual-tracked-content.spec.ts` · `storage/__tests__/preferences-conversion.spec.ts` · 서버 `sync/push.repository.spec.ts`(id 가 없는 표) | 결정 47: 컨텐츠 항목과 보스 항목이 종류와 줄 id 로 저장되고 읽히는지, 같은 캐릭터가 같은 대상을 두 번 넣지 못하는지(변환은 앞의 것만 남기고 서버는 유일 기준으로 덮는다), 서버가 종류가 말하는 표에 없는 id 를 받지 않는지 본다 |
 | 서버 `sync/push.repository.spec.ts` · `sync/pull.repository.spec.ts` · `users/maple-id-ownership.spec.ts` · `users/nexon-accounts.repository.spec.ts` | 결정 48: 올린 해시로 메이플 ID 줄을 찾아 캐릭터 줄에 줄 id 로 적고 내려줄 때 해시로 푸는지, 남의 메이플 ID 해시를 실은 올리기를 받지 않는지, 넥슨 계정 줄이 합쳐져도 기록이 같은 메이플 ID 줄을 가리키는지 본다 |
-| (서버 테스트를 더한다) | 결정 48: 메이플 ID 를 바로 가리키는 기록 표(가계부 기록 · 인벤토리 · MVP 등급 · 메이플 ID 이름 · 공유 진행)도 줄 id 로 적고 받기의 응답에 해시로 내는지 |
+| 서버 `sync/pull.repository.spec.ts`(메이플 ID 를 가리키는 기록) | 결정 48: 가계부 기록 · 인벤토리 · MVP 등급 · 메이플 ID 이름 · 공유 진행이 올린 해시로 찾은 메이플 ID 줄 id 로 적히고, 받기의 응답에는 해시로 오는지 본다 |
 | `features/server-sync/__tests__/push-records.spec.ts`(가계부) · `features/server-sync/__tests__/pull-records.spec.ts`(가계부) · `storage/sqlite/__tests__/server-sync-pull-real-sqlite.test.ts`(같은 날 기록) · 서버 `sync/push.repository.spec.ts`(다른 메이플 ID 아래의 ocid) | 결정 49: 캐릭터 기록을 올릴 때 앱이 그 캐릭터의 메이플 ID 를 찾아 싣고 모르면 보내지 않는지, 서버가 캐릭터와 메이플 ID 가 어긋난 줄을 받지 않는지(강화 합계로 본다), 받은 같은 날 기록이 저장한 시각 차례로 서는지, 메모와 저장한 시각이 서버 칸으로 오가는지 본다 |
-| (서버 테스트를 더한다) | 결정 49: 가계부 기록에서 캐릭터와 메이플 ID 가 어긋나면 거절하는지, 올린 메모와 저장한 시각이 받기의 응답에 그대로 오는지 |
+| 서버 `sync/push.repository.spec.ts`(가계부의 메이플 ID) · `sync/pull.repository.spec.ts`(가계부의 메모) | 결정 49: 가계부 기록의 캐릭터와 몸의 메이플 ID 가 어긋나면 `maple_id_not_registered` 이고, 메모와 `recorded_at` 이 올린 값 그대로 받기의 응답에 오는지 본다 |
 | `lib/__tests__/scheduler-merge.spec.ts` · `features/content-scheduler/__tests__/content-completion.test.ts` · 서버 `contents/contents.repository.spec.ts` | 결정 52: 넥슨이 최대 횟수를 0 으로 줘도 표의 `max_count` 로 완료와 분모를 정하는지, `count_only` 가 아닌 줄에 `max_count` 가 들어가지 않는지, 표에 없는 컨텐츠가 넥슨의 `type` 으로 판정되는지 본다 |
 | `storage/__tests__/spend.spec.ts`(품목 차례) · `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(같은 종류 품목) · 서버 `sync/push.repository.spec.ts`(딸린 줄) | 결정 53: 추가 리워드를 두 종류로 받은 기록의 품목이 들어간 차례와 상관없이 종류의 차례로 읽히는지, 한 기록에 같은 종류의 품목을 두 줄 받지 않는지 본다 |
 | `lib/__tests__/spend-catalog.test.ts`(통화) · `app/cashbook/__tests__/SpendSheet.test.tsx`(메포 항목) | 결정 53: 지출 항목의 통화를 `maple_point` · `meso` 로 읽고 옛 값 `point` 가 든 칸은 받지 않는지, 메이플포인트 항목을 고르면 메포 금액 칸에 적는지 본다 |
+| 서버 `database/maple-point-currency-migration.spec.ts` · `cli/move-old-db.spec.ts`(가계부 기준 표) | 결정 53: 마이그레이션 0067 이 통화 `point` 줄을 `maple_point` 로 바꾸고, 옛 DB 의 `point` 도 `maple_point` 로 옮기는지 본다 |
 | `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts`(기타 조각 · 딸린 입력) · `storage/sqlite/__tests__/inventory-real-sqlite.test.ts` · `storage/__tests__/income.spec.ts` · 서버 `sync/push.repository.spec.ts`(딸린 줄) | 결정 54: 기기 변환 뒤에 기타 조각의 남은 개수가 변환 전과 같은지, 한 기록이 같은 보관에서 두 줄로 가져가지 못하는지, 켠 효과가 적힌 차례와 상관없이 같은 칸으로 옮겨지는지 본다 |
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` · 서버 `users/nexon-accounts.repository.spec.ts` | 결정 55: 다시 받은 날의 줄을 분류로 갈아 끼워도 다른 API 종류의 줄이 지워지지 않는지, 넥슨 계정 줄을 합칠 때 굳은 날이 한 줄로 남는지 본다 |
 | `storage/__tests__/preferences-conversion.spec.ts`(약속 · 계산기 기록) · `storage/__tests__/party-appointments.spec.ts` · 서버 `users/nexon-accounts.repository.spec.ts` | 결정 57: 기기 변환 뒤에 약속이 주차 값과 난이도 줄 id 로 적히고 변환 전 모양으로 되읽히는지, 균등 분배와 % 로 나눠떨어지는 비율의 계산기 기록이 변환 전과 같은 금액으로 열리는지, 넥슨 계정 줄을 합칠 때 설정이 한 줄로 남는지 본다 |
@@ -2965,9 +3029,9 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
 | 서버 `cli/move-old-db.spec.ts`(크롭 · 공지 · FAQ · 게임 규칙) · `lib/__tests__/image-crop.test.ts` · `lib/faq/__tests__/faqs.spec.ts` · `lib/__tests__/game-rules.spec.ts` | 결정 61: 크롭 글자를 숫자 셋으로 옮기고 앱이 그 숫자로 자리를 그리는지, 규칙 아홉의 값이 한 줄의 칸으로 옮겨지는지, FAQ 답을 빈 줄로 이어 앱이 같은 문단으로 나누는지 본다 |
 | `features/enhancement-history/__tests__/anomalies.spec.ts` | 결정 61: 강화 이상 보고의 줄이 표의 칸 이름(`apiType` · `reason`)으로 서고 `itemKey` 를 싣지 않는지 본다 |
 | 서버 `identity/identity.guard.spec.ts` · `users/users.repository.spec.ts` · `users/nexon-accounts.repository.spec.ts` · `auth/sessions.repository.spec.ts` | 결정 62: 메이플 ID 해시로 온 요청이 같은 넥슨 계정 줄을 찾는지(줄을 합친 뒤에도), 신원 가드를 거치는 요청이 세션의 `last_used_at` 을 밀어 주는지 본다 |
-| (구현 때 더한다) | 결정 62: 세션 가드(`SessionGuard`)만 거치는 요청(`POST /v1/friends/stream`)도 `last_used_at` 을 밀어 주는지 |
+| 서버 `auth/session.guard.spec.ts` · `friends/friends.controller.spec.ts` | 결정 62: 세션 가드(`SessionGuard`)가 세션을 찾으면 `last_used_at` 을 고치고 모르는 값이면 401 로 아무것도 고치지 않는지, 스트림(`POST /v1/friends/stream`)은 자리가 다 찬 503 에도 시각을 고치는지 본다 |
 | 서버 `cli/move-old-db.spec.ts`(시세) · `drop-market/market-publish.spec.ts` | 결정 63: 옮긴 뒤 시세의 줄 수와 기준가가 같은지(시세 하나에 한 줄), 응답의 전일 대비가 두 종가의 차이와 같은지 본다 |
-| (서버 테스트를 더한다) | 결정 63: 여러 날 · 반지 레벨 · 뺀 줄이 섞인 시세를 옮겨도 시세마다 줄 수와 날마다 기준가가 같은지, 거래권으로 재던 소비 아이템의 지난 줄이 거래권 줄을 가리키는지 |
+| 서버 `cli/move-old-db.spec.ts`(시세 여러 날) | 결정 63: 여러 날 · 반지 레벨 · 옮기지 않는 판정이 섞인 시세를 옮겨도 시세마다 날마다 기준가가 같은지, 거래권으로 재던 소비 아이템의 지난 줄이 거래권 줄을 가리키는지 본다 |
 | `server/__tests__/market.spec.ts` · `features/market/__tests__/catalog.test.ts` · `app/utility/__tests__/MaspiScreen.test.tsx` · `app/utility/__tests__/MaspiItemScreen.test.tsx` | 결정 63: 반지 레벨 칸이 없는 새 시세 응답의 줄을 받고 상세를 아이템 key 와 월드로만 부르는지, 반지 레벨 줄의 key 면 원래 반지 이름에 레벨을 붙이는지, 목록의 줄이 그 key 로 상세를 열고 상세가 그 key 로 이름을 세우는지 본다 |
 | `features/device-conversion/__tests__/run.spec.ts`(점검) · `features/server-maintenance/__tests__/store.spec.ts`(풀리기 기다리기) · `__tests__/boot-order.test.tsx`(점검을 기다리는 변환) | 결정 64: 돌 단계가 남았으면 점검 잠금이 풀린 뒤에 기기 변환을 시작하고 그동안 기록 접근도 기다리는지, 돌 것이 없으면 점검을 묻지 않는지, 잠금이 풀리기를 기다리는 약속이 답을 못 받으면 지금 상태를 따르는지, 변환이 점검을 기다리는 동안 시작 화면이 점검 잠금 화면을 덮지 않는지 본다. 첫 동기화는 `features/server-sync/__tests__/run.spec.ts` 가 본다 |
 | (구현 때 더한다) | 결정 65: 운영 덤프를 새 표로 옮긴 뒤 표마다 줄 수가 결정들이 적은 대로인지 |
@@ -3068,3 +3132,14 @@ PR 마다 develop 에 머지하고, 그 PR 에서 `docs/foundation/server-sync.m
   앱이 통화 값 `maple_point` 를 읽고 계약 판을 올리는 것과 기기에 바꿀 값이 없다는 것을, 결정 63 에 반지 레벨 줄의 key 로 이름을
   세우는 것을 적었다. 결정 61 · 65 에서 앱이 따라가지 못한 강화 이상 보고의 몸과 직접 완료 응답 읽기를 함께 고쳤다. 모두 각 결정과
   [[ADR-074]] 결정 3 · 13 에서 따라 나와 Claude 가 정했다
+- (2026-11-24) 결정 31 을 구현했다. 서버의 결과를 받기 전에 기기 화면이 드롭을 어떻게 보일지는 지금처럼 그 자리에서 옮겨 보이는
+  것으로 정했다(사용자 선택). 기기도 서버와 같은 규칙으로 옮기고 지우되, 처치한 수익 건이 기기에 있으면 그 쓰기를 대기 표에 넣지
+  않는다. 서버가 드롭을 받을 때도 묶음을 맞추는 것, 그러다 비운 수익 건을 가리키는 뒤 드롭을 처치한 수익 건으로 받는 것, 같은 드롭이
+  겹칠 때 남는 차례, 드롭 표 줄의 기간을 보는 것, 비운 수익 건을 지우고 그 대기 줄을 빼는 것, 처치 기록이 없으면 대기 표로 올리는
+  것, 게임 데이터가 없으면 가리지 않는 것은 결정 31 의 규칙과 [[ADR-040]] 결정 7 · [[ADR-044]] 결정 8 에서 따라 나와 Claude 가 정했다.
+  결정 28 에 관리 화면의 드롭 표에서 줄을 지우는 경로를 걷은 것을, 결정 30 에 두 번 이어지는 연결을 막는 곳이 서버 마이그레이션의
+  트리거라는 것을, 결정 62 에 세션 가드도 시각을 고치는 것을 적었다. 테스트 표의 서버 테스트 행을 머지된 서버 테스트로 채웠다
+- (2026-11-24) 결정 31 에 직접 완료의 난이도를 바꿀 때 옛 처치를 걷는 쓰기를 먼저 하고 대기 줄의 차례를 맞추는 것, 대기 줄이 남은
+  비운 수익 건을 기기에서 지우지 않는 것, 서버가 처치 전 수익 건을 받을 때도 묶음을 맞추고 빈 수익 건을 지우는 것을 적었다. 새
+  처치가 옛 처치보다 먼저 닿아 `duplicate_record` 로 거절되고 앱이 기록과 드롭을 지우던 것을 고친다. 결정 28 의 관리 화면 검사를
+  구현하고 검사하는 때와 기간을 보지 않는 것을 적었다. 모두 Claude 가 정했다

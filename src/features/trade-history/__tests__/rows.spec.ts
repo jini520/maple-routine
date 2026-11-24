@@ -76,6 +76,7 @@ const drop = (over: Partial<BossDropRecord> & { dateKey: string }): DatedSoldDro
       difficulty: 'hard',
       periodKey: '2026-11',
       dropIndex: 0,
+      itemId: 'item-1',
       category: 'equipment',
       itemKey: 'magic_eyepatch',
       itemName: '마력이 깃든 안대',

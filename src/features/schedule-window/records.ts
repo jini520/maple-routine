@@ -108,10 +108,6 @@ async function recordPeriod(
   const worldKey = cachedBasic?.profile.worldKey ?? null
 
   for (const { bossKey, difficulty } of completed) {
-    // 이관은 `alreadyRecorded` 판정보다 앞에 둔다. 이미 수익 기록이 있든 없든 이 관측이 말하는
-    // 처치 난이도는 같고, 아래 continue 들에 막히면 안 된다.
-    await migrateDropsToConfirmedDifficulty({ ocid, bossKey, difficulty, periodKey }, dropRecords, now)
-
     // 시즌 보스는 챌린저스 월드 캐릭터만 기록한다. 넥슨 API 가 일반 월드 캐릭터에도 시즌 보스를 준다. 월드를
     // 모르면 이번 회차는 건너뛰고, 월드를 알게 된 회차가 기록한다(아래 이미 있는 행 판정이 안 막는다).
     if (isSeasonBoss(bossKey) && !isChallengersWorld(worldKey)) continue
@@ -184,6 +180,12 @@ async function recordPeriod(
         worldKey,
       }),
     )
+  }
+
+  // 이관은 처치 기록을 다 적은 뒤에 한다. 처치한 수익 건이 있어야 그 쓰기를 대기 표에 넣지 않고, 서버가 그 수익 건을 받아 같은
+  // 규칙으로 옮긴다. 이미 수익 기록이 있든 없든 이 관측이 말하는 처치 난이도는 같아서 위의 continue 들과 상관없이 모든 완료 보스를 본다.
+  for (const { bossKey, difficulty } of completed) {
+    await migrateDropsToConfirmedDifficulty({ ocid, bossKey, difficulty, periodKey }, dropRecords, now)
   }
 }
 

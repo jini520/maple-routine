@@ -296,6 +296,20 @@ describe('autoRecordRows', () => {
     expect(result).toEqual([pending])
   })
 
+  // 처치한 수익 건이 있어야 이관의 쓰기를 대기 표에 넣지 않는다. 서버가 그 수익 건을 받아 같은 규칙으로 옮긴다.
+  it('기록을 적는 행은 기록을 적은 뒤에 드롭을 옮긴다', async () => {
+    await autoRecordRows({
+      rows: [row()],
+      records: NO_RECORDS,
+      dropRecords: NO_DROPS,
+      now: NOW,
+      isSourceCurrent: () => true,
+      nexonCompleted: 넥슨완료,
+    })
+
+    expect(upsertBossProfitRecordMock.mock.invocationCallOrder[0]).toBeLessThan(migrateDropsMock.mock.invocationCallOrder[0])
+  })
+
   // 이관 가드는 자동 기록 가드보다 **넓다**. 이미 기록된 조합도 난이도는 확정이다.
   it('이미 기록된 행은 기록하지 않지만 드롭 이관은 한다', async () => {
     const recorded = row({ partySize: 2, payoutMeso: 5_000_000 })

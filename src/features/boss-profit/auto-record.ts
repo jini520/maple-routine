@@ -90,15 +90,18 @@ async function recordEachRow({
   const autoRecordedRows: BossProfitRow[] = []
   const autoFee = lazyAutoFeePercent()
 
-  for (const row of rows) {
-    const sourceIsCurrent = isSourceCurrent(row)
-
-    // 완료 행은 처치 난이도가 확정된 것이다. 다른 난이도 키에 남은 드롭을 이 난이도로 옮긴다.
-    // 아래 자동 기록 가드보다 조건이 넓다. 가격 미확정이거나 이미 기록된 조합도 난이도는
-    // 확정된 상태다. 출처가 지금의 사실이 아닌 행은 제외한다.
+  // 완료 행은 처치 난이도가 확정된 것이다. 다른 난이도 수익 건에 남은 드롭을 처치한 수익 건으로 옮긴다.
+  // 자동 기록 가드보다 조건이 넓다. 가격 미확정이거나 이미 기록된 조합도 난이도는
+  // 확정된 상태다. 출처가 지금의 사실이 아닌 행은 제외한다. 처치 기록을 적은 뒤에 옮긴다. 처치한 수익 건이 있어야
+  // 그 쓰기를 대기 표에 넣지 않고, 서버가 그 수익 건을 받아 같은 규칙으로 옮긴다.
+  const migrateConfirmed = async (row: BossProfitRow, sourceIsCurrent: boolean): Promise<void> => {
     if (records !== null && sourceIsCurrent && row.isComplete) {
       await migrateDropsToConfirmedDifficulty(row, dropRecords, now)
     }
+  }
+
+  for (const row of rows) {
+    const sourceIsCurrent = isSourceCurrent(row)
 
     // 넥슨이 같은 난이도 완료를 주면 사용자가 직접 적은 기록의 표식을 걷는다. 값은 안 건드린다 -
     // 사용자가 적은 날짜와 파티원 수가 더 정확하다.
@@ -159,6 +162,7 @@ async function recordEachRow({
       row.priceMeso === null
     ) {
       autoRecordedRows.push(row)
+      await migrateConfirmed(row, sourceIsCurrent)
       continue
     }
 
@@ -212,6 +216,7 @@ async function recordEachRow({
       splitFeePercent: shares.splitFeePercent,
       crystalExcluded: shares.excluded,
     })
+    await migrateConfirmed(row, sourceIsCurrent)
   }
 
   return autoRecordedRows
