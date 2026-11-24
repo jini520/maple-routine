@@ -219,28 +219,14 @@ export function getBossDifficulties(boss: string): BossDifficulty[] {
 }
 
 // 이 보스의 특정 난이도·기간에서 획득 가능한 '선택 타일' 아이템 key 집합(장비·소비, 상자 포함). 상자
-// 결과는 상자 key(=타일 key) 기준. 시트 난이도 변경 재조정·처치 난이도 확정 정리에 공통으로 쓴다.
+// 결과는 상자 key(=타일 key) 기준. 시트 난이도 변경 재조정에 쓴다. 처치 난이도로 기록을 가리는 일은 아이템 줄로 하는
+// `planClearedDrops`(`drop-item-ids.ts`)가 한다.
 export function getObtainableTileKeys(boss: string, difficulty: BossDifficulty, periodKey: string): Set<string> {
   return new Set(
     getBossDropCandidates(boss, periodKey, null)
       .filter((candidate) => candidate.difficulties.includes(difficulty))
       .map((candidate) => candidate.key),
   )
-}
-
-// 드롭 히스토리는 이 판정을 기록 한 건마다 한다. getObtainableTileKeys는 매
-// 호출마다 그 보스의 전 난이도 후보를 다시 순회하므로 난이도별 결과를 캐시한다. 표가 덮이면 캐시도 새것이다.
-const obtainableTileKeysCache = deriveAll([bossDropsTable, bossCatalogTable, itemsTable] as GameTable<unknown>[], () => new Map<string, Set<string>>())
-
-function obtainableTileKeys(boss: string, difficulty: BossDifficulty, periodKey: string): Set<string> {
-  const cache = obtainableTileKeysCache()
-  const key = `${boss}|${difficulty}|${periodKey}`
-  let cached = cache.get(key)
-  if (cached === undefined) {
-    cached = getObtainableTileKeys(boss, difficulty, periodKey)
-    cache.set(key, cached)
-  }
-  return cached
 }
 
 type TileFields = Pick<RecordedDrop, 'itemKey' | 'itemName' | 'boxOriginKey' | 'boxOrigin'>
@@ -264,137 +250,6 @@ export function dropTileKey(drop: TileFields): string | null {
 export function dropTileIdentity(drop: TileFields): string {
   const key = dropTileKey(drop)
   return key !== null ? `key:${key}` : `name:${drop.boxOrigin ?? drop.itemName}`
-}
-
-// 이 드롭이 그 난이도(처치 난이도)와 그 기간에서 획득 가능한지. 상자 결과는 상자 key 기준. 레거시
-// 고정(fixed) 기록은 선택 대상이 아니므로 항상 true 다. 기간을 보는 것은 패치로 빠진 아이템의
-// 패치 전 기록을 거짓 기록으로 판정하지 않기 위해서다.
-//
-// 타일 key 가 없는 옛 기록(이관이 이름을 못 찾았다)은 판정하지 않고 true 다. 못 찾은 것이 못 먹은 것은
-// 아니라서 지우지 않는다(사용자 결정 2026-09-15).
-export function isObtainableDrop(
-  boss: string,
-  difficulty: BossDifficulty,
-  periodKey: string,
-  drop: RecordedDrop,
-): boolean {
-  if (drop.category === 'fixed') return true
-  const tileKey = dropTileKey(drop)
-  return tileKey === null || obtainableTileKeys(boss, difficulty, periodKey).has(tileKey)
-}
-
-// 기록 드롭에서 이 난이도(처치 난이도)와 그 기간에서 획득 불가한 선택 드롭을 제거한다.
-export function pruneUnobtainableDrops(
-  boss: string,
-  difficulty: BossDifficulty,
-  periodKey: string,
-  drops: RecordedDrop[],
-): RecordedDrop[] {
-  return drops.filter((drop) => isObtainableDrop(boss, difficulty, periodKey, drop))
-}
-
-/**
- * 저장 계층이 읽은 드롭 기록(`boss_drops`)에서 이 계산에 필요한 부분만 추린 모양. 저장 계층 타입을 쓰지
- * 않는 이유는 `lib/` 가 `storage/` 를 의존하지 않기 위함이다.
- */
-export interface StoredDropRecord extends RecordedDrop {
-  difficulty: string
-  dropIndex: number
-}
-
-export interface DropMigrationPlan {
-  /** 확정 난이도 키에 새로 기록할 드롭 목록. 기존분 뒤에 기존분에 없는 타일의 이관분을 이어 붙인 것 */
-  drops: RecordedDrop[]
-  /** 비워야 하는 옛 난이도 키들 */
-  staleDifficulties: string[]
-}
-
-function toRecordedDrop(record: StoredDropRecord): RecordedDrop {
-  return {
-    category: record.category,
-    itemKey: record.itemKey,
-    itemName: record.itemName,
-    boxOriginKey: record.boxOriginKey,
-    boxOrigin: record.boxOrigin,
-    ringLevel: record.ringLevel,
-    dropRecordId: record.dropRecordId,
-    quantity: record.quantity,
-    // ⚠️ 가격 셋을 여기 빠뜨리면 **난이도가 확정되는 순간** 그 주 가격이 전부 날아간다.
-    // 타입 에러가 나지 않으므로(전부 optional) 이걸 막는 것은 테스트뿐이다.
-    priceState: record.priceState,
-    priceMeso: record.priceMeso,
-    priceSplitMode: record.priceSplitMode,
-    pricePartySize: record.pricePartySize,
-    priceShare: record.priceShare,
-    priceMyShare: record.priceMyShare,
-    saleFeePercent: record.saleFeePercent,
-    splitFeePercent: record.splitFeePercent,
-    saleFeeAuto: record.saleFeeAuto,
-    splitFeeAuto: record.splitFeeAuto,
-    // 다른 난이도로 옮겨도 가격 · 분배 · 수수료는 그대로라 저장된 받는 메소를 이어 든다.
-    saleReceivedMeso: record.saleReceivedMeso,
-  }
-}
-
-function compareStoredDrops(a: StoredDropRecord, b: StoredDropRecord): number {
-  const byDifficulty = difficultyOrder(a.difficulty) - difficultyOrder(b.difficulty)
-  return byDifficulty !== 0 ? byDifficulty : a.dropIndex - b.dropIndex
-}
-
-/**
- * 처치 난이도가 확정됐을 때 옛 난이도 키에 남은 드롭을 확정 난이도로 옮기는 계획.
- *
- * 왜 필요한가: 드롭은 `(ocid, boss, difficulty, period_key)` 로 저장된다. 익스트림으로 등록해두고
- * 드롭까지 기록한 뒤 백필이 실제 처치를 **하드**로 확정하면, 그 드롭은 아무 행도 읽지 않는 키에
- * 남아 영구 고아가 된다(화면·배지·환산 가치에서 사라지고 DB에만 쌓인다).
- *
- * - `records` 는 **같은 `(ocid, boss, period_key)`** 의 전 난이도 드롭이어야 한다(호출 측이 걸러 넘긴다).
- *   `periodKey` 는 그 기간이다. 그 기간에 나오는 아이템만 되살린다.
- * - 확정 난이도에서 획득 불가한 항목은 **되살리지 않는다**. 근거는 사용자 판단이다: 그 난이도에서
- *   나올 수 없는 아이템은 거짓 기록이고, 표시하는 것보다 삭제가 안전하다. 잘못된 환산 가치가
- *   계산에 섞이는 것이 기록 한 줄을 잃는 것보다 나쁘다.
- * - 확정 난이도에 **이미 드롭이 있으면 그 뒤에 이어 붙인다**. 단 **같은 타일(`dropTileIdentity`)은 두 번
- *   안 넣는다.** 한 카드는 같은 타일을 하나만 들어 두 번째 줄은 먹은 것이 아니고 금액만 두 번 센다.
- *   이미 있는 쪽이 남고, 옮겨 오는 것끼리 겹치면 정규 난이도 순서로 앞선 것이 남는다.
- * - 옛 키가 없으면 `null`(할 일 없음)이라 매번 호출해도 안전하다(멱등).
- */
-export function planConfirmedDifficultyDropMigration(
-  boss: string,
-  confirmedDifficulty: BossDifficulty,
-  periodKey: string,
-  records: StoredDropRecord[],
-): DropMigrationPlan | null {
-  const stale = records.filter((record) => record.difficulty !== confirmedDifficulty)
-  if (stale.length === 0) {
-    return null
-  }
-
-  const existing = records
-    .filter((record) => record.difficulty === confirmedDifficulty)
-    .sort(compareStoredDrops)
-    .map(toRecordedDrop)
-  const seenTiles = new Set(existing.map(dropTileIdentity))
-
-  // 저장 계층은 수익 건 안의 차례만 보장하므로 난이도가 섞이면 순서가 미정이다. 정규 난이도
-  // 순서로 정렬해 이관 결과가 실행마다 같게 한다. 겹치는 타일에서 어느 쪽이 남는지도 이 순서가 정한다.
-  const migrated = pruneUnobtainableDrops(
-    boss,
-    confirmedDifficulty,
-    periodKey,
-    [...stale].sort(compareStoredDrops).map(toRecordedDrop),
-  ).filter((drop) => {
-    const tile = dropTileIdentity(drop)
-    if (seenTiles.has(tile)) return false
-    seenTiles.add(tile)
-    return true
-  })
-
-  return {
-    drops: [...existing, ...migrated],
-    staleDifficulties: [...new Set(stale.map((record) => record.difficulty))].sort(
-      (a, b) => difficultyOrder(a) - difficultyOrder(b),
-    ),
-  }
 }
 
 // 명명 반지 기준(baseline) = 백옥 상자 반지 집합. 데이터에서 동적 산출(하드코딩·추정 없음).

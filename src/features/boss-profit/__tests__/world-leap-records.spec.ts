@@ -217,6 +217,7 @@ describe('cleanUpWorldLeapDuplicates', () => {
       difficulty: 'hard',
       periodKey: '2026-09-10',
       dropIndex,
+      itemId: 'item-1',
       dropRecordId: 'drop-1',
       world: null,
       worldKey: null,

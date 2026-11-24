@@ -16,9 +16,7 @@ jest.mock('../../../storage/boss-profit', () => ({
   upsertBossProfitRecord: jest.fn(),
   markBossProfitRecordAuto: jest.fn(),
 }))
-jest.mock('../../../storage/boss-drops', () => ({
-  // 실물과 같은 값이어야 호출 단언이 맞는다. 목이 안 내주면 `undefined` 가 흐른다.
-  NO_WORLD: { name: null, key: null }, getBossDropRecords: jest.fn(), replaceBossDropRecords: jest.fn() }))
+jest.mock('../../../storage/boss-drops', () => ({ getBossDropRecords: jest.fn(), settleClearedBossDrops: jest.fn() }))
 jest.mock('../../../storage/boss-party-settings', () => ({ getBossPartySetting: jest.fn() }))
 // 판 알림을 모으는 반복. 쓰기가 그 안에서 도는지 깊이로 본다.
 jest.mock('../../../storage/record-revision-batch', () => ({
@@ -44,7 +42,7 @@ const {
   upsertBossProfitRecord: upsertMock,
   markBossProfitRecordAuto: markAutoMock,
 } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
-const { getBossDropRecords: getDropsMock, replaceBossDropRecords: replaceDropsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
+const { getBossDropRecords: getDropsMock, settleClearedBossDrops: settleDropsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 const { getBossPartySetting: getPartySettingMock } = jest.requireMock('../../../storage/boss-party-settings') as Record<string, jest.Mock>
 
 /** 캐릭터의 월드를 쿼리 캐시 `characterBasic(ocid)` 에 심는다. 시즌 보스를 기록할지가 이 월드로 갈린다. */
@@ -68,7 +66,7 @@ beforeEach(() => {
   upsertMock.mockReset().mockResolvedValue(undefined)
   markAutoMock.mockReset().mockResolvedValue(undefined)
   getDropsMock.mockReset().mockResolvedValue([])
-  replaceDropsMock.mockReset().mockResolvedValue(undefined)
+  settleDropsMock.mockReset().mockResolvedValue(true)
   getPartySettingMock.mockReset().mockResolvedValue(null)
   queryClient.clear()
   for (const ocid of ['o1', 'o2', 'ocid-1']) seedWorld(ocid, '스카니아', 'scania')
@@ -231,7 +229,8 @@ describe('처치 난이도 확정', () => {
     expect(스우행).toEqual(['lotus|extreme|weekly|2026-09-03'])
   })
 
-  it('확정 난이도로 옛 난이도 키의 드롭을 옮긴다', async () => {
+  // 처치한 수익 건이 있어야 이관의 쓰기를 대기 표에 넣지 않는다. 서버가 그 수익 건을 받아 같은 규칙으로 옮긴다.
+  it('처치 기록을 적은 뒤에 다른 난이도 수익 건의 드롭을 처치한 수익 건으로 옮긴다', async () => {
     getLedgerMock.mockResolvedValue({
       unavailable: false,
       dates: { '2026-09-04': observed(['lotus|extreme']) },
@@ -244,6 +243,7 @@ describe('처치 난이도 확정', () => {
         difficulty: 'hard',
         periodKey: '2026-09-03',
         dropIndex: 0,
+        itemId: 'item-1',
         dropRecordId: null,
         category: 'equipment',
         itemKey: 'loose_control_machine_mark',
@@ -261,8 +261,8 @@ describe('처치 난이도 확정', () => {
 
     await recordBossProfitFromWindow(['o1'], NOW)
 
-    // 이관은 `이미 기록됨` 판정보다 앞이라 수익 행이 있든 없든 일어난다.
-    expect(replaceDropsMock).toHaveBeenCalled()
+    expect(settleDropsMock.mock.calls.map(([key, scope]) => [key.difficulty, scope])).toEqual([['extreme', 'group']])
+    expect(upsertMock.mock.invocationCallOrder[0]).toBeLessThan(settleDropsMock.mock.invocationCallOrder[0])
   })
 })
 

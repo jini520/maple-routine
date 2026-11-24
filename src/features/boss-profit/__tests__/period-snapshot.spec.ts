@@ -172,6 +172,7 @@ function dropRecord(overrides: Partial<BossDropRecord> & { periodKey: string }):
     boss: '자쿰',
     difficulty: 'chaos',
     dropIndex: 0,
+    itemId: 'item-1',
     category: 'equipment',
     itemKey: 'black_boss_ring_box',
     itemName: '칠흑의 보스 반지 상자',

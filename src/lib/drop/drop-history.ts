@@ -1,5 +1,5 @@
 import { DIFFICULTY_NAME } from '../../constants/domain/boss-difficulty'
-import { isObtainableDrop } from '../boss/boss-drops'
+import { isObtainableDrop } from '../boss/drop-item-ids'
 import { getCurrentBossProfitPeriod } from '../boss/boss-profit-period'
 import { bossNameOf } from '../boss/bosses'
 import { dropItemNameOf, isValuableDropItem } from './drop-items'
@@ -225,7 +225,7 @@ export function groupDropRecordsByPeriod(records: DropHistoryRecord[]): DropHist
 /**
  * 그 난이도에서 획득 불가한 기록을 거른다. **처치 난이도가 확정된 조합만**.
  *
- * 보스 수익 화면의 정리(`pruneUnobtainableDrops`)는 화면에 뜬 기간에서만 lazy 하게 돌아, 한 번도
+ * 보스 수익 화면의 정리(`loadDropsByRowKey`)는 화면에 뜬 기간에서만 lazy 하게 돌아, 한 번도
  * 열지 않은 과거 기간에는 정리되지 않은 행이 남아 있다. 히스토리가 그걸 보여주면 같은 기록을 한
  * 화면은 거부하고 다른 화면은 보여주는 셈이라, 같은 술어를 표시 시점에 한 번 더 적용한다.
  *

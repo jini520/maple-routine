@@ -1,11 +1,23 @@
 import { getBossDropCandidates } from '../lib/boss/boss-drops'
-import { bossNameOf } from '../lib/boss/bosses'
-import { dropItemIdOf, dropItemPartsOf } from '../lib/boss/drop-item-ids'
+import { bossDifficultyOfId, bossNameOf } from '../lib/boss/bosses'
+import { dropItemIdOf, dropItemPartsOf, planClearedDrops } from '../lib/boss/drop-item-ids'
 import { dropItemNameOf } from '../lib/drop/drop-items'
 import { dropPayoutMeso, type DropPriceFields } from '../lib/drop/drop-price'
 import { findWorld, findWorldById, worldNameOf } from '../lib/world/worlds'
-import { SPLIT_COLUMN_NAMES, deleteEntryIfEmpty, ensureEntryId, entryKeyOf, numberOrNull, periodCodesOf } from './boss-periods'
+import {
+  SPLIT_COLUMN_NAMES,
+  bossDifficultyIdFor,
+  deleteEntryIfEmpty,
+  ensureEntryId,
+  entryKeyOf,
+  numberOrNull,
+  periodCodeFor,
+  periodCodesOf,
+  type BossPeriodKey,
+} from './boss-periods'
 import { notifyAfterBatch } from './record-revision-batch'
+import { withServerSyncPaused } from './server-sync-queue'
+import type { SqliteDbConnection } from './ports'
 import { getBossProfitDb } from './sqlite/db'
 import { NEW_UUID_SQL } from './sqlite/uuid'
 import { inTransaction } from './sqlite/transaction'
@@ -29,6 +41,8 @@ export interface BossDropRecord {
   periodKey: string
   /** 그 수익 건 안의 차례. 드롭 표의 차례로 늘어놓은 자리이고 저장하지 않는다. */
   dropIndex: number
+  /** 저장된 아이템 줄 id. 반지는 레벨 줄, 상자에서 나온 연마석은 상자용 줄 */
+  itemId: string
   category: DropCategory
   /** 아이템 key. 저장된 기록은 늘 있다. */
   itemKey: string | null
@@ -335,6 +349,7 @@ function rowToRecord(row: Record<string, unknown>): BossDropRecord | null {
     difficulty: key.difficulty,
     periodKey: key.periodKey,
     dropIndex: 0,
+    itemId: row.item_id as string,
     category: row.category as DropCategory,
     itemKey: parts.itemKey,
     itemName: dropItemNameOf(parts.itemKey, parts.itemKey),
@@ -497,4 +512,88 @@ export async function getAllBossDropRecords(ocids: string[]): Promise<BossDropRe
   const { values } = await db.query(`${DROP_SELECT} WHERE e.ocid IN (${ocids.map(() => '?').join(', ')})`, [...ocids])
 
   return ordered(values)
+}
+
+/** 처치한 수익 건으로 모을 드롭의 범위. `group` 은 묶음의 모든 수익 건, `entry` 는 처치한 수익 건 안의 드롭만 */
+export type ClearedDropScope = 'group' | 'entry'
+
+interface EntryRow {
+  id: string
+  bossDifficultyId: string
+  cleared: boolean
+}
+
+/**
+ * 같은 캐릭터 · 보스 · 기간의 드롭을 처치한 수익 건으로 모으는 쓰기(`planClearedDrops`). 처치한 수익 건이 기기에 있으면 대기 표에
+ * 넣지 않고, 비운 수익 건의 대기 줄도 뺌. 서버가 같은 규칙으로 모으고, 남긴 대기 줄의 지우기는 서버가 옮기기 전의 드롭을 수익 건과
+ * 함께 지우기 때문. 처치한 수익 건이 없으면 정해진 난이도의 수익 건으로 모으고 대기 표로 올림
+ *
+ * @param key 정해진 처치 난이도. 그 난이도의 수익 건이 처치한 것이 아니면 묶음에서 처치한 수익 건으로 모음
+ * @returns 바꾼 것이 있으면 참
+ */
+export async function settleClearedBossDrops(key: BossPeriodKey, scope: ClearedDropScope, at: string): Promise<boolean> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query('SELECT id, boss_difficulty_id, clear_recorded_by FROM boss_profit_entries WHERE ocid = ? AND period_code = ?', [
+    key.ocid,
+    periodCodeFor(key.periodKey),
+  ])
+  const entries: EntryRow[] = (values ?? [])
+    .filter((row) => bossDifficultyOfId(row.boss_difficulty_id as string)?.bossKey === key.bossKey)
+    .map((row) => ({ id: row.id as string, bossDifficultyId: row.boss_difficulty_id as string, cleared: row.clear_recorded_by != null }))
+  const ownDifficultyId = bossDifficultyIdFor(key.bossKey, key.difficulty)
+  const own = entries.find((entry) => entry.bossDifficultyId === ownDifficultyId)
+  const target = own?.cleared === true ? own : (entries.find((entry) => entry.cleared) ?? own)
+  const write = (conn: SqliteDbConnection) => writeClearedDrops(conn, key, scope, entries, target, ownDifficultyId, at)
+  const changed = target?.cleared === true ? await withServerSyncPaused(write) : await inTransaction(db, () => write(db))
+  if (changed) bumpRecordsRevision()
+  return changed
+}
+
+async function writeClearedDrops(
+  db: SqliteDbConnection,
+  key: BossPeriodKey,
+  scope: ClearedDropScope,
+  entries: readonly EntryRow[],
+  target: EntryRow | undefined,
+  ownDifficultyId: string,
+  at: string,
+): Promise<boolean> {
+  const sources = scope === 'entry' ? (target === undefined ? [] : [target]) : entries
+  if (sources.length === 0) return false
+  const difficultyOf = new Map(sources.map((entry) => [entry.id, entry.bossDifficultyId]))
+  const { values } = await db.query(
+    `SELECT id, item_id, category, profit_entry_id FROM boss_drops WHERE profit_entry_id IN (${sources.map(() => '?').join(', ')})`,
+    sources.map((entry) => entry.id),
+  )
+  const drops = (values ?? []).map((row) => ({
+    id: row.id as string,
+    itemId: row.item_id as string,
+    category: row.category as DropCategory,
+    entryId: row.profit_entry_id as string,
+    bossDifficultyId: difficultyOf.get(row.profit_entry_id as string)!,
+  }))
+  const targetDifficultyId = target?.bossDifficultyId ?? ownDifficultyId
+  const plan = planClearedDrops(targetDifficultyId, key.periodKey, drops)
+  if (plan === null) return false
+  const byId = new Map(drops.map((drop) => [drop.id, drop]))
+  const moves = plan.keep.filter(({ id, itemId }) => {
+    const drop = byId.get(id)!
+    return drop.entryId !== target?.id || drop.itemId !== itemId
+  })
+  if (moves.length === 0 && plan.remove.length === 0) return false
+  for (const id of plan.remove) await db.run('DELETE FROM boss_drops WHERE id = ?', [id])
+  if (moves.length > 0) {
+    const targetId = target?.id ?? (await ensureEntryId(db, { ...key, difficulty: bossDifficultyOfId(targetDifficultyId)!.difficulty }, at))
+    for (const { id, itemId } of moves) {
+      await db.run('UPDATE boss_drops SET profit_entry_id = ?, item_id = ?, updated_at = ? WHERE id = ?', [targetId, itemId, at, id])
+    }
+  }
+  for (const entry of entries) {
+    if (!drops.some((drop) => drop.entryId === entry.id)) continue
+    await deleteEntryIfEmpty(db, entry.id)
+    if (target?.cleared !== true) continue
+    const { values: left } = await db.query('SELECT 1 FROM boss_profit_entries WHERE id = ?', [entry.id])
+    if ((left ?? []).length === 0) await db.run('DELETE FROM server_sync_queue WHERE record_id = ?', [entry.id])
+  }
+  return true
 }

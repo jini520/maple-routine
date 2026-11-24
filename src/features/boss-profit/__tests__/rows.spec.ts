@@ -204,6 +204,7 @@ describe('toRecordedDrop: 가격 필드', () => {
     difficulty: 'hard',
     periodKey: '2026-08-06',
     dropIndex: 0,
+    itemId: 'item-1',
     dropRecordId: 'drop-1',
     world: null,
     worldKey: null,

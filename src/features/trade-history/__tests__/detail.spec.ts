@@ -28,7 +28,7 @@ const spend = (over: Partial<SpendRecord> & Pick<SpendRecord, 'id' | 'category'>
 
 const drop = {
   dropRecordId: 'drop-1', ocid: 'ocid-slime', bossKey: 'black_mage', boss: '검은 마법사', difficulty: 'hard', periodKey: '2026-11',
-  dropIndex: 0, category: 'equipment', itemKey: 'magic_eyepatch', itemName: '마력이 깃든 안대', boxOriginKey: null, boxOrigin: null,
+  dropIndex: 0, itemId: 'item-1', category: 'equipment', itemKey: 'magic_eyepatch', itemName: '마력이 깃든 안대', boxOriginKey: null, boxOrigin: null,
   ringLevel: null, quantity: 1, recordedAt: '2026-11-13T05:00:00Z', pricedAt: '2026-11-13T05:00:00Z', world: null, worldKey: null,
   priceState: 'entered', priceMeso: 4_000_000_000, priceSplitMode: 'even', pricePartySize: 2, priceShare: null, priceMyShare: null,
   saleFeePercent: 5, splitFeePercent: null, saleFeeAuto: false, splitFeeAuto: false,

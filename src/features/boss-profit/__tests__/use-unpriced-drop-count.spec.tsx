@@ -58,6 +58,7 @@ function record(dropIndex: number, overrides: Partial<BossDropRecord> = {}): Bos
     difficulty: 'hard',
     periodKey: PERIOD,
     dropIndex,
+    itemId: 'item-1',
     dropRecordId: 'drop-1',
     world: null,
     worldKey: null,
