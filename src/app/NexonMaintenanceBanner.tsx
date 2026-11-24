@@ -10,15 +10,11 @@
  * @see docs/foundation/error-resilience.md 실패마다 하는 일
  */
 import { useState } from 'react'
-import { Pressable, View } from 'react-native'
-
-import { Text, WrenchIcon, XIcon } from '../components/atoms'
+import { WrenchIcon } from '../components/atoms'
+import { InfoStrip } from '../components/molecules/InfoStrip/InfoStrip'
 import { FaqSheet } from '../components/organisms/FaqSheet/FaqSheet'
 import { useFaqSheet } from '../features/faq/use-faq-sheet'
 import { useNexonMaintenanceStore } from '../features/nexon-maintenance/store'
-
-/** 16px 아이콘을 권장 타깃 44px 로 되돌린다. */
-const CLOSE_HIT_SLOP = 14
 
 const TITLE = {
   game: '메이플스토리 API 점검 중입니다.',
@@ -35,33 +31,18 @@ export function NexonMaintenanceBanner(props: { testID: string }): React.JSX.Ele
 
   return (
     <>
-      <View testID={props.testID} className="flex-row items-center gap-2.5 bg-settlement-tint px-4 py-2.5">
-        <WrenchIcon className="h-3.5 w-3.5 shrink-0 text-settlement-mark" strokeWidth={2} aria-hidden />
-
-        <Pressable
-          role="button"
-          aria-label="점검이 무엇인지 보기"
-          onPress={() => setFaqOpen(true)}
-          // 묶음에 문항이 없으면 줄은 서되 열 시트가 없다.
-          disabled={faq === null}
-          className="shrink grow"
-        >
-          <Text className="text-xs font-semibold text-settlement-ink">{TITLE[scope]}</Text>
-          <Text className="text-11 text-settlement-ink-muted">
-            점검이 끝날 때까지 마지막으로 불러온 정보를 보여 줍니다.
-          </Text>
-        </Pressable>
-
-        <Pressable
-          role="button"
-          aria-label="점검 안내 닫기"
-          hitSlop={CLOSE_HIT_SLOP}
-          onPress={dismiss}
-          className="shrink-0"
-        >
-          <XIcon className="h-4 w-4 text-settlement-ink-muted" strokeWidth={2} aria-hidden />
-        </Pressable>
-      </View>
+      <InfoStrip
+        testID={props.testID}
+        tone="settlement"
+        icon={WrenchIcon}
+        title={TITLE[scope]}
+        detail="점검이 끝날 때까지 마지막으로 불러온 정보를 보여 줍니다."
+        infoLabel="점검이 무엇인지 보기"
+        onPressInfo={() => setFaqOpen(true)}
+        infoDisabled={faq === null}
+        closeLabel="점검 안내 닫기"
+        onClose={dismiss}
+      />
 
       {faqOpen && faq !== null && (
         <FaqSheet title={faq.title} items={faq.items} onClose={() => setFaqOpen(false)} />
