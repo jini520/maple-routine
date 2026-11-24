@@ -26,12 +26,11 @@ import Animated, {
 } from 'react-native-reanimated'
 
 import { BottomBarOverlay } from '../BottomBar/BottomBarOverlay'
-import { tapFeedback } from '../../../native/haptics'
-import { FAB_SHADOW, useFabPlacement } from '../../../lib/fab-metrics'
-import { boxShadowOf } from '../../../lib/shadow'
+import { useFabPlacement } from '../../../lib/fab-metrics'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ThemeDefinition } from '../../../types/theme'
 import { PlusIcon, Text } from '../../atoms'
+import { Fab } from '../../molecules/Fab/Fab'
 import {
   DIAL_GAP_PX,
   DIAL_RISE_START_SCALE,
@@ -282,27 +281,16 @@ export function SpeedDial(props: SpeedDialProps): React.JSX.Element {
             onPress={() => select(action.onSelect)}
           />
         ))}
-        {/* 그림자만 드는 상자. `DropPriceFab` 과 같은 물건으로 보여야 해서 같은 자리에 단다.
-            모양은 `borderRadius` 에서 나온다. 없으면 둥근 원 뒤에 네모난 그림자가 깔린다. */}
-        <View
-          testID="speed-dial-fab-elevation"
-          style={{ borderRadius: 999, boxShadow: boxShadowOf(definition.shadowColor, FAB_SHADOW) }}
+        <Fab
+          elevationTestID="speed-dial-fab-elevation"
+          // 이름이 상태를 든다. 그림은 하나이고 각도만 다르므로 스크린리더에는 안 들린다.
+          label={isOpen ? '닫기' : props.label}
+          onPress={() => setIsOpen((open) => !open)}
         >
-          <Pressable
-            role="button"
-            // 이름이 상태를 든다. 그림은 하나이고 각도만 다르므로 스크린리더에는 안 들린다.
-            aria-label={isOpen ? '닫기' : props.label}
-            onPress={() => {
-              tapFeedback()
-              setIsOpen((open) => !open)
-            }}
-            className="h-14 w-14 items-center justify-center rounded-full bg-primary"
-          >
-            <AnimatedBox style={fabStyle}>
-              <PlusIcon className="h-6 w-6 text-on-primary" strokeWidth={2.2} aria-hidden />
-            </AnimatedBox>
-          </Pressable>
-        </View>
+          <AnimatedBox style={fabStyle}>
+            <PlusIcon className="h-6 w-6 text-on-primary" strokeWidth={2.2} aria-hidden />
+          </AnimatedBox>
+        </Fab>
       </View>
     </BottomBarOverlay>
   )

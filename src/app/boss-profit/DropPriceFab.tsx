@@ -12,19 +12,15 @@
  *
  * @see docs/features/boss-profit.md 정책
  */
-import { Pressable, View } from 'react-native'
+import { View } from 'react-native'
 import Animated, { Easing, useAnimatedStyle } from 'react-native-reanimated'
 
 import { TagIcon, Text } from '../../components/atoms'
+import { Fab, FabAnchor } from '../../components/molecules/Fab/Fab'
 import { BottomBarOverlay } from '../../components/organisms/BottomBar/BottomBarOverlay'
 import { useUnpricedDropCount } from '../../features/boss-profit/use-unpriced-drop-count'
-import { useFabPlacement } from '../../lib/fab-metrics'
 import { useLoopedValue } from '../../hooks/useLoopedValue'
-import { tapFeedback } from '../../native/haptics'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
-import { useThemeAppearance } from '../../theme/context'
-import { FAB_SHADOW } from '../../lib/fab-metrics'
-import { boxShadowOf } from '../../lib/shadow'
 import { TAG_SWING_LOOP_MS, TAG_SWING_PIVOT, tagSwingDegrees } from './drop-price-fab-motion'
 
 /**
@@ -42,8 +38,6 @@ export function DropPriceFab(props: {
   periodKey: string
 }): React.JSX.Element {
   const navigation = useScreenNavigation()
-  const { definition } = useThemeAppearance()
-  const fab = useFabPlacement()
   // 모르는 수(`null`)와 0 은 배지를 안 세운다.
   const unpriced = useUnpricedDropCount(props.periodKey)
   const showsBadge = unpriced !== null && unpriced > 0
@@ -62,36 +56,18 @@ export function DropPriceFab(props: {
 
   return (
     <BottomBarOverlay>
-      {/* 상자는 자기 자리를 안 먹는다. 오른쪽 여백이 이 상자의 넓이라, 상자가 터치를 받으면
-          버튼 옆의 목록 줄이 안 눌린다. */}
-      <View
-        testID="drop-price-fab"
-        pointerEvents="box-none"
-        style={{ bottom: fab.bottomPx, right: fab.rightPx }}
-        className="absolute"
-      >
-        {/* 그림자만 드는 상자. 모양은 `borderRadius` 에서 나온다. */}
-        <View
-          testID="drop-price-fab-elevation"
-          style={{ borderRadius: 999, boxShadow: boxShadowOf(definition.shadowColor, FAB_SHADOW) }}
+      <FabAnchor testID="drop-price-fab">
+        <Fab
+          elevationTestID="drop-price-fab-elevation"
+          // 배지가 `9+` 여도 스크린리더는 실제 수를 읽는다.
+          label={showsBadge ? `아이템 가격 입력, 미입력 ${unpriced}건` : '아이템 가격 입력'}
+          // 버튼은 주간 탭에만 선다. 가격 입력 화면은 보스 수익 스토어를 안 읽으므로 보던 주를 넘긴다.
+          onPress={() => navigation.navigate('DropPrice', { cycle: 'weekly', periodKey: props.periodKey })}
         >
-          <Pressable
-            role="button"
-            // 원 안에 글자가 없다. 이 이름이 무엇이 열리는지 말하는 유일한 자리다. 배지가 `9+` 여도
-            // 스크린리더는 실제 수를 읽는다.
-            aria-label={showsBadge ? `아이템 가격 입력, 미입력 ${unpriced}건` : '아이템 가격 입력'}
-            onPress={() => {
-              tapFeedback()
-              // 버튼은 주간 탭에만 선다. 가격 입력 화면은 보스 수익 스토어를 안 읽으므로 보던 주를 넘긴다.
-              navigation.navigate('DropPrice', { cycle: 'weekly', periodKey: props.periodKey })
-            }}
-            className="h-14 w-14 items-center justify-center rounded-full bg-primary"
-          >
-            <AnimatedBox testID="drop-price-fab-tag" style={[{ transformOrigin: TAG_SWING_PIVOT }, swing]}>
-              <TagIcon className="h-6 w-6 text-on-primary" strokeWidth={2.2} aria-hidden />
-            </AnimatedBox>
-          </Pressable>
-        </View>
+          <AnimatedBox testID="drop-price-fab-tag" style={[{ transformOrigin: TAG_SWING_PIVOT }, swing]}>
+            <TagIcon className="h-6 w-6 text-on-primary" strokeWidth={2.2} aria-hidden />
+          </AnimatedBox>
+        </Fab>
         {/* 뜻은 원의 이름이 읽으므로 배지는 장식이다. */}
         {showsBadge && (
           <View
@@ -108,7 +84,7 @@ export function DropPriceFab(props: {
             </Text>
           </View>
         )}
-      </View>
+      </FabAnchor>
     </BottomBarOverlay>
   )
 }
