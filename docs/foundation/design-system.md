@@ -91,6 +91,7 @@
 | `EmptyState` | 빈 상태. 크기 `page` · `inline` |
 | `LoadingState` | 목록이나 카드가 들어올 곳의 대기 카드 |
 | `ErrorState` · `StaleBanner` | 실패 상태 · 낡은 목록 위의 실패 배너 |
+| `InfoStrip` | 화면 머리글 아래의 안내 띠(결산 · 넥슨 점검 · 직접 완료). 아이콘 · 두 줄 문구 · 닫기, 색 묶음은 `settlement` · `primary`([[ADR-061]] 결정 14) |
 | `DataFreshness` | 제목 아래 `hh:mm:ss 기준` 줄. 하루 한 번 나오는 값은 시각 대신 값의 날짜(`11/14 기준`)를 적는다 |
 | `UnavailableBadge` | 값 대신 보이는 `조회 불가` 알약 |
 | `Segment` | 테두리 없는 세그먼트(크기 `sm` 26 · `md` 28 · 화면 헤더 탭 `lg` 32). `fill` 이면 조각이 트랙 폭을 똑같이 나눈다 |
