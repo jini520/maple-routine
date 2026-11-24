@@ -67,13 +67,13 @@ Figma 의 같은 부품도 맞춘다. 맞추지 않으면 정책 테스트가 �
 - 테스트는 Figma 를 직접 읽지 못한다. 기록을 고치는 것이 `Figma 를 맞췄다` 는 확인이다. Figma 를 고치지 않고 기록만 고치지 않는다.
 - 주석만 고친 것은 해시가 그대로라 Figma 작업이 필요 없다.
 - 새 부품을 만들면 Figma 에도 그리고 기록에 더한다. 부품을 지우면 Figma 에서도 지우고 기록에서 뺀다.
-- 처음 옮기는 동안(#1215)은 아직 옮기지 않은 부품이 `pending` 으로 남는다.
+- 앱 부품 82 와 토큰은 모두 옮겼다(#1215). 기록에 아직 안 옮긴 항목(`pending`)이 있으면 테스트가 실패한다.
 
 ### 기록 파일과 스크립트
 
 | 파일 | 하는 일 |
 |---|---|
-| `scripts/figma-record.json` | 항목마다 Figma 노드 id 와 맞춘 때의 소스 해시. 아직 옮기지 않은 항목은 `"pending"` 이다 |
+| `scripts/figma-record.json` | 항목마다 Figma 노드 id 와 맞춘 때의 소스 해시 |
 | `scripts/figma-record.mjs` | 해시를 계산하고 기록을 고치는 스크립트 |
 | `scripts/__tests__/figma-record.test.mjs` | 정책 테스트. 부품 폴더와 기록 항목이 일대일인지, 맞춘 항목의 해시가 지금 소스와 같은지 본다 |
 
@@ -90,13 +90,7 @@ Figma 의 같은 부품도 맞춘다. 맞추지 않으면 정책 테스트가 �
 node scripts/figma-record.mjs record atoms/Button 123:45
 ```
 
-Figma 의 그 부품(컴포넌트 세트나 컴포넌트)을 맞춘 뒤 노드 id 와 함께 적는다. 지금 소스의 해시가 들어간다.
-
-```bash
-node scripts/figma-record.mjs pending molecules/NewPart
-```
-
-새 부품을 `pending` 으로 더한다. 처음 옮기는 동안(#1215)에만 쓴다.
+Figma 의 그 부품(컴포넌트 세트나 컴포넌트)을 맞춘 뒤 노드 id 와 함께 적는다. 지금 소스의 해시가 들어간다. 새 부품도 Figma 에 그린 뒤 이것으로 더한다.
 
 ```bash
 node scripts/figma-record.mjs remove molecules/OldPart
@@ -108,7 +102,7 @@ node scripts/figma-record.mjs remove molecules/OldPart
 node scripts/figma-record.mjs status
 ```
 
-맞춘 항목 · `pending` 항목 · 해시가 어긋난 항목을 센다.
+항목 수와, 빠진 · 남은 · 안 옮긴 · 해시가 어긋난 항목을 알린다.
 
 ## Claude 가 Figma MCP 로 할 수 없는 것
 

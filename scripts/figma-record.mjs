@@ -3,7 +3,6 @@
 //
 // 저장소 루트에서 돌린다. 쓰는 법은 `docs/foundation/design-system/figma.md` 의 `코드와 맞추기` 에 있다.
 //   node scripts/figma-record.mjs record atoms/Button 123:45
-//   node scripts/figma-record.mjs pending molecules/NewPart
 //   node scripts/figma-record.mjs remove molecules/OldPart
 //   node scripts/figma-record.mjs status
 import { createHash } from 'node:crypto'
@@ -116,17 +115,22 @@ export function hashComponent(root, key) {
 
 /**
  * 기록과 지금 소스의 차이
- * @returns `missing` 기록에 없는 항목 · `extra` 폴더가 없는 항목 · `stale` 맞춘 뒤 소스가 바뀐 항목 · `invalid` 노드 id 가 Figma 형식이 아닌 항목
+ * @returns `missing` 기록에 없는 항목 · `extra` 폴더가 없는 항목 · `pending` Figma 에 아직 안 옮긴 항목 · `stale` 맞춘 뒤 소스가 바뀐 항목 ·
+ *   `invalid` 노드 id 가 Figma 형식이 아닌 항목
  */
 export function checkRecord(root, record) {
   const expected = [FOUNDATIONS, ...listComponentKeys(root)]
   const recorded = Object.keys(record.entries)
-  const result = { missing: [], extra: [], stale: [], invalid: [] }
+  const result = { missing: [], extra: [], pending: [], stale: [], invalid: [] }
   result.missing = expected.filter((key) => !recorded.includes(key))
   result.extra = recorded.filter((key) => !expected.includes(key))
   for (const key of recorded) {
     const entry = record.entries[key]
-    if (entry === 'pending' || !expected.includes(key)) continue
+    if (!expected.includes(key)) continue
+    if (entry === 'pending') {
+      result.pending.push(key)
+      continue
+    }
     if (entry.hash !== hashComponent(root, key)) result.stale.push(key)
     if (!NODE_ID.test(entry.node ?? '')) result.invalid.push(key)
   }
@@ -156,11 +160,6 @@ function main() {
     record.entries[key] = { node, hash: hashComponent(root, key) }
     save()
     console.log(`${key} → ${node} ${record.entries[key].hash}`)
-  } else if (command === 'pending') {
-    if (!known.includes(key)) fail(`부품 폴더나 ${FOUNDATIONS} 가 아니다: ${key}`)
-    record.entries[key] = 'pending'
-    save()
-    console.log(`${key} → pending`)
   } else if (command === 'remove') {
     if (!(key in record.entries)) fail(`기록에 없다: ${key}`)
     if (known.includes(key)) fail(`폴더가 아직 있다: ${key}`)
@@ -168,12 +167,11 @@ function main() {
     save()
     console.log(`${key} 를 뺐다`)
   } else if (command === 'status') {
-    const values = Object.values(record.entries)
     const result = checkRecord(root, record)
-    console.log(`맞춘 항목 ${values.filter((v) => v !== 'pending').length} · pending ${values.filter((v) => v === 'pending').length}`)
+    console.log(`항목 ${Object.keys(record.entries).length}`)
     for (const [name, keys] of Object.entries(result)) if (keys.length > 0) console.log(`${name}: ${keys.join(', ')}`)
   } else {
-    fail('쓰는 법: node scripts/figma-record.mjs record <항목> <노드 id> | pending <항목> | remove <항목> | status')
+    fail('쓰는 법: node scripts/figma-record.mjs record <항목> <노드 id> | remove <항목> | status')
   }
 }
 
