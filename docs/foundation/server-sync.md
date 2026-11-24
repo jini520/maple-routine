@@ -61,7 +61,7 @@
 | `storage/server-sync-pull.ts` | 받은 줄을 SQLite 기록 표에 넣고 지운다. 유일 기준이 같은 기기 줄을 서버 줄로 바꾼다. 주인의 기록 비우기 |
 | `storage/server-sync-owners.ts` | 주인을 바꿀 때의 기기 쪽. 대기 줄의 주인 찾기(`ownerOfServerSyncRecord`) · 버린 대기 줄의 기록 지우기(`discardServerSyncRecords`) · 기록이 있는 메이플 ID 모으기(`listServerSyncMapleIds`) · 앞 계정의 메이플 ID(`previousOwnerMapleIdHashes`) · 주인의 기록과 번호 지우기(`forgetServerSyncOwners` · `forgetServerSyncMapleIds`) |
 | `storage/server-sync-pull-preferences.ts` | 받은 줄을 Preferences 기록 키에 넣고 지운다 |
-| `storage/server-sync-cursors.ts` | 받기의 번호(Preferences `serverSyncCursors`)와 로그인 뒤 첫 받기의 표시(`serverSyncSignIn`) |
+| `storage/server-sync-cursors.ts` | 받기의 번호와 그 번호를 받을 때의 `purgedChangeSeq`(Preferences `serverSyncCursors`), 로그인 뒤 첫 받기의 표시(`serverSyncSignIn`) |
 | `storage/server-sync-unmatched.ts` | `#` 를 붙여 넣은 값 가운데 짝이 생긴 것을 원문으로 바꾼다(`replaceMatchedNexonIds`) |
 | `server/sync.ts` | 올리기 · 받기 · 데이터 삭제의 서버 경로. 응답을 읽을 수 있는 응답 · 요청 전체의 거절 · 응답 없음으로 가른다 |
 | `server/write.ts` | 쓰기 호출. 결과를 `sent` · `no-response` · `rejected` 로 나눈다 |
@@ -275,10 +275,12 @@
 2. Preferences `serverSyncCursors` 의 번호를 보낸다. 사람(넥슨 계정 줄 id 와 번호)과 메이플 ID 해시마다의 번호다. 처음이면 빈 번호다.
 3. 로그인 뒤 첫 응답이면 그 목록에 없는 메이플 ID 의 기록을 비운다(`로그인 뒤 첫 받기`). 첫 응답의 메이플 ID 목록에서 앞 받기의
    목록에 있던 메이플 ID 가 빠졌으면 그 부계정을 이 기기에서 뺀다(`다른 기기의 부계정 해제`).
-   응답의 `oldestDeletedChangeSeq` 보다 보낸 번호가 작은 주인이 있으면(번호 0 은 빼고, `주인의 기록 비우기`) 그 주인의 기록을 비우고
-   번호를 0 으로 적은 뒤 다시 받는다. 그 응답의 줄은 넣지 않는다.
+   응답의 `purgedChangeSeq` 가 적어 둔 값과 다르면 그 사이에 서버가 180일 지난 표식의 줄을 지운 것이다. 그때 보낸 번호가 그 값보다
+   작은 주인이 있으면(번호 0 은 빼고, `주인의 기록 비우기`) 그 주인의 기록을 비우고 번호를 0 으로, 적어 두는 값을 응답의 것으로 적은
+   뒤 다시 받는다. 그 응답의 줄은 넣지 않는다. 값이 같으면 비우지 않는다. 비운 뒤 0 부터 다시 받는 동안의 번호는 그 값보다 작지만
+   지운 줄은 이미 서버에 없다([[ADR-099]] 결정 9).
 4. 받은 줄을 표 차례대로 기기 칸으로 바꿔(`pull-records.ts`) 넣는다.
-5. 응답의 `cursors` 를 적는다. `hasMore` 가 켜져 있으면 2 로 돌아간다. 번호가 그대로면 멈춘다. 한 동기화는 100쪽(5만 줄)까지
+5. 응답의 `cursors` 와 `purgedChangeSeq` 를 적는다. `hasMore` 가 켜져 있으면 2 로 돌아간다. 번호가 그대로면 멈춘다. 한 동기화는 100쪽(5만 줄)까지
    받고, 남은 줄은 다음 동기화가 이어 받는다. `hasMore` 가 꺼질 때까지 받았는지를 돌려준다(`finished`). 처음 동기화가 이것을 보고
    올릴지 정한다.
 6. 넣은 표의 화면을 다시 읽게 한다(`refresh.ts`).
@@ -359,7 +361,8 @@
 
 ### 주인의 기록 비우기
 
-받은 지 180일이 넘어 서버가 지운 표식을 놓친 주인의 기록을 비운다(`clearServerSyncOwners`). 대기 표에 남은 기록은 비우지 않는다. 같은
+받은 지 180일이 넘어 서버가 지운 표식을 놓친 주인의 기록을 비운다(`clearServerSyncOwners`). 놓쳤는지는 받기의 `purgedChangeSeq` 로
+가른다(`받기` 의 3). 대기 표에 남은 기록은 비우지 않는다. 같은
 비우기를 다른 사람으로 로그인할 때와 부계정을 해제할 때도 쓴다(`로그인과 로그아웃` · `부계정 해제`).
 
 | 주인 | 비우는 것 |

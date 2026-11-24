@@ -70,8 +70,8 @@ export interface SyncPullResponse {
   mapleIds: string[]
   /** 다음 받기에 보낼 번호 */
   cursors: { nexonAccount: { id: string; changeSeq: number }; mapleIds: Record<string, number> }
-  /** 서버 전체에 남은 삭제 표식의 가장 작은 변경 번호. 표식이 없으면 `null` */
-  oldestDeletedChangeSeq: number | null
+  /** 서버가 180일 지난 표식의 줄을 지우며 지운 가장 큰 변경 번호. 지운 적이 없으면 `null` */
+  purgedChangeSeq: number | null
   hasMore: boolean
   records: Record<string, Record<string, unknown>[]>
 }
@@ -89,12 +89,12 @@ function isSeq(value: unknown): value is number {
 
 function pullResponseOf(raw: unknown): SyncPullResponse | null {
   if (!isRecord(raw) || !isRecord(raw.cursors) || !isRecord(raw.records)) return null
-  const { mapleIds, cursors, oldestDeletedChangeSeq, hasMore, records } = raw
+  const { mapleIds, cursors, purgedChangeSeq, hasMore, records } = raw
   const account = cursors.nexonAccount
   if (!Array.isArray(mapleIds) || !mapleIds.every((one) => typeof one === 'string')) return null
   if (!isRecord(account) || typeof account.id !== 'string' || !isSeq(account.changeSeq)) return null
   if (!isRecord(cursors.mapleIds) || !Object.values(cursors.mapleIds).every(isSeq)) return null
-  if (oldestDeletedChangeSeq !== null && !isSeq(oldestDeletedChangeSeq)) return null
+  if (purgedChangeSeq !== null && !isSeq(purgedChangeSeq)) return null
   if (typeof hasMore !== 'boolean') return null
   if (!Object.values(records).every((rows) => Array.isArray(rows) && rows.every(isRecord))) return null
   return raw as unknown as SyncPullResponse

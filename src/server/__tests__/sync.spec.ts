@@ -70,7 +70,7 @@ describe('받기', () => {
   const RESPONSE = {
     mapleIds: ['a'.repeat(64)],
     cursors: { nexonAccount: { id: 'account-1', changeSeq: 9 }, mapleIds: { ['a'.repeat(64)]: 9 } },
-    oldestDeletedChangeSeq: null,
+    purgedChangeSeq: 1828,
     hasMore: false,
     records: { mvpGradeHistory: [{ id: 'mvp-1', deletedAt: null }] },
   }
@@ -101,7 +101,9 @@ describe('받기', () => {
       { ...RESPONSE, cursors: { mapleIds: {} } },
       { ...RESPONSE, cursors: { ...RESPONSE.cursors, mapleIds: { x: '9' } } },
       { ...RESPONSE, hasMore: 'no' },
-      { ...RESPONSE, oldestDeletedChangeSeq: '3' },
+      { ...RESPONSE, purgedChangeSeq: '3' },
+      // 지운 번호를 싣지 않는 서버다. 없는 값을 null 로 읽으면 지운 줄을 놓친 주인을 비우지 못한다.
+      { ...RESPONSE, purgedChangeSeq: undefined },
       { ...RESPONSE, records: { mvpGradeHistory: {} } },
       { ...RESPONSE, mapleIds: 'a' },
     ]) {
