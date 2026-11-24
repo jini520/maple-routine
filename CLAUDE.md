@@ -57,11 +57,13 @@
 - 커밋 메시지는 conventional commits 형식을 따를 것 (feat:, fix:, docs:, refactor:)
 
 ## 명령어
-npm run dev      # 개발 서버
-npm run build    # 프로덕션 빌드
+npm start        # 개발 서버(Metro)
+npm run ios      # 개발 빌드를 시뮬레이터 · 기기에 올림(안드로이드는 npm run android)
 npm run lint     # ESLint
 npm run test     # 테스트 (전체 — 최종 확인용)
 
 npx tsgo --noEmit                # 타입 (전역, 1~2초. tsc 는 5초)
 npx oxlint src                   # 린트 (작업 중, 1초). 최종은 npm run lint
 npx jest src/lib src/app/utility # 테스트 — **영향 범위만** 지정하는 것이 기본
+
+스토어 빌드는 `docs/foundation/release.md` 를 따른다. `build` 스크립트는 없다.
