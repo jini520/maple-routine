@@ -170,7 +170,7 @@ async function renderScreen(): Promise<Rendered> {
 }
 
 async function switchAccount(view: Rendered, accountId: string): Promise<void> {
-  await press(view.getByTestId('account-select-trigger'))
+  await press(view.getByTestId('account-select-button'))
   await press(view.getByTestId(`account-select-option-${accountId}`))
   for (let i = 0; i < 3; i += 1) await act(async () => {})
 }
@@ -923,7 +923,7 @@ describe('화면 골격', () => {
     // 첫 조회가 account-a 다. 정렬이 첫 계정 선택에도 그대로 걸린다.
     expect(mockedRoster.mock.calls[0]?.[1]?.accountId).toBe('account-a')
 
-    await press(view.getByTestId('account-select-trigger'))
+    await press(view.getByTestId('account-select-button'))
     const options = view
       .getAllByTestId(/^account-select-option-/)
       .map((node) => String(node.props.testID).replace('account-select-option-', ''))

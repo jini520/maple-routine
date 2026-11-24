@@ -1,5 +1,5 @@
-// 이 앱이 **처음으로 직접 만드는 여는 목록**이라 테스트가 지키는 것도 **값이
-// 잘 나오는가** 보다 **무엇을 두지 않기로 했는가** 쪽이 많다. 스크림 없음 · 지시받지 않은 문구 없음.
+// 메이플 ID 드롭다운. 재기 · 띄우기 · 펼치는 움직임 · 그림자는 `SelectField` 가 하고, 이 부품은 칸과 목록 줄의 모양만 넘긴다.
+// 테스트가 지키는 것도 **값이 잘 나오는가** 보다 **무엇을 두지 않기로 했는가** 쪽이 많다. 스크림 없음 · 지시받지 않은 문구 없음.
 //
 // 대표 캐릭터 규칙은 `summarizeAccount` 가 갖는다. 그래서 픽스처를 손으로 적지 않고 **그 함수를 통과시켜** 만든다.
 // 여기서 기대값을 베끼면 규칙이 두 벌이 된다.
@@ -14,7 +14,6 @@ import { worldKeyOfApiName } from '../../../../lib/world/worlds'
 
 import { flattenStyle, renderOverlay, 기본테마, type TreeNode } from '../../../__tests__/render-atom'
 import { AccountSelect } from '../AccountSelect'
-import { placeDropdown } from '../../../../lib/place-dropdown'
 
 function 캐릭터(name: string, world: string, level: number): MapleCharacter {
   return { ocid: `ocid-${name}`, name, world, worldKey: worldKeyOfApiName(world), jobClass: '아크메이지(썬, 콜)', level }
@@ -57,7 +56,7 @@ function props(overrides: Partial<Props> = {}): Props {
 
 async function 열어서(overrides: Partial<Props> = {}): Promise<ReturnType<typeof renderOverlay>> {
   const rendered = await renderOverlay(<AccountSelect {...props(overrides)} />)
-  await fireEvent.press(rendered.getByTestId('account-select-trigger'))
+  await fireEvent.press(rendered.getByTestId('account-select-button'))
   return rendered
 }
 
@@ -158,7 +157,7 @@ describe('AccountSelect: 열린 목록', () => {
   it('고르면 그 계정 id 로 onSelect 를 부르고 목록을 닫는다', async () => {
     const p = props()
     const rendered = await renderOverlay(<AccountSelect {...p} />)
-    await fireEvent.press(rendered.getByTestId('account-select-trigger'))
+    await fireEvent.press(rendered.getByTestId('account-select-button'))
 
     await fireEvent.press(rendered.getByTestId(`account-select-option-${B}`))
 
@@ -185,7 +184,7 @@ describe('AccountSelect: 층은 그림자와 테두리가 말한다', () => {
   it('바깥을 누르면 닫힌다. 고르는 중에 아무것도 커밋하지 않아 잃을 것이 없다', async () => {
     const p = props()
     const rendered = await renderOverlay(<AccountSelect {...p} />)
-    await fireEvent.press(rendered.getByTestId('account-select-trigger'))
+    await fireEvent.press(rendered.getByTestId('account-select-button'))
 
     await fireEvent.press(rendered.getByTestId('account-select-backdrop'))
 
@@ -207,30 +206,6 @@ describe('AccountSelect: 층은 그림자와 테두리가 말한다', () => {
   })
 })
 
-describe('placeDropdown: 트리거 자리에서 시작하고, 넘치면 뒤집는다', () => {
-  const 화면 = { windowHeight: 844, safeTop: 59, safeBottom: 34, edgeGap: 12 }
-
-  it('아래에 들어가면 목록의 윗변이 트리거 윗변이다. 사이를 띄우지 않는다', () => {
-    const placed = placeDropdown({ ...화면, anchorTop: 200, anchorHeight: 60, contentHeight: 300 })
-
-    expect(placed.top).toBe(200)
-  })
-
-  it('아래로 넘치면 위로 뒤집어 목록의 밑변을 트리거 밑변에 맞춘다', () => {
-    const placed = placeDropdown({ ...화면, anchorTop: 600, anchorHeight: 60, contentHeight: 300 })
-
-    expect(placed.top).toBe(600 + 60 - 300)
-  })
-
-  it('양쪽 다 모자라면 넓은 쪽에 붙이고 그만큼으로 자른다. 목록은 안에서 굴린다', () => {
-    const placed = placeDropdown({ ...화면, anchorTop: 700, anchorHeight: 60, contentHeight: 900 })
-
-    // 위쪽이 넓다(700 + 60 − 71 = 689 vs 844 − 34 − 12 − 700 = 98).
-    expect(placed.top).toBe(71)
-    expect(placed.maxHeight).toBe(689)
-  })
-})
-
 // 닫힌 줄과 펼친 목록 모두 테두리가 없다. 앱의 드롭다운이 한 모양이다.
 describe('AccountSelect: 테두리', () => {
   it('닫힌 줄과 펼친 목록에 테두리가 없다', async () => {
@@ -241,14 +216,12 @@ describe('AccountSelect: 테두리', () => {
   })
 })
 
-// 목록은 모서리를 자르느라 `overflow: hidden` 이다. iOS 는 그 상자의 그림자를 함께 잘라서, 그림자는 바깥 상자가 든다.
-describe('AccountSelect: 그림자', () => {
-  it('목록 바깥 상자가 boxShadow 를 들고, 자르는 상자에는 그림자가 없다', async () => {
+// 메이플 ID 드롭다운도 앱의 다른 드롭다운과 같은 오버레이로 연다(사용자 선택 2026-11-24).
+describe('AccountSelect: SelectField 로 연다', () => {
+  it('단추가 열림 상태를 알리고, 목록은 메이플 ID 라는 이름의 메뉴다', async () => {
     const rendered = await 열어서()
 
-    expect(typeof flattenStyle(rendered.getByTestId('account-select-list-shadow').props.style).boxShadow).toBe('string')
-    const list = flattenStyle(rendered.getByTestId('account-select-list').props.style)
-    expect(list.overflow).toBe('hidden')
-    expect(list.shadowRadius).toBeUndefined()
+    expect(rendered.getByTestId('account-select-button').props.accessibilityState.expanded).toBe(true)
+    expect(rendered.getByTestId('account-select-list', { includeHiddenElements: true }).props['aria-label']).toBe('메이플 ID')
   })
 })

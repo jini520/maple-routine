@@ -1,12 +1,9 @@
 /**
- * 라벨과 값이 한 줄에 서는 커스텀 드롭다운. 가계부 시트의 캐릭터 고르개가 첫 호출부다.
+ * 앱의 드롭다운. 칸의 자리 재기와 목록 오버레이를 쥐는 곳이 여기 하나다. 위젯(`WidgetSelect`) · 메이플 ID(`AccountSelect`)
+ * 드롭다운도 이 위에 칸과 줄 모양만 얹는다. 오버레이가 둘이면 펼치는 방향이나 회전 처리 같은 고침이 한쪽에만 들어간다.
  *
- * `AccountSelect` 가 이미 푼 것을 그대로 따른다. 스크림 없이 바깥 탭으로만 닫고, 오버레이는
- * `react-native` 의 `Modal` 이며(RN 의 `absolute` 는 부모 상자에 갇힌다. 이 자리는 바텀시트 안이라
- * 더 그렇다), 좌표와 목록 높이가 둘 다 온 뒤에 그린다. 회전하면 잰 좌표가 거짓이 되어 닫는다.
- *
- * 세로 배치는 `AccountSelect` 의 `placeDropdown` 을 **그대로 부른다**. 같은 규칙이 두 벌이 되면
- * 한쪽만 고쳐진다.
+ * 스크림 없이 바깥 탭으로만 닫고, 오버레이는 `react-native` 의 `Modal` 이다. RN 의 `absolute` 는 부모 상자에 갇히고
+ * 이 자리는 바텀시트 안일 때가 많다. 좌표와 목록 높이가 둘 다 온 뒤에 그린다. 회전하면 잰 좌표가 거짓이 되어 닫는다.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
@@ -33,7 +30,7 @@ import {
 } from '../../../lib/dropdown-motion'
 import { placeDropdown, placeDropdownX } from '../../../lib/place-dropdown'
 
-/** 목록이 화면 가장자리에 붙지 않게 남기는 여백. `AccountSelect` 와 같은 값이다. */
+/** 목록이 화면 가장자리에 붙지 않게 남기는 여백. */
 const EDGE_GAP_PX = 12
 /** 트리거와 목록 사이. 목록은 트리거를 덮지 않고 그 아래에 뜬다 */
 const LIST_GAP_PX = 6
