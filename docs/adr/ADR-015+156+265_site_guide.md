@@ -1,6 +1,6 @@
 # ADR-015+156+265 안내 사이트와 홍보 첫 화면
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-110 · ADR-229
 > 관련 소스: `site/` · `site/index.html` · `site/home.css` · `site/home.js` · `site/images/home/` · `site/robots.txt` · `site/sitemap.xml` · `PRIVACY.md` · `scripts/build-site.mjs` · `scripts/deploy-site.sh` · `app/auth/api-key-links.ts` · `app/settings/SettingsAboutScreen.tsx`
 
@@ -166,13 +166,16 @@ App Store 부터 놓으라고 정한다. Google Play 배지는 검정 바탕뿐�
     붙인 주소로 301 하고 그 주소가 200 이다. 내용은 루트의 같은 페이지와 같다.
 - info 도 결정 6 대로 서버 앱을 거치지 않고 nginx 가 디스크에서 바로 낸다. 루트와 info 는 같은 디렉터리(`/var/www/mapleroutine`)를
   낸다. 그래서 지금 배포 한 번으로 두 주소에 함께 올라간다.
-- 대표 주소 · 사이트맵은 아직 루트를 가리키고 루트 `/` 도 301 하지 않는다. 사용자가 사이트를 옮기자고 할 때 함께 바꾼다.
+- 2026-11-24 에 옮겼다(사용자 지시). 대표 주소 · `og:url` · `og:image` · 구조화 데이터 · 사이트맵을 info 로 바꿔 올린 뒤, 앱 박스
+  nginx 의 루트 server 블록에만 `location = /` 의 301 을 더했다. 거꾸로 하면 info 페이지는 대표 주소로 루트를 가리키고 루트는
+  info 로 보내서 검색엔진이 엇갈린 신호를 받는다. 사이트는 main 트리에서 올린다. develop 의 `PRIVACY.md` 는 다음 버전의
+  처리방침이라 공지 전에 올리면 안 된다(`docs/features/site.md` 의 `배포`).
 
 ## 테스트
 
-사이트 자체를 확인하는 자동 테스트는 없다. 배포 스크립트가 끝에 일곱 경로(`/` · `/privacy` · `/support` ·
-`/api-key` · `/app-ads.txt` · `/robots.txt` · `/sitemap.xml`)의 응답 코드를 출력하므로, 배포할 때마다 그 출력을
-눈으로 확인한다.
+사이트 자체를 확인하는 자동 테스트는 없다. 배포 스크립트가 끝에 info 의 일곱 경로(`/` · `/privacy` · `/support` ·
+`/api-key` · `/app-ads.txt` · `/robots.txt` · `/sitemap.xml`)와 루트 `/` 의 301, 루트에 남긴 넷의 응답 코드를 출력하므로,
+배포할 때마다 그 출력을 눈으로 확인한다.
 
 | 파일 | 확인하는 것 |
 |---|---|
@@ -186,3 +189,5 @@ App Store 부터 놓으라고 정한다. Google Play 배지는 검정 바탕뿐�
   301 한다. 루트의 문서 주소와 `app-ads.txt` 는 둘 곳을 정할 때까지 그대로 낸다(#1090)
 - (2026-11-24) 결정 11 의 앱 주소(`PRIVACY_URL` · `GUIDE_URL`)를 develop 에서 info 로 바꾼 것과, 루트와 info 가 같은 디렉터리를
   내는 것을 적었다. 결정은 그대로다(#1090)
+- (2026-11-24) 결정 11 을 구현했다. 사이트의 대표 주소를 info 로 옮겨 올리고 루트 `/` 를 info 로 301 했다(hotfix #1209). 결정이 모두
+  구현돼 🟢 로 바꿨다(#1090)
