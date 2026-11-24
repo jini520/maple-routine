@@ -1,53 +1,29 @@
 /**
- * 메이플 ID 드롭다운. 캐릭터 관리 화면 아래 층의 머리에 서는 오버레이.
+ * 메이플 ID 드롭다운. 캐릭터 관리 화면 아래 층의 머리에 서는 고르개.
  *
  * 값 규칙은 밖에 있다. 대표 캐릭터는 `summarizeAccount`, 이름은 `useMapleIdNameOf`, 넥슨 계정 묶음은
  * `groupAccountSummaries` 가 정하고 이 컴포넌트는 받은 것을 그리기만 한다. 저장소도 네트워크도 모른다.
  *
- * 지키는 것 넷.
- *
- * ① **스크림이 없다.** 뒤를 덮으면 바로 아래 후보 목록까지 어두워진다. 층은 그림자와 테두리가
- *    말하고, 바깥 탭으로 닫는 성질만 남긴다.
- * ② 트리거와 목록 행이 **같은 컴포넌트**다. 모양이 갈리면 지금 고른 것과 고를 수 있는 것이 다른
- *    종류로 보인다.
- * ③ 오버레이가 `react-native` 의 `Modal` 이다. RN 의 `absolute` 는 부모 상자에 갇혀 이 화면
- *    안에서는 아래 층을 못 덮는다.
- * ④ 좌표를 **잰 뒤에** 그린다. 측정(`measureInWindow`)과 목록 높이(`onLayout`)가 둘 다 올 때까지
- *    `opacity-0` 이다. jest 는 레이아웃을 안 계산해 그 콜백이 안 오므로 테스트가 보는 목록은 늘
- *    투명하다. 회전하면 잰 좌표가 거짓이 되어 닫는다.
+ * 재기 · 띄우기 · 펼치는 움직임 · 그림자는 `SelectField` 가 하고, 여기는 칸과 목록 줄의 모양만 넘긴다. 칸과 목록 줄이
+ * 같은 `AccountRow` 다. 모양이 갈리면 지금 고른 것과 고를 수 있는 것이 다른 종류로 보인다.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  Dimensions,
-  Image,
-  Modal,
-  Pressable,
-  ScrollView,
-  View,
-} from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Image, Pressable, View } from 'react-native'
 
 import type { AccountSummaryView } from '../../../features/character-manage/derivations'
 import { worldEmblemUrl } from '../../../lib/assets/asset-lookup'
 import { useMapleIdNameOf } from '../../../features/maple-id/names'
-import { useScreenLayout } from '../../../lib/screen-layout'
 import { worldNameOf } from '../../../lib/world/worlds'
 
 import { FACE_AVATAR_SIZE } from '../../../lib/face-crop'
 import { CharacterAvatar } from '../../molecules/CharacterAvatar/CharacterAvatar'
 import { UnknownCharacterFace } from '../../molecules/CharacterAvatar/UnknownCharacterFace'
-import { ChevronDownIcon, Text } from '../../atoms'
+import { Text } from '../../atoms'
 import { naturalAspectStyle } from '../../../lib/image-aspect'
-import { boxShadowOf, DROPDOWN_SHADOW } from '../../../lib/shadow'
-import { useThemeAppearance } from '../../../theme/context'
-import { placeDropdown } from '../../../lib/place-dropdown'
+import { SelectChevron, SelectField, type SelectOption } from '../SelectField/SelectField'
 
 // 얼굴 크롭 표는 `lib/face-crop` 하나뿐이다. 캐릭터 카드(`CharacterRow`)도 같은 것을 쓴다.
 
-/** 목록이 화면 가장자리에 붙지 않게 남기는 여백. */
-const EDGE_GAP_PX = 12
-
-/** 트리거와 목록 행이 공유하는 안쪽 여백. 둘이 어긋나면 한 덩어리 가 깨진다. */
+/** 칸의 안쪽 여백. */
 const ROW_PADDING = 'px-3 py-2.5'
 
 export interface AccountRowProps {
@@ -122,152 +98,50 @@ export interface AccountSelectProps {
 }
 
 export function AccountSelect(props: AccountSelectProps): React.JSX.Element {
-  const triggerRef = useRef<View | null>(null)
-  const [isOpen, setIsOpen] = useState(false)
-  const [anchor, setAnchor] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
-  const [contentHeight, setContentHeight] = useState<number | null>(null)
-  const insets = useSafeAreaInsets()
-  const { definition } = useThemeAppearance()
-  const { windowHeightPx: windowHeight } = useScreenLayout()
-
-  const close = useCallback((): void => {
-    setIsOpen(false)
-    setAnchor(null)
-    setContentHeight(null)
-  }, [])
-
-  function open(): void {
-    setIsOpen(true)
-    triggerRef.current?.measureInWindow((x, y, width, height) => {
-      setAnchor({ left: x, top: y, width, height })
-    })
-  }
-
-  // 회전하면 잰 좌표가 거짓이 된다.
-  useEffect(() => {
-    if (!isOpen) return
-    const subscription = Dimensions.addEventListener('change', close)
-    return () => subscription.remove()
-  }, [isOpen, close])
+  const nameOf = useMapleIdNameOf()
 
   // 고른 계정이 목록에 없을 수 있다(계정 목록이 갱신되는 순간). 렌더 중에 던지지 않는다.
   const selected = props.accounts.find((account) => account.accountId === props.selectedAccountId)
   if (selected === undefined) return <></>
 
-  const placement =
-    anchor === null
-      ? null
-      : placeDropdown({
-          anchorTop: anchor.top,
-          anchorHeight: anchor.height,
-          contentHeight: contentHeight ?? 0,
-          windowHeight,
-          safeTop: insets.top,
-          safeBottom: insets.bottom,
-          edgeGap: EDGE_GAP_PX,
-        })
-
-  // 좌표와 높이가 둘 다 와야 뒤집을지가 정해진다. 그전에 그리면 한 프레임이 엉뚱한 자리에 뜬다.
-  const isPlaced = placement !== null && contentHeight !== null
+  const byId = new Map(props.accounts.map((account) => [account.accountId, account]))
+  // 이름은 스크린리더가 읽는다. 목록 줄이 보이는 그대로 이름과 대표 캐릭터 줄을 함께 싣는다.
+  const options: SelectOption[] = props.accounts.map((account) => {
+    const { representative } = account
+    const worldName = worldNameOf(representative.worldKey, representative.world)
+    return {
+      value: account.accountId,
+      label: `${nameOf(account.accountId)}, ${worldName} Lv.${representative.level} ${representative.name}`,
+      group: props.groupOf?.[account.accountId],
+    }
+  })
 
   return (
-    <>
-      <Pressable
-        ref={triggerRef}
-        testID="account-select-trigger"
-        role="button"
-        aria-expanded={isOpen}
-        onPress={open}
-        // 캐릭터 관리의 `캐릭터 추가` 카드 안에 서는 칸이라 `card-inset` 으로 칠한다.
-        className={`rounded-[10px] bg-card-inset ${ROW_PADDING}`}
-      >
-        <AccountRow
-          summary={selected}
-          portraitUrl={props.portraitByAccountId[selected.accountId] ?? null}
-          trailing={<ChevronDownIcon className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />}
-        />
-      </Pressable>
-
-      {isOpen && (
-        <Modal
-          testID="account-select-modal"
-          visible
-          transparent
-          animationType="none"
-          statusBarTranslucent
-          navigationBarTranslucent
-          onRequestClose={close}
-        >
-          {/* 색이 없다. 잡기만 한다. */}
-          <Pressable
-            testID="account-select-backdrop"
-            accessibilityLabel="메이플 ID 목록 닫기"
-            onPress={close}
-            className="flex-1"
+    <SelectField
+      label="메이플 ID"
+      testID="account-select"
+      options={options}
+      selected={props.selectedAccountId}
+      onSelect={(value) => {
+        if (value !== null) props.onSelect(value)
+      }}
+      // 캐릭터 관리의 `캐릭터 추가` 카드 안에 서는 칸이라 `card-inset` 으로 칠한다.
+      boxClassName={`rounded-[10px] bg-card-inset ${ROW_PADDING}`}
+      renderTrigger={(open, isOpen) => (
+        <Pressable testID="account-select-button" role="button" aria-expanded={isOpen} onPress={open} className="flex-1">
+          <AccountRow
+            summary={selected}
+            portraitUrl={props.portraitByAccountId[selected.accountId] ?? null}
+            trailing={<SelectChevron open={isOpen} />}
           />
-
-          {/* 그림자는 바깥 상자가 든다. 모서리를 자르는 안쪽 상자에 주면 iOS 가 그림자까지 자른다. */}
-          <View
-            testID="account-select-list-shadow"
-            style={{
-              left: anchor?.left ?? 0,
-              top: placement?.top ?? 0,
-              width: anchor?.width,
-              borderRadius: 14,
-              boxShadow: boxShadowOf(definition.shadowColor, DROPDOWN_SHADOW),
-            }}
-            className={`absolute${isPlaced ? '' : ' opacity-0'}`}
-          >
-          <View
-            testID="account-select-list"
-            role="menu"
-            aria-label="메이플 ID"
-            style={{ maxHeight: placement?.maxHeight }}
-            className="overflow-hidden rounded-[14px] bg-surface"
-          >
-            <ScrollView>
-              {/* 자연 높이를 재는 자리. `ScrollView` 안이라 바깥 `maxHeight` 에 눌리지 않는다. */}
-              <View onLayout={(event) => setContentHeight(event.nativeEvent.layout.height)}>
-                {props.accounts.map((account, index) => {
-                  const isSelected = account.accountId === props.selectedAccountId
-                  const group = props.groupOf?.[account.accountId]
-                  const previous = props.accounts[index - 1]
-                  const opensGroup = group !== undefined && group !== (previous === undefined ? undefined : props.groupOf?.[previous.accountId])
-                  return (
-                    <View key={account.accountId}>
-                      {opensGroup && (
-                        // `SelectField` 의 묶음 라벨과 같다. 첫 묶음 말고는 위를 더 띄워 앞 묶음의 끝이 보이게 한다. 선은 긋지 않는다.
-                        <Text
-                          testID={`account-select-group-${group}`}
-                          className={`px-3 pb-1 text-11 font-bold text-text-disabled ${index === 0 ? 'pt-2.5' : 'pt-4'}`}
-                        >
-                          {group}
-                        </Text>
-                      )}
-                      <Pressable
-                        testID={`account-select-option-${account.accountId}`}
-                        role="button"
-                        aria-selected={isSelected}
-                        onPress={() => {
-                          close()
-                          props.onSelect(account.accountId)
-                        }}
-                        className={`${ROW_PADDING}${isSelected ? ' bg-primary-tint' : ''}`}
-                      >
-                        <AccountRow
-                          summary={account}
-                          portraitUrl={props.portraitByAccountId[account.accountId] ?? null}
-                        />
-                      </Pressable>
-                    </View>
-                  )
-                })}
-              </View>
-            </ScrollView>
-          </View>
-          </View>
-        </Modal>
+        </Pressable>
       )}
-    </>
+      renderOption={(option) => {
+        const account = option.value === null ? undefined : byId.get(option.value)
+        return account === undefined ? null : (
+          <AccountRow summary={account} portraitUrl={props.portraitByAccountId[account.accountId] ?? null} />
+        )
+      }}
+    />
   )
 }
