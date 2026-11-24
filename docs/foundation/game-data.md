@@ -51,84 +51,31 @@
 | `imageCrops` | 보스 초상(카드 · 원형 아이콘)과 컨텐츠 지역 지도의 크롭 82줄(`imageCrops`. 종류 `type` · 그림 id · 폭 `widthPercent` · 위치 `positionXPercent` · `positionYPercent`). 표에 없는 그림은 상자를 덮는다 | `lib/assets/image-crops` | `/images` |
 | `faqs` | 화면 FAQ 의 묶음(`faqSheets`. key · 제목)과 문항(`faqItems`. 묶음 줄 id · 질문 · 답 글). 묶음 하나가 시트 하나다([[ADR-150]]). 답 글은 빈 줄로 문단을 나누고, 조회 모듈이 문단 블록으로 바꿔 시트에 넘긴다 | `lib/faq/faqs` | `/faqs` |
 | `gameRules` | 게임 규칙 아홉(주간 보스 선택 한도 · 주간 결정석 판매 한도 · 기본 파티 인원 상한 · 관세율 · 세라자르 주화 가격 · 메소마켓 수수료율 · 감정비용 무료 상한 · 감정비용 계수 · 파괴 방지 추가분)의 한 줄. 1.0.14 까지는 `bosses` · `spendCatalog` · `enhancementCosts` 의 `rules` 에 나뉘어 있었다([[ADR-099]] 결정 65) | `lib/game-rules` | 규칙을 쓰는 화면(보스 · 지출 카탈로그 · 강화 비용) |
-| `appImages` | 붙일 표가 없는 앱 그림 72장의 key 와 그림 id. 결정석 칩 · 강화 다섯 · 메소 주머니 · 포스 · 모르는 캐릭터 · 드롭 연출 프레임 등이다([[ADR-187]] 결정 8) | `lib/assets/app-images` | 없음(S4 에서 만든다) |
+| `appImages` | 붙일 표가 없는 앱 그림 72장의 key 와 그림 id. 결정석 칩 · 강화 다섯 · 메소 주머니 · 포스 · 모르는 캐릭터 · 드롭 연출 프레임 등이다([[ADR-187]] 결정 8) | `lib/assets/app-images` | `/app-images` |
 | `items` | 아이템 698개(key · 이름 · 묶음 · 그림 · 드롭 여부 `isDrop` · 고가 여부 `isValuable` · 강화 장비 여부 `isEquipment` · 착용 레벨)와 묶음 39(종류 · 차례), 특수스킬 반지의 레벨 줄, 같은 물건의 다른 줄(상자에서 나온 연마석). 이름 차례다. 1.0.14 까지의 `dropItems` · `equipmentItems` 칸이 여기로 합쳐졌다([[ADR-099]] 결정 65). 드롭 아이템 · 강화 장비 조회는 이 표에서 칸 하나로 고른다. 인벤토리 넣기와 가계부 아이템 고르기는 여기서 고르고, 상자 · 레벨 줄 · 같은 물건의 다른 줄을 빼는 일과 장신구를 장비로 옮기는 일은 고르는 쪽이 한다([[ADR-187]] 결정 10). 가계부의 펼친 강화 줄도 장비 그림을 여기서 찾는다([[ADR-047]] 결정 21) | `lib/item-catalog` · `lib/drop/drop-items` · `lib/equipment/equipment-items` | `/items` |
 
 응답은 서버 표의 줄을 그대로 펼친 목록이다. 보스 · 난이도 · 분류로 묶거나 지역 안에 사냥터를 묶는 일은 조회 모듈이 한다.
 부르는 쪽은 값이 기기 사본에서 왔는지 서버 응답인지 모른다.
 
-## 1.0.15 계약으로 바꾸는 일
+## 앱 안의 값과 서버 응답
 
-#947 의 앱 작업 브랜치(`feat/game-data-contract-947`)에서 했고 develop 에 머지했다(PR #1178). 앱이 받는 게임 데이터를 서버
-develop 의 새 모양으로 바꾸고, 그 값을 쓰는 앱 코드를 함께 고쳤다. 칸의 모양은 서버가 정했다([[ADR-099]] 결정 39 · 43 · 59 ~ 63 ·
-65). 여기에는 앱이 한 일만 적는다. develop 의 앱은 DB 박스의 서버 develop 을 본다(`api.mapleroutine.store`, 결정 43).
+칸의 모양은 서버가 정하고([[ADR-099]] 결정 39 · 43 · 59 ~ 63 · 65), 앱은 받은 값을 그 모양 그대로 둔다. develop 의 앱은 DB 박스의
+서버 develop 을 본다(`api.mapleroutine.store`).
 
-### 원칙
-
-- 칸마다 앱 안의 값(`GameData[K]`)은 서버 응답과 같다(사용자 선택 2026-11-21). 배열 이름이 표 이름이고(`bossDifficulties`), 다른
-  표의 줄은 줄 id 로 가리킨다(`bossDifficultyId`). 타입(`types/game-data.ts`)은 응답의 칸 이름을 그대로 쓴다. 받은 값을 옛 모양으로
-  바꿔 두지 않는다. 바꿔 두면 앱 안의 이름과 서버 · 관리 화면의 이름이 다시 갈린다.
-- 조회 모듈은 지금 파일과 역할을 지킨다. 표 값이 바뀔 때마다 줄 id 와 key 로 찾는 표를 한 번 만들어 둔다(`derive`). 보스 안의
-  난이도나 지역 안의 사냥터처럼 묶어 보이는 일도 조회 모듈이 한다. 쓰는 쪽은 조회 모듈을 거치고 표의 배열을 직접 돌지 않는다.
-- 기록이 줄 id 를 적게 바꾸는 일은 이 일에 넣지 않고 기기 변환(결정 19, [[ADR-286]])에서 했다. 그래서 이 일에서는 key 로 줄을 찾는
-  조회를 남겼다. key 가 없는 보스 난이도 줄은 보스 key 와 난이도 글자로 찾는다.
-- 없어진 칸은 그 칸을 없앤 결정대로 고친다(아래 표). 옛 칸을 앱에서 다시 만들지 않는다.
-- 계약 판(`GAME_DATA_CONTRACT`)을 올린다. 켤 때 옛 사본을 버리고 잠금 화면이 새 모양을 처음부터 받는다. 지금 판은 `2026-11-24` 다.
-  칸 스물을 옮기며 `2026-11-21` 로 올렸고, 지출 항목의 통화 값을 `maple_point` 로 바꾸며 다시 올렸다.
+- 칸마다 앱 안의 값(`GameData[K]`)은 서버 응답과 같다(사용자 선택 2026-11-21). 타입(`types/game-data.ts`)은 응답의 칸 이름을 그대로
+  쓴다. 배열 이름은 표 이름이고(`bossDifficulties`), 그림 목록(`assets` 칸)만 `files`, 앱 그림(`appImages` 칸)만 `images` 다. 다른
+  표의 줄은 줄 id 로 가리킨다(`bossDifficultyId`). 받은 값을 다른 모양으로 바꿔 두지 않는다. 바꿔 두면 앱 안의 이름과 서버 · 관리
+  화면의 이름이 갈린다.
+- 쓰는 쪽은 조회 모듈을 거치고 표의 배열을 직접 돌지 않는다. 조회 모듈은 표 값이 바뀔 때마다 줄 id 와 key 로 찾는 표를 한 번
+  만들어 둔다(`derive`). key 가 없는 보스 난이도 줄은 보스 key 와 난이도 글자로 찾는다(`bossDifficultyIdOf`).
+- 계약 판(`GAME_DATA_CONTRACT`)은 칸의 모양이 바뀔 때 올린다. 판이 다른 사본은 켤 때 쓰지 않고, 잠금 화면이 새 모양을 처음부터
+  받는다(아래 `값이 기기에 반영되는 순서`). 지금 판은 `2026-11-24` 다.
 - 테스트 fixture(`src/__fixtures__/game-data/`)는 DB 박스 서버의 응답을 떠서 칸마다 나눠 둔다. 운영 DB 를 옮긴 사본의 값이라 게임
-  수치를 지어 넣지 않는다. `drop-items.json` · `equipment-items.json` 은 지우고 `game-rules.json` 을 더한다.
-
-### 칸마다 바뀌는 것
-
-| 칸 | 새 배열 | 앱이 고칠 것 |
-|---|---|---|
-| `appImages` | `images` 그대로 | 없음 |
-| `assets` | `files` | `path` 가 없어지고 `size` 가 `sizeBytes` 다. 받을 크기를 세는 곳이 `sizeBytes` 를 읽는다 |
-| `bosses` | `bosses` · `bossDifficulties` | 보스의 `alias` → `shortName`, `from` · `until` → `validFrom` · `validUntil`. 시즌 보스는 `isSeasonBoss` 이고 주기는 난이도 줄의 `cycle` 이다. 난이도는 `bossId` 로 묶는다. 규칙 셋은 `gameRules` 로 간다 |
-| `bossDrops` | `bossDifficultyRewards` | 보스 key · 난이도 대신 난이도 줄 id, 아이템 key 대신 아이템 줄 id. 고정 보상 수량은 정수 `quantity` 다(결정 33). 화면의 `160개` 는 앱이 수량에서 만든다 |
-| `dropBoxes` | `dropBoxes` · `dropBoxContents` | 상자는 아이템 줄 id 와 반지 레벨 범위(`ringLevelMin` · `ringLevelMax`), 내용물은 상자 줄 id 와 아이템 줄 id. 생명의 보스 반지 상자의 연마석은 상자 연마석 줄을 가리킨다(결정 28) |
-| `crystalPrices` | `bossCrystalPrices` | 보스 key · 난이도 대신 난이도 줄 id |
-| `dropItems` · `equipmentItems` | 없어진다 | `items` 에서 고른다. 드롭 아이템은 `isDrop`, 고가는 `isValuable`, 강화 장비는 `isEquipment`, 착용 레벨은 `requiredLevel` 이다 |
-| `items` | `items` · `itemGroups` · `ringLevelItems` · `sameItemLinks` | 아이템의 묶음은 `groupId` 로 `itemGroups` 에서 찾고 묶음의 종류는 `type` 이다. 반지 레벨 줄은 `ringLevelItems` 로 원래 반지 · 레벨과 잇고, 상자 연마석은 `sameItemLinks` 로 원래 아이템과 잇는다 |
-| `worlds` | `worlds` · `worldOpenPeriods` | `challengers` → `isChallengers`, `event` → `isEvent`. 열린 기간은 `worldId` 로 묶는다. 엠블럼은 그림 줄 id 만 있다 |
-| `spendCatalog` | `spendRewardTypes` · `spendGroups` · `spendTiles` · `spendItems` · `spendItemOptions` · `spendItemRewardTypes` | 묶음은 가계부 분류 줄 id(`cashbookCategoryId`)를, 항목은 묶음 · 타일 줄 id 를 든다. `active` → `isActive`, `rewardCoins` → `rewardCoinQuantity`, 통화 값 `point` → `maple_point`(결정 53). 형태(`forms` · `itemForms`)는 추가 리워드 종류다. 항목의 줄인 이름은 없어진다(결정 60). 규칙은 `gameRules` 로 간다 |
-| `cashbookCategories` | `cashbookCategories` · `cashbookItemTypes` | 줄 id 가 붙고 아이템 종류의 배열 이름이 바뀐다 |
-| `symbolCosts` | `symbolGroups` · `symbols` · `symbolLevelCosts` | 묶음 · 심볼 줄 id. `defaultFrom` · `defaultTo` → `defaultFromLevel` · `defaultToLevel`, 비용 줄의 `level` → `fromLevel`, `symbol` → `symbolId` |
-| `hexaMatrix` | `jobs` · `hexaCoreTypes` · `hexaCores` · `hexaCoreLevelCosts` · `hexaStats` | 직업의 코어 목록은 그 직업의 코어와 `전직업`(`isAllJobs`)의 코어를 종류의 차례, 같은 종류 안에서는 코어의 차례로 섞는다(결정 35). 이름 표가 없어지고 코어가 `typeId` 로 종류를 든다. 비용 줄은 `fromLevel` · `fragmentQuantity` · `solErdaQuantity`, 스탯은 `activationFragmentQuantity` |
-| `contents` | `contentCategories` · `contents` | 아래 `컨텐츠` |
-| `enhancementCosts` | `potentialResetCosts` · `soulPotentialResetCosts` · `starforceCostSteps` · `superiorSeries` · `superiorItems` | `starforceSteps` → `starforceCostSteps`, 잠재의 `minLevel` → `minRequiredLevel`, 슈페리얼 장비는 계열 줄 id(`seriesId`). 규칙은 `gameRules` 로 간다 |
-| `mvpGrades` | `mvpGrades` | 배열 이름이 바뀌고 줄 id 가 붙는다. MVP 등급 기록은 기기 변환까지 등급 key 를 적는다 |
-| `huntingGrounds` | `huntingRegions` · `huntingGrounds` · `huntingGroundLevels` | 지역 · 사냥터 줄 id. `force` → `requiredForce`, `mobs` → `mobQuantity`, `popular` → `isPopular`, 몬스터 레벨 줄은 `groundId` · `mobLevel` |
-| `huntLoot` | `huntLootItems` | 아이템 줄 id 로 가리키고 이름 · 그림은 `items` 에서 읽는다. `kind` → `type`, 기간은 `validFrom` · `validUntil` |
-| `imageCrops` | `imageCrops` | 크기 · 위치 글자 대신 숫자 셋(`widthPercent` · `positionXPercent` · `positionYPercent`)이다. 크롭은 `type` 과 그림 줄 id 로 가린다. 파티 모달 띠 크롭은 없어진다(결정 61. 지금 앱은 읽지 않는다) |
-| `faqs` | `faqSheets` · `faqItems` | 문항은 묶음 줄 id(`sheetId`)를 든다. 답은 블록 배열이 아니라 글이고, 앱이 빈 줄에서 문단을 나눈다(결정 61) |
-| `gameRules` | 새 칸, 줄 하나 | 규칙 아홉. 지금 `bosses` · `spendCatalog` · `enhancementCosts` 의 `rules` 를 읽는 곳이 이 칸을 읽는다(결정 65 열째 묶음) |
-
-### 컨텐츠(동작이 바뀐다)
-
-- 완료 조건을 앱 코드에서 컨텐츠 key 로 가르지 않고 `contents.checkType` 으로 읽는다(결정 34). 카드 · 완료 판정 함수 · 진행 링 ·
-  오늘의 남은 스케줄 · 미완료 스케줄 알림이 같은 칸을 읽는다. 무릉도장은 층수가 0 보다 크면 완료로 센다. [[ADR-033]] 결정 5 의
-  본문을 함께 고친다.
-- `onlyWhenScheduled` · `trustRegistrationFlag` · `cumulativeScore` 가 없어진다(결정 42). 공유 컨텐츠 위젯은 공유 범위가 캐릭터가
-  아니고 `checkType` 이 `count_only` · `both` 인 컨텐츠만 그린다. 최근 활동 판정은 `checkType` 이 `score` 인 컨텐츠를 세지 않는다.
-- 최대 횟수는 `maxCount` 한 칸이다(결정 52). `maxCountOverride` 가 없어진다.
-- 보이는 이름은 `displayName` → `name`, 공유 줄의 짧은 이름은 `shortName` 이다(결정 60). `category` → `categoryId`,
-  `section` → `cycle`. 분류의 `weeklyLimit` → `weeklyMaxCount`, `hideCountTag` → `hidesCountTag`, `sharedOrder` → `sharedSortOrder`.
-
-### 하는 차례
-
-1. 규칙 칸(`gameRules`)을 먼저 만들고, 칸마다 타입 · 받는 함수(`parse`) · fixture · 조회 모듈 · 쓰는 쪽 · 테스트를 한 커밋으로 바꾼다.
-   다른 칸이 가리키는 칸부터 한다(아이템 → 월드 → 보스 → 드롭 · 상자 · 결정석 → 가계부 분류 · 그림 목록 → 지출 목록 → 심볼 →
-   헥사 → 사냥터 · 사냥 전리품 → MVP · 강화 비용 → 크롭 → FAQ → 컨텐츠). 커밋마다 타입 검사와 테스트가 통과한다. 칸 스물을 다
-   옮겼고(2026-11-21) 계약 판을 `2026-11-21` 로 올렸다. 칸마다 계약을 통과한 값이 서버 응답과 같은지는
-   `lib/game-data/__tests__/sections.spec.ts` 가 본다.
-2. 시뮬레이터에서 DB 박스 서버로 켜 잠금 화면이 받고 열리는지, 보스 · 가계부 · 스케줄 화면이 그려지는지 본다. 넥슨 로그인은 넥슨이
-   `api` 콜백을 승인한 뒤에 보고, 그 전에는 API 키로 본다. 2026-11-21 에 API 키 사용자의 기기 데이터로 봤다. 잠금 화면이 새 계약의
-   게임 데이터와 그림을 받고 열렸고, today(공유 위젯) · 컨텐츠 스케줄러 · 보스 스케줄러 · 보스 수입 · 드롭 시트와 반지 상자 ·
-   가계부 · 지출 목록 · 인벤토리 · FAQ 가 그려졌다. 넥슨 로그인은 아직 보지 않았다.
-3. 이 브랜치를 develop 에 머지했다(PR #1178, 결정 65). 서버는 2026-11-21 에 떴다.
-
-이 일에 들지 않는 것: 기록이 줄 id 를 적게 바꾸는 기기 변환(결정 19), 동기화(결정 7 ~ 18), OTA 주소를 `api` 로 옮기는 일(#1090).
+  수치를 지어 넣지 않는다. 칸마다 계약을 통과한 값이 서버 응답과 같은지는 `lib/game-data/__tests__/sections.spec.ts` 가 본다.
+- 컨텐츠의 완료 조건은 앱 코드가 컨텐츠 key 로 가르지 않고 `contents.checkType` 으로 읽는다([[ADR-099]] 결정 34, [[ADR-033]] 결정 5).
+  공유 컨텐츠 위젯은 공유 범위가 캐릭터가 아니고 `checkType` 이 `count_only` · `both` 인 컨텐츠만 그린다. 최근 활동 판정은
+  `checkType` 이 `score` 인 컨텐츠를 세지 않는다. 지하 수로의 점수는 주간 초기화 뒤에도 줄지 않아 최근에 했는지 가를 수 없기
+  때문이다(`lib/scheduler/scheduler-content-scope.ts`).
 
 ## 번들에 남는 것
 

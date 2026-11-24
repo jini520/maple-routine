@@ -39,31 +39,34 @@
 옛 원본을 합계로 옮기는 부팅 단계([[ADR-100]] 결정 3)는 옮긴 줄 전체의 상황을 묶어 보낸다. 대기 표에 쌓아 다시 보내지 않는다(사용자 선택).
 운영자가 양과 모양을 보는 용도라 몇 건을 놓쳐도 된다. 신원이 없으면 보내지 않는다.
 
-### 결정 3. 서버는 표에 남기고, 같은 날 · 종류 · 이유 · 장비는 한 줄을 덮는다
+### 결정 3. 서버는 표에 남기고, 같은 넥슨 계정 · 날 · 종류 · 이유 · 장비 · 상세는 한 줄을 덮는다
 
 서버 표 `enhancement_anomalies` 에 적는다(사용자 선택). 컨테이너 로그는 다시 만들면 사라지고 모아 보기 어렵다.
-강화 내역은 넥슨 계정마다 받으므로 `UNIQUE (nexon_account_id, history_date, enhancement_type, anomaly_type, item_name)` 이고 받은
-값으로 덮는다. 수집기는 오늘처럼 굳지 않은 날을 받을 때마다 그 날 전체를 다시 세므로, 덮어야 같은 줄이 여러 번 쌓이지 않는다.
-
-1.0.15 서버는 칸과 기준을 바꾼다([[ADR-099]] 결정 61).
-
-- `user_id` · `identified_by` · `item_key` 를 없앤다. 사람은 넥슨 계정 줄이 가리킨다.
-- `enhancement_type` 은 `api_type`, `anomaly_type` 은 `reason` 이다. 요청 몸의 이름도 `apiType` · `reason` 이고 `itemKey` 는 받지 않는다.
-- 한 줄의 기준에 `detail` 을 넣는다. 수집기가 상세까지 같아야 한 줄로 묶기 때문이다. 상세는 비울 수 있어 `coalesce(detail, '')` 로
-  견준다. 계정을 지워 넥슨 계정 칸이 빈 줄은 견주지 않는다. 빈 줄끼리 부딪치면 밤의 계정 삭제가 실패한다.
 
 ```
-서버 enhancement_anomalies   id · user_id · identified_by · history_date · enhancement_type · anomaly_type · item_key · item_name
-                             · row_count · detail · created_at · updated_at
+enhancement_anomalies   id · nexon_account_id · history_date · api_type · reason · item_name · row_count · detail
+                        · created_at · updated_at
 ```
 
-```
-1.0.15 enhancement_anomalies   id · nexon_account_id · history_date · api_type · reason · item_name · row_count · detail
-                               · created_at · updated_at
-```
+- 한 줄은 넥슨 계정 · 날짜 · API 종류(`api_type`) · 이유(`reason`) · 장비 이름 · 상세다. 같은 줄이 오면 받은 줄 수(`row_count`)로
+  덮는다. 수집기는 오늘처럼 굳지 않은 날을 받을 때마다 그 날 전체를 다시 세므로, 덮어야 같은 줄이 여러 번 쌓이지 않는다.
+- 상세를 기준에 넣는 것은 수집기가 상세까지 같아야 한 줄로 묶기 때문이다. 상세는 비울 수 있어 `coalesce(detail, '')` 로 견준다.
+  계정을 지워 넥슨 계정 칸이 빈 줄은 견주지 않는다. 빈 줄끼리 부딪치면 밤의 계정 삭제가 실패한다.
+- 강화 내역은 넥슨 계정마다 받으므로 넥슨 계정을 기준에 넣는다. 서버는 요청을 보낸 신원의 넥슨 계정 줄을 적는다. 앱은 회차의
+  상황을 메인 신원 하나로 보내서(`serverIdentityHeaders`), 부계정에서 받은 상황도 메인의 넥슨 계정 줄에 적힌다. 사람은 넥슨 계정
+  줄이 가리켜 사람 칸을 두지 않는다.
+- 요청 몸의 이름도 `apiType` · `reason` 이다. `itemKey` 는 받지 않는다.
+- `identified_by` 는 기록의 값이 아니라 사람의 값이라 두지 않는다([[ADR-099]] 결정 8). `item_key` 는 운영의 모든 줄에서 비어 있고
+  읽는 곳이 없어 두지 않는다([[ADR-099]] 결정 61).
 
-`identified_by` 는 기록의 값이 아니라 사람의 값이라 뺀다([[ADR-099]] 결정 8). `item_key` 는 운영의 모든 줄에서 비어 있고 읽는
-곳이 없다([[ADR-099]] 결정 61).
+1.0.14 까지의 운영 서버는 칸과 기준이 다르다. 사람 칸(`user_id`)과 `identified_by` · `item_key` 를 두고, API 종류와 이유를
+`enhancement_type` · `anomaly_type` 으로 부른다. 한 줄의 기준에 상세가 없다(`UNIQUE (nexon_account_id, history_date,
+enhancement_type, anomaly_type, item_name)`).
+
+```
+1.0.14 enhancement_anomalies   id · user_id · nexon_account_id · identified_by · history_date · enhancement_type · anomaly_type
+                               · item_key · item_name · row_count · detail · created_at · updated_at
+```
 
 ## 테스트
 
@@ -71,7 +74,7 @@
 |---|---|
 | `features/enhancement-history/__tests__/anomalies.spec.ts` | 이유마다 가르고 날짜 · 종류 · 이유 · 장비로 세는지, 줄이 요청 몸의 이름(`apiType` · `reason`)으로 서고 `itemKey` 를 싣지 않는지(결정 3), 전용 재화와 값이 매겨진 줄은 안 세는지, 목록을 못 받으면 판정 못 한 줄을 세는지, 장비 표에 없는 장비의 스타포스는 시도 뒤 10성 이상인 줄만 세는지(결정 1) |
 | `features/enhancement-history/__tests__/collect.spec.ts` | 회차에 받은 날들의 상황을 회차가 끝날 때 한 번에 보내고, 없으면 안 보내며, 보내기가 실패해도 수집이 이어지는지(결정 2) |
-| 서버 `modules/enhancement-anomalies/*.spec.ts` | 신원이 없으면 401, 같은 열쇠는 한 줄을 덮는지, 모르는 이유는 거절하는지(결정 3) |
+| 서버 `modules/enhancement-anomalies/*.spec.ts` | 신원이 없으면 401 이고 신원의 넥슨 계정을 적는지, 같은 날 · API 종류 · 이유 · 장비 · 상세는 한 줄을 받은 수로 덮는지, 넥슨 계정 칸이 빈 줄끼리 부딪치지 않는지, 한 사람 밑의 두 넥슨 계정은 따로 한 줄씩인지, 모르는 이유는 400 인지(결정 3) |
 
 ## 번호 기록
 
@@ -81,3 +84,5 @@
 - (2026-11-07) 결정 1 에서 장비 표에 없는 장비의 스타포스를 시도 뒤 10성 이상인 줄만 알리게 바꿨다. 운영 표가 이 이유의 줄로만 찼다
 - (2026-11-24) 결정 3 의 요청 몸 이름(`apiType` · `reason`)과 `itemKey` 를 싣지 않는 것을 앱도 따르게 했다. 결정 1 의 이유 칸 이름도
   `reason` 으로 고쳤다([[ADR-099]] 결정 61, #947)
+- (2026-11-24) 결정 3 을 1.0.15 서버의 칸과 기준(넥슨 계정 · 날 · API 종류 · 이유 · 장비 · 상세)으로 다시 쓰고 1.0.14 까지의 운영
+  서버는 뒤에 따로 밝혔다. 넥슨 계정이 보낸 신원의 것이라 부계정의 상황도 메인의 넥슨 계정 줄에 적히는 것을 적었다(#947)

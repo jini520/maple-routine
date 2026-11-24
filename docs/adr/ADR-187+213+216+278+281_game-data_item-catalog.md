@@ -283,7 +283,7 @@
 - 새 표의 key 는 아래다. 드롭 연출 프레임은 단계와 차례를 key 에 담고, 앱은 같은 단계의 key 를 번호 차례로 모은다. 글자
   차례로 모으면 `10` 이 `2` 앞에 서서 프레임이 뒤섞인다.
 
-| key | 그림 | 지금 경로 |
+| key | 그림 | 1.0.14 까지의 경로 |
 |---|---|---|
 | `boss_crystal_weekly` · `boss_crystal_monthly` | 보스 수익의 결정석 칩 둘. 가계부 결정석 줄은 주간 것을 쓴다 | `items/intense_power_crystal_weekly.webp` · `items/intense_power_crystal_monthly.webp` |
 | `enhancement_cube_reset` · `enhancement_starforce` · `enhancement_potential` · `enhancement_additional_potential` · `enhancement_soul_potential` | 가계부 강화 줄 다섯 | `items/cube_gold.png` · `items/equipment_enhancement_scroll.png` · `items/potential_reset.png` · `items/additional_potential_reset.png` · `items/soul_weapon_potential.webp` |
@@ -295,9 +295,9 @@
 | `unknown_character` | 모르는 캐릭터의 흰 실루엣 | `characters/unknown.webp` |
 | `drop_effect_<단계>_<번호>` | 드롭 연출 프레임 55. 단계는 `screen` 16 · `pre` 8 · `loop` 24 · `end` 7 이다 | `drop-effect/<단계>/<번호>.webp` |
 
-- 새 표를 고치는 관리 화면은 S4 의 그림 고르개와 함께 만든다(사용자 지정 2026-11-09). 그 전까지 새 표는 이관이 지금 앱이 쓰는
-  그림으로 채운 그대로다.
-- 그림 경로는 바꾸지 않는다. 옛 앱은 계속 이름으로 그림을 찾기 때문이다.
+- 새 표는 관리 화면의 앱 그림 화면(`/app-images`)에서 key 마다 그림 고르개로 고친다(결정 6, 사용자 지정 2026-11-09). 처음 줄은
+  이관이 그때 앱이 쓰던 그림으로 채웠다.
+- 위 표의 경로는 1.0.14 까지의 운영 서버의 그림 경로(`assets.path`)다. 1.0.15 서버의 그림 표에는 경로 칸이 없다(결정 5).
 
 ### 결정 9. 표도 앱 코드도 쓰지 않는 그림은 하나만 지운다 (사용자 지정 2026-11-08)
 
@@ -376,3 +376,5 @@
   [[ADR-016]] 결정 15 를 따르게 했다. 그림 고르개가 1.0.15 에서 그림 줄 id 를 보내는 것을 적었다(#1152)
 - (2026-11-24) 결정 1 · 2 · 4 · 5 의 `(1.0.15 서버 작업에서 바뀐다)` 주석을 걷고 본문을 1.0.15 서버로 다시 썼다. 반지 레벨 줄 ·
   아이템 칸 이름 · 묶음 종류 enum · 묶음 줄 id · 옛 글자 칸과 경로가 없는 그림 표다. 1.0.14 까지의 운영 서버는 따로 밝혔다(#947)
+- (2026-11-24) 결정 8 의 `새 표를 고치는 관리 화면은 S4 에서 만든다` 를 이미 있는 앱 그림 화면(`/app-images`)으로 고치고, `그림 경로는
+  바꾸지 않는다` 를 걷었다. 1.0.15 서버의 그림 표에는 경로 칸이 없어, key 표의 경로는 1.0.14 까지의 경로로 밝혔다(#947)
