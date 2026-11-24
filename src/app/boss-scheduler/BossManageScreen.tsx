@@ -8,6 +8,17 @@ import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { Pressable, View } from 'react-native'
 
+import {
+  applyBossTrackingDraft,
+  changedBossManageDraft,
+  EMPTY_BOSS_MANAGE_DRAFT,
+  hasBossManageChanges,
+  samePartySetting,
+  storedPartySetting,
+  trackedBossDifficulty,
+  withoutSavedBossManageDraft,
+  type BossManageDraft,
+} from '../../features/boss-scheduler/manage-draft'
 import { partySizeKey, useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule'
 import { BOSS_SECTION_ORDER } from '../../features/boss-scheduler/displayed-bosses'
@@ -28,14 +39,16 @@ import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import type { BossDifficulty } from '../../types'
 
-import { Badge, CheckIcon, Switch, Text } from '../../components/atoms'
+import { Badge, Button, CheckIcon, Switch, Text } from '../../components/atoms'
 import { BossPortrait } from '../../components/molecules/BossPortrait/BossPortrait'
 import { CharacterRail, type CharacterRailEntry } from '../../components/organisms/CharacterRail/CharacterRail'
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { DifficultyExpander } from '../../components/molecules/DifficultyExpander/DifficultyExpander'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
+import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
+import { useUnsavedChangesGuard, type DraftSaveOutcome } from '../../hooks/useUnsavedChangesGuard'
 import { BackButton } from '../../components/molecules/BackButton/BackButton'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
@@ -43,20 +56,20 @@ import { PartyShareSummary } from '../../components/molecules/PartyShareSummary/
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
-
+import { SettingsActionBar } from '../settings/SettingsActionBar'
 
 /** 주인이 다른 편집 표를 읽을 때 대신 주는 빈 표. 렌더마다 새 객체를 만들지 않는다. */
 const NO_DIFFICULTY_EDITS: Record<string, BossDifficulty> = {}
 
-// 수동 모드는 행 탭이 추적 토글이고 즉시 저장한다. 추적 중인 행에만 난이도 고르개와 파티 요약이 선다.
+/** 주인이 있는 초안. 주인이 고른 캐릭터와 다르면 쓰지 않는다. */
+type OwnedBossManageDraft = BossManageDraft & { ocid: string | null }
+
+const NO_DRAFT: OwnedBossManageDraft = { ocid: null, ...EMPTY_BOSS_MANAGE_DRAFT }
+
+// 수동 모드는 행 탭이 추적 토글이다. 추적 중인 행에만 난이도 고르개와 파티 요약이 선다.
 // 자동 모드는 추적 없이 파티만 설정하고, 미등록 보스도 미리 설정할 수 있다.
+// 누른 것은 초안에 들고 아래 `저장` 이 한 번에 저장한다. 누를 때마다 저장하면 그만큼 서버 동기화가 깨어난다.
 // 초상 옆에 보스명과, 그 아래 고르개 · 파티 요약 한 줄을 쌓는다.
-/** 비율을 안 쓰는 파티. 설정이 없는 조합이 이 값을 그린다. */
-const NO_SHARES: BossPartyShareColumns = {
-  crystalMyShare: null,
-  crystalSharesTotal: null,
-  splitFeePercent: null,
-}
 
 export function BossManageScreen(): React.JSX.Element {
   const faq = useFaqSheet('boss-manage')
@@ -66,18 +79,15 @@ export function BossManageScreen(): React.JSX.Element {
     partySizes,
     partyShares,
     manualTrackedByOcid,
-    setPartySetting,
-    addManualBoss,
-    removeManualBoss,
-    setManualBossDifficulty,
+    saveBossManageDraft,
     // 선택 캐릭터는 스케줄러와 공유한다. 두 화면이 갈라지면 안 된다.
   } = useBossSchedulerStore()
   const gradeContext = useMvpGradeContext()
   // 선택한 캐릭터는 앱 전체가 한 벌로 든다.
   const { selectedOcid, select } = useCharacterSelectionStore()
   const { mode } = useTrackingModeStore()
-  // 방향이 뒤집혀 읽힌다.
   // 스위치는 `모든 보스 보기`(기본 꺼짐)다. `거른다` 를 뜻하는 스위치는 끄면 더 보인다가 되어
+  // 방향이 뒤집혀 읽힌다.
   const [showAllBosses, setShowAllBosses] = useState(false)
   // 행의 `변경` 으로 여는 파티 모달. 인원과 비율을 함께 고친다.
   const [partyModal, setPartyModal] = useState<{ entry: BossEntry; difficulty: BossDifficulty } | null>(null)
@@ -91,6 +101,13 @@ export function BossManageScreen(): React.JSX.Element {
     ocid: string | null
     byBoss: Record<string, BossDifficulty>
   }>({ ocid: null, byBoss: {} })
+  /**
+   * 저장 전에 바꾼 추적 난이도와 파티 설정. `ocid` 가 이 초안의 주인이다. 받기가 고른 캐릭터를 바꿔도 앞 캐릭터의 초안이 새
+   * 캐릭터의 행에 얹히지 않는다.
+   */
+  const [draft, setDraft] = useState<OwnedBossManageDraft>(NO_DRAFT)
+  // 고정 바가 덮는 높이. 그만큼 목록 아래를 비워야 마지막 행이 바 뒤에 숨지 않는다.
+  const [actionBarHeightPx, setActionBarHeightPx] = useState(0)
 
   // 스토어가 내는 것은 기준 순서(레벨 내림차순)이고 화면 순서는 캐릭터 관리에서 정한 배열이다.
   // 스케줄러 화면과 같은 함수를 통과시켜야 두 화면의 레일이 같은 차례로 선다.
@@ -138,10 +155,18 @@ export function BossManageScreen(): React.JSX.Element {
     }
   }
 
-  const trackedBossItems =
-    selected !== null
-      ? (manualTrackedByOcid?.[selected.ocid] ?? []).filter((item) => item.kind === 'boss')
-      : []
+  const stored = {
+    items: selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : [],
+    partySizes,
+    partyShares,
+  }
+  // 주인이 다른 초안은 쓰지 않는다.
+  const ownDraft = draft.ocid !== null && draft.ocid === selected?.ocid ? draft : NO_DRAFT
+  const changes = changedBossManageDraft(ownDraft, stored)
+  const isDirty = hasBossManageChanges(changes)
+
+  // 화면은 저장된 목록에 초안을 얹어 그린다. 저장 함수가 같은 함수로 얹어 쓴다.
+  const trackedBossItems = applyBossTrackingDraft(stored.items, ownDraft.tracking).filter((item) => item.kind === 'boss')
 
   function trackedDifficultyOf(bossKey: string): BossDifficulty | null {
     return trackedBossItems.find((candidate) => candidate.bossKey === bossKey)?.difficulty ?? null
@@ -151,7 +176,8 @@ export function BossManageScreen(): React.JSX.Element {
     return registeredDifficultyByBoss.get(bossKey) ?? difficulties[0] ?? null
   }
 
-  // 12는 주간 한도이고 시즌 보스는 예외다. 카운트 규칙은 `lib/boss/boss-matching` 한 곳에만 있다.
+  // 12는 주간 한도이고 시즌 보스는 예외다. 카운트 규칙은 `lib/boss/boss-matching` 한 곳에만 있다. 아직 저장하지 않은 초안까지 센다.
+  // 저장된 목록으로 세면 화면에서는 13개를 고를 수 있고 `저장` 을 누른 뒤에야 막힌다.
   const weeklyTrackedCount = countManualWeeklyBosses(trackedBossItems)
   const isWeeklyLimitReached = mode === 'manual' && weeklyTrackedCount >= WEEKLY_BOSS_CLEAR_LIMIT
 
@@ -159,11 +185,11 @@ export function BossManageScreen(): React.JSX.Element {
     return bossCycleOf(bossKey) === 'weekly' && !isSeasonBoss(bossKey)
   }
 
-  // 비-챌린저스로 본다. 판정은 스케줄러 화면과 같은 함수여야 한다.
   // 시즌 보스는 챌린저스 월드 전용이라 그 월드 캐릭터에게만 보인다. 월드를 모르는 구버전 캐시는
+  // 비-챌린저스로 본다. 판정은 스케줄러 화면과 같은 함수여야 한다.
   const showsSeasonBosses = isChallengersWorld(selected?.worldKey)
-  // 목록은 보스 표에서 지금 기간에 유효한 것이다. 시즌이 끝난 시즌 보스는 빠진다. 주간 탭은 주간(챌린저스
-  // 월드는 시즌 주간까지), 월간 탭은 월간이다. 난이도
+  // 목록은 보스 표에서 지금 기간에 유효한 것이다. 시즌이 끝난 시즌 보스는 빠진다. 주간 섹션은 주간(챌린저스
+  // 월드는 시즌 주간까지), 월간 섹션은 월간이다. 난이도
   // 후보도 같은 표의 `difficulties` 를 쓴다. 표는 켜는 동안 서버 응답으로 덮일 수 있어 칸을 구독하고,
   // 덮이면 목록을 다시 만든다.
   const catalog = useGameTable('bosses')
@@ -176,7 +202,7 @@ export function BossManageScreen(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 표가 바뀌었다는 신호다. 값은 `bossesInSection` 이 같은 표에서 읽는다.
     [catalog],
   )
-  // **무리 둘이고 월간이 위다.** 스케줄러 목록과 같은 순서여야 보는 화면과 편집 화면이 같아진다.
+  // **섹션 둘이고 월간이 위다.** 스케줄러 목록과 같은 순서여야 보는 화면과 편집 화면이 같아진다.
   const allSections = BOSS_SECTION_ORDER.map((cycle) => ({
     cycle,
     entries:
@@ -189,8 +215,8 @@ export function BossManageScreen(): React.JSX.Element {
   // 자동 모드 기본은 등록된 보스만이다. 등록이 하나도 없으면(신규 캐릭터) 전체 목록으로
   // 대체해 미등록 보스의 파티 인원을 미리 설정할 수 있게 한다.
   //
-  // 합쳐 센 값이라, 검마만 등록한 캐릭터의 주간 무리가 등록 0이니 전체 목록으로 부풀지 않는다.
-  // **판정은 무리별이 아니라 목록 전체로 한다.** `registeredDifficultyByBoss.size` 가 두 무리를
+  // **판정은 섹션별이 아니라 목록 전체로 한다.** `registeredDifficultyByBoss.size` 가 두 섹션을
+  // 합쳐 센 값이라, 검마만 등록한 캐릭터의 주간 섹션이 등록 0이니 전체 목록으로 부풀지 않는다.
   const showsRegisteredOnly =
     mode === 'auto' && !showAllBosses && registeredDifficultyByBoss.size > 0
   const visibleSections = allSections
@@ -200,71 +226,66 @@ export function BossManageScreen(): React.JSX.Element {
         ? section.entries.filter((entry) => registeredDifficultyByBoss.has(entry.key))
         : section.entries,
     }))
+    // 섹션이 비면 헤더도 안 선다. `주간` 헤더의 `n/12` 는 수동 모드에서 고른 개수라, 고를 행이
     // 없으면 보여 줄 이유도 없다.
-    // 무리가 비면 헤더도 안 선다. `주간` 헤더의 `n/12` 는 수동 모드에서 고른 개수라, 고를 행이
     .filter((section) => section.entries.length > 0)
 
-  // 저장 실패를 토스트로 알린다. 안 알리면 체크가 조용히 되돌아가는 것 외에 설명이 없다.
-  async function handleToggleTracked(bossKey: string, difficulties: BossDifficulty[]): Promise<void> {
+  /**
+   * 초안의 추적 난이도를 바꾸는 함수. `null` 은 추적 안 함이다.
+   *
+   * 바꾸기 전 난이도를 들지 않는다. 렌더할 때의 낡은 값과 견주면 칩을 연달아 누를 때 변경이 조용히 사라진다. 저장된 값과 같아진
+   * 보스는 초안에서 뺀다. 남겨 두면 나중에 받은 값이 그 보스를 바꿨을 때 옛 초안이 바꾼 것으로 다시 잡힌다.
+   */
+  function setTrackingDraft(bossKey: string, difficulty: BossDifficulty | null): void {
     if (selected === null) return
-    const trackedDifficulty = trackedDifficultyOf(bossKey)
-    if (trackedDifficulty !== null) {
-      try {
-        await removeManualBoss(selected.ocid, bossKey, trackedDifficulty)
-      } catch {
-        useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
-      }
-      return
-    }
-    const difficulty = defaultDifficultyFor(bossKey, difficulties)
-    if (difficulty === null) return
-    // 안내이고, `error` 는 자동 소멸이 없어 사용자가 직접 닫아야 한다.
-    // 한도 초과는 행을 막지 않고 눌렀을 때 토스트로 알린다. `showInfo` 다. 실패가 아니라 규칙
-    try {
-      const result = await addManualBoss(selected.ocid, bossKey, difficulty)
-      if (result === 'limitReached') {
-        useToastStore.getState().showInfo(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`)
-      }
-    } catch {
-      useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
-    }
+    const ocid = selected.ocid
+    const isStored = difficulty === trackedBossDifficulty(stored.items, bossKey)
+    setDraft((current) => {
+      const base = current.ocid === ocid ? current : { ...NO_DRAFT, ocid }
+      const tracking = { ...base.tracking }
+      if (isStored) delete tracking[bossKey]
+      else tracking[bossKey] = difficulty
+      return { ...base, tracking }
+    })
   }
 
-  // remove → add 2단계는 커밋이 2회라 그 사이에 보스가 목록에 없는 상태가 실재했다.
-  // 수동 모드의 난이도 변경은 멤버십 교체다. 스토어의 단일 액션이 쓰기 1회로 끝낸다.
-  async function handleSwitchDifficulty(bossKey: string, to: BossDifficulty): Promise<void> {
-    if (selected === null) return
-    try {
-      await setManualBossDifficulty(selected.ocid, bossKey, to)
-    } catch {
-      useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
+  function handleToggleTracked(bossKey: string, difficulties: BossDifficulty[]): void {
+    if (trackedDifficultyOf(bossKey) !== null) {
+      setTrackingDraft(bossKey, null)
+      return
     }
+    // 초안에서 끈 보스를 다시 켜면 저장된 난이도로 돌아간다. 그래야 `저장` 도 다시 꺼진다.
+    const difficulty = trackedBossDifficulty(stored.items, bossKey) ?? defaultDifficultyFor(bossKey, difficulties)
+    if (difficulty === null) return
+    // 한도 초과는 행을 막지 않고 눌렀을 때 토스트로 알린다. `showInfo` 다. 실패가 아니라 규칙
+    // 안내이고, `error` 는 자동 소멸이 없어 사용자가 직접 닫아야 한다.
+    if (countsTowardWeeklyLimit(bossKey) && weeklyTrackedCount >= WEEKLY_BOSS_CLEAR_LIMIT) {
+      useToastStore.getState().showInfo(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`)
+      return
+    }
+    setTrackingDraft(bossKey, difficulty)
+  }
+
+  /** 지금 보이는 파티 설정. 초안에 있으면 초안이다. 고친 값이 어디에도 안 보이면 `적용` 이 먹지 않은 것으로 읽힌다. */
+  function partySettingOf(key: string): { partySize: number; shares: BossPartyShareColumns } {
+    return ownDraft.party[key] ?? storedPartySetting(stored, key)
   }
 
   const modalKey =
     partyModal === null ? null : partySizeKey(selected?.ocid ?? '', partyModal.entry.key, partyModal.difficulty)
   // 모달이 뜰 때의 값. 고치는 중인 값은 모달이 들고 있다가 적용할 때 한 번에 돌려준다.
-  const modalShares = modalKey === null ? NO_SHARES : partyShares[modalKey] ?? NO_SHARES
+  const modalSetting = modalKey === null ? null : partySettingOf(modalKey)
 
-  async function handleSetParty(
-    bossKey: string,
-    difficulty: BossDifficulty,
-    input: { partySize: number; shares: BossPartyShareColumns },
-  ): Promise<void> {
-    if (selected === null) return
-    try {
-      await setPartySetting(selected.ocid, bossKey, difficulty, input)
-    } catch {
-      useToastStore.getState().showError('파티원 수를 저장하지 못했습니다')
-    }
-  }
-
-  /** 적용을 누른 자리. 여기서 처음 쓴다. 끌기 한 번이 저장 아홉 번이 되지 않는 까닭이다. */
-  async function applyParty(next: { partySize: number; shares: BossPartyShareColumns }): Promise<void> {
+  /** 적용을 누른 자리. 저장하지 않고 초안에 넣는다. 저장은 아래 `저장` 이 한다. */
+  function applyParty(next: { partySize: number; shares: BossPartyShareColumns }): void {
     const target = partyModal
     setPartyModal(null)
-    if (target === null) return
-    await handleSetParty(target.entry.key, target.difficulty, {
+    if (target === null || selected === null) return
+    const ocid = selected.ocid
+    const key = partySizeKey(ocid, target.entry.key, target.difficulty)
+    const setting = {
+      bossKey: target.entry.key,
+      difficulty: target.difficulty,
       // 비율을 쓰면 두 쪽이라 2 다. 배지·필터가 그 수를 본다.
       partySize: partySizeForShares(
         {
@@ -275,19 +296,59 @@ export function BossManageScreen(): React.JSX.Element {
         next.partySize,
       ),
       shares: next.shares,
+    }
+    const isStored = samePartySetting(setting, storedPartySetting(stored, key))
+    setDraft((current) => {
+      const base = current.ocid === ocid ? current : { ...NO_DRAFT, ocid }
+      const party = { ...base.party }
+      if (isStored) delete party[key]
+      else party[key] = setting
+      return { ...base, party }
     })
   }
+
+  /** 바꾼 것을 한 번에 저장하는 함수. 실패하면 쓰지 못한 것만 초안에 남는다. */
+  async function saveDraft(): Promise<DraftSaveOutcome> {
+    if (selected === null || !isDirty) return { saved: true }
+    const ocid = selected.ocid
+    const saving = changes
+    const result = await saveBossManageDraft(ocid, saving)
+    const dropSaved = (saved: BossManageDraft): void => {
+      setDraft((current) => (current.ocid === ocid ? { ocid, ...withoutSavedBossManageDraft(current, saved) } : current))
+    }
+    switch (result.status) {
+      case 'saved':
+        dropSaved(saving)
+        return { saved: true }
+      case 'limitReached':
+        return {
+          saved: false,
+          report: () => useToastStore.getState().showInfo(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`),
+        }
+      case 'trackingFailed':
+        return { saved: false, report: () => useToastStore.getState().showError('추적 목록을 저장하지 못했습니다') }
+      case 'partyFailed':
+        // 추적 목록과 앞의 파티 설정은 썼다. 다시 누르면 남은 것만 쓴다.
+        dropSaved({
+          tracking: saving.tracking,
+          party: Object.fromEntries(result.savedPartyKeys.map((key) => [key, saving.party[key]])),
+        })
+        return { saved: false, report: () => useToastStore.getState().showError('파티원 수를 저장하지 못했습니다') }
+    }
+  }
+
+  const guard = useUnsavedChangesGuard({ dirty: isDirty, save: saveDraft, discard: () => setDraft(NO_DRAFT) })
+  const isSaveDisabled = !isDirty || guard.saving
 
   // 인원과 비율을 적고 모달로 보내는 줄. 스테퍼는 수 하나만 올리고 내릴 수 있어 비율이 들어갈
   // 자리가 없다.
   function renderPartySummary(entry: BossEntry, difficulty: BossDifficulty): React.JSX.Element {
     const ocid = selected?.ocid ?? ''
-    const key = partySizeKey(ocid, entry.key, difficulty)
-    const columns = partyShares[key] ?? NO_SHARES
+    const { partySize, shares: columns } = partySettingOf(partySizeKey(ocid, entry.key, difficulty))
     return (
       <PartyShareSummary
         label={entry.name}
-        partySize={partySizes[key] ?? 1}
+        partySize={partySize}
         crystal={{
           myShare: columns.crystalMyShare,
           sharesTotal: columns.crystalSharesTotal,
@@ -301,207 +362,230 @@ export function BossManageScreen(): React.JSX.Element {
   }
 
   return (
-    <ScreenScroll
-      // 설정에서 여는 하위 페이지라 하단바가 없다.
-      hasTabBar={false}
-      header={
-        // 헤더는 제목 줄 하나다. 레일도 토글도 콘텐츠로 내려갔다. 헤더에 담는 것은 ← · 제목 · 기준 시각이다.
-        <PageHeader>
-          <PageHeaderTitleRow fetchedAt={fetchedAt} className="gap-2">
-            <BackButton onPress={() => navigation.goBack()} />
-            {/* 물음표는 제목과 한 덩어리다. 뒤로 버튼과의 간격(gap-2)을 따르지 않게 묶는다. */}
-            <View className="flex-row items-center">
-              <Text className="text-lg font-bold text-text">보스 관리</Text>
-              <FaqButton sheet={faq} />
-            </View>
-          </PageHeaderTitleRow>
-        </PageHeader>
-      }
-    >
-      {/* 캐릭터를 고르는 장치라 콘텐츠다. **여기에는 진행 링이 없다**(`rings: []`) - 이 화면의
-          일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
+    <View className="flex-1">
+      <ScreenScroll
+        // 설정에서 여는 하위 페이지라 하단바가 없다.
+        hasTabBar={false}
+        header={
+          // 헤더는 제목 줄 하나다. 레일도 토글도 콘텐츠로 내려갔다. 헤더에 담는 것은 ← · 제목 · 기준 시각이다.
+          <PageHeader>
+            <PageHeaderTitleRow fetchedAt={fetchedAt} className="gap-2">
+              <BackButton onPress={() => navigation.goBack()} />
+              {/* 물음표는 제목과 한 덩어리다. 뒤로 버튼과의 간격(gap-2)을 따르지 않게 묶는다. */}
+              <View className="flex-row items-center">
+                <Text className="text-lg font-bold text-text">보스 관리</Text>
+                <FaqButton sheet={faq} />
+              </View>
+            </PageHeaderTitleRow>
+          </PageHeader>
+        }
+      >
+        {/* 캐릭터를 고르는 장치라 콘텐츠다. **여기에는 진행 링이 없다**(`rings: []`) - 이 화면의
+            일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
 
-          좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다. */}
-      {selected !== null && (
-        <CharacterRail
-          entries={railEntries}
-          selectedOcid={selected.ocid}
-          onSelect={(ocid) => {
-            void select(ocid)
-          }}
-        />
-      )}
-
-      {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다. 끄면 무엇이 걸러지는지 설명을 함께 적는다.
-
-          글자가 스위치 안이라 줄의 글자를 눌러도 토글된다. 스위치만 표적이면 44x24 하나뿐이다.
-          `n/12` 카운터는 `주간` 섹션 헤더가 싣는다. */}
-      {selected !== null && mode === 'auto' && (
-        <View className="px-4">
-          <Switch
-            on={showAllBosses}
-            label="모든 보스 보기"
-            onToggle={() => {
-              setShowAllBosses((prev) => !prev)
+            좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다. */}
+        {selected !== null && (
+          <CharacterRail
+            entries={railEntries}
+            selectedOcid={selected.ocid}
+            onSelect={(ocid) => {
+              // 고른 캐릭터는 앱 전체가 함께 쓴다. 답을 받기 전에 바꾸면 스케줄러까지 다른 캐릭터로 넘어간다.
+              if (ocid === selected.ocid) return
+              guard.confirm(() => {
+                void select(ocid)
+              })
             }}
-            className="justify-between gap-3 rounded-[14px] bg-surface px-3.5 py-3"
-          >
-            <View className="min-w-0 flex-1 gap-0.5">
-              <Text className="text-sm font-semibold text-text">모든 보스 보기</Text>
-              <Text className="text-xs text-text-muted">끄면 스케줄러에 등록한 보스만 보여요</Text>
+          />
+        )}
+
+        {/* 목록에서 무엇을 보는가를 고르는 장치라 콘텐츠다. 끄면 무엇이 걸러지는지 설명을 함께 적는다.
+
+            글자가 스위치 안이라 줄의 글자를 눌러도 토글된다. 스위치만 표적이면 44x24 하나뿐이다.
+            `n/12` 카운터는 `주간` 섹션 헤더가 싣는다. */}
+        {selected !== null && mode === 'auto' && (
+          <View className="px-4">
+            <Switch
+              on={showAllBosses}
+              label="모든 보스 보기"
+              onToggle={() => {
+                setShowAllBosses((prev) => !prev)
+              }}
+              className="justify-between gap-3 rounded-[14px] bg-surface px-3.5 py-3"
+            >
+              <View className="min-w-0 flex-1 gap-0.5">
+                <Text className="text-sm font-semibold text-text">모든 보스 보기</Text>
+                <Text className="text-xs text-text-muted">끄면 스케줄러에 등록한 보스만 보여요</Text>
+              </View>
+            </Switch>
+          </View>
+        )}
+
+        {/* 잰 바 높이만큼 목록 아래를 비운다. */}
+        <View testID="screen-BossManage" style={{ paddingBottom: actionBarHeightPx }}>
+          {/* 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않는다. */}
+          {selected === null && (status === 'idle' || status === 'loading') ? (
+            <View className="px-4 pb-4">
+              <LoadingState size="page" message="불러오고 있어요" />
             </View>
-          </Switch>
-        </View>
-      )}
-
-      <View testID="screen-BossManage">
-        {/* 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않는다. */}
-        {selected === null && (status === 'idle' || status === 'loading') ? (
-          <View className="px-4 pb-4">
-            <LoadingState size="page" message="불러오고 있어요" />
-          </View>
-        ) : selected === null ? (
-          <View className="px-4 pb-4">
-            <Text className="text-sm text-text-muted">
-              캐릭터를 먼저 선택해주세요. 설정의 ‘캐릭터 관리’에서 추가할 수 있어요.
-            </Text>
-          </View>
-        ) : selected.error?.kind === 'characterUnavailable' ? (
-          // 편집할 목록이 **빈 것이 아니라 모르는 것**이다. 체크박스를 세우면 사용자가 지금
-          // 추적을 고르고 있다고 믿는데, 그 선택은 조회가 돌아와야 뜻을 갖는다.
-          <View className="px-4 pb-4 pt-8">
-            <CharacterUnavailableNotice
-              onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
-            />
-          </View>
-        ) : (
-          <View className="gap-2 px-4 pb-4">
-            {visibleSections.map((section) => (
-              <View key={section.cycle} className="gap-2">
-                {/* 스케줄러 헤더와 같은 모양을 쓴다. 두 화면의 무리 머리가 갈리면 같은 목록으로
-                    안 읽힌다. 시즌 배지는 없다. 그것은 진행이고 이 화면은 편집이다. */}
-                <View
-                  testID={`boss-section-header-${section.cycle}`}
-                  className="flex-row items-center justify-between gap-2"
-                >
-                  <Text className="text-sm font-normal text-text">
-                    {section.cycle === 'weekly' ? '주간' : '월간'}
-                  </Text>
-                  {mode === 'manual' && section.cycle === 'weekly' && (
-                    <Badge variant="primary">
-                      {weeklyTrackedCount}/{WEEKLY_BOSS_CLEAR_LIMIT}
-                    </Badge>
-                  )}
-                </View>
-                {section.entries.map((entry) => {
-              const trackedDifficulty = mode === 'manual' ? trackedDifficultyOf(entry.key) : null
-              const isTracked = trackedDifficulty !== null
-
-              // 한도가 찼을 때 미선택 행은 흐리게만 둔다. 비활성화하면 이유를 알릴 수 없다.
-              const isLimitBlocked =
-                mode === 'manual' &&
-                !isTracked &&
-                isWeeklyLimitReached &&
-                countsTowardWeeklyLimit(entry.key)
-
-              // 자동 모드의 행 난이도: 화면 전용 선택 → 등록 난이도 → 첫 난이도 순.
-              // 지금 기간에 유효한 난이도만. 시작 전인 난이도와 끝난 난이도는 안 선다.
-              const difficulties = activeDifficultiesNow(entry.key)
-              const autoDifficulty =
-                autoDifficultyByBoss[entry.key] ?? defaultDifficultyFor(entry.key, difficulties)
-
-              // 고르개 · 파티 요약이 서는 난이도: 수동은 추적 난이도, 자동은 행 난이도.
-              const activeDifficulty = mode === 'manual' ? trackedDifficulty : autoDifficulty
-
-              return (
-                <View key={entry.key} testID={`boss-manage-row-${entry.key}`} className="rounded-[14px] bg-surface">
-                  {/* 수동 모드는 카드 전체가 추적 토글이다. 내용 뒤에 깔고, 내용은 고르개 · 파티 요약 밖의 누름을
-                      이 토글로 흘려보낸다. 고르개를 토글 안에 넣으면 스크린리더가 둘을 한 덩어리로 읽는다. */}
-                  {mode === 'manual' && (
-                    <Pressable
-                      role="button"
-                      aria-selected={isTracked}
-                      aria-label={entry.name}
-                      onPress={() => void handleToggleTracked(entry.key, difficulties)}
-                      className="absolute inset-0 rounded-[14px]"
-                    />
-                  )}
-
-                  {/* 흐림은 카드가 아니라 안쪽 내용에만 건다. 카드에 걸면 위에 얹는 안내까지 함께 흐려진다. */}
+          ) : selected === null ? (
+            <View className="px-4 pb-4">
+              <Text className="text-sm text-text-muted">
+                캐릭터를 먼저 선택해주세요. 설정의 ‘캐릭터 관리’에서 추가할 수 있어요.
+              </Text>
+            </View>
+          ) : selected.error?.kind === 'characterUnavailable' ? (
+            // 편집할 목록이 **빈 것이 아니라 모르는 것**이다. 체크박스를 세우면 사용자가 지금
+            // 추적을 고르고 있다고 믿는데, 그 선택은 조회가 돌아와야 뜻을 갖는다.
+            <View className="px-4 pb-4 pt-8">
+              <CharacterUnavailableNotice
+                onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
+              />
+            </View>
+          ) : (
+            <View className="gap-2 px-4 pb-4">
+              {visibleSections.map((section) => (
+                <View key={section.cycle} className="gap-2">
+                  {/* 스케줄러 헤더와 같은 모양을 쓴다. 두 화면의 섹션 머리가 갈리면 같은 목록으로
+                      안 읽힌다. 시즌 배지는 없다. 그것은 진행이고 이 화면은 편집이다. */}
                   <View
-                    pointerEvents="box-none"
-                    className={`flex-row items-center gap-3 px-3.5 py-4${isLimitBlocked ? ' opacity-40' : ''}`}
+                    testID={`boss-section-header-${section.cycle}`}
+                    className="flex-row items-center justify-between gap-2"
                   >
-                    <View aria-hidden pointerEvents="none">
-                      <BossPortrait portraitAssetId={entry.portraitAssetId} label={entry.name} size={44} />
-                      {isTracked && <TrackedMark />}
-                    </View>
-                    {activeDifficulty !== null ? (
-                      <View pointerEvents="box-none" className="min-w-0 flex-1 gap-2.5">
-                        <View pointerEvents="none">
-                          <Text numberOfLines={1} className="text-sm font-semibold text-text">
+                    <Text className="text-sm font-normal text-text">
+                      {section.cycle === 'weekly' ? '주간' : '월간'}
+                    </Text>
+                    {mode === 'manual' && section.cycle === 'weekly' && (
+                      <Badge variant="primary">
+                        {weeklyTrackedCount}/{WEEKLY_BOSS_CLEAR_LIMIT}
+                      </Badge>
+                    )}
+                  </View>
+                  {section.entries.map((entry) => {
+                const trackedDifficulty = mode === 'manual' ? trackedDifficultyOf(entry.key) : null
+                const isTracked = trackedDifficulty !== null
+
+                // 한도가 찼을 때 미선택 행은 흐리게만 둔다. 비활성화하면 이유를 알릴 수 없다.
+                const isLimitBlocked =
+                  mode === 'manual' &&
+                  !isTracked &&
+                  isWeeklyLimitReached &&
+                  countsTowardWeeklyLimit(entry.key)
+
+                // 자동 모드의 행 난이도: 화면 전용 선택 → 등록 난이도 → 첫 난이도 순.
+                // 지금 기간에 유효한 난이도만. 시작 전인 난이도와 끝난 난이도는 안 선다.
+                const difficulties = activeDifficultiesNow(entry.key)
+                const autoDifficulty =
+                  autoDifficultyByBoss[entry.key] ?? defaultDifficultyFor(entry.key, difficulties)
+
+                // 고르개 · 파티 요약이 서는 난이도: 수동은 추적 난이도, 자동은 행 난이도.
+                const activeDifficulty = mode === 'manual' ? trackedDifficulty : autoDifficulty
+
+                return (
+                  <View key={entry.key} testID={`boss-manage-row-${entry.key}`} className="rounded-[14px] bg-surface">
+                    {/* 수동 모드는 카드 전체가 추적 토글이다. 내용 뒤에 깔고, 내용은 고르개 · 파티 요약 밖의 누름을
+                        이 토글로 흘려보낸다. 고르개를 토글 안에 넣으면 스크린리더가 둘을 한 덩어리로 읽는다. */}
+                    {mode === 'manual' && (
+                      <Pressable
+                        role="button"
+                        aria-selected={isTracked}
+                        aria-label={entry.name}
+                        onPress={() => handleToggleTracked(entry.key, difficulties)}
+                        className="absolute inset-0 rounded-[14px]"
+                      />
+                    )}
+
+                    {/* 흐림은 카드가 아니라 안쪽 내용에만 건다. 카드에 걸면 위에 얹는 안내까지 함께 흐려진다. */}
+                    <View
+                      pointerEvents="box-none"
+                      className={`flex-row items-center gap-3 px-3.5 py-4${isLimitBlocked ? ' opacity-40' : ''}`}
+                    >
+                      <View aria-hidden pointerEvents="none">
+                        <BossPortrait portraitAssetId={entry.portraitAssetId} label={entry.name} size={44} />
+                        {isTracked && <TrackedMark />}
+                      </View>
+                      {activeDifficulty !== null ? (
+                        <View pointerEvents="box-none" className="min-w-0 flex-1 gap-2.5">
+                          <View pointerEvents="none">
+                            <Text numberOfLines={1} className="text-sm font-semibold text-text">
+                              {entry.name}
+                            </Text>
+                          </View>
+                          <View pointerEvents="box-none" className="flex-row items-center justify-between gap-2">
+                            <DifficultyExpander
+                              label={entry.name}
+                              difficulties={difficulties}
+                              value={activeDifficulty}
+                              onChange={(difficulty) =>
+                                mode === 'manual'
+                                  ? setTrackingDraft(entry.key, difficulty)
+                                  : setDifficultyEdit({
+                                      ocid: selected?.ocid ?? null,
+                                      byBoss: { ...autoDifficultyByBoss, [entry.key]: difficulty },
+                                    })
+                              }
+                            />
+                            {renderPartySummary(entry, activeDifficulty)}
+                          </View>
+                        </View>
+                      ) : (
+                        <View pointerEvents="none" className="min-w-0 flex-1">
+                          <Text numberOfLines={1} className="text-sm text-text-muted">
                             {entry.name}
                           </Text>
                         </View>
-                        <View pointerEvents="box-none" className="flex-row items-center justify-between gap-2">
-                          <DifficultyExpander
-                            label={entry.name}
-                            difficulties={difficulties}
-                            value={activeDifficulty}
-                            onChange={(difficulty) =>
-                              mode === 'manual'
-                                ? void handleSwitchDifficulty(entry.key, difficulty)
-                                : setDifficultyEdit({
-                                    ocid: selected?.ocid ?? null,
-                                    byBoss: { ...autoDifficultyByBoss, [entry.key]: difficulty },
-                                  })
-                            }
-                          />
-                          {renderPartySummary(entry, activeDifficulty)}
-                        </View>
-                      </View>
-                    ) : (
-                      <View pointerEvents="none" className="min-w-0 flex-1">
-                        <Text numberOfLines={1} className="text-sm text-text-muted">
-                          {entry.name}
-                        </Text>
-                      </View>
-                    )}
+                      )}
+                    </View>
                   </View>
+                )
+                  })}
                 </View>
-              )
-                })}
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-
-      {partyModal !== null && selected !== null && (
-        <PartySizeModal
-          bossName={partyModal.entry.name}
-          portraitAssetId={bossPortraitAssetIdOf(partyModal.entry.key)}
-          difficulties={activeDifficultiesNow(partyModal.entry.key)}
-          difficulty={partyModal.difficulty}
-          partySize={partySizes[partySizeKey(selected.ocid, partyModal.entry.key, partyModal.difficulty)] ?? 1}
-          maxPartySize={getMaxPartySize(partyModal.entry.key, partyModal.difficulty)}
-          shares={modalShares}
-          crystalPriceMeso={currentCrystalPriceMeso(
-            partyModal.entry.key,
-            partyModal.difficulty,
-            // 보스 표에 없는 key 는 주기를 모른다. 관리 화면 목록은 보스 표에서 오므로 주간으로 둔다.
-            bossCycleOf(partyModal.entry.key) ?? 'weekly',
-            new Date(),
+              ))}
+            </View>
           )}
-          // 설정은 앞으로 적힐 기록의 약속이라 이번 주 등급을 보인다.
-          autoFee={gradeContext === null ? null : autoFeeFrom(gradeContext, selected.ocid, getCurrentKstDateKey(new Date()))}
-          // 난이도는 행의 고르개가 정한다. 그래서 모달은 난이도를 배지로만 보인다.
-          onApply={(next) => void applyParty(next)}
-          // 적용을 안 눌렀으면 고친 값은 버린다.
-          onClose={() => setPartyModal(null)}
-        />
-      )}
-    </ScreenScroll>
+        </View>
+
+        {partyModal !== null && modalSetting !== null && selected !== null && (
+          <PartySizeModal
+            bossName={partyModal.entry.name}
+            portraitAssetId={bossPortraitAssetIdOf(partyModal.entry.key)}
+            difficulties={activeDifficultiesNow(partyModal.entry.key)}
+            difficulty={partyModal.difficulty}
+            partySize={modalSetting.partySize}
+            maxPartySize={getMaxPartySize(partyModal.entry.key, partyModal.difficulty)}
+            shares={modalSetting.shares}
+            crystalPriceMeso={currentCrystalPriceMeso(
+              partyModal.entry.key,
+              partyModal.difficulty,
+              // 보스 표에 없는 key 는 주기를 모른다. 관리 화면 목록은 보스 표에서 오므로 주간으로 둔다.
+              bossCycleOf(partyModal.entry.key) ?? 'weekly',
+              new Date(),
+            )}
+            // 설정은 앞으로 적힐 기록의 약속이라 이번 주 등급을 보인다.
+            autoFee={gradeContext === null ? null : autoFeeFrom(gradeContext, selected.ocid, getCurrentKstDateKey(new Date()))}
+            // 난이도는 행의 고르개가 정한다. 그래서 모달은 난이도를 배지로만 보인다.
+            onApply={applyParty}
+            // 적용을 안 눌렀으면 고친 값은 버린다.
+            onClose={() => setPartyModal(null)}
+          />
+        )}
+      </ScreenScroll>
+
+      <SettingsActionBar testID="boss-manage-action-bar" onHeight={setActionBarHeightPx}>
+        <Button
+          testID="boss-manage-save"
+          variant="primary"
+          onPress={guard.save}
+          disabled={isSaveDisabled}
+          busy={guard.saving}
+          // `disabled` 프롭은 색을 바꾸지 않는다. 그대로 두면 꺼진 버튼이 멀쩡한 색으로 보인다.
+          className={`w-full items-center${isSaveDisabled ? ' opacity-50' : ''}`}
+        >
+          저장
+        </Button>
+      </SettingsActionBar>
+
+      {guard.dialog !== null && <NoticeModal {...guard.dialog} />}
+    </View>
   )
 }
 

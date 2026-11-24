@@ -20,7 +20,8 @@
 | `app/boss-scheduler/BossManageScreen.tsx` | 보스 관리 화면 |
 | `features/boss-scheduler/displayed-bosses.ts` | 표시할 보스 목록, 섹션 순서, 마감 판정. today 남은 스케줄도 이 파일을 쓴다 |
 | `features/boss-scheduler/use-boss-schedule.ts` · `views.ts` | 쿼리 캐시에서 캐릭터 뷰를 만드는 훅과 순수 함수. 계산기는 `readBossCharacters` 로 렌더 밖에서 읽는다 |
-| `features/boss-scheduler/store.ts` | 파티 설정, 수동 추적 멤버십, 솔로 · 파티 필터. 넥슨에서 받은 값은 없다 |
+| `features/boss-scheduler/store.ts` | 파티 설정, 수동 추적 멤버십, 솔로 · 파티 필터, 보스 관리의 저장(`saveBossManageDraft`). 넥슨에서 받은 값은 없다 |
+| `features/boss-scheduler/manage-draft.ts` | 보스 관리의 초안. 저장된 목록에 얹기, 바꾼 것 고르기, 파티 설정 견주기. 화면과 저장 함수가 같이 쓴다 |
 | `features/boss-scheduler/manual-completed-query.ts` | 추적 캐릭터가 직접 적은 완료 쿼리 `manualCompleted(weeklyKey, monthlyKey)`(`useManualCompleted`). 보스 기록 판이 오르거나 추적 목록이 바뀌면 무효화된다 |
 | `features/manual-completion/` | 직접 완료를 연 보스 쿼리 `manualCompletion()`(`query.ts`), today 안내 줄을 닫은 주(`store.ts`), 직접 완료 기록 쓰기 · 고치기 · 지우기 |
 | `lib/boss/boss-matching.ts` | 보스 순서(`compareBossOrder`), 처치 수와 한도 판정, 카드용 · 수익용 보스 고르기 |

@@ -1,7 +1,8 @@
 // 이 화면이 지키는 것을 적는다.
 //
 // 갈린 것 셋
-// ① **라우터가 없다**. 뒤로는 `goBack` 이 불렸는가로, 자동 모드 리다이렉트도 같은 것으로 본다
+// ① **스택은 테스트용 껍데기다**(`ScreenStack`). 뒤로는 대개 `goBack` 이 불렸는가로 본다. 나가는 이동을 확인 창이 막는지는
+//    `useScreenNavigation` 을 진짜로 돌려 실제 스택에서 본다
 //
 // ② `aria-pressed` → **`aria-selected` → `accessibilityState.selected`**(RN 접근성 상태에
 //    *pressed* 가 없다. 설정·온보딩의 선택 카드가 이미 밟은 자리).
@@ -10,6 +11,7 @@
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
 import { useState } from 'react'
+import { create, type StoreApi, type UseBoundStore } from 'zustand'
 
 import {
   useContentSchedulerStore,
@@ -23,6 +25,7 @@ import {
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
+import { ScreenStack } from '../../../navigation/__tests__/screen-stack'
 import { ContentManageScreen } from '../ContentManageScreen'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
 
@@ -68,11 +71,13 @@ function mockSchedule(overrides: Partial<Schedule> = {}): Schedule {
   return schedule
 }
 
+/** 목 스토어의 실물. 받기가 저장된 목록을 바꾼 것을 흉내 낼 때 `setState` 로 바꾼다. */
+let liveStore: UseBoundStore<StoreApi<Store>>
+
 function mockStore(overrides: Partial<Store> = {}): Store {
   const base = {
     manualTrackedByOcid: {},
-    addManualContent: jest.fn(async () => {}),
-    removeManualContent: jest.fn(async () => {}),
+    saveManualContentDraft: jest.fn(async () => {}),
     activeTab: 'daily' as const,
     setActiveTab: jest.fn(),
     ...overrides,
@@ -80,11 +85,21 @@ function mockStore(overrides: Partial<Store> = {}): Store {
 
   // 이 화면의 탭은 **로컬**이지만(진입 시점 승계) 스토어 탭이 초기값이므로
   // 목도 같은 모양으로 둔다.
+  const live = create<Store>(() => base)
+  liveStore = live
   mockedStore.mockImplementation(() => {
+    const state = live()
     const [activeTab, setActiveTab] = useState(base.activeTab)
-    return { ...base, activeTab, setActiveTab }
+    return { ...state, activeTab, setActiveTab }
   })
   return base
+}
+
+/** 화면을 연 동안 받기가 저장된 값을 바꾼다. */
+async function receive(change: Partial<Store>): Promise<void> {
+  await act(async () => {
+    liveStore.setState(change)
+  })
 }
 
 function character(overrides: Partial<ContentCharacterView> = {}): ContentCharacterView {
@@ -101,7 +116,12 @@ function character(overrides: Partial<ContentCharacterView> = {}): ContentCharac
 }
 
 async function renderScreen(): Promise<void> {
-  await renderOverlay(<ContentManageScreen />)
+  await renderOverlay(<ScreenStack screen={ContentManageScreen} />)
+}
+
+/** 아래 `저장`. 확인 창에도 같은 글자가 있어 testID 로 찾는다. */
+function saveButton(): AtomElement {
+  return screen.getByTestId('content-manage-save')
 }
 
 /**
@@ -206,41 +226,113 @@ describe('ContentManageScreen', () => {
     expect(row('무릉도장')).toBeTruthy()
   })
 
-  it('미추적 항목을 누르면 현재 탭의 kind 로 즉시 추가한다', async () => {
+  // 누를 때마다 저장하면 그만큼 서버 동기화가 깨어난다. 누른 것은 초안에만 든다.
+  it('행을 눌러도 저장하지 않고 선택 상태만 바뀐다', async () => {
+    mockSchedule({ characters: [character()] })
+    const store = mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'mu_lung_dojo', kind: 'daily' }] } })
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+
+    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+    expect(store.saveManualContentDraft).not.toHaveBeenCalled()
+  })
+
+  // 캐릭터 관리의 저장 버튼과 같은 규칙이다. 저장된 값과 같아진 항목은 바꾼 것이 아니다.
+  it('바꾼 것이 없으면 `저장` 을 누를 수 없고, 켰다 다시 끄면 다시 꺼진다', async () => {
+    mockSchedule({ characters: [character()] })
+    await renderScreen()
+
+    expect(stateOf(saveButton()).disabled).toBe(true)
+    await press(row('몬스터파크'))
+    expect(stateOf(saveButton()).disabled).toBe(false)
+    await press(row('몬스터파크'))
+    expect(stateOf(saveButton()).disabled).toBe(true)
+  })
+
+  // 탭은 같은 캐릭터의 목록을 나눠 보여 줄 뿐이다. 바꾼 것은 그 탭의 kind 로 든다.
+  it('탭을 바꿔도 초안이 남고, `저장` 이 두 탭의 바꾼 것을 한 번에 넘긴다', async () => {
+    mockSchedule({ characters: [character()] })
+    const store = mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] } })
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(row('주간'))
+    await press(row('무릉도장'))
+    await press(row('일간'))
+
+    expect(stateOf(row('몬스터파크')).selected).toBe(false)
+    await press(saveButton())
+
+    expect(store.saveManualContentDraft).toHaveBeenCalledTimes(1)
+    expect(store.saveManualContentDraft).toHaveBeenCalledWith('ocid-1', {
+      daily: { monster_park: false },
+      weekly: { mu_lung_dojo: true },
+    })
+  })
+
+  // 저장 뒤에도 레일로 다른 캐릭터를 이어서 고치는 화면이다. 성공 문구는 없다.
+  it('저장하면 `저장` 이 다시 꺼지고 화면에 남는다', async () => {
+    mockSchedule({ characters: [character()] })
+    const store = mockStore()
+    ;(store.saveManualContentDraft as jest.Mock).mockImplementation(async () => {
+      liveStore.setState({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] } })
+    })
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(saveButton())
+
+    expect(stateOf(saveButton()).disabled).toBe(true)
+    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+    expect(goBack).not.toHaveBeenCalled()
+    expect(screen.getByTestId('screen-ContentManage')).toBeTruthy()
+  })
+
+  // 바꾼 행이 화면에 그대로 있어 무엇이 저장되지 않았는지 보인다. 다시 누를 수 있다.
+  it('저장이 실패하면 토스트로 알리고 초안이 남는다', async () => {
+    mockSchedule({ characters: [character()] })
+    mockStore({
+      saveManualContentDraft: jest.fn(async () => {
+        throw new Error('boom')
+      }),
+    })
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(saveButton())
+
+    expect(mockShowError).toHaveBeenCalledWith('추적 목록을 저장하지 못했습니다')
+    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+    expect(stateOf(saveButton()).disabled).toBe(false)
+  })
+
+  // 관리 화면을 연 동안에도 받기가 저장된 목록을 바꿀 수 있다. 목록 전체를 복사해 두면 만지지 않은 항목까지 옛 값으로 덮는다.
+  it('화면을 연 동안 받은 항목이 만지지 않은 행에 보이고, 저장은 바꾼 항목만 넘긴다', async () => {
     mockSchedule({ characters: [character()] })
     const store = mockStore()
     await renderScreen()
 
     await press(row('몬스터파크'))
+    await receive({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' }] } })
 
-    expect(store.addManualContent).toHaveBeenCalledWith('ocid-1', 'monster_park', 'daily')
+    expect(stateOf(row('소멸의 여로 조사')).selected).toBe(true)
+    await press(saveButton())
+    expect(store.saveManualContentDraft).toHaveBeenCalledWith('ocid-1', { daily: { monster_park: true }, weekly: {} })
   })
 
-  it('추적 중 항목을 누르면 즉시 제거한다', async () => {
-    mockSchedule({ characters: [character()] })
-    const store = mockStore({
-      manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] },
-    })
+  // 받기가 추적 캐릭터를 바꿔 고른 캐릭터가 넘어가도 앞 캐릭터의 초안이 새 캐릭터의 행에 얹히지 않는다.
+  it('초안의 주인이 아닌 캐릭터에는 초안이 얹히지 않는다', async () => {
+    mockSchedule({ characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })] })
     await renderScreen()
 
     await press(row('몬스터파크'))
-
-    expect(store.removeManualContent).toHaveBeenCalledWith('ocid-1', 'monster_park', 'daily')
-  })
-
-  // 전에는 프로미스를 버려 저장 실패가 무음이었다.
-  it('토글 저장이 실패하면 토스트로 알린다', async () => {
-    mockSchedule({ characters: [character()] })
-    mockStore({
-      addManualContent: jest.fn(async () => {
-        throw new Error('boom')
-      }) as unknown as Store['addManualContent'],
+    await act(async () => {
+      useCharacterSelectionStore.setState({ selectedOcid: 'ocid-2' })
     })
-    await renderScreen()
 
-    await press(row('몬스터파크'))
-
-    expect(mockShowError).toHaveBeenCalledWith('추적 목록을 저장하지 못했습니다')
+    expect(stateOf(row('몬스터파크')).selected).toBe(false)
+    expect(stateOf(saveButton()).disabled).toBe(true)
   })
 
   // 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다.
@@ -374,5 +466,180 @@ describe('레일 순서', () => {
       .getAllByTestId('character-portrait')
       .find((node) => stateOf(node).selected === true)
     expect(고른칸?.props.accessibilityLabel).toEqual(expect.stringContaining('캐릭터2'))
+  })
+})
+
+// 저장하지 않고 나가면 바꾼 것이 말없이 사라진다. 이 화면을 스택에서 빼는 이동을 한 곳에서 막는다.
+describe('저장하지 않고 나갈 때', () => {
+  const 확인창 = '저장하지 않은 변경이 있어요'
+
+  beforeEach(() => {
+    // 나가는 이동이 실제 스택을 지나야 막혔는지 볼 수 있다.
+    mockedNavigation.mockImplementation(
+      jest.requireActual<typeof import('../../../hooks/useScreenNavigation')>('../../../hooks/useScreenNavigation')
+        .useScreenNavigation,
+    )
+    mockSchedule({ characters: [character()] })
+  })
+
+  function isOpen(): boolean {
+    return screen.queryByTestId('screen-ContentManage', { includeHiddenElements: true }) !== null
+  }
+
+  it('바꾼 것이 없으면 확인 없이 나간다', async () => {
+    await renderScreen()
+
+    await press(screen.getByLabelText('뒤로'))
+
+    expect(screen.queryByText(확인창)).toBeNull()
+    expect(isOpen()).toBe(false)
+  })
+
+  it('바꾼 것이 있으면 확인 창을 띄우고 화면에 남는다', async () => {
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(screen.getByLabelText('뒤로'))
+
+    expect(screen.getByText(확인창)).toBeTruthy()
+    expect(screen.getByText('바꾼 내용을 저장할까요?')).toBeTruthy()
+    expect(isOpen()).toBe(true)
+  })
+
+  it('`버리기` 는 저장하지 않고 나간다', async () => {
+    const store = mockStore()
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(screen.getByLabelText('뒤로'))
+    await press(screen.getByText('버리기'))
+
+    expect(store.saveManualContentDraft).not.toHaveBeenCalled()
+    expect(isOpen()).toBe(false)
+  })
+
+  it('`저장` 은 저장한 뒤 나간다', async () => {
+    const store = mockStore()
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(screen.getByLabelText('뒤로'))
+    await press(screen.getByTestId('unsaved-changes-primary'))
+
+    expect(store.saveManualContentDraft).toHaveBeenCalledWith('ocid-1', { daily: { monster_park: true }, weekly: {} })
+    expect(isOpen()).toBe(false)
+  })
+
+  // 실패한 채 나가면 바꾼 것이 사라진다. 창을 먼저 닫아야 토스트가 창 뒤에 가리지 않는다.
+  it('창의 `저장` 이 실패하면 창을 닫고 토스트를 띄운 뒤 화면에 남는다', async () => {
+    mockStore({
+      saveManualContentDraft: jest.fn(async () => {
+        throw new Error('boom')
+      }),
+    })
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(screen.getByLabelText('뒤로'))
+    await press(screen.getByTestId('unsaved-changes-primary'))
+
+    expect(screen.queryByText(확인창)).toBeNull()
+    expect(mockShowError).toHaveBeenCalledWith('추적 목록을 저장하지 못했습니다')
+    expect(isOpen()).toBe(true)
+    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+  })
+
+  // 두 버튼 중 아무것도 고르지 않았으니 아무것도 하지 않는다.
+  it('창 바깥을 누르면 창만 닫히고 초안이 남는다', async () => {
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(screen.getByLabelText('뒤로'))
+    await press(screen.getByTestId('unsaved-changes'))
+
+    expect(screen.queryByText(확인창)).toBeNull()
+    expect(isOpen()).toBe(true)
+    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+  })
+
+  // 모드는 서버 동기화가 다른 기기의 값을 받아 바꿀 수 있다. 이 화면이 스스로 뒤로 가는 것도 나가는 이동이다.
+  it('자동 모드가 되어 스스로 뒤로 갈 때도 확인 창을 띄운다', async () => {
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await act(async () => {
+      useTrackingModeStore.setState({ mode: 'auto' })
+    })
+
+    expect(screen.getByText(확인창)).toBeTruthy()
+    expect(isOpen()).toBe(true)
+  })
+})
+
+// 고른 캐릭터는 앱 전체가 함께 쓴다. 답을 받기 전에 바꾸면 스케줄러까지 다른 캐릭터로 넘어간다.
+describe('바꾼 것이 있을 때 캐릭터 바꾸기', () => {
+  beforeEach(() => {
+    mockSchedule({ characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })] })
+  })
+
+  it('확인 창을 띄우고 고른 캐릭터는 그대로다', async () => {
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(screen.getAllByTestId('character-portrait')[1])
+
+    expect(screen.getByText('저장하지 않은 변경이 있어요')).toBeTruthy()
+    expect(useCharacterSelectionStore.getState().selectedOcid).toBeNull()
+  })
+
+  it('`버리기` 는 초안을 버리고 캐릭터를 바꾼다', async () => {
+    const store = mockStore()
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(screen.getAllByTestId('character-portrait')[1])
+    await press(screen.getByText('버리기'))
+
+    expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
+    expect(store.saveManualContentDraft).not.toHaveBeenCalled()
+    await press(screen.getAllByTestId('character-portrait')[0])
+    expect(stateOf(row('몬스터파크')).selected).toBe(false)
+  })
+
+  it('`저장` 은 저장한 뒤 캐릭터를 바꾼다', async () => {
+    const store = mockStore()
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(screen.getAllByTestId('character-portrait')[1])
+    await press(screen.getByTestId('unsaved-changes-primary'))
+
+    expect(store.saveManualContentDraft).toHaveBeenCalledWith('ocid-1', { daily: { monster_park: true }, weekly: {} })
+    expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
+  })
+
+  it('창의 `저장` 이 실패하면 그 캐릭터에 남는다', async () => {
+    mockStore({
+      saveManualContentDraft: jest.fn(async () => {
+        throw new Error('boom')
+      }),
+    })
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(screen.getAllByTestId('character-portrait')[1])
+    await press(screen.getByTestId('unsaved-changes-primary'))
+
+    expect(mockShowError).toHaveBeenCalledWith('추적 목록을 저장하지 못했습니다')
+    expect(useCharacterSelectionStore.getState().selectedOcid).toBeNull()
+  })
+
+  it('바꾼 것이 없으면 확인 없이 바꾼다', async () => {
+    await renderScreen()
+
+    await press(screen.getAllByTestId('character-portrait')[1])
+
+    expect(screen.queryByText('저장하지 않은 변경이 있어요')).toBeNull()
+    expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
   })
 })

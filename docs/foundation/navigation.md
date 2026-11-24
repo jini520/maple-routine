@@ -36,6 +36,7 @@
 | `hooks/useRootBackToBackground.ts` | 안드로이드에서 되돌아갈 화면이 없을 때 뒤로 가기를 받아 백그라운드로 보낸다 |
 | `hooks/useScreenFocused.ts` | 이 화면이 지금 보이는지. 내비게이터 밖이면 늘 `true` |
 | `hooks/useRunAfterTransition.ts` | 담은 스택의 다음 전환이 끝난 뒤 일을 한 번 부른다. 전환 이벤트가 없으면 시간 제한 뒤에 부르고, 내비게이터 밖이면 바로 부른다 |
+| `hooks/useUnsavedChangesGuard.ts` | 저장하지 않은 초안이 있는 동안 이 화면을 빼는 이동을 `usePreventRemove` 로 막고 확인 창을 띄운다. 보스 관리 · 컨텐츠 관리가 쓴다([[ADR-034]] 결정 10) |
 | `native/haptics.ts` | `tapFeedback()` · `selectionFeedback()` |
 
 ## 화면 구조

@@ -1,6 +1,6 @@
 # ADR-038+220+238+288+313 보스 파티 인원과 결정석 분배 비율
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-014 결정 1 · ADR-019 결정 1 · 2 · 3 · 7 · 8 · ADR-121 결정 2 · 3 · 7 · ADR-305 결정 1 · 2 · 3 · 4 · 5 · 9 · 10 · 13 · ADR-312 결정 1 · 2 · 3 · 4 · ADR-313
 > 관련 소스: `storage/boss-party-settings.ts` · `storage/boss-party-period-overrides.ts` · `lib/boss/party-shares.ts` · `lib/boss/boss-crystal-prices.ts` · `features/boss-scheduler/store.ts` · `components/organisms/PartySizeModal/` · `components/molecules/PartyShareSummary/` · `components/molecules/BossPortrait/`
 
@@ -327,8 +327,8 @@
 | `app/boss-profit/__tests__/BossProfitBossRow.test.tsx` · `app/boss-scheduler/__tests__/BossScreen.test.tsx` | 결정 13: 보스 수익 완료 행은 그 기록의 가격으로, 보스 카드는 이번 기간의 가격 표로 받는 금액을 세는지 본다 |
 | `features/boss-scheduler/__tests__/store.spec.ts` | 결정 1: 설정이 없는 보스를 맵에 넣지 않는지, 상한을 넘거나 1 미만이면 저장하지 않고 예외를 던지는지 본다. 결정 10: 재조회를 건너뛰어도 파티 설정을 다시 읽는지, 읽기가 실패해도 목록을 그리는지 본다 |
 | `app/boss-scheduler/__tests__/BossScreen.test.tsx` | 결정 4: 카드를 누르면 모달이 열리고, 적용 전에는 저장하지 않고, 적용하면 그 보스 · 난이도로 저장하는지 본다. 자동 모드에서 난이도를 바꿔도 추적을 안 바꾸는지, 수동 모드에서는 적용할 때 단일 액션으로 바꾸는지 본다 |
-| `app/boss-scheduler/__tests__/BossManageScreen.test.tsx` | 결정 3: 파티 요약이 결정석 몫을 적고 `변경` 이 모달을 여는지, 상한이 보스 · 난이도마다 다른지 본다. 결정 11: 캐릭터를 옮기면 앞 캐릭터의 난이도가 따라오지 않고, 적용은 새 캐릭터의 등록 난이도로 저장하는지 본다 |
-| (구현 때 더한다) | 결정 4: 보스 관리에서 연 모달의 `적용` 이 저장하지 않고 초안에 넣어 파티 요약과 다시 연 모달에 그 값이 보이는지, `적용` 에 토스트가 없는지 본다. 보스 카드의 `적용` 은 그대로 바로 저장하는지 본다 |
+| `app/boss-scheduler/__tests__/BossManageScreen.test.tsx` | 결정 3: 파티 요약이 결정석 몫을 적고 `변경` 이 모달을 여는지, 상한이 보스 · 난이도마다 다른지 본다. 결정 11: 캐릭터를 옮기면 앞 캐릭터의 난이도가 따라오지 않고, 적용한 값이 새 캐릭터의 등록 난이도로 저장되는지 본다 |
+| `app/boss-scheduler/__tests__/BossManageScreen.test.tsx` | 결정 4: 보스 관리에서 연 모달의 `적용` 이 저장하지 않고 초안에 넣어 파티 요약과 다시 연 모달에 그 값이 보이는지, `적용` 에 토스트가 없는지, 아래 `저장` 이 그 값을 넘기는지 본다. 보스 카드의 `적용` 이 그대로 바로 저장하는 것은 위 `BossScreen.test.tsx` 줄이 본다 |
 | `lib/boss/__tests__/party-shares.spec.ts` | 결정 12: `제외` 면 균등 · 비율과 상관없이 내 몫이 0 인지 본다 |
 | `storage/__tests__/boss-party-settings.spec.ts` · `boss-party-period-overrides.spec.ts` · `boss-profit.spec.ts` | 결정 12: `제외` 를 쓰면 인원 · 비율 · 요율을 버리고 다시 읽을 때 솔로인 `제외` 로 읽는지, `기본` 으로 되돌리면 `제외` 가 풀리는지, 리프한 새 캐릭터로 설정을 옮길 때 `제외` 도 가는지, 처치를 걷어 드롭만 남은 수익 건은 `제외` 와 한도 초과 표시도 비우는지 본다 |
 | `components/organisms/PartySizeModal/__tests__/PartySizeModal.test.tsx` | 결정 12: `제외` 를 고르면 인원 · 비율 · 송금 수수료 줄이 사라지는지, 적용하면 인원 · 비율 · 수수료를 비운 솔로 `제외` 를 내보내는지, 다시 `기본` 이나 `비율` 을 고르면 옛 값 대신 새로 정하는지 본다 |
