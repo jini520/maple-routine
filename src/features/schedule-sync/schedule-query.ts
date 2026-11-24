@@ -5,9 +5,10 @@
  * `scheduleRound()` 쿼리 하나가 `syncSchedules` 를 부르고, 화면은 `schedule(ocid)` · `characterBasic(ocid)` 를 본다.
  *
  * 신선함은 `scheduleStaleTime` 이 정한다(5분 + KST 자정). 자동 진입은 신선하면 캐시로 끝나고, 당김 · 다시 시도는
- * `refreshSchedules` 로 신선해도 받는다. 앱 복귀는 `refetchOnWindowFocus: 'always'` 로 신선해도 한 번 받는다.
+ * `refreshSchedules` 로 신선해도 받는다. 앱 복귀는 `refetchOnWindowFocus: 'always'` 로 신선해도 한 번 받는다. 배경에 가서
+ * 끊긴 회차는 실패로 남기지 않는다(`isCutByBackground`).
  */
-import { queryOptions, skipToken } from '@tanstack/react-query'
+import { focusManager, queryOptions, skipToken } from '@tanstack/react-query'
 
 import type { CachedSchedulerEntry } from '../../storage/scheduler-cache'
 import { clearCachedSchedulerState, getCachedSchedulerState } from '../../storage/scheduler-cache'
@@ -17,6 +18,7 @@ import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { readLegacyEventWorldNames, readLegacyMesoRates, runLegacyCleanupOnce } from '../../storage/legacy-cleanup'
 import { resolveDefeatDates } from '../boss-profit/defeat-dates'
 import { recordBossProfitFromRound } from '../boss-profit/round-record'
+import { backgroundedAt } from '../query/app-focus'
 import { queryClient } from '../query/client'
 import { queryKeys } from '../query/keys'
 import { scheduleStaleTime } from '../query/freshness'
@@ -146,14 +148,38 @@ function announceReceived(results: readonly CharacterScheduleSync[]): void {
   for (const listener of roundReceivedListeners) listener()
 }
 
+/** 회차 하나를 넥슨에서 받는 함수. `requestedAt` 은 묻기 직전의 시각이고, 기록할 때 기간이 바뀌었으면 받은 완료는 지난 기간의 것이다. */
+async function receiveRound(ocids: string[]): Promise<{ requestedAt: Date; results: CharacterScheduleSync[] }> {
+  const requestedAt = new Date()
+  return { requestedAt, results: await syncSchedules(ocids) }
+}
+
+/**
+ * 회차가 도는 중에 앱이 배경에 가서 끊긴 회차인가. iOS 는 배경에 간 앱의 진행 중인 요청을 끊어, 그 캐릭터가 네트워크 실패로
+ * 끝난다. 사용자는 잠깐 나갔다 왔을 뿐이라 동기화 실패로 남기지 않는다.
+ */
+function isCutByBackground(results: readonly CharacterScheduleSync[], requestedAt: Date): boolean {
+  const leftAt = backgroundedAt()
+  if (leftAt === null || leftAt < requestedAt.getTime()) return false
+  return results.some((result) => result.isStale && result.error?.kind === 'network')
+}
+
 async function runScheduleRound(): Promise<ScheduleRoundResult> {
   const ocids = (await readTrackedOcids()) ?? []
   if (ocids.length === 0) {
     return { fetchedAt: new Date().toISOString(), receivedAt: previousReceivedAt(), ocids: [], outcomes: {}, stranded: [] }
   }
-  // 넥슨에 묻기 직전의 시각. 기록할 때 기간이 바뀌었으면 받은 완료는 지난 기간의 것이다.
-  const requestedAt = new Date()
-  const results = await syncSchedules(ocids)
+  let { requestedAt, results } = await receiveRound(ocids)
+  if (!inBackground && isCutByBackground(results, requestedAt)) {
+    // 아직 배경이면 앞 회차를 그대로 둔다. 돌아오면 복귀 규칙이 새 회차를 돌린다.
+    if (!focusManager.isFocused()) {
+      const previous = queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())
+      if (previous !== undefined) return previous
+    } else {
+      // 복귀 신호가 이 회차가 도는 중에 왔으면 복귀가 이 회차를 함께 쓴다. 다시 돌리지 않으면 복귀에 받은 것이 끊긴 결과다.
+      ;({ requestedAt, results } = await receiveRound(ocids))
+    }
+  }
   const outcomes = distribute(results)
   const stranded = await resolveStrandedCharacters(ocids, results)
   await recordAfterSync(ocids, results, requestedAt)

@@ -1,3 +1,5 @@
+import { focusManager } from '@tanstack/react-query'
+
 import { queryClient } from '../../query/client'
 import { queryKeys } from '../../query/keys'
 import {
@@ -13,6 +15,8 @@ import {
 import type { CharacterScheduleSync } from '../schedule-sync'
 
 jest.mock('../schedule-sync', () => ({ syncSchedules: jest.fn() }))
+jest.mock('../../query/app-focus', () => ({ backgroundedAt: jest.fn(() => null), installAppStateFocus: jest.fn() }))
+const { backgroundedAt: backgroundedAtMock } = jest.requireMock('../../query/app-focus') as Record<string, jest.Mock>
 const { syncSchedules: syncSchedulesMock } = jest.requireMock('../schedule-sync') as Record<string, jest.Mock>
 
 jest.mock('../stranded-characters', () => ({ resolveStrandedCharacters: jest.fn(async () => []) }))
@@ -87,6 +91,7 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.useRealTimers()
+  focusManager.setFocused(undefined)
 })
 
 describe('scheduleRound', () => {
@@ -233,6 +238,103 @@ describe('서버 동기화', () => {
 
     expect(syncSchedulesMock).toHaveBeenCalledTimes(3)
     expect(listener).not.toHaveBeenCalled()
+  })
+})
+
+// iOS 는 앱이 배경에 가면 진행 중인 요청의 연결을 끊는다. 그 실패를 회차에 남기면 잠깐 나갔다 온 것만으로 `동기화 실패` 배지가 선다.
+describe('배경에 가서 끊긴 회차', () => {
+  const previousRound = async () => {
+    syncSchedulesMock.mockResolvedValueOnce([synced('a'), synced('b')])
+    await refreshSchedules()
+    return queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())
+  }
+  /** 회차를 부른 뒤 배경에 간다. 부르는 동안 배경에 간 시각이 회차를 시작한 시각보다 늦다. */
+  const leaveDuringRound = (results: CharacterScheduleSync[]) => {
+    syncSchedulesMock.mockImplementationOnce(async () => {
+      backgroundedAtMock.mockReturnValue(Date.now() + 1)
+      return results
+    })
+  }
+
+  beforeEach(() => {
+    backgroundedAtMock.mockReturnValue(null)
+  })
+  afterEach(() => {
+    syncSchedulesMock.mockReset()
+    backgroundedAtMock.mockReturnValue(null)
+  })
+
+  it('앱이 아직 배경에 있을 때 끝나면 앞 회차의 결과를 그대로 둔다. 돌아오면 복귀 규칙이 새 회차를 돌린다', async () => {
+    const previous = await previousRound()
+    leaveDuringRound([synced('a'), fallback('b')])
+    focusManager.setFocused(false)
+
+    await refreshSchedules()
+
+    expect(syncSchedulesMock).toHaveBeenCalledTimes(2)
+    expect(queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())?.outcomes).toEqual(previous?.outcomes)
+  })
+
+  it('앱이 이미 돌아온 뒤에 끝나면 그 자리에서 회차를 한 번 더 돌려 그 결과를 남긴다', async () => {
+    await previousRound()
+    leaveDuringRound([synced('a'), fallback('b')])
+    syncSchedulesMock.mockResolvedValueOnce([synced('a'), synced('b')])
+    focusManager.setFocused(true)
+
+    await refreshSchedules()
+
+    expect(syncSchedulesMock).toHaveBeenCalledTimes(3)
+    expect(queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())?.outcomes.b?.isStale).toBe(false)
+  })
+
+  // 다시 돌린 회차도 끊기면 또 돌리지 않는다. 배경을 오가는 동안 회차가 끝없이 돌지 않게 하려는 것이다.
+  it('다시 돌린 회차도 끊기면 그 결과를 그대로 남긴다', async () => {
+    await previousRound()
+    leaveDuringRound([synced('a'), fallback('b')])
+    leaveDuringRound([synced('a'), fallback('b')])
+    focusManager.setFocused(true)
+
+    await refreshSchedules()
+
+    expect(syncSchedulesMock).toHaveBeenCalledTimes(3)
+    expect(queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())?.outcomes.b?.error).toEqual({ kind: 'network' })
+  })
+
+  it('배경에 가지 않았거나 회차를 시작하기 전에 갔으면 네트워크 실패를 그대로 남긴다', async () => {
+    await previousRound()
+    focusManager.setFocused(true)
+    for (const leftAt of [null, NOW.getTime() - 1]) {
+      backgroundedAtMock.mockReturnValue(leftAt)
+      syncSchedulesMock.mockResolvedValueOnce([synced('a'), fallback('b')])
+
+      await refreshSchedules()
+
+      expect(queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())?.outcomes.b?.error).toEqual({ kind: 'network' })
+    }
+    expect(syncSchedulesMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('배경에 갔어도 네트워크가 아닌 실패는 그대로 남긴다', async () => {
+    await previousRound()
+    leaveDuringRound([synced('a'), { ...fallback('b'), error: { kind: 'rateLimited' } }])
+    focusManager.setFocused(false)
+
+    await refreshSchedules()
+
+    expect(syncSchedulesMock).toHaveBeenCalledTimes(2)
+    expect(queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())?.outcomes.b?.error).toEqual({ kind: 'rateLimited' })
+  })
+
+  // OS 가 깨운 배경 실행은 배경에서 시작한 회차다. 배경에 간 것 때문에 끊겼다고 볼 수 없다.
+  it('OS 가 깨운 배경 실행의 회차는 끊긴 것으로 보지 않는다', async () => {
+    await previousRound()
+    leaveDuringRound([synced('a'), fallback('b')])
+    focusManager.setFocused(false)
+
+    await refreshSchedulesInBackground()
+
+    expect(syncSchedulesMock).toHaveBeenCalledTimes(2)
+    expect(queryClient.getQueryData<ScheduleRoundResult>(queryKeys.scheduleRound())?.outcomes.b?.error).toEqual({ kind: 'network' })
   })
 })
 

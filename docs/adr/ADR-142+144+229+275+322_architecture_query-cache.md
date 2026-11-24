@@ -1,4 +1,4 @@
-# ADR-142+144+229+275 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
+# ADR-142+144+229+275+322 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다
 
 > 🟢 유효(세 단계와 #819 후속 모두 구현)
 > 관련 소스: `features/query/`(`client.ts` · `keys.ts` · `meta.ts` · `freshness.ts` · `app-focus.ts` · `reset-timer.ts` · `persist.ts` · `invalidation.ts`) · `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` · `schedule-views.ts` · `read-schedule.ts` · `save-tracked.ts` · `features/refresh/pull.ts` · `features/refresh/freshness.ts` · `features/boss-profit/period-query.ts` · `round-record.ts` · `round-view.ts` · `store.ts` · `drop-history-query.ts` · `features/cashbook/ledger-query.ts` · `features/cashbook/meso-rate.ts` · `features/ledger/LedgerDataProvider.tsx` · `useLedgerData.ts` · `features/content-scheduler/views.ts` · `use-content-schedule.ts` · `features/boss-scheduler/views.ts` · `use-boss-schedule.ts` · `manual-completed-query.ts` · `features/settlement/query.ts` · `features/manual-completion/query.ts` · `features/notice/notice-query.ts` · `features/party-appointments/query.ts` · `features/mvp-grade/character-list.ts` · `features/character-profile/resolve.ts` · `features/enhancement-history/event-world-names.ts` · `features/prehydrate.ts` · `storage/query-cache.ts` · `storage/legacy-cleanup.ts` · `storage/sqlite/query-cache-tables.ts` · `app/QueryCacheProvider.tsx` · `hooks/useRefetchStaleOnFocus.ts` · `hooks/useReturnToForeground.ts` · `index.ts`
@@ -299,6 +299,26 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
   `seedScheduleQueriesFromLegacyCache` 가 옮기며 지운다. 추적하지 않는 캐릭터의 두 키는 남는다(결정 10).
 - 어느 단계든 던지면 표식을 안 둔다. 다음 부팅이 처음부터 다시 돌고, 심기는 쿼리에 있는 값을 건너뛰며 지우기는 두 번 돌아도 같다.
 
+### 결정 13. 배경에 가서 끊긴 회차는 실패로 남기지 않는다
+
+- iOS 는 앱이 배경에 가면 진행 중인 요청의 연결을 끊는다. 스케줄 회차가 도는 중에 배경에 가면 끊긴 캐릭터가 `network`
+  실패로 끝난다. 그 결과가 회차에 남으면 잠깐 나갔다 왔을 뿐인데 남은 스케줄 위젯과 보스 수익 카드에 `동기화 실패` 배지가
+  선다(#1225).
+- 2026-11-24 하루의 운영 nginx 기록에서 끊긴 프렌즈 조회(`POST /v1/friends/stream` 의 499)는 iOS 2,705건 가운데 17건,
+  안드로이드 2,151건 가운데 0건이었다. iOS 17건 가운데 9건은 같은 기기가 3초 안에 사용 로그를 보냈다. 사용 로그는 앱이 배경에
+  갈 때 보낸다([[ADR-158]] 결정 2).
+- 회차가 끝났을 때 `network` 실패가 있고, 회차를 시작한 뒤에 배경에 간 적이 있으면(`backgroundedAt()`) 끊긴 회차로 본다. 다른
+  실패(429 · 점검 · 조회 불가)는 배경과 관계없는 실패라 그대로 남긴다.
+- 끊긴 회차가 앱이 아직 배경에 있을 때 끝나면 앞 회차의 결과를 그대로 둔다. 돌아오면 복귀 규칙(결정 5)이 새 회차를 돌린다.
+  앞 회차가 없으면 받은 결과를 남긴다.
+- 앱이 돌아온 뒤에 끝나면 그 자리에서 회차를 한 번 더 돌린다. 복귀 신호가 회차가 도는 중에 오면 복귀는 진행 중인 회차를 함께
+  쓴다. 다시 돌리지 않으면 복귀에 받은 결과가 끊긴 결과다. 다시 돌린 회차도 끊기면 그 결과를 남긴다. 배경을 오가는 동안
+  회차가 되풀이되지 않게 하려는 것이다.
+- OS 가 깨운 배경 실행의 회차(`refreshSchedulesInBackground`)는 이 규칙을 쓰지 않는다. 배경에서 시작한 회차라 배경에 가서
+  끊겼다고 볼 수 없다.
+- 시뮬레이터는 배경에서 연결을 끊지 않아 배지가 재현되지 않는다. 2026-11-24 시뮬레이터에서는 배경에서 멈춘 회차가 돌아온
+  순간 이어서 끝나는 것만 확인했다. 이 결정은 결정 5 의 복귀 규칙에서 따라 나와 Claude 가 정했다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -308,6 +328,7 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
 | `features/query/__tests__/reset-timer.spec.ts` | 결정 4: KST 자정에 `source: nexon` 쿼리만 무효화하고 틱을 올린 뒤 다음 자정을 다시 거는지 |
 | `features/query/__tests__/persist.spec.ts` | 결정 7: `meta.persist` 가 참이고 성공한 쿼리만 저장하는지, 어댑터가 `storage/query-cache` 를 부르는지, 판과 `maxAge` |
 | `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 3 · 5: 회차 하나가 캐릭터 열쇠를 다 채우고 캐시로 채운 캐릭터는 안 덮는지, 신선하면 자동 진입은 안 받고 당김은 받는지, 회차가 덮지 않은 캐릭터가 생기면 받는지, 던져도 캐릭터 열쇠가 그대로인지, 새 캐릭터만 받아 넣는지, 옛 캐시를 옮기고 앱 시작에 한 번 받는지 |
+| `features/schedule-sync/__tests__/schedule-query.spec.ts` | 결정 13: 회차를 시작한 뒤 배경에 가서 네트워크로 끊기면, 아직 배경일 때는 앞 회차를 두고 돌아온 뒤에는 한 번만 다시 돌리는지, 배경에 가지 않았거나 시작 전에 갔거나 네트워크가 아닌 실패, OS 가 깨운 배경 실행의 회차는 실패를 그대로 남기는지 |
 | `features/schedule-sync/__tests__/use-schedule-queries.spec.tsx` | 결정 3: 회차가 도는 동안 든 값이 그대로 보이는지, 상태와 실패 종류 |
 | `features/schedule-sync/__tests__/save-tracked.spec.ts` | 결정 3: 저장 순서(수동 시드 → 목록 → 새 캐릭터 조회), 더한 것이 없으면 안 받는지, 실패 토스트 |
 | `features/content-scheduler/__tests__/views.spec.ts` · `features/boss-scheduler/__tests__/views.spec.ts` | 결정 3: 스냅샷이 뷰가 되는 규칙. 조회 불가와 답하지 않은 캐릭터는 내용을 비우고 자리를 남기는지, 레벨 순서 |
@@ -347,3 +368,4 @@ Preferences 에 남아 있던 넥슨 응답 캐시 둘(`mesoRateCache:{ocid}` ·
 - ADR-229 (2026-11-15): 결정 6 에 표마다 같은 알림 함수 · 같은 작업 안의 표를 한 번에 무효화 · 안 보이는 화면의 구독 끊기를 더했다. 아이폰 계측에서 같은 달 읽기가 897번 돈 것이 계기다(#1026)
 - ADR-275 (2026-11-20): 결정 5 에 배경에 간 시각을 `app-focus.ts` 가 정하고, iOS 에서 신호가 돌아온 뒤에 처리되면 JS 가 마지막으로 살아 있던 시각을 쓴다는 것을 더했다(#1134)
 - (2026-11-23) 결정 4 의 신선한 시간을 10분에서 5분으로 줄였다. 스케줄 회차에 서버 기록 받기를 붙여, 켜 놓고 쓰는 두 기기가 어긋나 있는 시간이 그만큼 줄어든다([[ADR-099]] 결정 9)
+- ADR-322 (2026-11-24): 결정 13 을 더했다. 배경에 가서 끊긴 회차를 동기화 실패로 남기지 않는다(#1225)
