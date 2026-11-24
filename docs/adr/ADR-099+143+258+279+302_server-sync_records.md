@@ -2232,7 +2232,7 @@ ADR 에 적는다. 여기에는 전환(결정 43)이 그 잠금에 기대는 것
     있었다. 설계 원본을 고쳐 다시 뽑는다. 이 줄은 Claude 가 적었다.
 - 셋째 묶음은 헥사 매트릭스 표(`jobs` · `hexa_cores` · `hexa_core_types` · `hexa_core_level_costs` · `hexa_stats`)다. 설계 페이지의
   직업 · 헥사 코어 카드는 앞의 셋이다. 비용 · 스탯 표를 더한 것은 다섯 표를 같은 서버 모듈(`hexa-matrix`) · 같은 게임 데이터 칸
-  (`hexaMatrix`) · 같은 관리 화면(`/admin/hexa-matrix`)이 함께 다루기 때문이다. 나누면 같은 칸과 화면을 두 번 고친다. 이름 표
+  (`hexaMatrix`) · 같은 관리 화면(`/hexa-matrix`)이 함께 다루기 때문이다. 나누면 같은 칸과 화면을 두 번 고친다. 이름 표
   `hexa_core_name_kinds` 는 없앤다(결정 35). 이 줄과 아래 넷은 Claude 가 적었다.
   - 게임 데이터 `hexaMatrix` 칸은 표 이름의 배열 다섯을 싣는다(결정 59). `jobs`(`id` · `name` · `isAllJobs`), `hexaCoreTypes`
     (`id` · `key` · `name` · `apiType` · `isDefault` · `maxLevel` · `iconAssetId` · `sortOrder`), `hexaCores`(`id` · `jobId` ·
