@@ -387,7 +387,7 @@ describe('보스 수익 계산기 기록', () => {
     await setJson('bossProfitCalculatorRecords', [
       { id: 'rec-1', savedAt: '2026-11-17T00:00:00.000Z', characters: [{ ocid: 'ocid-1', bosses: legacyBosses }] },
     ])
-    const before = legacyBosses.map((boss) => bossPayoutMeso(boss, now))
+    const before = legacyBosses.map((boss) => bossPayoutMeso(boss, now, 5))
 
     await runPreferencesConversion(db)
 
@@ -395,7 +395,7 @@ describe('보스 수익 계산기 기록', () => {
     const converted = record!.characters[0]!.bosses
     expect(converted.map((boss) => boss.shares.sharesTotal)).toEqual([null, 100_000, 100_000])
     expect(before).not.toContain(0)
-    expect(converted.map((boss) => bossPayoutMeso(boss, now))).toEqual(before)
+    expect(converted.map((boss) => bossPayoutMeso(boss, now, 5))).toEqual(before)
   })
 })
 

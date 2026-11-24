@@ -16,7 +16,7 @@ import { getQueryCache, removeQueryCache, setQueryCache } from '../../storage/qu
  * 저장된 캐시의 모양 판. 정규화 모양을 바꾸면 올려서 옛 캐시를 버린다. 맞지 않는 모양을 읽어 화면이 깨지는 것보다
  * 한 번 다시 받는 것이 낫다.
  */
-export const QUERY_CACHE_BUSTER = '1'
+export const QUERY_CACHE_BUSTER = '2'
 
 const STORAGE_KEY = 'query-cache'
 

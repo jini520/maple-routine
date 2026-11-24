@@ -146,7 +146,7 @@ export interface SpendItemRow {
   groupId: string
   tileId: string
   tier?: string
-  currency: 'point' | 'meso'
+  currency: 'maple_point' | 'meso'
   /** `null` 은 경매장 값이라 적을 때 친다. */
   unitPrice: number | null
   unit: string

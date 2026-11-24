@@ -140,10 +140,12 @@
 
 ```
 GET /v1/manual-completion
-→ { "bosses": [ { "boss": "black_mage", "from": "2026-09-01" } ] }
+→ { "bossManualCompletionPeriods": [ { "bossId": "<보스 줄 id>", "fromDate": "2026-09-01" } ] }
 ```
 
-- 보스 key 와 여는 날만 받는다. 열린 보스는 모든 난이도가 열린다.
+- 보스 줄 id 와 여는 날만 받는다. 열린 보스는 모든 난이도가 열린다. 배열과 칸의 이름은 서버 표
+  `boss_manual_completion_periods` 를 따른다([[ADR-099]] 결정 58 · 65). 앱은 보스 줄 id 로 게임 데이터의 보스를 찾아, 보스
+  key 로 묻는 행과 견준다. 게임 데이터에 없는 보스 줄 id 는 아무 행도 열지 않는다.
 - 닫는 날은 없다. 넥슨이 언제 고칠지 모르기 때문이다. 운영자가 관리 화면에서 닫으면 응답에서 빠지고, 앱의
   버튼도 그때 사라진다.
 - 기간 판정은 앱이 한다(`isManualCompletionOpen`). 그 행의 기간(주간은 주, 월간은 달)의 마지막 날이 여는 날과
@@ -252,7 +254,8 @@ SQLite 를 읽을 뿐 넥슨은 부르지 않는다. 화면이 포커스마다 �
 | `features/boss-scheduler/__tests__/manual-completed-query.spec.ts` | 결정 8 · 14: 기간 키가 열쇠이고 보스 기록 판 · 추적 목록에 매여 무효화되는지, 두 기간의 기록을 캐릭터별 `bossKey\|difficulty` 로 묶는지, 읽기가 실패하거나 추적이 없으면 빈 표인지 본다 |
 | `app/boss-scheduler/__tests__/BossScreen.test.tsx` | 결정 6: 한도를 채우면 링이 `12/12` 가 되는지, 한도 전에는 미처치가 링에서 빠지는지 본다 |
 | `app/boss-scheduler/__tests__/BossManageScreen.test.tsx` | 결정 7: `n/12` 가 수동 모드 `주간` 제목에만 붙는지, 한도에서도 행을 막지 않고 토스트로 알리는지, 고른 행은 뺄 수 있는지 본다 |
-| `lib/boss/__tests__/manual-completion.spec.ts` | 결정 8: 같은 보스 · 같은 난이도에만 완료와 `ownComplete` 를 반영하는지 본다. 결정 9: 여는 날이 속한 기간부터 열리는지, 목록에 없거나 목록을 모르거나 날짜 형식이 이상하면 닫히는지 본다 |
+| `lib/boss/__tests__/manual-completion.spec.ts` | 결정 8: 같은 보스 · 같은 난이도에만 완료와 `ownComplete` 를 반영하는지 본다. 결정 9: 보스 key 의 줄 id 로 열린 기간을 찾는지, 여는 날이 속한 기간부터 열리는지, 목록에 없거나 목록을 모르거나 날짜 형식이 이상하면 닫히는지 본다 |
+| `server/__tests__/manual-completion.spec.ts` | 결정 9: 응답의 `bossManualCompletionPeriods` 를 보스 줄 id 와 여는 날로 읽고, 칸이 빠진 줄만 버리며, 배열이 없거나 받지 못하면 모름(`null`)인지 본다 |
 | `features/manual-completion/__tests__/record.spec.ts` | 결정 11: 송금 수수료가 자동이면 잡은 날 등급 요율로 적는지 본다 |
 | `features/manual-completion/__tests__/query.spec.tsx` | 결정 9: 진입 · 복귀마다 묻는 서버 쿼리인지, 못 받은 것(`null`)은 줄을 안 세우는지, 단추가 보는 목록이 같은 쿼리인지 본다. 결정 15: 닫으면 이번 주 키를 적고 줄이 내려가는지, 줄이 안 서 있으면 닫지 않는지 본다 |
 
@@ -264,3 +267,5 @@ SQLite 를 읽을 뿐 넥슨은 부르지 않는다. 화면이 포커스마다 �
 ## 번호 기록
 
 - ADR-037 (2026-10-19): 옛 ADR-031 · 033 · 054 · 055 · 121 · 187 · 293 을 합쳐 처음 작성
+- (2026-11-24) 결정 9 의 응답을 서버 표의 이름(`bossManualCompletionPeriods` · `bossId` · `fromDate`)으로 바꾸고, 앱이 보스
+  줄 id 로 보스를 찾게 했다([[ADR-099]] 결정 58 · 65, #947)

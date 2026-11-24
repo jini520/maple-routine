@@ -73,7 +73,8 @@
 - 기록은 기기 변환(결정 19)까지 지금처럼 key 를 적는다. 그래서 key 로 줄을 찾는 조회는 남긴다. key 가 없는 보스 난이도 줄은 보스
   key 와 난이도 글자로 찾는다. 기록이 줄 id 를 적게 바꾸는 일은 기기 변환에서 한다.
 - 없어진 칸은 그 칸을 없앤 결정대로 고친다(아래 표). 옛 칸을 앱에서 다시 만들지 않는다.
-- 계약 판(`GAME_DATA_CONTRACT`)을 올린다(`2026-11-21`). 켤 때 옛 사본을 버리고 잠금 화면이 새 모양을 처음부터 받는다.
+- 계약 판(`GAME_DATA_CONTRACT`)을 올린다. 켤 때 옛 사본을 버리고 잠금 화면이 새 모양을 처음부터 받는다. 지금 판은 `2026-11-24` 다.
+  칸 스물을 옮기며 `2026-11-21` 로 올렸고, 지출 항목의 통화 값을 `maple_point` 로 바꾸며 다시 올렸다.
 - 테스트 fixture(`src/__fixtures__/game-data/`)는 DB 박스 서버의 응답을 떠서 칸마다 나눠 둔다. 운영 DB 를 옮긴 사본의 값이라 게임
   수치를 지어 넣지 않는다. `drop-items.json` · `equipment-items.json` 은 지우고 `game-rules.json` 을 더한다.
 
@@ -90,7 +91,7 @@
 | `dropItems` · `equipmentItems` | 없어진다 | `items` 에서 고른다. 드롭 아이템은 `isDrop`, 고가는 `isValuable`, 강화 장비는 `isEquipment`, 착용 레벨은 `requiredLevel` 이다 |
 | `items` | `items` · `itemGroups` · `ringLevelItems` · `sameItemLinks` | 아이템의 묶음은 `groupId` 로 `itemGroups` 에서 찾고 묶음의 종류는 `type` 이다. 반지 레벨 줄은 `ringLevelItems` 로 원래 반지 · 레벨과 잇고, 상자 연마석은 `sameItemLinks` 로 원래 아이템과 잇는다 |
 | `worlds` | `worlds` · `worldOpenPeriods` | `challengers` → `isChallengers`, `event` → `isEvent`. 열린 기간은 `worldId` 로 묶는다. 엠블럼은 그림 줄 id 만 있다 |
-| `spendCatalog` | `spendRewardTypes` · `spendGroups` · `spendTiles` · `spendItems` · `spendItemOptions` · `spendItemRewardTypes` | 묶음은 가계부 분류 줄 id(`cashbookCategoryId`)를, 항목은 묶음 · 타일 줄 id 를 든다. `active` → `isActive`, `rewardCoins` → `rewardCoinQuantity`. 형태(`forms` · `itemForms`)는 추가 리워드 종류다. 항목의 줄인 이름은 없어진다(결정 60). 규칙은 `gameRules` 로 간다 |
+| `spendCatalog` | `spendRewardTypes` · `spendGroups` · `spendTiles` · `spendItems` · `spendItemOptions` · `spendItemRewardTypes` | 묶음은 가계부 분류 줄 id(`cashbookCategoryId`)를, 항목은 묶음 · 타일 줄 id 를 든다. `active` → `isActive`, `rewardCoins` → `rewardCoinQuantity`, 통화 값 `point` → `maple_point`(결정 53). 형태(`forms` · `itemForms`)는 추가 리워드 종류다. 항목의 줄인 이름은 없어진다(결정 60). 규칙은 `gameRules` 로 간다 |
 | `cashbookCategories` | `cashbookCategories` · `cashbookItemTypes` | 줄 id 가 붙고 아이템 종류의 배열 이름이 바뀐다 |
 | `symbolCosts` | `symbolGroups` · `symbols` · `symbolLevelCosts` | 묶음 · 심볼 줄 id. `defaultFrom` · `defaultTo` → `defaultFromLevel` · `defaultToLevel`, 비용 줄의 `level` → `fromLevel`, `symbol` → `symbolId` |
 | `hexaMatrix` | `jobs` · `hexaCoreTypes` · `hexaCores` · `hexaCoreLevelCosts` · `hexaStats` | 직업의 코어 목록은 그 직업의 코어와 `전직업`(`isAllJobs`)의 코어를 종류의 차례, 같은 종류 안에서는 코어의 차례로 섞는다(결정 35). 이름 표가 없어지고 코어가 `typeId` 로 종류를 든다. 비용 줄은 `fromLevel` · `fragmentQuantity` · `solErdaQuantity`, 스탯은 `activationFragmentQuantity` |

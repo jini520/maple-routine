@@ -100,7 +100,7 @@ API 키 원문은 서버로 가지 않는다.
 구분선을 쓰지 않는다([[ADR-016]] 결정 13).
 드롭 시세는 장비는 거래권마다, 소비 아이템은 월드마다 `/admin/drop-market` 에서 본다. 관리 화면은 줄마다 하루 작업이 남긴 그날 울타리와 비교해 잘못 적은 값을 뺀다.
 일일 기준가와 드롭 시세 지수 MASPI 는 하루 작업(KST 00:05)이 사람마다 하루 한 표로 계산해 남기고, 앱에 줄 응답을 만들어 저장한다.
-앱은 `GET /v1/market/maspi` · `/v1/market/items?world=` · `/v1/market/items/{itemKey}?ring=&world=` 로 그 응답을 그대로 받는다(ETag · 304).
+앱은 `GET /v1/market/maspi` · `/v1/market/items?world=` · `/v1/market/items/{itemKey}?world=` 로 그 응답을 그대로 받는다(ETag · 304).
 처음 채우기는 2026-11-16 에 `node dist/cli/market-backfill.js` 로 한 번 했다([[ADR-071]]).
 왼쪽 메뉴는 공지 · 게임데이터(보스 · 가계부 · 기타) · 로그 · 임시 기능으로 묶여 있고, 묶음마다 접고 펼 수 있다.
 지금 보는 화면이 든 묶음만 펼친 채로 열린다. 화면이 열일곱이라 다 펼쳐 두면 찾기 어렵기 때문이다.

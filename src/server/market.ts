@@ -28,8 +28,8 @@ export interface MaspiResponse {
 
 /** 신뢰 시세 하나. 가격은 메소 정수다. */
 export interface MarketEntry {
+  /** 아이템 key. 반지는 레벨 줄의 key(`restraint_ring_lv4`)다 */
   itemKey: string
-  ringLevel: number | null
   price: number
   /** 전일 대비(%). 앞 날이 없으면 `null` */
   changePct: number | null
@@ -64,7 +64,6 @@ export interface MarketItemResponse extends Omit<MarketEntry, 'spark'> {
 /** 상세 하나를 가리키는 값. 장비는 서버가 월드를 보지 않는다. */
 export interface MarketItemTarget {
   itemKey: string
-  ringLevel: number | null
   world: string
 }
 
@@ -101,7 +100,6 @@ function entryHead(value: Record<string, unknown>): Omit<MarketEntry, 'spark'> |
   if (
     typeof value.itemKey !== 'string' ||
     value.itemKey === '' ||
-    !isNumberOrNull(value.ringLevel) ||
     !isNumber(value.price) ||
     !isNumberOrNull(value.changePct) ||
     !isNumberOrNull(value.low) ||
@@ -112,7 +110,6 @@ function entryHead(value: Record<string, unknown>): Omit<MarketEntry, 'spark'> |
   }
   return {
     itemKey: value.itemKey,
-    ringLevel: value.ringLevel,
     price: value.price,
     changePct: value.changePct,
     low: value.low,
@@ -197,6 +194,5 @@ export function fetchMarketItems(world: string, etag: string | null): Promise<Ma
 
 /** 시세 하나와 최대 1년의 날마다 값. */
 export function fetchMarketItem(target: MarketItemTarget, etag: string | null): Promise<MarketFetch<MarketItemResponse> | null> {
-  const query = `ring=${target.ringLevel ?? ''}&world=${encodeURIComponent(target.world)}`
-  return fetchStored(`/market/items/${encodeURIComponent(target.itemKey)}?${query}`, etag, parseMarketItem)
+  return fetchStored(`/market/items/${encodeURIComponent(target.itemKey)}?world=${encodeURIComponent(target.world)}`, etag, parseMarketItem)
 }

@@ -158,6 +158,7 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
     recordedAt: entry.head.createdAt,
     ...(first.inventoryItemId === null ? {} : { inventoryItemId: first.inventoryItemId }),
     ...(first.ringLevel === null ? {} : { ringLevel: first.ringLevel }),
+    ...(first.hexaCoreId === null ? {} : { hexaCoreId: first.hexaCoreId }),
     ...memoField(entry.head.memo),
     ...(entry.transfer == null ? {} : { transfer: entry.transfer }),
     ...(entry.exchange == null ? {} : { exchange: entry.exchange }),

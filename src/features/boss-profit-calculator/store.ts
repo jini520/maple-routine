@@ -37,14 +37,18 @@ interface BossProfitCalculatorState {
   /** 저장소의 기록 목록을 다시 읽는다. 다른 기기가 지운 기록을 서버가 거절해 기기에서 지웠을 때 부른다. 아직 안 열었으면 하지 않는다 */
   reloadRecords: () => Promise<void>
   save: (mode: CalculatorSaveMode, now: Date) => Promise<void>
-  importFromBossManage: (ocid: string, now: Date) => void
+  /** @param autoFeePercent 그 캐릭터의 오늘 MVP 등급 요율. 12개를 넘을 때 몫을 견주는 데 쓴다(`bossPayoutMeso`) */
+  importFromBossManage: (ocid: string, now: Date, autoFeePercent: number | null) => void
   clearCharacter: (ocid: string) => void
   /** 보스 선택의 `적용`. 고른 순서와 상관없이 보스 표 순서로 놓는다 */
   setBosses: (ocid: string, bosses: readonly CalculatorBoss[]) => void
   updateBoss: (ocid: string, bossKey: string, patch: Partial<Omit<CalculatorBoss, 'bossKey'>>) => void
 }
 
-/** 보스 관리에 이 보스 · 난이도의 파티 설정이 있으면 그 인원과 비율, 없으면 1인. 보스 선택에서 새로 고른 보스가 쓴다 */
+/**
+ * 보스 관리에 이 보스 · 난이도의 파티 설정이 있으면 그 인원과 비율, 없으면 1인. 보스 선택에서 새로 고른 보스가 쓴다.
+ * 등급을 따르는 설정은 요율을 비운다. 계산기는 요율이 비었는지로 수수료 자동을 가른다
+ */
 export function bossWithPartySetting(ocid: string, bossKey: string, difficulty: BossDifficulty): CalculatorBoss {
   const scheduler = useBossSchedulerStore.getState()
   const key = partySizeKey(ocid, bossKey, difficulty)
@@ -56,13 +60,13 @@ export function bossWithPartySetting(ocid: string, bossKey: string, difficulty: 
     shares: {
       myShare: columns?.crystalMyShare ?? null,
       sharesTotal: columns?.crystalSharesTotal ?? null,
-      splitFeePercent: columns?.splitFeePercent ?? null,
+      splitFeePercent: columns?.splitFeeAuto === true ? null : (columns?.splitFeePercent ?? null),
     },
   }
 }
 
 /** 보스 관리에 등록된 이 캐릭터의 주간 보스 · 난이도 · 파티 설정. 12개가 넘으면 몫이 큰 12개만 남긴다 */
-function bossesFromBossManage(ocid: string, now: Date): CalculatorBoss[] {
+function bossesFromBossManage(ocid: string, now: Date, autoFeePercent: number | null): CalculatorBoss[] {
   const scheduler = useBossSchedulerStore.getState()
   const character = readBossCharacters().find((one) => one.ocid === ocid)
   if (character === undefined) return []
@@ -75,7 +79,7 @@ function bossesFromBossManage(ocid: string, now: Date): CalculatorBoss[] {
     seen.add(boss.bossKey)
     bosses.push(bossWithPartySetting(ocid, boss.bossKey, boss.difficulty))
   }
-  return keepTopByPayout(bosses, now)
+  return keepTopByPayout(bosses, now, autoFeePercent)
 }
 
 /** 기록에 있는 캐릭터는 기록 값, 기록을 남긴 뒤에 추적을 시작한 캐릭터는 빈 상태. 기록은 남긴 그때의 계산이다 */
@@ -137,8 +141,8 @@ export const useBossProfitCalculatorStore = create<BossProfitCalculatorState>()(
     set({ records: next, openedId: id })
   },
 
-  importFromBossManage(ocid, now) {
-    set((state) => ({ bossesByOcid: { ...state.bossesByOcid, [ocid]: bossesFromBossManage(ocid, now) } }))
+  importFromBossManage(ocid, now, autoFeePercent) {
+    set((state) => ({ bossesByOcid: { ...state.bossesByOcid, [ocid]: bossesFromBossManage(ocid, now, autoFeePercent) } }))
   },
 
   clearCharacter(ocid) {

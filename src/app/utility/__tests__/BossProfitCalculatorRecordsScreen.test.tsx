@@ -4,12 +4,25 @@ import { act, fireEvent } from '@testing-library/react-native'
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useBossProfitCalculatorStore } from '../../../features/boss-profit-calculator/store'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
+import { bossPayoutMeso } from '../../../lib/boss/boss-profit-calculator'
+import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { getBossProfitCalculatorRecords, setBossProfitCalculatorRecords, type BossProfitCalculatorRecord } from '../../../storage/boss-profit-calculator-records'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { BossProfitCalculatorRecordsScreen } from '../BossProfitCalculatorRecordsScreen'
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
+// 자동 수수료가 읽는 등급 기록. ocid-1 은 다이아(3%) 메이플 ID 이고, ocid-2 는 등급을 고르지 않은 메이플 ID 라 일반(5%)이다.
+jest.mock('../../../features/mvp-grade/fee-context', () => ({
+  loadFeeContext: jest.fn(async () => ({
+    histories: new Map([['A', [{ startDate: '2026-06-01', grade: 'diamond' }]]]),
+    sightings: [
+      { ocid: 'ocid-1', name: '아무개', accountId: 'A', firstSeenOn: '2026-06-01', lastSeenOn: '2026-11-20' },
+      { ocid: 'ocid-2', name: '둘째', accountId: 'B', firstSeenOn: '2026-06-01', lastSeenOn: '2026-11-20' },
+    ],
+    fallbackOcid: 'ocid-1',
+  })),
+}))
 // 캐릭터는 쿼리 캐시에서 온다. 기록 줄의 이름을 보는 테스트만 채우고 나머지는 추적 캐릭터가 없는 상태로 둔다.
 const mockCharacters: { ocid: string; characterName: string; imageUrl: string }[] = []
 jest.mock('../../../features/boss-scheduler/use-boss-schedule', () => ({
@@ -83,6 +96,24 @@ describe('BossProfitCalculatorRecordsScreen', () => {
 
     expect(useBossProfitCalculatorStore.getState().openedId).toBe('old')
     expect(goBack).toHaveBeenCalled()
+  })
+
+  // 기록은 금액을 남기지 않고 열 때마다 오늘 가격으로 다시 센다. 자동 수수료도 캐릭터마다의 오늘 등급 요율이다.
+  it('기록의 합계는 요율이 빈 비율 보스를 캐릭터마다 그 캐릭터의 오늘 등급 요율로 센다', async () => {
+    const 비율 = { bossKey: 'kaling', difficulty: 'normal' as const, partySize: 2, shares: { myShare: 2, sharesTotal: 5, splitFeePercent: null } }
+    const 둘다: BossProfitCalculatorRecord = {
+      id: 'both',
+      savedAt: '2026-10-21T03:00:00.000Z',
+      characters: [
+        { ocid: 'ocid-1', bosses: [비율] },
+        { ocid: 'ocid-2', bosses: [비율] },
+      ],
+    }
+    useBossProfitCalculatorStore.setState({ records: [둘다] })
+    const view = await renderOverlay(<BossProfitCalculatorRecordsScreen />)
+    const now = new Date()
+
+    expect(await view.findByText(formatMesoUnits(bossPayoutMeso(비율, now, 3) + bossPayoutMeso(비율, now, 5)))).toBeTruthy()
   })
 
   it('지우면 목록과 저장소에서 빠진다', async () => {

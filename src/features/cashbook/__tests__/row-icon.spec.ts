@@ -6,6 +6,8 @@
 import type { IncomeRecord } from '../../../storage/income'
 import type { SpendRecord } from '../../../storage/spend'
 import { assetIdOfPath, imageOfPath } from '../../../assets/__tests__/asset-uri'
+import hexaMatrix from '../../../__fixtures__/game-data/hexa-matrix.json'
+import { getAssetImage } from '../../../lib/assets/asset-lookup'
 import { enhancementCostsTable } from '../../../lib/enhancement/cost'
 import type { DayRecord, EnhancedItem } from '../records'
 import { enhancedItemIconOf, recordIconKeyOf, recordIconOf } from '../row-icon'
@@ -116,6 +118,24 @@ describe('recordIconOf', () => {
       imageOfPath('items/hexa_matrix.webp'),
     )
     expect(imageOfPath('skills/KEJDKDOEMH.webp')).not.toBeNull()
+  })
+
+  // `시그너스 팔랑크스 VI` 는 여섯 직업에 같은 이름으로 있고 그림이 여섯 장이다. 이름으로 찾으면 모두 표에 먼저 선 직업의 그림이 된다.
+  it('헥사 스킬은 기록이 가리키는 코어 줄의 그림이라, 이름이 같은 코어도 직업마다 제 그림이다', () => {
+    const 조각 = { fragmentCount: 1, untradableFragmentCount: 0, fragmentPrice: 1, useStorage: false, storageAsSpend: false, storageUses: [] }
+    const jobIdOf = (name: string) => hexaMatrix.jobs.find((job) => job.name === name)!.id
+    const coreOf = (job: string) =>
+      hexaMatrix.hexaCores.find((core) => core.jobId === jobIdOf(job) && core.name === '시그너스 팔랑크스 VI')!
+    const 나이트워커 = coreOf('나이트워커')
+    const 미하일 = coreOf('미하일')
+    const 기록 = (hexaCoreId: string | undefined) =>
+      spend({ category: 'hexa_matrix', itemKey: '시그너스 팔랑크스 VI', hexaCoreId, hexa: { ...조각, activation: null } })
+
+    expect(나이트워커.iconAssetId).not.toBe(미하일.iconAssetId)
+    expect(recordIconOf(기록(나이트워커.id))).toBe(getAssetImage(나이트워커.iconAssetId))
+    expect(recordIconOf(기록(미하일.id))).toBe(getAssetImage(미하일.iconAssetId))
+    // 직업을 몰라 코어 줄을 고르지 못한 기록은 이름으로 찾아 그림이 선다.
+    expect(recordIconOf(기록(undefined))).not.toBeNull()
   })
 
   // 선택 목록이 아니라 비용 표에서 심볼을 되짚는다.
