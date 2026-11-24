@@ -472,16 +472,6 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
 })
 
 /**
- * 시트 스코프.
- *
- * 시트가 자기가 덮고 있는 페이지와 같은 토큰(`bg`)으로 서 있어 다크에서 스크림 깔린 배경과
- * 대비가 1.03~1.05 였다. 여기서 지키는 것은 두 고리다:
- *   ① 라이브러리가 칠하는 **껍데기**(`backgroundStyle`. 우리 서브트리 밖이라 변수가 안 닿는다)
- *   ② 시트 **안**의 `className` 이 올린 값으로 풀리는가 (이게 시트 안 코드를 안 고친다 의 실체다)
- *
- * 색은 손으로 적지 않는다. `buildSheetScopeVariables` 가 내는 값과 대조한다.
- */
-/**
  * 단계를 갈 때 얹히는 흐림의 **재질**.
  *
  * `expo-blur` 의 기본 `default` 는 iOS 의 적응형 `.regular` 이라 **OS 외형**을 따라간다. 다크 OS 를
@@ -491,8 +481,16 @@ describe('BottomSheet: 머리를 스크롤 밖에 고정한다', () => {
 describe('BottomSheet: 흐림 재질은 테마가 고른다', () => {
   const 검은마법사 = getThemeDefinition('검은마법사')
 
-  beforeEach(__resetThemeAppearanceForTest)
-  afterEach(__resetThemeAppearanceForTest)
+  // 흐림은 300ms 동안 걷힌다. 진짜 시계면 그 끝이 케이스가 끝나고 언마운트하기 전에 `act` 밖에서 와서
+  // 시트를 다시 그린다. 여기서 보는 것은 재질이라 시계를 넘기지 않는다.
+  beforeEach(() => {
+    jest.useFakeTimers()
+    __resetThemeAppearanceForTest()
+  })
+  afterEach(() => {
+    __resetThemeAppearanceForTest()
+    jest.useRealTimers()
+  })
 
   /**
    * 단계를 안에서 갈아 준다. 밖에서 `rerender` 하면 껍데기(안전 영역 프로바이더)까지 함께
@@ -562,6 +560,16 @@ describe('BottomSheet: 흐림 재질은 테마가 고른다', () => {
   })
 })
 
+/**
+ * 시트 스코프.
+ *
+ * 시트가 자기가 덮고 있는 페이지와 같은 토큰(`bg`)으로 서 있어 다크에서 스크림 깔린 배경과
+ * 대비가 1.03~1.05 였다. 여기서 지키는 것은 두 고리다:
+ *   ① 라이브러리가 칠하는 **껍데기**(`backgroundStyle`. 우리 서브트리 밖이라 변수가 안 닿는다)
+ *   ② 시트 **안**의 `className` 이 올린 값으로 풀리는가 (이게 시트 안 코드를 안 고친다 의 실체다)
+ *
+ * 색은 손으로 적지 않는다. `buildSheetScopeVariables` 가 내는 값과 대조한다.
+ */
 describe('BottomSheet: 다크에서 표면 계열을 한 칸 올린다', () => {
   const 검은마법사 = getThemeDefinition('검은마법사')
   const 스코프 = buildSheetScopeVariables(검은마법사)

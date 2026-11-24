@@ -26,7 +26,10 @@ import { STACK_ROUTE_NAMES, type RootStackParamList } from '../routes'
 
 type Stage = 'signIn' | 'characterSetup' | 'ready'
 
+// 시계는 가짜다. 앱 트리의 초기화 카운트다운이 실제 시계로 1초마다 울리면, 부하로 케이스가 길어질 때 `act` 밖에서
+// 화면을 바꾼다. 이 파일은 시간이 지나야 하는 것을 보지 않아서 시계를 넘기지 않는다.
 beforeEach(() => {
+  jest.useFakeTimers()
   installMemoryPreferences()
   // `SettingsAbout` 이 마운트에서 실행 중인 번들 버전을 묻는다(배선). 주입이 없으면
   // 슬롯이 던져 **그 화면이 열리는가** 를 묻는 케이스가 배선과 무관한 이유로 빨개진다.
@@ -45,6 +48,10 @@ beforeEach(() => {
   // `ContentManage` 는 **수동 모드 전용**이라 자동 모드로 두면 열리자마자
   // 물러난다. 그러면 이 파일의 **열둘이 전부 열린다** 가 배선이 아니라 모드 때문에 빨개진다.
   useTrackingModeStore.setState({ mode: 'manual' })
+})
+
+afterEach(() => {
+  jest.useRealTimers()
 })
 
 describe('진입 분기', () => {
