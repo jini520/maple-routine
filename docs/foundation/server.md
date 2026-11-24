@@ -46,7 +46,7 @@
 | `POST /v1/me/sub-accounts` | 세션 | `{ mapleIds }`. 부계정의 메이플 ID 해시 | 204. 거절은 409 와 `code`(`same_account` · `registered_elsewhere` · `has_sub_accounts` · `login_is_sub_account`) | 10초 |
 | `DELETE /v1/me/sub-accounts` | 세션 | `{ mapleIds }` | 204. 등록이 없어도 204 | 10초 |
 | `POST /v1/usage-events` | 세션 또는 메이플 ID 해시 | 사용 로그 묶음 | `{ ok: true }` | 10초 |
-| `POST /v1/enhancement-anomalies` | 세션 또는 메이플 ID 해시 | `{ items }` | `{ ok: true }` | 10초 |
+| `POST /v1/enhancement-anomalies` | 세션 또는 메이플 ID 해시 | `{ items }`. 상황마다 그 내역을 받은 계정의 메이플 ID 해시(`mapleId`) | `{ ok: true }`. 보낸 신원이 쓸 수 없는 메이플 ID 의 상황은 버린다 | 10초 |
 | `POST /v1/sync/push` | 세션 또는 메이플 ID 해시 | `{ records: [{ table, action, row }] }`. 100건 · 256KB 까지 | `{ results }`. 기록마다 받았으면 `{ ok: true, id }`, 거절이면 `{ ok: false, code, reason }` | 10초 |
 | `POST /v1/auth/nexon/login` | 없음 | `{ platform }` | `{ authorizeUrl, redeemKey }` | 15초 |
 | `POST /v1/auth/nexon/session` | 없음 | `{ redeemKey, receipt }` | `{ status: 'ok', session }` · `{ status: 'pending' }` · 404 | 15초 |
