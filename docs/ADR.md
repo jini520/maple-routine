@@ -162,7 +162,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-033+274](./adr/ADR-033+274_content-scheduler_cards.md) | 🟢 | content-scheduler | 컨텐츠 카드와 완료 판정 |
 | [ADR-034+175+298+311](./adr/ADR-034+175+298+311_content-scheduler_tracking-mode.md) | 🟢 | content-scheduler | 자동 · 수동 추적 모드와 컨텐츠 관리 · 두 관리 화면의 `저장` |
 | [ADR-035](./adr/ADR-035_content-scheduler_layout.md) | 🟢 | content-scheduler | 스케줄러 화면의 레일 아래 간격 |
-| [ADR-036+312](./adr/ADR-036+312_boss-scheduler_boss-list.md) | 🟢 | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 · 보스 관리의 초안과 `저장` |
+| [ADR-036+312+320](./adr/ADR-036+312+320_boss-scheduler_boss-list.md) | 🟢 | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 · 보스 관리의 초안과 `저장` |
 | [ADR-037](./adr/ADR-037_boss-scheduler_completion.md) | 🟢 | boss-scheduler | 보스 완료 판정과 주간 한도 |
 | [ADR-038+220+238+288+313](./adr/ADR-038+220+238+288+313_boss-scheduler_party.md) | 🟢 | boss-scheduler | 보스 파티 인원과 결정석 분배 비율 · 결정석을 팔지 않은 처치의 `제외` · 비율 % 입력과 받는 금액 |
 | [ADR-039+242](./adr/ADR-039+242_boss-scheduler_card.md) | 🟢 | boss-scheduler | 보스 카드 |
@@ -200,7 +200,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-078+254+287](./adr/ADR-078+254+287_persistence_boss-tables.md) | 🟢 | persistence | 보스 기록 테이블 재설계 |
 | [ADR-096+290](./adr/ADR-096+290_persistence_cashbook-tables.md) | 🟢 | persistence | 가계부 기록 테이블 재설계 |
 | [ADR-098+173](./adr/ADR-098+173_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |
-| [ADR-099+143+258+279+302+305+310](./adr/ADR-099+143+258+279+302+305+310_server-sync_records.md) | ⚪ | server-sync | 사용자가 만든 기록을 서버에 두고 기기끼리 맞추기 · 과거 드롭 올리기 |
+| [ADR-099+143+258+279+302+305+310+319](./adr/ADR-099+143+258+279+302+305+310+319_server-sync_records.md) | ⚪ | server-sync | 사용자가 만든 기록을 서버에 두고 기기끼리 맞추기 · 과거 드롭 올리기 |
 | [ADR-100+174+189+234+295](./adr/ADR-100+174+189+234+295_cashbook_enhancement-totals.md) | 🟢 | cashbook | 강화 합계 저장과 재계산 요청 · 스타포스 첫 성과 끝 성 · 이벤트 월드 판정과 월드 기간 · 슈페리얼 장비 스타포스 비용 |
 | [ADR-101+186+193+201+259+277+285+294+297](./adr/ADR-101+186+193+201+259+277+285+294+297_auth_multi-account.md) | ⚪ | auth | 다계정 |
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |

@@ -39,7 +39,7 @@
 | `features/server-sync/accounts.ts` | 메인 신원으로 메이플 ID 알리기 · 지금 로그인의 부계정 키 등록(`prepareServerAccounts`) |
 | `features/server-sync/push.ts` | 올리기. 대기 표를 묶어 보내고 결과마다 대기 줄과 기기 줄을 다룬다(`pushServerSync`) |
 | `features/server-sync/push-records.ts` | 표마다 기기 값을 서버 칸으로 바꾼다. 넥슨 식별자의 해시 · 참 거짓 · 메이플 ID 찾기(`pushRecordOf`) |
-| `features/server-sync/pull.ts` | 받기. 번호를 보내고 받은 줄을 넣은 뒤 번호를 갈아 끼운다. 가장 오래된 삭제 표식보다 번호가 작은 주인을 비우고, 다른 기기가 해제한 부계정을 뺀다(`pullServerSync`) |
+| `features/server-sync/pull.ts` | 받기. 번호를 보내고 받은 줄을 넣은 뒤 번호를 갈아 끼운다. `purgedChangeSeq` 가 바뀌었으면 번호가 그보다 작은 주인을 비우고, 다른 기기가 해제한 부계정을 뺀다(`pullServerSync`) |
 | `features/server-sync/pull-records.ts` | 표마다 서버 줄을 기기 칸으로 바꾼다. 해시를 원문으로, 짝이 없으면 `#` 를 붙인 해시로(`pulledRecordOf`) |
 | `features/server-sync/refresh.ts` | 기기 줄을 고친 표의 화면을 다시 읽게 한다. 동기화가 올린 판은 동기화를 다시 깨우지 않는다 |
 | `features/server-sync/rejection-notice.ts` | 두 거절의 알림 문구와 기록 이름 |
@@ -61,6 +61,7 @@
 | `storage/server-sync-pull.ts` | 받은 줄을 SQLite 기록 표에 넣고 지운다. 유일 기준이 같은 기기 줄을 서버 줄로 바꾼다. 주인의 기록 비우기 |
 | `storage/server-sync-owners.ts` | 주인을 바꿀 때의 기기 쪽. 대기 줄의 주인 찾기(`ownerOfServerSyncRecord`) · 버린 대기 줄의 기록 지우기(`discardServerSyncRecords`) · 기록이 있는 메이플 ID 모으기(`listServerSyncMapleIds`) · 앞 계정의 메이플 ID(`previousOwnerMapleIdHashes`) · 주인의 기록과 번호 지우기(`forgetServerSyncOwners` · `forgetServerSyncMapleIds`) |
 | `storage/server-sync-pull-preferences.ts` | 받은 줄을 Preferences 기록 키에 넣고 지운다 |
+| `storage/shared-progress-cache.ts` | 공유 진행 원장. 회차 · 받기 · `#` 바꾸기 · 주인 비우기가 원장을 읽고 고쳐 쓰는 일을 차례로 돌린다(`writeSharedProgressLedgers`) |
 | `storage/server-sync-cursors.ts` | 받기의 번호와 그 번호를 받을 때의 `purgedChangeSeq`(Preferences `serverSyncCursors`), 로그인 뒤 첫 받기의 표시(`serverSyncSignIn`) |
 | `storage/server-sync-unmatched.ts` | `#` 를 붙여 넣은 값 가운데 짝이 생긴 것을 원문으로 바꾼다(`replaceMatchedNexonIds`) |
 | `server/sync.ts` | 올리기 · 받기 · 데이터 삭제의 서버 경로. 응답을 읽을 수 있는 응답 · 요청 전체의 거절 · 응답 없음으로 가른다 |
@@ -153,6 +154,10 @@
   변환이 옮긴 줄은 처음 동기화가 넣는다(`처음 동기화`).
 - Preferences 기록의 저장 함수는 앞 값과 새 값을 견주어 바뀐 항목만 넣는다. 로그인할 때 추적 목록과 대표를 비우는 일은 넣지 않는다.
   넣으면 새 기기의 로그인이 서버의 추적 목록을 지운다.
+- 공유 진행 원장을 읽고 고쳐 쓰는 일은 모두 차례로 돈다(`writeSharedProgressLedgers`, [[ADR-099]] 결정 67). 회차는 컨텐츠마다 ·
+  캐릭터마다 저장을 함께 부르고, 받기가 그 사이에 같은 키를 적는다. 겹치면 앞 쓰기가 읽은 원장으로 뒤 쓰기의 항목을 덮는다. 덮인
+  항목은 원장에 없어 다음 저장이 새 항목으로 넣고, 올리기는 원본이 없어 지우기를 보낸다. 회차마다 같은 일이 되풀이되어 올리기와
+  받기가 끝없이 나갔다.
 - 한 줄짜리 표 `server_sync_pause` 에 줄이 있으면 트리거와 Preferences 넣기가 넣지 않는다. `withServerSyncPaused` 가 트랜잭션 안에서
   그 줄을 넣고 일을 마치면 뺀다. 받은 줄을 넣거나 올리기의 결과로 기기 줄을 고칠 때 쓴다.
 - 처치한 수익 건으로 드롭을 옮기고 가리는 쓰기는 처치한 수익 건이 기기에 있으면 넣지 않는다. 서버가 같은 규칙으로 맞추고 받기가
@@ -194,6 +199,9 @@
 - 설정의 빈 칸은 아무 기기도 고르지 않은 칸이라 기기 값과 그 대기 줄을 둔다. 기기 값이 올라가 빈 칸을 채운다.
 
 - 약속과 계산기 기록은 기기의 uuid 가 줄 id 라 두 기기의 기록이 둘 다 남는다. 평소 규칙 그대로다.
+- 수동 추적 보스는 캐릭터 · 보스를 같은 항목으로 본다. 수동 모드는 보스마다 난이도 하나를 추적하기 때문이다([[ADR-036]] 결정 13).
+  서버에서 보스가 오면, 같은 캐릭터 · 같은 보스의 다른 난이도이고 처음 올리기의 대기 줄이 있는 기기 항목을 지우고 그 대기 줄을 뺀다.
+  올리면 서버가 나중에 온 난이도를 남겨(`올리기`) 먼저 올린 기기의 난이도가 지워진다. `queuedAt` 뒤에 바꾼 난이도는 두고 올린다.
 - 추적 목록은 여러 항목이 한 키의 차례와 대표 하나를 나눠 가진다. 항목마다 서버 값을 적기만 하면 서버 차례 값과 기기 자리가 같은
   값으로 겹쳐 기기마다 차례가 갈린다. 그래서 그 받기에 추적 캐릭터가 오면 목록 단위로 서버에 맞춘다.
   - 서버의 캐릭터를 서버 차례대로 앞에 두고, 서버에 없는 이 기기의 캐릭터(처음 올리기의 대기 줄이 있는 것)를 지금 차례대로 뒤에
@@ -251,6 +259,10 @@
 | 메이플 ID 를 모른다 | 보내지 않고 세지 않는다 |
 
 - 기기 줄을 고치고 지우는 일은 넣지 않는 동안(`withServerSyncPaused`)에 한다. 서버가 이미 아는 값이라 다시 올리지 않는다.
+- 서버는 같은 값을 다시 올린 줄의 변경 번호와 고친 시각을 그대로 둔다([[ADR-099]] 결정 17 · 66). 그 줄은 올린 기기와 다른 기기의
+  받기에 다시 실리지 않는다. 딸린 줄만 바뀐 기록(가계부 · 약속 · 계산기 기록)은 번호가 오른다.
+- 수동 추적 보스는 서버가 캐릭터 · 보스마다 난이도 하나로 둔다([[ADR-099]] 결정 10 · 66). 다른 난이도를 올리면 서버가 앞 난이도에
+  삭제 표식을 적고, 다른 기기는 받기에서 그 난이도를 지운다. 앞 난이도의 지우기가 서버에 닿지 않아도 두 난이도가 함께 남지 않는다.
 - 응답이 왔는지로 횟수를 가르는 이유는 [[ADR-099]] 결정 10 에 있다. 비행기 모드로 앱을 다섯 번 켠 사용자가 그동안 쌓인 것을 잃지
   않게 하려는 것이다.
 
