@@ -148,6 +148,29 @@ export async function withServerSyncPaused<T>(work: (db: SqliteDbConnection) => 
 }
 
 /**
+ * 그 기록의 대기 줄이 다른 기록의 대기 줄보다 앞이면 맨 뒤로 옮기는 쓰기. 횟수 · 넣은 시각은 그대로. 올리기는 넣은 차례(rowid)로
+ * 보내서, 서버가 받는 차례가 정해져야 하는 두 쓰기에 씀. 둘 중 하나라도 대기 줄이 없으면 아무것도 안 함
+ *
+ * @param db 부르는 쪽의 트랜잭션 안의 연결
+ */
+export async function moveServerSyncAfter(db: SqliteDbConnection, recordId: string, afterRecordId: string): Promise<void> {
+  const { values } = await db.query('SELECT rowid AS seq, * FROM server_sync_queue WHERE record_id IN (?, ?)', [recordId, afterRecordId])
+  const rows = new Map((values ?? []).map((row) => [row.record_id as string, row]))
+  const mine = rows.get(recordId)
+  const other = rows.get(afterRecordId)
+  if (mine === undefined || other === undefined || Number(mine.seq) > Number(other.seq)) return
+  await db.run('DELETE FROM server_sync_queue WHERE record_id = ?', [recordId])
+  await db.run('INSERT INTO server_sync_queue (id, record_type, record_id, attempts, last_error, created_at) VALUES (?, ?, ?, ?, ?, ?)', [
+    mine.id,
+    mine.record_type,
+    mine.record_id,
+    mine.attempts,
+    mine.last_error ?? null,
+    mine.created_at,
+  ])
+}
+
+/**
  * id 가 없는 Preferences 항목의 대기 줄 id. 유일 기준의 값을 `/` 로 잇는다. 기록 id 는 uuid 라 이 글자와 겹치지 않는다.
  *
  * @example preferenceRecordIdOf('manualTrackedItems', [ocid, 'weekly', contentId])

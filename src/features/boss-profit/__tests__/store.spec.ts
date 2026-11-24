@@ -4,6 +4,7 @@
  */
 jest.mock('../../../storage/boss-profit', () => ({
   upsertBossProfitRecord: jest.fn(),
+  changeBossProfitRecordDifficulty: jest.fn(),
   deleteBossProfitRecord: jest.fn(),
   setBossProfitDefeatedOn: jest.fn(),
   findAdjacentPeriodKeyWithRecords: jest.fn(),
@@ -66,6 +67,7 @@ import { useBossProfitStore } from '../store'
 
 const {
   upsertBossProfitRecord: upsertBossProfitRecordMock,
+  changeBossProfitRecordDifficulty: changeDifficultyMock,
   deleteBossProfitRecord: deleteBossProfitRecordMock,
   setBossProfitDefeatedOn: setBossProfitDefeatedOnMock,
   findAdjacentPeriodKeyWithRecords: findAdjacentMock,
@@ -181,6 +183,7 @@ beforeEach(() => {
   getRecordedCharacterOcidsMock.mockResolvedValue([])
   upsertBossProfitRecordMock.mockResolvedValue(undefined)
   deleteBossProfitRecordMock.mockResolvedValue(undefined)
+  changeDifficultyMock.mockResolvedValue(undefined)
   setBossProfitDefeatedOnMock.mockResolvedValue(undefined)
   replaceBossDropRecordsMock.mockResolvedValue([])
   getBossDropRecordsMock.mockResolvedValue([])
@@ -551,17 +554,24 @@ describe('saveManualCompletion', () => {
   })
 
   // 난이도를 바꾸면 기록 키가 바뀐다. 옛 줄을 안 지우면 같은 처치가 두 줄이 된다.
-  it('직접 적은 행의 난이도를 바꾸면 옛 난이도의 줄을 지우고, 동기화가 만든 행이면 지우지 않는다', async () => {
+  // 옛 줄을 지우면 그 지우기가 서버에 먼저 닿아 서버가 아직 옮기지 않은 드롭을 함께 지운다. 처치만 걷어야 서버가 같은 순서로 맞춘다.
+  it('직접 적은 행의 난이도를 바꾸면 옛 처치를 걷고 새 처치를 쓰며 옛 줄은 지우지 않고, 동기화가 만든 행이면 그냥 쓴다', async () => {
     const manual = monthlyPlaceholder({ difficulty: 'hard', isComplete: true, partySize: 1, payoutMeso: 665_000_000, source: 'manual' })
     seedPeriod('weekly', WEEK, { rows: [manual] })
     await save(manual, '2026-09-11', 'extreme')
-    expect(deleteBossProfitRecordMock).toHaveBeenCalledWith({ ocid: 'ocid-1', bossKey: 'black_mage', difficulty: 'hard', periodKey: MONTH })
+    expect(changeDifficultyMock).toHaveBeenCalledWith(
+      { ocid: 'ocid-1', bossKey: 'black_mage', difficulty: 'hard', periodKey: MONTH },
+      expect.objectContaining({ difficulty: 'extreme', source: 'manual' }),
+    )
+    expect(upsertBossProfitRecordMock).not.toHaveBeenCalled()
+    expect(deleteBossProfitRecordMock).not.toHaveBeenCalled()
 
-    deleteBossProfitRecordMock.mockClear()
+    changeDifficultyMock.mockClear()
     const auto = monthlyPlaceholder({ difficulty: 'hard' })
     seedPeriod('weekly', WEEK, { rows: [auto] })
     await save(auto, '2026-09-11', 'extreme')
-    expect(deleteBossProfitRecordMock).not.toHaveBeenCalled()
+    expect(changeDifficultyMock).not.toHaveBeenCalled()
+    expect(upsertBossProfitRecordMock).toHaveBeenCalledWith(expect.objectContaining({ difficulty: 'extreme' }))
   })
 
   // 화면은 여기서 안 건드린다. 쓴 기록이 표의 판을 올리면 그 표를 읽는 기간 쿼리가 전부 무효화되어 월간 탭에도 선다.

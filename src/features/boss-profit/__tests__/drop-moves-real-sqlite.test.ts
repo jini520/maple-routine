@@ -8,6 +8,7 @@ import type { RecordedDrop } from '../../../types/drops'
 import { loadDropsByRowKey, migrateDropsToConfirmedDifficulty } from '../drops-loader'
 import type { BossProfitRow } from '../rows'
 import { cancelManualCompletion, saveManualCompletion, type ManualCompletionInput } from '../../manual-completion/record'
+import { getBossPartyPeriodOverrides } from '../../../storage/boss-party-period-overrides'
 import { getBossProfitRecords, upsertBossProfitRecord } from '../../../storage/boss-profit'
 import { NO_WORLD, getAllBossDropRecords, replaceBossDropRecords } from '../../../storage/boss-drops'
 import { applyPulledSqliteRecord } from '../../../storage/server-sync-pull'
@@ -31,8 +32,24 @@ afterEach(async () => {
 const AT = '2026-10-03T00:00:00.000Z'
 const NOW = new Date('2026-10-05T00:00:00.000Z')
 
+/** 대기 표의 줄. 넣은 차례(rowid)다. 올리기가 이 차례로 보낸다. */
+const queue = (): [string, string][] =>
+  real.inspect((db) =>
+    (db.prepare('SELECT record_type, record_id FROM server_sync_queue ORDER BY rowid').all() as Record<string, string>[]).map(
+      (row) => [row.record_type!, row.record_id!],
+    ),
+  )
+/** 대기 표를 비운다. 그때까지 쓴 기록을 올린 뒤다. */
+const clearQueue = () => real.inspect((db) => db.exec('DELETE FROM server_sync_queue'))
+/** 수익 건마다 [id, 처치했는지]. */
+const entries = (): [string, boolean][] =>
+  (real.inspect((db) => db.prepare('SELECT id, clear_recorded_by FROM boss_profit_entries ORDER BY rowid').all()) as Record<string, unknown>[]).map(
+    (row) => [row.id as string, row.clear_recorded_by !== null],
+  )
+
 describe('난이도 확정 이관', () => {
-  it('드롭이 식별자와 가격을 들고 확정 난이도로 옮겨 가고, 옛 수익 건은 지워진다', async () => {
+  // 처치 기록이 없어 대기 표로 올리는 이관이다. 옛 수익 건의 지우기가 드롭보다 먼저 서버에 닿지 않게 옛 수익 건은 남긴다.
+  it('드롭이 식별자와 가격을 들고 확정 난이도로 옮겨 가고, 옛 수익 건은 비어도 남는다', async () => {
     await replaceBossDropRecords('o', 'lucid', 'hard', '2026-10-01', [
       {
         dropRecordId: null, category: 'equipment', itemKey: 'twilight_mark', itemName: '', quantity: 1,
@@ -47,7 +64,7 @@ describe('난이도 확정 이관', () => {
     expect(after.map((row) => [row.difficulty, row.dropRecordId, row.priceMeso])).toEqual([
       ['normal', before[0].dropRecordId, 5_000],
     ])
-    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_profit_entries').get())).toEqual({ n: 1 })
+    expect(entries().map(([, cleared]) => cleared)).toEqual([false, false])
   })
 
   it('확정 난이도에서 못 얻는 드롭은 옮기지 않고 지운다', async () => {
@@ -85,9 +102,15 @@ describe('직접 완료', () => {
     return id
   }
 
-  it('난이도를 고치면 처치와 드롭이 새 난이도로 옮겨 가고 옛 수익 건은 남지 않는다', async () => {
+  const entryRows = (records: [string, string][]) => records.filter(([type]) => type === 'bossProfitEntries').map(([, id]) => id)
+
+  // 새 처치가 서버에 먼저 닿으면 옛 처치와 같은 기간 · 보스의 처치라 거절되고 앱이 새 기록을 지운다. 옛 기록을 먼저 지우면 그
+  // 지우기가 서버가 아직 옮기지 않은 드롭을 함께 지운다.
+  it('난이도를 고치면 옛 수익 건의 처치를 걷는 대기 줄이 새 처치 앞에 서고, 옛 수익 건은 지우지 않으며 드롭만 새 수익 건으로 옮긴다', async () => {
     await saveManualCompletion(input, NOW)
     const id = await seedDrop('hard')
+    const [[hard]] = entries()
+    clearQueue()
 
     await saveManualCompletion({ ...input, difficulty: 'normal', previousDifficulty: 'hard' }, NOW)
 
@@ -95,7 +118,46 @@ describe('직접 완료', () => {
       ['normal', '2026-10-03'],
     ])
     expect((await getAllBossDropRecords(['o'])).map((row) => [row.difficulty, row.dropRecordId])).toEqual([['normal', id]])
-    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_profit_entries').get())).toEqual({ n: 1 })
+    const normal = entries().find(([entryId]) => entryId !== hard)![0]
+    expect(entries()).toEqual([
+      [hard, false],
+      [normal, true],
+    ])
+    expect(queue()).toEqual([
+      ['bossProfitEntries', hard],
+      ['bossProfitEntries', normal],
+    ])
+    // 빈 옛 수익 건은 서버가 지운 결과를 받을 때까지 남지만, 처치 · 그 기간 값 · 드롭을 읽는 어느 곳에도 나오지 않는다.
+    expect(await getBossPartyPeriodOverrides(['o'], ['2026-10-01'])).toEqual([])
+  })
+
+  it('옛 처치를 아직 올리지 않았어도 옛 수익 건의 대기 줄이 새 처치 앞에 선다', async () => {
+    await saveManualCompletion(input, NOW)
+    await seedDrop('hard')
+    const [[hard]] = entries()
+
+    await saveManualCompletion({ ...input, difficulty: 'normal', previousDifficulty: 'hard' }, NOW)
+
+    const normal = entries().find(([entryId]) => entryId !== hard)![0]
+    expect(entryRows(queue())).toEqual([hard, normal])
+    expect(entries()).toEqual([
+      [hard, false],
+      [normal, true],
+    ])
+  })
+
+  // 올리기는 넣은 차례(rowid)로 보낸다. 이미 있던 대기 줄은 넣은 시각만 고쳐져 차례가 그대로라, 그대로 두면 새 처치가 먼저 간다.
+  it('새 수익 건의 대기 줄이 옛 수익 건보다 앞에 있었으면 그 뒤로 옮긴다', async () => {
+    await saveManualCompletion(input, NOW)
+    const [[hard]] = entries()
+    clearQueue()
+    await seedDrop('normal')
+    const normal = entries().find(([entryId]) => entryId !== hard)![0]
+    expect(entryRows(queue())).toEqual([normal])
+
+    await saveManualCompletion({ ...input, difficulty: 'normal', previousDifficulty: 'hard' }, NOW)
+
+    expect(entryRows(queue())).toEqual([hard, normal])
   })
 
   it('취소하면 처치와 드롭이 사라지고 수익 건도 남지 않는다', async () => {
@@ -163,21 +225,13 @@ describe('처치한 수익 건으로 모으기', () => {
       .map((row) => [row.bossKey, row.difficulty, row.dropRecordId, findItemById(row.itemId)?.key, row.priceMeso])
       .sort((a, b) => `${a[0]}${a[1]}`.localeCompare(`${b[0]}${b[1]}`))
   }
-  /** 대기 표의 줄. 넣은 차례다. */
-  const queue = (): [string, string][] =>
-    real.inspect((db) =>
-      (db.prepare('SELECT record_type, record_id FROM server_sync_queue ORDER BY rowid').all() as Record<string, string>[]).map(
-        (row) => [row.record_type!, row.record_id!],
-      ),
-    )
-  const clearQueue = () => real.inspect((db) => db.exec('DELETE FROM server_sync_queue'))
   /** 처치 기록이 없는 수익 건의 id */
   const unclearedEntryIds = (): string[] =>
     (real.inspect((db) => db.prepare('SELECT id FROM boss_profit_entries WHERE clear_recorded_by IS NULL').all()) as { id: string }[]).map(
       (row) => row.id,
     )
 
-  it('처치 기록이 있으면 결정의 세 예대로 옮기고 지우고 바꾸며, 그 쓰기와 비운 수익 건은 대기 표에 남지 않는다', async () => {
+  it('처치 기록이 있으면 결정의 세 예대로 옮기고 지우고 바꾸며, 그 쓰기는 대기 표에 넣지 않고 대기 줄이 남은 비운 수익 건은 지우지 않는다', async () => {
     const [restraint] = await replaceBossDropRecords(
       'o',
       'guardian_kalos',
@@ -201,13 +255,13 @@ describe('처치한 수익 건으로 모으기', () => {
       ['bellona', 'hard', stone, 'life_whetstone_from_box', 7_000],
       ['guardian_kalos', 'chaos', restraint, 'restraint_ring_lv4', null],
     ])
-    expect(real.inspect((db) => db.prepare('SELECT count(*) AS n FROM boss_profit_entries').get())).toEqual({ n: 2 })
-    // 적어 둔 드롭의 대기 줄은 다음 올리기에서 기기가 고친 값으로 간다. 비운 수익 건의 대기 줄은 빠진다.
+    // 비운 수익 건은 대기 줄이 남아 있어 지우지 않는다. 대기 줄은 다음 올리기에서 기기가 고친 값으로 간다.
     expect(emptied).toHaveLength(2)
-    expect(queue()).toEqual(pending.filter(([, id]) => !emptied.includes(id)))
+    expect(entries().filter(([, cleared]) => !cleared).map(([id]) => id)).toEqual(emptied)
+    expect(queue()).toEqual(pending)
   })
 
-  it('이미 올린 기록이면 옮기고 지우고 바꾸는 쓰기는 대기 표에 들어가지 않는다', async () => {
+  it('이미 올린 기록이면 옮기고 지우고 바꾸는 쓰기와 비운 수익 건을 지우는 쓰기가 대기 표에 들어가지 않는다', async () => {
     await replaceBossDropRecords('o', 'guardian_kalos', 'normal', PERIOD, [ring('restraint_ring', 'white_boss_ring_box')], WRITTEN, NO_WORLD)
     await replaceBossDropRecords('o', 'bellona', 'normal', PERIOD, [whetstone], WRITTEN, NO_WORLD)
     await clear('guardian_kalos', 'chaos')
@@ -222,11 +276,13 @@ describe('처치한 수익 건으로 모으기', () => {
       ['bellona', 'hard'],
       ['guardian_kalos', 'chaos'],
     ])
+    expect(entries().map(([, cleared]) => cleared)).toEqual([true, true])
     expect(queue()).toEqual([])
   })
 
-  // 처치한 수익 건이 없으면 서버는 옮기지 않는다. 기기가 옮긴 것을 올려야 서버도 같은 수익 건에 드롭을 둔다.
-  it('처치 기록이 없으면 정해진 난이도의 수익 건으로 옮기고 그 쓰기를 대기 표로 올린다', async () => {
+  // 처치한 수익 건이 없으면 서버는 옮기지 않는다. 기기가 옮긴 것을 올려야 서버도 같은 수익 건에 드롭을 둔다. 수익 건은 드롭보다
+  // 먼저 올라가서, 비운 수익 건의 지우기가 먼저 닿으면 서버가 드롭을 함께 지우고 뒤에 온 드롭의 옮기기를 거절한다.
+  it('처치 기록이 없으면 정해진 난이도의 수익 건으로 옮기고 그 쓰기를 대기 표로 올리며, 드롭을 옮겨 비운 수익 건은 지우지 않는다', async () => {
     const [restraint, ultimatum] = await replaceBossDropRecords(
       'o',
       'guardian_kalos',
@@ -236,19 +292,22 @@ describe('처치한 수익 건으로 모으기', () => {
       WRITTEN,
       NO_WORLD,
     )
-    const normal = queue().find(([type]) => type === 'bossProfitEntries')![1]
+    const [[normal]] = entries()
     clearQueue()
 
     await migrateDropsToConfirmedDifficulty(confirmed('guardian_kalos', 'chaos'), await getAllBossDropRecords(['o']), SETTLED)
 
     expect(await drops()).toEqual([['guardian_kalos', 'chaos', restraint, 'restraint_ring_lv4', null]])
-    const chaos = real.inspect((db) => db.prepare('SELECT id FROM boss_profit_entries').get()) as { id: string }
+    const chaos = entries().find(([id]) => id !== normal)![0]
+    expect(entries()).toEqual([
+      [normal, false],
+      [chaos, false],
+    ])
     expect(queue().sort()).toEqual(
       [
         ['bossDrops', restraint],
         ['bossDrops', ultimatum],
-        ['bossProfitEntries', normal],
-        ['bossProfitEntries', chaos.id],
+        ['bossProfitEntries', chaos],
       ].sort(),
     )
   })

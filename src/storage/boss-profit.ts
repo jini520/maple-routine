@@ -18,6 +18,7 @@ import {
 } from './boss-periods'
 import { bumpBossDropRecordsRevision } from './boss-drops'
 import { notifyAfterBatch } from './record-revision-batch'
+import { moveServerSyncAfter } from './server-sync-queue'
 import { getBossProfitDb } from './sqlite/db'
 import { NEW_UUID_SQL } from './sqlite/uuid'
 import { inTransaction } from './sqlite/transaction'
@@ -155,9 +156,8 @@ export function resetBossProfitRecordsRevisionForTests(): void {
   recordsRevision = 0
 }
 
-export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<void> {
-  const db = await getBossProfitDb()
-  await db.run(UPSERT_SQL, [
+function upsertValues(record: BossProfitRecord): unknown[] {
+  return [
     ...entryKeyValues(record),
     findWorld(record.worldKey)?.id ?? null,
     record.priceMeso,
@@ -166,8 +166,43 @@ export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<
     ...splitValues(record, true),
     record.recordedAt,
     record.recordedAt,
-  ])
+  ]
+}
+
+export async function upsertBossProfitRecord(record: BossProfitRecord): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(UPSERT_SQL, upsertValues(record))
   // **쓰기가 끝난 뒤**에 올린다. 중간에 던지면 표가 안 바뀐 것이라, 그때 올리면 읽는 쪽이 헛일한다.
+  bumpRecordsRevision()
+}
+
+/** 처치 칸 · 분배를 비워 처치만 걷는 쓰기. 수익 건과 그 드롭 · 그 기간 값이 아닌 칸은 남는다 */
+const UNCLEAR_SQL = `
+  UPDATE boss_profit_entries
+     SET crystal_price_meso = NULL, crystal_received_meso = NULL, cleared_date = NULL, clear_recorded_by = NULL,
+         over_crystal_sale_limit = NULL, ${SPLIT_COLUMN_NAMES.map((column) => `${column} = ?`).join(', ')}
+   WHERE id = ?`
+
+/**
+ * 직접 완료의 난이도를 바꾸는 쓰기. 옛 처치를 걷고(수익 건은 남김) 새 난이도의 처치를 한 트랜잭션에서 쓰고, 새 수익 건의 대기 줄을
+ * 옛 수익 건 뒤에 둠. 서버가 새 처치를 먼저 받으면 옛 처치와 같은 기간 · 보스의 처치라 거절하고, 옛 수익 건을 지우면 그 지우기가
+ * 서버가 아직 옮기지 않은 드롭을 함께 지움
+ *
+ * @param previous 옛 난이도의 처치 기록 key
+ */
+export async function changeBossProfitRecordDifficulty(previous: BossProfitRecordKey, record: BossProfitRecord): Promise<void> {
+  const db = await getBossProfitDb()
+  await inTransaction(db, async () => {
+    const clearedIdOf = async (key: BossProfitRecordKey): Promise<string | undefined> => {
+      const { values } = await db.query(`SELECT id FROM boss_profit_entries WHERE ${CLEARED} AND ${ENTRY_KEY_WHERE}`, entryKeyValues(key))
+      return (values ?? [])[0]?.id as string | undefined
+    }
+    const previousId = await clearedIdOf(previous)
+    if (previousId !== undefined) await db.run(UNCLEAR_SQL, [...NO_SPLIT_VALUES, previousId])
+    await db.run(UPSERT_SQL, upsertValues(record))
+    const recordId = await clearedIdOf(record)
+    if (previousId !== undefined && recordId !== undefined) await moveServerSyncAfter(db, recordId, previousId)
+  })
   bumpRecordsRevision()
 }
 
@@ -654,13 +689,7 @@ export async function deleteBossProfitRecord(key: BossProfitRecordKey): Promise<
   )
   const entryId = (values ?? [])[0]?.id as string | undefined
   if (entryId !== undefined) {
-    await db.run(
-      `UPDATE boss_profit_entries
-          SET crystal_price_meso = NULL, crystal_received_meso = NULL, cleared_date = NULL, clear_recorded_by = NULL,
-              over_crystal_sale_limit = NULL, ${SPLIT_COLUMN_NAMES.map((column) => `${column} = ?`).join(', ')}
-        WHERE id = ?`,
-      [...NO_SPLIT_VALUES, entryId],
-    )
+    await db.run(UNCLEAR_SQL, [...NO_SPLIT_VALUES, entryId])
     await deleteEntryIfEmpty(db, entryId)
   }
   bumpRecordsRevision()

@@ -525,8 +525,8 @@ interface EntryRow {
 
 /**
  * 같은 캐릭터 · 보스 · 기간의 드롭을 처치한 수익 건으로 모으는 쓰기(`planClearedDrops`). 처치한 수익 건이 기기에 있으면 대기 표에
- * 넣지 않고, 비운 수익 건의 대기 줄도 뺌. 서버가 같은 규칙으로 모으고, 남긴 대기 줄의 지우기는 서버가 옮기기 전의 드롭을 수익 건과
- * 함께 지우기 때문. 처치한 수익 건이 없으면 정해진 난이도의 수익 건으로 모으고 대기 표로 올림
+ * 넣지 않음(서버가 같은 규칙으로 모음). 처치한 수익 건이 없으면 정해진 난이도의 수익 건으로 모으고 대기 표로 올림. 비운 수익 건은
+ * 대기 줄이 남았거나 대기 표로 올리는 쓰기에서 드롭을 옮겨 비운 것이면 지우지 않음
  *
  * @param key 정해진 처치 난이도. 그 난이도의 수익 건이 처치한 것이 아니면 묶음에서 처치한 수익 건으로 모음
  * @returns 바꾼 것이 있으면 참
@@ -588,12 +588,19 @@ async function writeClearedDrops(
       await db.run('UPDATE boss_drops SET profit_entry_id = ?, item_id = ?, updated_at = ? WHERE id = ?', [targetId, itemId, at, id])
     }
   }
+  const paused = target?.cleared === true
+  const movedFrom = new Set(moves.map(({ id }) => byId.get(id)!.entryId))
   for (const entry of entries) {
     if (!drops.some((drop) => drop.entryId === entry.id)) continue
+    // 비운 수익 건의 아직 올리지 않은 쓰기가 서버에 먼저 닿아야 서버가 같은 순서로 맞춘다. 지우면 그 쓰기 대신 지우기가 가서 서버가
+    // 아직 옮기지 않은 드롭을 함께 지운다. 대기 표로 올리는 쓰기면 수익 건이 드롭보다 먼저 올라가 같은 일이 난다.
+    if (paused ? await isQueued(db, entry.id) : movedFrom.has(entry.id)) continue
     await deleteEntryIfEmpty(db, entry.id)
-    if (target?.cleared !== true) continue
-    const { values: left } = await db.query('SELECT 1 FROM boss_profit_entries WHERE id = ?', [entry.id])
-    if ((left ?? []).length === 0) await db.run('DELETE FROM server_sync_queue WHERE record_id = ?', [entry.id])
   }
   return true
+}
+
+async function isQueued(db: SqliteDbConnection, recordId: string): Promise<boolean> {
+  const { values } = await db.query('SELECT 1 FROM server_sync_queue WHERE record_id = ?', [recordId])
+  return (values ?? []).length > 0
 }
