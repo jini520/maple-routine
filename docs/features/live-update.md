@@ -149,8 +149,9 @@ OTA 번들은 스토어 바이너리와 지문이 같은 트리에서만 받힌�
 
 ### 준비
 
-1. `ssh ubuntu@158.179.175.230` 이 비밀번호 없이 열려야 한다. 스크립트가 rsync 로 `/srv/maple-routine-ota` 에 올린다.
-   1.0.15 의 OTA 를 이 박스에 올릴지는 아직 정하지 않았다(아래 `서버와 Worker` 의 주소 표).
+1. 스크립트의 `OTA_HOST` 로 `ssh` 가 비밀번호 없이 열려야 한다. 1.0.14 까지의 트리는 앱 박스(`ubuntu@158.179.175.230`)이고,
+   develop(1.0.15)은 전환까지 DB 박스(`ubuntu@152.69.225.126`)다(아래 `서버와 Worker` 의 주소 표). 스크립트가 rsync 로 그
+   박스의 `/srv/maple-routine-ota` 에 올린다.
    디렉터리가 없으면 서버 README 의 OTA 절대로 만든다. macOS 의 기본 rsync 는 openrsync 라 GNU rsync 의 옵션 일부를
    모른다(`--chmod=F644` 가 그랬다). 그래서 스크립트는 올릴 파일의 권한을 로컬에서 644 로 맞추고 rsync 에는 `-a` 만 준다.
 2. `package.json` 의 `version` 을 올린다. 새 버전이면 `x.y.z`, 같은 버전의 버그 수정이면 `x.y.z+n`
@@ -293,17 +294,23 @@ v1.0.13 은 이 절차를 건너뛰었다. 서버의 `latest-<platform>.json` �
 `ios/app/Supporting/Expo.plist` 의 `EXUpdatesURL` 과 `AndroidManifest.xml` 의 `EXPO_UPDATE_URL` 도 같은 값이어야 한다.
 `src/__tests__/server-domain-policy.test.ts` 가 셋이 같은지와, 발행 스크립트의 `FILES_BASE` 가 같은 서버인지 본다.
 
-| 바이너리 | 매니페스트 주소 | 번들 · 에셋 주소(`FILES_BASE`) | 발행하는 트리 |
-|---|---|---|---|
-| 1.0.13 · 1.0.14 | `https://mapleroutine.store/v1/ota/manifest` | `https://mapleroutine.store/ota/files` | main 에서 딴 hotfix · 릴리즈 대기 단계의 patch |
-| 1.0.15 부터 | `https://api.mapleroutine.store/v1/ota/manifest` | `https://api.mapleroutine.store/ota/files` | 1.0.15 바이너리를 빌드한 트리 |
+| 바이너리 | 매니페스트 주소 | 번들 · 에셋 주소(`FILES_BASE`) | 올리는 박스(`OTA_HOST`) | 발행하는 트리 |
+|---|---|---|---|---|
+| 1.0.13 · 1.0.14 | `https://mapleroutine.store/v1/ota/manifest` | `https://mapleroutine.store/ota/files` | 앱 박스 | main 에서 딴 hotfix · 릴리즈 대기 단계의 patch |
+| 1.0.15 부터 | `https://api.mapleroutine.store/v1/ota/manifest` | `https://api.mapleroutine.store/ota/files` | 전환까지 DB 박스, 전환 뒤 앱 박스 | 1.0.15 바이너리를 빌드한 트리 |
 
 - 1.0.15 의 주소는 도메인을 나누며 api 로 바꿨다([[ADR-016]] 결정 14). 매니페스트 주소는 지문 재료라서 develop 의 지문이 1.0.14
   와 달라졌다. 1.0.15 는 새 스토어 바이너리이므로 그래야 맞다. 그래서 develop 에서 발행한 번들은 1.0.14 바이너리가 받지 못하고,
   1.0.14 의 OTA 는 지금처럼 patch · hotfix 트리의 스크립트로 낸다. 그 트리의 `app.json` 과 `FILES_BASE` 는 루트 그대로다.
 - 발행 스크립트의 왕복 확인(`[6/6]`)은 그 트리의 `app.json` 에 있는 매니페스트 주소로 묻는다. develop 에서 내면 api 로 묻는다.
-- api 는 upstream `maple_api` 가 가리키는 박스로 가고, 2026-11-21 부터 DB 박스(`ubuntu@152.69.225.126`)다. 그런데 발행 스크립트는
-  앱 박스(`OTA_HOST`)에 올린다. 1.0.15 의 OTA 파일과 받는 지문 목록을 어느 박스에 둘지는 출시 전에 정한다(#1090).
-- 정하기 전에는 develop 에서 발행하지 않는다. 지금 내면 `[5/5]` 가 앱 박스의 `latest-<platform>.json` 을 develop 의 지문으로
-  덮는다. 루트로 묻는 1.0.14 사용자는 자기 지문이 목록에 없어 스토어 업데이트 모달에 막힌다. 스크립트는 그 뒤 `[6/6]` 에서
-  api 쪽에 매니페스트가 없어 멈춘다.
+- 1.0.15 의 OTA 는 전환까지 DB 박스에 둔다([[ADR-099]] 결정 43). 매니페스트가 읽는 `latest-<platform>.json` 과 받는 지문
+  목록, 번들과 에셋이다. api 의 `/v1/ota/` · `/ota/files/` 가 upstream `maple_api` 를 따라 DB 박스로 가기 때문이다. 그래서
+  develop 의 `OTA_HOST` 는 DB 박스이고, 1.0.15 바이너리(TestFlight 포함)를 업로드하면 지문도 DB 박스의 목록에 넣는다
+  (`foundation/release.md` 의 `업로드하면 곧바로: 지문 등록`).
+- 트리마다 `OTA_HOST` 가 그 트리의 바이너리가 묻는 주소의 박스를 가리킨다. 그래서 develop 에서 발행해도 앱 박스의
+  `latest-<platform>.json` 은 바뀌지 않고, 루트로 묻는 1.0.14 사용자에게는 아무 일이 없다. 반대로 1.0.14 의 트리에서 발행해도
+  DB 박스의 목록은 바뀌지 않는다.
+- 전환할 때 upstream 을 앱 박스로 바꾸기 전에 DB 박스의 1.0.15 OTA 를 앱 박스로 옮기고, 다음에 발행할 트리의 `OTA_HOST` 를 앱
+  박스로 바꾼다([[ADR-099]] 결정 43). 바꾼 뒤 api 의 OTA 확인은 앱 박스의 목록을 읽으므로, 옮기지 않으면 1.0.15 사용자가
+  자기 지문이 없는 목록을 받아 스토어 업데이트 모달에 막힌다. 옮긴 목록은 루트로 묻는 1.0.14 사용자도 받으므로 1.0.15 가
+  스토어에 나온 뒤 루트를 잠글 때 옮긴다([[ADR-099]] 결정 64). 절차는 서버 저장소 `README.md` 의 OTA 에 있다.

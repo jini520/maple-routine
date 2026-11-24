@@ -40,7 +40,7 @@
 | `GET /v1/settlement` | 없음 | | `{ settling, startedAt }` | 4초 |
 | `GET /v1/manual-completion` | 없음 | | `{ bosses: [{ boss, from }] }` | 4초 |
 | `GET /v1/game-data` | 없음 | | 스무 칸. 칸마다 `updatedAt` | 4초 |
-| `GET /v1/maintenance` | 없음 | | 점검 중이면 200 과 `{ maintenance: true, until }`, 아니면 204. 서버가 아니라 nginx 가 답한다([[ADR-261]] 결정 3) | 4초 |
+| `GET /v1/maintenance` | 없음 | | 점검 중이면 200 과 `{ maintenance: true, until }`, 아니면 204. 서버가 아니라 nginx 가 그 주소의 점검 파일로 답한다([[ADR-261]] 결정 3) | 4초 |
 | `DELETE /v1/me` | 세션 또는 메이플 ID 해시 | | 204 | 10초 |
 | `PUT /v1/me/maple-ids` | 세션 또는 메이플 ID 해시 | `{ mapleIds }`. 메인 계정의 메이플 ID 해시 | `{ mapleIds }`. 그 넥슨 계정이 가진 메이플 ID 해시 전부 | 10초 |
 | `POST /v1/me/sub-accounts` | 세션 | `{ mapleIds }`. 부계정의 메이플 ID 해시 | 204. 거절은 409 와 `code`(`same_account` · `registered_elsewhere` · `has_sub_accounts` · `login_is_sub_account`) | 10초 |
