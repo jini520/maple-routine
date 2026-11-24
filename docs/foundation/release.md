@@ -346,7 +346,7 @@ iOS 는 로컬 아카이브로 낸다. Xcode Cloud 워크플로는 꺼 두었다
 | 진단(Play `앱 정보 및 성능` · App Store `기타 진단 데이터`) | 강화 합계에서 빠진 줄의 날짜 · 종류 · 사유 · 장비 이름 · 줄 수([[ADR-102]]). 앱의 계산 오류를 찾는 데 쓴다 |
 
 Play 는 `수집함 · 공유하지 않음 · 필수 · 앱 기능과 분석`(사용 로그와 진단은 `분석`), `전송 중 암호화`, `삭제 요청 가능` 으로
-적는다. 삭제는 앱 설정의 `계정 삭제` 가 한다. 서버는 30일 유예 뒤 사람과 열쇠를 지우고 보낸 기록은 사람과의 연결을 끊어 남긴다. 드롭에는 ocid 해시가 남는다([[ADR-017]] 결정 6). 1.0.15 는 동기화한 기록도 지우고, 남는 판매가에 ocid 해시가 없다(PR #1201).
+적는다. 삭제는 앱 설정의 `계정 삭제` 가 한다. 서버는 30일 유예 뒤 사람과 열쇠를 지우고 보낸 기록은 사람과의 연결을 끊어 남긴다. 드롭에는 ocid 해시가 남는다([[ADR-101]] 결정 24). 1.0.15 는 동기화한 기록도 지우고, 남는 판매가에 ocid 해시가 없다(PR #1201).
 메일로는 받지 않는다. 운영자가 메일만으로 사람을 찾을 수 없어서다. 넥슨 로그인이 바이너리에 있으므로 계정 생성 방법은
 `OAuth` 이고, 잠근 채로 내도 그렇게 적는다. OTA 로 풀면 심사 없이 계정이 생기기 때문이다. 계정 삭제 URL 과 데이터 삭제 URL 은
 `https://mapleroutine.store/support` 다. 그 페이지의 `계정을 삭제하고 싶습니다` 절이 앱에서 지우는 순서와 지우는 데이터 · 남는
@@ -365,7 +365,7 @@ Play 는 `수집함 · 공유하지 않음 · 필수 · 앱 기능과 분석`(�
 | 금융 정보 | 신고하지 않는다(사용자 선택). 가계부의 `캐시` 지출 금액이 서버에 가지만 게임 안의 지출 기록이다 |
 | 계정을 지우지 않고 일부 데이터 삭제(Play) | `예` 로 바꾼다. 앱의 `데이터 삭제` 가 서버의 기록도 지운다([[ADR-099]] 결정 16) |
 | 계정 삭제로 지우는 것의 설명 | 동기화한 기록도 지우고, 남는 드롭 판매가에 ocid 해시가 없다고 고친다 |
-| 심사 메모 | `[PERMISSIONS / THIRD PARTIES]` 의 Network 문단과 `[ACCOUNT DELETION]` 을 같은 내용으로 고친다 |
+| 심사 메모 | 아래 `심사 메모 (App Store)` 의 Network 문단과 `[ACCOUNT DELETION]` 을 1.0.15 의 내용으로 고쳐 두었다 |
 
 사용자 ID · 기기 식별자 · 앱 상호작용 · 진단 · 광고 ID · 추적 없음 · 전송 중 암호화는 그대로다.
 
@@ -597,14 +597,14 @@ NEXON SIGN-IN SCREEN RECORDING:
 
 [PERMISSIONS / THIRD PARTIES]
 - Notifications (optional): NEXON notice alerts, party schedule reminders, and a daily 21:00 reminder of unfinished schedules (can be turned off). Reminders are scheduled on the device; a background task rechecks remaining schedules.
-- Network: NEXON Open API. For NEXON sign-in users, NEXON's guidelines keep the login token on our server (mapleroutine.store), which calls NEXON on the user's behalf and passes results to the device without storing them. Our server also serves app notices and daily item price statistics (MASPI), and receives the drop sale prices users enter (with SHA-256 hashes of the Maple ID and character ID, never the raw IDs) and a first-party usage log (screens viewed, save counts, platform, app version), keyed by our session or a SHA-256 hash of the API key. No third-party analytics. Push uses Firebase Cloud Messaging topics. No ads.
-- The API key stays on the device and is never sent in plain text.
+- Network: NEXON Open API. For NEXON sign-in users, NEXON's guidelines keep the login token on our server (mapleroutine.store), which calls NEXON on the user's behalf and passes results to the device without storing them. Our server also serves app notices, game reference data, and daily item price statistics (MASPI). The records users create in the app (boss income, item drops, cashbook, inventory, enhancement totals, party schedules, calculator records, notes, and some settings) are stored on our server so that the same user's devices show the same records. Requests are keyed by our session or a SHA-256 hash of the user's Maple ID; NEXON identifiers are sent only as SHA-256 hashes, never raw, and character names are not sent. The app also sends a first-party usage log (screens viewed, save counts, platform, app version). No third-party analytics. Push uses Firebase Cloud Messaging topics. No ads.
+- The API key stays on the device and is never sent, not even as a hash.
 
 [LOGIN SERVICES]
 Sign in with NEXON is used only to read the user's own MapleStory data from NEXON; the app is a client for NEXON's game-data service (Guideline 4.8). An API key can be used instead.
 
 [ACCOUNT DELETION]
-더보기 (More) > gear icon > 앱 정보 및 계정 (App info and account) > 계정 삭제 (Delete account), for every user. The session is removed and the user is signed out at once; after 30 days our server deletes the user's identifiers (signing in again before then offers to cancel). Records already sent remain without the link to the user.
+더보기 (More) > gear icon > 앱 정보 및 계정 (App info and account) > 계정 삭제 (Delete account), for every user. The session is removed and the user is signed out at once; after 30 days our server deletes the user's identifiers and the records synced to the server (signing in again before then offers to cancel). Drop sale prices and the usage log remain without the link to the user. Records on the device are kept; 데이터 삭제 (Delete data) on the same screen deletes chosen records on the server and the device.
 
 [AFFILIATION] Not affiliated with or endorsed by NEXON Korea Corp. "Data based on NEXON Open API" is shown at the bottom of Settings.
 
