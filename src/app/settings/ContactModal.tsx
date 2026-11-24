@@ -6,7 +6,7 @@
 import type { ReactNode } from 'react'
 import { Linking, Pressable, View } from 'react-native'
 
-import { ExternalLinkIcon, HeadsetIcon, KakaoTalkIcon, MailIcon, Text } from '../../components/atoms'
+import { ExternalLinkIcon, HeadsetIcon, IconBadge, KakaoTalkIcon, MailIcon, Text } from '../../components/atoms'
 import { ModalHeader } from '../../components/molecules/ModalHeader/ModalHeader'
 import { Modal } from '../../components/organisms/Modal/Modal'
 import { useToastStore } from '../../features/toast/store'
@@ -47,11 +47,7 @@ export function ContactModal(props: ContactModalProps): React.JSX.Element {
           <View className="gap-1.5">
             <ContactCell
               label="메일"
-              icon={
-                <View className="h-8 w-8 items-center justify-center rounded-full bg-primary-tint">
-                  <MailIcon className="h-[18px] w-[18px] text-primary-ink" strokeWidth={1.75} aria-hidden />
-                </View>
-              }
+              icon={<IconBadge icon={MailIcon} size={32} />}
               onPress={() =>
                 choose(() => {
                   Linking.openURL(props.mailUrl).catch(() =>

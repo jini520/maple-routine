@@ -1,4 +1,4 @@
-import { Card, MapleLeaf, Text } from '../../atoms'
+import { Card, IconBadge, Text, type IconBadgeIcon } from '../../atoms'
 import { Pressable, View } from 'react-native'
 
 interface EmptyStateAction {
@@ -7,7 +7,7 @@ interface EmptyStateAction {
 }
 
 interface EmptyStateProps {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }> | 'leaf'
+  icon: IconBadgeIcon | 'leaf'
   title: string
   description?: string
   /** 문구가 지시하는 목적지가 앱 안에 있을 때만 주는 CTA. 없으면 만들지 않는다. */
@@ -16,26 +16,12 @@ interface EmptyStateProps {
 }
 
 export function EmptyState(props: EmptyStateProps): React.JSX.Element {
-  const { icon: Icon, title, description, action, size = 'inline' } = props
+  const { icon, title, description, action, size = 'inline' } = props
   const isPage = size === 'page'
 
   const body = (
     <>
-      <View
-        testID="empty-state-badge"
-        aria-hidden
-        className={`items-center justify-center rounded-full bg-primary-tint ${
-          isPage ? 'h-16 w-16' : 'h-12 w-12'
-        }`}
-      >
-        {/* 마크 색은 primary 계열로 통일. primary-ink 는 라이트 테마에선 더 또렷하지만 레테(다크)에서
-            배지 배경에 묻힌다(그 테마만 primary-ink 가 primary 보다 어둡다). */}
-        {Icon === 'leaf' ? (
-          <MapleLeaf size={isPage ? 32 : 24} className="text-primary-ink" />
-        ) : (
-          <Icon className={`text-primary-ink ${isPage ? 'h-8 w-8' : 'h-6 w-6'}`} strokeWidth={1.75} />
-        )}
-      </View>
+      <IconBadge testID="empty-state-badge" icon={icon} size={isPage ? 64 : 48} />
 
       <View className="gap-1">
         <Text

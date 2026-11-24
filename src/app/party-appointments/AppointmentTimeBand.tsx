@@ -10,7 +10,7 @@
 import { forwardRef, useState } from 'react'
 import { Pressable, View } from 'react-native'
 
-import { CalendarIcon, ClockIcon, FlagIcon, Text } from '../../components/atoms'
+import { CalendarIcon, ClockIcon, FlagIcon, IconBadge, Text } from '../../components/atoms'
 import { SelectChevron } from '../../components/organisms/SelectField/SelectField'
 import { CalendarPopover } from '../../components/organisms/CalendarPopover/CalendarPopover'
 import { TimePopover } from '../../components/organisms/TimePopover/TimePopover'
@@ -97,7 +97,6 @@ interface TileProps extends ValueTone {
 
 /** 타일 하나. 팝오버가 이 타일을 재서 아래에 앉는다 */
 const Tile = forwardRef<View, TileProps>(function Tile(props, ref) {
-  const Icon = props.icon
   return (
     <Pressable
       ref={ref}
@@ -108,15 +107,7 @@ const Tile = forwardRef<View, TileProps>(function Tile(props, ref) {
       onPress={props.onPress}
       className={`flex-1 flex-row items-center gap-2.5 rounded-xl px-3 py-2.5 ${props.isOpen ? 'bg-primary-tint' : 'bg-surface'}`}
     >
-      <View
-        className={`h-[30px] w-[30px] items-center justify-center rounded-full ${props.muted ? 'bg-surface-2' : 'bg-primary-tint'}`}
-      >
-        <Icon
-          className={`h-[15px] w-[15px] ${props.muted ? 'text-text-disabled' : 'text-primary-ink'}`}
-          strokeWidth={2}
-          aria-hidden
-        />
-      </View>
+      <IconBadge icon={props.icon} size={32} tone={props.muted ? 'muted' : 'primary'} />
       <View className="shrink">
         <Text className="text-xs text-text-muted">{props.label}</Text>
         <View className="flex-row items-center gap-0.5">

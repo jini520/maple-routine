@@ -29,7 +29,7 @@ import { BottomBarOverlay } from '../BottomBar/BottomBarOverlay'
 import { useFabPlacement } from '../../../lib/fab-metrics'
 import { useThemeAppearance } from '../../../theme/context'
 import type { ThemeDefinition } from '../../../types/theme'
-import { PlusIcon, Text } from '../../atoms'
+import { IconBadge, PlusIcon, Text } from '../../atoms'
 import { Fab } from '../../molecules/Fab/Fab'
 import {
   DIAL_GAP_PX,
@@ -60,7 +60,7 @@ const EASE_IN = Easing.bezier(0.4, 0, 1, 1)
 const EASE_SPRING = Easing.bezier(0.34, 1.42, 0.64, 1)
 
 /** 아이콘 원 지름과 알약 안 여백 */
-const ICON_CIRCLE_PX = 42
+const ICON_CIRCLE_PX = 40
 const ICON_INSET_PX = (PILL_HEIGHT_PX - ICON_CIRCLE_PX) / 2
 /** 글자를 재는 상자 폭. 글자가 여기서 줄바꿈되지 않을 만큼 넉넉하면 된다(알약이 잘라 보인다) */
 const LABEL_BOX_PX = 360
@@ -165,19 +165,9 @@ function DialPill(props: DialPillProps): React.JSX.Element {
           {/* 알약이 왼쪽으로 늘어나는 동안 원은 왼쪽 끝을 따라간다. */}
           <View
             testID={`speed-dial-icon-${action.key}`}
-            style={{
-              position: 'absolute',
-              left: ICON_INSET_PX,
-              top: ICON_INSET_PX,
-              width: ICON_CIRCLE_PX,
-              height: ICON_CIRCLE_PX,
-              borderRadius: 999,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: definition.primaryTint,
-            }}
+            style={{ position: 'absolute', left: ICON_INSET_PX, top: ICON_INSET_PX }}
           >
-            <action.Icon className="h-5 w-5 text-primary-ink" strokeWidth={2} />
+            <IconBadge icon={action.Icon} size={ICON_CIRCLE_PX} />
           </View>
           <AnimatedBox
             style={[
