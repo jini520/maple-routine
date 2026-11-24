@@ -1,12 +1,12 @@
 # 안내 사이트
 
-`mapleroutine.store` 는 앱 홍보 첫 화면과, 스토어와 AdMob 이 요구하는 문서, API 키 발급 가이드를 올려 둔 정적
-사이트다. 앱 기능을 웹으로 옮긴 것이 아니고, RN 앱과 코드를 함께 쓰지 않는다. 왜 이렇게 만들었는지는 [[ADR-015]]
+`info.mapleroutine.store` 는 앱 홍보 첫 화면과, 스토어와 AdMob 이 요구하는 문서, API 키 발급 가이드를 올려 둔 정적
+사이트다. 루트 `mapleroutine.store` 는 PC 버전에 비워 두려고 `/` 를 info 로 301 한다(2026-11-24). 루트의 `/privacy` ·
+`/support` · `/api-key` · `/app-ads.txt` 는 스토어 등록정보와 AdMob 이 찾으므로, 둘 곳을 정할 때까지 루트에서도 같은 파일을 낸다. 앱 기능을 웹으로 옮긴 것이 아니고, RN 앱과 코드를 함께 쓰지 않는다. 왜 이렇게 만들었는지는 [[ADR-015]]
 에 있다.
 
-같은 사이트가 `info.mapleroutine.store` 에도 열린다. 두 주소가 앱 박스의 같은 디렉터리를 낸다. 1.0.15 앱은 처리방침과 키
-가이드를 info 주소로 연다. 대표 주소(`canonical`) · 사이트맵 · 스토어 등록정보는 아직 루트이고, info 로 옮기는 일은
-[[ADR-015]] 결정 11 에 있다.
+루트와 info 는 앱 박스의 같은 디렉터리를 낸다. 1.0.15 앱은 처리방침과 키 가이드를 info 주소로 연다. 스토어 등록정보는 아직
+루트이고, 둘 곳은 나중에 정한다([[ADR-015]] 결정 11).
 
 ## 관련 소스
 
@@ -92,11 +92,12 @@ Figma MCP 로 내보낸 PNG 는 틀 채우기를 비워도 바탕이 깔린다. 
 ## 검색엔진 등록
 
 운영자 계정으로 사람이 한다. 소유 확인은 HTML 메타 태그로 하고, 받은 태그를 `site/index.html` 머리에 넣어 다시
-배포한 뒤 각 도구에서 확인을 누른다. 확인이 끝나면 `https://mapleroutine.store/sitemap.xml` 을 제출한다.
+배포한 뒤 각 도구에서 확인을 누른다. 확인이 끝나면 `https://info.mapleroutine.store/sitemap.xml` 을 제출한다. 대표 주소를
+info 로 옮겨서(2026-11-24) info 를 새로 등록해야 한다. 옛 루트 속성은 301 을 따라 옮겨 가는 것을 보려고 남겨 둔다.
 
 | 도구 | 하는 일 |
 |---|---|
-| Google Search Console | URL 접두어 속성 `https://mapleroutine.store/` 를 만들고 메타 태그로 확인한다 |
+| Google Search Console | URL 접두어 속성 `https://info.mapleroutine.store/` 를 만들고 메타 태그로 확인한다 |
 | 네이버 서치어드바이저 | 사이트를 등록하고 메타 태그로 확인한다. 사이트맵 제출과 웹 페이지 수집 요청을 한다 |
 | Bing 웹마스터 도구 | Google Search Console 에서 가져오기로 등록한다 |
 
@@ -109,8 +110,11 @@ npm run deploy:site
 1. `npm run build:site` 로 `dist-site/` 를 만든다.
 2. `rsync -az --delete` 로 `ubuntu@158.179.175.230:/var/www/mapleroutine/` 에 올린다. `DEPLOY_HOST` ·
    `DEPLOY_DEST` 환경 변수로 바꿀 수 있다. 루트와 info 가 이 디렉터리를 함께 내므로 한 번 올리면 두 주소가 같이 바뀐다.
-3. `/` · `/privacy` · `/support` · `/api-key` · `/app-ads.txt` · `/robots.txt` · `/sitemap.xml` 의 응답 코드를 출력한다.
-   모두 `200` 인지 확인한다.
+3. info 의 `/` · `/privacy` · `/support` · `/api-key` · `/app-ads.txt` · `/robots.txt` · `/sitemap.xml` 이 모두 `200` 인지,
+   루트의 `/` 가 info 로 `301` 이고 `/privacy` · `/support` · `/api-key` · `/app-ads.txt` 가 `200` 인지 출력한다.
+
+**사이트는 main 의 트리에서 올린다.** 빌드가 그 트리의 `PRIVACY.md` 로 처리방침 페이지를 만든다. develop 의 `PRIVACY.md` 는
+다음 버전의 처리방침이라 출시 7일 전 공지 전에는 올리면 안 된다. 사이트를 고칠 때는 main 에서 딴 hotfix 로 고쳐 거기서 올린다.
 
 Oracle 접속 키는 배포하는 사람의 `~/.ssh` 에만 있다. `dist-site/` 는 커밋하지 않는다.
 

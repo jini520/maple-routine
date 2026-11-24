@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# mapleroutine.store 정적 사이트를 Oracle 로 올린다.
+# 안내 사이트(info.mapleroutine.store)를 Oracle 로 올린다. 루트(mapleroutine.store)도 같은 디렉터리를 낸다.
 #
 # GitHub Actions 가 아니라 손으로 도는 이유. 자동화하려면 GitHub Actions 에 Oracle 접속
 # 열쇠를 둬야 하고, 그 열쇠가 새면 서버가 열린다. 이 사이트는 처방침을 고칠 때나 바뀌는데
@@ -20,8 +20,17 @@ echo "올린다 → $HOST:$DEST"
 # --delete 로 지운 파일이 서버에 안 남게 한다. 옛 페이지가 남으면 그것도 열린다.
 rsync -az --delete --stats dist-site/ "$HOST:$DEST" | grep -E "Number of files|Total transferred"
 
-echo "확인"
+echo "확인 (info)"
 for p in / /privacy /support /api-key /app-ads.txt /robots.txt /sitemap.xml; do
+  code=$(curl -sL --max-time 15 -o /dev/null -w '%{http_code}' "https://info.mapleroutine.store$p")
+  printf '  %-14s %s\n' "$p" "$code"
+done
+
+# 루트 / 는 info 로 301 한다. 스토어 등록정보와 AdMob 이 루트로 찾는 넷은 루트에서도 200 이어야 한다.
+echo "확인 (루트)"
+code=$(curl -s --max-time 15 -o /dev/null -w '%{http_code} %{redirect_url}' "https://mapleroutine.store/")
+printf '  %-14s %s\n' "/" "$code"
+for p in /privacy /support /api-key /app-ads.txt; do
   code=$(curl -sL --max-time 15 -o /dev/null -w '%{http_code}' "https://mapleroutine.store$p")
   printf '  %-14s %s\n' "$p" "$code"
 done
