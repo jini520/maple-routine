@@ -1,6 +1,6 @@
-# ADR-005 React Native 앱 하나로 만든다
+# ADR-005+308 React Native 앱 하나로 만들고, 웹과 한 저장소에 둔다
 
-> 🟢 유효
+> ⚪ 미구현
 > 옛 번호: ADR-128 · ADR-154 · ADR-155
 > 관련 소스: `package.json` · `app.json` · `index.ts` · `src/` · `modules/capacitor-storage/` · `src/storage/adapters/` · `ota/` · `tailwind-v4-axes.cjs`
 
@@ -64,6 +64,8 @@ import 경로에 alias 를 두지 않고 모두 상대 경로로 쓴다. 그래�
 타입 검사는 `npm run typecheck`(`tsc --noEmit`) 하나다. 루트 `tsconfig.json` 이 앱 전체를 검사하므로 따로
 나눈 프로그램이 없다.
 
+웹이 앱의 로직을 함께 쓰게 되면서 이 결정은 결정 8 의 모노레포로 바뀐다. 결정 8 을 구현하면 이 결정을 지운다.
+
 ### 결정 5. Tailwind v4 기준 치수는 값을 고정해 둔다
 
 NativeWind 는 Tailwind v3 만 받는다. 그런데 화면 코드는 웹 시절 Tailwind v4 의 간격 · 컨테이너 · 모서리
@@ -104,6 +106,28 @@ Metro 는 사이클을 찾으면 `Require cycle: …` 경고를 내고, 그 경�
 값이 함수 본문에서만 쓰여 동작은 멀쩡해도, 누가 그 값을 모듈 최상위로 옮기는 순간 `undefined` 가 된다.
 `import type` 은 컴파일 때 지워지므로 사이클로 치지 않는다.
 
+### 결정 8. 저장소를 모노레포로 바꾸고 앱을 `apps/mobile` 로 옮긴다 (사용자 선택 2026-11-24)
+
+웹을 Next.js 로 따로 만들고 로직은 앱과 함께 쓰기로 했다([[ADR-307]] 결정 1). 로직을 두 앱이 함께 쓰려면 패키지로 빼야 해서, 결정 4 의
+`앱이 하나뿐이라 패키지를 나눌 이유가 없다` 가 더는 맞지 않는다.
+
+```
+apps/mobile/      지금 RN 앱. app.json · index.ts · ios/ · android/ · 화면 · 저장소와 네이티브 어댑터
+apps/web/         Next.js 웹
+packages/core/    features · lib · storage · nexon · server 와 이들이 쓰는 타입 · 상수
+packages/tokens/  테마 색 · 글자 역할표
+```
+
+- `packages/core` 에는 플랫폼 라이브러리를 들이지 않는다. 웹 번들에 RN 이 딸려 오면 웹에서 돌지 않기 때문이다. 2026-11-24 에 로직 파일
+  가운데 RN · Expo 를 직접 가져오는 것은 `features` 5개(`AppState` · 로그인 창)와 `lib` 8개(화면 치수 계산)였다. 앞의 것은 포트로
+  바꾸고, 뒤의 것은 화면이 쓰는 계산이라 `apps/mobile` 에 둔다. 저장소 어댑터(`storage/adapters/rn-*`)도 `apps/mobile` 에 둔다.
+- 화면 쪽 코드를 가져오는 로직 파일 7개는 그 타입과 표를 `packages/core` 로 옮긴다. `features/bar-order` 와 `storage/bar-order.ts` 가
+  `navigation/bar-groups` 를, `features/boss-profit` · `features/inventory` · `features/input-card` 가 `components/organisms/InputCard`
+  의 타입을 가져온다.
+- 옮긴 트리는 다음 스토어 바이너리로 낸다. `ios/Podfile.lock` 의 `../node_modules/...` 상대 경로 255곳이 바뀌어 iOS 지문이 바뀌고, 지문이
+  다른 트리에서는 지금 스토어 바이너리에 OTA 를 낼 수 없기 때문이다([[ADR-011]]). 옮길 때 앞뒤 지문을 잰다.
+- 옮기는 일은 `release/1.0.15` 를 딴 뒤 develop 에서 한다(#1208). 그 전에 옮기면 1.0.15 를 만드는 브랜치마다 모든 파일 경로가 부딪힌다.
+
 ## 테스트
 
 | 파일 | 확인하는 것 |
@@ -116,6 +140,8 @@ Metro 는 사이클을 찾으면 `Require cycle: …` 경고를 내고, 그 경�
 | `src/__tests__/require-cycle-policy.test.ts` | 결정 7: Metro 가 번들하는 `src/` 그래프에 런타임 import 사이클이 없는지, 그래프를 실제로 읽었는지 본다 |
 | `ota/__tests__/latest.spec.ts` | 결정 6: `latest.json` 이 동결한 파서를 통과하는지(문자열로 와도), 목록에 `android` 만 있는지, `highlights` 에 스토어 이야기가 없는지(iOS 도 같은 문구를 읽는다), `url` · `checksum` · `size` 형식이 맞는지 본다 |
 
+결정 8 의 테스트는 옮길 때 적는다. `packages/core` 가 RN · Expo 와 플랫폼 라이브러리를 가져오지 않는지 본다.
+
 ## 열린 질문
 
 - iOS 를 `storeRequiredPlatforms` 에 넣을지. App Store 에는 2026-08-21 부터 React Native 판이 게시돼 있지만
@@ -125,3 +151,5 @@ Metro 는 사이클을 찾으면 `Require cycle: …` 경고를 내고, 그 경�
 
 - ADR-005 (2026-10-19): 옛 ADR-128 · 154 · 155 를 합쳐 처음 작성. 옛 ADR-092(Vite 번들 분할)는 Metro 에서
   의미가 없어져 옮기지 않았다. 옛 ADR-155 결정 6(러너 둘)은 [[ADR-006]] 으로 대체됐다
+- ADR-308 (2026-11-24): 결정 8 을 더했다. 웹을 Next.js 로 따로 만들고 로직을 앱과 함께 쓰기로 해서, 결정 4 의 저장소 구조를 모노레포로
+  바꾼다(#1206 · #1208)

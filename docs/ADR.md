@@ -131,7 +131,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-002+094+165+237](./adr/ADR-002+094+165+237_stats_overview.md) | 🟢 | stats | 통계 화면 |
 | [ADR-003+273+283](./adr/ADR-003+273+283_docs_writing-rules.md) | 🟢 | docs | 문서 · 주석 · 앱 문구 쓰는 규칙 |
 | [ADR-004+065](./adr/ADR-004+065_architecture_local-first-adapters.md) | 🟢 | architecture | 기기 저장소와 네이티브 어댑터 경계 |
-| [ADR-005](./adr/ADR-005_architecture_react-native.md) | 🟢 | architecture | React Native 앱 하나로 만든다 |
+| [ADR-005+308](./adr/ADR-005+308_architecture_react-native.md) | ⚪ | architecture | React Native 앱 하나로 만들고, 웹과 한 저장소에 둔다 |
 | [ADR-006+069+154+271+284+303](./adr/ADR-006+069+154+271+284+303_architecture_testing.md) | 🟢 | architecture | 테스트 러너 · 검증 명령 · 네이티브 빌드 캐시 |
 | [ADR-007+077](./adr/ADR-007+077_persistence_sqlite.md) | 🟢 | persistence | SQLite 커넥션 · 스키마 진화 · 기본키 |
 | [ADR-008](./adr/ADR-008_release_android-signing.md) | 🟢 | release | Android 릴리스 서명 |
@@ -152,7 +152,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-023](./adr/ADR-023_error-resilience_resumable-task.md) | 🟢 | error-resilience | 이어서 하는 작업과 기록 판 알림 |
 | [ADR-024+196](./adr/ADR-024+196_auth_api-key.md) | 🟢 | auth | API 키 로그인과 키 재입력 |
 | [ADR-025+068+083+105+166+169+170+171+192+207+233](./adr/ADR-025+068+083+105+166+169+170+171+192+207+233_auth_nexon-login.md) | 🟢 | auth | 넥슨 로그인 |
-| [ADR-026](./adr/ADR-026_app-entry_onboarding.md) | 🟢 | app-entry | 온보딩 흐름 |
+| [ADR-026+309](./adr/ADR-026+309_app-entry_onboarding.md) | ⚪ | app-entry | 온보딩 흐름 · 로그인 없이 열기 |
 | [ADR-027](./adr/ADR-027_app-entry_cold-start.md) | 🟢 | app-entry | 콜드 스타트 첫 화면 |
 | [ADR-028](./adr/ADR-028_character_tracking.md) | 🟢 | character | 추적 캐릭터 |
 | [ADR-029+108](./adr/ADR-029+108_character_manage.md) | 🟢 | character | 캐릭터 관리 화면 |
@@ -160,11 +160,11 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-031+155+177+219](./adr/ADR-031+155+177+219_character_portrait.md) | 🟢 | character | 캐릭터 초상화 |
 | [ADR-032+204+299](./adr/ADR-032+204+299_content-scheduler_cache.md) | 🟢 | content-scheduler | 스케줄러 응답 병합과 캐시 |
 | [ADR-033+274](./adr/ADR-033+274_content-scheduler_cards.md) | 🟢 | content-scheduler | 컨텐츠 카드와 완료 판정 |
-| [ADR-034+175+298](./adr/ADR-034+175+298_content-scheduler_tracking-mode.md) | 🟢 | content-scheduler | 자동 · 수동 추적 모드와 컨텐츠 관리 |
+| [ADR-034+175+298+311](./adr/ADR-034+175+298+311_content-scheduler_tracking-mode.md) | ⚪ | content-scheduler | 자동 · 수동 추적 모드와 컨텐츠 관리 · 두 관리 화면의 `저장` |
 | [ADR-035](./adr/ADR-035_content-scheduler_layout.md) | 🟢 | content-scheduler | 스케줄러 화면의 레일 아래 간격 |
-| [ADR-036](./adr/ADR-036_boss-scheduler_boss-list.md) | 🟢 | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 |
+| [ADR-036+312](./adr/ADR-036+312_boss-scheduler_boss-list.md) | ⚪ | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 · 보스 관리의 초안과 `저장` |
 | [ADR-037](./adr/ADR-037_boss-scheduler_completion.md) | 🟢 | boss-scheduler | 보스 완료 판정과 주간 한도 |
-| [ADR-038+220+238+288](./adr/ADR-038+220+238+288_boss-scheduler_party.md) | 🟢 | boss-scheduler | 보스 파티 인원과 결정석 분배 비율 · 결정석을 팔지 않은 처치의 `제외` · 비율 % 입력과 받는 금액 |
+| [ADR-038+220+238+288+313](./adr/ADR-038+220+238+288+313_boss-scheduler_party.md) | ⚪ | boss-scheduler | 보스 파티 인원과 결정석 분배 비율 · 결정석을 팔지 않은 처치의 `제외` · 비율 % 입력과 받는 금액 |
 | [ADR-039+242](./adr/ADR-039+242_boss-scheduler_card.md) | 🟢 | boss-scheduler | 보스 카드 |
 | [ADR-093+121](./adr/ADR-093+121_boss-scheduler_manage-redesign.md) | 🟢 | boss-scheduler | 보스 관리 화면 리디자인과 난이도 고르개 통일 |
 | [ADR-040+208](./adr/ADR-040+208_boss-profit_records.md) | 🟢 | boss-profit | 보스 수익 기록 |
@@ -222,3 +222,4 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-250](./adr/ADR-250_design-system_press-feedback.md) | 🟢 | design-system | 누를 때 흐려지지 않는다 |
 | [ADR-261+306](./adr/ADR-261+306_error-resilience_server-maintenance.md) | 🟢 | error-resilience | 서버 점검 잠금 |
 | [ADR-286](./adr/ADR-286_persistence_device-conversion.md) | 🟢 | persistence | 1.0.15 기기 변환 |
+| [ADR-307](./adr/ADR-307_architecture_web.md) | ⚪ | architecture | PC 웹 버전 |
