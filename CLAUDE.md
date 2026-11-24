@@ -48,7 +48,7 @@
 - CRITICAL: 새 기능 구현 시 반드시 테스트를 먼저 작성하고, 테스트가 통과하는 구현을 작성할 것 (TDD)
 - CRITICAL: 작업 중 검증은 **변경 영향 범위의 경로만** 지정해 돌릴 것 — `npx jest <바꾼 디렉터리…>`. 전체 실행은 750여 스위트·9,300여 테스트로 1분 남짓 걸린다. 개발 환경의 Node 는 26 LTS 다. Node 24.14.0 은 V8 GC 크래시로 jest 작업 프로세스가 죽어 **아무 스위트나 `failed to run`(SIGSEGV)** 으로 떨어지므로 쓰지 않는다. 공유 상수·유틸을 뽑아 다른 소비자를 건드렸으면 그 경로도 함께 넣을 것. 배선 누락은 `npx tsgo --noEmit` 가 전역으로 잡으므로 그것 때문에 전체를 돌릴 필요는 없다
 - CRITICAL: **디자인을 고치거나 새 시안을 만들 때는 `docs/foundation/design-system.md` 의 `디자인 작업 전에` 를 먼저 읽고 따를 것.** 글자는 `docs/foundation/design-system/typography.md` 의 역할표에서 크기와 두께를 고른다. 표에 없는 크기나 두께를 새로 만들지 않고, 맞는 역할이 없으면 사용자에게 묻는다. 눈대중으로 값을 고르면 같은 역할이 화면마다 갈리기 때문이다
-- 아티팩트로 디자인 시안을 만들면 앱의 테마 전부(지금 `job-themes.json` 의 6개)를 함께 보여 줄 것. 배경 그림이 있는 테마는 `src/assets/themes/` 의 그림을 깔고 그 위에 놓는다. 테마마다 라이트 · 다크와 색이 달라 한 테마에서만 보면 다른 테마에서 깨지는 것을 놓친다(`docs/foundation/design-system.md` 시안)
+- 디자인 시안은 Figma `maple-routine` 의 `시안` 페이지에 부품 인스턴스로 그릴 것(움직임 · 실제 웹 동작을 봐야 할 때만 아티팩트). 절차는 `docs/foundation/design-system/figma.md`. 시안에는 앱의 테마 전부(지금 `job-themes.json` 의 6개)를 함께 보여 줄 것. 배경 그림이 있는 테마는 `src/assets/themes/` 의 그림을 깔고 그 위에 놓는다. 테마마다 라이트 · 다크와 색이 달라 한 테마에서만 보면 다른 테마에서 깨지는 것을 놓친다(`docs/foundation/design-system.md` 시안)
 - 낮은 화면에서 어떻게 보이는지 다루는 시안이면 갤럭시 Z 폴드8 외부 화면 · 아이폰 듀오 외부 화면 · 아이폰 SE 2 를 함께 그릴 것. 셋 다 키보드가 올라오면 남는 높이가 가장 작은 축이다(`docs/foundation/design-system.md` 시안)
 - CRITICAL: **OTA 를 발행할 때는 `docs/features/live-update.md` 의 `OTA 발행 절차` 를 처음부터 순서대로 따를 것.** 메모리에 적힌 버전을 믿지 말고 서버 `/v1/ota/latest` 와 스토어 버전부터 직접 확인한다. 스토어 바이너리와 지문이 다른 트리에서 발행하면 스토어 사용자 전체가 잠기기 때문이다. 스토어 바이너리를 빌드할 때는 `docs/foundation/release.md` 를 본다
 - 커밋 메시지는 conventional commits 형식을 따를 것 (feat:, fix:, docs:, refactor:)
