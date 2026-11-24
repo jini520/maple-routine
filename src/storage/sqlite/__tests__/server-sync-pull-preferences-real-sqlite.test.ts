@@ -4,6 +4,7 @@
  *
  * 저장 함수를 거치면 받은 값이 대기 표에 들어가 서버로 되돌아가고, 대기 줄을 보지 않으면 아직 못 올린 기기 값을 덮는다.
  */
+import { bossDifficultyIdOf } from '../../../lib/boss/bosses'
 import { installFakePreferences, type FakePreferences } from '../../__tests__/fake-preferences'
 import { __resetStoragePortsForTest, setSqlitePort, type SqliteDbConnection } from '../../ports'
 import { applyPulledPreferenceRecords } from '../../server-sync-pull-preferences'
@@ -304,6 +305,55 @@ describe('처음 동기화의 받기', () => {
       firstQueuedAt: QUEUED_AT,
     })
     await expect(prefs.get('representativeCharacter')).resolves.toBeNull()
+  })
+
+  // 수동 모드는 캐릭터 · 보스마다 난이도 하나다. 기기의 다른 난이도를 올리면 서버가 나중에 온 쪽을 남겨, 먼저 올린 기기의 값이
+  // 남는다는 처음 동기화의 규칙과 어긋난다.
+  describe('수동 추적 보스', () => {
+    const LUCID_HARD = bossDifficultyIdOf('lucid', 'hard')!
+    const LUCID_NORMAL = bossDifficultyIdOf('lucid', 'normal')!
+    const WILL_HARD = bossDifficultyIdOf('will', 'hard')!
+    const LIST = 'manualTrackedContent:ocid-1'
+
+    it('서버에 같은 캐릭터 · 같은 보스의 다른 난이도가 오면 처음 올리기의 기기 난이도를 버리고 그 대기 줄을 뺀다', async () => {
+      await prefs.set(
+        LIST,
+        JSON.stringify([
+          { type: 'boss', targetId: LUCID_HARD },
+          { type: 'boss', targetId: WILL_HARD },
+        ]),
+      )
+      await prefs.set('manualTrackedContent:ocid-2', JSON.stringify([{ type: 'boss', targetId: LUCID_HARD }]))
+      await enqueueAt(`manualTrackedItems:ocid-1/boss/${LUCID_HARD}`, QUEUED_AT)
+      await enqueueAt(`manualTrackedItems:ocid-1/boss/${WILL_HARD}`, QUEUED_AT)
+      await enqueueAt(`manualTrackedItems:ocid-2/boss/${LUCID_HARD}`, QUEUED_AT)
+
+      await applyPulledPreferenceRecords([{ table: 'manualTrackedItems', deleted: false, ocid: 'ocid-1', type: 'boss', targetId: LUCID_NORMAL }], {
+        firstQueuedAt: QUEUED_AT,
+      })
+
+      expect(await json(LIST)).toEqual([
+        { type: 'boss', targetId: WILL_HARD },
+        { type: 'boss', targetId: LUCID_NORMAL },
+      ])
+      expect(await json('manualTrackedContent:ocid-2')).toEqual([{ type: 'boss', targetId: LUCID_HARD }])
+      expect(queue()).toEqual([`manualTrackedItems:ocid-1/boss/${WILL_HARD}`, `manualTrackedItems:ocid-2/boss/${LUCID_HARD}`])
+    })
+
+    it('처음 동기화 뒤에 바꾼 기기 난이도와 처음 동기화가 아닌 받기는 기기 난이도를 둔다', async () => {
+      await prefs.set(LIST, JSON.stringify([{ type: 'boss', targetId: LUCID_HARD }]))
+      await enqueueAt(`manualTrackedItems:ocid-1/boss/${LUCID_HARD}`, LATER)
+      const received = [{ table: 'manualTrackedItems' as const, deleted: false, ocid: 'ocid-1', type: 'boss', targetId: LUCID_NORMAL }]
+
+      await applyPulledPreferenceRecords(received, { firstQueuedAt: QUEUED_AT })
+      await applyPulledPreferenceRecords(received)
+
+      expect(await json(LIST)).toEqual([
+        { type: 'boss', targetId: LUCID_HARD },
+        { type: 'boss', targetId: LUCID_NORMAL },
+      ])
+      expect(queue()).toEqual([`manualTrackedItems:ocid-1/boss/${LUCID_HARD}`])
+    })
   })
 
   // 사용자가 처음 동기화 뒤에 친 값이다. 올리기가 서버를 덮는다.
