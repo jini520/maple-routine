@@ -33,7 +33,7 @@ import {
 } from '../../lib/cashbook/item-split'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { Segment } from '../../components/molecules/Segment/Segment'
-import { mesoTextOf, mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../lib/meso-input/meso-pad'
 import {
   MESO_UNITS,
   MESO_UNIT_LABELS,
@@ -41,7 +41,7 @@ import {
   mesoTextOfUnit,
   shownUnitText,
   unitTextOf,
-} from '../../components/organisms/MesoPad/meso-unit'
+} from '../../lib/meso-input/meso-unit'
 import { mesoUnitOf, rememberMesoUnit } from '../../features/input-card/meso-unit'
 import type { MesoUnit } from '../../types/meso-unit'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'

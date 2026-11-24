@@ -21,7 +21,7 @@ import {
   optionalMesoTextOf,
   optionalMesoValueOf,
   settleMesoText,
-} from '../../../components/organisms/MesoPad/meso-pad'
+} from '../../../lib/meso-input/meso-pad'
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
 import { solErdaFragmentIcon } from '../../../lib/assets/asset-lookup'

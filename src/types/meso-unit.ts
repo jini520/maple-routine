@@ -1,4 +1,4 @@
-/** 금액 칸에서 치는 단위. 세그먼트 글자와 환산은 `MesoPad/meso-unit.ts` 가 정한다. */
+/** 금액 칸에서 치는 단위. 세그먼트 글자와 환산은 `lib/meso-input/meso-unit.ts` 가 정한다. */
 export type MesoUnit = 'base' | 'man' | 'eok'
 
 /**

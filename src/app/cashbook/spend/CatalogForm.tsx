@@ -49,7 +49,7 @@ import {
   type SpendCatalogItem,
 } from '../../../lib/cashbook/spend-catalog'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../lib/meso-input/meso-pad'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { ownerFieldsOf, ownerValueOf } from '../character-options'
 import { AmountInput, FIELD_CELL_CLASS, FieldCard, FieldRow, OwnerField, QuantityStepper } from '../sheet-fields'

@@ -22,7 +22,7 @@ import { inventoryItemIconOf, inventoryItemNameOf } from '../../features/invento
 import { useInventory } from '../../features/inventory/query'
 import { useMvpGradeContext } from '../../features/mvp-grade/store'
 import { useToastStore } from '../../features/toast/store'
-import { mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
+import { mesoValueOf } from '../../lib/meso-input/meso-pad'
 import { ITEM_KIND_KEYS, itemKindNameOf, type ItemKindKey } from '../../lib/cashbook/categories'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
 import { dropPriceCardRequest } from '../boss-profit/drop-price-card'

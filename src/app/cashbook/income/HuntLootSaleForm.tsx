@@ -16,7 +16,7 @@
 import { useEffect, useState } from 'react'
 
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../lib/meso-input/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'

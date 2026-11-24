@@ -18,7 +18,7 @@ import { Pressable } from 'react-native'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../lib/meso-input/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { netProceedsMeso } from '../../../lib/cashbook/item-split'
@@ -36,7 +36,7 @@ import { openInputCard } from '../../../features/input-card/store'
 import { MESO_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { acceptMesoText, settleMesoText } from '../../../components/organisms/MesoPad/meso-pad'
+import { acceptMesoText, settleMesoText } from '../../../lib/meso-input/meso-pad'
 
 export function ItemSaleForm(props: IncomeFormProps): React.JSX.Element {
   const editing = props.editing !== undefined

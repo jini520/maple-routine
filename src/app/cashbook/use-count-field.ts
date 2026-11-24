@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { mesoTextOf } from '../../components/organisms/MesoPad/meso-pad'
+import { mesoTextOf } from '../../lib/meso-input/meso-pad'
 
 /**
  * 기본값 1 로 서는 수를 드는 훅. 수량 다섯과 사냥 계산기의 `소재` 가 쓴다.

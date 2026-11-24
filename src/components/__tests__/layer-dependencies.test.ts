@@ -101,4 +101,19 @@ describe('컴포넌트 계층 의존 방향', () => {
 
     expect(unexpected).toEqual([])
   })
+
+  // 계층은 화면에 그리는 것들의 순서다. 그리지 않는 로직이 부품 폴더에 있으면 부품 목록과 Figma 에 그릴 것이 없는 항목이 생긴다.
+  it('부품 폴더마다 그리는 부품(.tsx)이 하나 이상 있다', () => {
+    const drawless: string[] = []
+    for (const layer of presentLayers) {
+      for (const name of readdirSync(join(ROOT, layer))) {
+        const dir = join(ROOT, layer, name)
+        if (name === '__tests__' || !statSync(dir).isDirectory()) continue
+        const draws = readdirSync(dir).some((file) => file.endsWith('.tsx') && !/\.(test|spec)\.tsx$/.test(file))
+        if (!draws) drawless.push(`${layer}/${name}`)
+      }
+    }
+
+    expect(drawless).toEqual([])
+  })
 })

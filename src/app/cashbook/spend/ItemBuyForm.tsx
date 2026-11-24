@@ -18,7 +18,7 @@ import { Pressable } from 'react-native'
 
 import { CheckBox, Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../lib/meso-input/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import { spendTariffPercent, withTariffMeso } from '../../../lib/cashbook/spend-catalog'
 import {

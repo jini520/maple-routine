@@ -16,7 +16,7 @@ import { Image, Pressable, View } from 'react-native'
 
 import { CheckBox, CrownIcon, Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../lib/meso-input/meso-pad'
 import { Segment } from '../../../components/molecules/Segment/Segment'
 import type { SelectOption } from '../../../components/organisms/SelectField/SelectField'
 import type { MesoRateLoad } from '../../../features/cashbook/meso-rate'
@@ -31,7 +31,7 @@ import {
   optionalMesoTextOf,
   optionalMesoValueOf,
   settleMesoText,
-} from '../../../components/organisms/MesoPad/meso-pad'
+} from '../../../lib/meso-input/meso-pad'
 import {
   findHuntingGround,
   findHuntingRegion,

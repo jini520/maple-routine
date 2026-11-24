@@ -49,8 +49,8 @@ import type { ImageAssetRef } from '../../../types/image-asset'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { Text, TextInput, XIcon } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
-import { MAX_MESO, mesoTextOf, mesoValueOf } from '../MesoPad/meso-pad'
-import { caretAfterDigits, digitsBefore } from '../MesoPad/meso-caret'
+import { MAX_MESO, mesoTextOf, mesoValueOf } from '../../../lib/meso-input/meso-pad'
+import { caretAfterDigits, digitsBefore } from '../../../lib/meso-input/meso-caret'
 import {
   MESO_UNITS,
   MESO_UNIT_LABELS,
@@ -58,7 +58,7 @@ import {
   mesoTextOfUnit,
   shownUnitText,
   unitTextOf,
-} from '../MesoPad/meso-unit'
+} from '../../../lib/meso-input/meso-unit'
 import { mesoUnitOf, rememberMesoUnit } from '../../../features/input-card/meso-unit'
 import type { MesoUnit, MesoUnitKey } from '../../../types/meso-unit'
 import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
