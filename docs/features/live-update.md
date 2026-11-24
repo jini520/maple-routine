@@ -122,10 +122,12 @@ OTA 부팅 확인은 `boot.ts` 의 `loadGameData()` 가 게임 데이터 사본�
 메모나 이전 대화에 적힌 버전을 믿지 않는다. 발행할 때마다 아래 세 가지를 직접 확인한다.
 
 1. 지금 서버에 발행돼 있는 것. 캐시를 피하려고 `t=` 를 붙인다. 두 값이 `null` 이면 아직 서버로 발행된 적이 없다.
+   주소는 발행할 트리의 `app.json` 에 있는 매니페스트 주소의 서버다(아래 `서버와 Worker` 의 주소 표). develop 은 api 이고,
+   1.0.14 까지의 바이너리에 내는 patch · hotfix 트리는 루트다.
 
    ```bash
-   curl -s "https://mapleroutine.store/v1/ota/latest?platform=ios&t=$(date +%s)"
-   curl -s "https://mapleroutine.store/v1/ota/latest?platform=android&t=$(date +%s)"
+   curl -s "https://api.mapleroutine.store/v1/ota/latest?platform=ios&t=$(date +%s)"
+   curl -s "https://api.mapleroutine.store/v1/ota/latest?platform=android&t=$(date +%s)"
    ```
 
 2. 스토어에 게시된 버전. iOS 는 `https://itunes.apple.com/lookup?bundleId=com.mapleroutine.app&country=kr`
@@ -148,6 +150,7 @@ OTA 번들은 스토어 바이너리와 지문이 같은 트리에서만 받힌�
 ### 준비
 
 1. `ssh ubuntu@158.179.175.230` 이 비밀번호 없이 열려야 한다. 스크립트가 rsync 로 `/srv/maple-routine-ota` 에 올린다.
+   1.0.15 의 OTA 를 이 박스에 올릴지는 아직 정하지 않았다(아래 `서버와 Worker` 의 주소 표).
    디렉터리가 없으면 서버 README 의 OTA 절대로 만든다. macOS 의 기본 rsync 는 openrsync 라 GNU rsync 의 옵션 일부를
    모른다(`--chmod=F644` 가 그랬다). 그래서 스크립트는 올릴 파일의 권한을 로컬에서 644 로 맞추고 rsync 에는 `-a` 만 준다.
 2. `package.json` 의 `version` 을 올린다. 새 버전이면 `x.y.z`, 같은 버전의 버그 수정이면 `x.y.z+n`
@@ -172,7 +175,7 @@ OTA 번들은 스토어 바이너리와 지문이 같은 트리에서만 받힌�
    `base/assets/fingerprint`(AAB)다. 지금 발행돼 있는 값은 아래로도 볼 수 있다.
 
    ```bash
-   curl -s "https://mapleroutine.store/v1/ota/latest?platform=ios&t=$(date +%s)"
+   curl -s "https://api.mapleroutine.store/v1/ota/latest?platform=ios&t=$(date +%s)"
    ```
 
 5. 워크트리에서 발행한다면 git 이 무시하는 다음 파일을 원래 체크아웃에서 복사한다. 모두 지문 재료라서
@@ -287,3 +290,19 @@ v1.0.13 은 이 절차를 건너뛰었다. 서버의 `latest-<platform>.json` �
 
 매니페스트 주소(`app.json` 의 `expo.updates.url`)는 네이티브 설정이라, 바꾸면 스토어 바이너리를 새로 빌드해야 한다.
 `ios/app/Supporting/Expo.plist` 의 `EXUpdatesURL` 과 `AndroidManifest.xml` 의 `EXPO_UPDATE_URL` 도 같은 값이어야 한다.
+`src/__tests__/server-domain-policy.test.ts` 가 셋이 같은지와, 발행 스크립트의 `FILES_BASE` 가 같은 서버인지 본다.
+
+| 바이너리 | 매니페스트 주소 | 번들 · 에셋 주소(`FILES_BASE`) | 발행하는 트리 |
+|---|---|---|---|
+| 1.0.13 · 1.0.14 | `https://mapleroutine.store/v1/ota/manifest` | `https://mapleroutine.store/ota/files` | main 에서 딴 hotfix · 릴리즈 대기 단계의 patch |
+| 1.0.15 부터 | `https://api.mapleroutine.store/v1/ota/manifest` | `https://api.mapleroutine.store/ota/files` | 1.0.15 바이너리를 빌드한 트리 |
+
+- 1.0.15 의 주소는 도메인을 나누며 api 로 바꿨다([[ADR-016]] 결정 14). 매니페스트 주소는 지문 재료라서 develop 의 지문이 1.0.14
+  와 달라졌다. 1.0.15 는 새 스토어 바이너리이므로 그래야 맞다. 그래서 develop 에서 발행한 번들은 1.0.14 바이너리가 받지 못하고,
+  1.0.14 의 OTA 는 지금처럼 patch · hotfix 트리의 스크립트로 낸다. 그 트리의 `app.json` 과 `FILES_BASE` 는 루트 그대로다.
+- 발행 스크립트의 왕복 확인(`[6/6]`)은 그 트리의 `app.json` 에 있는 매니페스트 주소로 묻는다. develop 에서 내면 api 로 묻는다.
+- api 는 upstream `maple_api` 가 가리키는 박스로 가고, 2026-11-21 부터 DB 박스(`ubuntu@152.69.225.126`)다. 그런데 발행 스크립트는
+  앱 박스(`OTA_HOST`)에 올린다. 1.0.15 의 OTA 파일과 받는 지문 목록을 어느 박스에 둘지는 출시 전에 정한다(#1090).
+- 정하기 전에는 develop 에서 발행하지 않는다. 지금 내면 `[5/5]` 가 앱 박스의 `latest-<platform>.json` 을 develop 의 지문으로
+  덮는다. 루트로 묻는 1.0.14 사용자는 자기 지문이 목록에 없어 스토어 업데이트 모달에 막힌다. 스크립트는 그 뒤 `[6/6]` 에서
+  api 쪽에 매니페스트가 없어 멈춘다.

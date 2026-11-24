@@ -4,6 +4,10 @@
 사이트다. 앱 기능을 웹으로 옮긴 것이 아니고, RN 앱과 코드를 함께 쓰지 않는다. 왜 이렇게 만들었는지는 [[ADR-015]]
 에 있다.
 
+같은 사이트가 `info.mapleroutine.store` 에도 열린다. 두 주소가 앱 박스의 같은 디렉터리를 낸다. 1.0.15 앱은 처리방침과 키
+가이드를 info 주소로 연다. 대표 주소(`canonical`) · 사이트맵 · 스토어 등록정보는 아직 루트이고, info 로 옮기는 일은
+[[ADR-015]] 결정 11 에 있다.
+
 ## 관련 소스
 
 | 파일 | 하는 일 |
@@ -104,7 +108,7 @@ npm run deploy:site
 
 1. `npm run build:site` 로 `dist-site/` 를 만든다.
 2. `rsync -az --delete` 로 `ubuntu@158.179.175.230:/var/www/mapleroutine/` 에 올린다. `DEPLOY_HOST` ·
-   `DEPLOY_DEST` 환경 변수로 바꿀 수 있다.
+   `DEPLOY_DEST` 환경 변수로 바꿀 수 있다. 루트와 info 가 이 디렉터리를 함께 내므로 한 번 올리면 두 주소가 같이 바뀐다.
 3. `/` · `/privacy` · `/support` · `/api-key` · `/app-ads.txt` · `/robots.txt` · `/sitemap.xml` 의 응답 코드를 출력한다.
    모두 `200` 인지 확인한다.
 
