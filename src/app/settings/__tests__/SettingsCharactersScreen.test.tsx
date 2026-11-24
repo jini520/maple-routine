@@ -304,7 +304,7 @@ describe('두 층. 위는 계정을 넘고 아래는 계정 하나다', () => {
 
     // 마크와 문구가 **함께** 선다. 둘 중 하나만 남기면 예전 얼굴로 돌아간다.
     expect(view.getByText('캐릭터 목록을 불러오고 있어요')).toBeTruthy()
-    expect(view.getByTestId('maple-sweep-spinner', { includeHiddenElements: true })).toBeTruthy()
+    expect(view.getByTestId('spinner', { includeHiddenElements: true })).toBeTruthy()
   })
 
   it('실패도 아래 자리에만 그려진다', async () => {

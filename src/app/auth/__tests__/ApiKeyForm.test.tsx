@@ -88,7 +88,7 @@ describe('ApiKeyForm', () => {
     expect(view.getByText('확인')).toBeTruthy()
     expect(stateOf(submitButton(view)).busy).toBe(true)
     // 스피너는 `aria-hidden` 이라 기본 쿼리에 안 잡힌다.
-    expect(view.getByTestId('maple-spinner', { includeHiddenElements: true })).toBeTruthy()
+    expect(view.getByTestId('spinner', { includeHiddenElements: true })).toBeTruthy()
   })
 
   it('isSubmitting이면 키보드 완료 키로도 onSubmit이 다시 호출되지 않는다', async () => {

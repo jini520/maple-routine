@@ -1,4 +1,4 @@
-// 이 배선이 끊기면 SVG atom 셋(`MapleSpinner`·`MapleSweepSpinner`·`ProfitIcon`)이 **크기도 색도 없이**
+// 이 배선이 끊기면 SVG atom 들(`Spinner`·`ProfitIcon`)이 **크기도 색도 없이**
 // 그려진다. 에러는 나지 않는다. `className` 이 그냥 모르는 프롭으로 흘러갈 뿐이라, 화면을 보기
 // 전에는 아무도 모른다. 그래서 atom 별 테스트와 별개로 배선 자체를 여기서 못박는다.
 //

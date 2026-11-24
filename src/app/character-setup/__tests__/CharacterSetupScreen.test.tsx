@@ -347,8 +347,7 @@ describe('CharacterSetupScreen: 머리와 CTA', () => {
     })
 
     expect(view.getByText('체크리스트를 준비하고 있어요')).toBeTruthy()
-    // 24px 이상 자리는 스윕 스피너.
-    expect(view.getByTestId('maple-sweep-spinner', { includeHiddenElements: true })).toBeTruthy()
+    expect(view.getByTestId('spinner', { includeHiddenElements: true })).toBeTruthy()
     expect(view.queryByText('계속하기')).toBeNull()
 
     await act(async () => {

@@ -8,7 +8,7 @@
  */
 import { View } from 'react-native'
 
-import { CheckIcon, ProgressBar, RingSpinner, Text } from '../../atoms'
+import { CheckIcon, ProgressBar, Spinner, Text } from '../../atoms'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { InsetRow } from '../../molecules/InsetRow/InsetRow'
 import { ModalHeader, type ModalIcon } from '../../molecules/ModalHeader/ModalHeader'
@@ -44,7 +44,7 @@ function StepRow(props: { step: TaskProgressStep; unit: string }): React.JSX.Ele
               <CheckIcon className="h-3 w-3 text-on-primary" strokeWidth={2.5} aria-hidden />
             </View>
           ) : step.state === 'run' ? (
-            <RingSpinner size={18} />
+            <Spinner size={18} />
           ) : (
             <View className="h-[18px] w-[18px] rounded-full border-2 border-border" />
           )

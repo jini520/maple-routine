@@ -28,7 +28,7 @@ import {
 } from '../../../features/schedule-sync/format'
 import { useAuthStore } from '../../../features/auth/store'
 
-import { MapleSweepSpinner, Text } from '../../atoms'
+import { Spinner, Text } from '../../atoms'
 import { CardBackdrop } from './CardBackdrop'
 import { CARD_GAP, UPPER_CARD_TAIL } from './card-backdrop-frames'
 import { CharacterLayerGrid } from './CharacterLayerGrid'
@@ -69,7 +69,7 @@ export interface CharacterManageBodyProps {
 function Waiting(props: { label: string }): React.JSX.Element {
   return (
     <View role="status" aria-busy className="min-h-[120px] flex-1 items-center justify-center gap-3">
-      <MapleSweepSpinner size={32} className="text-primary" />
+      <Spinner size={32} />
       <Text className="text-center text-sm text-text-muted">{props.label}</Text>
     </View>
   )

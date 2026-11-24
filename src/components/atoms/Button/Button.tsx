@@ -7,7 +7,7 @@
 import { Children, type ReactNode } from 'react'
 import { Pressable, View, type PressableProps } from 'react-native'
 
-import { MapleSpinner } from '../Spinner'
+import { Spinner } from '../Spinner'
 import { Text } from '../Text/Text'
 import {
   BUTTON_SIZE_CLASS,
@@ -118,7 +118,7 @@ export function Button({
       {busy && (
         // 겹쳐 그린다. 흐름 안에 두면 그만큼 버튼이 넓어져 대기 전 폭이 안 남는다.
         <View testID="button-busy" className="absolute inset-0 items-center justify-center">
-          <MapleSpinner size={BUSY_SPINNER_SIZE} className={BUTTON_VARIANT_SPINNER_CLASS[variant]} />
+          <Spinner size={BUSY_SPINNER_SIZE} className={BUTTON_VARIANT_SPINNER_CLASS[variant]} inButton />
         </View>
       )}
     </Pressable>
