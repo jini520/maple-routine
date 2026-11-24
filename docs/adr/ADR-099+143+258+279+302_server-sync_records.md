@@ -2081,6 +2081,9 @@ nexon_account_maple_ids   id · nexon_account_id · maple_id UNIQUE
   - 앱은 시세의 `itemKey` 로 아이템 표의 줄을 찾는다. 반지는 레벨 줄의 key(`restraint_ring_lv4`)로 오므로, 레벨 줄이면 원래
     반지의 이름 뒤에 레벨을 붙여 보인다(`리스트레인트 링 4레벨`). 지금까지 보이던 이름과 같다.
   - 상세는 그 key 와 월드로만 부른다. 기기에 저장하는 상세 쿼리의 열쇠에서도 반지 레벨을 뺀다.
+  - 기기에 저장된 1.0.14 의 시세 목록은 옛 모양이라, 쿼리 캐시의 판(`QUERY_CACHE_BUSTER`)을 올려 버린다([[ADR-142]] 결정 7).
+    버리지 않으면 새 응답을 받기 전까지(오프라인이면 내내) 반지가 레벨 없이 같은 이름으로 여러 줄 보인다. 판을 올리면 저장된
+    캐시가 모두 한 번 비고, 메소 획득량 칸의 기본값([[ADR-142]] 결정 11)도 한 번 빈다. Claude 가 결정 7 에 따라 정했다(2026-11-24).
 - `maspi_basket.base_price_meso` 의 형을 `bigint` 로 바꾼다. 운영 26줄이 모두 정수다.
 - 한 줄의 기준이 바뀐다. 기준가 표는 `date` · `item_id` · `scope_type` · `scope_id`, 판정 표는 `date` · `user_id`, 바스켓은
   `item_id` · `scope_type` · `scope_id` 다.
