@@ -12,30 +12,34 @@
 
 ## 결정
 
-### 결정 1. 게임 수치 열네 칸과 그림 목록 · 크롭 두 칸은 서버가 기준이고, 앱 번들에는 없다
+### 결정 1. 게임 데이터 칸 스물은 서버가 기준이고, 앱 번들에는 없다
 
 | 칸 | 서버 표 |
 |---|---|
-| `bosses` | `bosses` · `boss_difficulties` · `game_rules` |
-| `dropItems` | `items` 의 드롭 아이템 줄(`is_drop`). 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) |
-| `bossDrops` | `boss_drop_rewards` |
+| `bosses` | `bosses` · `boss_difficulties` |
+| `bossDrops` | `boss_difficulty_rewards` |
 | `dropBoxes` | `drop_boxes` · `drop_box_contents` |
 | `crystalPrices` | `boss_crystal_prices` |
-| `worlds` | `worlds` · `world_periods`(월드가 열린 기간, [[ADR-100]] 결정 9. 1.0.15 에서 `world_open_periods` 로 바뀐다. [[ADR-099]] 결정 58) |
-| `spendCatalog` | `spend_groups` · `spend_tiles` · `spend_items` · `spend_item_options` · `spend_item_forms` · `spend_forms` · `game_rules` |
-| `cashbookCategories` | `cashbook_categories` · `cashbook_item_kinds` |
+| `worlds` | `worlds` · `world_open_periods`(월드가 열린 기간, [[ADR-100]] 결정 9) |
+| `spendCatalog` | `spend_reward_types` · `spend_groups` · `spend_tiles` · `spend_items` · `spend_item_options` · `spend_item_reward_types` |
+| `cashbookCategories` | `cashbook_categories` · `cashbook_item_types` |
 | `symbolCosts` | `symbol_groups` · `symbols` · `symbol_level_costs` |
-| `contents` | `contents` · `content_categories` |
-| `equipmentItems` | `items` 의 강화 장비 줄(`is_equipment`). 1.0.15 에서 `items` 칸으로 합친다([[ADR-099]] 결정 65) |
-| `enhancementCosts` | `potential_reset_costs` · `soul_potential_reset_costs` · `starforce_steps` · `game_rules` |
+| `hexaMatrix` | `jobs` · `hexa_core_types` · `hexa_cores` · `hexa_core_level_costs` · `hexa_stats` |
+| `contents` | `content_categories` · `contents` |
+| `enhancementCosts` | `potential_reset_costs` · `soul_potential_reset_costs` · `starforce_cost_steps` · `superior_series` · `superior_items` |
 | `mvpGrades` | `mvp_grades` |
 | `huntingGrounds` | `hunting_regions` · `hunting_grounds` · `hunting_ground_levels` |
-| `assets` | `assets`. 그림 경로 · 내용 해시 · 바이트 · 가로 · 세로 |
-| `imageCrops` | `image_crops`. 보스 초상 셋과 컨텐츠 지역 지도의 크롭 |
+| `huntLoot` | `hunt_loot_items` |
+| `assets` | `assets`. 그림의 분류 · 파일 이름 · 확장자 · 내용 해시 · 바이트 · 가로 · 세로 |
+| `imageCrops` | `image_crops`. 보스 초상 둘과 컨텐츠 지역 지도의 크롭 |
+| `faqs` | `faq_sheets` · `faq_items` |
+| `appImages` | `app_images`. 붙일 표가 없는 앱 그림 |
+| `items` | `items` · `item_groups` · `ring_level_items` · `same_item_links` |
+| `gameRules` | `game_rules`. 규칙마다 칸을 둔 한 줄 |
 
-(1.0.15 서버 작업에서 서버 표의 이름을 정리한다. `boss_drop_rewards` 는 `boss_difficulty_rewards`, `spend_forms` · `spend_item_forms` 는
-`spend_reward_types` · `spend_item_reward_types`, `cashbook_item_kinds` 는 `cashbook_item_types` 가 된다. 앱이 받는 칸의 이름은 그대로다.
-[[ADR-099]] 결정 33)
+칸마다 담는 것은 `foundation/game-data.md` 의 `칸 스물` 에 있다. 1.0.14 까지의 앱과 운영 서버는 표와 칸의 옛 이름을 쓰고, 아이템을
+`dropItems` · `equipmentItems` 칸으로 나눠 내며, 게임 규칙을 `bosses` · `spendCatalog` · `enhancementCosts` 칸의 `rules` 에 나눠
+낸다([[ADR-099]] 결정 43 · 65).
 
 앱은 번들 사본을 두지 않는다(사용자 지정 2026-10-26). 번들 사본은 서버에서 새로 더한 그림을 가질 수 없고, 서버에 닿지 못한
 날 오래된 값으로 수익을 잘못 계산한다. 그 대신 다 받은 기기 사본이 없으면 화면을 잠근다(결정 12).
@@ -43,26 +47,28 @@
 번들에 남는 것도 있다. 테마(`job-themes.json` 과 배경 그림) · 업데이트 노트(`release-notes.ts`) · 도구 아이콘 · 넥슨 로그인
 단추다. 이것들은 앱 코드와 함께 바뀌는 값이고, 잠금 화면도 테마로 그려야 한다.
 
-### 결정 2. 앱은 `GET /v1/game-data` 하나로 열여섯 칸을 한 번에 받는다
-
-(1.0.15 에서 바뀐다. 응답의 이름이 서버 표와 칸의 새 이름을 따르고, 옛 앱이 읽던 그림 이름을 싣지 않는다. [[ADR-099]] 결정 43)
+### 결정 2. 앱은 `GET /v1/game-data` 하나로 칸 스물을 한 번에 받는다
 
 ```
 GET /v1/game-data
-→ { "bosses": { "updatedAt": "…", "rules": {…}, "bosses": [ … ] },
-    "dropItems": { "updatedAt": "…", "items": [ … ] },
+→ { "bosses": { "updatedAt": "…", "bosses": [ … ], "bossDifficulties": [ … ] },
+    "gameRules": { "updatedAt": "…", "gameRules": { … } },
     … }
 ```
 
+응답의 배열과 칸 이름은 서버 표와 칸의 이름을 따르고, 다른 표의 줄은 줄 id 로 가리킨다. 1.0.14 까지의 앱이 읽던 그림 이름
+글자는 싣지 않는다([[ADR-099]] 결정 39 · 43).
+
 - 공개 조회다. 칸 하나가 표 하나이고, 칸마다 `updatedAt` 이 있다. 응답 전체의 시각을 하나로 두면 표 하나만 바뀌어도
   모든 표를 다시 그려야 한다.
-- 칸의 `updatedAt` 은 서버의 `game_data_sections` 표에 있다(1.0.15 에서 표 이름이 `game_data_section_updates` 로 바뀌고, `game_rules` 는 규칙마다 칸을 둔 한 줄이 된다. [[ADR-099]] 결정 61). 줄의 `updated_at` 최댓값으로 내면 줄을 지운 것이 드러나지
-  않아서, 쓰기마다 이 표의 시각을 올린다. `bosses` 칸만 보스 줄의 `updated_at` 최댓값이다.
+- 칸의 `updatedAt` 은 서버의 `game_data_section_updates` 표에 있다([[ADR-099]] 결정 61). 줄의 `updated_at` 최댓값으로 내면 줄을
+  지운 것이 드러나지 않아서, 쓰기마다 이 표의 시각을 올린다. `bosses` 칸은 보스 줄의, `gameRules` 칸은 규칙 줄(`game_rules`)의
+  `updated_at` 으로 낸다.
 - 아직 한 번도 채우지 않은 표는 그 칸의 `updatedAt` 이 `null` 이고 목록이 비어 있다. 앱은 그 칸을 버린다.
 - 응답은 서버 표의 줄을 그대로 펼친 목록이다. 예를 들어 드롭 표는 보상 줄의 목록이고, 보스 · 난이도 · 분류로 묶는 일은
   앱의 조회 모듈이 한다. 배열은 서버 `sort_order` 순서이고 `sort_order` 자체는 응답에 없다.
-- 서버의 `GET /v1/bosses` 는 아직 남아 있다. 스토어 1.0.12 의 옛 OTA 가 이 경로를 부르기 때문이다(1.0.15 의 서버에서 지운다.
-  [[ADR-099]] 결정 65).
+- 1.0.15 서버에는 `GET /v1/bosses` 가 없다. 1.0.14 까지의 운영 서버는 스토어 1.0.12 의 옛 OTA 가 부르는 이 경로를 남겨 두었다
+  ([[ADR-099]] 결정 65).
 - 응답 몸의 해시를 ETag 로 단다. `If-None-Match` 가 같으면 몸 없이 304 를 낸다. nginx 가 gzip 으로 줄이며 붙이는 `W/` 도
   같은 것으로 본다. 앱은 백그라운드에서 돌아올 때마다 묻기 때문에, 바뀐 것이 없는 날은 전송이 거의 없다.
 - 서버는 만든 응답 몸과 ETag 를 메모리에 담아 두고 그대로 낸다. 요청마다 몸을 새로 만들면 304 로 끝나는 요청도 칸 스물하나를
@@ -70,8 +76,8 @@ GET /v1/game-data
   박스가 이것만으로 막혔다(2026-11-20 실측, 이슈 #1100).
   담아 둔 뒤 같은 날 19:05 공지 알림(1분 최대 457건, game-data 46건)과 21:00 알림(1분 334건, game-data 53건)에서 시간 초과(504)는
   0건, 끊긴 요청(499)은 각각 8건 · 2건이었다. 담기 전 10:15 몰림은 50초 동안 499 가 381건, 504 가 33건이었다.
-- 요청마다 칸의 시각만 쿼리 하나로 읽고, 담아 둔 응답을 만들 때의 시각과 다르면 다시 만든다. 시각은 `game_data_sections` 의
-  칸 시각과, `bosses` 칸의 `updatedAt` 을 내는 보스 줄 · 규칙 줄(`game_rules`)의 `updated_at` 이다. 쓰기마다 칸 시각을 올리므로
+- 요청마다 칸의 시각만 쿼리 하나로 읽고, 담아 둔 응답을 만들 때의 시각과 다르면 다시 만든다. 시각은 `game_data_section_updates`
+  의 칸 시각과, 보스 줄 · 규칙 줄(`game_rules`)의 `updated_at` 이다. 쓰기마다 칸 시각을 올리므로
   관리 화면에서 고친 값이 다음 요청에 바로 닿는다(사용자 지정 2026-11-20).
 - 담은 지 5분이 지나면 시각이 같아도 다시 만든다. 앱은 칸 시각을 보지 않고, ETag 가 바뀌면 칸 전부를 바꾼다. 그래서 담아 두기
   전에는 칸 시각을 안 올리는 쓰기(빠진 경로나 SQL 직접 수정)도 앱에 닿았는데, 담아 두면 닿지 않는다. 5분이 그 늦음의 끝이다
@@ -112,7 +118,7 @@ GET /v1/game-data
   굳는다. 번들 시절에는 드러나지 않던 결함이라 정책 테스트가 지킨다.
 - 화면은 `useGameTable('bosses')` 처럼 칸 하나를 구독한다(`features/game-data/sync.ts`). 바뀌지 않은 칸은 같은 객체를
   유지하므로, 바뀐 칸을 쓰는 화면만 다시 그린다.
-- 열여섯 칸의 표와 `parse` 는 `lib/game-data/sections.ts` 의 `SECTIONS` 에 모여 있다. 칸을 더하면 여기와
+- 칸 스물의 표와 `parse` 는 `lib/game-data/sections.ts` 의 `SECTIONS` 에 모여 있다. 칸을 더하면 여기와
   `types/game-data.ts` 에 한 줄씩 더한다.
 
 ### 결정 5. 그림은 기기 문서 디렉터리에 내용 해시 이름으로 둔다
@@ -131,21 +137,21 @@ GET /v1/game-data
 
 ### 결정 6. 서버 값은 관리 화면에서 고치고, 첫 채움은 시드 CLI 가 했다
 
-서버 저장소의 `seed-game-data` CLI 가 `src/database/seed/<표>.json` 을 읽어 비어 있는 표만 채운다. 줄이 하나라도 있는
-표는 건드리지 않는다. 운영자가 폼으로 고친 값을 배포 때 되돌리지 않기 위해서다(1.0.15 의 서버에서 이 명령과 씨앗 JSON 을
-지운다. 새 DB 는 옛 DB 에서 옮겨 채운다. [[ADR-099]] 결정 65).
+게임 수치의 첫 채움은 서버 저장소의 `seed-game-data` CLI 가 했다. `src/database/seed/<표>.json` 을 읽어 비어 있는 표만 채우고,
+줄이 하나라도 있는 표는 건드리지 않았다. 운영자가 폼으로 고친 값을 배포 때 되돌리지 않기 위해서다. 1.0.15 서버에는 이 명령과
+씨앗 JSON 이 없다. 새 DB 는 옛 DB 에서 옮겨 채운다([[ADR-099]] 결정 65).
 
 그 뒤로는 관리 화면(admin 주소, nginx basic auth)에서 고친다. JSON 을 통째로 붙여 넣는 화면은 없다. 새 보스나 새
 아이템은 하나씩 더하는 일이기 때문이다. key 는 바꿀 수 없고, 기록이 가리키는 줄(보스 · 아이템 · 장비 · 사냥터 · 컨텐츠
-· 지출 항목)은 지우지 않는다. 더 쓰지 않는 줄은 `until` 로 닫는다.
+· 지출 항목)은 지우지 않는다. 더 쓰지 않는 줄은 `valid_until` 로 닫는다.
 
-이미 있는 보스에서 고칠 수 있는 칸은 별칭(`alias`)뿐이다(`PUT /admin/bosses/:key/alias`). 별칭은 좁은 자리에 보이는
-글자일 뿐이어서 바꿔도 기록이 끊기지 않는다. 이름은 넥슨 API 의 `content_name` 과 맞춰 보는 값이라 열지 않았다(1.0.15 의
-서버에서는 칸 이름이 `short_name` 이고 경로는 `PUT /bosses/:key/short-name` 이다. [[ADR-099]] 결정 43).
+이미 있는 보스에서 고칠 수 있는 칸은 짧은 이름(`short_name`)뿐이다(`PUT /bosses/:key/short-name`). 짧은 이름은 좁은 자리에
+보이는 글자일 뿐이어서 바꿔도 기록이 끊기지 않는다. 이름은 넥슨 API 의 `content_name` 과 맞춰 보는 값이라 열지 않았다. 1.0.14
+까지의 운영 서버는 같은 칸을 별칭(`alias`)이라 부르고 `PUT /admin/bosses/:key/alias` 로 고친다([[ADR-099]] 결정 43).
 
 그림과 크롭의 첫 채움은 서버 저장소의 `seed-assets` CLI 가 했다. 맥에서 앱 저장소의 그림 파일과 크롭 JSON 을 관리 화면
-경로로 올렸고, 이미 있는 경로와 크롭은 건너뛴다. 관리 화면 경로를 거쳐야 형식 검사와 파일을 쓰는 차례가 운영과 같다(1.0.15
-의 서버에서는 분류 · 파일 이름 · 확장자로 올리고 크롭은 올리지 않는다. [[ADR-099]] 결정 65).
+경로로 올렸고, 이미 있는 경로와 크롭은 건너뛴다. 관리 화면 경로를 거쳐야 형식 검사와 파일을 쓰는 차례가 운영과 같다. 1.0.15
+서버의 이 명령은 그림을 분류 · 파일 이름 · 확장자로 올리고 크롭은 올리지 않는다([[ADR-099]] 결정 65).
 
 ### 결정 7. 값의 규칙은 서버가 지키고, 앱은 형식만 본다
 
@@ -153,7 +159,7 @@ GET /v1/game-data
 |---|---|
 | 가리키는 key 가 표에 있다 | 서버 FK · UNIQUE |
 | 한 보스 · 난이도의 가격 줄이 겹치지 않고 이어진다 · 새 가격의 시작이 그 보스의 기간 경계(주간 · 시즌은 목요일, 월간은 1일)다 · 기간 글자 형식 | 관리 화면의 쓰기 검사. 걸리면 400 이고 아무것도 안 바뀐다 |
-| 스타포스 단계가 0 부터 빠짐없이 있다 · 잠재 재설정에 `min_level 1` 구간이 있다 · 심볼 비용이 1 부터 `max_level - 1` 까지 있다 | 관리 화면의 쓰기 검사 |
+| 스타포스 단계가 0 부터 빠짐없이 있다 · 잠재 재설정에 `min_required_level 1` 구간이 있다 · 심볼 비용이 1 부터 `max_level - 1` 까지 있다 | 관리 화면의 쓰기 검사 |
 | 컨텐츠 API 이름 · 장비 이름이 NFC 와 공백 제거 뒤에도 유일하다 | 관리 화면의 쓰기 검사([[ADR-019]] 결정 4 의 찾는 규칙을 지키기 위해서다) |
 | 그림 칸 아홉(보스 초상 · 아이템 · 엠블럼 · 가계부 분류 · 지출 타일 둘 · 심볼 · 컨텐츠 배경 둘)이 그림 표에 있는 그림을 가리킨다 | 관리 화면의 쓰기 검사. 없는 그림을 가리키면 앱은 에러 없이 그림만 빈 채로 그린다 |
 | 그림이 경로 규칙의 디렉터리 · 확장자이고 내용이 확장자와 같다 · 1MB 이하 | 관리 화면의 그림 올리기 |
@@ -183,7 +189,7 @@ GET /v1/game-data
 ### 결정 9. 여러 값이 붙는 칸은 배열이 아니라 줄 표다
 
 보스의 난이도와 요구 레벨, 지출 항목의 축 값과 형태, 심볼의 레벨별 비용, 사냥터의 몬스터 레벨은 모두 줄 표다
-(`boss_difficulties` · `spend_item_options` · `spend_item_forms` · `symbol_level_costs` · `hunting_ground_levels`). 배열이나
+(`boss_difficulties` · `spend_item_options` · `spend_item_reward_types` · `symbol_level_costs` · `hunting_ground_levels`). 배열이나
 jsonb 칸 두 개에 나눠 두면 두 칸의 순서가 어긋나도 DB 가 잡지 못한다.
 
 값이 정해진 집합(보스 난이도 · 주기, 드롭 분류, 지출 화폐 · 형태, 가계부 수입 · 지출 구분, 컨텐츠 분류 · 섹션 · 공유 범위,
@@ -191,25 +197,23 @@ jsonb 칸 두 개에 나눠 두면 두 칸의 순서가 어긋나도 DB 가 잡�
 마이그레이션으로 더한다. ENUM 의 한글 이름(분류 이름, 잠재 등급의 넥슨 표기)은 앱 상수로 둔다.
 
 가계부는 예외다. 분류 · 아이템 종류 · 에픽던전 형태의 이름 · 카드 제목 · 단위는 서버 표(`cashbook_categories` ·
-`cashbook_item_kinds` · `spend_forms`)가 든다([[ADR-096]] 결정 3 · 4 · 7). 하루 목록 카드의 이름을 앱 업데이트 없이
+`cashbook_item_types` · `spend_reward_types`)가 든다([[ADR-096]] 결정 3 · 4 · 7). 하루 목록 카드의 이름을 앱 업데이트 없이
 고치려는 것이다. 분류 key 는 관리 화면에서 더하므로 ENUM 이 아니라 글자이고, 앱은 입력 폼을 모르는 key 를 목록에 이름만
 세우고 못 고르게 한다. 형태 key 는 앱 코드가 갈려 ENUM 으로 남는다.
 
 ### 결정 10. 기간 칸은 KST 글자 그대로 둔다
 
-(서버 표의 칸 이름은 1.0.15 서버 작업에서 `valid_from` · `valid_until` 로 바뀐다. 앱이 받는 이름은 그대로다. [[ADR-099]] 결정 23)
-
-`from` · `until` 은 서버에서도 `text` 이고, 앱과 같은 글자(`YYYY-MM-DD` 또는 `YYYY-MM-DDTHH:mm`)를 내려준다. 앱의 판정
+기간 칸(서버 `valid_from` · `valid_until`, 앱이 받는 `validFrom` · `validUntil`)은 서버에서도 `text` 이고, 앱과 같은 글자(`YYYY-MM-DD` 또는 `YYYY-MM-DDTHH:mm`)를 내려준다. 앱의 판정
 `isEffectiveIn` 이 문자열 비교라서, `timestamptz` 로 바꾸면 경계를 판정하는 방법이 두 벌이 된다.
 
 보스와 보스 난이도에도 기간이 있다. 시즌 보스는 시즌이 끝나면 새 챌린저스 월드에 나오지 않아야 하기 때문이다. 난이도
 줄에 기간이 있으면 그 난이도는 그 값을 쓰고, 기간이 없는 칸은 보스의 값을 쓴다(`isBossActiveIn` · `activeDifficultiesOf`). 기록을
 고치는 화면은 그 행의 난이도가 기간 밖이어도 목록에 남긴다.
 
-### 결정 11. 고가 판정은 `items.valuable` 한 칸이다
+### 결정 11. 고가 판정은 `items.is_valuable` 한 칸이다
 
-예전에는 세트 표와 고가 목록 파일이 따로 있었지만, 세트를 쓰는 곳이 고가 판정 하나뿐이었다. 그래서 드롭 아이템 줄의
-`valuable` 칸 하나로 합쳤다. 판정 함수는 `lib/drop/drop-items.ts` 의 `isValuableDropItem` 이다. 새 아이템이 고가면
+예전에는 세트 표와 고가 목록 파일이 따로 있었지만, 세트를 쓰는 곳이 고가 판정 하나뿐이었다. 그래서 아이템 줄의
+`is_valuable` 칸(앱이 받는 `isValuable`) 하나로 합쳤다. 판정 함수는 `lib/drop/drop-items.ts` 의 `isValuableDropItem` 이다. 새 아이템이 고가면
 관리 화면에서 그 칸을 켠다. 세트에 속했다고 저절로 고가가 되지는 않는다.
 
 ### 결정 12. 다 받은 사본이 없으면 잠그고, 다 받은 뒤에만 앱을 쓴다 (사용자 지정 2026-10-26)
@@ -338,3 +342,6 @@ key 를 번호 차례로 모은다(`appImageFrames`). 글자 차례면 `10 < 2` 
 - ADR-140 (2026-10-30): 받기 전 확인을 처음 실행과 5MB 넘는 잠금에만 띄우고, 잠근 채 켜지면 OTA 확인 뒤에 받는다(결정 12 고침, 이슈 #803)
 - ADR-244 (2026-11-15): 결정 12 에 그림 한 장이 실패하면 새 그림을 더 받지 않고, 받던 그림이 끝난 뒤 실패로 남기는 규칙을 더했다. 실패 뒤에도 받던 그림의 진행 알림이 실패를 덮어 99% 에서 멈췄다(이슈 #1033)
 - ADR-263 (2026-11-20): 결정 2 에 서버가 응답을 메모리에 담아 두고, 칸 시각이 바뀌거나 5분이 지나면 다시 만드는 규칙을 더했다. 요청마다 응답을 만들어서 푸시 직후 서버가 막혔다(이슈 #1100)
+- (2026-11-24) 결정 1 · 2 · 4 · 6 · 7 · 9 · 10 · 11 을 1.0.15 서버와 앱의 게임 데이터에 맞췄다. 칸 스물과 그 서버 표, 응답 모양,
+  칸 시각의 표, 없어진 `GET /v1/bosses` 와 씨앗 CLI, 보스 짧은 이름, 기간 · 고가 칸 이름이다. `(1.0.15 에서 바뀐다)` 주석을 걷고
+  1.0.14 까지의 운영 서버는 따로 밝혔다(#947)

@@ -31,15 +31,16 @@
 ### 결정 3. 일러스트를 자르는 값은 쓰는 곳마다 따로 둔다
 
 보스 일러스트는 인물의 구도와 여백이 저마다 달라서, 값 하나로는 모든 보스의 얼굴이 잘 보이지 않는다. 그래서
-보스마다 `size` · `position` 을 적은 크롭 표를 둔다(1.0.15 에서 숫자 칸 `width_percent` · `position_x_percent` · `position_y_percent` 로 바뀐다. [[ADR-099]] 결정 61). 표는 서버 게임 데이터의 `imageCrops` 칸 하나다. 같은 일러스트가
-두 곳에 쓰이므로, 크롭도 쓰는 곳마다 `kind` 를 달리해 따로 둔다.
+보스마다 폭과 위치를 숫자로 적은 크롭 표를 둔다(`widthPercent` · `positionXPercent` · `positionYPercent`, 서버
+`width_percent` · `position_x_percent` · `position_y_percent`, [[ADR-099]] 결정 61). 표는 서버 게임 데이터의 `imageCrops` 칸
+하나다. 같은 일러스트가 두 곳에 쓰이므로, 크롭도 쓰는 곳마다 `type` 을 달리해 따로 둔다.
 
-| `kind` | 쓰는 곳 |
+| `type` | 쓰는 곳 |
 |---|---|
 | `boss_portrait` | 보스 카드(`getBossPortraitCrop`) |
 | `boss_portrait_icon` | 원형 초상화 `BossPortrait`(`getBossPortraitIconCrop`). 보스 관리 · 보스 수익 줄과 파티 모달 머리([[ADR-038]] 결정 5) |
 
-- 키는 `kind` 와 초상의 그림 id 이고, 표에 없으면 `cover` · `center` 를 쓴다.
+- 키는 `type` 과 초상의 그림 id 이고, 표에 없으면 상자를 덮는다(`cover`).
 - 넓은 사각형과 작은 원은 맞는 크롭이 서로 다르다. 크롭을 같이 쓰면 한 곳을 맞출 때마다 다른 곳의
   크롭도 함께 바뀐다.
 - 값은 이미지를 보고 정해야 하므로 AI 가 미리 채우지 않는다. 사용자가 관리 화면(`/images`)에서 직접 넣는다. 게임 수치
@@ -102,3 +103,5 @@
 
 - ADR-039 (2026-10-19): 옛 ADR-018 과 옛 ADR-019 · 121 · 187 의 카드 관련 결정을 합쳐 처음 작성
 - ADR-242 (2026-11-15): 결정 3 에서 파티 모달 띠의 크롭(`boss_portrait_modal`)을 걷었다. 모달 머리가 원형 초상화를 쓴다(#1045)
+- (2026-11-24) 결정 3 의 크롭 칸을 1.0.15 의 게임 데이터에 맞췄다. 크롭은 `type` 과 그림 id 로 가리고 폭 · 위치 숫자 셋을 든다
+  ([[ADR-099]] 결정 61, #947)

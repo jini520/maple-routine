@@ -64,10 +64,17 @@ today 와 더보기는 목록에 넣지 않고 `하단 탭` 카드의 미리보�
 화면 아래의 `적용` 을 눌러야 저장되고 앱에 반영된다. 저장된 순서와 같으면 `적용` 이 꺼지고, 누르지 않고 나가면 고친
 순서를 버린다. 테마와 글자 크기 페이지가 같은 규칙이라, 설정의 값 고르기 페이지가 모두 한 가지로 동작한다.
 
-### 결정 5. 순서는 기기에만 저장하고, 읽을 때 표에 맞춘다
+### 결정 5. 순서는 Preferences 에 저장해 같은 사람의 기기끼리 맞추고, 읽을 때 표에 맞춘다
 
-Preferences 키 하나에 JSON 으로 저장한다. 구조는 `storage/quick-links.ts` · `features/quick-links/` 와 같다. 서버로
-보내지 않으므로 기기마다 따로다. 사용자가 고른 값이라 데이터 삭제와 로그아웃이 지우지 않는다.
+Preferences 키 `barOrder` 하나에 JSON 으로 저장한다. 구조는 `storage/quick-links.ts` · `features/quick-links/` 와 같다.
+
+1.0.15 부터 이 순서는 서버에도 올려 같은 사람의 기기끼리 맞춘다([[ADR-099]] 결정 15). 그룹 순서는 서버
+`account_settings.bar_group_keys` 로, 그룹마다의 하위 페이지 순서는 `bottom_bar_sub_page_orders` 의 줄로 올라간다([[ADR-099]]
+결정 57). 저장(`setBarOrder`)은 앞 값과 견주어 바뀐 칸과 그룹만 대기 표에 넣는다. 서버가 실은 칸과 그룹만 고치기 때문이다. 다른
+기기에서 바꾼 순서를 받으면 스토어가 다시 읽어 바에 반영한다(`features/server-sync/refresh.ts` 의 `refreshAfterServerSync`).
+
+사용자가 고른 값이라 데이터 삭제와 로그아웃이 지우지 않는다. 다른 사람으로 로그인하면 앞 사람의 순서를 지워 기본 순서로
+돌린다([[ADR-099]] 결정 14).
 
 저장된 값은 읽을 때 표에 맞춘다. 표에 없는 칸과 중복을 버리고, 빠진 칸을 표의 순서대로 뒤에 더하고, today 와 더보기를
 양 끝으로 되돌린다. 값이 없거나 JSON 이 깨졌으면 기본 순서를 쓴다.
@@ -86,6 +93,7 @@ Preferences 키 하나에 JSON 으로 저장한다. 구조는 `storage/quick-lin
 |---|---|
 | `features/bar-order/__tests__/config.test.ts` | 결정 1 · 5: 표에 없는 칸 · 중복 · 다른 그룹의 페이지를 버리는지, 빠진 칸을 뒤에 더하는지, today 와 더보기가 양 끝으로 돌아오는지, 깨진 값이면 기본 순서인지 본다 |
 | `features/bar-order/__tests__/store.test.ts` | 결정 5: 저장한 순서가 다시 켜도 남는지, 저장이 실패하면 바의 순서가 그대로인지 본다 |
+| `storage/__tests__/server-sync-preferences.spec.ts` (`하단바 순서는 그룹 목록 칸과 하위 페이지 차례의 그룹마다 견준다`) | 결정 5: 저장이 그룹 목록 칸과 하위 페이지 차례의 그룹마다 견주어 바뀐 것만 대기 표에 넣는지 본다 |
 | `navigation/__tests__/bar-groups.test.ts` | 결정 3: `visibleSubs` 가 사용자 순서를 따르는지, `lastSub` 가 없으면 맨 왼쪽 하위를 열고 있으면 그 하위를 여는지 본다 |
 | `navigation/__tests__/bar-in-layer-stack.test.tsx` | 결정 2 · 3: 순서를 바꾼 뒤에도 today 에서 시작하는지, 칸이 사용자 순서로 그려지고 활성 표시가 따라가는지 본다 |
 | `app/settings/__tests__/SettingsBarOrderScreen.test.tsx` | 결정 4: 놓은 순서가 그 카드의 미리보기에 보이는지, `적용` 전에는 저장하지 않는지, 나가면 버리는지, 바뀐 것이 없으면 `적용` 이 꺼지는지, today 와 더보기가 목록에 없는지 본다 |
@@ -94,3 +102,5 @@ Preferences 키 하나에 JSON 으로 저장한다. 구조는 `storage/quick-lin
 ## 번호 기록
 
 - ADR-152 (2026-11-02): 하단바 순서 바꾸기의 범위 · 편집 페이지 · 저장을 처음 작성했다
+- (2026-11-24) 결정 5 를 1.0.15 의 기기 간 동기화에 맞췄다. 순서가 기기에만 있다고 적혀 있었는데, 1.0.15 는 그룹 순서와 하위 페이지
+  순서를 서버에 올려 같은 사람의 기기끼리 맞춘다([[ADR-099]] 결정 15 · 57, #947)
