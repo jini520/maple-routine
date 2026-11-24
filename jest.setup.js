@@ -131,8 +131,10 @@ console.warn = (...args) => {
 // 끝나기 전에 다음 `act` 를 열었다는 뜻이다. 둘 다 경고만 내고 통과해서 26개 파일에 쌓였고, 새 경고가 묻혔다.
 //
 // 경고는 그대로 출력하고 모아 두었다가 케이스가 끝날 때 던진다. React 가 경고를 내는 자리에서 던지면 렌더
-// 도중이라 다른 에러로 바뀐다. 이 `afterEach` 는 Testing Library 의 정리(언마운트)보다 먼저 돈다. 그래서 케이스가
-// 끝난 뒤 정리 전에 난 경고는 다음 케이스의 실패로 나온다. 마지막 케이스 뒤에 난 경고는 `afterAll` 이 잡는다.
+// 도중이라 다른 에러로 바뀐다. 이 `afterEach` 는 Testing Library 의 정리(언마운트) 뒤에 돈다. 맨 위의
+// `react-native-css-interop/test` 가 Testing Library 를 불러 그 정리를 먼저 등록하기 때문이다. 그래서 케이스가 끝난 뒤
+// 정리 전에 난 경고도 그 케이스의 실패로 나온다. 그 뒤에 도는 테스트 파일의 `afterEach` 에서 난 경고는 다음 케이스의
+// 실패로, 마지막 케이스의 것은 `afterAll` 이 잡는다.
 const ACT_WARNING = /not wrapped in act\(|overlapping act\(\) calls/
 const actWarnings = []
 const baseError = console.error

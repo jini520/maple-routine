@@ -40,7 +40,10 @@ function 줄의_타일(view: Rendered, row: number): string[] {
     .map((tile) => String(tile.props.testID).replace('widget-tile-', ''))
 }
 
+// 시계는 가짜다. 격자의 초기화 카운트다운이 실제 시계로 1초마다 울리면, 부하로 케이스가 길어질 때 `act` 밖에서
+// 타일을 다시 그린다. 이 파일은 시간이 지나야 하는 것을 보지 않아서 시계를 넘기지 않는다.
 beforeEach(() => {
+  jest.useFakeTimers()
   // 층 스택이 없는 가짜다. `useOpenTab` 이 그 깊이를 물어 `popToTop` 을 헛치지 않는다.
   mockedUseScreenNavigation.mockReturnValue({ navigate, dispatch, getParent: () => undefined } as unknown as ReturnType<
     typeof useScreenNavigation
@@ -49,6 +52,7 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.clearAllMocks()
+  jest.useRealTimers()
 })
 
 describe('WidgetGrid: 줄과 칸', () => {

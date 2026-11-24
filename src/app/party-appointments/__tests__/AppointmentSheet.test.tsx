@@ -58,6 +58,16 @@ import { AppointmentSheet } from '../AppointmentSheet'
 
 const NAMES = new Map([['ocid-1', '낟낟']])
 
+// 시트는 단계가 바뀌면 `StepVeil` 의 흐림을 300ms 동안 걷는다. 진짜 시계면 그 끝이 케이스가 끝나고
+// 언마운트하기 전에 `act` 밖에서 와서 시트를 다시 그린다.
+beforeEach(() => {
+  jest.useFakeTimers()
+})
+
+afterEach(() => {
+  jest.useRealTimers()
+})
+
 function 그리기(props: Partial<React.ComponentProps<typeof AppointmentSheet>> = {}) {
   return renderOverlay(<AppointmentSheet names={NAMES} faces={new Map()} onClose={jest.fn()} {...props} />)
 }

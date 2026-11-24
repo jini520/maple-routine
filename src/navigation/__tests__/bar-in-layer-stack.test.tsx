@@ -45,7 +45,11 @@ const isLiquidGlassAvailableMock = isLiquidGlassAvailable as jest.MockedFunction
 
 // **`act` 로 감싸지 않는다.** 이 시점에는 마운트된 컴포넌트가 없어 감쌀 이유가 없고, 렌더 *전*의
 // `act` 는 뒤따르는 `render` 가 `null` 을 내게 만든다(`RootNavigator.test.tsx` 머리말).
+//
+// 시계는 가짜다. 앱 트리의 초기화 카운트다운이 실제 시계로 1초마다 울리면, 부하로 케이스가 길어질 때 `act` 밖에서
+// 화면을 바꾼다. 더블 터치의 300ms 창도 누름 사이의 실제 시간을 재므로 부하에서 결과가 바뀐다. 시간은 `settle` 만 넘긴다.
 beforeEach(() => {
+  jest.useFakeTimers()
   installMemoryPreferences()
   resetBarStoreForTests()
   __resetScrollToTopForTest()
@@ -58,20 +62,21 @@ afterEach(() => {
   useAppEntryStore.setState({ stage: 'signIn' })
   __resetThemeAppearanceForTest()
   setSystemBarsPort(noopSystemBarsPort)
+  jest.useRealTimers()
 })
 
 /**
- * 탭 전환이 끝나기를 `act` 안에서 기다리는 함수. 탭 화면(`BottomTabView`)은 전환 애니메이션이 끝난 뒤 32ms 타이머로 상태를
- * 바꾼다. 기다리지 않으면 부하가 걸렸을 때 그 갱신이 검사가 끝난 뒤에 와서 `act()` 경고로 케이스가 실패한다.
+ * 탭 전환을 `act` 안에서 끝까지 흘려보내는 함수. 탭 화면(`BottomTabView`)은 전환 애니메이션이 끝난 뒤 32ms 타이머로 상태를
+ * 바꾼다. 가짜 시계를 그만큼 넘겨 그 갱신까지 검사 전에 반영한다.
  */
 async function settle(): Promise<void> {
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, TAB_TRANSITION_SETTLE_MS))
+    await jest.advanceTimersByTimeAsync(TAB_TRANSITION_SETTLE_MS)
   })
 }
 
-/** 탭 화면의 32ms 타이머에 애니메이션 한 프레임을 더한 시간. */
-const TAB_TRANSITION_SETTLE_MS = 60
+/** jest 의 네이티브 애니메이션 목이 끝을 알리는 16ms 와 그 뒤 탭 화면이 거는 32ms 타이머를 더한 시간. */
+const TAB_TRANSITION_SETTLE_MS = 16 + 32
 
 /** 그린 뒤 남은 틱을 흘려보낸다. */
 async function render(element: React.ReactElement): Promise<ReturnType<typeof renderNow>> {

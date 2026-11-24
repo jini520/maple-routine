@@ -21,7 +21,10 @@ type ContainerRef = React.ComponentProps<typeof NavigationHarness>['navigationRe
 
 let navigationRef: ContainerRef
 
+// 시계는 가짜다. 앱 트리의 초기화 카운트다운이 실제 시계로 1초마다 울리면, 부하로 케이스가 길어질 때 `act` 밖에서
+// 화면을 바꾼다. 이 파일은 시간이 지나야 하는 것을 보지 않아서 시계를 넘기지 않는다.
 beforeEach(() => {
+  jest.useFakeTimers()
   installMemoryPreferences()
   resetBarStoreForTests()
   useAppEntryStore.setState({ stage: 'ready' })
@@ -31,6 +34,7 @@ beforeEach(() => {
 afterEach(() => {
   useAppEntryStore.setState({ stage: 'signIn' })
   __resetThemeAppearanceForTest()
+  jest.useRealTimers()
 })
 
 async function 앱을_켠다(): Promise<void> {
