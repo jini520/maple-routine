@@ -1,6 +1,6 @@
 // ADR 규칙 검사
 //
-// 검사는 여섯이다.
+// 검사는 일곱이다.
 //
 //   1. 파일 이름이 `ADR-{번호목록}_{카테고리}_{기능}.md` 이고 카테고리가 표에 있다
 //   2. 한 번호는 한 파일에만 있다
@@ -8,6 +8,7 @@
 //   4. 인덱스 행과 파일이 일대일로 맞고 배지가 같다
 //   5. 문서의 `[[ADR-NNN]]` 인용이 실재하는 번호를, `결정 N` 이 실재하는 결정을 가리킨다
 //   6. 소스는 ADR 을 인용하지 않는다
+//   7. 앞으로 바뀔 일을 적은 버전 메모는 ⚪ 미구현 ADR 에만 있다
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
@@ -185,6 +186,32 @@ describe('새 문서의 ADR 인용', () => {
       }
     }
     expect([...new Set(broken)]).toEqual([])
+  })
+})
+
+/** 버전 뒤에 앞으로 바뀔 일을 적은 메모. `(1.0.15 에서 바뀐다)` · `1.0.15 부터 없앤다` 같은 것이다. */
+const VERSION_NOTE = /\d+\.\d+\.\d+ ?(?:에서|부터는?) (?:바뀐다|바꾼다|없앤다|없어진다|걷는다|옮긴다|더한다)/g
+
+describe('구현 전의 일', () => {
+  // 🟢 ADR 과 기능 · 토대 · 저장소 문서는 지금 트리에 구현된 것만 적는다. 거기 단 예고 메모는 구현한 PR 이 자기 문서만
+  // 고쳐서 구현 뒤에도 남는다. 앞으로의 일은 그 결정을 적는 ⚪ ADR 에만 둔다. 버전 숫자로 견주지 않는다. develop 의
+  // `app.json` 버전은 release 를 딸 때까지 운영 버전이라, develop 에 들어온 새 버전의 일을 가리지 못한다.
+  it('버전 예고 메모는 ⚪ ADR 에만 있다', () => {
+    const offenders: string[] = []
+    for (const file of filesUnder(ROOT, /\.md$/)) {
+      let text = readFileSync(file, 'utf8')
+      const adr = FILES.find((f) => join(ADR_DIR, f.name) === file)
+      if (adr !== undefined) {
+        if (BADGE.exec(adr.body.split('\n').slice(0, 6).join('\n'))?.[0] === '⚪') continue
+        // 번호 기록은 그때 한 일의 기록이라 옛 메모를 걷은 일도 적힌다.
+        if (text.includes('## 번호 기록')) text = text.slice(0, text.lastIndexOf('## 번호 기록'))
+      }
+      // 코드 블록과 백틱 속은 메모를 예로 들어 가리킨 것이다.
+      const prose = text.replace(/```[\s\S]*?```/g, '').replace(/`[^`\n]*`/g, '')
+      const rel = file.slice(REPO_ROOT.length + 1)
+      for (const m of prose.matchAll(VERSION_NOTE)) offenders.push(`${rel}: ${m[0]}`)
+    }
+    expect(offenders).toEqual([])
   })
 })
 
