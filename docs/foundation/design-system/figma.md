@@ -18,7 +18,7 @@ Figma 파일을 고치거나 Figma 에 시안을 그릴 때 이 문서를 따른
 
 | 페이지 | 담는 것 |
 |---|---|
-| `Foundations` | 색 변수(테마 여섯이 모드) · 텍스트 스타일 · 모서리 · 간격 · 아이콘 |
+| `Foundations` | 색 변수(테마 여섯이 모드) · 텍스트 스타일 · 모서리 · 간격 · 아이콘. 아이콘 묶음 `Icon set` 이 `atoms/Icon` 의 사본이다 |
 | `App/Atoms` · `App/Molecules` · `App/Organisms` · `App/Templates` | 앱 부품. 코드의 `components/` 계층과 같다 |
 | `Web/…` | 웹 부품. 웹 코드가 생기면 같은 방식으로 나눈다 |
 | `시안` | 기능마다 섹션 하나 |
@@ -72,7 +72,8 @@ Figma 의 같은 부품도 맞춘다. 맞추지 않으면 정책 테스트가 �
 | `scripts/figma-record.mjs` | 해시를 계산하고 기록을 고치는 스크립트 |
 | `scripts/__tests__/figma-record.test.mjs` | 정책 테스트. 부품 폴더와 기록 항목이 일대일인지, 맞춘 항목의 해시가 지금 소스와 같은지 본다 |
 
-- 항목은 부품 폴더마다 하나(`atoms/Button`)이고, 토큰 세 파일은 `Foundations` 한 항목이다.
+- 항목은 부품 폴더마다 하나(`atoms/Button`)이고, 토큰 세 파일은 `Foundations` 한 항목이다. 노드 id 는 그 부품의 컴포넌트 세트(변형이 없으면 컴포넌트)이고,
+  `Foundations` 는 페이지, `atoms/Icon` 은 `Icon set` 틀이다.
 - 해시는 폴더 안의 `.ts` · `.tsx`(`__tests__` 와 `*.test.*` 제외)를 파일 경로 순서로 읽고, 주석과 공백을 걷은 토큰으로 계산한다.
   글자 안의 공백(`className` 등)은 그대로 둔다. 화면에 보이는 값이기 때문이다. `job-themes.json` 은 값만 본다.
 - 기록 파일을 `src/components/` 에 두지 않는다. 그 바로 아래에는 계층 디렉터리만 둔다(`layer-dependencies.test.ts`). 해시를 계산하는
