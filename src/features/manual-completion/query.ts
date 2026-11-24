@@ -9,12 +9,12 @@ import { useEffect } from 'react'
 
 import { getCurrentBossProfitPeriod } from '../../lib/boss/boss-profit-period'
 import { fetchManualCompletionBosses } from '../../server/manual-completion'
-import type { ManualCompletionBoss } from '../../types/manual-completion'
+import type { ManualCompletionPeriod } from '../../types/manual-completion'
 import { queryKeys } from '../query/keys'
 import { useManualCompletionDismissal } from './store'
 
 /** `null` 은 못 받았다는 뜻이고 빈 배열은 아무것도 안 열렸다는 사실이다. */
-export const manualCompletionOptions = queryOptions<ManualCompletionBoss[] | null>({
+export const manualCompletionOptions = queryOptions<ManualCompletionPeriod[] | null>({
   queryKey: queryKeys.manualCompletion(),
   queryFn: fetchManualCompletionBosses,
   staleTime: 0,
@@ -24,7 +24,7 @@ export const manualCompletionOptions = queryOptions<ManualCompletionBoss[] | nul
 
 /** 열린 보스가 있고 이번 주에 안 닫았을 때만 참. */
 export function isManualCompletionVisible(
-  bosses: ManualCompletionBoss[] | null | undefined,
+  bosses: ManualCompletionPeriod[] | null | undefined,
   dismissedWeek: string | null,
   now: Date,
 ): boolean {
@@ -33,7 +33,7 @@ export function isManualCompletionVisible(
 }
 
 /** 서버가 연 보스. 보스 수익의 행이 단추를 세울지 이것으로 가른다. 못 받았으면 `null`. */
-export function useManualCompletionBosses(): ManualCompletionBoss[] | null {
+export function useManualCompletionBosses(): ManualCompletionPeriod[] | null {
   const { data } = useQuery(manualCompletionOptions)
   return data ?? null
 }

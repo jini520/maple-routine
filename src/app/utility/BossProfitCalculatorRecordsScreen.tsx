@@ -18,11 +18,13 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useBossProfitCalculatorStore } from '../../features/boss-profit-calculator/store'
 import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule'
+import { autoFeeFrom, useMvpGradeContext } from '../../features/mvp-grade/store'
 import { useToastStore } from '../../features/toast/store'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { totalPayoutMeso } from '../../lib/boss/boss-profit-calculator'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
 import { formatMesoUnits } from '../../lib/drop/drop-price'
+import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { boxShadowOf } from '../../lib/shadow'
 import { useThemeAppearance } from '../../theme/context'
 import type { BossProfitCalculatorRecord } from '../../storage/boss-profit-calculator-records'
@@ -47,6 +49,14 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
   const { records, openedId, openRecord, deleteRecord } = useBossProfitCalculatorStore()
   const { characters } = useBossSchedule()
   const [now] = useState(() => new Date())
+  const gradeContext = useMvpGradeContext()
+  // 계산기와 같이 오늘을 센다. 수수료 자동은 캐릭터마다의 오늘 등급 요율이다.
+  const todayKey = getCurrentKstDateKey(now)
+  const totalOf = (record: BossProfitCalculatorRecord): number =>
+    record.characters.reduce((sum, character) => {
+      const autoFeePercent = gradeContext === null ? null : autoFeeFrom(gradeContext, character.ocid, todayKey).percent
+      return sum + totalPayoutMeso(character.bosses, now, autoFeePercent)
+    }, 0)
   const lift = [
     boxShadowOf(definition.shadowColor, { opacity: 0.14, radius: 1, y: 1 }),
     boxShadowOf(definition.shadowColor, { opacity: 0.17, radius: 12, y: 8 }),
@@ -97,7 +107,6 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
             {records.map((record) => {
               const title = recordTitle(record.savedAt)
               const opened = record.id === openedId
-              const bosses = record.characters.flatMap((character) => character.bosses)
               return (
                 <View
                   key={record.id}
@@ -131,7 +140,7 @@ export function BossProfitCalculatorRecordsScreen(): React.JSX.Element {
                         {charactersLabel(record)}
                       </Text>
                       <Text className="text-lg font-bold text-text" style={TABULAR_NUMS}>
-                        {formatMesoUnits(totalPayoutMeso(bosses, now))}
+                        {formatMesoUnits(totalOf(record))}
                       </Text>
                     </View>
                   </Pressable>

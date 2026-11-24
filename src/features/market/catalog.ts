@@ -1,7 +1,7 @@
 /**
  * 시세 응답을 게임 데이터와 잇는 곳. 서버는 아이템을 key 로만 주고, 이름과 그림은 앱이 가진 게임 데이터에서 찾는다.
  */
-import { findItem } from '../../lib/item-catalog'
+import { findItem, ringLevelOf } from '../../lib/item-catalog'
 import { isInWorldPeriod, openPeriodsOf, worlds, type WorldEntry } from '../../lib/world/worlds'
 
 export interface MarketItemFace {
@@ -11,13 +11,14 @@ export interface MarketItemFace {
 }
 
 /**
- * 시세 줄의 이름과 그림. 반지는 드롭 기록과 같이 이름 뒤에 ` 4레벨` 을 붙인다.
+ * 시세 줄의 이름과 그림. 반지는 레벨 줄의 key 로 오고, 드롭 기록과 같이 원래 반지 이름 뒤에 ` 4레벨` 을 붙인다.
  * 앱이 아직 모르는 새 아이템은 이름 자리에 key 를 적는다. 게임 데이터를 다시 받으면 이름이 선다.
  */
-export function marketItemFace(itemKey: string, ringLevel: number | null): MarketItemFace {
+export function marketItemFace(itemKey: string): MarketItemFace {
   const item = findItem(itemKey)
-  const level = ringLevel === null ? '' : ` ${ringLevel}레벨`
-  return { name: `${item?.name ?? itemKey}${level}`, iconAssetId: item?.iconAssetId ?? null }
+  const ring = item === null ? null : ringLevelOf(item)
+  const name = ring === null ? (item?.name ?? itemKey) : `${ring.ring.name} ${ring.ringLevel}레벨`
+  return { name, iconAssetId: item?.iconAssetId ?? null }
 }
 
 /**
@@ -26,11 +27,8 @@ export function marketItemFace(itemKey: string, ringLevel: number | null): Marke
  *
  * @example entries.slice().sort(byPriceDesc)
  */
-export function byPriceDesc(
-  a: { itemKey: string; ringLevel: number | null; price: number },
-  b: { itemKey: string; ringLevel: number | null; price: number },
-): number {
-  return b.price - a.price || marketItemFace(a.itemKey, a.ringLevel).name.localeCompare(marketItemFace(b.itemKey, b.ringLevel).name, 'ko')
+export function byPriceDesc(a: { itemKey: string; price: number }, b: { itemKey: string; price: number }): number {
+  return b.price - a.price || marketItemFace(a.itemKey).name.localeCompare(marketItemFace(b.itemKey).name, 'ko')
 }
 
 /**

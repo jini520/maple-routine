@@ -1,10 +1,12 @@
 /// <reference types="node" />
 /**
  * 1.0.15 기기 변환의 강화 합계 · 월드 리프 · MVP 등급 단계를 진짜 SQLite 로 태운다. 1.0.14 의 세 표에 줄을 심고 변환을 돌려, 새 표의
- * 줄이 변환 규칙대로인지 본다. 변환은 줄을 지워 되돌릴 수 없어서, 규칙이 틀리면 강화 지출이 빠지거나 부풀고 MVP 할인이 사라진다.
+ * 줄이 변환 규칙대로인지와 변환 뒤 강화 합계를 다시 받을 때 변환한 줄을 찾는지 본다. 변환은 줄을 지워 되돌릴 수 없어서, 규칙이 틀리면
+ * 강화 지출이 빠지거나 부풀고 MVP 할인이 사라진다.
  */
 import { findMvpGrade } from '../../../lib/mvp/grades'
 import { findWorld } from '../../../lib/world/worlds'
+import { replaceEnhancementTotals, type EnhancementTotalInput } from '../../enhancement-totals'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
 import { closeBossProfitDb, getBossProfitDbUngated } from '../db'
 import { runDeviceConversion } from '../device-conversion'
@@ -141,6 +143,33 @@ describe('강화 합계', () => {
         id: 't-first', attempt_count: 3, attempt_cost_meso: 1_200_000, destroy_defence_cost_meso: 300_000, superior_cost_meso: 10,
         from_star: 15, to_star: 17,
       },
+    ])
+  })
+
+  // 변환 뒤에도 그 날을 통째로 다시 받는다. 장비 이름으로 변환한 줄을 찾아야 줄이 늘지 않고 서버로 보내는 줄의 id 가 그대로다.
+  it('변환 뒤 같은 날을 다시 받으면 장비 이름마다 한 줄이고, 변환한 줄의 id 를 지키며 값을 갈아 끼운다', async () => {
+    await convert([
+      total('t-key'),
+      total('t-name-same', { item_group: 'name:아케인셰이드클로', item_key: null }),
+      total('t-name', { item_group: 'name:데아시두스이어링', item_key: null, item_name: '데아 시두스 이어링' }),
+    ])
+    const received = (itemName: string, attempts: number): EnhancementTotalInput => ({
+      historyDate: '2026-10-20', ocid: 'o1', worldKey: 'elysium', enhancementCategory: 'cube_reset', itemName, attempts,
+      attemptCostMeso: attempts * 500_000, destroyDefenceCostMeso: 0, superiorCostMeso: 0, fromStar: null, toStar: null, eventWorld: false,
+    })
+
+    await replaceEnhancementTotals(
+      'account-main',
+      'cube',
+      '2026-10-20',
+      [received('아케인셰이드 클로', 2), received('데아 시두스 이어링', 2)],
+      new Date(AT),
+      ['o1'],
+    )
+
+    expect(all('SELECT id, item_name, attempt_count, attempt_cost_meso FROM enhancement_totals ORDER BY id')).toEqual([
+      { id: 't-key', item_name: '아케인셰이드 클로', attempt_count: 2, attempt_cost_meso: 1_000_000 },
+      { id: 't-name', item_name: '데아 시두스 이어링', attempt_count: 2, attempt_cost_meso: 1_000_000 },
     ])
   })
 })

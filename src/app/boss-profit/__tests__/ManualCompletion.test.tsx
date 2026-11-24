@@ -42,14 +42,14 @@ import { useBossProfitStore } from '../../../features/boss-profit/store'
 import { useManualCompletionBosses } from '../../../features/manual-completion/query'
 import { BossProfitBossRow } from '../BossProfitBossRow'
 import { loadConfiguredPartySize } from '../../../features/manual-completion/record'
-import { 보스행, 컨텍스트값, renderProfit, 주간보스, 주간보스이름, PERIOD, NOW } from './harness'
+import { 보스행, 컨텍스트값, renderProfit, 주간보스, 주간보스이름, 주간보스줄, PERIOD, NOW } from './harness'
 
 const saveManualCompletion = jest.fn().mockResolvedValue(undefined)
 const cancelManualCompletion = jest.fn().mockResolvedValue(undefined)
 
 /** 그 보스가 이번 주부터 열려 있다. `PERIOD` 는 하네스가 고정한 이번 주다. */
 function 서버가열었다(): void {
-  jest.mocked(useManualCompletionBosses).mockReturnValue([{ boss: 주간보스, from: PERIOD }])
+  jest.mocked(useManualCompletionBosses).mockReturnValue([{ bossId: 주간보스줄, fromDate: PERIOD }])
 }
 
 // 자쿰은 카오스 하나뿐이다. 가격이 없는 난이도로 두면 저장 단추가 꺼져 시트를 못 본다.

@@ -72,6 +72,17 @@ function recordsOf(ocid: string, items: readonly StoredManualTrackedItem[]): [st
   return items.map((item) => [preferenceRecordIdOf('manualTrackedItems', [ocid, item.type, item.targetId]), true])
 }
 
+/** 처음 동기화가 넣는 대기 줄 id. 저장 함수가 넣는 것과 같다. */
+export async function manualTrackedSyncRecordIds(): Promise<string[]> {
+  const prefix = manualTrackedContentKey('')
+  const ids: string[] = []
+  for (const key of await preferences.keys()) {
+    if (!key.startsWith(prefix)) continue
+    ids.push(...recordsOf(key.slice(prefix.length), parseStored(await preferences.get(key))).map(([id]) => id))
+  }
+  return ids
+}
+
 // 저장된 값이 없거나 손상된 JSON이면 빈 배열을 반환한다.
 export async function getManualTrackedContent(ocid: string): Promise<ManualTrackedItem[]> {
   await whenRecordsReleased()

@@ -77,9 +77,9 @@ function tilePriceLabel(items: readonly SpendCatalogItem[]): string | null {
   if (items.some((item) => item.unitPrice === null)) return null
   const shown = items.every((item) => item.unitPrice === first.unitPrice) ? [first] : items
   const numbers = shown.map((item) =>
-    item.currency === 'point' ? item.unitPrice!.toLocaleString() : formatMesoCompact(item.unitPrice!),
+    item.currency === 'maple_point' ? item.unitPrice!.toLocaleString() : formatMesoCompact(item.unitPrice!),
   )
-  return `${numbers.join(' | ')} ${first.currency === 'point' ? '메포' : '메소'}`
+  return `${numbers.join(' | ')} ${first.currency === 'maple_point' ? '메포' : '메소'}`
 }
 
 /** 상한을 넘겨 친 수량을 상한으로 줄인다. 상한은 사용자가 준 한도에서 온다. 없는 항목은 안 막는다 */
@@ -259,7 +259,7 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
   const currency = scope?.currency ?? 'meso'
   /** 적을 때 개당 가격을 치는 항목인가. 한 대표 안의 단계들은 이것도 같다. */
   const typesPrice = scope !== null && scope.unitPrice === null
-  const usesPoint = currency === 'point'
+  const usesPoint = currency === 'maple_point'
   const typedRate = Number(rateText)
   const rate = usesPoint && rateText !== '' && Number.isFinite(typedRate) ? typedRate : null
   // 형태가 있으면 고른 단계 값의 합이다. 형태마다 따로 사기 때문이다.
@@ -394,8 +394,8 @@ export function CatalogForm(props: SpendFormProps): React.JSX.Element {
         quantity,
         mesoAmount: currency === 'meso' ? amount : null,
         tariffMeso: null,
-        pointAmount: currency === 'point' ? amount : null,
-        pointPer100mMeso: currency === 'point' ? rate : null,
+        pointAmount: currency === 'maple_point' ? amount : null,
+        pointPer100mMeso: currency === 'maple_point' ? rate : null,
         cashAmount: null,
         hexa: null,
       }),

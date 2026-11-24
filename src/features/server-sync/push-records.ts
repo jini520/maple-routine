@@ -13,6 +13,8 @@ import { partsOfPreferenceRecordId, SERVER_SYNC_TABLES, type ServerSyncTable } f
 export interface RecordOwners {
   mapleIdOfOcid(ocid: string): Promise<string | null>
   mapleIdOfNexonAccount(nexonAccountId: string): Promise<string | null>
+  /** 드롭의 주인. 수익 건의 캐릭터로 찾는다 */
+  mapleIdOfProfitEntry(profitEntryId: string): Promise<string | null>
 }
 
 /** 대기 줄 하나로 할 일. `hold` 는 메이플 ID 를 몰라 두는 것이고, `drop` 은 보낼 것이 없어 대기 줄만 지우는 것이다. */
@@ -262,6 +264,9 @@ async function upsertRowOf(table: ServerSyncTable, row: Row, owners: RecordOwner
         clearRecordedBy: row.clear_recorded_by,
       }
     case 'bossDrops':
+      // 드롭의 주인은 수익 건의 캐릭터다. 그 메이플 ID 를 몰라 수익 건이 남았는데 드롭만 보내면 서버가 수익 건이 없다고 거절해, 다섯
+      // 번째에 대기 줄이 빠지고 그 캐릭터가 나타나도 올라가지 않는다.
+      if ((await owners.mapleIdOfProfitEntry(text(row.profit_entry_id))) === null) throw new OwnerUnknown()
       return {
         id: row.id,
         profitEntryId: row.profit_entry_id,

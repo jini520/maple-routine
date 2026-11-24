@@ -41,6 +41,11 @@ function recordsOf(stored: Readonly<Record<string, unknown>> | null): Map<string
   )
 }
 
+/** 처음 동기화가 넣는 대기 줄 id. 저장 함수가 넣는 것과 같다. */
+export async function figureMotionSyncRecordIds(): Promise<string[]> {
+  return [...recordsOf(await readObject()).keys()]
+}
+
 /** 바꾸거나 지운 캐릭터의 동작을 대기 표에 넣는다. */
 export async function setFigureMotions(motions: Readonly<Record<string, FigureMotion>>): Promise<void> {
   await whenRecordsReleased()

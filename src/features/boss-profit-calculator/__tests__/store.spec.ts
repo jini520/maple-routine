@@ -74,8 +74,8 @@ function bossesOf(ocid: string): string[] {
 /** 계산기를 열고 두 캐릭터를 보스 관리 값으로 채운다. 계산기는 빈 상태로 열린다 */
 async function openFilled(): Promise<void> {
   await useBossProfitCalculatorStore.getState().open()
-  useBossProfitCalculatorStore.getState().importFromBossManage('ocid-1', NOW)
-  useBossProfitCalculatorStore.getState().importFromBossManage('ocid-2', NOW)
+  useBossProfitCalculatorStore.getState().importFromBossManage('ocid-1', NOW, 5)
+  useBossProfitCalculatorStore.getState().importFromBossManage('ocid-2', NOW, 5)
 }
 
 const 옛것: BossProfitCalculatorRecord = {
@@ -154,6 +154,17 @@ describe('bossWithPartySetting', () => {
       shares: EVEN,
     })
   })
+
+  // 계산기는 요율이 비었는지로 자동을 가른다. 보스 관리가 들고 있는 등급 요율을 담으면 손으로 고른 요율이 된다.
+  it('보스 관리의 설정이 등급을 따르면 요율을 비워 가져온다', () => {
+    useBossSchedulerStore.setState({
+      partyShares: {
+        [partySizeKey('ocid-1', 'kaling', 'normal')]: { crystalMyShare: 2, crystalSharesTotal: 5, splitFeePercent: 3, splitFeeAuto: true },
+      },
+    })
+
+    expect(bossWithPartySetting('ocid-1', 'kaling', 'normal').shares).toEqual({ myShare: 2, sharesTotal: 5, splitFeePercent: null })
+  })
 })
 
 describe('캐릭터 하나에만 걸리는 버튼', () => {
@@ -171,7 +182,7 @@ describe('캐릭터 하나에만 걸리는 버튼', () => {
     useBossProfitCalculatorStore.getState().clearCharacter('ocid-1')
     useBossProfitCalculatorStore.getState().clearCharacter('ocid-2')
 
-    useBossProfitCalculatorStore.getState().importFromBossManage('ocid-1', NOW)
+    useBossProfitCalculatorStore.getState().importFromBossManage('ocid-1', NOW, 5)
 
     expect(bossesOf('ocid-1')).toEqual(['lucid:hard:1', 'kaling:normal:3'])
     expect(useBossProfitCalculatorStore.getState().bossesByOcid['ocid-1']?.[1]?.shares).toEqual({

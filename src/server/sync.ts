@@ -1,10 +1,11 @@
 /**
- * 기기 간 기록 동기화의 서버 경로. 올리기(`POST /v1/sync/push`)와 받기(`POST /v1/sync/pull`)를 부른다.
+ * 기기 간 기록 동기화의 서버 경로. 올리기(`POST /v1/sync/push`) · 받기(`POST /v1/sync/pull`) · 데이터 삭제(`POST /v1/sync/clear`)를
+ * 부른다.
  *
  * 올리기의 응답은 기록마다의 결과를 올린 차례대로 싣는다. 요청 전체를 거절하는 것은 신원(401 · 403)과 본문의 겉모양(400 · 413)과 서버
  * 오류뿐이다.
  */
-import { jsonCall } from './write'
+import { jsonCall, writeCall, type SendResult } from './write'
 
 /** 올리는 기록 한 건. `table` 은 서버 표 이름을 낙타 표기로 쓴 것이고 `row` 는 그 표의 칸이다. */
 export interface SyncPushRecord {
@@ -109,4 +110,16 @@ export async function pullSyncRecords(headers: Record<string, string>, cursors: 
   if (response.outcome === 'no-response') return response
   const parsed = response.ok ? pullResponseOf(response.body) : null
   return parsed === null ? { outcome: 'refused', status: response.status } : { outcome: 'answered', response: parsed }
+}
+
+/** 데이터 삭제가 서버에서 지우는 기록 묶음. 서버 `sync.dto.ts` 의 `CLEAR_GROUPS` 와 같다. */
+export type SyncClearGroup = 'manual' | 'boss' | 'cashbook' | 'enhancement'
+
+/** 이 신원이 쓸 수 있는 메이플 ID 의 기록 가운데 고른 묶음에 삭제 표식을 적게 한다. 서버가 지웠으면 204 다. */
+export function clearSyncRecords(headers: Record<string, string>, groups: readonly SyncClearGroup[]): Promise<SendResult> {
+  return writeCall('/sync/clear', {
+    method: 'POST',
+    headers: { ...headers, 'content-type': 'application/json' },
+    body: JSON.stringify({ groups }),
+  })
 }

@@ -9,7 +9,7 @@
  */
 import { cashbookRowIconOf, getAssetImage } from '../../lib/assets/asset-lookup'
 import { cashbookCategoryOf } from '../../lib/cashbook/categories'
-import { findHexaCore } from '../../lib/cashbook/hexa-matrix'
+import { findHexaCore, findHexaCoreById } from '../../lib/cashbook/hexa-matrix'
 import { findHuntLoot } from '../../lib/cashbook/hunt-loot'
 import { findSpendChoice, findSpendRewardChoice } from '../../lib/cashbook/spend-catalog'
 import { findSymbol } from '../../lib/cashbook/symbol-costs'
@@ -49,12 +49,13 @@ export function recordIconOf(entry: DayRecord): ImageAssetRef | null {
       const symbol = findSymbol(itemKey)?.symbol
       return symbol === undefined ? null : getAssetImage(symbol.iconAssetId)
     }
-    // 헥사 스킬은 그 코어의 스킬 그림, 헥사 스탯은 분류 카드와 같은 헥사 매트릭스 원본 그림이다.
+    // 헥사 스킬은 그 코어의 스킬 그림, 헥사 스탯은 분류 카드와 같은 헥사 매트릭스 원본 그림이다. 이름이 같은 코어도 직업마다
+    // 그림이 달라 코어 줄 id 로 찾고, 직업을 몰라 줄을 고르지 못한 기록만 이름으로 찾는다.
     if (category === 'hexa_matrix') {
       if (entry.record.hexa?.activation != null) {
         return getAssetImage(cashbookCategoryOf('spend', category)?.iconAssetId)
       }
-      const core = findHexaCore(itemKey)
+      const core = findHexaCoreById(entry.record.hexaCoreId) ?? findHexaCore(itemKey)
       return core === null ? null : getAssetImage(core.iconAssetId)
     }
     const choice = findSpendChoice(category, itemKey)?.choice ?? findSpendRewardChoice(category, formItemKeys)?.choice

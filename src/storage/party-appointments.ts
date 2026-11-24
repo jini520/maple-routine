@@ -260,6 +260,11 @@ async function readStored(): Promise<unknown[]> {
   }
 }
 
+/** 처음 동기화가 넣는 대기 줄 id. 저장 함수가 넣는 것과 같다. */
+export async function partyAppointmentSyncRecordIds(): Promise<string[]> {
+  return [...recordsOf(await readStored()).keys()]
+}
+
 /** 더하거나 고치거나 지운 약속을 대기 표에 넣는다. */
 export async function setPartyAppointments(appointments: readonly PartyAppointment[]): Promise<void> {
   await whenRecordsReleased()

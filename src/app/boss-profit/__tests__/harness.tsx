@@ -23,6 +23,9 @@ import type { BossProfitContextValue } from '../boss-profit-context'
 export const 주간보스 = bossesInSection('weekly')[0].key
 export const 다른주간보스 = bossesInSection('weekly')[1].key
 export const 월간보스 = bossesInSection('monthly')[0].key
+/** 보스 줄 id. 직접 완료를 연 기간이 보스를 이 값으로 가리킨다. */
+export const 주간보스줄 = bossesInSection('weekly')[0].id
+export const 월간보스줄 = bossesInSection('monthly')[0].id
 /** 화면에 보이는 이름. 글자를 확인하는 단언이 쓴다. */
 export const 주간보스이름 = bossesInSection('weekly')[0].name
 export const 다른주간보스이름 = bossesInSection('weekly')[1].name

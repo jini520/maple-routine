@@ -2,11 +2,12 @@
 //
 // 여기가 지키는 것은 두 가지다. 가진 응답의 ETag 를 보내 바뀐 것이 없으면 몸 없이 끝내는 것, 그리고 계약을 어긴 값이
 // 화면까지 흘러가지 않게 하는 것이다. 목록에서 줄 하나가 어기면 그 줄만 빠진다.
+//
+// 반지는 레벨마다 아이템 줄이 따로라 레벨 줄의 key 로 온다. 응답에 반지 레벨 칸이 없다.
 import { fetchMarketItem, fetchMarketItems, fetchMaspi } from '../market'
 
 const 줄 = {
-  itemKey: 'restraint_ring',
-  ringLevel: 4,
+  itemKey: 'restraint_ring_lv4',
   price: 3_300_000_000,
   changePct: 0.3,
   low: 3_200_000_000,
@@ -54,7 +55,7 @@ it('목록에서 계약을 어긴 줄만 빼고, 모르는 등급도 그 줄을 
     ok({
       date: '2026-11-15',
       equipment: [줄, { ...줄, itemKey: 'broken', price: '33억' }, { ...줄, itemKey: 'odd', grade: 'lots' }],
-      consumable: { world: 'scania', items: [{ ...줄, itemKey: 'life_whetstone', ringLevel: null, changePct: null }] },
+      consumable: { world: 'scania', items: [{ ...줄, itemKey: 'life_whetstone', changePct: null }] },
     }),
   )
 
@@ -62,12 +63,12 @@ it('목록에서 계약을 어긴 줄만 빼고, 모르는 등급도 그 줄을 
 
   expect(result).toMatchObject({ kind: 'ok' })
   if (result?.kind !== 'ok') throw new Error('받지 못했다')
-  expect(result.body.equipment.map((entry) => entry.itemKey)).toEqual(['restraint_ring'])
-  expect(result.body.consumable.items).toEqual([{ ...줄, itemKey: 'life_whetstone', ringLevel: null, changePct: null }])
+  expect(result.body.equipment).toEqual([줄])
+  expect(result.body.consumable.items).toEqual([{ ...줄, itemKey: 'life_whetstone', changePct: null }])
 })
 
 it('7일 표가 모자라 범위가 없는 줄과 날은 low · high 가 null 로 오고, 빼지 않고 그대로 받는다', async () => {
-  const 범위없음 = { ...줄, itemKey: 'life_whetstone', ringLevel: null, low: null, high: null }
+  const 범위없음 = { ...줄, itemKey: 'life_whetstone', low: null, high: null }
   jest.spyOn(global, 'fetch').mockResolvedValue(
     ok({ date: '2026-11-15', equipment: [], consumable: { world: 'scania', items: [범위없음] } }),
   )
@@ -79,7 +80,7 @@ it('7일 표가 모자라 범위가 없는 줄과 날은 low · high 가 null �
   ]
   const { spark: _spark, ...head } = 범위없음
   jest.spyOn(global, 'fetch').mockResolvedValue(ok({ date: '2026-11-15', ...head, series }))
-  await expect(fetchMarketItem({ itemKey: 'life_whetstone', ringLevel: null, world: 'scania' }, null)).resolves.toMatchObject({
+  await expect(fetchMarketItem({ itemKey: 'life_whetstone', world: 'scania' }, null)).resolves.toMatchObject({
     body: { low: null, high: null, series },
   })
 })
@@ -98,12 +99,11 @@ it('그 월드의 시세가 없어 404 면 없다고 주고, 다른 실패와 �
   await expect(fetchMaspi(null)).resolves.toBeNull()
 })
 
-it('상세는 아이템 key 와 반지 레벨 · 월드로 부르고, 날마다 값을 준다. 반지가 아니면 ring 을 비워 보낸다', async () => {
+it('상세는 아이템 key 와 월드로 부르고, 날마다 값을 준다. 반지도 레벨 줄의 key 로 부른다', async () => {
   const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(
     ok({
       date: '2026-11-15',
       itemKey: 'magic_eyepatch',
-      ringLevel: null,
       price: 2_600_000_000,
       changePct: -7.8,
       low: 2_500_000_000,
@@ -113,8 +113,10 @@ it('상세는 아이템 key 와 반지 레벨 · 월드로 부르고, 날마다 
     }),
   )
 
-  const result = await fetchMarketItem({ itemKey: 'magic_eyepatch', ringLevel: null, world: 'scania' }, null)
+  const result = await fetchMarketItem({ itemKey: 'magic_eyepatch', world: 'scania' }, null)
+  await fetchMarketItem({ itemKey: 'restraint_ring_lv4', world: 'general' }, null)
 
-  expect(fetchSpy.mock.calls[0]?.[0]).toBe('https://api.mapleroutine.store/v1/market/items/magic_eyepatch?ring=&world=scania')
-  expect(result).toMatchObject({ kind: 'ok', body: { grade: 'normal', series: [{ date: '2026-11-15', price: 2_600_000_000 }] } })
+  expect(fetchSpy.mock.calls[0]?.[0]).toBe('https://api.mapleroutine.store/v1/market/items/magic_eyepatch?world=scania')
+  expect(fetchSpy.mock.calls[1]?.[0]).toBe('https://api.mapleroutine.store/v1/market/items/restraint_ring_lv4?world=general')
+  expect(result).toMatchObject({ kind: 'ok', body: { itemKey: 'magic_eyepatch', grade: 'normal', series: [{ date: '2026-11-15', price: 2_600_000_000 }] } })
 })

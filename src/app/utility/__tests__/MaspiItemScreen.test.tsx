@@ -10,7 +10,7 @@ import { MARKET_EMPTY_TITLE } from '../MaspiScreen'
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 jest.mock('../../../features/market/query', () => ({ useMarketItem: jest.fn() }))
 
-const 열기 = { params: { itemKey: 'magic_eyepatch', ringLevel: null, world: 'general' } }
+const 열기 = { params: { itemKey: 'magic_eyepatch', world: 'general' } }
 
 beforeEach(() => {
   jest.mocked(useScreenNavigation).mockReturnValue({ goBack: jest.fn() } as unknown as ReturnType<typeof useScreenNavigation>)
@@ -21,7 +21,6 @@ describe('MaspiItemScreen', () => {
     jest.mocked(useMarketItem).mockReturnValue({
       date: '2026-11-15',
       itemKey: 'magic_eyepatch',
-      ringLevel: null,
       price: 2_600_000_000,
       changePct: -7.8,
       low: 2_500_000_000,
@@ -35,7 +34,7 @@ describe('MaspiItemScreen', () => {
 
     const view = await renderOverlay(<MaspiItemScreen route={열기} />)
 
-    expect(jest.mocked(useMarketItem)).toHaveBeenCalledWith({ itemKey: 'magic_eyepatch', ringLevel: null, world: 'general' })
+    expect(jest.mocked(useMarketItem)).toHaveBeenCalledWith({ itemKey: 'magic_eyepatch', world: 'general' })
     expect(view.getByText('마력이 깃든 안대')).toBeTruthy()
     expect(view.getByTestId('maspi-item-price')).toHaveTextContent('26억')
     expect(view.getByText('전일 대비 -7.8%')).toBeTruthy()
@@ -50,7 +49,6 @@ describe('MaspiItemScreen', () => {
     jest.mocked(useMarketItem).mockReturnValue({
       date: '2026-11-15',
       itemKey: 'magic_eyepatch',
-      ringLevel: null,
       price: 2_600_000_000,
       changePct: -7.8,
       low: null,
@@ -66,6 +64,15 @@ describe('MaspiItemScreen', () => {
 
     expect(view.getByText('범위')).toBeTruthy()
     expect(view.getByText('-')).toBeTruthy()
+  })
+
+  it('반지는 레벨 줄의 key 로 열고, 머리의 이름은 원래 반지 이름 뒤에 레벨을 붙인다', async () => {
+    jest.mocked(useMarketItem).mockReturnValue(null)
+
+    const view = await renderOverlay(<MaspiItemScreen route={{ params: { itemKey: 'restraint_ring_lv4', world: 'general' } }} />)
+
+    expect(jest.mocked(useMarketItem)).toHaveBeenCalledWith({ itemKey: 'restraint_ring_lv4', world: 'general' })
+    expect(view.getByText('리스트레인트 링 4레벨')).toBeTruthy()
   })
 
   it('신뢰 시세가 아니게 됐으면 빈 상태 카드다', async () => {

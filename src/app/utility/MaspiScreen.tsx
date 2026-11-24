@@ -105,12 +105,11 @@ export function MaspiScreen(): React.JSX.Element {
           <View className="gap-1.5">
             {entries.map((entry) => (
               <MarketRow
-                key={`${entry.itemKey}-${entry.ringLevel ?? ''}`}
+                key={entry.itemKey}
                 entry={entry}
                 onPress={() =>
                   navigation.navigate('UtilityMaspiItem', {
                     itemKey: entry.itemKey,
-                    ringLevel: entry.ringLevel,
                     world: kind === '장비' ? EQUIPMENT_SCOPE : (world ?? EQUIPMENT_SCOPE),
                   })
                 }

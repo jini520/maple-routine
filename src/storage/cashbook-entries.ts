@@ -75,6 +75,10 @@ export interface EntryItem {
   inventoryItemId: string | null
   /** 아이템 구매 · 판매에서 고른 특수스킬 반지의 레벨. 다른 품목은 `null` 이다. */
   ringLevel: number | null
+  /**
+   * 헥사 스킬 품목이 가리키는 코어 줄 id. 읽을 때만 채운다. 저장은 key 와 캐릭터의 직업으로 줄을 다시 고르므로 이 값을 보지 않는다.
+   */
+  hexaCoreId: string | null
 }
 
 /** 헥사 기록이 한 캐릭터의 사냥 조각 보관에서 가져온 조각. */
@@ -162,6 +166,7 @@ export const EMPTY_ITEM: EntryItem = {
   hexaStorageAsSpend: null,
   inventoryItemId: null,
   ringLevel: null,
+  hexaCoreId: null,
 }
 
 function flagOf(value: boolean | null): number | null {
@@ -512,6 +517,7 @@ function itemOf(row: Record<string, unknown>, head: EntryHead): EntryItem {
     hexaStorageAsSpend: booleanOrNull(row.counts_stored_fragments_as_spend),
     inventoryItemId: textOrNull(row.inventory_item_id),
     ringLevel: target?.ringLevel ?? null,
+    hexaCoreId: type === 'hexa_core' ? targetId : null,
   }
 }
 

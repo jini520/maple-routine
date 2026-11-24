@@ -9,6 +9,7 @@ jest.mock('../../../storage/manual-completion-banner', () => ({
 }))
 
 import { getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
+import { findBoss } from '../../../lib/boss/bosses'
 import { queryClient } from '../../query/client'
 import { isManualCompletionVisible, manualCompletionOptions, useManualCompletionBanner, useManualCompletionBosses } from '../query'
 import { resetManualCompletionDismissalForTests } from '../store'
@@ -19,6 +20,7 @@ const { getDismissedManualCompletionWeek: dismissedMock, dismissManualCompletion
 ) as Record<string, jest.Mock>
 
 const NOW = new Date('2026-10-31T05:00:00.000Z')
+const 로터스 = { bossId: findBoss('lotus')!.id, fromDate: '2026-10-30' }
 const THIS_WEEK = getCurrentBossProfitPeriod('weekly', NOW).periodKey
 const wrapper = ({ children }: { children: ReactNode }): React.JSX.Element => (
   <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
@@ -31,7 +33,7 @@ beforeEach(() => {
   resetManualCompletionDismissalForTests()
   jest.clearAllMocks()
   dismissedMock.mockResolvedValue(null)
-  fetchMock.mockResolvedValue([{ boss: 'lotus', from: '2026-10-30' }])
+  fetchMock.mockResolvedValue([로터스])
 })
 
 afterEach(() => {
@@ -45,9 +47,9 @@ it('진입마다 묻는 서버 쿼리다', () => {
 })
 
 it('열린 보스가 있고 이번 주에 안 닫았을 때만 줄을 세운다. 못 받은 것(`null`)은 안 세운다', () => {
-  expect(isManualCompletionVisible([{ boss: 'lotus', from: '2026-10-30' }], null, NOW)).toBe(true)
-  expect(isManualCompletionVisible([{ boss: 'lotus', from: '2026-10-30' }], THIS_WEEK, NOW)).toBe(false)
-  expect(isManualCompletionVisible([{ boss: 'lotus', from: '2026-10-30' }], '2026-10-22', NOW)).toBe(true)
+  expect(isManualCompletionVisible([로터스], null, NOW)).toBe(true)
+  expect(isManualCompletionVisible([로터스], THIS_WEEK, NOW)).toBe(false)
+  expect(isManualCompletionVisible([로터스], '2026-10-22', NOW)).toBe(true)
   expect(isManualCompletionVisible([], null, NOW)).toBe(false)
   expect(isManualCompletionVisible(null, null, NOW)).toBe(false)
 })

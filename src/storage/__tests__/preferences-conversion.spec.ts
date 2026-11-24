@@ -3,6 +3,7 @@
  * 1.0.15 기기 변환의 Preferences 단계. 1.0.14 모양의 값을 심고 변환을 돌려, 새 모양으로 적히고 저장소가 변환 전과 같은 값으로
  * 되읽는지 본다. Preferences 는 트랜잭션 밖이라 두 번 돌아도 같아야 하고, 못 찾은 항목만 빠져야 한다.
  */
+import { bossPayoutMeso, type CalculatorBoss } from '../../lib/boss/boss-profit-calculator'
 import { bossDifficultyIdOf } from '../../lib/boss/bosses'
 import { contentIdOf } from '../../lib/scheduler/contents'
 import { findWorld } from '../../lib/world/worlds'
@@ -373,6 +374,28 @@ describe('보스 수익 계산기 기록', () => {
         shares: { myShare: 66_667, sharesTotal: 100_000, splitFeePercent: 3, splitFeeAuto: false },
       },
     ])
+  })
+
+  // 계산기 기록은 금액을 남기지 않고 열 때마다 분배 칸으로 다시 센다. 분배 칸을 바꿨다고 지난 기록의 금액이 달라지면 안 된다.
+  it('균등 분배와 % 로 나눠떨어지는 비율은 변환 뒤에 센 금액이 변환 전 모양으로 센 금액과 같다', async () => {
+    const now = new Date('2026-11-20T03:00:00.000Z')
+    const legacyBosses: CalculatorBoss[] = [
+      { bossKey: 'lucid', difficulty: 'hard', partySize: 3, shares: even },
+      { bossKey: 'will', difficulty: 'hard', partySize: 2, shares: { myShare: 2, sharesTotal: 5, splitFeePercent: 3 } },
+      { bossKey: 'lotus', difficulty: 'hard', partySize: 2, shares: { myShare: 1, sharesTotal: 4, splitFeePercent: null } },
+    ]
+    await setJson('bossProfitCalculatorRecords', [
+      { id: 'rec-1', savedAt: '2026-11-17T00:00:00.000Z', characters: [{ ocid: 'ocid-1', bosses: legacyBosses }] },
+    ])
+    const before = legacyBosses.map((boss) => bossPayoutMeso(boss, now, 5))
+
+    await runPreferencesConversion(db)
+
+    const [record] = await getBossProfitCalculatorRecords()
+    const converted = record!.characters[0]!.bosses
+    expect(converted.map((boss) => boss.shares.sharesTotal)).toEqual([null, 100_000, 100_000])
+    expect(before).not.toContain(0)
+    expect(converted.map((boss) => bossPayoutMeso(boss, now, 5))).toEqual(before)
   })
 })
 

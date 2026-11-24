@@ -1,5 +1,5 @@
 /**
- * 화면이 쓰는 기록 모양(`SpendRecord` · `IncomeRecord`)과 가계부 기록 표 셋의 행을 서로 옮기는 자리.
+ * 화면이 쓰는 기록 모양(`SpendRecord` · `IncomeRecord`)과 가계부 기록 표 여섯의 행을 서로 옮기는 자리.
  *
  * 저장 함수(`spend.ts` · `income.ts`)와 버전 15 이관(`sqlite/migrations.ts`)이 같은 변환을 쓴다. DB 를 안 열어서
  * 이관이 이것을 읽어도 순환이 안 생긴다.
@@ -158,6 +158,7 @@ export function spendRecordOf(entry: StoredEntry): SpendRecord {
     recordedAt: entry.head.createdAt,
     ...(first.inventoryItemId === null ? {} : { inventoryItemId: first.inventoryItemId }),
     ...(first.ringLevel === null ? {} : { ringLevel: first.ringLevel }),
+    ...(first.hexaCoreId === null ? {} : { hexaCoreId: first.hexaCoreId }),
     ...memoField(entry.head.memo),
     ...(entry.transfer == null ? {} : { transfer: entry.transfer }),
     ...(entry.exchange == null ? {} : { exchange: entry.exchange }),

@@ -26,6 +26,11 @@ function recordsOf(names: Readonly<Record<string, string>>): Map<string, string>
   return new Map(Object.entries(names).map(([mapleId, name]) => [preferenceRecordIdOf('mapleIdNames', [mapleId]), name]))
 }
 
+/** 처음 동기화가 넣는 대기 줄 id. 저장 함수가 넣는 것과 같다. */
+export async function mapleIdNameSyncRecordIds(): Promise<string[]> {
+  return [...recordsOf(await getMapleIdNames()).keys()]
+}
+
 /** 바꾸거나 지운 메이플 ID 의 이름을 대기 표에 넣는다. */
 export async function setMapleIdNames(names: Readonly<Record<string, string>>): Promise<void> {
   const before = await getMapleIdNames()

@@ -9,11 +9,9 @@
 // ① **셸이 무엇을 언제 하는가**. 렌더해서 실제 호출 순서를 본다.
 // ② **진입점이 무엇을 먼저 하는가**. 포트 주입과 스플래시 붙들기는 React 트리 **밖**이라 렌더로는
 //    못 본다. `index.ts` 를 소스로 읽어 순서만 본다.
-// ③ **OTA 가 아직 아무 데도 안 이어져 있는가**. 프로토콜 재설계를 뒤로 미뤄 뒀다.
-//    `LiveUpdatePort` 는 던지고, 그보다 앞서 core 의 live-update 스토어는 **import
-//    하는 것만으로** 죽는다(`import.meta.env`). 그래서 계약이 "부르지 않는다"가
-//    아니라 **"값으로 가져오지도 않는다"** 이고, 그건 호출 관측으로는 못 지킨다. 값 import 가
-//    하나 생기면 그 순간 앱도 테스트도 안 뜨므로 **그 전에** 여기가 빨개져야 한다.
+// ③ **OTA 가 이어져 있는가**. live-update 스토어가 `import.meta` 를 쓰면 RN 은 그 모듈을 **import
+//    하는 것만으로** 죽는다. 그건 호출 관측으로는 못 지켜서 소스를 읽어 본다. 업데이트 모달이 마운트된
+//    자리도 소스로 본다.
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import path from 'node:path'
 
@@ -211,6 +209,7 @@ jest.mock('../features/server-maintenance/store', () => ({
 }))
 
 import { AppShell } from '../app/AppShell'
+import { BOOT_SPLASH_HOLD_MS } from '../app/BootSplash'
 import { renderOverlay } from '../components/__tests__/render-atom'
 import { installAppStateFocus } from '../features/query/app-focus'
 
@@ -231,14 +230,22 @@ describe('① 셸이 무엇을 언제 하는가', () => {
     jest.useRealTimers()
   })
 
+  /** 2겹이 그려지고 최소 표시 시간이 지난 때로 보낸다. 붙들지 않으면 이때 걷힌다. */
+  async function passBootSplashHold(view: Awaited<ReturnType<typeof renderOverlay>>): Promise<void> {
+    await fireEvent(view.getByTestId('boot-splash'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 390, height: 844 } },
+    })
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(BOOT_SPLASH_HOLD_MS * 2)
+    })
+  }
+
   async function mountShell(): Promise<void> {
     await renderOverlay(<AppShell />)
     // 복원 여섯·예열은 마이크로태스크(그리고 예열은 동적 import)라 이펙트 뒤 한 번 흘려보내야 관측된다.
     await act(async () => {})
   }
 
-  // 여기에 `startAds`(광고 SDK 초기화 + 사전 로드)가 다섯 번째 항목으로 있었다. 이
-  // 전면광고를 걷으며 셸에서 사라졌다.
   it('복원 여섯이 첫 렌더에 전부 시작된다', async () => {
     await mountShell()
 
@@ -318,6 +325,23 @@ describe('① 셸이 무엇을 언제 하는가', () => {
 
     expect(view.queryByTestId('game-data-lock')).toBeNull()
     expect(view.queryByText('navigation')).toBeNull()
+  })
+
+  // 시작 화면은 셸의 맨 위에 그려진다. 변환이 점검이 풀리기를 기다리는 동안 붙들면 상한(20초)까지 점검 잠금 화면을 덮는다.
+  it('받을 것이 없던 실행이면 기기 변환 동안 시작 화면을 붙들고, 변환이 점검을 기다리는 동안은 붙들지 않는다', async () => {
+    mockConversion.phase = 'running'
+    const converting = await renderOverlay(<AppShell />)
+    await passBootSplashHold(converting)
+
+    expect(converting.queryByTestId('boot-splash')).not.toBeNull()
+    await converting.unmount()
+
+    mockMaintenance.locked = true
+    const waiting = await renderOverlay(<AppShell />)
+    await passBootSplashHold(waiting)
+
+    expect(waiting.queryByTestId('boot-splash')).toBeNull()
+    expect(waiting.getByTestId('server-maintenance-lock')).toBeTruthy()
   })
 
   // 변환 코드의 잘못을 OTA 로 고칠 수 있어야 한다. 실패 패널 위에 모달이 없으면 고친 번들을 받을 길이 없다.
@@ -444,8 +468,8 @@ describe('② 진입점이 무엇을 먼저 하는가', () => {
   })
 })
 
-describe('③ OTA 배선. 벽이 사라졌고, 사라진 채로 있어야 한다', () => {
-  /** `packages/app-rn` 의 **제품 소스** 전부(테스트·스냅샷 제외). */
+describe('③ OTA 배선. live-update 스토어를 import 할 수 있고 업데이트 모달이 마운트돼 있다', () => {
+  /** 앱의 **제품 소스** 전부(테스트·스냅샷 제외). */
   const sources = ((): string[] => {
     const walk = (dir: string): string[] =>
       readdirSync(dir).flatMap((entry) => {
@@ -465,15 +489,9 @@ describe('③ OTA 배선. 벽이 사라졌고, 사라진 채로 있어야 한다
 
   const relative = (file: string): string => path.relative(RN_ROOT, file)
 
-  // 여기 있던 세 케이스는 **아직 안 이어져 있다를 고정**하고 있었다(스토어를 타입으로만 import·
-  // `src/native/live-update` 호출 0· 모달 마운트 0). 그 셋이 다 뒤집혔으므로 그대로
-  // 두면 **구현하면 실패하는 테스트**가 된다. 글롭 고정 테스트를 `0이어야 한다`로
-  // 뒤집었을 때와 같은 처리다. 감시 대상이 사라진 게 아니라 **묻는 질문이 바뀐 것**이다.
-  //
-  // 이제 묻는 것은 **벽이 정말 사라졌는가** 다. 벽은 core 가 **Vite 전용 API** 를 쓰는 것이었고,
-  // 그것이 되살아나면 RN 은 다시 **import 하는 것만으로 죽는** 상태로 돌아간다. 그때 실패해야 하는
+  // 스토어가 **Vite 전용 API**(`import.meta`)를 쓰면 RN 은 **import 하는 것만으로 죽는다**. 그때 실패해야 하는
   // 자리는 이 모듈을 쓰는 화면 하나가 아니라 여기다.
-  it('core 의 live-update 스토어에 `import.meta` 가 없다. 그것이 벽이었다', () => {
+  it('live-update 스토어에 `import.meta` 가 없다', () => {
     const store = readFileSync(
       path.join(RN_ROOT, 'src', 'features', 'live-update', 'store.ts'),
       'utf8',

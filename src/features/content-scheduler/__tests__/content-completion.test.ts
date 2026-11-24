@@ -120,6 +120,13 @@ describe('주간 완료 판정', () => {
     expect(weeklyContentCompletion(weekly({ ...critias, questState: 0 }))).toBe('incomplete')
   })
 
+  // 넥슨이 새로 낸 컨텐츠는 관리 화면에 줄을 더하기 전까지 표에 없다. 그동안에도 카드 · 링 · 남은 스케줄이 완료를 가려야 한다.
+  it('표에 없는 contents 항목은 횟수가 최대 횟수에 닿아야 완료다', () => {
+    const unlisted = { contentKey: null, apiName: '표에 없는 주간 컨텐츠', kind: 'contents' as const, questState: null }
+    expect(weeklyContentCompletion(weekly({ ...unlisted, nowCount: 3, maxCount: 3 }))).toBe('complete')
+    expect(weeklyContentCompletion(weekly({ ...unlisted, nowCount: 2, maxCount: 3 }))).toBe('incomplete')
+  })
+
   // 무릉도장은 점수로 가른다. 층수가 0 보다 크면 그 주에 참여한 것이라 완료다(사용자 지정 2026-11-19).
   it('무릉도장은 층수가 있으면 완료다', () => {
     const muLungDojo = { contentKey: 'mu_lung_dojo', apiName: '무릉도장' }

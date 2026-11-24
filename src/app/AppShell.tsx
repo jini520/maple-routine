@@ -42,6 +42,7 @@ import { ServerMaintenanceLock } from './server-maintenance/ServerMaintenanceLoc
 import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
 import { ApiKeyNoticeModal } from './auth/ApiKeyNoticeModal'
 import { AccountDeletionPrompt } from './auth/AccountDeletionPrompt'
+import { UnsyncedRecordsModal } from './auth/UnsyncedRecordsModal'
 import { MvpGradeHost } from './mvp-grade/MvpGradeHost'
 import { TaskHost } from './resumable-task/TaskHost'
 import { prehydrateTabStores } from './prehydrate'
@@ -51,10 +52,9 @@ import { useReturnToForeground } from '../hooks/useReturnToForeground'
 import { useUsageLog } from '../features/usage-log/useUsageLog'
 
 /**
- * 앱 셸. 웹 `AppShell`(573줄)의 짝. 화면이 아니라 **부팅 순서**가 이 파일의 실질이다.
+ * 앱 셸. 화면이 아니라 **부팅 순서**가 이 파일의 실질이다.
  *
- * 여기에는 **이 파일에 남은 것과 그 순서**만
- * 적는다.
+ * 여기에는 **이 파일에 남은 것과 그 순서**만 적는다.
  *
  * ## 순서
  *
@@ -66,17 +66,17 @@ import { useUsageLog } from '../features/usage-log/useUsageLog'
  *    예약을 전부 지운다. 준비 전에는 `GameDataLock` 이 선다.
  * 3-0'. **기기 변환**. 게임 데이터가 준비돼도 1.0.15 기기 변환이 끝나기 전에는 `ReadyShell` 을 마운트하지 않는다. 새 앱
  *    코드는 옛 모양의 기록 표를 읽지 못한다. 받은 실행이면 잠금 화면을 다 받은 모습 그대로 두고, 받을 것이 없던 실행이면
- *    스플래시를 붙든다. 실패하면 `DeviceConversionFailed` 가 선다.
+ *    스플래시를 붙든다. 변환이 점검이 풀리기를 기다리는 동안은 붙들지 않는다. 실패하면 `DeviceConversionFailed` 가 선다.
  * 3-0. **서버 점검 잠금**. 서버가 점검 중이면 게임 데이터가 준비됐어도 `ReadyShell` 을 내리고 `ServerMaintenanceLock` 을
  *    세운다. 게임 데이터 잠금보다 앞이다. 점검 중에는 게임 데이터를 받을 수 없다.
- * 3-1. **저장소 복원 다섯**(인증·진입 단계·테마·트래킹 모드·드롭 연출). 서로 독립이라 순서가 없다. 각자
- *    각자 자기 이펙트를 갖는다. 하나가 던져도 나머지가 돈다.
- * 4. **광고 SDK 초기화**. 실패해도 던지지 않아 부팅을 막지 않는다.
- * 5. **탭 스토어 선하이드레이션**. 앱이 열린 뒤에만.
- * 6. **스플래시 내리기**. 이 파일이 아니다. `BootSplash` 가 자기가 그려졌을 때 내린다. 시계로
+ * 3-1. **저장소 복원**. 테마 · 글자 크기 · 하단바 순서는 셸이, 인증 · 진입 단계 · 트래킹 모드 · 드롭 연출 · 오버 프레임 ·
+ *    바로가기 · 대표 캐릭터 동작 · 오늘 탭의 공유 메이플 ID · 메이플 ID 이름 · 공지 구독은 `ReadyShell` 이 복원한다. 서로 독립이라 순서가
+ *    없고, 각자 자기 이펙트를 갖는다. 하나가 던져도 나머지가 돈다.
+ * 4. **탭 스토어 선하이드레이션**. 앱이 열린 뒤에만.
+ * 5. **스플래시 내리기**. 이 파일이 아니다. `BootSplash` 가 자기가 그려졌을 때 내린다. 시계로
  *    내리면 화면에 무엇이 그려졌는지 모르는 채로 걷게 되고, 그 사이가 빈다.
  *
- * ## 7. **OTA 부팅 확인**. 이 파일이 아니다
+ * ## 6. **OTA 부팅 확인**. 이 파일이 아니다
  *
  * `boot.ts` 의 `loadGameData()` 가 게임 데이터 사본을 읽은 뒤 `checkOnBoot()` 를 부른다. 처음 실행인지와
  * 잠근 채인지는 사본을 읽어야 알기 때문이다. 잠근 채면 게임 데이터 받기가 그 확인을 기다린다. 이 파일은 잠금
@@ -257,9 +257,11 @@ function ReadyShell(): React.JSX.Element {
       <TaskHost />
       {/* 저장된 키가 무효화되거나 호출 한도를 넘기면
           원래 화면 위에 닫을 수 없는 안내 모달이 덮이고, "확인"을 눌러야 키 입력 화면으로
-          이동한다. 내비게이터 **밖**이라 어느 화면에서 감지되든 뜬다(웹에서 라우트 밖이던 자리). */}
+          이동한다. 내비게이터 **밖**이라 어느 화면에서 감지되든 뜬다. */}
       <ApiKeyNoticeModal />
       <AccountDeletionPrompt />
+      {/* 다른 사람으로 로그인할 때 앞 사람의 올리지 못한 기록을 묻는다. 로그인 화면 · 키 입력 시트 위에 서야 해 키 안내 모달 뒤에 둔다. */}
+      <UnsyncedRecordsModal />
       {/* 토스트는 자기가 놓인 자리에 절대 배치로 그린다. 여기가 `ThemeProvider` 의 화면 채움
           View 직속이라 탭바 위에 뜬다. */}
       <ToastStack hasTabBar={isReady && !isKeyboardVisible} />
@@ -301,9 +303,16 @@ function lockStatusOf(gameData: GameDataStatus, conversion: DeviceConversionPhas
   return { phase: 'downloading', progress: gameData.progress }
 }
 
-/** 받을 것이 없던 실행의 기기 변환. 잠금 화면이 선 적이 없어 시작 화면이 가린다. */
-function convertingWithoutLock(gameData: GameDataStatus, conversion: DeviceConversionPhase): boolean {
-  return gameData.phase === 'ready' && conversion === 'running' && gameData.progress.dataBytes === null
+/**
+ * 받을 것이 없던 실행의 기기 변환. 잠금 화면이 선 적이 없어 시작 화면이 가린다. 점검 중이면 가리지 않는다. 변환은 점검이 풀리기를
+ * 기다리고, 시작 화면은 맨 위에 그려져 점검 잠금 화면을 덮는다.
+ */
+function convertingWithoutLock(
+  gameData: GameDataStatus,
+  conversion: DeviceConversionPhase,
+  maintenanceLocked: boolean,
+): boolean {
+  return !maintenanceLocked && gameData.phase === 'ready' && conversion === 'running' && gameData.progress.dataBytes === null
 }
 
 export function AppShell(): React.JSX.Element {
@@ -372,7 +381,7 @@ export function AppShell(): React.JSX.Element {
       )}
       {/* 스플래시의 두 번째 겹. **형제 중 마지막이라 맨 위에 그려진다.** 이 층이 그려졌다는
           사실이 네이티브 스플래시를 내리는 신호라, 순서가 뒤집히면 그 사이가 빈다. */}
-      <BootSplash holding={holdingSplash || convertingWithoutLock(gameData, conversion)} />
+      <BootSplash holding={holdingSplash || convertingWithoutLock(gameData, conversion, maintenanceLocked)} />
     </>
   )
 }

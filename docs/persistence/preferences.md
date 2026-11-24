@@ -52,8 +52,12 @@
   않으려는 것이다. 다른 기기의 캐릭터와 메이플 ID 가 이 기기의 `character_accounts` 에 없으면 원문 대신 `#` 를 붙인 해시를 적는다
   (`manualTrackedContent:#…` · `accountSharedProgress:#…` 의 키, 약속 · 계산기 기록의 `ocid`, `mapleIdNames` · `figureMotions` 의 열쇠).
   추적 목록과 대표에는 적지 않는다. 짝이 생기면 받기가 원문으로 바꾼다(`storage/server-sync-unmatched.ts`, [[ADR-099]] 결정 15 · 67).
-- 기기 변환(`preferences-conversion.ts`)과 옛 키 합치기는 Preferences 를 직접 써서 넣지 않는다. 변환 전 기록은 처음 동기화가 넣는다.
+- 기기 변환(`preferences-conversion.ts`)과 옛 키 합치기는 Preferences 를 직접 써서 넣지 않는다. 변환 전 기록은 처음 동기화가
+  넣는다(`storage/server-sync-first.ts`). 항목마다 저장 함수와 같은 대기 줄 id 를 짓는 함수가 어댑터에 함께 있다. 설정은 키에 값이
+  적힌 칸만 넣는다. 고른 적이 없는 칸을 기본값으로 올리면 다른 기기가 고른 값을 덮는다.
 - `server_sync_pause` 에 줄이 있는 동안은 넣지 않는다. 받은 값을 저장하는 동안이다.
+- 대기 줄이 이미 있는 항목이 또 바뀌면 그 줄의 넣은 시각만 지금으로 고친다. 처음 올리기의 줄을 사용자가 고친 뒤에도 처음 동기화의
+  받기가 서버 값으로 덮지 않게 하려는 것이다(`foundation/server-sync.md` 의 `처음 동기화`).
 
 ## 데이터 삭제와 새 키
 
@@ -88,6 +92,8 @@
 | `partyAppointments` | JSON 약속 배열. 칸은 서버 `party_appointments` 와 같고(`time` · `alarmMinutesBefore` · `schedule.date` · `fromWeekCode` · `untilWeekCode`), 주는 주차 값, 보스 판은 `{ bossDifficultyId, ocid }` 다 | `party-appointments.ts` | 남긴다 | 사용자가 적은 파티 약속([[ADR-051]] 결정 12). `id` 는 uuid 이고, 옛 `시각 + 난수` id 는 읽을 때 uuid 로 바꿔 다시 저장한다([[ADR-098]] 결정 4) |
 | `serverAccounts` | JSON `{ reported: { [넥슨 계정 id]: 메이플 ID 해시[] }, registered: '로그인 계정 id:키 해시'[] }`. 깨진 값은 빈 값으로 읽는다 | `server-accounts.ts` | 남긴다 | 서버가 메인 계정에 마지막으로 돌려준 메이플 ID 와, 서버에 등록한 부계정 키. 이미 아는 것은 다시 보내지 않는다. 부계정을 지우면 서버가 해제를 받은 뒤 그 키의 값을 뺀다([[ADR-101]] 결정 14 · 25) |
 | `serverSyncCursors` | JSON `{ nexonAccount: { id, changeSeq } \| null, mapleIds: { [메이플 ID 해시]: changeSeq } }`. 깨진 값은 빈 번호로 읽는다 | `server-sync-cursors.ts` | 남긴다 | 동기화의 받기가 주인마다 마지막으로 받은 변경 번호. 받은 줄을 다 넣은 뒤 응답의 번호로 갈아 끼운다. 메이플 ID 열쇠는 앞 받기의 메이플 ID 목록이라, 다른 기기가 부계정을 해제했는지 견주는 데도 쓴다. 지워지면 처음부터 다시 받고, 같은 줄을 다시 넣어도 한 번 넣은 것과 같다([[ADR-099]] 결정 9 · 67) |
+| `serverSyncSignIn` | JSON `{ previousMapleIds: 메이플 ID 해시[] }`. 깨진 값은 표시가 없는 것으로 읽는다 | `server-sync-cursors.ts` | 남긴다 | 로그인 화면의 로그인과 메인 키 바꾸기가 저장한 뒤 적는다. 있으면 다음 받기의 첫 응답이 그 목록에 없는 메이플 ID 의 기록을 비우고, 앞 계정의 메이플 ID 와 하나도 겹치지 않으면 사람의 기록도 비운 뒤 지운다([[ADR-099]] 결정 14 · 67) |
+| `firstServerSync` | JSON `{ queuedAt, pulled }`. `queuedAt` 은 ISO 시각, `pulled` 는 참 거짓. 깨진 값은 처음 동기화를 마친 것으로 읽는다 | `server-sync-first.ts` | 남긴다 | 처음 동기화가 기기의 기록을 모두 대기 표에 넣은 시각과 그 뒤 받기를 끝냈는지. 있으면 다시 넣지 않는다. 다시 넣으면 받은 기록까지 서버로 되돌아간다. `queuedAt` 까지 대기 표에 들어간 줄이 처음 올리기다([[ADR-099]] 결정 13 · 67) |
 | `legacyCleanupDone` | `'1'` | `legacy-cleanup.ts` | 남긴다 | 옛 키 정리가 끝났다는 표식. 있으면 부팅이 정리를 건너뛴다([[ADR-142]] 결정 12) |
 | `enhancementTotalsMoved` | `'1'` | `enhancement-totals-moved.ts` | 남긴다 | 옛 강화 원본(`enhancement_history`)을 합계로 옮겼는지. 옮기면 원본 표를 지운다([[ADR-100]] 결정 3) |
 | `legacySpaceReclaimed` | `'1'` | `legacy-space.ts` | 남긴다 | 옛 표를 다 지운 뒤 사본 파일을 지우고 `VACUUM` 했다는 표식. 있으면 다시 돌지 않는다([[ADR-078]] 결정 11) |

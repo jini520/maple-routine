@@ -148,6 +148,10 @@ export const STORAGE_KEYS = {
   serverAccounts: 'serverAccounts',
   // 동기화의 받기가 주인마다 마지막으로 받은 변경 번호. 지워지면 처음부터 다시 받는다.
   serverSyncCursors: 'serverSyncCursors',
+  // 로그인한 뒤 첫 받기가 서버의 목록으로 앞 사람의 기록을 비울 표시와 앞 계정의 메이플 ID 해시. 지워지면 그 비우기를 건너뛴다.
+  serverSyncSignIn: 'serverSyncSignIn',
+  // 처음 동기화가 기기의 기록을 모두 대기 표에 넣은 시각과 받기를 끝냈는지. 지워지면 다시 넣어 받은 기록까지 서버로 되돌아간다.
+  firstServerSync: 'firstServerSync',
   // 옛 강화 원본 표를 합계로 옮겼나. 옮긴 뒤 원본 표를 지운다.
   enhancementTotalsMoved: 'enhancementTotalsMoved',
   // 월드로만 묶던 옛 월드 공유 원장을 메이플 ID 마다 베꼈나. 베낀 뒤 옛 원장을 지운다.

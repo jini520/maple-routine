@@ -194,16 +194,7 @@ describe('clearCacheData', () => {
     expect([count('cashbook_entries'), count('enhancement_totals')]).toEqual([1, 1])
   })
 
-  // 대기 표가 남으면 방금 지운 기록마다 지우기 요청이 서버로 간다. 서버 사본은 남긴다.
-  it.each(['manual', 'boss', 'cashbook', 'enhancement'] as const)('%s 을 고르면 서버 전송 대기 표를 비운다', async (group) => {
-    await seedAll()
-
-    await clearCacheData({ ...NONE, [group]: true })
-
-    expect(count('server_sync_queue')).toBe(0)
-  })
-
-  // 기록이 그대로라 지우기 요청이 생기지 않는다. 비우면 아직 못 보낸 드롭 시세가 사라진다.
+  // 기록이 그대로라 지우기 요청이 생기지 않는다. 비우면 아직 못 올린 기록이 사라진다.
   it('캐시만 고르면 서버 전송 대기 표를 남긴다', async () => {
     await seedAll()
     const queued = count('server_sync_queue')
@@ -304,6 +295,147 @@ describe('clearCacheData', () => {
 
     const after = real.statements.slice(before)
     expect(after.indexOf('VACUUM')).toBeGreaterThan(after.indexOf('COMMIT'))
+  })
+})
+
+/**
+ * 서버가 이미 지운 묶음이라 기기의 지우기는 대기 표에 넣지 않고, 그 묶음의 대기 줄을 함께 지운다. 고르지 않은 묶음의 대기 줄은 아직
+ * 못 올린 기록이라 남는다.
+ */
+describe('대기 표', () => {
+  const AT = '2026-11-24T00:00:00.000Z'
+
+  function queue(): [string, string][] {
+    return real.inspect((db) =>
+      (db.prepare('SELECT record_type, record_id FROM server_sync_queue ORDER BY rowid').all() as Record<string, string>[]).map(
+        (row) => [row.record_type!, row.record_id!],
+      ),
+    )
+  }
+
+  /** 기록을 넣으며 트리거가 넣은 줄을 비우고, 그 자리에 보는 대기 줄만 둔다. */
+  function queueOnly(rows: [string, string][]): void {
+    real.inspect((db) => db.exec('DELETE FROM server_sync_queue'))
+    for (const [type, id] of rows) insertRow('server_sync_queue', { record_type: type, record_id: id, created_at: AT })
+  }
+
+  /** 처치한 수익 건 · 분배를 고른 처치 전 수익 건 · 분배를 고르지 않은 처치 전 수익 건. */
+  function insertEntry(id: string, kind: 'cleared' | 'split' | 'empty'): void {
+    const cleared = kind === 'cleared'
+    const split = kind !== 'empty'
+    real.inspect((db) =>
+      db
+        .prepare(
+          `INSERT INTO boss_profit_entries (id, ocid, boss_difficulty_id, period_code, crystal_price_meso, crystal_received_meso,
+                                            split_type, party_size, split_fee_follows_mvp_grade, clear_recorded_by, created_at, updated_at)
+           VALUES (?, 'o', ?, 'W202647', ?, ?, ?, ?, 1, ?, ?, ?)`,
+        )
+        .run(id, `difficulty-${id}`, cleared ? 10 : null, cleared ? 5 : null, split ? 'even' : null, split ? 2 : null, cleared ? 'auto' : null, AT, AT),
+    )
+  }
+
+  function insertDrop(id: string, entryId: string): void {
+    real.inspect((db) =>
+      db
+        .prepare(
+          `INSERT INTO boss_drops (id, profit_entry_id, item_id, category, price_status, sale_fee_follows_mvp_grade,
+                                   split_fee_follows_mvp_grade, created_at, updated_at)
+           VALUES (?, ?, ?, 'fixed', 'pending', 1, 1, ?, ?)`,
+        )
+        .run(id, entryId, `item-${id}`, AT, AT),
+    )
+  }
+
+  it('가계부를 고르면 가계부 기록 · 인벤토리 · 기억한 레벨의 대기 줄만 지운다', async () => {
+    insertRow('cashbook_entries', { id: 'entry-1' })
+    insertRow('inventory_items', { id: 'inventory-1' })
+    insertRow('remembered_levels', { id: 'level-1', type: 'symbol' })
+    insertRow('enhancement_totals', { id: 'total-1' })
+    queueOnly([
+      ['cashbookEntries', 'entry-1'],
+      ['cashbookEntries', 'entry-gone'],
+      ['inventoryItems', 'inventory-1'],
+      ['rememberedLevels', 'level-1'],
+      ['enhancementTotals', 'total-1'],
+      ['manualTrackedItems', 'manualTrackedItems:o/weekly/c'],
+      ['partyAppointments', 'appointment-1'],
+    ])
+
+    await clearCacheData({ ...NONE, cashbook: true })
+
+    expect(queue()).toEqual([
+      ['enhancementTotals', 'total-1'],
+      ['manualTrackedItems', 'manualTrackedItems:o/weekly/c'],
+      ['partyAppointments', 'appointment-1'],
+    ])
+  })
+
+  it('강화를 고르면 강화 합계와 굳은 날의 대기 줄만 지운다', async () => {
+    insertRow('enhancement_totals', { id: 'total-1' })
+    insertRow('enhancement_history_checks', { id: 'check-1', settled: 1 })
+    insertRow('cashbook_entries', { id: 'entry-1' })
+    queueOnly([
+      ['enhancementTotals', 'total-1'],
+      ['enhancementSettledDays', 'check-1'],
+      ['cashbookEntries', 'entry-1'],
+    ])
+
+    await clearCacheData({ ...NONE, enhancement: true })
+
+    expect(queue()).toEqual([['cashbookEntries', 'entry-1']])
+  })
+
+  // 전에 지운 수익 건은 이번에 서버가 지우지 않는 줄일 수 있다. 그 지우기를 버리면 서버에 남는다.
+  it('보스 처치 · 드롭을 고르면 드롭과 이번에 지우는 수익 건의 대기 줄만 지우고, 남는 수익 건과 전에 지운 수익 건은 남긴다', async () => {
+    insertEntry('cleared', 'cleared')
+    insertEntry('split', 'split')
+    insertEntry('empty', 'empty')
+    insertDrop('drop-1', 'cleared')
+    queueOnly([
+      ['bossProfitEntries', 'cleared'],
+      ['bossProfitEntries', 'split'],
+      ['bossProfitEntries', 'empty'],
+      ['bossProfitEntries', 'entry-gone'],
+      ['bossDrops', 'drop-1'],
+      ['bossDrops', 'drop-gone'],
+      ['bossSplitSettings', 'setting-1'],
+    ])
+
+    await clearCacheData({ ...NONE, boss: true })
+
+    expect(queue()).toEqual([
+      ['bossProfitEntries', 'split'],
+      ['bossProfitEntries', 'entry-gone'],
+      ['bossSplitSettings', 'setting-1'],
+    ])
+  })
+
+  // 서버도 같은 줄의 분배 칸을 비웠다. 넣으면 같은 값이 다시 올라간다.
+  it('수동 선택 항목을 고르면 분배 설정 · 수동 추적 항목 · 공유 진행 · 이번에 지우는 수익 건의 대기 줄만 지우고, 분배 칸을 비운 수익 건은 넣지 않는다', async () => {
+    insertEntry('cleared', 'cleared')
+    insertEntry('with-drop', 'split')
+    insertEntry('without-drop', 'split')
+    insertDrop('drop-1', 'with-drop')
+    queueOnly([
+      ['bossSplitSettings', 'setting-1'],
+      ['manualTrackedItems', 'manualTrackedItems:o/weekly/c'],
+      ['sharedContentProgress', 'sharedContentProgress:m//c'],
+      ['bossProfitEntries', 'without-drop'],
+      ['bossProfitEntries', 'entry-gone'],
+      ['bossDrops', 'drop-1'],
+      ['enhancementTotals', 'total-1'],
+    ])
+
+    await clearCacheData({ ...NONE, manual: true })
+
+    expect(queue()).toEqual([
+      ['bossProfitEntries', 'entry-gone'],
+      ['bossDrops', 'drop-1'],
+      ['enhancementTotals', 'total-1'],
+    ])
+    expect(real.inspect((db) => db.prepare("SELECT split_type FROM boss_profit_entries WHERE id = 'with-drop'").get())).toEqual({
+      split_type: null,
+    })
   })
 })
 

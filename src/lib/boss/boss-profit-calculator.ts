@@ -17,15 +17,20 @@ export interface CalculatorBoss {
   shares: PartyShares
 }
 
-/** 이 보스 · 난이도 · 파티의 내 몫. 가격은 지금 주의 가격이다 */
-export function bossPayoutMeso(boss: CalculatorBoss, now: Date): number {
+/**
+ * 이 보스 · 난이도 · 파티의 내 몫. 가격은 지금 주의 가격이다
+ *
+ * @param autoFeePercent 요율이 빈(자동) 보스에 쓸 그 캐릭터의 오늘 MVP 등급 요율. 등급 기록을 아직 못 읽었으면 `null` 이고 일반 요율로 센다
+ */
+export function bossPayoutMeso(boss: CalculatorBoss, now: Date, autoFeePercent: number | null): number {
   const periodKey = getCurrentBossProfitPeriod('weekly', now).periodKey
   const price = findPriceEntry(boss.bossKey, boss.difficulty, periodKey, now)?.priceMeso ?? 0
-  return crystalPayoutMeso(price, boss.partySize, boss.shares)
+  return crystalPayoutMeso(price, boss.partySize, { ...boss.shares, splitFeePercent: boss.shares.splitFeePercent ?? autoFeePercent })
 }
 
-export function totalPayoutMeso(bosses: readonly CalculatorBoss[], now: Date): number {
-  return bosses.reduce((sum, boss) => sum + bossPayoutMeso(boss, now), 0)
+/** @param autoFeePercent `bossPayoutMeso` 와 같다 */
+export function totalPayoutMeso(bosses: readonly CalculatorBoss[], now: Date, autoFeePercent: number | null): number {
+  return bosses.reduce((sum, boss) => sum + bossPayoutMeso(boss, now, autoFeePercent), 0)
 }
 
 /** 보스 표의 기준 순서로 늘어놓는다. 계산기의 보스 줄과 보스 선택의 선택 줄이 이 순서를 지킨다 */
@@ -37,15 +42,20 @@ export function sortByReferenceOrder<T extends { bossKey: string }>(bosses: read
  * 주간 12개 한도를 넘는 보스를 몫이 작은 쪽부터 뺀다. 시즌 보스는 한도에 세지 않고 그대로 둔다.
  *
  * 보스 관리 값으로 채울 때 쓴다. 자동 모드는 게임에 등록한 보스를 그대로 가져와 12개를 넘을 수 있다.
+ *
+ * @param autoFeePercent `bossPayoutMeso` 와 같다
  */
 export function keepTopByPayout(
   bosses: readonly CalculatorBoss[],
   now: Date,
+  autoFeePercent: number | null,
   limit: number = WEEKLY_BOSS_CLEAR_LIMIT,
 ): CalculatorBoss[] {
   const counted = bosses.filter((boss) => !isSeasonBoss(boss.bossKey))
   const kept = new Set(
-    [...counted].sort((a, b) => bossPayoutMeso(b, now) - bossPayoutMeso(a, now)).slice(0, limit),
+    [...counted]
+      .sort((a, b) => bossPayoutMeso(b, now, autoFeePercent) - bossPayoutMeso(a, now, autoFeePercent))
+      .slice(0, limit),
   )
   return sortByReferenceOrder(bosses.filter((boss) => isSeasonBoss(boss.bossKey) || kept.has(boss)))
 }

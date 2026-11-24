@@ -28,6 +28,7 @@ import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
 import { useBossSchedule } from '../../features/boss-scheduler/use-boss-schedule'
 import { resolveSelectedCharacter } from '../../features/character-selection/selected-character'
 import { useCharacterSelectionStore } from '../../features/character-selection/store'
+import { autoFeeFrom, useMvpGradeContext, type AutoFee } from '../../features/mvp-grade/store'
 import type { PickerTile } from '../../features/party-appointments/boss-picker'
 import { useToastStore } from '../../features/toast/store'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
@@ -47,6 +48,7 @@ import {
 import { formatMesoUnits } from '../../lib/drop/drop-price'
 import { useBottomSafeAreaPx } from '../../lib/safe-area'
 import { boxShadowOf, type ShadowLayer } from '../../lib/shadow'
+import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
 import { orderByTracked } from '../../lib/scheduler/tracked-order'
 import { useThemeAppearance } from '../../theme/context'
 import { BossRow } from './boss-profit-calculator/BossRow'
@@ -97,6 +99,11 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
 
   const characters = orderByTracked(schedule.characters, schedule.trackedOcids ?? [])
   const selected = resolveSelectedCharacter(selectedOcid, characters)
+  const gradeContext = useMvpGradeContext()
+  // 계산기는 저장한 날이 아니라 오늘을 센다. 수수료 자동도 가격처럼 그 캐릭터의 오늘 등급 요율이다.
+  const todayKey = getCurrentKstDateKey(now)
+  const autoFeeOf = (ocid: string): AutoFee | null => (gradeContext === null ? null : autoFeeFrom(gradeContext, ocid, todayKey))
+  const autoFeePercentOf = (ocid: string): number | null => autoFeeOf(ocid)?.percent ?? null
   const cardShadow = { boxShadow: CARD_LIFT.map((layer) => boxShadowOf(definition.shadowColor, layer)).join(', ') }
 
   const bossesOf = (ocid: string): CalculatorBoss[] => calculator.bossesByOcid[ocid] ?? []
@@ -133,7 +140,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
   }
 
   const selectedName = selected === null ? '' : selected.characterName
-  const selectedTotal = totalPayoutMeso(selectedBosses, now)
+  const selectedTotal = selected === null ? 0 : totalPayoutMeso(selectedBosses, now, autoFeePercentOf(selected.ocid))
   // 시즌 보스는 주간 12개 한도에 세지 않는다.
   const countedBosses = selectedBosses.filter((boss) => !isSeasonBoss(boss.bossKey)).length
 
@@ -182,7 +189,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                 characters={characters.map((character) => ({
                   ocid: character.ocid,
                   name: character.characterName,
-                  meso: totalPayoutMeso(bossesOf(character.ocid), now),
+                  meso: totalPayoutMeso(bossesOf(character.ocid), now, autoFeePercentOf(character.ocid)),
                 }))}
                 bossCount={characters.reduce((sum, character) => sum + bossesOf(character.ocid).length, 0)}
                 selectedOcid={selected.ocid}
@@ -233,7 +240,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
                   <BossRow
                     key={boss.bossKey}
                     boss={boss}
-                    payoutMeso={bossPayoutMeso(boss, now)}
+                    payoutMeso={bossPayoutMeso(boss, now, autoFeePercentOf(selected.ocid))}
                     onChangeDifficulty={(difficulty) =>
                       calculator.updateBoss(selected.ocid, boss.bossKey, {
                         difficulty,
@@ -316,9 +323,13 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
             crystalMyShare: partyBoss.shares.myShare,
             crystalSharesTotal: partyBoss.shares.sharesTotal,
             splitFeePercent: partyBoss.shares.splitFeePercent,
+            // 계산기는 수수료 자동을 따로 두지 않고 요율이 빈 것으로 적는다.
+            splitFeeAuto: partyBoss.shares.splitFeePercent === null,
           }}
           // 계산기와 같은 가격(이번 주)이다. 계산기 줄의 금액과 모달의 받는 금액이 같아야 한다.
           crystalPriceMeso={currentCrystalPriceMeso(partyBoss.bossKey, partyBoss.difficulty, 'weekly', now)}
+          // 계산기 줄의 금액과 같은 요율이다. 그 캐릭터의 오늘 등급이다.
+          autoFee={autoFeeOf(selected.ocid)}
           // 값만 받아 계산기에 넣는다. 보스 관리의 파티 설정에는 쓰지 않는다.
           // 난이도는 보스 줄의 고르개가 정한다. 그래서 모달은 난이도를 배지로만 보인다.
           onApply={(next) => {
@@ -327,7 +338,8 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
               shares: {
                 myShare: next.shares.crystalMyShare,
                 sharesTotal: next.shares.crystalSharesTotal,
-                splitFeePercent: next.shares.splitFeePercent,
+                // 모달은 자동이면 등급 요율을 담아 내보낸다. 그 값을 담으면 손으로 고른 요율이 되므로 비운다.
+                splitFeePercent: next.shares.splitFeeAuto === true ? null : next.shares.splitFeePercent,
               },
             })
             setPartyBossKey(null)
@@ -353,7 +365,7 @@ export function BossProfitCalculatorScreen(): React.JSX.Element {
             role="menuitem"
             aria-label="스케줄러 데이터 가져오기"
             onPress={() => {
-              calculator.importFromBossManage(selected.ocid, new Date())
+              calculator.importFromBossManage(selected.ocid, new Date(), autoFeePercentOf(selected.ocid))
               setMenuOpen(false)
               setMenuAnchor(null)
             }}

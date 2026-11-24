@@ -17,8 +17,7 @@ const navigate = jest.fn()
 
 function 시세(부분: Partial<MarketEntry>): MarketEntry {
   return {
-    itemKey: 'restraint_ring',
-    ringLevel: 4,
+    itemKey: 'restraint_ring_lv4',
     price: 3_300_000_000,
     changePct: 0.3,
     low: 3_200_000_000,
@@ -33,7 +32,7 @@ function 목록(world: string, consumable: MarketEntry[]): MarketItemsResponse {
   return {
     date: '2026-11-15',
     // 서버는 판 사람 수 차례로 준다. 화면은 기준가가 높은 차례로 다시 세운다.
-    equipment: [시세({ itemKey: 'brand_new_item', ringLevel: null, price: 100_000_000, changePct: null, low: null, high: null }), 시세({})],
+    equipment: [시세({ itemKey: 'brand_new_item', price: 100_000_000, changePct: null, low: null, high: null }), 시세({})],
     consumable: { world, items: consumable },
   }
 }
@@ -43,7 +42,7 @@ beforeEach(() => {
   jest.mocked(useMaspi).mockReturnValue({ date: '2026-11-15', close: 9119, change: -24.82, series: [] })
   jest.mocked(useRepresentativeWorldKey).mockReturnValue('scania')
   jest.mocked(useMarketItems).mockImplementation((world) =>
-    world === 'eos' ? 목록('eos', []) : 목록(world ?? '', [시세({ itemKey: 'life_whetstone', ringLevel: null, price: 762_500_000 })]),
+    world === 'eos' ? 목록('eos', []) : 목록(world ?? '', [시세({ itemKey: 'life_whetstone', price: 762_500_000 })]),
   )
 })
 
@@ -76,7 +75,7 @@ describe('MaspiScreen', () => {
     const view = await renderOverlay(<MaspiScreen />)
 
     const rows = view.getAllByTestId(/^market-row-/).map((row) => row.props.testID as string)
-    expect(rows).toEqual(['market-row-restraint_ring', 'market-row-brand_new_item'])
+    expect(rows).toEqual(['market-row-restraint_ring_lv4', 'market-row-brand_new_item'])
     expect(view.getByText('리스트레인트 링 4레벨')).toBeTruthy()
     expect(view.getByText('33억')).toBeTruthy()
     expect(view.getByText('+0.3%')).toBeTruthy()
@@ -108,14 +107,14 @@ describe('MaspiScreen', () => {
     expect(view.getByTestId('maspi-world-option-bera-icon').props.source).toEqual(worldEmblemUrl('bera'))
   })
 
-  it('줄을 누르면 상세를 민다. 장비는 서버가 월드를 보지 않아 general 로, 소비는 고른 월드로 연다', async () => {
+  it('줄을 누르면 상세를 민다. 반지는 레벨 줄의 key 로 열고, 장비는 서버가 월드를 보지 않아 general 로, 소비는 고른 월드로 연다', async () => {
     const view = await renderOverlay(<MaspiScreen />)
 
-    await press(view.getByTestId('market-row-restraint_ring'))
-    expect(navigate).toHaveBeenLastCalledWith('UtilityMaspiItem', { itemKey: 'restraint_ring', ringLevel: 4, world: 'general' })
+    await press(view.getByTestId('market-row-restraint_ring_lv4'))
+    expect(navigate).toHaveBeenLastCalledWith('UtilityMaspiItem', { itemKey: 'restraint_ring_lv4', world: 'general' })
 
     await press(view.getByLabelText('소비'))
     await press(view.getByTestId('market-row-life_whetstone'))
-    expect(navigate).toHaveBeenLastCalledWith('UtilityMaspiItem', { itemKey: 'life_whetstone', ringLevel: null, world: 'scania' })
+    expect(navigate).toHaveBeenLastCalledWith('UtilityMaspiItem', { itemKey: 'life_whetstone', world: 'scania' })
   })
 })

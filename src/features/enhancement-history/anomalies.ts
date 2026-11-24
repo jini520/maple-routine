@@ -43,14 +43,8 @@ export function enhancementAnomaliesOf(
   judgmentOf: (entry: EnhancementSource) => EventWorldJudgment | null,
 ): EnhancementAnomaly[] {
   const counted = new Map<string, EnhancementAnomaly>()
-  const count = (
-    entry: EnhancementSource,
-    anomalyType: EnhancementAnomaly['anomalyType'],
-    itemKey: string | null,
-    itemName: string,
-    detail: string | null,
-  ) => {
-    const key = [entry.dateKey, entry.kind, anomalyType, itemName, detail ?? ''].join('|')
+  const count = (entry: EnhancementSource, reason: EnhancementAnomaly['reason'], itemName: string, detail: string | null) => {
+    const key = [entry.dateKey, entry.kind, reason, itemName, detail ?? ''].join('|')
     const existing = counted.get(key)
     if (existing !== undefined) {
       existing.rowCount += 1
@@ -58,9 +52,8 @@ export function enhancementAnomaliesOf(
     }
     counted.set(key, {
       historyDate: entry.dateKey,
-      enhancementType: entry.kind,
-      anomalyType,
-      itemKey,
+      apiType: entry.kind,
+      reason,
       itemName,
       rowCount: 1,
       detail: detail?.slice(0, DETAIL_MAX) ?? null,
@@ -71,11 +64,11 @@ export function enhancementAnomaliesOf(
     const reason = unpricedReasonOf(entry)
     if (reason !== null && isUnwatchedNoLevel(entry, reason)) continue
     if (reason !== null) {
-      count(entry, reason, entry.itemKey, entry.targetItem, null)
+      count(entry, reason, entry.targetItem, null)
       continue
     }
     const judgment = judgmentOf(entry)
-    if (judgment !== null && judgment.eventWorld === null) count(entry, 'event_world_unknown', null, '', judgment.unknownWorld)
+    if (judgment !== null && judgment.eventWorld === null) count(entry, 'event_world_unknown', '', judgment.unknownWorld)
   }
   return [...counted.values()]
 }

@@ -86,6 +86,26 @@ describe('한 줄의 쓰기', () => {
     expect(queue()).toEqual([['bossProfitEntries', 'entry-1']])
   })
 
+  // 넣은 시각이 처음 올리기를 가른다. 처음 올리기의 줄을 사용자가 고친 뒤에도 옛 시각이면 처음 동기화의 받기가 그 입력을 덮는다.
+  it('대기 줄이 이미 있는 기록이 또 바뀌면 넣은 시각만 지금으로 고치고, 횟수와 차례는 둔다', async () => {
+    const OLD = '2026-01-01T00:00:00.000Z'
+    await insertEntry('entry-1')
+    await insertEntry('entry-2', 'ocid-1', 'W202646')
+    real.inspect((file) => file.exec(`UPDATE server_sync_queue SET created_at = '${OLD}', attempts = 2`))
+
+    await db.run(`UPDATE boss_profit_entries SET world_id = 'world-1' WHERE id = 'entry-1'`)
+    await withServerSyncPaused((paused) => paused.run(`UPDATE boss_profit_entries SET world_id = 'world-1' WHERE id = 'entry-2'`))
+
+    const rows = real.inspect(
+      (file) => file.prepare('SELECT record_id, attempts, created_at FROM server_sync_queue ORDER BY rowid').all() as Record<string, unknown>[],
+    )
+    expect(rows).toEqual([
+      { record_id: 'entry-1', attempts: 2, created_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/) },
+      { record_id: 'entry-2', attempts: 2, created_at: OLD },
+    ])
+    expect(rows[0]!.created_at).not.toBe(OLD)
+  })
+
   // 같은 값으로 덮는 쓰기와 기기만 쓰는 칸의 쓰기를 넣으면 같은 값이 올라가 번호만 오르고, 모든 기기가 그 줄을 다시 받는다.
   it('기기만 쓰는 칸이나 같은 값만 다시 적은 쓰기는 넣지 않는다', async () => {
     await insertEntry('entry-1')

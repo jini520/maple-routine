@@ -13,9 +13,9 @@ import { pushServerSync, type PushDeps } from '../push'
 const HEADERS = { 'x-maple-id-hash': 'a'.repeat(64) }
 
 let seq = 0
-function entry(recordType: string, recordId: string, attempts = 0): SyncQueueEntry {
+function entry(recordType: string, recordId: string, attempts = 0, createdAt = '2026-11-23T00:00:00.000Z'): SyncQueueEntry {
   seq += 1
-  return { id: `q-${seq}`, recordType, recordId, attempts, lastError: null, createdAt: '2026-11-23T00:00:00.000Z' }
+  return { id: `q-${seq}`, recordType, recordId, attempts, lastError: null, createdAt }
 }
 
 /** 표마다 최소한의 원본. 주인이 필요한 표는 `ocid-1` 의 기록이다. */
@@ -87,6 +87,8 @@ interface Harness {
   deleted: [string, string][]
   notices: string[]
   changedTables: string[][]
+  /** 보내기와 기다리기의 차례 */
+  events: string[]
   /** 원본을 갈아 끼운다. 보낸 뒤 바뀐 기록을 흉내 낸다 */
   sources: Map<string, Record<string, unknown> | null>
 }
@@ -106,6 +108,7 @@ function harness(options: {
     deleted: [],
     notices: [],
     changedTables: [],
+    events: [],
     sources: new Map(),
     deps: undefined as unknown as PushDeps,
   }
@@ -120,9 +123,11 @@ function harness(options: {
     owners: {
       mapleIdOfOcid: async (ocid) => (ocid === 'ocid-1' ? 'maple-1' : null),
       mapleIdOfNexonAccount: async () => null,
+      mapleIdOfProfitEntry: async () => 'maple-1',
     },
     send: async (_headers, records) => {
       h.sent.push(records)
+      h.events.push(`send ${records.length}`)
       return (options.answer ?? ok)(records)
     },
     remove: async (recordId) => {
@@ -149,6 +154,9 @@ function harness(options: {
     },
     afterRecordsChanged: (tables) => {
       h.changedTables.push([...tables])
+    },
+    wait: async (ms) => {
+      h.events.push(`wait ${ms}`)
     },
   }
   return h
@@ -293,20 +301,16 @@ describe('결과', () => {
     expect(h.changedTables).toEqual([['bossProfitEntries']])
   })
 
-  it('자동으로 적은 기록과 알리지 않게 부른 회차의 거절은 기기 줄만 지우고 알리지 않는다', async () => {
+  it('자동으로 적은 기록의 거절은 기기 줄만 지우고 알리지 않는다', async () => {
     const answer = (): SyncPushOutcome => ({
       outcome: 'answered',
       results: [{ ok: false, code: 'duplicate_record', reason: 'r' }],
     })
     const silent = harness({ entries: [entry('bossProfitEntries', 'entry-1')], answer, names: { 'entry-1': 'silent' } })
     await pushServerSync({}, silent.deps)
-    const muted = harness({ entries: [entry('bossProfitEntries', 'entry-1')], answer, names: { 'entry-1': '루시드 하드 처치 기록' } })
-    await pushServerSync({ notify: false }, muted.deps)
 
     expect(silent.deleted).toEqual([['bossProfitEntries', 'entry-1']])
     expect(silent.notices).toEqual([])
-    expect(muted.deleted).toEqual([['bossProfitEntries', 'entry-1']])
-    expect(muted.notices).toEqual([])
   })
 
   it('다른 거절은 횟수를 세고 다섯 번째에 대기 줄을 빼며, 그 회차에서 다시 보내지 않는다', async () => {
@@ -357,6 +361,55 @@ describe('결과', () => {
     expect(h.removed).toEqual(['check-1'])
     expect(h.counted).toEqual([])
     expect(summary).toMatchObject({ held: 1 })
+  })
+})
+
+// 처음 동기화가 넣은 줄은 사용자가 방금 친 값이 아니다. 메이플 ID 를 몰라 남은 줄은 늦게 올라가도 그렇다.
+describe('처음 올리기', () => {
+  const QUEUED_AT = '2026-11-24T00:00:00.000Z'
+  const BEFORE = '2026-11-23T23:59:59.000Z'
+  const AFTER = '2026-11-24T00:00:01.000Z'
+
+  it('넣기를 마친 시각까지 들어간 줄의 거절은 알리지 않고, 그 뒤에 넣은 줄의 거절은 알린다', async () => {
+    const h = harness({
+      entries: [
+        entry('bossProfitEntries', 'entry-old', 0, BEFORE),
+        entry('bossProfitEntries', 'entry-first', 0, QUEUED_AT),
+        entry('bossProfitEntries', 'entry-new', 0, AFTER),
+      ],
+      answer: (records) => ({
+        outcome: 'answered',
+        results: records.map(() => ({ ok: false, code: 'duplicate_record', reason: 'r' })),
+      }),
+      names: { 'entry-old': '루시드 하드 처치 기록', 'entry-first': '윌 하드 처치 기록', 'entry-new': '진 힐라 하드 처치 기록' },
+    })
+
+    await pushServerSync({ firstQueuedAt: QUEUED_AT }, h.deps)
+
+    expect(h.deleted.map(([, id]) => id)).toEqual(['entry-old', 'entry-first', 'entry-new'])
+    expect(h.notices).toEqual(['진 힐라 하드 처치 기록은 다른 기기에서 먼저 적어, 그 기록으로 바꿨습니다'])
+  })
+
+  // 출시 직후 모든 기기가 한꺼번에 올리는 부하를 나눈다.
+  it('처음 올리기의 줄을 실은 요청만 앞 요청과 1초 띄운다', async () => {
+    const h = harness({
+      entries: [
+        ...Array.from({ length: 150 }, (_, i) => entry('mvpGradeHistory', `mvp-${i}`, 0, QUEUED_AT)),
+        ...Array.from({ length: 150 }, (_, i) => entry('mapleIdNames', `mapleIdNames:maple-${i}`, 0, AFTER)),
+      ],
+    })
+
+    await pushServerSync({ firstQueuedAt: QUEUED_AT }, h.deps)
+
+    expect(h.events).toEqual(['send 100', 'wait 1000', 'send 100', 'send 100'])
+  })
+
+  it('넣기를 마친 시각이 없으면 띄우지 않는다', async () => {
+    const h = harness({ entries: Array.from({ length: 150 }, (_, i) => entry('mvpGradeHistory', `mvp-${i}`)) })
+
+    await pushServerSync({}, h.deps)
+
+    expect(h.events).toEqual(['send 100', 'send 50'])
   })
 })
 

@@ -1,23 +1,24 @@
 import { byPriceDesc, initialWorldKey, marketItemFace, openWorlds } from '../catalog'
 
 describe('marketItemFace', () => {
-  it('이름과 그림은 게임 데이터의 아이템 표에서 찾고, 반지는 이름 뒤에 레벨을 붙인다', () => {
-    expect(marketItemFace('restraint_ring', 4)).toEqual({ name: '리스트레인트 링 4레벨', iconAssetId: expect.any(String) })
-    expect(marketItemFace('magic_eyepatch', null)).toMatchObject({ name: '마력이 깃든 안대' })
+  // 반지는 레벨 줄의 key 로 온다. 레벨 줄의 이름(`리스트레인트 링 lv.4`)이 아니라 드롭 기록과 같은 꼴로 적는다.
+  it('이름과 그림은 게임 데이터의 아이템 표에서 찾고, 반지 레벨 줄은 원래 반지 이름 뒤에 레벨을 붙인다', () => {
+    expect(marketItemFace('restraint_ring_lv4')).toEqual({ name: '리스트레인트 링 4레벨', iconAssetId: expect.any(String) })
+    expect(marketItemFace('magic_eyepatch')).toMatchObject({ name: '마력이 깃든 안대' })
   })
 
   it('앱이 모르는 아이템은 이름 자리에 아이템 key 이고 그림이 없다', () => {
-    expect(marketItemFace('brand_new_item', null)).toEqual({ name: 'brand_new_item', iconAssetId: null })
+    expect(marketItemFace('brand_new_item')).toEqual({ name: 'brand_new_item', iconAssetId: null })
   })
 })
 
 describe('byPriceDesc', () => {
   it('기준가가 높은 시세부터 세우고, 같으면 보이는 이름의 가나다 차례다', () => {
-    const 줄 = (itemKey: string, price: number) => ({ itemKey, ringLevel: null, price })
-    const sorted = [줄('life_whetstone', 7), 줄('magic_eyepatch', 26), 줄('restraint_ring', 33), 줄('faith_whetstone', 26)].sort(byPriceDesc)
+    const 줄 = (itemKey: string, price: number) => ({ itemKey, price })
+    const sorted = [줄('life_whetstone', 7), 줄('magic_eyepatch', 26), 줄('restraint_ring_lv4', 33), 줄('faith_whetstone', 26)].sort(byPriceDesc)
 
     // 마력이 깃든 안대 · 신념의 연마석이 26 으로 같아 이름 차례다.
-    expect(sorted.map((entry) => entry.itemKey)).toEqual(['restraint_ring', 'magic_eyepatch', 'faith_whetstone', 'life_whetstone'])
+    expect(sorted.map((entry) => entry.itemKey)).toEqual(['restraint_ring_lv4', 'magic_eyepatch', 'faith_whetstone', 'life_whetstone'])
   })
 })
 

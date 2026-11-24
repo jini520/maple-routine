@@ -1,8 +1,8 @@
 /// <reference types="node" />
 /**
  * 1.0.15 기기 변환의 가계부 단계를 진짜 SQLite 로 태운다. 1.0.14 의 가계부 기록 표 · 인벤토리 · 기억한 레벨에 줄을 심고 변환을
- * 돌려, 새 표의 줄이 변환 규칙대로인지 본다. 변환은 줄을 지워 되돌릴 수 없어서, 규칙이 틀리면 사용자의 기록이 사라지거나 다른
- * 물건의 기록이 된다.
+ * 돌려, 새 표의 줄이 변환 규칙대로인지와 변환한 기록을 수입 · 지출 · 인벤토리의 읽기 함수가 그대로 읽는지 본다. 변환은 줄을 지워
+ * 되돌릴 수 없어서, 규칙이 틀리면 사용자의 기록이 사라지거나 다른 물건의 기록이 된다.
  */
 import {
   cashbookCategoryIdOf,
@@ -11,7 +11,10 @@ import {
   spendRewardTypeIdOf,
 } from '../../../lib/cashbook/entry-ids'
 import { findWorld } from '../../../lib/world/worlds'
+import { getIncomeRecordsBetween } from '../../income'
+import { getOtherFragmentStorage } from '../../inventory'
 import { __resetStoragePortsForTest, setSqlitePort } from '../../ports'
+import { getSpendRecordsBetween } from '../../spend'
 import { closeBossProfitDb, getBossProfitDbUngated } from '../db'
 import { runDeviceConversion, type DeviceConversionContext } from '../device-conversion'
 import { __setMigrationCeilingForTest, DB_VERSION } from '../migrations'
@@ -158,8 +161,35 @@ describe('가계부 단계: 분류와 품목의 대상', () => {
     ])
   })
 
+  // 손으로 적은 기록이라 지우지 않는다. 이름만 남고 금액이 비면 지출 합계에서 그 강화가 빠진다.
+  it('직업에서 못 찾은 헥사 코어 기록은 금액 · 레벨 · 조각을 지키고, 지출 기록을 읽으면 그 이름이 코어 key 로 나온다', async () => {
+    await convert([
+      profile('o2', '비숍'),
+      entry('e-lost', 'spend', 'hexa_matrix', { ocid: 'o2' }),
+      item('i-lost', 'e-lost', {
+        item_key: '블리츠 실드 VI/블리츠 버스트', from_level: 3, to_level: 5, amount_meso: 1000, fragment_count: 10,
+        untradable_fragment_count: 0, fragment_price_meso: 100,
+      }),
+    ])
+
+    expect(await getSpendRecordsBetween('2026-11-19', '2026-11-19')).toEqual([
+      expect.objectContaining({
+        id: 'e-lost',
+        ocid: 'o2',
+        category: 'hexa_matrix',
+        item: null,
+        itemKey: '블리츠 실드 VI/블리츠 버스트',
+        levelFrom: 3,
+        levelTo: 5,
+        mesoAmount: 1000,
+        hexa: expect.objectContaining({ fragmentCount: 10, untradableFragmentCount: 0, fragmentPrice: 100 }),
+      }),
+    ])
+  })
+
   // 품목만 지우면 금액이 빈 기록이 남는다. 서버 표에 없는 분류 · 물건을 가리키는 기록은 기록째 옮기지 않는다.
-  it('모르는 분류와 모르는 품목 key 의 기록은 딸린 줄과 함께 옮기지 않고, 대상이 없는 분류의 key 는 버린다', async () => {
+  // 기타는 수입 · 지출에 같은 key 로 있어, 기록의 종류가 어느 분류 줄인지 가른다.
+  it('모르는 분류와 모르는 품목 key 의 기록은 딸린 줄과 함께 옮기지 않고, 수입 · 지출의 기타 기록은 각자의 분류 줄로 옮기며, 대상이 없는 분류의 key 는 버린다', async () => {
     await convert([
       entry('e-unknown-category', 'spend', 'no_such_category'),
       item('i-1', 'e-unknown-category', { item_name: '옛 지출' }),
@@ -168,11 +198,17 @@ describe('가계부 단계: 분류와 품목의 대상', () => {
       insert('cashbook_entry_fragment_uses', { id: 'u-1', entry_id: 'e-unknown-item', fragment_source: 'hunt', ocid: 'o1', fragments: 3 }),
       entry('e-keyed-etc', 'spend', 'etc'),
       item('i-3', 'e-keyed-etc', { item_key: 'seiram_elixir', amount_meso: 100 }),
+      entry('e-income-etc', 'income', 'etc', { accountId: 'maple-1' }),
+      item('i-4', 'e-income-etc', { item_name: '이벤트 보상', amount_meso: 50 }),
     ])
 
-    expect(all('SELECT id FROM cashbook_entries')).toEqual([{ id: 'e-keyed-etc' }])
-    expect(all('SELECT id, target_type, target_id, item_name FROM cashbook_entry_items')).toEqual([
+    expect(all('SELECT id, category_id FROM cashbook_entries ORDER BY id')).toEqual([
+      { id: 'e-income-etc', category_id: cashbookCategoryIdOf('income', 'etc') },
+      { id: 'e-keyed-etc', category_id: cashbookCategoryIdOf('spend', 'etc') },
+    ])
+    expect(all('SELECT id, target_type, target_id, item_name FROM cashbook_entry_items ORDER BY id')).toEqual([
       { id: 'i-3', target_type: null, target_id: null, item_name: null },
+      { id: 'i-4', target_type: null, target_id: null, item_name: '이벤트 보상' },
     ])
     expect(all('SELECT count(*) AS n FROM cashbook_entry_fragment_uses')).toEqual([{ n: 0 }])
   })
@@ -269,6 +305,31 @@ describe('가계부 단계: 인벤토리에서 판 기타 조각의 월드', () 
       { id: 'e-world', world_id: worldId('scania') },
     ])
   })
+
+  // 변환 뒤에는 조각 사용 줄의 메이플 ID · 월드를 기록에서 찾는다. 어긋나면 다른 메이플 ID · 월드의 조각이 빠진다.
+  it('월드 둘의 남은 기타 조각은 변환 뒤에도 월드마다 넣은 개수에서 판매 · 헥사 강화가 가져간 개수를 뺀 값이다', async () => {
+    const fragments = (id: string, worldKey: string, quantity: number) =>
+      insert('inventory_items', {
+        id, account_id: 'maple-1', world_key: worldKey, item_key: 'sol_erda_fragment', item_kind_key: 'etc', quantity,
+        ring_level: null, created_at: AT, updated_at: AT,
+      })
+    const otherUse = (id: string, entryId: string, worldKey: string, count: number) =>
+      insert('cashbook_entry_fragment_uses', { id, entry_id: entryId, fragment_source: 'other', account_id: 'maple-1', world_key: worldKey, fragments: count })
+    await convert([
+      sighting('o1', 'maple-1', 'account-main'),
+      fragments('inv-scania', 'scania', 10),
+      fragments('inv-luna', 'luna', 6),
+      entry('e-sale', 'income', 'item_sale', { accountId: 'maple-1' }),
+      item('i-sale', 'e-sale', { item_key: 'sol_erda_fragment', item_kind_key: 'etc', quantity: 3, amount_meso: 300 }),
+      otherUse('u-sale', 'e-sale', 'scania', 3),
+      entry('e-hexa', 'spend', 'hexa_matrix', { ocid: 'o1' }),
+      item('i-hexa', 'e-hexa', { item_key: 'hexa_stat_1', hexa_activation: 1, fragment_count: 4, untradable_fragment_count: 0 }),
+      otherUse('u-hexa', 'e-hexa', 'luna', 4),
+    ])
+
+    await expect(getOtherFragmentStorage('maple-1', 'scania')).resolves.toBe(10 - 3)
+    await expect(getOtherFragmentStorage('maple-1', 'luna')).resolves.toBe(6 - 4)
+  })
 })
 
 describe('가계부 단계: 주인을 모르는 옛 손입력', () => {
@@ -356,6 +417,40 @@ describe('가계부 단계: 인벤토리와 기억한 레벨', () => {
       { id: 'r-core-space', type: 'hexa', target_id: itemTargetIdOf('hexa_core', '블리츠 실드 VI/블리츠 버스트', { job: '팔라딘' }), level: 22 },
       { id: 'r-symbol', type: 'symbol', target_id: itemTargetIdOf('symbol', 'cernium'), level: 7 },
     ])
+  })
+})
+
+describe('가계부 단계: 변환한 기록 읽기', () => {
+  // 변환은 분류 · 종류를 줄 id 로 바꾸고, 읽을 때 그 id 로 수입 · 지출을 가르고 종류 key 를 되찾는다. 어긋나면 기록이 빠지거나 다른 쪽 기록으로 읽힌다.
+  it('변환한 수입 · 지출 기록을 날짜 범위로 읽으면 빠짐없이 섞이지 않고 나오며, 캐시 아이템 구매는 종류를 지킨다', async () => {
+    await convert([
+      entry('e-in-hunt', 'income', 'hunting'),
+      item('i-in-hunt', 'e-in-hunt', { item_key: 'tallahart_road_of_night_3', quantity: 8, amount_meso: 900 }),
+      entry('e-in-etc', 'income', 'etc', { accountId: 'maple-1' }),
+      item('i-in-etc', 'e-in-etc', { item_name: '이벤트 보상', amount_meso: 100 }),
+      entry('e-out-etc', 'spend', 'etc', { accountId: 'maple-1' }),
+      item('i-out-etc', 'e-out-etc', { item_name: '패스', amount_meso: 200 }),
+      entry('e-out-cash', 'spend', 'item_purchase'),
+      item('i-out-cash', 'e-out-cash', { item_key: 'boutique_ticket', item_kind_key: 'cash', quantity: 2, amount_meso: 300 }),
+    ])
+
+    const income = await getIncomeRecordsBetween('2026-11-19', '2026-11-19')
+    const spend = await getSpendRecordsBetween('2026-11-19', '2026-11-19')
+
+    expect(income.map((record) => [record.id, record.category])).toEqual([
+      ['e-in-etc', 'etc'],
+      ['e-in-hunt', 'hunting'],
+    ])
+    expect(spend.map((record) => [record.id, record.category])).toEqual([
+      ['e-out-cash', 'item_purchase'],
+      ['e-out-etc', 'etc'],
+    ])
+    expect(spend.find((record) => record.id === 'e-out-cash')).toMatchObject({
+      itemKey: 'boutique_ticket',
+      itemKind: 'cash',
+      quantity: 2,
+      mesoAmount: 300,
+    })
   })
 })
 

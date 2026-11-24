@@ -2,6 +2,7 @@
 import type { MatchedBoss } from '../../../lib/boss/boss-matching'
 import { findContent } from '../../../lib/scheduler/contents'
 import type { BossCharacterView } from '../../boss-scheduler/store'
+import { weeklyContentProgress, weeklyLimitClosedKeys } from '../../content-scheduler/content-completion'
 import type { ContentCharacterView } from '../../content-scheduler/store'
 import type { DailyContent, WeeklyContent } from '../../../types'
 import { remainingScheduleOf, type RemainingScheduleInput } from '../remaining-schedule'
@@ -141,5 +142,34 @@ describe('remainingScheduleOf', () => {
 
     expect(remaining.dailyNames).toEqual(['레헬른'])
     expect(remaining.monthlyBosses).toEqual([{ bossKey: 'black_mage', name: '검은 마법사', difficulty: 'hard' }])
+  })
+})
+
+// 남은 스케줄 · 진행 링이 카드의 완료 배지와 다르게 읽으면 카드는 완료인데 today 에 남은 것으로 선다. 공유 컨텐츠는 남은 스케줄이 세지 않아 뺐다.
+describe('카드와 같은 완료 판정', () => {
+  const FLAG_RACE = { ...content('guild_flag_race'), kind: 'contents' as const, questState: null }
+  const ERDA = { ...content('erda_spectrum'), kind: 'contents' as const, questState: null }
+  const CRITIAS = { ...content('weekly_quest_critias'), kind: 'quest' as const }
+  const FAITHFUL = { ...content('weekly_quest_faithful_investigation_reward'), kind: 'quest' as const }
+
+  it.each<[string, Partial<WeeklyContent>, boolean]>([
+    ['플래그 레이스 1000점', { ...FLAG_RACE, nowCount: 1000 }, true],
+    ['플래그 레이스 0점', { ...FLAG_RACE, nowCount: 0 }, false],
+    ['에르다 스펙트럼 1/1', { ...ERDA, nowCount: 1, maxCount: 1 }, true],
+    ['에르다 스펙트럼 0/1', { ...ERDA, nowCount: 0, maxCount: 1 }, false],
+    ['크리티아스 상태 2', { ...CRITIAS, questState: 2 }, true],
+    ['크리티아스 상태 0', { ...CRITIAS, questState: 0 }, false],
+    ['성실한 조사 0/0 · 상태 0', { ...FAITHFUL, questState: 0 }, false],
+    ['성실한 조사 1/2 · 상태 1', { ...FAITHFUL, questState: 1, nowCount: 1, maxCount: 2 }, false],
+    ['성실한 조사 2/2 · 상태 1', { ...FAITHFUL, questState: 1, nowCount: 2, maxCount: 2 }, false],
+    ['성실한 조사 0/0 · 상태 2', { ...FAITHFUL, questState: 2 }, true],
+  ])('%s', (_, overrides, isComplete) => {
+    const item = weekly(overrides)
+
+    const remaining = remainingScheduleOf(input({ content: contentView({ level: 300, weeklyContents: [item] }) }))
+    const ring = weeklyContentProgress([item], 300, weeklyLimitClosedKeys([item]))
+
+    expect(remaining.weeklyNames).toHaveLength(isComplete ? 0 : 1)
+    expect(ring).toEqual({ completed: isComplete ? 1 : 0, total: 1 })
   })
 })

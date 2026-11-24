@@ -104,27 +104,29 @@ export async function countServerSyncAttempt(recordId: string, lastError: string
   await db.run(`UPDATE server_sync_queue SET attempts = attempts + 1, last_error = ? WHERE record_id = ?`, [lastError, recordId])
 }
 
-/**
- * 표를 통째로 비운다. **로그아웃이 부른다.**
- *
- * 남겨 두면 다음에 다른 키를 넣은 사람이 **앞사람의 기록을 자기 이름으로** 올린다. 대기 줄에는 누가 만든 것인지가 안 적혀 있다.
- */
-export async function clearServerSyncQueue(): Promise<void> {
-  const db = await getBossProfitDb()
-  await db.run(`DELETE FROM server_sync_queue`)
-}
-
 /** 그 기록의 대기 줄이 있나. 받기가 아직 못 올린 기기 값을 덮지 않으려고 본다. */
 export async function isServerSyncQueued(recordId: string): Promise<boolean> {
-  const db = await getBossProfitDb()
-  const { values } = await db.query(`SELECT 1 FROM server_sync_queue WHERE record_id = ?`, [recordId])
-  return (values ?? []).length > 0
+  return (await serverSyncQueuedAt(recordId)) !== null
 }
 
-/** 보냈거나 포기했다. 줄을 지우는 자리는 여기 하나다. */
+/** 그 기록의 대기 줄을 넣은 시각. 그 기록이 마지막으로 바뀐 시각이다. 대기 줄이 없으면 `null` 이다. */
+export async function serverSyncQueuedAt(recordId: string): Promise<string | null> {
+  const db = await getBossProfitDb()
+  const { values } = await db.query(`SELECT created_at FROM server_sync_queue WHERE record_id = ?`, [recordId])
+  const found = values?.[0]?.created_at
+  return typeof found === 'string' ? found : null
+}
+
+/** 보냈거나 포기했다. */
 export async function removeServerSync(recordId: string): Promise<void> {
   const db = await getBossProfitDb()
   await db.run(`DELETE FROM server_sync_queue WHERE record_id = ?`, [recordId])
+}
+
+/** 그 서버 표의 대기 줄을 모두 지운다. 로그인이 추적 목록을 비울 때 부른다. */
+export async function removeServerSyncTable(table: ServerSyncTable): Promise<void> {
+  const db = await getBossProfitDb()
+  await db.run(`DELETE FROM server_sync_queue WHERE record_type = ?`, [table])
 }
 
 /**
@@ -167,8 +169,15 @@ const ENQUEUE_SQL = `
      AND NOT EXISTS (SELECT 1 FROM server_sync_queue WHERE record_id = ?)
 `
 
+/** 이미 있는 대기 줄의 넣은 시각을 고친다. 넣은 시각이 처음 올리기를 가르는 값이라, 고친 항목은 사용자가 친 값으로 다룬다. */
+const TOUCH_SQL = `
+  UPDATE server_sync_queue SET created_at = ?
+   WHERE record_id = ? AND NOT EXISTS (SELECT 1 FROM server_sync_pause)
+`
+
 /**
  * Preferences 에 든 기록을 바꾼 저장이 부른다. 앞 값과 새 값에서 달라진 항목을 넣는다. 열쇠는 대기 줄 id 이고 값은 견주기만 한다.
+ * 대기 줄이 이미 있으면 넣은 시각만 지금으로 고치고 횟수는 둔다.
  *
  * 대기 표에 넣지 못해도 던지지 않는다. 기록은 이미 Preferences 에 적혀서, 던지면 화면이 저장하지 못했다고 알린다.
  *
@@ -187,11 +196,28 @@ export async function enqueueChangedPreferenceRecords(
   try {
     const db = await getBossProfitDb()
     const now = new Date().toISOString()
-    for (const recordId of changed) await db.run(ENQUEUE_SQL, [table, recordId, now, recordId])
+    for (const recordId of changed) {
+      await db.run(ENQUEUE_SQL, [table, recordId, now, recordId])
+      await db.run(TOUCH_SQL, [now, recordId])
+    }
     noteRecordsWritten()
   } catch {
     // 기록은 이미 저장됐다.
   }
+}
+
+/**
+ * 처음 동기화가 Preferences 기록을 견주지 않고 넣는다. 이미 대기 줄이 있는 기록은 그 줄을 넣은 시각과 함께 둔다. 동기화를 깨우지 않는다. 부르는 처음
+ * 동기화가 곧 올린다.
+ *
+ * @param createdAt 넣는 줄의 `created_at`. 처음 올리기의 줄을 이 시각으로 가른다
+ */
+export async function enqueueServerSyncRecords(
+  db: SqliteDbConnection,
+  records: readonly { table: ServerSyncTable; recordId: string }[],
+  createdAt: string,
+): Promise<void> {
+  for (const record of records) await db.run(ENQUEUE_SQL, [record.table, record.recordId, createdAt, record.recordId])
 }
 
 /**
