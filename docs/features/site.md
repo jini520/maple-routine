@@ -113,8 +113,9 @@ npm run deploy:site
 3. info 의 `/` · `/privacy` · `/support` · `/api-key` · `/app-ads.txt` · `/robots.txt` · `/sitemap.xml` 이 모두 `200` 인지,
    루트의 `/` 가 info 로 `301` 이고 `/privacy` · `/support` · `/api-key` · `/app-ads.txt` 가 `200` 인지 출력한다.
 
-**사이트는 main 의 트리에서 올린다.** 빌드가 그 트리의 `PRIVACY.md` 로 처리방침 페이지를 만든다. develop 의 `PRIVACY.md` 는
-다음 버전의 처리방침이라 출시 7일 전 공지 전에는 올리면 안 된다. 사이트를 고칠 때는 main 에서 딴 hotfix 로 고쳐 거기서 올린다.
+**사이트는 main 의 트리에서 올린다.** 빌드가 그 트리의 `PRIVACY.md` 로 처리방침 페이지를 만든다. develop 에만 있는 사이트 고침은
+아직 출시하지 않은 버전의 것이라 먼저 올리면 안 된다. 사이트를 고칠 때는 main 에서 딴 hotfix 로 고쳐 거기서 올린다. 처리방침 2.0 은
+출시일과 상관없이 hotfix 로 main 에 넣어 올렸다(2026-11-25 개정 · 2026-12-02 시행, #947).
 
 Oracle 접속 키는 배포하는 사람의 `~/.ssh` 에만 있다. `dist-site/` 는 커밋하지 않는다.
 
