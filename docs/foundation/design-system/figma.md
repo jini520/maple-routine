@@ -64,7 +64,45 @@ Figma 의 같은 부품도 맞춘다. 맞추지 않으면 정책 테스트가 �
 - 새 부품을 만들면 Figma 에도 그리고 기록에 더한다. 부품을 지우면 Figma 에서도 지우고 기록에서 뺀다.
 - 처음 옮기는 동안(#1215)은 아직 옮기지 않은 부품이 `pending` 으로 남는다.
 
-기록 파일 · 스크립트 · 테스트의 경로는 구현하면 여기에 적는다.
+### 기록 파일과 스크립트
+
+| 파일 | 하는 일 |
+|---|---|
+| `scripts/figma-record.json` | 항목마다 Figma 노드 id 와 맞춘 때의 소스 해시. 아직 옮기지 않은 항목은 `"pending"` 이다 |
+| `scripts/figma-record.mjs` | 해시를 계산하고 기록을 고치는 스크립트 |
+| `scripts/__tests__/figma-record.test.mjs` | 정책 테스트. 부품 폴더와 기록 항목이 일대일인지, 맞춘 항목의 해시가 지금 소스와 같은지 본다 |
+
+- 항목은 부품 폴더마다 하나(`atoms/Button`)이고, 토큰 세 파일은 `Foundations` 한 항목이다.
+- 해시는 폴더 안의 `.ts` · `.tsx`(`__tests__` 와 `*.test.*` 제외)를 파일 경로 순서로 읽고, 주석과 공백을 걷은 토큰으로 계산한다.
+  글자 안의 공백(`className` 등)은 그대로 둔다. 화면에 보이는 값이기 때문이다. `job-themes.json` 은 값만 본다.
+- 기록 파일을 `src/components/` 에 두지 않는다. 그 바로 아래에는 계층 디렉터리만 둔다(`layer-dependencies.test.ts`). 해시를 계산하는
+  함수를 스크립트와 테스트가 함께 써야 해서 셋을 `scripts/` 에 모았다.
+
+저장소 루트에서 돌린다.
+
+```bash
+node scripts/figma-record.mjs record atoms/Button 123:45
+```
+
+Figma 의 그 부품(컴포넌트 세트나 컴포넌트)을 맞춘 뒤 노드 id 와 함께 적는다. 지금 소스의 해시가 들어간다.
+
+```bash
+node scripts/figma-record.mjs pending molecules/NewPart
+```
+
+새 부품을 `pending` 으로 더한다. 처음 옮기는 동안(#1215)에만 쓴다.
+
+```bash
+node scripts/figma-record.mjs remove molecules/OldPart
+```
+
+지운 부품을 기록에서 뺀다. Figma 에서도 지운 뒤에 돌린다.
+
+```bash
+node scripts/figma-record.mjs status
+```
+
+맞춘 항목 · `pending` 항목 · 해시가 어긋난 항목을 센다.
 
 ## Claude 가 Figma MCP 로 할 수 없는 것
 

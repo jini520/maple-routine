@@ -23,7 +23,7 @@ app.json · app.config.js · metro.config.js · babel.config.js · jest.config.j
 modules/          로컬 Expo 모듈 셋(capacitor-storage · app-background · app-system-bars)
 android/ · ios/   커밋된 네이티브 프로젝트. expo prebuild 를 돌리지 않는다
 ota/              Capacitor 앱 사용자를 스토어로 보내는 매니페스트(ADR-005 결정 6)
-scripts/          에셋 목록 생성 · OTA 발행 · 게임 데이터 동기화 · 안내 사이트 빌드
+scripts/          에셋 목록 생성 · OTA 발행 · 게임 데이터 동기화 · 안내 사이트 빌드 · Figma 기록
 workers/          Cloudflare Worker(OTA 매니페스트)
 site/             안내 사이트(mapleroutine.store · info.mapleroutine.store)
 src/
