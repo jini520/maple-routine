@@ -7,6 +7,7 @@
  *
  * @see docs/foundation/server-sync.md `받기`
  */
+import { bossDifficultyOfId } from '../lib/boss/bosses'
 import { getBarOrder } from './bar-order'
 import {
   accountSharedProgressKey,
@@ -20,7 +21,7 @@ import type { StoredCalculatorRecord } from './boss-profit-calculator-records'
 import type { StoredPartyAppointment } from './party-appointments'
 import { preferences } from './ports'
 import { isServerSyncQueued, preferenceRecordIdOf, removeServerSync, serverSyncQueuedAt } from './server-sync-queue'
-import { readStoredSharedProgress, type StoredSharedProgressEntry } from './shared-progress-cache'
+import { readStoredSharedProgress, writeSharedProgressLedgers, type StoredSharedProgressEntry } from './shared-progress-cache'
 
 /** 받은 Preferences 기록 하나. 칸 이름은 그 키에 저장하는 꼴이다. */
 export type PulledPreferenceRecord =
@@ -103,14 +104,17 @@ function sharedProgressKeyOf(record: Pulled<'sharedContentProgress'>): string {
 }
 
 async function applySharedProgress(records: readonly Pulled<'sharedContentProgress'>[]): Promise<void> {
-  for (const key of new Set(records.map(sharedProgressKeyOf))) {
-    const ledger: Row = { ...(await readStoredSharedProgress(key)) }
-    for (const record of records.filter((one) => sharedProgressKeyOf(one) === key)) {
-      if (record.deleted) delete ledger[record.contentId]
-      else ledger[record.contentId] = record.entry
+  if (records.length === 0) return
+  await writeSharedProgressLedgers(async () => {
+    for (const key of new Set(records.map(sharedProgressKeyOf))) {
+      const ledger: Row = { ...(await readStoredSharedProgress(key)) }
+      for (const record of records.filter((one) => sharedProgressKeyOf(one) === key)) {
+        if (record.deleted) delete ledger[record.contentId]
+        else ledger[record.contentId] = record.entry
+      }
+      await writeJson(key, ledger)
     }
-    await writeJson(key, ledger)
-  }
+  })
 }
 
 /** 열쇠마다 값 하나인 객체(메이플 ID 이름 · 대표 캐릭터 동작). */
@@ -215,6 +219,36 @@ export interface PulledPreferenceOptions {
   unpairedRepresentative?: boolean
 }
 
+/**
+ * 처음 동기화의 받기가 서버의 보스 난이도를 남기려고 버리는 기기 항목. 서버에서 온 보스와 캐릭터 · 보스가 같고 난이도가 다르며, 처음
+ * 올리기의 대기 줄이 있는 항목이다. 수동 모드는 캐릭터 · 보스마다 난이도 하나라 서버가 나중에 온 난이도를 남기고 앞 난이도를 지운다.
+ * 버리지 않고 올리면 나중에 처음 동기화한 기기의 난이도가 먼저 올린 기기의 난이도를 지운다.
+ *
+ * @returns 지우기로 넣을 항목과 뺄 대기 줄 id
+ */
+async function firstUploadOtherDifficultiesOf(
+  received: readonly Pulled<'manualTrackedItems'>[],
+  firstQueuedAt: string,
+): Promise<{ records: Pulled<'manualTrackedItems'>[]; recordIds: string[] }> {
+  const records: Pulled<'manualTrackedItems'>[] = []
+  const recordIds: string[] = []
+  for (const record of received) {
+    const boss = record.deleted || record.type !== 'boss' ? null : bossDifficultyOfId(record.targetId)
+    if (boss === null) continue
+    for (const item of (await readList(manualTrackedContentKey(record.ocid))).filter(isRow)) {
+      const targetId = item.targetId
+      if (item.type !== 'boss' || typeof targetId !== 'string' || targetId === record.targetId) continue
+      if (bossDifficultyOfId(targetId)?.bossKey !== boss.bossKey) continue
+      const recordId = preferenceRecordIdOf('manualTrackedItems', [record.ocid, 'boss', targetId])
+      const queuedAt = await serverSyncQueuedAt(recordId)
+      if (queuedAt === null || queuedAt > firstQueuedAt || recordIds.includes(recordId)) continue
+      records.push({ table: 'manualTrackedItems', deleted: true, ocid: record.ocid, type: 'boss', targetId })
+      recordIds.push(recordId)
+    }
+  }
+  return { records, recordIds }
+}
+
 /** 서버에서 오지 않았고 처음 올리기의 대기 줄이 있는 추적 캐릭터. */
 async function deviceOnlyTrackedOf(received: readonly Pulled<'trackedCharacters'>[], firstQueuedAt: string): Promise<Set<string>> {
   const receivedOcids = new Set(received.map((record) => record.ocid))
@@ -232,8 +266,9 @@ async function deviceOnlyTrackedOf(received: readonly Pulled<'trackedCharacters'
  * 칸이라 빼고 기기 값을 둔다.
  *
  * 처음 동기화의 받기(`firstQueuedAt`)는 id 가 없는 항목과 설정 칸에서 먼저 올린 기기의 값, 곧 서버 값을 남긴다. 처음 올리기의 대기
- * 줄이 있어도 서버 값을 적고 그 대기 줄을 뺀다. 그 뒤에 들어간 대기 줄은 사용자가 친 값이라 둔다. 약속과 계산기 기록은 기기의 uuid
- * 가 줄 id 라 둘 다 남아 평소 규칙 그대로다.
+ * 줄이 있어도 서버 값을 적고 그 대기 줄을 뺀다. 그 뒤에 들어간 대기 줄은 사용자가 친 값이라 둔다. 수동 추적 보스는 캐릭터 · 보스를
+ * 같은 항목으로 보아, 서버의 난이도와 다른 처음 올리기의 기기 난이도를 버린다. 약속과 계산기 기록은 기기의 uuid 가 줄 id 라 둘 다
+ * 남아 평소 규칙 그대로다.
  */
 export async function applyPulledPreferenceRecords(
   records: readonly PulledPreferenceRecord[],
@@ -270,10 +305,15 @@ export async function applyPulledPreferenceRecords(
           deviceOnly: await deviceOnlyTrackedOf(tracked, options.firstQueuedAt),
           unpairedRepresentative: options.unpairedRepresentative === true,
         }
+  const otherDifficulties =
+    options.firstQueuedAt === undefined
+      ? { records: [], recordIds: [] }
+      : await firstUploadOtherDifficultiesOf(of('manualTrackedItems'), options.firstQueuedAt)
+  replaced.push(...otherDifficulties.recordIds)
 
   await applyListItems(STORAGE_KEYS.partyAppointments, of('partyAppointments'))
   await applyListItems(STORAGE_KEYS.bossProfitCalculatorRecords, of('bossProfitCalculatorRecords'))
-  await applyManualTrackedItems(of('manualTrackedItems'))
+  await applyManualTrackedItems([...otherDifficulties.records, ...of('manualTrackedItems')])
   await applySharedProgress(of('sharedContentProgress'))
   await applyKeyedObject(
     STORAGE_KEYS.mapleIdNames,
@@ -341,23 +381,25 @@ export async function clearServerSyncOwnerPreferences(owners: {
   }
 
   const keys = await preferences.keys()
-  for (const mapleId of owners.mapleIds) {
-    const ledgers = [
-      { key: accountSharedProgressKey(mapleId), worldId: '' },
-      ...keys
-        .filter((key) => key.startsWith(worldSharedProgressKey(mapleId, '')))
-        .map((key) => ({ key, worldId: key.slice(worldSharedProgressKey(mapleId, '').length) })),
-    ]
-    for (const ledger of ledgers) {
-      const stored = await readStoredSharedProgress(ledger.key)
-      const left: Row = {}
-      for (const [contentId, entry] of Object.entries(stored)) {
-        if (!(await notQueued('sharedContentProgress', [mapleId, ledger.worldId, contentId]))) left[contentId] = entry
+  await writeSharedProgressLedgers(async () => {
+    for (const mapleId of owners.mapleIds) {
+      const ledgers = [
+        { key: accountSharedProgressKey(mapleId), worldId: '' },
+        ...keys
+          .filter((key) => key.startsWith(worldSharedProgressKey(mapleId, '')))
+          .map((key) => ({ key, worldId: key.slice(worldSharedProgressKey(mapleId, '').length) })),
+      ]
+      for (const ledger of ledgers) {
+        const stored = await readStoredSharedProgress(ledger.key)
+        const left: Row = {}
+        for (const [contentId, entry] of Object.entries(stored)) {
+          if (!(await notQueued('sharedContentProgress', [mapleId, ledger.worldId, contentId]))) left[contentId] = entry
+        }
+        if (Object.keys(left).length === 0) await preferences.remove(ledger.key)
+        else await writeJson(ledger.key, left)
       }
-      if (Object.keys(left).length === 0) await preferences.remove(ledger.key)
-      else await writeJson(ledger.key, left)
     }
-  }
+  })
 
   const names = await readObject(STORAGE_KEYS.mapleIdNames)
   for (const mapleId of owners.mapleIds) if (await notQueued('mapleIdNames', [mapleId])) delete names[mapleId]

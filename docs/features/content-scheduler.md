@@ -40,7 +40,7 @@ API 동기화와 진입 재조회는 [[ADR-021]], 실패를 알리는 방법은 
 | `lib/scheduler/content-category.ts` · `content-categories.ts` | 카테고리 묶기, 참고 배지, 길드 판정 |
 | `lib/scheduler/manual-content-merge.ts` | 수동 항목 값 찾기, 화면 순서 맞추기 |
 | `features/schedule-sync/schedule-sync.ts` | 캐릭터별 동기화, 지난 날짜로 채우기(`fillMissingSections`) |
-| `storage/shared-progress-cache.ts` | 월드 · 계정 원장. 서버 칸 모양으로 적고 병합이 드는 모양으로 읽는다 |
+| `storage/shared-progress-cache.ts` | 월드 · 계정 원장. 서버 칸 모양으로 적고 병합이 드는 모양으로 읽는다. 회차가 컨텐츠마다 · 캐릭터마다 함께 부르는 쓰기와 받기의 쓰기를 차례로 돌려 서로의 항목을 덮지 않는다([[ADR-099]] 결정 67) |
 | `storage/scheduler-cache.ts` | 1.0.12 까지의 스케줄 캐시(Preferences `schedulerCache:{ocid}`) 읽기 · 지우기. 업데이트 뒤 첫 실행이 쿼리 캐시로 옮긴 뒤 지운다([[ADR-142]] 결정 7) |
 | `storage/manual-tracked-content.ts` · `storage/tracking-mode.ts` | 추적 목록(종류와 줄 id 로 적는다), 추적 모드 |
 | `app/settings/TrackingModeModal.tsx` · `TrackingModeSelector.tsx` | 설정의 모드 전환 모달 |
