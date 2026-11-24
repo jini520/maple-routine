@@ -1,7 +1,7 @@
 # ADR-086+317 Figma 디자인 시스템 파일 · 앱과 웹
 
 > ⚪ 미구현
-> 관련 소스: `src/data/job-themes.json` · `typography.cjs` · `tailwind-v4-axes.cjs` · `src/theme/theme-vars.ts` · `components/atoms/`
+> 관련 소스: `src/data/job-themes.json` · `typography.cjs` · `tailwind-v4-axes.cjs` · `src/theme/theme-vars.ts` · `components/` · `scripts/figma-record.mjs`
 
 ## 배경
 
@@ -122,7 +122,7 @@ Figma 의 글꼴을 Pretendard 로 바꾸지 않는다. 바꾸면 그 뒤로 Cla
 
 ### 결정 9. 부품과 토큰의 소스가 Figma 를 맞춘 뒤 바뀌면 테스트가 실패한다 (사용자 선택 2026-11-24)
 
-- 저장소에 기록 파일을 둔다. 부품 폴더(`components/<계층>/<이름>`)마다 Figma 노드 id 와, Figma 를 맞춘 때의 소스 해시를 적는다.
+- 저장소에 기록 파일(`scripts/figma-record.json`)을 둔다. 부품 폴더(`components/<계층>/<이름>`)마다 Figma 노드 id 와, Figma 를 맞춘 때의 소스 해시를 적는다.
   토큰(`src/data/job-themes.json` · `typography.cjs` · `tailwind-v4-axes.cjs`)은 `Foundations` 한 항목이다.
 - 정책 테스트가 지금 소스의 해시를 기록과 견준다. 다르면 실패하고, 어느 부품을 Figma 에서 맞춰야 하는지 알려 준다. 해시는 그 폴더의
   `.ts` · `.tsx`(테스트 제외)에서 주석과 공백을 걷어 낸 글자로 계산한다. 주석만 고친 것으로 Figma 작업을 요구하지 않기 위해서다.
@@ -136,8 +136,9 @@ Figma 의 글꼴을 Pretendard 로 바꾸지 않는다. 바꾸면 그 뒤로 Cla
 
 ## 테스트
 
-구현할 때 적는다. 결정 9 의 정책 테스트가 부품 폴더와 기록 항목이 일대일인지, 맞춘 부품의 해시가 지금 소스와 같은지, 주석만 바꾸면
-해시가 그대로인지 본다.
+| 파일 | 확인하는 것 |
+|---|---|
+| `scripts/__tests__/figma-record.test.mjs` | 결정 9: 부품 폴더와 기록 항목이 일대일이고 `Foundations` 항목이 있는지, 맞춘 항목의 해시가 지금 소스와 같은지, 노드 id 가 Figma 형식인지 본다. 해시가 주석 · 줄바꿈 · JSX 주석에는 그대로이고 코드 · 글자 안의 공백 · 테스트가 아닌 파일이 바뀌면 달라지는지, 테스트 파일은 보지 않는지 본다 |
 
 ## 열린 질문
 
