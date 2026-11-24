@@ -1,6 +1,15 @@
+import { nexonIdHashHex } from '../../../lib/crypto/nexon-id-hash'
 import { judgeEventWorld, type EventWorldJudgment } from '../../../lib/enhancement/world'
-import { enhancementAnomaliesOf } from '../anomalies'
+import { enhancementAnomaliesOf, reportEnhancementAnomalies, type AccountAnomaly } from '../anomalies'
 import type { EnhancementSource } from '../spending'
+
+jest.mock('../../auth/server-identity', () => ({ serverIdentityHeaders: jest.fn() }))
+jest.mock('../../../server/enhancement-anomalies', () => ({ sendEnhancementAnomalies: jest.fn() }))
+jest.mock('../../../storage/server-sync-records', () => ({ mapleIdOfNexonAccount: jest.fn() }))
+
+const { serverIdentityHeaders } = jest.requireMock('../../auth/server-identity') as Record<string, jest.Mock>
+const { sendEnhancementAnomalies } = jest.requireMock('../../../server/enhancement-anomalies') as Record<string, jest.Mock>
+const { mapleIdOfNexonAccount } = jest.requireMock('../../../storage/server-sync-records') as Record<string, jest.Mock>
 
 const entry = (over: Partial<EnhancementSource> = {}): EnhancementSource => ({
   kind: 'cube',
@@ -22,7 +31,7 @@ const potential = (payload: Record<string, unknown>) => entry({ kind: 'potential
 
 // 원본을 버리므로, 합계에서 빠진 줄은 이 값이 운영자가 원인을 볼 유일한 단서다.
 describe('합계에서 뺀 줄', () => {
-  // 줄은 그대로 요청 몸이 된다. 칸 이름은 서버 표를 따르고, 장비는 넥슨이 준 이름으로만 알아 아이템 key 를 싣지 않는다.
+  // 줄은 보낼 때 메이플 ID 만 더해 요청 몸이 된다. 칸 이름은 서버 표를 따르고, 장비는 넥슨이 준 이름으로만 알아 아이템 key 를 싣지 않는다.
   it('같은 날 · 종류 · 이유 · 장비는 한 줄로 세고, 줄의 칸은 서버 표의 이름이다', () => {
     const unknownItem = { itemKey: null, targetItem: '왕푸' }
     const rows = [starforce(unknownItem, { after_starforce_count: 15 }), starforce(unknownItem, { after_starforce_count: 15 })]
@@ -111,5 +120,50 @@ describe('이벤트 월드를 판정하지 못한 줄', () => {
   // 붙이지 못한 줄은 합계에 들지 않는다. 판정할 것이 없다.
   it('캐릭터에 붙이지 못한 줄은 판정을 세지 않는다', () => {
     expect(enhancementAnomaliesOf([entry(), entry()], () => null)).toEqual([])
+  })
+})
+
+// 강화 내역은 넥슨 계정마다 받는다. 요청은 메인 신원 하나로 가므로, 상황에 실은 메이플 ID 로 서버가 그 계정의 줄에 적는다.
+describe('서버로 보내기', () => {
+  const MAPLE_IDS: Record<string, string> = { 'account-main': 'maple-main', 'account-sub': 'maple-sub' }
+  const counted = (over: Partial<AccountAnomaly> = {}): AccountAnomaly => ({
+    nexonAccountId: 'account-main',
+    historyDate: '2026-09-05',
+    apiType: 'starforce',
+    reason: 'no_level',
+    itemName: '왕푸',
+    rowCount: 2,
+    detail: null,
+    ...over,
+  })
+  const sentItems = () => sendEnhancementAnomalies.mock.calls.flatMap((call) => call[1] as unknown[])
+
+  beforeEach(() => {
+    serverIdentityHeaders.mockReset().mockResolvedValue({ authorization: 'Bearer 세션' })
+    sendEnhancementAnomalies.mockReset().mockResolvedValue({ outcome: 'sent' })
+    mapleIdOfNexonAccount.mockReset().mockImplementation(async (id: string) => MAPLE_IDS[id] ?? null)
+  })
+
+  // 메인 신원의 줄에 적으면 부계정의 상황이 메인의 같은 상황을 덮는다.
+  it('메인과 부계정의 상황은 각자 그 계정의 메이플 ID 해시를 싣고, 기기의 넥슨 계정 id 는 싣지 않는다', async () => {
+    await reportEnhancementAnomalies([counted({ rowCount: 1 }), counted({ nexonAccountId: 'account-sub', rowCount: 4 })])
+
+    expect(sendEnhancementAnomalies).toHaveBeenCalledTimes(1)
+    expect(sendEnhancementAnomalies).toHaveBeenCalledWith({ authorization: 'Bearer 세션' }, [
+      { mapleId: nexonIdHashHex('maple-main'), historyDate: '2026-09-05', apiType: 'starforce', reason: 'no_level', itemName: '왕푸', rowCount: 1, detail: null },
+      { mapleId: nexonIdHashHex('maple-sub'), historyDate: '2026-09-05', apiType: 'starforce', reason: 'no_level', itemName: '왕푸', rowCount: 4, detail: null },
+    ])
+  })
+
+  // 진단 값이라 놓쳐도 된다. 다른 계정의 메이플 ID 를 대신 실으면 그 계정의 줄에 적힌다.
+  it('메이플 ID 를 모르는 계정의 상황은 보내지 않고, 남는 상황이 없으면 요청도 보내지 않는다', async () => {
+    await reportEnhancementAnomalies([counted({ nexonAccountId: 'account-unseen' }), counted({ rowCount: 3 })])
+
+    expect(sentItems()).toEqual([expect.objectContaining({ mapleId: nexonIdHashHex('maple-main'), rowCount: 3 })])
+
+    sendEnhancementAnomalies.mockClear()
+    await reportEnhancementAnomalies([counted({ nexonAccountId: 'account-unseen' })])
+
+    expect(sendEnhancementAnomalies).not.toHaveBeenCalled()
   })
 })

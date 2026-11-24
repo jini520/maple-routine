@@ -712,6 +712,32 @@ describe('넥슨 계정이 여럿', () => {
     expect(marked).toHaveLength(3)
   })
 
+  // 서버는 상황을 그 내역을 받은 넥슨 계정의 줄에 적는다. 계정을 모르면 부계정의 상황이 메인의 같은 상황을 덮는다.
+  it.each([
+    ['화면 회차', () => collectEnhancementHistory(['2026-09-05'], NOW)],
+    [
+      '다시 받을 날',
+      () => {
+        refetches.loadEnhancementRefetches.mockResolvedValue([{ kind: 'starforce', dateKey: '2026-09-05' }])
+        return collectEnhancementRefetches(NOW)
+      },
+    ],
+  ])('%s에 계정마다 받은 상황에 그 넥슨 계정을 붙여 한 번에 알린다', async (_label, collect) => {
+    // 이 줄은 시도 전 성수가 없어 비용을 못 매긴다.
+    fetchEnhancementHistory.mockImplementation((_credential: unknown, kind: string) =>
+      Promise.resolve(kind === 'starforce' ? page(['sf']) : page([])),
+    )
+
+    await collect()
+
+    expect(reportEnhancementAnomalies).toHaveBeenCalledTimes(1)
+    const reported = reportEnhancementAnomalies.mock.calls[0]?.[0] as { nexonAccountId: string; reason: string }[]
+    expect(reported.map((one) => [one.nexonAccountId, one.reason]).sort()).toEqual([
+      ['account-login', 'no_star'],
+      ['account-부', 'no_star'],
+    ])
+  })
+
   // 옛 원본은 계정 칸이 생기기 전의 메인 계정 기록이라, 부계정의 스페셜 이름이 섞이면 메인 계정의 줄을 잘못 가른다.
   it('옛 원본을 옮기는 단계에 남기는 스페셜 이름은 메인 계정의 목록에서만 온다', async () => {
     await collectEnhancementHistory(['2026-09-05'], NOW)

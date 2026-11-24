@@ -18,9 +18,8 @@ import { isEnhancementTotalsMoved, markEnhancementTotalsMoved } from '../../stor
 import { reclaimLegacySpaceOnce } from '../../storage/legacy-space'
 import type { EnhancementKind } from '../../nexon/history/client'
 import { eventWorldOf, summarizeEnhancement, type EnhancementSource, type EntryOwner } from './spending'
-import { enhancementAnomaliesOf, reportEnhancementAnomalies } from './anomalies'
+import { enhancementAnomaliesOf, reportEnhancementAnomalies, type AccountAnomaly } from './anomalies'
 import { readEventWorldNames } from './event-world-names'
-import type { EnhancementAnomaly } from '../../types/server-records'
 
 /** 앱이 그 이름으로 본 기간의 캐릭터. 월드는 소속 기록에 적힌 월드다. */
 function legacyOwnerOf(
@@ -77,7 +76,7 @@ async function move(): Promise<void> {
       : judgment
   }
   const now = new Date()
-  const anomalies: EnhancementAnomaly[] = []
+  const anomalies: AccountAnomaly[] = []
   for (const dateKey of await listEnhancementHistoryDates()) {
     const entries = await loadEnhancementHistory([dateKey])
     for (const kind of ['cube', 'starforce', 'potential', 'soul_potential'] as const satisfies readonly EnhancementKind[]) {
@@ -86,12 +85,11 @@ async function move(): Promise<void> {
       const ownerOf = (entry: EnhancementSource) => legacyOwnerOf(sightings, entry, accountId)
       if (ofKind.some((entry) => ownerOf(entry) === null)) await addEnhancementRefetch(accountId, kind, dateKey, now)
       await replaceEnhancementTotals(accountId, kind, dateKey, summarizeEnhancement(ofKind, ownerOf, judge), now)
-      anomalies.push(
-        ...enhancementAnomaliesOf(ofKind, (entry) => {
-          const owner = ownerOf(entry)
-          return owner === null ? null : judge(entry, owner)
-        }),
-      )
+      const counts = enhancementAnomaliesOf(ofKind, (entry) => {
+        const owner = ownerOf(entry)
+        return owner === null ? null : judge(entry, owner)
+      })
+      anomalies.push(...counts.map((count) => ({ ...count, nexonAccountId: accountId })))
     }
   }
   await markEnhancementTotalsMoved()
