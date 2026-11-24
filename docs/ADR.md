@@ -200,7 +200,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-078+254+287](./adr/ADR-078+254+287_persistence_boss-tables.md) | 🟢 | persistence | 보스 기록 테이블 재설계 |
 | [ADR-096+290](./adr/ADR-096+290_persistence_cashbook-tables.md) | 🟢 | persistence | 가계부 기록 테이블 재설계 |
 | [ADR-098+173](./adr/ADR-098+173_persistence_record-keys.md) | 🟢 | persistence | 남은 표의 기본키 · 파티 약속 id · 넥슨 계정 id |
-| [ADR-099+143+258+279+302+305+310+319](./adr/ADR-099+143+258+279+302+305+310+319_server-sync_records.md) | ⚪ | server-sync | 사용자가 만든 기록을 서버에 두고 기기끼리 맞추기 · 과거 드롭 올리기 |
+| [ADR-099+143+258+279+302+305+310+319](./adr/ADR-099+143+258+279+302+305+310+319_server-sync_records.md) | 🟢 | server-sync | 사용자가 만든 기록을 서버에 두고 기기끼리 맞추기 · 과거 드롭 올리기 |
 | [ADR-100+174+189+234+295](./adr/ADR-100+174+189+234+295_cashbook_enhancement-totals.md) | 🟢 | cashbook | 강화 합계 저장과 재계산 요청 · 스타포스 첫 성과 끝 성 · 이벤트 월드 판정과 월드 기간 · 슈페리얼 장비 스타포스 비용 |
 | [ADR-101+186+193+201+259+277+285+294+297](./adr/ADR-101+186+193+201+259+277+285+294+297_auth_multi-account.md) | ⚪ | auth | 다계정 |
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |
@@ -215,7 +215,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-160+200](./adr/ADR-160+200_cashbook_exclusions.md) | ⚪ | cashbook | 가계부에서 빼는 강화 기록 |
 | [ADR-161+202+293](./adr/ADR-161+202+293_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
 | [ADR-187+213+216+278+281](./adr/ADR-187+213+216+278+281_game-data_item-catalog.md) | 🟢 | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 · 고르기 목록 칸 · 묶음 표 |
-| [ADR-188+260+269](./adr/ADR-188+260+269_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기, 사용자에게 묻기 전에 확인할 것, 버전의 역할과 릴리즈 대기 단계, 찾은 잘못을 그 자리에서 고치기 |
+| [ADR-188+260+269+321](./adr/ADR-188+260+269+321_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기, 사용자에게 묻기 전에 확인할 것, 버전의 역할과 릴리즈 대기 단계, 찾은 잘못을 그 자리에서 고치기, 전제가 바뀌면 옛 말로 찾아 고치기 |
 | [ADR-191+230](./adr/ADR-191+230_design-system_screen-size.md) | 🟢 | design-system | 태블릿과 접는 폰 외부 화면의 배치 |
 | [ADR-209+291](./adr/ADR-209+291_inventory_items.md) | 🟢 | inventory | 인벤토리 |
 | [ADR-228](./adr/ADR-228_trade-history_page.md) | 🟢 | trade-history | 거래 내역 |

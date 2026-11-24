@@ -1,13 +1,13 @@
 # ADR-100+174+189+234+295 강화 내역을 계산한 합계로 저장하고, 다시 매길 기간은 환경 변수로 건다
 
 > 🟢 유효
-> 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/recompute.ts` · `features/enhancement-history/anomalies.ts` · `features/enhancement-history/owners.ts` · `features/enhancement-history/legacy-totals.ts` · `lib/enhancement/world.ts` · `lib/enhancement/sighted-owner.ts` · `lib/world/worlds.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/enhancement-tables.ts` · `storage/sqlite/convert-enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts` · `app/cashbook/CashbookScreen.tsx` · 서버 `database/schema.ts`(`world_periods` · `superior_series` · `superior_items`) · 서버 `modules/worlds/worlds.repository.ts` · 서버 `modules/enhancement-costs/` · 서버 `modules/admin/`
+> 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/recompute.ts` · `features/enhancement-history/anomalies.ts` · `features/enhancement-history/owners.ts` · `features/enhancement-history/legacy-totals.ts` · `lib/enhancement/world.ts` · `lib/enhancement/sighted-owner.ts` · `lib/world/worlds.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/enhancement-tables.ts` · `storage/sqlite/convert-enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts` · `app/cashbook/CashbookScreen.tsx` · 서버 `database/schema.ts`(`world_open_periods` · `superior_series` · `superior_items`) · 서버 `modules/worlds/worlds.repository.ts` · 서버 `modules/enhancement-costs/` · 서버 `modules/admin/`
 
 ## 배경
 
 가계부는 강화 API(큐브 · 스타포스 · 잠재능력 · 소울 잠재)의 응답 줄을 `enhancement_history.payload` 로 통째로 들고,
 읽을 때마다 비용을 계산한다([[ADR-047]] 결정 10). 이것을 계산이 끝난 합계로 저장하게 바꾼다(#614, 사용자 2026-10-06).
-합계는 지금 서버로 보내지 않는다. 기기 간 동기화가 구현되면 합계와 굳은 날을 서버에 두고, 새 기기는 굳은 날을 넥슨에서 다시 받지
+1.0.15 부터 합계와 굳은 날은 서버에도 올려 같은 사람의 기기끼리 맞춘다. 새 기기는 서버에서 받은 굳은 날을 넥슨에서 다시 받지
 않는다([[ADR-099]] 결정 11).
 
 합계를 저장하면 계산 코드나 비용 표를 고쳐도 지난 합계가 저절로 바뀌지 않는다. 그래서 그 기간을 넥슨 API 에서 다시
@@ -174,15 +174,16 @@ OTA 를 낸다. 순서가 바뀌면 다시 받은 날이 다시 모름으로 남
 ### 결정 9. 월드 표는 그 월드가 열린 기간을 여러 줄 든다
 
 이벤트 월드와 챌린저스 월드는 열렸다가 닫히고, 다음 시즌에 같은 이름으로 다시 열린다(사용자 2026-11-09). 그래서 기간을
-월드 줄의 칸 하나로 두지 않고, 월드마다 여러 줄을 두는 서버 표 `world_periods` 에 둔다([[ADR-020]] 결정 9). (1.0.15 에서 표 이름이 `world_open_periods` 로 바뀐다. [[ADR-099]] 결정 58)
+월드 줄의 칸 하나로 두지 않고, 월드마다 여러 줄을 두는 서버 표 `world_open_periods` 에 둔다([[ADR-020]] 결정 9 · [[ADR-099]]
+결정 58). 1.0.14 까지의 운영 서버는 같은 표를 `world_periods` 라 부르고 두 칸을 `from` · `until` 로 적는다.
 
 ```
-서버 world_periods   id · world_id(FK worlds) · from · until · updated_at
-                     UNIQUE(world_id, from)
+서버 world_open_periods   id · world_id(FK worlds) · valid_from · valid_until · updated_at
+                          UNIQUE(world_id, valid_from)
 ```
 
-- `from` 은 연 날이고 `until` 은 닫힌 다음 날이다. 보스 기간과 같은 KST 글자(`YYYY-MM-DD`)이고 경계의 뜻도 같다([[ADR-020]]
-  결정 10). 스페셜은 2025-12-18 03시에 닫혀 그 날의 기록이 있으므로 `until` 이 `2025-12-19` 다.
+- `valid_from` 은 연 날이고 `valid_until` 은 닫힌 다음 날이다. 보스 기간과 같은 KST 글자(`YYYY-MM-DD`)이고 경계의 뜻도 같다([[ADR-020]]
+  결정 10). 스페셜은 2025-12-18 03시에 닫혀 그 날의 기록이 있으므로 `valid_until` 이 `2025-12-19` 다.
 - 앱이 받는 `worlds` 칸은 월드 줄과 따로 기간 줄 배열 `worldOpenPeriods`(`worldId` · `validFrom` · `validUntil`)를 싣는다
   ([[ADR-099]] 결정 65). 기간이 없는 월드는 기간 줄이 없다. 월드마다 기간을 묶는 일은 `lib/world/worlds.ts` 의
   `openPeriodsOf` 가 한다.
@@ -321,3 +322,5 @@ today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어
 - ADR-295 (2026-11-21): 1.0.15 기기 변환이 합계 표를 서버 표와 같은 칸으로 옮겨 결정 7 을 다시 썼다([[ADR-286]] 결정 6 · 10, #947).
   넥슨 계정 · 이름 · 메이플 ID · API 종류 · 장비 묶음 칸을 없애고 장비를 넥슨이 준 이름으로 가린다. 결정 6 에서 갈아 끼울 때 지우는
   범위를 소속 기록의 그 넥슨 계정 ocid 와 받은 API 종류의 분류로 고쳤고, 결정 3 에 옮기기가 변환 뒤에 돈다는 것을 더했다
+- (2026-11-24) 배경의 `합계는 지금 서버로 보내지 않는다` 를 1.0.15 의 기기 간 동기화에 맞추고, 결정 9 의 서버 표를
+  `world_open_periods` 로 고쳤다. 1.0.14 까지의 운영 서버는 따로 밝혔다(#947)

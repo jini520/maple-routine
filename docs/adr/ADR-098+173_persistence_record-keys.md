@@ -154,11 +154,10 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
 
 예외가 둘 있다.
 
-- **게임 데이터는 `_key` 로 가리킨다**(`boss_key` · `item_key` · `world_key`). 기기 번들에는 서버 표의 uuid 가 없고 key 만
-  있기 때문이다. 서버는 받은 key 로 줄을 찾아 `item_id` 같은 외래키로 적는다. 지금 `drop_prices` 가 이렇게 한다. 보스 기록
-  표 셋 · 가계부 기록 표 · 인벤토리 · 강화 레벨 기억 · 강화 합계 · MVP 등급은 예외다. 1.0.15 기기 변환 뒤에는 서버에서 받은 게임
-  데이터의 줄 id(`boss_difficulty_id` · `item_id` · `category_id` · `target_id` · `world_id` · `grade_id` 등)로 가리킨다([[ADR-078]]
-  결정 1 · [[ADR-096]] 결정 1 · [[ADR-286]] 결정 6).
+- **게임 데이터를 key 글자로 가리키는 칸은 `_key` 로 끝낸다**(`world_key`). 캐릭터 프로필 · 소속 표(`character_profiles` ·
+  `character_accounts`)의 월드가 그렇다. 기록 표는 1.0.15 기기 변환 뒤 서버에서 받은 게임 데이터의 줄 id(`boss_difficulty_id` ·
+  `item_id` · `category_id` · `target_id` · `world_id` · `grade_id` 등)로 가리킨다([[ADR-078]] 결정 1 · [[ADR-096]] 결정 1 ·
+  [[ADR-286]] 결정 6). 서버로 올리는 기록이 서버 표와 같은 줄 id 를 들어야 하기 때문이다([[ADR-099]] 결정 39).
 - **메이플 ID 는 `account_id` 로 둔다**(사용자 선택). 넥슨 API 응답의 칸 이름과 같다. 다른 표를 가리키는 uuid 가 아니라
   넥슨이 주는 문자열이다.
 
@@ -186,3 +185,5 @@ uuid 를 JS 가 아니라 SQLite 가 만드는 이유는 `storage/sqlite/uuid.ts
 - ADR-098 (2026-10-26): 버전 16 이관 · 계정 id · 칸 이름 · 약속 id 를 구현했다
 - ADR-173 (2026-11-05): 결정 5 에 넥슨 로그인이 메이플 ID 가 같은 키를 거두면 그 키의 계정 id 를 이어받는 것을 더했다. 로그인이
   새 id 를 받아 키 시절 강화 지출이 두 번 세어지던 것을 막는다(#607)
+- (2026-11-24) 결정 7 의 게임 데이터 예외를 1.0.15 에 맞췄다. 기록 표는 기기 변환 뒤 줄 id 로 가리키고, `_key` 로 남은 칸은
+  캐릭터 프로필 · 소속 표의 월드다. 옛 `drop_prices` 의 예를 걷었다(#947)
