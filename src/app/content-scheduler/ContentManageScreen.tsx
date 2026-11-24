@@ -15,6 +15,15 @@ import {
 } from '../../lib/scheduler/content-category'
 import type { ContentCategoryKey } from '../../lib/scheduler/content-categories'
 import type { ContentEntry } from '../../lib/scheduler/contents'
+import {
+  applyContentManageDraft,
+  changedContentManageDraft,
+  EMPTY_CONTENT_MANAGE_DRAFT,
+  hasContentManageChanges,
+  isContentTracked,
+  withoutSavedContentManageDraft,
+  type ContentManageDraft,
+} from '../../features/content-scheduler/manage-draft'
 import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
 import { useContentSchedule } from '../../features/content-scheduler/use-content-schedule'
 import { useGameTable } from '../../features/game-data/sync'
@@ -26,6 +35,7 @@ import { useToastStore } from '../../features/toast/store'
 
 import {
   Badge,
+  Button,
   CastleIcon,
   FlagIcon,
   LayoutGridIcon,
@@ -42,12 +52,15 @@ import { CharacterRail, type CharacterRailEntry } from '../../components/organis
 import { CharacterUnavailableNotice } from '../../components/organisms/CharacterUnavailable/CharacterUnavailableNotice'
 import { LoadingState } from '../../components/molecules/LoadingState/LoadingState'
 import { Segment } from '../../components/molecules/Segment/Segment'
+import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
 import { PageHeader } from '../../components/templates/PageHeader/PageHeader'
 import { PageHeaderTitleRow } from '../../components/templates/PageHeader/PageHeaderTitleRow'
 import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScroll'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useOpenTab } from '../../hooks/useOpenTab'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
+import { useUnsavedChangesGuard, type DraftSaveOutcome } from '../../hooks/useUnsavedChangesGuard'
+import { SettingsActionBar } from '../settings/SettingsActionBar'
 
 // 카테고리 → 아이콘은 표현 계층 결정이라 여기 둔다(카테고리 자체는 lib/content-category가 데이터에서 도출).
 const CATEGORY_ICON: Record<ContentCategoryKey, LucideIcon> = {
@@ -64,8 +77,8 @@ const CATEGORY_ICON: Record<ContentCategoryKey, LucideIcon> = {
 
 // 컨텐츠 관리 페이지(수동 추적 항목 편집). 템플릿 전체를 일간/주간 탭 체크리스트로 항상
 // 보여주고 추적 중인 항목만 선택 상태로 그린다. 추가·삭제가 행 탭(토글) 하나로 통일되고,
-// 토글은 즉시 저장한다(로컬 Preferences 쓰기뿐이고 비파괴적이라 확인 버튼 없음). 대상 캐릭터는
-// 컨텐츠 스케줄러에서 선택된 캐릭터를 승계한다. 수동 모드 전용.
+// 토글은 초안에만 들고 아래 `저장` 이 한 번에 저장한다. 누를 때마다 저장하면 그만큼 서버 동기화가
+// 깨어난다. 대상 캐릭터는 컨텐츠 스케줄러에서 선택된 캐릭터를 승계한다. 수동 모드 전용.
 // 리디자인(와이어프레임 리뷰): 템플릿 줄의 `category`(lib/scheduler/content-category)로
 // 카테고리 그룹핑. 카테고리 이름을 헤더로 한 번만 묶고 행에는 표의 `displayName` 만 표시한다.
 /** 주기 탭. 값은 스케줄러가 쓰는 주기이고 화면에는 라벨이 선다. */
@@ -83,8 +96,7 @@ export function ContentManageScreen(): React.JSX.Element {
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
   const {
     manualTrackedByOcid,
-    addManualContent,
-    removeManualContent,
+    saveManualContentDraft,
     // 진입 시점의 스케줄러 탭을 이어받는다(일간에서 들어오면 일간).
     activeTab: schedulerTab,
     // 선택 캐릭터는 스케줄러와 공유한다. 탭과 달리 "지금 누구를 보고 있는가"는
@@ -98,10 +110,20 @@ export function ContentManageScreen(): React.JSX.Element {
   // 되돌리지 않는다. 되돌리면 잠깐 다른 탭을 뒤져본 것 때문에 돌아갔을 때 보던 화면이 바뀌어,
   // 애초에 고치려던 문제("보던 자리를 잃는다")를 반대 방향으로 다시 만든다.
   const [activeTab, setActiveTab] = useState<ContentTab>(schedulerTab)
+  /**
+   * 저장 전에 켜고 끈 것. `ocid` 가 이 초안의 주인이다. 받기가 고른 캐릭터를 바꿔도 앞 캐릭터의 초안이 새 캐릭터의 행에
+   * 얹히지 않는다.
+   */
+  const [draft, setDraft] = useState<{ ocid: string | null; tracked: ContentManageDraft }>({
+    ocid: null,
+    tracked: EMPTY_CONTENT_MANAGE_DRAFT,
+  })
+  // 고정 바가 덮는 높이. 그만큼 목록 아래를 비워야 마지막 행이 바 뒤에 숨지 않는다.
+  const [actionBarHeightPx, setActionBarHeightPx] = useState(0)
   // 컨텐츠 표는 켜는 동안 서버 응답으로 덮일 수 있다. 칸을 구독해 덮이면 목록을 다시 그린다.
   useGameTable('contents')
 
-  // 알 수 없는 탭이면 첫 탭으로 되돌린다.
+  // 자동 모드에서는 고를 것이 없다. 바꾼 것이 있으면 이 뒤로 가기도 확인 창이 막는다.
   useEffect(() => {
     if (mode !== 'manual') navigation.goBack()
   }, [mode, navigation])
@@ -124,188 +146,244 @@ export function ContentManageScreen(): React.JSX.Element {
     rings: [],
   }))
 
+  const storedItems = selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : []
+  // 주인이 다른 초안은 쓰지 않는다.
+  const ownDraft = draft.ocid !== null && draft.ocid === selected?.ocid ? draft.tracked : EMPTY_CONTENT_MANAGE_DRAFT
+  const changes = changedContentManageDraft(ownDraft, storedItems)
+  const isDirty = hasContentManageChanges(changes)
+  // 화면은 저장된 목록에 초안을 얹어 그린다. 저장 함수가 같은 함수로 얹어 쓴다.
   const trackedKeys = new Set(
-    (selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : [])
-      .flatMap((item) => (item.kind === activeTab ? [item.contentKey] : [])),
+    applyContentManageDraft(storedItems, ownDraft).flatMap((item) => (item.kind === activeTab ? [item.contentKey] : [])),
   )
 
-  // 전에는 void로 프로미스를 버려 저장 실패가 무음이었다. 체크가 조용히
-  // 되돌아가는 것 외에 설명이 없었다. 체크박스가 그 자리에 남으므로 토스트로 알린다.
-  async function handleToggle(contentKey: string): Promise<void> {
+  // 저장된 값과 같아진 항목은 초안에서 뺀다. 남겨 두면 나중에 받은 값이 그 항목을 바꿨을 때 옛 초안이 바꾼 것으로 다시 잡힌다.
+  function handleToggle(contentKey: string): void {
     if (selected === null) return
-    try {
-      if (trackedKeys.has(contentKey)) {
-        await removeManualContent(selected.ocid, contentKey, activeTab)
-      } else {
-        await addManualContent(selected.ocid, contentKey, activeTab)
-      }
-    } catch {
-      useToastStore.getState().showError('추적 목록을 저장하지 못했습니다')
-    }
+    const ocid = selected.ocid
+    const kind = activeTab
+    const tracked = !trackedKeys.has(contentKey)
+    const isStored = tracked === isContentTracked(storedItems, kind, contentKey)
+    // 렌더 사이에 두 행을 이어 누르면 앞의 것이 덮이지 않게 지금 초안에 얹는다.
+    setDraft((current) => {
+      const base = current.ocid === ocid ? current.tracked : EMPTY_CONTENT_MANAGE_DRAFT
+      const kindDraft = { ...base[kind] }
+      if (isStored) delete kindDraft[contentKey]
+      else kindDraft[contentKey] = tracked
+      return { ocid, tracked: { ...base, [kind]: kindDraft } }
+    })
   }
+
+  async function saveDraft(): Promise<DraftSaveOutcome> {
+    if (selected === null || !isDirty) return { saved: true }
+    const ocid = selected.ocid
+    try {
+      await saveManualContentDraft(ocid, changes)
+    } catch {
+      return { saved: false, report: () => useToastStore.getState().showError('추적 목록을 저장하지 못했습니다') }
+    }
+    setDraft((current) =>
+      current.ocid === ocid ? { ocid, tracked: withoutSavedContentManageDraft(current.tracked, changes) } : current,
+    )
+    return { saved: true }
+  }
+
+  const guard = useUnsavedChangesGuard({
+    dirty: isDirty,
+    save: saveDraft,
+    discard: () => setDraft({ ocid: null, tracked: EMPTY_CONTENT_MANAGE_DRAFT }),
+  })
+  const isSaveDisabled = !isDirty || guard.saving
 
   // null일 때만 "가입한 길드 없음"이다. undefined(구버전 캐시·응답에 필드 없음)는
   // "모름"이라 잠그지 않는다. 모름을 미가입으로 취급하면 멀쩡한 사용자의 길드 콘텐츠가 막힌다.
   const hasNoGuild = selected?.guildName === null
 
-  // 이미 추적 중인 항목은 잠그지 않는다. 길드를 나가도 해제할 수 있어야 한다.
+  // 이미 추적 중인 항목은 잠그지 않는다. 길드를 나가도 해제할 수 있어야 하고, 초안에서 끈 항목을 다시 켤 수 있어야 한다.
   function isGuildBlocked(entry: ContentEntry): boolean {
-    return !trackedKeys.has(entry.key) && hasNoGuild && isGuildContent(entry)
+    return (
+      !trackedKeys.has(entry.key) &&
+      !isContentTracked(storedItems, activeTab, entry.key) &&
+      hasNoGuild &&
+      isGuildContent(entry)
+    )
   }
 
   return (
-    <ScreenScroll
-      hasTabBar={false}
-      header={
-        // 헤더는 제목 줄 하나다. 레일은 콘텐츠로 내려갔다. `←` 이 남는 것은 그것이
-        // **다른 페이지로 가는 것**이기 때문이다. 주기 탭은 다른 화면과 같은 자리(`trailing`)에 선다.
-        <PageHeader>
-          <PageHeaderTitleRow
-            className="justify-between"
-            trailing={
-              selected !== null ? (
-                <Segment
-                  size="lg" className="self-start"
-                  options={CONTENT_TABS}
-                  selected={activeTab}
-                  onSelect={setActiveTab}
-                  labelOf={(value) => CONTENT_TAB_LABELS[value]}
-                />
-              ) : undefined
-            }
-          >
-            <View className="flex-row items-center gap-2">
-              <BackButton onPress={() => navigation.goBack()} />
-              {/* 물음표는 제목과 한 덩어리다. 뒤로 버튼과의 간격(gap-2)을 따르지 않게 묶는다. */}
-              <View className="flex-row items-center">
-                <Text className="text-lg font-bold text-text">컨텐츠 관리</Text>
-                <FaqButton sheet={faq} />
-              </View>
-            </View>
-          </PageHeaderTitleRow>
-
-        </PageHeader>
-      }
-    >
-      {/* 캐릭터를 고르는 장치라 콘텐츠다. 스케줄러와 같은 컴포넌트이고 **여기에는 진행 링이
-          없다**(`rings: []`) - 이 화면의 일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
-
-          좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다. */}
-      {selected !== null && (
-        <CharacterRail
-          entries={railEntries}
-          selectedOcid={selected.ocid}
-          onSelect={(ocid) => {
-            void select(ocid)
-          }}
-        />
-      )}
-
-      <View testID="screen-ContentManage">
-        {/* 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않고
-            로딩 카드를 그린다. 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다. */}
-        {selected === null && (status === 'idle' || status === 'loading') ? (
-          <View className="px-4 pb-4">
-            <LoadingState size="page" message="불러오고 있어요" />
-          </View>
-        ) : selected === null ? (
-          <View className="px-4 pb-4">
-            <Text className="text-sm text-text-muted">
-              캐릭터를 먼저 선택해주세요. 설정의 ‘캐릭터 관리’에서 추가할 수 있어요.
-            </Text>
-          </View>
-        ) : selected.error?.kind === 'characterUnavailable' ? (
-          // 편집할 목록이 **빈 것이 아니라 모르는 것**이다. 체크박스를 세우면 사용자가 지금
-          // 추적을 고르고 있다고 믿는데, 그 선택은 조회가 돌아와야 뜻을 갖는다.
-          <View className="px-4 pb-4">
-            <CharacterUnavailableNotice
-              onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
-            />
-          </View>
-        ) : (
-          <View className="gap-4 px-4 pb-4">
-            {categorizeContentEntries(
-              // 출시 전인 컨텐츠는 고를 수 없다. 이미 추적 중이어도 목록에서만 빠지고 저장은 그대로다.
-              effectiveTemplateEntries(
-                contentTemplate()[activeTab],
-                getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
-              ),
-              activeTab === 'weekly' ? weeklyCategoryOrder() : undefined,
-            ).map((group) => {
-              const GroupIcon = CATEGORY_ICON[group.category]
-              const trackedCount = group.items.filter((item) => trackedKeys.has(item.entry.key)).length
-              return (
-                <View key={group.category}>
-                  <View className="flex-row items-center gap-2 px-1 pb-2 pt-1">
-                    <View className="h-6 w-6 items-center justify-center rounded-lg bg-third-tint">
-                      <GroupIcon className="h-3.5 w-3.5 text-third-ink" strokeWidth={2} aria-hidden />
-                    </View>
-                    <Text className="text-xs font-bold text-text">{group.label}</Text>
-                    <Badge variant="muted" style={TABULAR_NUMS} className="ml-auto">
-                      {trackedCount}/{group.items.length}
-                    </Badge>
-                  </View>
-                  <View className="gap-2">
-                    {group.items.map(({ entry, displayName }) => {
-                      const isTracked = trackedKeys.has(entry.key)
-                      const isLocked = isGuildBlocked(entry)
-                      const tag = contentCountTag(entry)
-                      // 사유는 오른쪽 뱃지가 아니라 흐려진 행 위에 얹는 한 줄로 알린다.
-                      // 보스 관리 화면과 같은 규칙(사용자 피드백).
-                      return (
-                        <View key={entry.key}>
-                          <Pressable
-                            role="button"
-                            aria-selected={isTracked}
-                            disabled={isLocked}
-                            onPress={() => void handleToggle(entry.key)}
-                            className={
-                              // 테두리 없이 면으로 고른 줄을 가린다. 고른 줄은 테마 면, 나머지는 카드 바탕이다.
-                              isTracked
-                                ? 'w-full flex-row items-center gap-3 rounded-[10px] bg-primary-tint px-4 py-3'
-                                : 'w-full flex-row items-center gap-3 rounded-[10px] bg-surface px-4 py-3'
-                            }
-                          >
-                            <GroupIcon
-                              className={
-                                isTracked
-                                  ? 'h-[18px] w-[18px] shrink-0 text-primary-ink'
-                                  : 'h-[18px] w-[18px] shrink-0 text-text-muted'
-                              }
-                              strokeWidth={2}
-                              aria-hidden
-                            />
-                            <Text numberOfLines={1} className="min-w-0 flex-1 text-sm font-semibold text-text">
-                              {displayName}
-                            </Text>
-                            {tag !== null && (
-                              <Badge variant="muted" className="shrink-0">
-                                {tag}
-                              </Badge>
-                            )}
-                          </Pressable>
-
-                          {/* 보스 관리 화면과 같은 규칙. 흐림은 콘텐츠 opacity 가 아니라 그 위를
-                              덮는 스크림이다. 이 행은 자체 배경이 없어 페이지 배경색(bg)으로
-                              덮는다. `backdrop-blur` 는 RN 에 없어 빠진다. */}
-                          {isLocked && (
-                            <View
-                              pointerEvents="none"
-                              className="absolute inset-0 items-center justify-center rounded-[10px] bg-scrim px-4"
-                            >
-                              <Text className="text-sm font-semibold text-text">길드 가입 시 진행 가능</Text>
-                            </View>
-                          )}
-                        </View>
-                      )
-                    })}
-                  </View>
+    <View className="flex-1">
+      <ScreenScroll
+        hasTabBar={false}
+        header={
+          // 헤더는 제목 줄 하나다. 레일은 콘텐츠로 내려갔다. `←` 이 남는 것은 그것이
+          // **다른 페이지로 가는 것**이기 때문이다. 주기 탭은 다른 화면과 같은 자리(`trailing`)에 선다.
+          <PageHeader>
+            <PageHeaderTitleRow
+              className="justify-between"
+              trailing={
+                selected !== null ? (
+                  <Segment
+                    size="lg" className="self-start"
+                    options={CONTENT_TABS}
+                    selected={activeTab}
+                    onSelect={setActiveTab}
+                    labelOf={(value) => CONTENT_TAB_LABELS[value]}
+                  />
+                ) : undefined
+              }
+            >
+              <View className="flex-row items-center gap-2">
+                <BackButton onPress={() => navigation.goBack()} />
+                {/* 물음표는 제목과 한 덩어리다. 뒤로 버튼과의 간격(gap-2)을 따르지 않게 묶는다. */}
+                <View className="flex-row items-center">
+                  <Text className="text-lg font-bold text-text">컨텐츠 관리</Text>
+                  <FaqButton sheet={faq} />
                 </View>
-              )
-            })}
-          </View>
+              </View>
+            </PageHeaderTitleRow>
+
+          </PageHeader>
+        }
+      >
+        {/* 캐릭터를 고르는 장치라 콘텐츠다. 스케줄러와 같은 컴포넌트이고 **여기에는 진행 링이
+            없다**(`rings: []`) - 이 화면의 일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
+
+            좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다. */}
+        {selected !== null && (
+          <CharacterRail
+            entries={railEntries}
+            selectedOcid={selected.ocid}
+            onSelect={(ocid) => {
+              // 고른 캐릭터는 앱 전체가 함께 쓴다. 답을 받기 전에 바꾸면 스케줄러까지 다른 캐릭터로 넘어간다.
+              if (ocid === selected.ocid) return
+              guard.confirm(() => {
+                void select(ocid)
+              })
+            }}
+          />
         )}
-      </View>
-    </ScreenScroll>
+
+        {/* 잰 바 높이만큼 목록 아래를 비운다. */}
+        <View testID="screen-ContentManage" style={{ paddingBottom: actionBarHeightPx }}>
+          {/* 조회가 끝나기 전(idle·loading)에는 빈 상태 문구로 위장하지 않고
+              로딩 카드를 그린다. 확정된 빈 상태는 조회가 끝난 뒤에만 말할 수 있다. */}
+          {selected === null && (status === 'idle' || status === 'loading') ? (
+            <View className="px-4 pb-4">
+              <LoadingState size="page" message="불러오고 있어요" />
+            </View>
+          ) : selected === null ? (
+            <View className="px-4 pb-4">
+              <Text className="text-sm text-text-muted">
+                캐릭터를 먼저 선택해주세요. 설정의 ‘캐릭터 관리’에서 추가할 수 있어요.
+              </Text>
+            </View>
+          ) : selected.error?.kind === 'characterUnavailable' ? (
+            // 편집할 목록이 **빈 것이 아니라 모르는 것**이다. 체크박스를 세우면 사용자가 지금
+            // 추적을 고르고 있다고 믿는데, 그 선택은 조회가 돌아와야 뜻을 갖는다.
+            <View className="px-4 pb-4">
+              <CharacterUnavailableNotice
+                onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
+              />
+            </View>
+          ) : (
+            <View className="gap-4 px-4 pb-4">
+              {categorizeContentEntries(
+                // 출시 전인 컨텐츠는 고를 수 없다. 이미 추적 중이어도 목록에서만 빠지고 저장은 그대로다.
+                effectiveTemplateEntries(
+                  contentTemplate()[activeTab],
+                  getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
+                ),
+                activeTab === 'weekly' ? weeklyCategoryOrder() : undefined,
+              ).map((group) => {
+                const GroupIcon = CATEGORY_ICON[group.category]
+                const trackedCount = group.items.filter((item) => trackedKeys.has(item.entry.key)).length
+                return (
+                  <View key={group.category}>
+                    <View className="flex-row items-center gap-2 px-1 pb-2 pt-1">
+                      <View className="h-6 w-6 items-center justify-center rounded-lg bg-third-tint">
+                        <GroupIcon className="h-3.5 w-3.5 text-third-ink" strokeWidth={2} aria-hidden />
+                      </View>
+                      <Text className="text-xs font-bold text-text">{group.label}</Text>
+                      <Badge variant="muted" style={TABULAR_NUMS} className="ml-auto">
+                        {trackedCount}/{group.items.length}
+                      </Badge>
+                    </View>
+                    <View className="gap-2">
+                      {group.items.map(({ entry, displayName }) => {
+                        const isTracked = trackedKeys.has(entry.key)
+                        const isLocked = isGuildBlocked(entry)
+                        const tag = contentCountTag(entry)
+                        // 사유는 오른쪽 뱃지가 아니라 흐려진 행 위에 얹는 한 줄로 알린다.
+                        // 보스 관리 화면과 같은 규칙(사용자 피드백).
+                        return (
+                          <View key={entry.key}>
+                            <Pressable
+                              role="button"
+                              aria-selected={isTracked}
+                              disabled={isLocked}
+                              onPress={() => handleToggle(entry.key)}
+                              className={
+                                // 테두리 없이 면으로 고른 줄을 가린다. 고른 줄은 테마 면, 나머지는 카드 바탕이다.
+                                isTracked
+                                  ? 'w-full flex-row items-center gap-3 rounded-[10px] bg-primary-tint px-4 py-3'
+                                  : 'w-full flex-row items-center gap-3 rounded-[10px] bg-surface px-4 py-3'
+                              }
+                            >
+                              <GroupIcon
+                                className={
+                                  isTracked
+                                    ? 'h-[18px] w-[18px] shrink-0 text-primary-ink'
+                                    : 'h-[18px] w-[18px] shrink-0 text-text-muted'
+                                }
+                                strokeWidth={2}
+                                aria-hidden
+                              />
+                              <Text numberOfLines={1} className="min-w-0 flex-1 text-sm font-semibold text-text">
+                                {displayName}
+                              </Text>
+                              {tag !== null && (
+                                <Badge variant="muted" className="shrink-0">
+                                  {tag}
+                                </Badge>
+                              )}
+                            </Pressable>
+
+                            {/* 보스 관리 화면과 같은 규칙. 흐림은 콘텐츠 opacity 가 아니라 그 위를
+                                덮는 스크림이다. 이 행은 자체 배경이 없어 페이지 배경색(bg)으로
+                                덮는다. `backdrop-blur` 는 RN 에 없어 빠진다. */}
+                            {isLocked && (
+                              <View
+                                pointerEvents="none"
+                                className="absolute inset-0 items-center justify-center rounded-[10px] bg-scrim px-4"
+                              >
+                                <Text className="text-sm font-semibold text-text">길드 가입 시 진행 가능</Text>
+                              </View>
+                            )}
+                          </View>
+                        )
+                      })}
+                    </View>
+                  </View>
+                )
+              })}
+            </View>
+          )}
+        </View>
+      </ScreenScroll>
+
+      <SettingsActionBar testID="content-manage-action-bar" onHeight={setActionBarHeightPx}>
+        <Button
+          testID="content-manage-save"
+          variant="primary"
+          onPress={guard.save}
+          disabled={isSaveDisabled}
+          busy={guard.saving}
+          // `disabled` 프롭은 색을 바꾸지 않는다. 그대로 두면 꺼진 버튼이 멀쩡한 색으로 보인다.
+          className={`w-full items-center${isSaveDisabled ? ' opacity-50' : ''}`}
+        >
+          저장
+        </Button>
+      </SettingsActionBar>
+
+      {guard.dialog !== null && <NoticeModal {...guard.dialog} />}
+    </View>
   )
 }

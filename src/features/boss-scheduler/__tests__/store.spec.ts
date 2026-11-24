@@ -4,6 +4,8 @@
  * 열쇠로 준다.
  */
 import type { ManualTrackedItem } from '../../../storage/manual-tracked-content'
+import type { BossDifficulty } from '../../../types'
+import type { BossManageDraft, BossPartyDraft } from '../manage-draft'
 import { queryClient } from '../../query/client'
 import { queryKeys } from '../../query/keys'
 
@@ -39,7 +41,7 @@ jest.mock('../../tracking-mode/store', () => ({
   },
 }))
 
-import { useBossSchedulerStore } from '../store'
+import { useBossSchedulerStore, type BossManageSaveResult } from '../store'
 
 /** 비율을 안 쓰는 파티. 인원만 고치는 테스트가 넘긴다. */
 const EVEN_SHARE_COLUMNS = {
@@ -233,86 +235,189 @@ describe('setPartySetting', () => {
   })
 })
 
-describe('addManualBoss', () => {
-  it('저장소에 (보스, 난이도) 멤버십을 저장하고 상태를 갱신한다 (maxCount 없음)', async () => {
-    const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'zakum', 'chaos')
+describe('saveBossManageDraft', () => {
+  const save = (draft: Partial<BossManageDraft>): Promise<BossManageSaveResult> =>
+    useBossSchedulerStore.getState().saveBossManageDraft('ocid-1', { tracking: {}, party: {}, ...draft })
 
-    expect(result).toBe('added')
-    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-      { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
-    ])
-    expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({
-      'ocid-1': [{ kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' }],
+  const party = (bossKey: string, difficulty: BossDifficulty, partySize: number): BossPartyDraft => ({
+    bossKey,
+    difficulty,
+    partySize,
+    shares: EVEN_SHARE_COLUMNS,
+  })
+
+  describe('추적 목록', () => {
+    // 지우기와 추가를 따로 저장하면 그 사이에 보스가 목록에 없는 상태가 저장소에 실재했다.
+    it('저장소의 지금 배열에 초안을 얹어 한 번 쓴다. 바꾼 보스는 제자리에서 난이도만, 끈 보스는 빠지고, 켠 보스는 끝에 붙는다', async () => {
+      getManualTrackedContentMock.mockResolvedValue([
+        { kind: 'boss', bossKey: 'lotus', difficulty: 'hard' },
+        { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+        { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
+        { kind: 'boss', bossKey: 'lucid', difficulty: 'normal' },
+      ])
+
+      const result = await save({ tracking: { lotus: 'extreme', zakum: null, will: 'hard' } })
+
+      const next = [
+        { kind: 'boss', bossKey: 'lotus', difficulty: 'extreme' },
+        { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+        { kind: 'boss', bossKey: 'lucid', difficulty: 'normal' },
+        { kind: 'boss', bossKey: 'will', difficulty: 'hard' },
+      ]
+      expect(result).toEqual({ status: 'saved' })
+      expect(setManualTrackedContentMock).toHaveBeenCalledTimes(1)
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', next)
+      expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({ 'ocid-1': next })
+    })
+
+    it('같은 보스가 두 난이도로 저장돼 있으면 하나로 합친다', async () => {
+      getManualTrackedContentMock.mockResolvedValue([
+        { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
+        { kind: 'boss', bossKey: 'lucid', difficulty: 'hard' },
+      ])
+
+      await save({ tracking: { lucid: 'normal' } })
+
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+        { kind: 'boss', bossKey: 'lucid', difficulty: 'normal' },
+      ])
+    })
+
+    // 화면을 연 동안 받기가 다른 기기의 항목을 저장소에 썼다. 스토어 사본이 아니라 저장소를 읽어야 그것을 덮지 않는다.
+    it('스토어 사본이 아니라 저장소의 지금 배열에 얹어, 화면을 연 동안 받은 항목을 덮지 않는다', async () => {
+      useBossSchedulerStore.setState({ manualTrackedByOcid: { 'ocid-1': [] } })
+      getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' }])
+
+      await save({ tracking: { lotus: 'hard' } })
+
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+        { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
+        { kind: 'boss', bossKey: 'lotus', difficulty: 'hard' },
+      ])
+    })
+
+    // 자동 모드의 초안에는 파티 설정만 든다. 추적은 게임 등록을 따른다.
+    it('추적 초안이 없으면 추적 목록을 읽지도 쓰지도 않는다', async () => {
+      await save({ party: { 'ocid-1:zakum:chaos': party('zakum', 'chaos', 3) } })
+
+      expect(getManualTrackedContentMock).not.toHaveBeenCalled()
+      expect(setManualTrackedContentMock).not.toHaveBeenCalled()
+      expect(setBossPartySettingMock).toHaveBeenCalledTimes(1)
     })
   })
 
-  it('이미 추적 중인 (보스, 난이도)면 쓰지 않고 duplicate 를 돌려준다', async () => {
-    getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' }])
-
-    const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'zakum', 'chaos')
-
-    expect(result).toBe('duplicate')
-    expect(setManualTrackedContentMock).not.toHaveBeenCalled()
-  })
-
-  it('같은 보스의 다른 난이도는 별개 항목으로 추가한다', async () => {
-    getManualTrackedContentMock.mockResolvedValue([{ kind: 'boss', bossKey: 'lucid', difficulty: 'easy' }])
-
-    await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'lucid', 'hard')
-
-    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
-      { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
-      { kind: 'boss', bossKey: 'lucid', difficulty: 'hard' },
-    ])
-  })
-
-  // 한도 가드의 본체는 스토어다. 화면에서만 막으면 난이도 교체 · 시드 같은 다른 호출 경로가 그대로 새어나간다.
+  // 한도 가드의 본체는 스토어다. 화면에서만 막으면 화면을 연 동안 받은 항목으로 늘어난 목록이 그대로 저장된다.
   describe('주간 12개 한도', () => {
-    it('한도(12)에 도달하면 저장하지 않고 limitReached 를 돌려준다', async () => {
+    it('초안을 얹어 12개를 넘으면 아무것도 쓰지 않고 limitReached 를 돌려준다', async () => {
       getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES))
 
-      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'gloom', 'normal')
+      const result = await save({
+        tracking: { gloom: 'normal' },
+        party: { 'ocid-1:zakum:normal': party('zakum', 'normal', 2) },
+      })
 
-      expect(result).toBe('limitReached')
+      expect(result).toEqual({ status: 'limitReached' })
       expect(setManualTrackedContentMock).not.toHaveBeenCalled()
+      expect(setBossPartySettingMock).not.toHaveBeenCalled()
     })
 
-    it('한도 직전(11)이면 추가한다', async () => {
+    it('12개째를 켜는 것은 저장한다', async () => {
       getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES.slice(0, 11)))
 
-      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'gloom', 'normal')
+      const result = await save({ tracking: { gloom: 'normal' } })
 
-      expect(result).toBe('added')
+      expect(result).toEqual({ status: 'saved' })
       expect(setManualTrackedContentMock).toHaveBeenCalled()
     })
 
-    it('시즌 보스(메이린)는 한도가 찼어도 추가할 수 있다. 처치 카운트 제외 규칙과 같다', async () => {
+    it('한 보스를 끄고 다른 보스를 켜 12개 안이면 저장한다', async () => {
       getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES))
 
-      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'meirin', 'normal')
+      const result = await save({ tracking: { [TWELVE_WEEKLY_BOSSES[0]]: null, gloom: 'normal' } })
 
-      expect(result).toBe('added')
+      expect(result).toEqual({ status: 'saved' })
     })
 
-    it('월간 보스(검은 마법사)는 한도가 찼어도 추가할 수 있다. 12 는 주간 한도다', async () => {
+    // 받기로 이미 넘은 목록이면 줄이거나 난이도만 바꾸는 것까지 막으면 고칠 길이 없다.
+    it('이미 12개를 넘었어도 늘리지 않는 저장은 막지 않는다', async () => {
+      getManualTrackedContentMock.mockResolvedValue([...trackedBosses(TWELVE_WEEKLY_BOSSES), ...trackedBosses(['gloom'])])
+
+      const result = await save({ tracking: { [TWELVE_WEEKLY_BOSSES[0]]: 'hard' } })
+
+      expect(result).toEqual({ status: 'saved' })
+    })
+
+    it.each([
+      ['시즌 보스(메이린)', 'meirin', 'normal'],
+      ['월간 보스(검은 마법사)', 'black_mage', 'hard'],
+    ] as const)('%s 는 한도가 찼어도 켠다. 12 는 주간 한도다', async (_label, bossKey, difficulty) => {
       getManualTrackedContentMock.mockResolvedValue(trackedBosses(TWELVE_WEEKLY_BOSSES))
 
-      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'black_mage', 'hard')
+      const result = await save({ tracking: { [bossKey]: difficulty } })
 
-      expect(result).toBe('added')
+      expect(result).toEqual({ status: 'saved' })
+    })
+  })
+
+  describe('파티 설정', () => {
+    // 파티 설정은 보스와 난이도에 붙어 있다. 순서가 반대면 추적 목록 쓰기가 실패했을 때 추적하지 않는 난이도에 설정만 생긴다.
+    it('추적 목록을 먼저 쓰고 파티 설정을 나중에 쓴다', async () => {
+      await save({
+        tracking: { lotus: 'hard' },
+        party: { 'ocid-1:lotus:hard': party('lotus', 'hard', 2) },
+      })
+
+      expect(setManualTrackedContentMock.mock.invocationCallOrder[0]).toBeLessThan(
+        setBossPartySettingMock.mock.invocationCallOrder[0],
+      )
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:lotus:hard': 2 })
     })
 
-    it('시즌 · 월간 보스 · 컨텐츠는 주간 카운트를 채우지 않는다', async () => {
-      getManualTrackedContentMock.mockResolvedValue([
-        ...trackedBosses(TWELVE_WEEKLY_BOSSES.slice(0, 11)),
-        { kind: 'boss', bossKey: 'meirin', difficulty: 'normal' },
-        { kind: 'boss', bossKey: 'black_mage', difficulty: 'hard' },
-        { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+    it('추적 목록을 쓰지 못하면 파티 설정을 쓰지 않고 trackingFailed 를 돌려준다', async () => {
+      setManualTrackedContentMock.mockRejectedValueOnce(new Error('write failed'))
+
+      const result = await save({
+        tracking: { lotus: 'hard' },
+        party: { 'ocid-1:lotus:hard': party('lotus', 'hard', 2) },
+      })
+
+      expect(result).toEqual({ status: 'trackingFailed' })
+      expect(setBossPartySettingMock).not.toHaveBeenCalled()
+      expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({})
+    })
+
+    // 쓴 몫은 화면이 초안에서 뺀다. 다시 누르면 남은 것만 쓴다.
+    it('파티 설정을 쓰지 못하면 그 앞까지 쓴 키를 돌려주고, 쓴 것만 스토어에 든다', async () => {
+      setBossPartySettingMock.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('sqlite fail'))
+
+      const result = await save({
+        tracking: { lotus: 'hard' },
+        party: {
+          'ocid-1:zakum:chaos': party('zakum', 'chaos', 3),
+          'ocid-1:lotus:hard': party('lotus', 'hard', 2),
+        },
+      })
+
+      expect(result).toEqual({ status: 'partyFailed', savedPartyKeys: ['ocid-1:zakum:chaos'] })
+      expect(useBossSchedulerStore.getState().manualTrackedByOcid['ocid-1']).toEqual([
+        { kind: 'boss', bossKey: 'lotus', difficulty: 'hard' },
       ])
+      expect(useBossSchedulerStore.getState().partySizes).toEqual({ 'ocid-1:zakum:chaos': 3 })
+    })
 
-      const result = await useBossSchedulerStore.getState().addManualBoss('ocid-1', 'gloom', 'normal')
+    // 상한은 보스 표에 있다. 스우 익스트림은 2인이다.
+    it('인원이 그 난이도의 상한을 넘으면 쓰지 않고 partyFailed 를 돌려준다', async () => {
+      const result = await save({ party: { 'ocid-1:lotus:extreme': party('lotus', 'extreme', 3) } })
 
-      expect(result).toBe('added')
+      expect(result).toEqual({ status: 'partyFailed', savedPartyKeys: [] })
+      expect(setBossPartySettingMock).not.toHaveBeenCalled()
+    })
+
+    // 고친 보스마다 토스트가 쌓인다. 저장 뒤에는 `저장` 이 꺼지는 것으로 끝낸다.
+    it('`파티원 수를 저장했어요` 를 띄우지 않는다', async () => {
+      await save({ party: { 'ocid-1:zakum:chaos': party('zakum', 'chaos', 3) } })
+
+      expect(showSuccessMock).not.toHaveBeenCalled()
     })
   })
 })
@@ -403,25 +508,6 @@ describe('setManualBossDifficulty', () => {
     const saved = setManualTrackedContentMock.mock.calls[0][1] as ManualTrackedItem[]
     expect(saved).toHaveLength(12)
     expect(saved[0]).toEqual({ kind: 'boss', bossKey: TWELVE_WEEKLY_BOSSES[0], difficulty: 'hard' })
-  })
-})
-
-describe('removeManualBoss', () => {
-  it('해당 (보스, 난이도)만 제거하고 다른 난이도 · 다른 kind 는 보존한다', async () => {
-    getManualTrackedContentMock.mockResolvedValue([
-      { kind: 'boss', bossKey: 'lucid', difficulty: 'easy' },
-      { kind: 'boss', bossKey: 'lucid', difficulty: 'hard' },
-      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
-    ])
-
-    await useBossSchedulerStore.getState().removeManualBoss('ocid-1', 'lucid', 'easy')
-
-    const remaining = [
-      { kind: 'boss', bossKey: 'lucid', difficulty: 'hard' },
-      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
-    ]
-    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', remaining)
-    expect(useBossSchedulerStore.getState().manualTrackedByOcid).toEqual({ 'ocid-1': remaining })
   })
 })
 

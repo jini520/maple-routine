@@ -1,6 +1,7 @@
 // `BossManageScreen.test.tsx` 574줄의 **명세를 읽어 다시 쓴 것**이다.
 import { useCharacterSelectionStore } from '../../../features/character-selection/store'
 import { act, fireEvent, screen, within } from '@testing-library/react-native'
+import { create, type StoreApi, type UseBoundStore } from 'zustand'
 
 import { bossesInSection, bossKeyOfApiName } from '../../../lib/boss/bosses'
 import { INITIAL_BOSS_CATALOG, setBossCatalog } from '../../../lib/boss/catalog'
@@ -18,6 +19,7 @@ import type { BossDifficulty, ManualTrackedItem } from '../../../types'
 
 import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
+import { ScreenStack } from '../../../navigation/__tests__/screen-stack'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { setHapticsPort } from '../../../native/ports'
 import { BossManageScreen } from '../BossManageScreen'
@@ -42,6 +44,7 @@ afterAll(() => {
 
 const mockShowError = jest.fn()
 const mockShowInfo = jest.fn()
+const mockShowSuccess = jest.fn()
 const goBack = jest.fn()
 
 // 머리의 `hh:mm:ss 기준` 은 쿼리 캐시를 읽는다. 이 화면 테스트는 프로바이더 없이 그리므로 값만 돌려준다.
@@ -49,7 +52,7 @@ jest.mock('../../../features/refresh/freshness', () => ({ useRealtimeFetchedAt: 
 
 jest.mock('../../../features/toast/store', () => ({
   useToastStore: {
-    getState: () => ({ showError: mockShowError, showSuccess: jest.fn(), showInfo: mockShowInfo }),
+    getState: () => ({ showError: mockShowError, showSuccess: mockShowSuccess, showInfo: mockShowInfo }),
   },
 }))
 
@@ -99,21 +102,30 @@ function mockSchedule(overrides: Partial<Schedule> = {}): Schedule {
   return schedule
 }
 
+/** 목 스토어의 실물. 받기가 저장된 목록을 바꾼 것을 흉내 낼 때 `setState` 로 바꾼다. */
+let liveStore: UseBoundStore<StoreApi<Store>>
+
 function mockStore(overrides: Partial<Store> = {}): Store {
   const base = {
     partySizes: {},
     partyShares: {},
     manualTrackedByOcid: {},
-    setPartySetting: jest.fn(),
-    addManualBoss: jest.fn(async () => 'added'),
-    removeManualBoss: jest.fn(),
-    setManualBossDifficulty: jest.fn(),
+    saveBossManageDraft: jest.fn(async () => ({ status: 'saved' as const })),
     ...overrides,
   } as Store
 
   // 탭이 걷혔다. 목이 흉내 낼 탭 상태가 없다.
-  mockedStore.mockImplementation(() => base)
+  const live = create<Store>(() => base)
+  liveStore = live
+  mockedStore.mockImplementation(() => live())
   return base
+}
+
+/** 화면을 연 동안 받기가 저장된 값을 바꾼다. */
+async function receive(change: Partial<Store>): Promise<void> {
+  await act(async () => {
+    liveStore.setState(change)
+  })
 }
 
 /** 화면에 선 섹션 헤더를 위에서 아래 순서로. 스케줄러 화면의 같은 이름 헬퍼와 같은 규칙이다. */
@@ -158,8 +170,22 @@ function trackedBoss(bossName: string, difficulty: BossDifficulty): ManualTracke
 }
 
 async function renderScreen(): Promise<ReturnType<typeof renderOverlay>> {
-  return renderOverlay(<BossManageScreen />)
+  return renderOverlay(<ScreenStack screen={BossManageScreen} />)
 }
+
+/** 아래 `저장`. 확인 창에도 같은 글자가 있어 testID 로 찾는다. */
+function saveButton(): AtomElement {
+  return screen.getByTestId('boss-manage-save')
+}
+
+/** 파티 모달을 열어 인원을 `steps` 만큼 올리고 `적용` 한다. */
+async function applyPartySize(bossName: string, steps: number): Promise<void> {
+  await press(screen.getByLabelText(`${bossName} 파티 인원과 비율 변경`))
+  for (let i = 0; i < steps; i += 1) await press(screen.getByLabelText(`${bossName} 파티원 수 증가`))
+  await press(screen.getByText('적용'))
+}
+
+const EVEN_SHARES = { crystalMyShare: null, crystalSharesTotal: null, splitFeePercent: null }
 
 async function press(element: AtomElement): Promise<void> {
   await act(async () => {
@@ -189,6 +215,7 @@ async function pickDifficulty(bossName: string, current: string, next: string): 
 beforeEach(() => {
   mockShowError.mockClear()
   mockShowInfo.mockClear()
+  mockShowSuccess.mockClear()
   goBack.mockClear()
   mockedNavigation.mockReturnValue({ navigate: jest.fn(), goBack, setParams: jest.fn() } as never)
   useTrackingModeStore.setState({ mode: 'auto' })
@@ -364,7 +391,8 @@ describe('BossManageScreen: 수동 모드', () => {
     expect(within(row('매그너스')).queryByTestId('boss-tracked-mark', HIDDEN)).toBeNull()
   })
 
-  it('미추적 보스를 탭하면 기본 난이도(등록 난이도 우선)로 addManualBoss 를 부른다', async () => {
+  // 누를 때마다 저장하면 그만큼 서버 동기화가 깨어난다. 누른 것은 초안에 들고 화면은 초안을 얹어 그린다.
+  it('미추적 보스를 탭하면 기본 난이도(등록 난이도 우선)로 초안에 들고, 저장하지 않는다', async () => {
     const store = mockStore()
     mockSchedule({
       characters: [
@@ -377,40 +405,67 @@ describe('BossManageScreen: 수동 모드', () => {
 
     await press(rowToggle('스우'))
 
-    expect(store.addManualBoss).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme')
+    expect(stateOf(rowToggle('스우')).selected).toBe(true)
+    expect(within(screen.getByTestId('boss-manage-row-lotus')).getByTestId('boss-tracked-mark', HIDDEN)).toBeTruthy()
+    expect(screen.getByLabelText('스우 난이도 익스트림, 눌러서 바꾸기')).toBeTruthy()
+    expect(store.saveBossManageDraft).not.toHaveBeenCalled()
+
+    await press(saveButton())
+
+    expect(store.saveBossManageDraft).toHaveBeenCalledTimes(1)
+    expect(store.saveBossManageDraft).toHaveBeenCalledWith('ocid-1', { tracking: { lotus: 'extreme' }, party: {} })
   })
 
-  it('등록 난이도가 없으면 참조표의 첫 난이도로 부른다', async () => {
+  it('등록 난이도가 없으면 참조표의 첫 난이도로 든다', async () => {
     mockSchedule({ characters: [character()] })
     const store = mockStore()
     await renderScreen()
 
     await press(rowToggle('스우'))
+    await press(saveButton())
 
-    expect(store.addManualBoss).toHaveBeenCalledWith('ocid-1', 'lotus', 'normal')
+    expect(store.saveBossManageDraft).toHaveBeenCalledWith('ocid-1', { tracking: { lotus: 'normal' }, party: {} })
   })
 
-  it('추적 중인 보스를 탭하면 추적 난이도로 removeManualBoss 를 부른다', async () => {
+  it('추적 중인 보스를 탭하면 추적 안 함이 초안에 든다', async () => {
     mockSchedule({ characters: [character()] })
     const store = mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] } })
     await renderScreen()
 
     await press(rowToggle('스우'))
 
-    expect(store.removeManualBoss).toHaveBeenCalledWith('ocid-1', 'lotus', 'hard')
+    expect(stateOf(rowToggle('스우')).selected).toBe(false)
+    await press(saveButton())
+    expect(store.saveBossManageDraft).toHaveBeenCalledWith('ocid-1', { tracking: { lotus: null }, party: {} })
   })
 
-  // remove → add 2단계가 아니라 **쓰기 1회**다.
-  it('추적 중인 보스의 다른 난이도를 누르면 단일 액션으로 교체한다', async () => {
+  // 캐릭터 관리의 저장 버튼과 같은 규칙이다. 다시 켜면 저장된 난이도로 돌아가 바꾼 것이 없다.
+  it('바꾼 것이 없으면 `저장` 을 누를 수 없고, 껐다 다시 켜면 다시 꺼진다', async () => {
+    mockSchedule({ characters: [character()] })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] } })
+    await renderScreen()
+
+    expect(stateOf(saveButton()).disabled).toBe(true)
+    await press(rowToggle('스우'))
+    expect(stateOf(saveButton()).disabled).toBe(false)
+    await press(rowToggle('스우'))
+
+    expect(screen.getByLabelText('스우 난이도 하드, 눌러서 바꾸기')).toBeTruthy()
+    expect(stateOf(saveButton()).disabled).toBe(true)
+  })
+
+  // 바꾸기 전 난이도를 들지 않는다. 보스마다 마지막에 고른 난이도만 남는다.
+  it('추적 중인 보스의 다른 난이도를 고르면 그 보스의 난이도만 초안에 든다', async () => {
     mockSchedule({ characters: [character()] })
     const store = mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'hard')] } })
     await renderScreen()
 
     await pickDifficulty('스우', '하드', '익스트림')
 
-    expect(store.setManualBossDifficulty).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme')
-    expect(store.removeManualBoss).not.toHaveBeenCalled()
-    expect(store.addManualBoss).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('스우 난이도 익스트림, 눌러서 바꾸기')).toBeTruthy()
+    expect(store.saveBossManageDraft).not.toHaveBeenCalled()
+    await press(saveButton())
+    expect(store.saveBossManageDraft).toHaveBeenCalledWith('ocid-1', { tracking: { lotus: 'extreme' }, party: {} })
   })
 
   // 행에는 스테퍼가 없다. 수 하나만 올리고 내릴 수 있어 비율이 들어갈 자리가 없다.
@@ -439,7 +494,7 @@ describe('BossManageScreen: 수동 모드', () => {
   })
 
   // 스우 익스트림의 상한은 2인이다(`boss-crystal-prices.json`). 화면이 숫자를 정하지 않는다.
-  it('모달에서 고른 인원이 적용으로 저장되고, 상한은 (보스, 난이도)마다 다르다', async () => {
+  it('상한은 (보스, 난이도)마다 다르고, 모달의 `적용` 은 저장하지 않고 초안에 넣는다', async () => {
     mockSchedule({ characters: [character()] })
     const store = mockStore({
       manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'extreme')] },
@@ -456,42 +511,113 @@ describe('BossManageScreen: 수동 모드', () => {
     await press(screen.getByLabelText('스우 파티원 수 감소'))
     await press(screen.getByText('적용'))
 
-    expect(store.setPartySetting).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme', {
-      partySize: 1,
-      shares: {
-        crystalMyShare: null,
-        crystalSharesTotal: null,
-        splitFeePercent: null,
-      },
+    expect(store.saveBossManageDraft).not.toHaveBeenCalled()
+    await press(saveButton())
+    expect(store.saveBossManageDraft).toHaveBeenCalledWith('ocid-1', {
+      tracking: {},
+      party: { 'ocid-1:lotus:extreme': { bossKey: 'lotus', difficulty: 'extreme', partySize: 1, shares: EVEN_SHARES } },
     })
   })
 
-  // 저장 실패가 무음이면 체크가 조용히 되돌아가는 것 외에 설명이 없다.
-  it('추적 저장이 실패하면 토스트로 알린다', async () => {
+  // 고친 값이 어디에도 안 보이면 `적용` 이 먹지 않은 것으로 읽힌다. 토스트는 `저장` 의 결과만 알린다.
+  it('`적용` 한 값이 파티 요약과 다시 연 모달에 보이고, `적용` 에는 토스트가 없다', async () => {
     mockSchedule({ characters: [character()] })
-    mockStore({
-      addManualBoss: jest.fn(async () => Promise.reject(new Error('boom'))) as Store['addManualBoss'],
-    })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] } })
+    await renderScreen()
+
+    await applyPartySize('자쿰', 2)
+
+    expect(screen.getByText('파티 3인')).toBeTruthy()
+    expect(mockShowSuccess).not.toHaveBeenCalled()
+    await press(screen.getByLabelText('자쿰 파티 인원과 비율 변경'))
+    expect(within(screen.getByTestId('party-size-panel')).getByText('3')).toBeTruthy()
+  })
+
+  // 바꾼 행이 화면에 그대로 있어 무엇이 저장되지 않았는지 보인다. 다시 누를 수 있다.
+  it('추적 목록을 쓰지 못하면 `추적 목록을 저장하지 못했습니다` 를 띄우고 초안이 남는다', async () => {
+    mockSchedule({ characters: [character()] })
+    mockStore({ saveBossManageDraft: jest.fn(async () => ({ status: 'trackingFailed' as const })) })
     await renderScreen()
 
     await press(rowToggle('자쿰'))
+    await press(saveButton())
 
     expect(mockShowError).toHaveBeenCalledWith('추적 목록을 저장하지 못했습니다')
+    expect(stateOf(rowToggle('자쿰')).selected).toBe(true)
+    expect(stateOf(saveButton()).disabled).toBe(false)
   })
 
-  it('파티원 수 저장이 실패하면 스케줄러 모달과 같은 문구로 알린다', async () => {
+  // 자동 모드에는 추적 목록이 없어서, 파티만 실패했는데 `추적 목록` 을 말하면 저장하지 않은 것을 가리키게 된다.
+  it('파티 설정을 쓰지 못하면 `파티원 수를 저장하지 못했습니다` 를 띄우고, 쓴 것은 초안에서 빠진다', async () => {
     mockSchedule({ characters: [character()] })
-    mockStore({
-      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] },
-      setPartySetting: jest.fn(async () => Promise.reject(new Error('boom'))) as Store['setPartySetting'],
+    const store = mockStore({
+      manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos'), trackedBoss('스우', 'hard')] },
+      saveBossManageDraft: jest.fn(async () => ({
+        status: 'partyFailed' as const,
+        savedPartyKeys: ['ocid-1:zakum:chaos'],
+      })),
     })
     await renderScreen()
 
-    await press(screen.getByLabelText('자쿰 파티 인원과 비율 변경'))
-    await press(screen.getByLabelText('자쿰 파티원 수 증가'))
-    await press(screen.getByText('적용'))
+    await applyPartySize('자쿰', 1)
+    await applyPartySize('스우', 1)
+    await press(saveButton())
 
     expect(mockShowError).toHaveBeenCalledWith('파티원 수를 저장하지 못했습니다')
+    // 다시 누르면 남은 것만 쓴다.
+    ;(store.saveBossManageDraft as jest.Mock).mockResolvedValue({ status: 'saved' })
+    await press(saveButton())
+    expect(store.saveBossManageDraft).toHaveBeenLastCalledWith('ocid-1', {
+      tracking: {},
+      party: { 'ocid-1:lotus:hard': { bossKey: 'lotus', difficulty: 'hard', partySize: 2, shares: EVEN_SHARES } },
+    })
+  })
+
+  // 저장 뒤에도 레일로 다른 캐릭터를 이어서 고치는 화면이다. 성공 문구는 없다.
+  it('저장하면 `저장` 이 다시 꺼지고 화면에 남는다', async () => {
+    mockSchedule({ characters: [character()] })
+    const store = mockStore()
+    ;(store.saveBossManageDraft as jest.Mock).mockImplementation(async () => {
+      liveStore.setState({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('스우', 'normal')] } })
+      return { status: 'saved' }
+    })
+    await renderScreen()
+
+    await press(rowToggle('스우'))
+    await press(saveButton())
+
+    expect(stateOf(saveButton()).disabled).toBe(true)
+    expect(stateOf(rowToggle('스우')).selected).toBe(true)
+    expect(mockShowSuccess).not.toHaveBeenCalled()
+    expect(goBack).not.toHaveBeenCalled()
+  })
+
+  // 관리 화면을 연 동안에도 받기가 저장된 목록을 바꿀 수 있다. 목록 전체를 복사해 두면 만지지 않은 항목까지 옛 값으로 덮는다.
+  it('화면을 연 동안 받은 보스가 만지지 않은 행에 보이고, 저장은 바꾼 보스만 넘긴다', async () => {
+    mockSchedule({ characters: [character()] })
+    const store = mockStore()
+    await renderScreen()
+
+    await press(rowToggle('스우'))
+    await receive({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] } })
+
+    expect(stateOf(rowToggle('자쿰')).selected).toBe(true)
+    await press(saveButton())
+    expect(store.saveBossManageDraft).toHaveBeenCalledWith('ocid-1', { tracking: { lotus: 'normal' }, party: {} })
+  })
+
+  // 받기가 추적 캐릭터를 바꿔 고른 캐릭터가 넘어가도 앞 캐릭터의 초안이 새 캐릭터의 행에 얹히지 않는다.
+  it('초안의 주인이 아닌 캐릭터에는 초안이 얹히지 않는다', async () => {
+    mockSchedule({ characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })] })
+    await renderScreen()
+
+    await press(rowToggle('스우'))
+    await act(async () => {
+      useCharacterSelectionStore.setState({ selectedOcid: 'ocid-2' })
+    })
+
+    expect(stateOf(rowToggle('스우')).selected).toBe(false)
+    expect(stateOf(saveButton()).disabled).toBe(true)
   })
 })
 
@@ -543,7 +669,8 @@ describe('BossManageScreen: 자동 모드', () => {
     expect(screen.getByText('매그너스')).toBeTruthy()
   })
 
-  it('등록 난이도가 기본 선택되고, 적용은 그 난이도로 저장한다', async () => {
+  // 자동 모드의 초안에는 파티 설정만 든다. 추적은 게임 등록을 따른다.
+  it('등록 난이도가 기본 선택되고, `저장` 은 그 난이도의 파티 설정만 넘긴다', async () => {
     const store = mockStore()
     mockSchedule({
       characters: [
@@ -554,17 +681,13 @@ describe('BossManageScreen: 자동 모드', () => {
     })
     await renderScreen()
 
-    await press(screen.getByLabelText('스우 파티 인원과 비율 변경'))
-    await press(screen.getByLabelText('스우 파티원 수 증가'))
-    await press(screen.getByText('적용'))
+    await applyPartySize('스우', 1)
+    expect(store.saveBossManageDraft).not.toHaveBeenCalled()
+    await press(saveButton())
 
-    expect(store.setPartySetting).toHaveBeenCalledWith('ocid-1', 'lotus', 'hard', {
-      partySize: 2,
-      shares: {
-        crystalMyShare: null,
-        crystalSharesTotal: null,
-        splitFeePercent: null,
-      },
+    expect(store.saveBossManageDraft).toHaveBeenCalledWith('ocid-1', {
+      tracking: {},
+      party: { 'ocid-1:lotus:hard': { bossKey: 'lotus', difficulty: 'hard', partySize: 2, shares: EVEN_SHARES } },
     })
   })
 
@@ -582,19 +705,14 @@ describe('BossManageScreen: 자동 모드', () => {
 
     await pickDifficulty('스우', '하드', '익스트림')
 
-    expect(store.setManualBossDifficulty).not.toHaveBeenCalled()
-    expect(store.addManualBoss).not.toHaveBeenCalled()
+    // 어느 난이도의 파티를 고칠지 고른 것일 뿐이라 바꾼 것이 아니다.
+    expect(stateOf(saveButton()).disabled).toBe(true)
 
-    await press(screen.getByLabelText('스우 파티 인원과 비율 변경'))
-    await press(screen.getByLabelText('스우 파티원 수 증가'))
-    await press(screen.getByText('적용'))
-    expect(store.setPartySetting).toHaveBeenCalledWith('ocid-1', 'lotus', 'extreme', {
-      partySize: 2,
-      shares: {
-        crystalMyShare: null,
-        crystalSharesTotal: null,
-        splitFeePercent: null,
-      },
+    await applyPartySize('스우', 1)
+    await press(saveButton())
+    expect(store.saveBossManageDraft).toHaveBeenCalledWith('ocid-1', {
+      tracking: {},
+      party: { 'ocid-1:lotus:extreme': { bossKey: 'lotus', difficulty: 'extreme', partySize: 2, shares: EVEN_SHARES } },
     })
   })
 
@@ -645,17 +763,12 @@ describe('BossManageScreen: 자동 모드', () => {
 
     await pickDifficulty('스우', '하드', '익스트림')
     await press(screen.getAllByTestId('character-portrait')[1])
-    await press(screen.getByLabelText('스우 파티 인원과 비율 변경'))
-    await press(screen.getByLabelText('스우 파티원 수 증가'))
-    await press(screen.getByText('적용'))
+    await applyPartySize('스우', 1)
+    await press(saveButton())
 
-    expect(store.setPartySetting).toHaveBeenCalledWith('ocid-2', 'lotus', 'normal', {
-      partySize: 2,
-      shares: {
-        crystalMyShare: null,
-        crystalSharesTotal: null,
-        splitFeePercent: null,
-      },
+    expect(store.saveBossManageDraft).toHaveBeenCalledWith('ocid-2', {
+      tracking: {},
+      party: { 'ocid-2:lotus:normal': { bossKey: 'lotus', difficulty: 'normal', partySize: 2, shares: EVEN_SHARES } },
     })
   })
 })
@@ -728,16 +841,46 @@ describe('BossManageScreen: 주간 12개 한도', () => {
     expect(stateOf(blocked).disabled).not.toBe(true)
   })
 
-  it('한도가 찬 상태에서 미선택 보스를 누르면 정보 톤 토스트로 이유를 알린다', async () => {
-    const store = atLimit({ addManualBoss: jest.fn(async () => 'limitReached') as Store['addManualBoss'] })
+  it('한도가 찬 상태에서 미선택 보스를 누르면 켜지 않고 정보 톤 토스트로 이유를 알린다', async () => {
+    atLimit()
     await renderScreen()
 
     await press(rowToggle(WEEKLY_NAMES[WEEKLY_BOSS_CLEAR_LIMIT]))
 
-    expect(store.addManualBoss).toHaveBeenCalled()
+    expect(stateOf(rowToggle(WEEKLY_NAMES[WEEKLY_BOSS_CLEAR_LIMIT])).selected).toBe(false)
     // 실패가 아니라 규칙 안내라 `showError` 가 아니다(그쪽은 자동 소멸이 없다).
     expect(mockShowInfo).toHaveBeenCalledWith(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`)
     expect(mockShowError).not.toHaveBeenCalled()
+  })
+
+  // 저장된 목록으로 세면 화면에서는 13개를 고를 수 있고 `저장` 을 누른 뒤에야 막힌다.
+  it('아직 저장하지 않은 초안까지 세어, 초안으로 12개가 차면 `n/12` 가 따라가고 13번째를 켜지 않는다', async () => {
+    mockSchedule({ characters: [character()] })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': TWELVE.slice(0, 11).map((name) => trackedBoss(name, 'normal')) } })
+    await renderScreen()
+
+    await press(rowToggle(TWELVE[11]))
+
+    expect(
+      within(screen.getByTestId('boss-section-header-weekly')).getByText(`${WEEKLY_BOSS_CLEAR_LIMIT}/${WEEKLY_BOSS_CLEAR_LIMIT}`),
+    ).toBeTruthy()
+    await press(rowToggle(WEEKLY_NAMES[WEEKLY_BOSS_CLEAR_LIMIT]))
+    expect(stateOf(rowToggle(WEEKLY_NAMES[WEEKLY_BOSS_CLEAR_LIMIT])).selected).toBe(false)
+    expect(mockShowInfo).toHaveBeenCalledWith(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`)
+  })
+
+  // 화면을 연 동안 받은 항목으로 목록이 늘어난 경우다. 저장 함수가 막고 초안은 남는다.
+  it('저장 함수가 한도에 걸리면 같은 안내를 띄우고 초안이 남는다', async () => {
+    mockSchedule({ characters: [character()] })
+    mockStore({ saveBossManageDraft: jest.fn(async () => ({ status: 'limitReached' as const })) })
+    await renderScreen()
+
+    await press(rowToggle('자쿰'))
+    await press(saveButton())
+
+    expect(mockShowInfo).toHaveBeenCalledWith(`주간 ${WEEKLY_BOSS_CLEAR_LIMIT}개를 모두 선택했어요`)
+    expect(stateOf(rowToggle('자쿰')).selected).toBe(true)
+    expect(stateOf(saveButton()).disabled).toBe(false)
   })
 
   it('한도에 걸리지 않은 추가는 토스트를 띄우지 않는다', async () => {
@@ -750,30 +893,25 @@ describe('BossManageScreen: 주간 12개 한도', () => {
   })
 
   it('한도에 도달해도 이미 선택된 보스는 해제할 수 있다', async () => {
-    const store = atLimit()
+    atLimit()
     await renderScreen()
 
     await press(rowToggle(TWELVE[0]))
 
-    expect(store.removeManualBoss).toHaveBeenCalled()
+    expect(stateOf(rowToggle(TWELVE[0])).selected).toBe(false)
   })
 
-  it('한도에 도달해도 시즌 보스는 선택할 수 있다', async () => {
-    const store = atLimit()
+  it.each([
+    ['시즌 보스', SEASON_NAME],
+    ['월간 보스', MONTHLY_NAME],
+  ])('한도에 도달해도 %s 는 선택할 수 있다', async (_label, name) => {
+    atLimit()
     await renderScreen()
 
-    await press(rowToggle(SEASON_NAME))
+    await press(rowToggle(name))
 
-    expect(store.addManualBoss).toHaveBeenCalledWith('ocid-1', keyOf(SEASON_NAME), 'normal')
-  })
-
-  it('한도에 도달해도 월간 보스는 선택할 수 있다', async () => {
-    const store = atLimit()
-    await renderScreen()
-
-    await press(rowToggle(MONTHLY_NAME))
-
-    expect(store.addManualBoss).toHaveBeenCalled()
+    expect(stateOf(rowToggle(name)).selected).toBe(true)
+    expect(mockShowInfo).not.toHaveBeenCalled()
   })
 })
 
@@ -847,5 +985,49 @@ describe('`모든 보스 보기` 스위치의 촉각', () => {
     await press(screen.getByLabelText('모든 보스 보기'))
 
     expect(select).toHaveBeenCalledTimes(1)
+  })
+})
+
+// 확인 창의 버튼 하나하나는 컨텐츠 관리 화면 테스트가 본다. 두 화면이 같은 훅을 쓴다. 여기서는 보스 관리의 이동이 같은 창에 걸리는지 본다.
+describe('BossManageScreen: 저장하지 않고 나갈 때 · 캐릭터를 바꿀 때', () => {
+  beforeEach(() => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockSchedule({ characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })] })
+  })
+
+  it('바꾼 것이 있으면 `←` 가 확인 창을 띄우고, `저장` 은 저장한 뒤 나간다', async () => {
+    mockedNavigation.mockImplementation(
+      jest.requireActual<typeof import('../../../hooks/useScreenNavigation')>('../../../hooks/useScreenNavigation')
+        .useScreenNavigation,
+    )
+    const store = mockStore()
+    await renderScreen()
+
+    await press(rowToggle('스우'))
+    await press(screen.getByLabelText('뒤로'))
+
+    expect(screen.getByText('저장하지 않은 변경이 있어요')).toBeTruthy()
+    expect(screen.getByTestId('screen-BossManage')).toBeTruthy()
+
+    await press(screen.getByTestId('unsaved-changes-primary'))
+
+    expect(store.saveBossManageDraft).toHaveBeenCalledWith('ocid-1', { tracking: { lotus: 'normal' }, party: {} })
+    expect(screen.queryByTestId('screen-BossManage', HIDDEN)).toBeNull()
+  })
+
+  it('파티만 바꿨어도 캐릭터를 바꿀 때 확인 창을 띄우고, `버리기` 는 초안을 버리고 바꾼다', async () => {
+    const store = mockStore({ manualTrackedByOcid: { 'ocid-1': [trackedBoss('자쿰', 'chaos')] } })
+    await renderScreen()
+
+    await applyPartySize('자쿰', 1)
+    await press(screen.getAllByTestId('character-portrait')[1])
+
+    expect(screen.getByText('저장하지 않은 변경이 있어요')).toBeTruthy()
+    expect(useCharacterSelectionStore.getState().selectedOcid).toBeNull()
+
+    await press(screen.getByText('버리기'))
+
+    expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
+    expect(store.saveBossManageDraft).not.toHaveBeenCalled()
   })
 })

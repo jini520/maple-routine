@@ -3,6 +3,7 @@
  * 추적 목록은 쿼리 캐시의 `trackedOcids` 열쇠로 준다.
  */
 import type { CachedCharacterBasicEntry } from '../../../storage/character-basic-cache'
+import type { ContentManageDraft } from '../manage-draft'
 import type { CharacterBasicProfile } from '../../../types'
 import { queryClient } from '../../query/client'
 import { queryKeys } from '../../query/keys'
@@ -103,83 +104,98 @@ describe('reloadLocal', () => {
   })
 })
 
-describe('addManualContent', () => {
-  // 최대 횟수는 읽는 곳이 없어 저장하지 않는다. 카드는 넥슨이 준 값이나 컨텐츠 표의 값을 쓴다.
-  it('저장소에 멤버십(kind 포함)만 저장하고 상태를 갱신한다', async () => {
-    const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'monster_park', 'daily')
+describe('saveManualContentDraft', () => {
+  const save = (draft: Partial<ContentManageDraft>): Promise<void> =>
+    useContentSchedulerStore.getState().saveManualContentDraft('ocid-1', { daily: {}, weekly: {}, ...draft })
 
-    expect(result).toBe('added')
-    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [{ contentKey: 'monster_park', kind: 'daily' }])
-    expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({
-      'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }],
-    })
+  // 최대 횟수는 읽는 곳이 없어 저장하지 않는다. 카드는 넥슨이 준 값이나 컨텐츠 표의 값을 쓴다.
+  it('저장소의 지금 배열에 초안을 얹어 한 번 쓴다. 끈 항목만 빠지고 켠 항목은 kind 와 함께 끝에 붙는다', async () => {
+    getManualTrackedContentMock.mockResolvedValue([
+      { contentKey: 'monster_park', kind: 'daily' },
+      { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
+      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+    ])
+
+    await save({ daily: { monster_park: false, daily_quest_road_of_vanishing: true }, weekly: { epic_dungeon_angler_company: true } })
+
+    const next = [
+      { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
+      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+      { contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' },
+      { contentKey: 'epic_dungeon_angler_company', kind: 'weekly' },
+    ]
+    expect(setManualTrackedContentMock).toHaveBeenCalledTimes(1)
+    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', next)
+    expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({ 'ocid-1': next })
   })
 
-  it('이미 추적 중인 콘텐츠면 쓰지 않고 duplicate 를 돌려준다', async () => {
+  // 같은 key 라도 일간과 주간은 다른 항목이다. 이미 있는 항목을 켜도 겹치지 않는다.
+  it('이미 추적 중인 항목을 켜도 겹쳐 넣지 않고, 다른 kind 의 같은 key 는 건드리지 않는다', async () => {
     getManualTrackedContentMock.mockResolvedValue([{ contentKey: 'monster_park', kind: 'daily' }])
 
-    const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'monster_park', 'daily')
+    await save({ daily: { monster_park: true }, weekly: { monster_park: false } })
 
-    expect(result).toBe('duplicate')
-    expect(setManualTrackedContentMock).not.toHaveBeenCalled()
+    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [{ contentKey: 'monster_park', kind: 'daily' }])
+  })
+
+  // 화면을 연 동안 받기가 다른 기기의 항목을 저장소에 썼다. 스토어 사본이 아니라 저장소를 읽어야 그것을 덮지 않는다.
+  it('스토어 사본이 아니라 저장소의 지금 배열에 얹어, 화면을 연 동안 받은 항목을 덮지 않는다', async () => {
+    useContentSchedulerStore.setState({ manualTrackedByOcid: { 'ocid-1': [] } })
+    getManualTrackedContentMock.mockResolvedValue([{ contentKey: 'mu_lung_dojo', kind: 'weekly' }])
+
+    await save({ daily: { monster_park: true } })
+
+    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+      { contentKey: 'monster_park', kind: 'daily' },
+    ])
+  })
+
+  it('저장이 실패하면 던지고 스토어 상태를 바꾸지 않는다', async () => {
+    setManualTrackedContentMock.mockRejectedValueOnce(new Error('write failed'))
+
+    await expect(save({ daily: { monster_park: true } })).rejects.toThrow()
+
+    expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({})
   })
 
   // 가드의 본체는 스토어다. 화면에서만 막으면 다른 호출 경로가 샌다. 길드 가입 여부는 쿼리 캐시의 기본 정보에서 읽는다.
-  it('기본 정보의 guildName 이 null(미가입)이면 길드 콘텐츠를 거부한다', async () => {
-    queryClient.setQueryData(queryKeys.characterBasic('ocid-1'), basicEntry({ guildName: null }))
+  describe('길드 잠금', () => {
+    it('기본 정보의 guildName 이 null(미가입)이면 길드 콘텐츠를 새로 켜지 않고 나머지만 쓴다', async () => {
+      queryClient.setQueryData(queryKeys.characterBasic('ocid-1'), basicEntry({ guildName: null }))
 
-    const result = await useContentSchedulerStore
-      .getState()
-      .addManualContent('ocid-1', 'guild_underground_waterway', 'weekly')
+      await save({ weekly: { guild_underground_waterway: true, mu_lung_dojo: true } })
 
-    expect(result).toBe('guildRequired')
-    expect(setManualTrackedContentMock).not.toHaveBeenCalled()
-  })
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [{ contentKey: 'mu_lung_dojo', kind: 'weekly' }])
+    })
 
-  it('기본 정보가 캐시에 없으면(길드를 모름) 길드 콘텐츠를 통과시킨다', async () => {
-    const result = await useContentSchedulerStore
-      .getState()
-      .addManualContent('ocid-1', 'guild_underground_waterway', 'weekly')
+    // 길드를 나가도 끌 수 있어야 한다.
+    it('미가입이어도 이미 추적 중인 길드 콘텐츠는 끌 수 있다', async () => {
+      queryClient.setQueryData(queryKeys.characterBasic('ocid-1'), basicEntry({ guildName: null }))
+      getManualTrackedContentMock.mockResolvedValue([{ contentKey: 'guild_underground_waterway', kind: 'weekly' }])
 
-    expect(result).toBe('added')
-    expect(setManualTrackedContentMock).toHaveBeenCalled()
-  })
+      await save({ weekly: { guild_underground_waterway: false } })
 
-  it('기본 정보에 guildName 이 undefined 여도(길드를 모름) 길드 콘텐츠를 통과시킨다', async () => {
-    queryClient.setQueryData(queryKeys.characterBasic('ocid-1'), basicEntry({ guildName: undefined }))
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [])
+    })
 
-    const result = await useContentSchedulerStore
-      .getState()
-      .addManualContent('ocid-1', 'guild_underground_waterway', 'weekly')
+    it('기본 정보가 캐시에 없으면(길드를 모름) 길드 콘텐츠를 켠다', async () => {
+      await save({ weekly: { guild_underground_waterway: true } })
 
-    expect(result).toBe('added')
-  })
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+        { contentKey: 'guild_underground_waterway', kind: 'weekly' },
+      ])
+    })
 
-  it('길드 미가입이어도 길드 외 콘텐츠는 통과시킨다', async () => {
-    queryClient.setQueryData(queryKeys.characterBasic('ocid-1'), basicEntry({ guildName: null }))
+    it('기본 정보에 guildName 이 undefined 여도(길드를 모름) 길드 콘텐츠를 켠다', async () => {
+      queryClient.setQueryData(queryKeys.characterBasic('ocid-1'), basicEntry({ guildName: undefined }))
 
-    const result = await useContentSchedulerStore.getState().addManualContent('ocid-1', 'mu_lung_dojo', 'weekly')
+      await save({ weekly: { guild_underground_waterway: true } })
 
-    expect(result).toBe('added')
-  })
-})
-
-describe('removeManualContent', () => {
-  it('해당 (kind, key) 항목만 제거하고 다른 kind(boss) · 다른 key 는 보존한다', async () => {
-    getManualTrackedContentMock.mockResolvedValue([
-      { contentKey: 'monster_park', kind: 'daily' },
-      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
-      { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
-    ])
-
-    await useContentSchedulerStore.getState().removeManualContent('ocid-1', 'monster_park', 'daily')
-
-    const remaining = [
-      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
-      { kind: 'boss', bossKey: 'zakum', difficulty: 'chaos' },
-    ]
-    expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', remaining)
-    expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({ 'ocid-1': remaining })
+      expect(setManualTrackedContentMock).toHaveBeenCalledWith('ocid-1', [
+        { contentKey: 'guild_underground_waterway', kind: 'weekly' },
+      ])
+    })
   })
 })
 
