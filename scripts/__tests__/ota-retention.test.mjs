@@ -4,8 +4,8 @@ import { selectRetainedFiles } from '../ota-retention.mjs'
 
 const release = (appVersion, files) => ({ appVersion, createdAt: '2026-10-30T00:00:00Z', platforms: ['ios', 'android'], files })
 const manifest = (bundle, assets = []) => ({
-  launchAsset: { url: `https://mapleroutine.store/ota/files/${bundle}` },
-  assets: assets.map((name) => ({ url: `https://mapleroutine.store/ota/files/${name}` })),
+  launchAsset: { url: `https://api.mapleroutine.store/ota/files/${bundle}` },
+  assets: assets.map((name) => ({ url: `https://api.mapleroutine.store/ota/files/${name}` })),
 })
 
 describe('selectRetainedFiles', () => {

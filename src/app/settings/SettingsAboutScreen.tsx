@@ -45,7 +45,7 @@ import { SettingsRow } from './SettingsRow'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
 
 /** 개인정보 처리방침 원본. 저장소 루트의 `PRIVACY.md` 를 사이트가 그린 것이다. */
-export const PRIVACY_URL = 'https://mapleroutine.store/privacy'
+export const PRIVACY_URL = 'https://info.mapleroutine.store/privacy'
 
 export interface SettingsAboutScreenProps {
   /** 테스트 주입용. 기본은 지금 도는 번들의 재실행. */

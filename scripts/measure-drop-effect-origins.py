@@ -53,7 +53,7 @@ try:
 except ImportError:  # pragma: no cover - 개발자 도구라 런타임 의존성 아님
     sys.exit("numpy 와 pillow 가 필요합니다: pip install numpy pillow")
 
-SERVER = "https://mapleroutine.store"
+SERVER = "https://api.mapleroutine.store"
 CACHE = Path(tempfile.gettempdir()) / "maple-routine-drop-effect"
 PHASES = ("pre", "loop", "end")
 

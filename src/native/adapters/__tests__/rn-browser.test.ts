@@ -14,12 +14,12 @@ describe('rnBrowserPort.open', () => {
   it('로그인 창과 같은 카드 시트로 띄우고, 받은 색을 그대로 넘긴다', async () => {
     openBrowserAsync.mockResolvedValue({ type: 'dismiss' })
 
-    await rnBrowserPort.open('https://mapleroutine.store/privacy', {
+    await rnBrowserPort.open('https://info.mapleroutine.store/privacy', {
       toolbarColor: '#111111',
       controlsColor: '#222222',
     })
 
-    expect(openBrowserAsync).toHaveBeenCalledWith('https://mapleroutine.store/privacy', {
+    expect(openBrowserAsync).toHaveBeenCalledWith('https://info.mapleroutine.store/privacy', {
       toolbarColor: '#111111',
       controlsColor: '#222222',
       presentationStyle: 'pageSheet',

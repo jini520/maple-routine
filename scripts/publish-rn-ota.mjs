@@ -49,8 +49,8 @@ import {
 // 1.0.13 바이너리부터 OTA 는 앱 박스가 내준다. 1.0.12 바이너리가 묻는 GitHub Releases 와 Worker 에는 더 이상 쓰지 않는다.
 const OTA_HOST = 'ubuntu@158.179.175.230'
 const OTA_DIR = '/srv/maple-routine-ota'
-/** 번들과 에셋을 nginx 가 내주는 주소. 서버의 `files/` 디렉터리다. */
-const FILES_BASE = 'https://mapleroutine.store/ota/files'
+/** 번들과 에셋을 nginx 가 내주는 주소. 서버의 `files/` 디렉터리다. `app.json` 의 매니페스트 주소와 같은 서버여야 한다. */
+const FILES_BASE = 'https://api.mapleroutine.store/ota/files'
 /** 파일을 남기는 최근 발행 수. 바로 지난 발행을 받던 기기가 아직 내려받는 중일 수 있어 하나가 아니라 셋이다. */
 const KEEP_RELEASES = 3
 
