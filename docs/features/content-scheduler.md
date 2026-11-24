@@ -24,8 +24,10 @@ API 동기화와 진입 재조회는 [[ADR-021]], 실패를 알리는 방법은 
 | `app/content-scheduler/quest-state.ts` | `quest_state` 배지 글자와 색 |
 | `features/content-scheduler/content-completion.ts` | 완료 판정과 링 진행률. 카드의 완료 배지, today 의 남은 스케줄, 미완료 스케줄 알림도 이 파일을 쓴다 |
 | `app/content-scheduler/ContentManageScreen.tsx` | 컨텐츠 관리 화면(`ContentManage`) |
+| `features/content-scheduler/manage-draft.ts` | 컨텐츠 관리의 초안. 저장된 목록에 얹기, 바꾼 것 고르기. 화면과 저장 함수가 같이 쓴다 |
+| `hooks/useUnsavedChangesGuard.ts` | 저장하지 않고 나갈 때 · 캐릭터를 바꿀 때의 확인 창. 보스 관리와 같이 쓴다 |
 | `features/content-scheduler/use-content-schedule.ts` · `views.ts` | 쿼리 캐시에서 캐릭터 뷰를 만드는 훅과 순수 함수. 자동 조회와 당김(`refresh`)도 여기서 낸다 |
-| `features/content-scheduler/store.ts` | 수동 추적 멤버십, `activeTab`. 넥슨에서 받은 값은 없다 |
+| `features/content-scheduler/store.ts` | 수동 추적 멤버십, `activeTab`, 컨텐츠 관리의 저장(`saveManualContentDraft`). 넥슨에서 받은 값은 없다 |
 | `features/schedule-sync/schedule-query.ts` · `use-schedule-queries.ts` | 스케줄 회차 쿼리와 캐릭터 열쇠, 화면이 보는 스냅샷 훅([[ADR-142]]) |
 | `features/content-scheduler/displayed-contents.ts` | 모드에 따라 화면에 보일 항목을 고른다. today 의 남은 스케줄도 같은 함수를 쓴다 |
 | `features/tracking-mode/` | 추적 모드 스토어, 시드, 모드 설명 문구 |

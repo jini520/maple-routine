@@ -25,7 +25,7 @@ MVP 등급 페이지는 `features/mvp-grade.md`([[ADR-050]]), 테마 고르기�
 | `app/settings/SettingsThemeScreen.tsx` · `ThemeSelector.tsx` | 테마 페이지([[ADR-054]] 결정 10) |
 | `app/settings/SettingsTextSizeScreen.tsx` · `TextSizeSlider.tsx` | 글자 크기 페이지. 미리보기 칸과 네 칸 슬라이더([[ADR-063]] 결정 11) |
 | `app/settings/SettingsBarOrderScreen.tsx` | 하단 탭 순서 페이지. 카드마다 바 미리보기와 끄는 목록([[ADR-152]] 결정 4) |
-| `app/settings/SettingsActionBar.tsx` | 하위 페이지 아래에 고정하는 버튼 바. 캐릭터 관리의 `저장` · 테마 · 글자 크기 · 하단 탭 순서의 `적용` |
+| `app/settings/SettingsActionBar.tsx` | 하위 페이지 아래에 고정하는 버튼 바. 캐릭터 관리 · 보스 관리 · 컨텐츠 관리의 `저장`, 테마 · 글자 크기 · 하단 탭 순서의 `적용` |
 | `app/settings/TrackingModeModal.tsx` · `TrackingModeSelector.tsx` | 스케줄 관리 방법 고르기 |
 | `app/settings/reload-tab-stores.ts` | 스케줄 관리 방법을 바꾼 뒤 컨텐츠 · 보스 · 수익 스토어를 차례로 다시 읽게 한다 |
 | `features/settings/cache-data.ts` · `storage/cache-data.ts` | 데이터 삭제 그룹 · 건수 · 삭제 · 다시 띄우기 |

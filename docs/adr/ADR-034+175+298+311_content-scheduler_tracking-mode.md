@@ -1,8 +1,8 @@
 # ADR-034+175+298+311 자동 · 수동 추적 모드와 컨텐츠 관리
 
-> ⚪ 미구현
+> 🟢 유효
 > 옛 번호: ADR-035 · ADR-096 · ADR-086 결정 2 · ADR-140 결정 5 정정
-> 관련 소스: `features/tracking-mode/` · `storage/tracking-mode.ts` · `storage/manual-tracked-content.ts` · `lib/scheduler/manual-content-merge.ts` · `features/content-scheduler/displayed-contents.ts` · `features/content-scheduler/store.ts` · `app/content-scheduler/ContentManageScreen.tsx` · `app/boss-scheduler/BossManageScreen.tsx` · `app/settings/SettingsActionBar.tsx` · `components/organisms/NoticeModal/` · `storage/record-revision-batch.ts` · `app/settings/TrackingModeModal.tsx` · `app/settings/TrackingModeSelector.tsx` · `storage/preferences-conversion.ts`
+> 관련 소스: `features/tracking-mode/` · `storage/tracking-mode.ts` · `storage/manual-tracked-content.ts` · `lib/scheduler/manual-content-merge.ts` · `features/content-scheduler/displayed-contents.ts` · `features/content-scheduler/store.ts` · `features/content-scheduler/manage-draft.ts` · `app/content-scheduler/ContentManageScreen.tsx` · `app/boss-scheduler/BossManageScreen.tsx` · `hooks/useUnsavedChangesGuard.ts` · `app/settings/SettingsActionBar.tsx` · `components/organisms/NoticeModal/` · `storage/record-revision-batch.ts` · `app/settings/TrackingModeModal.tsx` · `app/settings/TrackingModeSelector.tsx` · `storage/preferences-conversion.ts`
 
 ## 배경
 
@@ -219,7 +219,7 @@
   값을 받아 바꿀 수 있다.
 - 바꾼 것이 있는 동안 React Navigation 의 `usePreventRemove` 로 이 빼기를 한 곳에서 막고 확인 창을 띄운다. 이동마다 따로
   막으면 새 이동이 생길 때 빠진다. native-stack 은 이 훅이 켜져 있으면 iOS 스와이프도 멈추고 같은 처리를 부른다
-  (`preventNativeDismiss`).
+  (`preventNativeDismiss`). 두 화면이 같은 훅(`useUnsavedChangesGuard`)으로 막고 같은 창을 띄운다.
 - 하단바의 탭 바꾸기는 생기지 않는다. 두 화면은 루트 스택의 하위 페이지라, 열리면 하단바가 아래 화면과 함께 밀려
   나간다(`docs/foundation/navigation.md`).
 - 앱을 닫는 것은 막지 않는다. 배경으로 가면 화면과 초안이 메모리에 남아, 돌아와서 이어 고친다. OS 가 앱을 끝내거나 OTA
@@ -261,8 +261,13 @@
   쓰기의 알림이 동기화를 시작하고, 도는 동안 난 다음 알림이 끝난 뒤 한 번 더 돌린다(`features/server-sync/kick.ts`).
 - 추적 목록은 저장소의 지금 배열을 읽어 초안을 얹고 `setManualTrackedContent` 한 번으로 쓴다. 지금의 추가 · 삭제 함수처럼
   읽기 → 계산 → 쓰기 한 번이다. 그래서 받은 항목을 덮지 않고, 쓰는 사이에 항목이 빠진 상태가 저장되지 않는다.
-- 저장 함수도 지금의 추가 함수처럼 주간 보스 한도([[ADR-037]] 결정 7)와 길드 잠금([[ADR-033]] 결정 8)을 확인한다. 막는
-  곳은 스토어라는 지금 규칙을 따른다.
+- 저장 함수(`saveManualContentDraft` · `saveBossManageDraft`)도 예전의 추가 함수처럼 주간 보스 한도([[ADR-037]] 결정 7)와
+  길드 잠금([[ADR-033]] 결정 8)을 확인한다. 막는 곳은 스토어라는 규칙을 따른다.
+- 길드 잠금에 걸린 컨텐츠는 켜지 않고 나머지만 저장한다. 화면은 잠긴 행을 누를 수 없게 하므로, 화면을 연 동안 받은 기본
+  정보가 미가입으로 바뀐 경우에만 생긴다. 켜지 않은 항목도 저장한 것과 함께 초안에서 빠진다. 그러면 그 행이 꺼진 채
+  `길드 가입 시 진행 가능` 을 덮어 보여 왜 켜지지 않았는지 보인다.
+- 화면은 저장된 값에 초안을 얹어 그리고, 저장 함수는 저장소의 지금 배열에 같은 함수(`manage-draft.ts`)로 초안을 얹어 쓴다.
+  두 곳이 같은 함수를 써야 화면에 보인 목록이 그대로 저장된다.
 - 저장한 항목은 초안에서 뺀다. 남겨 두면 나중에 받은 값이 그 항목을 바꿨을 때 옛 초안이 바꾼 것으로 다시 잡힌다.
 
 **실패.** 추적 목록을 쓰지 못하면 지금 문구 `추적 목록을 저장하지 못했습니다` 토스트를 띄운다([[ADR-022]] 결정 7). 초안은
@@ -284,15 +289,16 @@
 | `storage/__tests__/preferences-conversion.spec.ts` | 결정 3: 옛 `content` 항목과 이름 항목을 줄 id 로 옮기고 못 찾거나 겹치면 버리는지 본다 |
 | `lib/__tests__/manual-content-merge.spec.ts` | 결정 3 · 6: 수동 항목 값을 동기화 결과에서, 없으면 표 기본값에서 찾는지, 순서가 표 순서인지, 표에 없는 추적 항목도 버리지 않는지 본다 |
 | `features/content-scheduler/__tests__/displayed-contents.spec.ts` | 결정 2 · 6: 자동은 등록된 것만, 수동은 추적 목록대로 보여 주는지, 일간 · 주간이 섞이지 않는지, 표에 없는 컨텐츠의 처리, 수동 모드에서 시작 기간 전인 항목을 그리지만 않는지 본다 |
-| `features/content-scheduler/__tests__/store.spec.ts` | 결정 3: 추가할 때 `kind` 만 저장하고 중복을 막는지, 삭제가 그 항목만 지우는지 본다. 결정 5: 수동 모드에서 새로 더한 캐릭터만 시드하는지 본다. 결정 8: 탭을 바꿔도 조회하지 않는지 본다 |
-| `app/content-scheduler/__tests__/ContentManageScreen.test.tsx` | 결정 7: 자동 모드면 뒤로 가는지, 표 전체를 보여 주고 추적 항목만 선택 상태인지, 누르면 지금 탭의 `kind` 로 추가 · 삭제하는지, 저장 실패 토스트, 시작 기간 전 컨텐츠를 빼는지 본다 |
+| `features/content-scheduler/__tests__/store.spec.ts` | 결정 3 · 10: 저장이 저장소의 지금 배열에 초안을 얹어 `kind` 와 key 만 한 번 쓰는지, 끈 항목만 빼고 이미 있는 항목을 겹쳐 넣지 않는지, 화면을 연 동안 받은 항목을 덮지 않는지, 실패하면 던지고 상태를 바꾸지 않는지 본다. 결정 5: 수동 모드에서 새로 더한 캐릭터만 시드하는지 본다. 결정 8: 탭을 바꿔도 조회하지 않는지 본다 |
+| `features/content-scheduler/__tests__/manage-save-sync.spec.ts` | 결정 10: 진짜 SQLite 위에서 일간 · 주간을 여럿 바꿔 저장해도 추적 목록을 한 번 쓰고 쓰기 알림(동기화 깨우기)이 한 번인지 본다 |
+| `app/content-scheduler/__tests__/ContentManageScreen.test.tsx` | 결정 7: 자동 모드면 뒤로 가는지, 표 전체를 보여 주고 추적 항목만 선택 상태인지, 시작 기간 전 컨텐츠를 빼는지 본다 |
+| | 결정 7 · 10: 행을 눌러도 저장하지 않고 선택 상태만 바뀌는지, 바꾼 것이 없으면 `저장` 을 누를 수 없고 켰다 다시 끄면 다시 꺼지는지, 탭을 바꿔도 초안이 남아 `저장` 이 두 탭의 바꾼 것을 한 번에 넘기는지 본다 |
+| | 결정 10: 저장 뒤 `저장` 이 꺼지고 화면에 남는지, 실패하면 `추적 목록을 저장하지 못했습니다` 를 띄우고 초안이 남는지 본다 |
+| | 결정 10: 바꾼 것이 있을 때 `←` · 자동 모드가 되어 스스로 뒤로 가기 · 레일의 캐릭터 바꾸기가 확인 창을 띄우는지, `저장` 은 저장한 뒤 이동을 잇고 실패하면 창을 닫고 토스트를 띄운 뒤 남는지, `버리기` 는 버리고 잇는지, 창 바깥을 누르면 아무것도 바뀌지 않는지, 바꾼 것이 없으면 묻지 않는지 본다 |
+| | 결정 10: 화면을 연 동안 받은 항목이 만지지 않은 행에 보이고 저장은 바꾼 항목만 넘기는지, 주인이 아닌 캐릭터에는 초안이 얹히지 않는지 본다 |
 | `app/content-scheduler/__tests__/ContentScreen.test.tsx` | 결정 2 · 7: 수동 모드는 등록과 관계없이 추적 항목을 보여 주는지, 머리의 `관리`(스크린 리더 이름 `컨텐츠 관리`)와 빈 상태 버튼이 관리 화면을 열고 자동 모드에는 없는지 본다 |
 | `lib/__tests__/content-category.spec.ts` | 결정 7: 카테고리 key 로 묶는지, 순서 목록에 있는 카테고리를 앞세우는지, 참고 배지의 우선순위를 본다 |
 | `app/settings/__tests__/TrackingModeModal.test.tsx` | 결정 9: 옵션을 눌러도 적용되지 않는지, 같은 모드면 `적용` 을 못 누르는지, 적용 중에는 모두 막히는지, 적용이 끝난 뒤에만 세 탭을 다시 읽는지, 적용이 실패하면 모달을 닫고 토스트를 띄우는지 본다 |
-| (구현 때 더한다) | 결정 7 · 10: 컨텐츠 관리의 행을 눌러도 저장소를 쓰지 않는지, 바꾼 것이 없으면 `저장` 을 누를 수 없고 켰다 다시 끄면 다시 꺼지는지, 탭을 바꿔도 초안이 남는지 본다 |
-| (구현 때 더한다) | 결정 10: 저장이 추적 목록을 한 번에 쓰고 동기화 깨우기가 한 번인지, 저장 뒤 `저장` 이 꺼지고 화면에 남는지, 실패하면 `추적 목록을 저장하지 못했습니다` 를 띄우고 초안이 남는지 본다 |
-| (구현 때 더한다) | 결정 10: 바꾼 것이 있을 때 뒤로 가기와 캐릭터 바꾸기가 확인 창을 띄우는지, `저장` 은 저장한 뒤 이동을 잇고 실패하면 남는지, `버리기` 는 버리고 잇는지, 창을 닫으면 아무것도 바뀌지 않는지 본다 |
-| (구현 때 더한다) | 결정 10: 화면을 연 동안 받은 항목이 만지지 않은 행에 보이고 저장이 그것을 덮지 않는지, 주인이 아닌 캐릭터에는 초안이 얹히지 않는지 본다 |
 
 ## 번호 기록
 
