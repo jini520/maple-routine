@@ -164,23 +164,35 @@ describe('앞 계정의 메이플 ID', () => {
   it('번호의 메이플 ID 열쇠와 추적 캐릭터의 메이플 ID 해시다', async () => {
     await recordCharacterAccounts(account('maple-1', 'ocid-1'), '2026-11-20', 'account-1')
     await prefs.set('trackedCharacters', JSON.stringify(['ocid-1']))
-    await setServerSyncCursors({ nexonAccount: null, mapleIds: { 'hash-cursor': 3 } })
+    await setServerSyncCursors({ nexonAccount: null, mapleIds: { 'hash-cursor': 3 }, purgedChangeSeq: null })
 
     expect((await previousOwnerMapleIdHashes()).sort()).toEqual(['hash-cursor', nexonIdHashHex('maple-1')].sort())
   })
 })
 
 describe('주인의 기록과 번호 지우기', () => {
-  it('비운 메이플 ID 의 번호를 지우고, 사람의 기록을 비우면 사람의 번호도 지운다', async () => {
+  // 지운 번호를 비우면 다음 받기가 남은 주인까지 견주어, 놓친 것이 없는 주인을 비운다.
+  it('비운 메이플 ID 의 번호를 지우고, 사람의 기록을 비우면 사람의 번호도 지운다. 적어 둔 지운 번호는 남긴다', async () => {
     await recordCharacterAccounts(account('maple-1', 'ocid-1'), '2026-11-20', 'account-1')
     await insertEntry('entry-1', 'ocid-1')
     clearQueue()
-    await setServerSyncCursors({ nexonAccount: { id: 'person-1', changeSeq: 7 }, mapleIds: { [nexonIdHashHex('maple-1')]: 5, other: 2 } })
+    await setServerSyncCursors({
+      nexonAccount: { id: 'person-1', changeSeq: 7 },
+      mapleIds: { [nexonIdHashHex('maple-1')]: 5, other: 2 },
+      purgedChangeSeq: 900,
+    })
 
     await forgetServerSyncOwners({ mapleIds: ['maple-1'], person: true })
 
     expect(rows('SELECT id FROM boss_profit_entries')).toEqual([])
-    expect(await getServerSyncCursors()).toEqual({ nexonAccount: null, mapleIds: { other: 2 } })
+    expect(await getServerSyncCursors()).toEqual({ nexonAccount: null, mapleIds: { other: 2 }, purgedChangeSeq: 900 })
+  })
+
+  // 지운 번호를 적기 전의 번호다. null 로 읽어야 값이 실린 첫 응답에서 한 번 견준다.
+  it('지운 번호 칸이 없는 번호는 지운 번호를 null 로 읽는다', async () => {
+    await prefs.set('serverSyncCursors', JSON.stringify({ nexonAccount: null, mapleIds: { other: 2 } }))
+
+    expect(await getServerSyncCursors()).toEqual({ nexonAccount: null, mapleIds: { other: 2 }, purgedChangeSeq: null })
   })
 
   // 해제한 메이플 ID 의 기록은 서버가 받지 않는다. 남기면 다섯 번 거절된 뒤 기기에만 남는다.
@@ -195,7 +207,7 @@ describe('주인의 기록과 번호 지우기', () => {
     await enqueue('bossProfitEntries', 'entry-queued')
     await enqueue('manualTrackedItems', 'manualTrackedItems:ocid-1/weekly/c')
     await enqueue('cashbookEntries', 'cash-other')
-    await setServerSyncCursors({ nexonAccount: { id: 'person-1', changeSeq: 7 }, mapleIds: { [hash]: 5 } })
+    await setServerSyncCursors({ nexonAccount: { id: 'person-1', changeSeq: 7 }, mapleIds: { [hash]: 5 }, purgedChangeSeq: null })
 
     await forgetServerSyncMapleIds([hash])
 
@@ -203,7 +215,7 @@ describe('주인의 기록과 번호 지우기', () => {
     expect(rows('SELECT id FROM cashbook_entries')).toEqual([{ id: 'cash-other' }])
     await expect(prefs.get('manualTrackedContent:ocid-1')).resolves.toBeNull()
     expect(queue()).toEqual(['cash-other'])
-    expect(await getServerSyncCursors()).toEqual({ nexonAccount: { id: 'person-1', changeSeq: 7 }, mapleIds: {} })
+    expect(await getServerSyncCursors()).toEqual({ nexonAccount: { id: 'person-1', changeSeq: 7 }, mapleIds: {}, purgedChangeSeq: null })
   })
 
   // `#` 의 기록은 앞 신원으로 받은 것이라 다른 사람이면 모두 앞 사람의 것이다. 설정을 남기면 새 사람의 기기만 앞 사람의 값을 보인다.

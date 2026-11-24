@@ -1,8 +1,9 @@
 /**
  * 번호를 보내 받고, 받은 줄을 넣은 뒤 번호를 갈아 끼우는 받기.
  *
- * 여기서 막는 사고는 셋이다. 넣기 전에 번호를 적어 앱이 꺼지면 그 줄을 영영 놓치는 것, 서버가 같은 쪽을 계속 주면 끝나지 않는 것,
- * 180일 넘게 받지 않은 기기가 서버가 지운 표식을 놓친 채 지운 기록을 계속 보이는 것이다.
+ * 여기서 막는 사고는 넷이다. 넣기 전에 번호를 적어 앱이 꺼지면 그 줄을 영영 놓치는 것, 서버가 같은 쪽을 계속 주면 끝나지 않는 것,
+ * 180일 넘게 받지 않은 기기가 서버가 지운 표식을 놓친 채 지운 기록을 계속 보이는 것, 놓치지 않은 주인을 비우고 다시 받기를
+ * 되풀이하는 것이다.
  */
 import { nexonIdHashHex } from '../../../lib/crypto/nexon-id-hash'
 import type { SyncPullCursors, SyncPullOutcome, SyncPullResponse } from '../../../server/sync'
@@ -20,7 +21,7 @@ function response(patch: Partial<SyncPullResponse> = {}): SyncPullResponse {
   return {
     mapleIds: [MAPLE_HASH],
     cursors: { nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 10 } },
-    oldestDeletedChangeSeq: null,
+    purgedChangeSeq: null,
     hasMore: false,
     records: {},
     ...patch,
@@ -29,13 +30,16 @@ function response(patch: Partial<SyncPullResponse> = {}): SyncPullResponse {
 
 const answered = (one: SyncPullResponse): SyncPullOutcome => ({ outcome: 'answered', response: one })
 
+/** 적어 둔 번호. 지운 번호를 빼면 null 이다. */
+type Stored = Omit<ServerSyncCursors, 'purgedChangeSeq'> & { purgedChangeSeq?: number | null }
+
 function setup(
   outcomes: SyncPullOutcome[],
-  stored: ServerSyncCursors = { nexonAccount: null, mapleIds: {} },
+  stored: Stored = { nexonAccount: null, mapleIds: {} },
   signIn: { previousMapleIds: string[] } | null = null,
   device: string[] = [],
 ) {
-  let cursors = stored
+  let cursors: ServerSyncCursors = { purgedChangeSeq: null, ...stored }
   let signedIn = signIn
   const events: string[] = []
   const sent: SyncPullCursors[] = []
@@ -131,9 +135,9 @@ it('기억한 번호를 보내고, 받은 줄을 표 차례로 다 넣은 뒤에
     'sqlite bossDrops drop-1',
     'settled 2026-11-20',
     'preferences mapleIdNames',
-    `cursors ${JSON.stringify({ nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 10 } })}`,
+    `cursors ${JSON.stringify({ nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 10 }, purgedChangeSeq: null })}`,
   ])
-  expect(current()).toEqual(response().cursors)
+  expect(current()).toEqual({ ...response().cursors, purgedChangeSeq: null })
   expect(summary).toMatchObject({ applied: 4, skipped: 0, stopped: false, finished: true })
   expect(deps.afterRecordsChanged).toHaveBeenCalledWith(
     new Set(['bossProfitEntries', 'bossDrops', 'enhancementSettledDays', 'mapleIdNames']),
@@ -156,7 +160,7 @@ it('넣지 못한 줄과 대기 중이라 건너뛴 줄은 세고 나머지를 �
   const summary = await pullServerSync({}, deps)
 
   expect(summary).toMatchObject({ applied: 1, skipped: 3 })
-  expect(current()).toEqual(response().cursors)
+  expect(current()).toEqual({ ...response().cursors, purgedChangeSeq: null })
   expect(deps.applyPreferences).not.toHaveBeenCalled()
 })
 
@@ -221,48 +225,94 @@ it('응답이 없거나 요청 전체가 거절되면 번호를 두고 멈춘다
   }
 })
 
-describe('가장 오래된 삭제 표식', () => {
-  it('번호가 0 보다 크고 표식보다 작은 주인만 비우고, 그 주인의 번호를 0 으로 적어 그 응답의 줄은 넣지 않고 다시 받는다', async () => {
-    const stored = { nexonAccount: { id: 'account-1', changeSeq: 50 }, mapleIds: { [MAPLE_HASH]: 5, [OTHER_HASH]: 0 } }
-    const stale = response({
-      mapleIds: [MAPLE_HASH, OTHER_HASH],
-      oldestDeletedChangeSeq: 20,
-      records: { mvpGradeHistory: [{ id: 'mvp-old', mapleId: MAPLE_HASH }] },
-    })
-    const { deps, events, sent } = setup([answered(stale), answered(response({ records: { mvpGradeHistory: [{ id: 'mvp-1' }] } }))], stored)
+// 표식을 놓치는 것은 표식이 선 줄이 180일 뒤 실제로 지워질 때뿐이다. 남은 표식과 견주면 줄이 많은 주인이 비우고 다시 받기를 끝없이
+// 되풀이한다(2026-11-24 심사용 서버에서 재현).
+describe('180일 뒤 지우기가 지운 번호', () => {
+  const page = (mapleIdSeq: number, patch: Partial<SyncPullResponse> = {}): SyncPullResponse =>
+    response({ hasMore: true, cursors: { nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: mapleIdSeq } }, ...patch })
+
+  it('줄이 많은 주인을 쪽으로 받을 때 쪽의 번호가 남은 표식이나 지운 번호보다 작아도 비우지 않고 끝까지 받는다', async () => {
+    const pages = (purgedChangeSeq: number | null): SyncPullOutcome[] => [
+      answered(page(500, { purgedChangeSeq, records: { rememberedLevels: [{ id: 'level-1' }] } })),
+      answered(page(1000, { purgedChangeSeq, records: { mvpGradeHistory: [{ id: 'mvp-1', mapleId: MAPLE_HASH }] } })),
+      answered(response({ purgedChangeSeq, cursors: { nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 2000 } } })),
+    ]
+    // 재현한 상태다. 서버에 오늘 생긴 표식(번호 1828)만 있고 지운 줄이 없다. 쪽의 번호 500 · 1000 은 그 표식보다 작다.
+    const fresh = setup(pages(null))
+    const summary = await pullServerSync({}, fresh.deps)
+    expect(fresh.deps.clearOwners).not.toHaveBeenCalled()
+    expect(fresh.deps.pull).toHaveBeenCalledTimes(3)
+    expect(summary).toMatchObject({ applied: 2, finished: true })
+    expect(fresh.current()).toEqual({ nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 2000 }, purgedChangeSeq: null })
+
+    // 앞서 지운 번호 700 을 이미 적은 기기가 처음 보는 메이플 ID 를 0 부터 받는다. 쪽의 번호 500 은 700 보다 작다.
+    const known = setup(pages(700), { nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: {}, purgedChangeSeq: 700 })
+    await pullServerSync({}, known.deps)
+    expect(known.deps.clearOwners).not.toHaveBeenCalled()
+    expect(known.deps.pull).toHaveBeenCalledTimes(3)
+    expect(known.current().purgedChangeSeq).toBe(700)
+  })
+
+  it('지운 번호가 바뀌면 그보다 작은 주인을 한 번만 비우고, 0 부터 다시 받는 쪽에서는 다시 비우지 않는다', async () => {
+    const stored = { nexonAccount: { id: 'account-1', changeSeq: 2500 }, mapleIds: { [MAPLE_HASH]: 300, [OTHER_HASH]: 0 }, purgedChangeSeq: 100 }
+    const { deps, events, sent, current } = setup(
+      [
+        answered(response({ mapleIds: [MAPLE_HASH, OTHER_HASH], purgedChangeSeq: 1000, records: { mvpGradeHistory: [{ id: 'mvp-old', mapleId: MAPLE_HASH }] } })),
+        answered(page(500, { mapleIds: [MAPLE_HASH, OTHER_HASH], purgedChangeSeq: 1000, records: { mvpGradeHistory: [{ id: 'mvp-1', mapleId: MAPLE_HASH }] } })),
+        answered(response({ mapleIds: [MAPLE_HASH, OTHER_HASH], purgedChangeSeq: 1000, cursors: { nexonAccount: { id: 'account-1', changeSeq: 2600 }, mapleIds: { [MAPLE_HASH]: 2600, [OTHER_HASH]: 2600 } } })),
+      ],
+      stored,
+    )
 
     await pullServerSync({}, deps)
 
+    // 번호가 0 인 주인은 받은 적이 없어 놓친 지우기가 없다. 번호가 지운 번호보다 큰 사람도 놓치지 않았다.
+    expect(deps.clearOwners).toHaveBeenCalledTimes(1)
     expect(events[1]).toBe(`clear ${JSON.stringify({ mapleIds: [MAPLE], person: false })}`)
-    expect(sent[1]).toEqual({ nexonAccount: { id: 'account-1', changeSeq: 50 }, mapleIds: { [MAPLE_HASH]: 0, [OTHER_HASH]: 0 } })
+    expect(sent.map((one) => one.mapleIds[MAPLE_HASH])).toEqual([300, 0, 500])
     expect(events).not.toContain('sqlite mvpGradeHistory mvp-old')
     expect(events).toContain('sqlite mvpGradeHistory mvp-1')
+    expect(current().purgedChangeSeq).toBe(1000)
   })
 
-  it('사람의 번호가 작으면 사람의 기록을 비우고 사람의 번호를 비운다. 넥슨 계정 줄이 바뀐 번호는 서버가 0 으로 봐 비우지 않는다', async () => {
-    const stored = { nexonAccount: { id: 'account-1', changeSeq: 5 }, mapleIds: { [MAPLE_HASH]: 50 } }
-    const { deps, sent } = setup([answered(response({ oldestDeletedChangeSeq: 20 })), answered(response())], stored)
+  it('다음 동기화도 지운 번호가 적은 값과 같으면, 다 받지 못한 주인의 번호가 그보다 작아도 비우지 않는다', async () => {
+    // 앞 동기화가 비운 뒤 0 부터 다시 받다 한 쪽에서 멈췄다.
+    const stored = { nexonAccount: { id: 'account-1', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 500 }, purgedChangeSeq: 1000 }
+    const { deps, sent } = setup([answered(response({ purgedChangeSeq: 1000 }))], stored)
+
+    const summary = await pullServerSync({}, deps)
+
+    expect(deps.clearOwners).not.toHaveBeenCalled()
+    expect(sent).toEqual([{ nexonAccount: stored.nexonAccount, mapleIds: stored.mapleIds }])
+    expect(summary.finished).toBe(true)
+  })
+
+  it('사람의 번호도 같은 규칙이다. 넥슨 계정 줄이 바뀐 번호는 서버가 0 으로 봐 비우지 않는다', async () => {
+    const stored = { nexonAccount: { id: 'account-1', changeSeq: 5 }, mapleIds: { [MAPLE_HASH]: 50 }, purgedChangeSeq: 3 }
+    const { deps, sent, current } = setup([answered(response({ purgedChangeSeq: 20 })), answered(response({ purgedChangeSeq: 20 }))], stored)
 
     await pullServerSync({}, deps)
 
     expect(deps.clearOwners).toHaveBeenCalledWith({ mapleIds: [], person: true })
     expect(sent[1]).toEqual({ nexonAccount: null, mapleIds: { [MAPLE_HASH]: 50 } })
+    expect(current().purgedChangeSeq).toBe(20)
 
     const moved = setup(
-      [answered(response({ oldestDeletedChangeSeq: 20, cursors: { nexonAccount: { id: 'account-2', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 60 } } }))],
+      [answered(response({ purgedChangeSeq: 20, cursors: { nexonAccount: { id: 'account-2', changeSeq: 10 }, mapleIds: { [MAPLE_HASH]: 60 } } }))],
       stored,
     )
     await pullServerSync({}, moved.deps)
     expect(moved.deps.clearOwners).not.toHaveBeenCalled()
   })
 
-  it('짝이 없는 메이플 ID 는 `#` 를 붙인 해시로 비우고, 표식이 null 이면 비우지 않는다', async () => {
+  // 이 칸이 생기기 전에 적은 번호는 지운 번호가 없다. 값이 실린 첫 응답에서 한 번 견준다.
+  it('적은 값이 없으면 null 로 보고 견주며, 짝이 없는 메이플 ID 는 `#` 를 붙인 해시로 비운다. 응답이 null 이면 비우지 않는다', async () => {
     const stored = { nexonAccount: null, mapleIds: { [OTHER_HASH]: 5 } }
-    const first = setup([answered(response({ mapleIds: [OTHER_HASH], oldestDeletedChangeSeq: 20 })), answered(response())], stored)
+    const first = setup([answered(response({ mapleIds: [OTHER_HASH], purgedChangeSeq: 20 })), answered(response({ purgedChangeSeq: 20 }))], stored)
     await pullServerSync({}, first.deps)
     expect(first.deps.clearOwners).toHaveBeenCalledWith({ mapleIds: [`#${OTHER_HASH}`], person: false })
 
-    const none = setup([answered(response({ mapleIds: [OTHER_HASH], oldestDeletedChangeSeq: null }))], stored)
+    const none = setup([answered(response({ mapleIds: [OTHER_HASH], purgedChangeSeq: null }))], stored)
     await pullServerSync({}, none.deps)
     expect(none.deps.clearOwners).not.toHaveBeenCalled()
   })

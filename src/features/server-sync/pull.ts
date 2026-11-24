@@ -7,9 +7,9 @@
  *   응답 없음 · 요청 전체의 거절 → 번호를 두고 멈춘다
  *   로그인 뒤 첫 응답 → 그 목록에 없는 메이플 ID 의 기록을 비운다. 앞 계정과 겹치지 않으면 사람의 기록도 비우고 다시 받는다
  *   첫 응답의 메이플 ID 목록에서 앞 목록에 있던 메이플 ID 가 빠졌다 → 다른 기기가 해제한 부계정과 그 기록을 이 기기에서 뺀다
- *   번호가 0 보다 크고 가장 오래된 삭제 표식보다 작은 주인 → 그 주인의 기록을 비우고 번호를 0 으로 적어 다시 받는다
+ *   지운 번호가 적어 둔 값과 다르고, 번호가 0 보다 크며 그보다 작은 주인 → 그 주인의 기록을 비우고 번호를 0 으로 적어 다시 받는다
  *   받은 줄을 표 차례로 기기 칸으로 바꿔 넣는다. 넣지 못한 줄은 건너뛴다
- *   응답의 번호를 적는다. `hasMore` 면 이어 받는다. 번호가 그대로면 멈춘다
+ *   응답의 번호와 지운 번호를 적는다. `hasMore` 면 이어 받는다. 번호가 그대로면 멈춘다
  * 넣은 표의 화면을 다시 읽게 한다
  * ```
  *
@@ -133,13 +133,14 @@ function resolverOf(lookup: NexonIdLookup): NexonIdResolver {
 }
 
 /**
- * 받은 지 오래되어 서버가 지운 표식을 놓친 주인. 번호가 0 인 주인은 받은 적이 없어 비울 것이 없다. 넥슨 계정 줄이 바뀐 사람의 번호는
- * 서버가 0 으로 본다.
+ * 받은 지 오래되어 서버가 지운 표식을 놓친 주인. 번호를 적은 뒤에 지운 줄이 생겼고(지운 번호가 바뀜) 번호가 그보다 작은 주인이다.
+ * 번호가 0 인 주인은 받은 적이 없어 비울 것이 없다. 넥슨 계정 줄이 바뀐 사람의 번호는 서버가 0 으로 본다.
  */
 function staleOwnersOf(sent: ServerSyncCursors, response: SyncPullResponse): { mapleIdHashes: string[]; person: boolean } {
-  const oldest = response.oldestDeletedChangeSeq
-  if (oldest === null) return { mapleIdHashes: [], person: false }
-  const stale = (seq: number): boolean => seq > 0 && seq < oldest
+  const purged = response.purgedChangeSeq
+  // 같은 값이면 0 부터 다시 받는 쪽의 번호가 그보다 작아도 지운 줄은 이미 서버에 없다.
+  if (purged === null || purged === sent.purgedChangeSeq) return { mapleIdHashes: [], person: false }
+  const stale = (seq: number): boolean => seq > 0 && seq < purged
   const account = sent.nexonAccount
   return {
     mapleIdHashes: response.mapleIds.filter((hash) => stale(sent.mapleIds[hash] ?? 0)),
@@ -172,7 +173,8 @@ function signInOwnersOf(signIn: ServerSyncSignIn, device: readonly string[], res
 }
 
 function sameCursors(left: ServerSyncCursors, right: SyncPullResponse['cursors']): boolean {
-  return JSON.stringify(left) === JSON.stringify({ nexonAccount: right.nexonAccount, mapleIds: right.mapleIds })
+  const pick = (one: SyncPullResponse['cursors'] | ServerSyncCursors) => ({ nexonAccount: one.nexonAccount, mapleIds: one.mapleIds })
+  return JSON.stringify(pick(left)) === JSON.stringify(pick(right))
 }
 
 /** 한 쪽의 줄을 표 차례로 넣는다. 한 줄 때문에 받기가 멈추면 번호가 오르지 않아 같은 줄에서 계속 멈추므로, 넣지 못한 줄은 건너뛴다. */
@@ -242,7 +244,7 @@ export async function pullServerSync(options: PullOptions = {}, deps: PullDeps =
   try {
     for (let page = 0; page < pageLimit; page += 1) {
       const sent = await deps.getCursors()
-      const outcome = await deps.pull(headers, sent)
+      const outcome = await deps.pull(headers, { nexonAccount: sent.nexonAccount, mapleIds: sent.mapleIds })
       if (outcome.outcome !== 'answered') {
         summary.stopped = true
         break
@@ -262,7 +264,7 @@ export async function pullServerSync(options: PullOptions = {}, deps: PullDeps =
           await deps.clearSignIn()
           if (owners.person) {
             // 번호의 넥슨 계정 줄이 응답과 같으면 서버가 번호 뒤의 줄만 주어 비운 기록이 돌아오지 않는다.
-            await deps.setCursors({ nexonAccount: null, mapleIds: sent.mapleIds })
+            await deps.setCursors({ ...sent, nexonAccount: null })
             pageLimit += 1
             continue
           }
@@ -287,13 +289,18 @@ export async function pullServerSync(options: PullOptions = {}, deps: PullDeps =
         await deps.setCursors({
           nexonAccount: stale.person ? null : sent.nexonAccount,
           mapleIds: { ...sent.mapleIds, ...Object.fromEntries(stale.mapleIdHashes.map((hash) => [hash, 0])) },
+          purgedChangeSeq: response.purgedChangeSeq,
         })
         pageLimit += 1
         continue
       }
 
       await applyPage(deps, options, response.records, resolver, summary, changed)
-      await deps.setCursors({ nexonAccount: response.cursors.nexonAccount, mapleIds: response.cursors.mapleIds })
+      await deps.setCursors({
+        nexonAccount: response.cursors.nexonAccount,
+        mapleIds: response.cursors.mapleIds,
+        purgedChangeSeq: response.purgedChangeSeq,
+      })
       if (!response.hasMore) {
         summary.finished = true
         break

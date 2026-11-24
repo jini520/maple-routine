@@ -201,6 +201,7 @@ export async function forgetServerSyncOwners(owners: ServerSyncOwners): Promise<
   const cleared = new Set(owners.mapleIds.map(hashOfMapleId))
   const cursors = await getServerSyncCursors()
   await setServerSyncCursors({
+    ...cursors,
     nexonAccount: owners.person ? null : cursors.nexonAccount,
     mapleIds: Object.fromEntries(Object.entries(cursors.mapleIds).filter(([hash]) => !cleared.has(hash))),
   })
