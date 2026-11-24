@@ -61,42 +61,150 @@
       "node": "85:65",
       "hash": "120fb14bea5a1843"
     },
-    "molecules/AmountFigure": "pending",
-    "molecules/ApiKeyLoginButton": "pending",
-    "molecules/AuroraText": "pending",
-    "molecules/BackButton": "pending",
-    "molecules/BossPortrait": "pending",
-    "molecules/CalendarGrid": "pending",
-    "molecules/CharacterAvatar": "pending",
-    "molecules/CharacterGroupLabel": "pending",
-    "molecules/DataFreshness": "pending",
-    "molecules/DateSelect": "pending",
-    "molecules/DifficultyExpander": "pending",
-    "molecules/DonutRing": "pending",
-    "molecules/EmptyState": "pending",
-    "molecules/ErrorState": "pending",
-    "molecules/Fab": "pending",
-    "molecules/FadedIllustration": "pending",
-    "molecules/InfoStrip": "pending",
-    "molecules/InsetRow": "pending",
-    "molecules/InventoryTabs": "pending",
-    "molecules/LoadingState": "pending",
-    "molecules/MemoField": "pending",
-    "molecules/ModalHeader": "pending",
-    "molecules/MvpGradeGrid": "pending",
-    "molecules/MvpPlate": "pending",
-    "molecules/NexonLoginButton": "pending",
-    "molecules/NumberPad": "pending",
-    "molecules/PartyShareSummary": "pending",
-    "molecules/PeriodStepper": "pending",
-    "molecules/Popover": "pending",
-    "molecules/SearchField": "pending",
-    "molecules/Segment": "pending",
-    "molecules/SparkLine": "pending",
-    "molecules/Stepper": "pending",
-    "molecules/TimeWheel": "pending",
-    "molecules/UnavailableBadge": "pending",
-    "molecules/ValuableDropMark": "pending",
+    "molecules/AmountFigure": {
+      "node": "95:50",
+      "hash": "64193cb973b30455"
+    },
+    "molecules/ApiKeyLoginButton": {
+      "node": "95:51",
+      "hash": "ef18883547f4798e"
+    },
+    "molecules/AuroraText": {
+      "node": "95:60",
+      "hash": "27eb9223f6d628aa"
+    },
+    "molecules/BackButton": {
+      "node": "93:2",
+      "hash": "742bdeadc9da75c6"
+    },
+    "molecules/BossPortrait": {
+      "node": "95:67",
+      "hash": "b776f34ebbc2299f"
+    },
+    "molecules/CalendarGrid": {
+      "node": "97:90",
+      "hash": "1852f7ed3fb29456"
+    },
+    "molecules/CharacterAvatar": {
+      "node": "95:76",
+      "hash": "b628bde799f8bb68"
+    },
+    "molecules/CharacterGroupLabel": {
+      "node": "95:77",
+      "hash": "47448c1179066b89"
+    },
+    "molecules/DataFreshness": {
+      "node": "93:6",
+      "hash": "2d241a61b10c1c43"
+    },
+    "molecules/DateSelect": {
+      "node": "93:40",
+      "hash": "711e53ef100d5534"
+    },
+    "molecules/DifficultyExpander": {
+      "node": "97:238",
+      "hash": "955778176b2f6ff9"
+    },
+    "molecules/DonutRing": {
+      "node": "97:248",
+      "hash": "5c0cc913b7ea65a2"
+    },
+    "molecules/EmptyState": {
+      "node": "95:126",
+      "hash": "99955bed2c86738a"
+    },
+    "molecules/ErrorState": {
+      "node": "95:160",
+      "hash": "dbda6fb760f0b1d3"
+    },
+    "molecules/Fab": {
+      "node": "95:161",
+      "hash": "683463589a12431c"
+    },
+    "molecules/FadedIllustration": {
+      "node": "97:255",
+      "hash": "0453af7902573155"
+    },
+    "molecules/InfoStrip": {
+      "node": "93:61",
+      "hash": "e6079b377e7dc959"
+    },
+    "molecules/InsetRow": {
+      "node": "93:69",
+      "hash": "76589798da0a1a41"
+    },
+    "molecules/InventoryTabs": {
+      "node": "93:70",
+      "hash": "cc03dcfffd1787a8"
+    },
+    "molecules/LoadingState": {
+      "node": "93:85",
+      "hash": "cca0e258fb389bae"
+    },
+    "molecules/MemoField": {
+      "node": "93:99",
+      "hash": "1f6781728ff8c32a"
+    },
+    "molecules/ModalHeader": {
+      "node": "95:181",
+      "hash": "53d79589e106b2fe"
+    },
+    "molecules/MvpGradeGrid": {
+      "node": "97:256",
+      "hash": "3480b363e4b2dcd6"
+    },
+    "molecules/MvpPlate": {
+      "node": "97:282",
+      "hash": "18374098ac279a6a"
+    },
+    "molecules/NexonLoginButton": {
+      "node": "97:283",
+      "hash": "2739dcb92a52de1d"
+    },
+    "molecules/NumberPad": {
+      "node": "97:347",
+      "hash": "90fef1079b42644b"
+    },
+    "molecules/PartyShareSummary": {
+      "node": "97:374",
+      "hash": "68c360abafb4c306"
+    },
+    "molecules/PeriodStepper": {
+      "node": "97:405",
+      "hash": "c942536c8131da36"
+    },
+    "molecules/Popover": {
+      "node": "98:125",
+      "hash": "7e8bdfd6ce58a629"
+    },
+    "molecules/SearchField": {
+      "node": "93:100",
+      "hash": "3cc38ceddcabcfbc"
+    },
+    "molecules/Segment": {
+      "node": "98:168",
+      "hash": "961b65b8750d7f75"
+    },
+    "molecules/SparkLine": {
+      "node": "98:169",
+      "hash": "5dbd2fb2cfc01051"
+    },
+    "molecules/Stepper": {
+      "node": "98:213",
+      "hash": "158bd42ad32b901f"
+    },
+    "molecules/TimeWheel": {
+      "node": "98:239",
+      "hash": "dc9569d6e27a0c82"
+    },
+    "molecules/UnavailableBadge": {
+      "node": "93:105",
+      "hash": "63b7780d4f830a88"
+    },
+    "molecules/ValuableDropMark": {
+      "node": "98:240",
+      "hash": "78983609b1536fce"
+    },
     "organisms/AccountSelect": "pending",
     "organisms/BossPicker": "pending",
     "organisms/BottomBar": "pending",

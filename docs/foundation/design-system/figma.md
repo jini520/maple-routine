@@ -29,6 +29,11 @@ Figma 파일을 고치거나 Figma 에 시안을 그릴 때 이 문서를 따른
 - 부품 설명의 첫 줄은 코드 경로다(`components/atoms/Button`).
 - 텍스트 스타일은 `mobile/sm/semibold` · `web/…` 처럼 플랫폼 묶음 뒤에 그 플랫폼 코드의 클래스를 쓴다. 글자는 모두 텍스트 스타일에 연결하고,
   노드에서 글꼴 · 크기 · 자간을 직접 덮어쓰지 않는다.
+- 부품 코드가 크기 · 두께 말고 자간이나 줄 높이까지 바꾼 조합도 텍스트 스타일로 둔다(`mobile/chip-sm/bold-tracked` · `mobile/2xl/bold-tight` ·
+  `mobile/9/normal-leading-3`). 노드에서 덮어쓰면 스타일 연결이 끊기기 때문이다. 이름 뒤쪽은 그 클래스(`tracking-[.03em]` · `tracking-[-.03em]` ·
+  `leading-3`)를 줄인 말이다.
+- `theme-vars.ts` 가 계산하는 파생 색(`cardBody` · `cardInset` · `control*` · `settlement*`)도 `Color` 컬렉션에 테마마다 값을 넣어 둔다. 어두운
+  테마의 시트 · 팝오버 안에서 `bg` · `surface` 를 한 단계 밝히는 것은 변수로 두지 않고 그 부품의 설명에 적는다.
 - 플랫폼마다 따로 두는 값(글자 · 간격 · 레이아웃 크기 · 부품 크기 단계)은 `mobile/` · `web/` 묶음으로 나누고, 함께 쓰는 값(색 · 모서리)은
   하나만 둔다.
 
