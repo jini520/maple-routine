@@ -1,4 +1,4 @@
-// mapleroutine.store 정적 사이트 빌드.
+// 안내 사이트(info.mapleroutine.store) 정적 빌드. 루트(mapleroutine.store)도 같은 파일을 낸다.
 //
 // 스토어가 요구하는 개인정보 처리방침·지원 URL을 서빙하는 것이 이 사이트의 존재 이유다.
 // 앱 번들(vite)과는 완전히 별개로 돌아가며 dist-site/ 로 나간다.
@@ -15,7 +15,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SITE = join(ROOT, 'site')
 const OUT = join(ROOT, 'dist-site')
 
-const DOMAIN = 'mapleroutine.store'
+const DOMAIN = 'info.mapleroutine.store'
 
 /**
  * 출력 경로 → 마크다운 원본. `privacy` 만 저장소 루트를 가리킨다(단일 원본).
