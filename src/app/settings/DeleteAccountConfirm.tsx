@@ -27,8 +27,8 @@ export function DeleteAccountConfirm(props: DeleteAccountConfirmProps): React.JS
       title="계정을 삭제할까요?"
       content={
         <InsetNote>
-          30일 뒤 서버의 계정이 지워져요. 그 전에 다시 로그인하면 취소할 수 있어요. 삭제 후 사용 기록은 익명 기록으로
-          변경되고, 이 기기의 기록은 삭제되지 않고 보관됩니다.
+          30일 뒤 서버의 계정과 서버에 둔 기록이 지워져요. 그 전에 다시 로그인하면 취소할 수 있어요. 사용 기록과 드롭
+          판매가는 익명 기록으로 남고, 이 기기의 기록은 지워지지 않아요.
         </InsetNote>
       }
       action={{ label: '취소', onPress: props.onCancel, disabled: props.isDeleting }}
