@@ -8,7 +8,7 @@ import { Image, Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms'
 import { BottomSheet } from '../../components/organisms/BottomSheet/BottomSheet'
-import { mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
+import { mesoValueOf } from '../../lib/meso-input/meso-pad'
 import { COUNT_QUICK_ADDS } from '../../constants/domain/quick-adds'
 import { openInputCard } from '../../features/input-card/store'
 import { addToInventory } from '../../features/inventory/actions'

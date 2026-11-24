@@ -24,7 +24,7 @@ import {
   mesoTextOf,
   mesoValueOf,
   settleMesoText,
-} from '../../components/organisms/MesoPad/meso-pad'
+} from '../../lib/meso-input/meso-pad'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
 import { openInputCard } from '../../features/input-card/store'
 import type { InputCardChip, InputCardIcon } from '../../components/organisms/InputCard/InputCard'

@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { Text } from '../../../components/atoms'
 import { AmountFigure } from '../../../components/molecules/AmountFigure/AmountFigure'
-import { mesoTextOf, mesoValueOf } from '../../../components/organisms/MesoPad/meso-pad'
+import { mesoTextOf, mesoValueOf } from '../../../lib/meso-input/meso-pad'
 import { FeeRow } from '../../../components/organisms/FeeRow/FeeRow'
 import { netProceedsMeso, type FeePercent } from '../../../lib/cashbook/item-split'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'

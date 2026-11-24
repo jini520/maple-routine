@@ -17,7 +17,7 @@ import {
   mesoValueOf,
   optionalMesoTextOf,
   optionalMesoValueOf,
-} from '../../../components/organisms/MesoPad/meso-pad'
+} from '../../../lib/meso-input/meso-pad'
 import { SelectChevron, SelectField, type SelectOption } from '../../../components/organisms/SelectField/SelectField'
 import { FRAGMENT_PRICE_QUICK_ADDS } from '../../../constants/domain/meso-quick-adds'
 import { COUNT_QUICK_ADDS } from '../../../constants/domain/quick-adds'

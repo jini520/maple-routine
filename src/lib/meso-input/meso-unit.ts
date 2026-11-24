@@ -5,7 +5,7 @@
  * `Math.round` 로 덮어도 자릿수가 커지면 다시 어긋난다.
  */
 import { MAX_MESO, acceptMesoText } from './meso-pad'
-import type { MesoUnit } from '../../../types/meso-unit'
+import type { MesoUnit } from '../../types/meso-unit'
 
 export const MESO_UNITS = ['base', 'man', 'eok'] as const satisfies readonly MesoUnit[]
 

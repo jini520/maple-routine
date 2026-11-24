@@ -64,7 +64,7 @@ import { useScreenNavigation } from '../../hooks/useScreenNavigation'
 import { CharacterAvatar } from '../../components/molecules/CharacterAvatar/CharacterAvatar'
 import { PORTRAIT_COMPACT } from '../../components/organisms/CharacterPortrait/portrait-metrics'
 import { closeInputCard, openInputCard } from '../../features/input-card/store'
-import { mesoValueOf } from '../../components/organisms/MesoPad/meso-pad'
+import { mesoValueOf } from '../../lib/meso-input/meso-pad'
 import { confirmLabels } from '../../lib/drop/price-card-labels'
 import { dropPriceCardRequest, type PriceEdit } from './drop-price-card'
 

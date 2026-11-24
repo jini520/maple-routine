@@ -4,7 +4,7 @@
  */
 import type { FeesValue, ShareValue } from '../../components/organisms/InputCard/InputCard'
 import { MESO_QUICK_ADDS } from '../../constants/domain/meso-quick-adds'
-import { mesoTextOf } from '../../components/organisms/MesoPad/meso-pad'
+import { mesoTextOf } from '../../lib/meso-input/meso-pad'
 import type { DropPriceEntry } from '../../features/boss-profit/drop-price-store'
 import { dropFeeSeeds } from '../../features/boss-profit/drop-fees'
 import type { InputCardRequest } from '../../features/input-card/store'
