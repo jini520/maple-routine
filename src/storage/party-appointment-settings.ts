@@ -1,5 +1,5 @@
 /**
- * 파티 약속 알림 스위치(설정 > 알림 설정의 `파티 약속 알림`). 기본은 켜짐이다.
+ * 파티 스케줄 알림 스위치(설정 > 알림 설정의 `파티 스케줄 알림`). 기본은 켜짐이다.
  */
 import { STORAGE_KEYS } from './keys'
 import { preferences } from './ports'

@@ -1,6 +1,16 @@
 // 파티 약속 알림의 계획. 앞으로 7일 안에 울릴 회차마다 알림 하나다.
+jest.mock('../../../storage/party-appointments', () => ({ getPartyAppointments: jest.fn(async () => []) }))
+jest.mock('../../../storage/party-appointment-settings', () => ({ getPartyAlarmEnabled: jest.fn(async () => true) }))
+jest.mock('../../server-sync/keyless', () => ({
+  ...jest.requireActual('../../server-sync/keyless'),
+  loadKeyLostScope: jest.fn(),
+}))
+jest.mock('../../schedule-sync/read-schedule', () => ({
+  readCharacterBasic: (ocid: string) => (ocid === 'ocid-1' ? { profile: { name: '낟낟' } } : undefined),
+}))
+
 import { notificationId } from '../../local-notifications/reconcile'
-import { PARTY_NOTIFICATION_KIND, planPartyNotifications } from '../notification'
+import { PARTY_NOTIFICATION_KIND, planPartyAppointmentKind, planPartyNotifications } from '../notification'
 import type { PartyAppointment } from '../../../types/party-appointment'
 
 const NAMES = new Map([['ocid-1', '낟낟']])
@@ -59,5 +69,33 @@ describe('planPartyNotifications', () => {
     const items = planPartyNotifications([weekly], NAMES, NOW)
 
     expect(items.map((item) => item.id)).toEqual([notificationId(PARTY_NOTIFICATION_KIND, 'w1', '2026-10-08')])
+  })
+})
+
+describe('planPartyAppointmentKind', () => {
+  const { getPartyAppointments } = jest.requireMock('../../../storage/party-appointments') as Record<string, jest.Mock>
+  const { loadKeyLostScope } = jest.requireMock('../../server-sync/keyless') as Record<string, jest.Mock>
+
+  function mixed(id: string, ocids: string[]): PartyAppointment {
+    return {
+      ...once(id, '2026-10-07', 10),
+      bosses: ocids.map((ocid, index) => ({ bossKey: index === 0 ? 'limbo' : 'lucid', difficulty: 'hard', ocid })),
+    }
+  }
+
+  // 부계정 키가 이 기기에 없으면 그 캐릭터의 파티는 알리지 않는다(사용자 지정).
+  it('키 없는 부계정 캐릭터와 이 기기가 모르는 캐릭터의 보스는 알리지 않고, 섞인 스케줄은 남은 보스로 알린다', async () => {
+    getPartyAppointments.mockResolvedValue([
+      mixed('lost', ['ocid-sub']),
+      mixed('unknown', ['#a1b2']),
+      mixed('both', ['ocid-1', 'ocid-sub']),
+    ])
+    loadKeyLostScope.mockResolvedValue({ mapleIds: new Set(['sub']), ocids: new Map([['ocid-sub', 'sub']]) })
+
+    const planned = await planPartyAppointmentKind(NOW)
+
+    expect(planned.map((one) => one.id)).toEqual([notificationId(PARTY_NOTIFICATION_KIND, 'both', '2026-10-07')])
+    expect(planned[0]!.title).toBe('낟낟 파티 보스 스케줄이 곧 시작해요')
+    expect(planned[0]!.body).toBe('21:00 낟낟 하드 림보 파티 10분 전이에요')
   })
 })

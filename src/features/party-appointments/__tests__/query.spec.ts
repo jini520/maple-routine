@@ -14,7 +14,15 @@ const { getPartyAppointments: getMock, setPartyAppointments: setMock } = jest.re
 ) as Record<string, jest.Mock>
 const { requestNotificationReconcile: reconcileMock } = jest.requireMock('../../local-notifications/run') as Record<string, jest.Mock>
 
-const ONE = { id: 'one' } as unknown as PartyAppointment
+const ONE: PartyAppointment = {
+  id: 'one',
+  bosses: [{ bossKey: 'limbo', difficulty: 'hard', ocid: 'ocid-1' }],
+  timeKst: '21:00',
+  durationMinutes: 30,
+  leadMinutes: 10,
+  schedule: { type: 'once', dateKey: '2026-10-07' },
+  exceptions: {},
+}
 
 beforeEach(() => {
   queryClient.clear()
@@ -49,4 +57,12 @@ it('아직 안 읽었으면 저장소를 읽고, 읽은 뒤에는 캐시를 돌�
   expect(await loadPartyAppointments()).toEqual([ONE])
   expect(await loadPartyAppointments()).toEqual([ONE])
   expect(getMock).toHaveBeenCalledTimes(1)
+})
+
+// 알림을 눌러 들어와도 숨은 회차의 상세를 열지 않는다. 그 주만 연다.
+it('읽은 목록에서 이 기기가 모르는 캐릭터의 보스를 뺀다', async () => {
+  const mixed: PartyAppointment = { ...ONE, bosses: [...ONE.bosses, { bossKey: 'lucid', difficulty: 'hard', ocid: '#a1b2' }] }
+  getMock.mockResolvedValue([mixed])
+
+  expect((await loadPartyAppointments())[0]!.bosses).toEqual(ONE.bosses)
 })

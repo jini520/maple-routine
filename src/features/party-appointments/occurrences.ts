@@ -62,5 +62,6 @@ export function occurrencesInWeek(
         : occurrenceOf(appointment, exception.dateKey, exception, true),
     )
   }
-  return result.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
+  // 보스가 모두 숨은 회차(`visibleAppointments`)는 서지 않는다.
+  return result.filter((one) => one.bosses.length > 0).sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())
 }

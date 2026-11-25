@@ -12,7 +12,8 @@
 | `types/party-appointment.ts` | 스케줄 · 보스 · 주별 예외 · 회차 |
 | `storage/party-appointments.ts` | Preferences `partyAppointments` 읽기 · 쓰기. 서버 칸 이름 · 주차 값 · 난이도 줄 id 로 적고 아래 형식으로 읽는다. 깨진 항목만 버린다 |
 | `storage/party-appointment-settings.ts` · `features/party-appointments/alarm-settings.ts` | `파티 스케줄 알림` 스위치 |
-| `features/party-appointments/query.ts` | 약속 목록 쿼리 `partyAppointments()`. 화면은 `usePartyAppointments` 로 읽고, 알림으로 들어온 화면은 `loadPartyAppointments` 로 먼저 읽는다. 저장(`savePartyAppointments`)은 저장소에 먼저 쓰고 캐시를 덮은 뒤 알림 재조정을 부른다 |
+| `features/party-appointments/query.ts` | 약속 목록 쿼리 `partyAppointments()` 와 숨길 캐릭터 쿼리 `keyLostScope()`. 화면은 `usePartyAppointments` 로 숨은 보스를 뺀 목록(`appointments`)과 저장된 그대로의 목록(`stored`)을 읽고, 알림으로 들어온 화면은 `loadPartyAppointments` 로 숨은 보스를 뺀 목록을 먼저 읽는다. 저장(`savePartyAppointments`)은 저장소에 먼저 쓰고 캐시를 덮은 뒤 알림 재조정을 부른다 |
+| `features/party-appointments/hidden-bosses.ts` | 이 기기에 키가 없는 부계정 캐릭터의 보스 숨기기 · 고쳐 저장할 때 숨은 보스 되붙이기 |
 | `features/party-appointments/occurrences.ts` | 한 주의 회차 펼치기 |
 | `features/party-appointments/draft.ts` | 시트의 처음 값 · 시각 계산 · 저장 조건 · 스케줄로 바꾸기 |
 | `features/party-appointments/edit.ts` | 수정 · 삭제 |
@@ -100,6 +101,21 @@
 - 보스 추가 단계는 같은 캐릭터 · 같은 보스가 든 스케줄이 이미 있는 타일의 초상 윗변에 `등록됨` 알약을 붙인다. 기간은 시트의
   시작 날짜가 든 리셋 주이고, 월간 보스(검은 마법사)는 그 날짜가 든 달이다. 수정할 때는 고치는 스케줄 자신을 빼고 센다.
   중복 저장을 막지 않으므로 붙은 타일도 흐리지 않고 그대로 고를 수 있다([[ADR-051]] 결정 15).
+
+## 키가 없는 부계정 캐릭터
+
+파티 스케줄은 기기 간 동기화로 같은 사람의 모든 기기에 들어온다. 이 기기에 그 부계정의 키가 없으면 그 캐릭터의 보스를 숨기고 알림을
+울리지 않는다([[ADR-099]] 결정 69). 이 기기에서 부를 수 없는 캐릭터라, 그대로 두면 새 기기에서는 이름 없는 알림이 뜨기 때문이다.
+
+- 숨기는 보스는 판의 `ocid` 가 키가 있던 기기의 부계정 캐릭터(`loadKeyLostScope` 의 `ocids`)이거나 `#` 로 시작하는 것이다(`hiddenOcidOf`).
+  `#` 는 이 기기가 그 캐릭터를 모른다는 표시다. 새 기기에 받은 부계정 캐릭터와 지운 캐릭터가 든다.
+- 숨기는 단위는 보스 한 판이다. 반복 스케줄의 주별 예외도 그 주의 보스로 가른다. 한 회차의 보스가 모두 숨으면 그 회차가 서지 않고,
+  남으면 남은 보스로 선다(`visibleAppointments` 와 `occurrencesInWeek` 의 빈 회차 빼기).
+- 숨은 보스는 목록 · 보드 · 시간표, today 의 `다음 파티 스케줄`, 보스 추가 단계의 `등록됨`, 알림 어디에도 들지 않는다. 알림 문구도 남은
+  보스로 짓는다. 알림이 가리킨 회차가 숨었으면 그 주만 연다.
+- 기록은 지우지 않는다. 키를 등록하거나 키가 무효가 되면(`auth_methods`) 숨길 캐릭터를 다시 읽고 알림을 다시 맞춘다.
+- 이 기기에서 보스 일부가 숨은 스케줄을 고쳐 저장하면 숨은 보스를 남긴다(`withHiddenBosses`). 화면에 없는 보스를 빠뜨리면 서버와 키가
+  멀쩡한 다른 기기에서까지 지워진다. 삭제는 스케줄 전체를 지운다.
 
 ## 알림
 

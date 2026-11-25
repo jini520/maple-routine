@@ -1,5 +1,5 @@
 /**
- * 레지스트리에 들어가는 파티 약속 알림 종류. 앞으로 7일 안에 울릴 회차마다 알림 하나를 계획한다.
+ * 레지스트리에 들어가는 파티 스케줄 알림 종류. 앞으로 7일 안에 울릴 회차마다 알림 하나를 계획한다.
  */
 import { resetWeekStartOf, shiftDateKey } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
@@ -8,6 +8,8 @@ import { getPartyAlarmEnabled } from '../../storage/party-appointment-settings'
 import { getPartyAppointments } from '../../storage/party-appointments'
 import type { PartyAppointment } from '../../types/party-appointment'
 import { notificationId, type PlannedNotification } from '../local-notifications/reconcile'
+import { EMPTY_KEY_LOST_SCOPE, loadKeyLostScope } from '../server-sync/keyless'
+import { hiddenOcidOf, visibleAppointments } from './hidden-bosses'
 import { notificationText } from './notification-text'
 import { occurrencesInWeek } from './occurrences'
 
@@ -60,9 +62,15 @@ async function characterNames(appointments: readonly PartyAppointment[]): Promis
   return new Map(entries)
 }
 
-/** `파티 약속 알림` 이 꺼져 있으면 빈 계획이다 */
+/**
+ * `파티 스케줄 알림` 이 꺼져 있으면 빈 계획이다. 이 기기에 키가 없는 부계정 캐릭터의 보스는 알리지 않고, 문구도 남은 보스로 짓는다.
+ */
 export async function planPartyAppointmentKind(now: Date): Promise<PlannedNotification[]> {
   if (!(await getPartyAlarmEnabled())) return []
-  const appointments = await getPartyAppointments()
+  const [stored, scope] = await Promise.all([
+    getPartyAppointments(),
+    loadKeyLostScope().catch(() => EMPTY_KEY_LOST_SCOPE),
+  ])
+  const appointments = visibleAppointments(stored, hiddenOcidOf(scope))
   return planPartyNotifications(appointments, await characterNames(appointments), now)
 }
