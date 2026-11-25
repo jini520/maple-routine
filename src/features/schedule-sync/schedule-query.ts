@@ -23,6 +23,7 @@ import { queryClient } from '../query/client'
 import { queryKeys } from '../query/keys'
 import { scheduleStaleTime } from '../query/freshness'
 import { NEXON_QUERY_SOURCE } from '../query/reset-timer'
+import { readSettlementBeforeRound } from '../settlement/store'
 import { syncSchedules, type CharacterScheduleSync, type ScheduleSyncError } from './schedule-sync'
 import { resolveStrandedCharacters, type StrandedCharacter } from './stranded-characters'
 
@@ -212,6 +213,8 @@ export const scheduleRoundOptions = queryOptions({
  * 도는 회차가 있으면 그것을 기다린다.
  */
 export async function refreshSchedules(): Promise<void> {
+  // 0시 ~ 2시에는 결산 답을 먼저 받는다. 회차가 처음부터 결산 중인 어제를 빼고, 단계마다 같은 조회를 기다리지 않는다.
+  await readSettlementBeforeRound(new Date())
   await queryClient.fetchQuery({ ...scheduleRoundOptions, staleTime: 0 }).catch(() => undefined)
 }
 

@@ -1,4 +1,4 @@
-import { QueryClientProvider } from '@tanstack/react-query'
+import { focusManager, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react-native'
 import type { ReactNode } from 'react'
 
@@ -9,7 +9,16 @@ jest.mock('../../../storage/settlement-banner', () => ({
 }))
 
 import { queryClient } from '../../query/client'
-import { isSettlementVisible, refreshSettlement, settlementOptions, settlingYesterdayOf, useSettlementBanner } from '../query'
+import {
+  isSettlementVisible,
+  readSettlementBeforeRound,
+  refreshSettlement,
+  settlementOptions,
+  settlingYesterdayOf,
+  startSettlementRecheck,
+  useSettlementBanner,
+} from '../query'
+import type { Settlement } from '../../../types/settlement'
 import { resetSettlementDismissalForTests } from '../store'
 
 const { fetchSettlement: fetchMock } = jest.requireMock('../../../server/settlement') as Record<string, jest.Mock>
@@ -107,4 +116,109 @@ it('회차가 겹쳐 물어도 서버는 한 번만 부른다', async () => {
   await Promise.all([first, second])
 
   expect(fetchMock).toHaveBeenCalledTimes(1)
+})
+
+describe('0시 ~ 2시 다시 묻기', () => {
+  const kst = (text: string) => new Date(`${text}+09:00`)
+  const MINUTE = 60_000
+  let stop: () => void = () => undefined
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+    focusManager.setFocused(true)
+  })
+
+  afterEach(() => {
+    stop()
+    focusManager.setFocused(undefined)
+    jest.useRealTimers()
+  })
+
+  const seed = (value: unknown) => queryClient.setQueryData(settlementOptions.queryKey, value as never)
+
+  // 서버는 첫 확인에 성공해야 결산 중이라고 한다. 0시 직후에 받은 결산 아님을 들고 있으면 다음 복귀까지 줄이 안 선다.
+  it.each([
+    ['결산 아님', { settling: false, startedAt: null }],
+    ['모름', null],
+  ])('포그라운드에서 답이 %s 이면 1분마다 다시 묻는다', async (_name, answer) => {
+    jest.setSystemTime(kst('2026-11-26T00:00:30'))
+    seed(answer)
+    fetchMock.mockResolvedValue({ settling: false, startedAt: null })
+    stop = startSettlementRecheck()
+
+    await jest.advanceTimersByTimeAsync(MINUTE)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    await jest.advanceTimersByTimeAsync(MINUTE)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('결산 중이라는 답을 받으면 더 묻지 않는다', async () => {
+    jest.setSystemTime(kst('2026-11-26T00:00:30'))
+    seed({ settling: false, startedAt: null })
+    stop = startSettlementRecheck()
+
+    await jest.advanceTimersByTimeAsync(MINUTE)
+    await jest.advanceTimersByTimeAsync(MINUTE * 3)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  // 결산 답을 쓰는 것은 0시 ~ 2시 회차뿐이다. 낮에 묻는 것은 호출만 늘린다.
+  it('2시가 지나면 묻지 않는다', async () => {
+    jest.setSystemTime(kst('2026-11-26T01:59:30'))
+    seed({ settling: false, startedAt: null })
+    fetchMock.mockResolvedValue({ settling: false, startedAt: null })
+    stop = startSettlementRecheck()
+
+    await jest.advanceTimersByTimeAsync(MINUTE * 3)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  // 돌아올 때는 복귀 재조회가 한 번 묻는다.
+  it('배경에서는 묻지 않는다', async () => {
+    jest.setSystemTime(kst('2026-11-26T00:00:30'))
+    seed({ settling: false, startedAt: null })
+    focusManager.setFocused(false)
+    stop = startSettlementRecheck()
+
+    await jest.advanceTimersByTimeAsync(MINUTE * 3)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('멈추면 더 묻지 않는다', async () => {
+    jest.setSystemTime(kst('2026-11-26T00:00:30'))
+    seed({ settling: false, startedAt: null })
+    startSettlementRecheck()()
+
+    await jest.advanceTimersByTimeAsync(MINUTE * 3)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('readSettlementBeforeRound', () => {
+  const kst = (text: string) => new Date(`${text}+09:00`)
+
+  // 회차의 단계마다 진행 중인 조회를 기다리지 않고, 처음부터 어제를 뺄 수 있게 답을 먼저 받아 둔다.
+  it('0시 ~ 2시에는 들고 있는 답이 있어도 서버에 다시 묻고, 뒤의 회차는 그 답을 다시 쓴다', async () => {
+    const notSettling: Settlement = { settling: false, startedAt: null }
+    queryClient.setQueryData(settlementOptions.queryKey, notSettling)
+    const now = kst('2026-11-26T00:05:00')
+
+    await readSettlementBeforeRound(now)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    await expect(settlingYesterdayOf(now)).resolves.toBe('2026-11-25')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  // 2시 밖에서는 결산 답을 쓰지 않는다. 당김을 늦출 이유가 없다.
+  it('2시 밖에서는 묻지 않는다', async () => {
+    await readSettlementBeforeRound(kst('2026-11-26T02:00:00'))
+    await readSettlementBeforeRound(kst('2026-11-26T15:00:00'))
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('답을 못 받아도 던지지 않는다', async () => {
+    fetchMock.mockRejectedValue(new Error('down'))
+    await expect(readSettlementBeforeRound(kst('2026-11-26T00:05:00'))).resolves.toBeUndefined()
+  })
 })

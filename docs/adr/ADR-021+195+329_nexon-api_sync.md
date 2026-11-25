@@ -1,8 +1,8 @@
 # ADR-021+195+329 넥슨 API 호출과 스케줄러 동기화
 
-> ⚪ 미구현(결정 15. 결정 1 ~ 14 는 구현돼 있다)
+> 🟢 유효
 > 옛 번호: ADR-007 · ADR-067 결정 1 · 4 · ADR-097 · ADR-111 결정 5 · ADR-113 결정 1 · ADR-148 · ADR-218 결정 1 · 2 · ADR-222 결정 1 ~ 4 · 8 · 정정 2 · 6 · ADR-226 결정 2 ~ 4 · 정정 1 · 3
-> 관련 소스: `nexon/` · `features/schedule-sync/` · `features/schedule-window/` · `features/refresh/progress.ts` · `features/refresh/pull.ts` · `features/ledger/LedgerDataProvider.tsx` · `useLedgerData.ts` · `lib/scheduler/sync-freshness.ts` · `storage/schedule-probe-ledger.ts`
+> 관련 소스: `nexon/` · `features/schedule-sync/` · `features/schedule-window/` · `features/refresh/progress.ts` · `features/refresh/pull.ts` · `features/ledger/LedgerDataProvider.tsx` · `useLedgerData.ts` · `lib/scheduler/sync-freshness.ts` · `storage/schedule-probe-ledger.ts` · `features/settlement/query.ts` · `index.ts`
 
 ## 배경
 
@@ -316,7 +316,7 @@ advance(slot, done, total?) 그 몫의 진척. 실제 분모가 오면 고친다
 0시 직후 앱이 배경에서 돌아오면 결산 안내 줄이 서지 않고, 그 상태에서 당기면 오래 걸렸다(#1256). 원인은 한 번 받은 결산 답을 다시
 묻지 않는 것이다.
 
-- 결산 쿼리(`settlement()`)는 `staleTime: Infinity` · `retry: false` 이고, 다시 묻는 때는 앱 복귀와 회차 시작뿐이다([[ADR-142]] 결정 5).
+- 결산 쿼리(`settlement()`)는 `staleTime: Infinity` · `retry: false` 이고, 이 결정 전에는 다시 묻는 때가 앱 복귀와 회차 시작뿐이었다.
 - 서버는 넥슨 확인에 한 번 성공해야 결산 중이라고 답한다. 확인은 00:00:01 부터 10분마다라, 그 전이나 첫 확인이 실패한 밤에는 다음
   타점까지 `결산 아님` 을 준다. 앱 조회도 4초(`TIMEOUT_MS`) 안에 못 받으면 `null` 이고, 쿼리는 그것을 성공한 답으로 들고 있는다.
 - 그래서 0시 몇 분 안에 돌아오거나 포그라운드에서 0시를 넘기면 `결산 아님` 을 받고, 다음 복귀까지 줄이 서지 않는다. 같은 답 때문에
@@ -327,15 +327,15 @@ advance(slot, done, total?) 그 몫의 진척. 실제 분모가 오면 고친다
 - **다시 묻기.** KST 0시 ~ 2시에 앱이 포그라운드이고 결산 쿼리의 답이 결산 중(`settling === true`)이 아니면 1분마다
   `refreshSettlement` 를 부른다. 결산 아님 · 모름 · 실패가 모두 여기에 든다. 첫 확인이 늦은 밤에도 늦어야 1분 뒤 줄이 선다.
   1분은 결정 14 의 재사용 시간과 같은 값이라 회차의 조회와 겹쳐도 호출이 늘지 않는다. 2시가 지나면 묻지 않아 낮에는 호출이
-  늘지 않는다. 배경에서는 묻지 않는다. 돌아올 때 복귀 재조회가 한 번 묻기 때문이다. 타이머는 앱에 하나이고 부팅 때 건다.
-- **당김은 답부터.** 당겨서 새로고침 · 다시 시도(`refreshSchedules`)는 KST 0시 ~ 2시이면 결산 답을 먼저 한 번 받고(최대 4초) 회차를
-  시작한다. 지금은 회차를 먼저 시작하고, 회차 · 13일 창 · 강화 내역이 단계마다 진행 중인 결산 조회를 기다린다. 먼저 받아 두면
+  늘지 않는다. 배경에서는 묻지 않는다. 돌아올 때 복귀 재조회가 한 번 묻기 때문이다. 타이머는 앱에 하나이고 부팅 때 건다
+  (`startSettlementRecheck`, `index.ts`).
+- **당김은 답부터.** 당겨서 새로고침 · 다시 시도 · 헤더 버튼(`refreshSchedules`)은 KST 0시 ~ 2시이면 결산 답을 먼저 한 번 받고(최대 4초) 회차를
+  시작한다(`readSettlementBeforeRound`). 회차를 먼저 시작하면 회차 · 13일 창 · 강화 내역이 단계마다 진행 중인 결산 조회를 기다린다. 먼저 받아 두면
   뒤 단계는 1분 재사용으로 기다리지 않고, 결산 중이면 처음부터 어제를 뺀다. 2시 밖에서는 기다리지 않는다. 결산 답을 쓰지 않는
   시간에 당김을 늦출 이유가 없기 때문이다.
-- 답을 모를 때(`null`) 결산 중으로 보지는 않는다(결정 14 의 마지막 항목 그대로). 안내 줄도 지금처럼 서지 않는다.
-- 결산이 끝난 뒤 줄이 걷히는 것은 지금처럼 다음 복귀나 회차가 한다. 이 결정은 결산 중인데 줄이 안 서는 것만 다룬다.
-
-구현할 때 [[ADR-142]] 결정 5 의 계기 표와 `docs/features/today.md` 의 결산 안내 줄에 다시 묻기를 더한다.
+- 답을 모를 때(`null`) 결산 중으로 보지는 않는다(결정 14). 안내 줄도 서지 않는다.
+- 결산이 끝난 뒤 줄이 걷히는 것은 다음 복귀나 회차가 한다. 이 결정은 결산 중인데 줄이 안 서는 것만 다룬다.
+- 다시 받는 계기 표는 [[ADR-142]] 결정 5 에 있다.
 
 ## 테스트
 
@@ -377,4 +377,4 @@ advance(slot, done, total?) 그 몫의 진척. 실제 분모가 오면 고친다
   버리는 규칙을, 결정 3 에 `OPENAPI00006` 을 더했다
 - (2026-11-23) 결정 6 의 신선한 시간을 10분에서 5분으로 줄였다([[ADR-099]] 결정 9). 결정 7 의 5분 가드는 동기화 TTL 보다 길지만 않으면 되는 것으로 고쳤다. 가드의 기준 시각이 회차가 끝난 시각보다 앞서 같은 값이어도 갱신이 일어난다
 - ADR-329 (2026-11-25): 0시 직후 복귀에 결산 안내 줄이 안 서고 당김이 느린 것을 고치려 결정 15 를 더했다(#1256). 결정 14 의
-  `앞으로는` 문장을 구현된 동작으로 고쳐 썼다
+  `앞으로는` 문장을 구현된 동작으로 고쳐 썼다. 같은 날 구현했다

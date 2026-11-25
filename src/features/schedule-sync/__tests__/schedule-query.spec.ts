@@ -58,6 +58,9 @@ const { recordBossProfitFromRound: recordMock } = jest.requireMock('../../boss-p
 jest.mock('../../boss-profit/defeat-dates', () => ({ resolveDefeatDates: jest.fn(async () => 0) }))
 const { resolveDefeatDates: defeatDatesMock } = jest.requireMock('../../boss-profit/defeat-dates') as Record<string, jest.Mock>
 
+jest.mock('../../settlement/store', () => ({ readSettlementBeforeRound: jest.fn(async () => undefined) }))
+const { readSettlementBeforeRound: settlementFirstMock } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
+
 const NOW = new Date('2026-10-30T05:00:00.000Z')
 
 function synced(ocid: string, syncedAt = NOW.toISOString()): CharacterScheduleSync {
@@ -117,6 +120,22 @@ describe('scheduleRound', () => {
 
     await refreshSchedules()
     expect(syncSchedulesMock).toHaveBeenCalledTimes(2)
+  })
+
+  // 0시 ~ 2시 당김은 결산 답을 먼저 받아야 회차가 처음부터 어제를 뺀다. 답을 기다리는 동안 회차가 먼저 나가면 안 된다.
+  it('당김은 결산 답을 받은 뒤 회차를 시작한다', async () => {
+    let answer: () => void = () => undefined
+    settlementFirstMock.mockReturnValueOnce(new Promise<void>((done) => (answer = done)))
+    syncSchedulesMock.mockResolvedValue([synced('a'), synced('b')])
+
+    const pulling = refreshSchedules()
+    await jest.advanceTimersByTimeAsync(0)
+    expect(settlementFirstMock).toHaveBeenCalledWith(NOW)
+    expect(syncSchedulesMock).not.toHaveBeenCalled()
+
+    answer()
+    await pulling
+    expect(syncSchedulesMock).toHaveBeenCalledTimes(1)
   })
 
   it('추적 목록에 회차가 덮지 않은 캐릭터가 생기면 자동 진입도 받는다', async () => {
