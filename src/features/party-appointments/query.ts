@@ -51,7 +51,7 @@ export function usePartyAppointments(): PartyAppointments {
   return { appointments, stored, hidden, loaded: data !== undefined }
 }
 
-/** 아직 안 읽었으면 읽은 화면용 목록. 알림을 눌러 들어온 화면이 그 회차를 찾을 때 쓴다. 숨은 회차는 찾지 못한다. */
+/** 아직 안 읽었으면 읽어 숨은 보스를 뺀 목록. 알림을 눌러 들어온 화면이 그 회차를 찾을 때 쓴다. 숨은 회차는 찾지 못한다. */
 export async function loadPartyAppointments(): Promise<PartyAppointment[]> {
   const [appointments, scope] = await Promise.all([
     queryClient.ensureQueryData(partyAppointmentsOptions),
