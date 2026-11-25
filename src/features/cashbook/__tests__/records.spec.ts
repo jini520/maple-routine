@@ -59,6 +59,10 @@ jest.mock('../../../storage/hexa-storage-checks', () => ({ setHexaStorageChecks:
 jest.mock('../../../lib/mvp/starforce', () => ({ starforceMvpDiscountOf: jest.fn() }))
 jest.mock('../../app-review/request', () => ({ countCoreSave: jest.fn() }))
 jest.mock('../account-names', () => ({ loadAccountLabels: jest.fn(async () => new Map()) }))
+jest.mock('../../server-sync/keyless', () => ({
+  ...jest.requireActual('../../server-sync/keyless'),
+  loadKeyLostScope: jest.fn(),
+}))
 
 const income = jest.requireMock('../../../storage/income') as Record<string, jest.Mock>
 const spend = jest.requireMock('../../../storage/spend') as Record<string, jest.Mock>
@@ -78,6 +82,7 @@ const characterAccounts = jest.requireMock('../../../storage/character-accounts'
 const hexaChecks = jest.requireMock('../../../storage/hexa-storage-checks') as Record<string, jest.Mock>
 const mvp = jest.requireMock('../../../lib/mvp/starforce') as Record<string, jest.Mock>
 const accountNames = jest.requireMock('../account-names') as Record<string, jest.Mock>
+const keyless = jest.requireMock('../../server-sync/keyless') as Record<string, jest.Mock>
 
 const 지금 = new Date('2026-08-23T05:00:00.000Z')
 
@@ -103,6 +108,7 @@ beforeEach(() => {
   legacyTotals.ensureEnhancementTotals.mockResolvedValue(undefined)
   mvpGrades.getMvpGradeHistories.mockResolvedValue(new Map())
   characterAccounts.getCharacterAccountSightings.mockResolvedValue([])
+  keyless.loadKeyLostScope.mockResolvedValue({ mapleIds: new Set(), ocids: new Map() })
   mvp.starforceMvpDiscountOf.mockReturnValue(0)
   lastHunts.getLastHunts.mockResolvedValue({})
   income.getIncomeMonthRows.mockResolvedValue([])
@@ -661,6 +667,28 @@ describe('칸 금액', () => {
   it('기록이 없는 날은 아예 없다. 0 을 채워 넣지 않는다', async () => {
 
     expect(await 칸금액('2026-08-01', '2026-08-31')).toEqual({})
+  })
+
+  it('키가 없는 부계정의 기록은 그 메이플 ID 를 달고 칸 금액에서 빠진다', async () => {
+    keyless.loadKeyLostScope.mockResolvedValue({ mapleIds: new Set(['maple-sub']), ocids: new Map([['ocid-sub', 'maple-sub']]) })
+    income.getIncomeRecordsBetween.mockResolvedValue([
+      { ...수입, id: 'a', recordedAt: '' },
+      { ...수입, id: 'b', recordedAt: '', ocid: 'ocid-sub', mesoAmount: 543_000_000 },
+      { ...수입, id: 'c', recordedAt: '', accountId: 'maple-sub', mesoAmount: 7_000_000 },
+    ])
+
+    const days = await loadDayRecords('2026-08-23')
+    const amounts = await 칸금액('2026-08-01', '2026-08-31')
+
+    expect(days.map((entry) => entry.keyLostMapleId).sort()).toEqual(['maple-sub', 'maple-sub', undefined])
+    expect(amounts['2026-08-23']).toEqual({ incomeMeso: 1_200_000_000, expenseMeso: 0 })
+  })
+
+  it('키가 없는 부계정을 가를 수 없으면 모든 기록을 합계에 넣는다', async () => {
+    keyless.loadKeyLostScope.mockRejectedValue(new Error('auth'))
+    income.getIncomeRecordsBetween.mockResolvedValue([{ ...수입, id: 'a', recordedAt: '', ocid: 'ocid-sub' }])
+
+    expect((await 칸금액('2026-08-01', '2026-08-31'))['2026-08-23']?.incomeMeso).toBe(1_200_000_000)
   })
 
   it('범위를 두 어댑터에 그대로 넘긴다', async () => {

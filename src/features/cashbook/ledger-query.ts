@@ -11,8 +11,11 @@ import type { RecordTable } from '../query/meta'
 import { loadMonthDays, type DayRecord } from './records'
 import { useQuerySubscribed } from '../query/subscription'
 
-/** 이 쿼리가 읽는 표. 보스 결정석 · 드롭 판매 · 수입 · 지출 · 강화 지출이 한 줄 묶음에 든다. */
+/**
+ * 이 쿼리가 읽는 표. 보스 결정석 · 드롭 판매 · 수입 · 지출 · 강화 지출이 한 줄 묶음에 든다. 인증 수단은 키 없는 부계정의 기록을 가른다.
+ */
 export const LEDGER_TABLES: readonly RecordTable[] = [
+  'auth_methods',
   'boss_profit_records',
   'boss_drop_records',
   'income_records',

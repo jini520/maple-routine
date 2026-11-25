@@ -3,8 +3,12 @@
  * (`dependsOn`)가 열쇠가 아니라 이것을 본다.
  */
 
-/** 판을 올리고 구독 함수를 내는 저장소 표. 이름은 SQLite 표 이름이고 조회 원장만 Preferences 다. */
+/**
+ * 판을 올리고 구독 함수를 내는 저장소 표. 이름은 SQLite 표 이름이고 조회 원장과 인증 수단(`auth_methods`)은 Preferences 다. 인증 수단은
+ * 키 없는 부계정의 기록을 흐리게 하는 쿼리가 읽는다.
+ */
 export type RecordTable =
+  | 'auth_methods'
   | 'boss_profit_records'
   | 'boss_drop_records'
   | 'income_records'

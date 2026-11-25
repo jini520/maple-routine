@@ -125,6 +125,19 @@ describe('totalsBetween', () => {
   })
 })
 
+describe('키가 없는 부계정의 기록', () => {
+  // 가계부 칸 금액과 같은 기록을 같은 축으로 센다. 한쪽에서만 빠지면 통계와 가계부의 합이 어긋난다.
+  it('합계 · 캐릭터별 · 분류별 어디에도 들지 않는다', () => {
+    const byDate = {
+      '2026-09-24': [crystal('a', '낟낟', 500), { ...crystal('b', '부캐', 300), keyLostMapleId: 'maple-sub' }],
+      '2026-09-25': [{ ...spend('b', '부캐', { mesoAmount: 70 }), keyLostMapleId: 'maple-sub' }],
+    }
+    expect(totalsBetween(byDate, WEEK)).toEqual({ incomeMeso: 500, expenseMeso: 0, netMeso: 500 })
+    expect(characterTotalsBetween(byDate, WEEK).map((row) => row.ocid)).toEqual(['a'])
+    expect(categoryTotalsBetween(byDate, WEEK, 'expense')).toEqual([])
+  })
+})
+
 describe('totalsSeries 와 cumulativeNet', () => {
   it('기간마다 합계를 내고 누적은 순 수익을 차례로 더한다', () => {
     const byDate = {

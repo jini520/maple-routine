@@ -10,6 +10,7 @@
  * ③ 여러 원천을 하루로 접는다. 캘린더 칸이 받는 `CalendarAmounts` 를 만든다. 원천이 넷이고
  *    (손입력 둘 · 보스 결정석 · 아이템 판매) 뒤의 둘은 여기서 못 고친다.
  */
+import { EMPTY_KEY_LOST_SCOPE, keyLostMapleIdOf, loadKeyLostScope } from '../server-sync/keyless'
 import { countCoreSave } from '../app-review/request'
 import { recordUsageAction } from '../usage-log/record'
 import { withSqliteFallback } from '../boss-profit/sqlite-guards'
@@ -595,12 +596,17 @@ export async function loadMonthDays(
   fromDateKey: string,
   toDateKey: string,
 ): Promise<Record<string, DayRecord[]>> {
-  const [incomes, spends, bossSummaries, enhancements] = await Promise.all([
+  const [incomes, spends, bossSummaries, enhancements, keyLost] = await Promise.all([
     withSqliteFallback(getIncomeRecordsBetween(fromDateKey, toDateKey), []),
     withSqliteFallback(getSpendRecordsBetween(fromDateKey, toDateKey), []),
     loadBossDaySummaries(fromDateKey, toDateKey),
     loadEnhancementSpending(fromDateKey, toDateKey),
+    loadKeyLostScope().catch(() => EMPTY_KEY_LOST_SCOPE),
   ])
+  /** 키가 있던 기기의 부계정 기록에 그 메이플 ID 를 붙인다. 붙은 줄은 흐리게 서고 합계에서 빠진다. */
+  const marked = <T extends DayRecord>(entry: T, mapleId: string | undefined): T =>
+    mapleId === undefined ? entry : { ...entry, keyLostMapleId: mapleId }
+  const markedAuto = <T extends AutoDayRecord>(entry: T): T => marked(entry, keyLostMapleIdOf(keyLost, undefined, entry.ocid))
 
   /**
    * 이름을 한 번에 찾는 조회. 손입력 줄과 보스 줄이 같은 캐릭터를 가리킬 수 있어, 갈라 부르면
@@ -636,24 +642,26 @@ export async function loadMonthDays(
   }
 
   for (const summary of bossSummaries) {
-    bucketOf(summary.dateKey).auto.push(...toAutoRecords([summary], names))
+    bucketOf(summary.dateKey).auto.push(...toAutoRecords([summary], names).map(markedAuto))
   }
   for (const [dateKey, rows] of groupByDate(enhancements)) {
-    bucketOf(dateKey).auto.push(...toEnhancementRecords(rows, names))
+    bucketOf(dateKey).auto.push(...toEnhancementRecords(rows, names).map(markedAuto))
   }
   for (const record of incomes) {
-    bucketOf(record.earnedOn).manual.push({
-      kind: 'income',
-      record,
-      characterName: nameOf(record),
-    })
+    bucketOf(record.earnedOn).manual.push(
+      marked<ManualDayRecord>(
+        { kind: 'income', record, characterName: nameOf(record) },
+        keyLostMapleIdOf(keyLost, record.accountId, record.ocid),
+      ),
+    )
   }
   for (const record of spends) {
-    bucketOf(record.spentOn).manual.push({
-      kind: 'spend',
-      record,
-      characterName: nameOf(record),
-    })
+    bucketOf(record.spentOn).manual.push(
+      marked<ManualDayRecord>(
+        { kind: 'spend', record, characterName: nameOf(record) },
+        keyLostMapleIdOf(keyLost, record.accountId, record.ocid),
+      ),
+    )
   }
 
   const byDate: Record<string, DayRecord[]> = {}
@@ -765,6 +773,11 @@ interface ManualDayRecordBase {
    * 캐시에 이름이 없으면 빈다. 줄은 그때 항목만 적는다.
    */
   characterName: string
+  /**
+   * 이 기기에 쓸 수 있는 키가 없는 부계정의 기록이면 그 메이플 ID. 줄은 흐리게 서고 합계(`dayTotalsOf`)와 통계에서 빠진다. 누르면 키를 다시
+   * 등록하거나 이 기기에서 지우는 모달이 뜬다
+   */
+  keyLostMapleId?: string
 }
 
 export type ManualDayRecord =
@@ -795,6 +808,11 @@ interface AutoDayRecordBase {
   payoutMeso: number
   /** 결정석이면 마리, 판매면 건. */
   count: number
+  /**
+   * 이 기기에 쓸 수 있는 키가 없는 부계정의 기록이면 그 메이플 ID. 줄은 흐리게 서고 합계(`dayTotalsOf`)와 통계에서 빠진다. 누르면 키를 다시
+   * 등록하거나 이 기기에서 지우는 모달이 뜬다
+   */
+  keyLostMapleId?: string
 }
 
 /**
@@ -855,6 +873,11 @@ export interface EnhancementDayRecord {
   count: number
   /** 무엇을 강화했나. **비어 있지 않다.** 이 줄이 서는 조건이다 */
   items: readonly EnhancedItem[]
+  /**
+   * 이 기기에 쓸 수 있는 키가 없는 부계정의 기록이면 그 메이플 ID. 줄은 흐리게 서고 합계(`dayTotalsOf`)와 통계에서 빠진다. 누르면 키를 다시
+   * 등록하거나 이 기기에서 지우는 모달이 뜬다
+   */
+  keyLostMapleId?: string
 }
 
 /** 펼친 강화 줄의 한 칸. 장비 하나가 그날 먹은 메소다. */
@@ -1323,6 +1346,8 @@ export function dayTotalsOf(entries: readonly DayRecord[]): CalendarDayAmounts {
   let incomeMeso = 0
   let expenseMeso = 0
   for (const entry of entries) {
+    // 이 기기에 쓸 수 있는 키가 없는 부계정의 기록은 흐리게 서고 합계에 들지 않는다.
+    if (entry.keyLostMapleId !== undefined) continue
     // 지출은 둘이다. 손입력과 강화 사용 내역. 나머지 자동 줄은 언제나 수익이다.
     if (entry.kind === 'spend' || entry.kind === 'enhancement') {
       expenseMeso += recordMesoOf(entry)

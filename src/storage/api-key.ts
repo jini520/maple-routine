@@ -150,8 +150,22 @@ export async function getAuthConfig(): Promise<NexonAuthConfig | null> {
   return stored
 }
 
+const authMethodsListeners = new Set<() => void>()
+
+/**
+ * 인증 수단이 바뀔 때 부를 함수를 건다. 풀 함수를 돌려준다. 키가 무효가 되거나 바뀌면 어느 부계정의 기록이 흐려지는지가 바뀌어, 그
+ * 기록을 읽는 쿼리가 다시 읽는다.
+ */
+export function subscribeAuthMethods(listener: () => void): () => void {
+  authMethodsListeners.add(listener)
+  return () => {
+    authMethodsListeners.delete(listener)
+  }
+}
+
 async function write(shape: StoredShape): Promise<void> {
   await preferences.set(STORAGE_KEYS.authMethods, JSON.stringify(shape))
+  for (const listener of authMethodsListeners) listener()
 }
 
 /**

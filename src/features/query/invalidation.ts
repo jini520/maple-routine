@@ -6,6 +6,7 @@
  */
 import type { QueryCacheNotifyEvent, QueryClient } from '@tanstack/react-query'
 
+import { subscribeAuthMethods } from '../../storage/api-key'
 import { subscribeBossDropRecordsRevision } from '../../storage/boss-drops'
 import { subscribeBossProfitRecordsRevision } from '../../storage/boss-profit'
 import { subscribeEnhancementTotalsRevision } from '../../storage/enhancement-totals'
@@ -17,6 +18,7 @@ import { queryKeys } from './keys'
 import type { QueryDependency, RecordTable } from './meta'
 
 const TABLE_SUBSCRIBERS: Record<RecordTable, (listener: () => void) => () => void> = {
+  auth_methods: subscribeAuthMethods,
   boss_profit_records: subscribeBossProfitRecordsRevision,
   boss_drop_records: subscribeBossDropRecordsRevision,
   income_records: subscribeIncomeRecordsRevision,

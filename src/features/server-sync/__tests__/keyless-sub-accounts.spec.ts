@@ -32,7 +32,10 @@ describe('키가 있던 기기의 메이플 ID', () => {
     const scope = keyLostScopeOf(config, BY_ACCOUNT, SIGHTINGS)
 
     expect([...scope.mapleIds].sort()).toEqual(['maple-gone', 'maple-sub'])
-    expect([...scope.ocids].sort()).toEqual(['ocid-gone', 'ocid-sub'])
+    expect([...scope.ocids].sort()).toEqual([
+      ['ocid-gone', 'maple-gone'],
+      ['ocid-sub', 'maple-sub'],
+    ])
   })
 
   it('지금 로그인과 쓸 수 있는 부계정 키의 메이플 ID 는 고르지 않는다', () => {

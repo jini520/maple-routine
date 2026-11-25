@@ -55,10 +55,11 @@ function isExpense(entry: DayRecord): boolean {
   return entry.kind === 'spend' || entry.kind === 'enhancement'
 }
 
+/** 범위의 기록. 이 기기에 쓸 수 있는 키가 없는 부계정의 기록은 가계부 합계처럼 빠진다. */
 function entriesBetween(byDate: DaysByDate, range: StatsRange): DayRecord[] {
   return Object.entries(byDate)
     .filter(([dateKey]) => dateKey >= range.from && dateKey <= range.to)
-    .flatMap(([, entries]) => entries)
+    .flatMap(([, entries]) => entries.filter((entry) => entry.keyLostMapleId === undefined))
 }
 
 /** 범위의 수입 · 지출 · 순 수익. */

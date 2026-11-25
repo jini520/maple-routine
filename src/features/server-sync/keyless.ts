@@ -30,10 +30,22 @@ function accountsByMapleId(byAccount: ReadonlyMap<string, readonly string[]>): M
 /** 쓸 수 있는 키가 없는 부계정의 메이플 ID 와 그 캐릭터. 흐리게 두고 합계에서 뺀다. */
 export interface KeyLostScope {
   mapleIds: ReadonlySet<string>
-  ocids: ReadonlySet<string>
+  /** 캐릭터 → 그 메이플 ID */
+  ocids: ReadonlyMap<string, string>
 }
 
-export const EMPTY_KEY_LOST_SCOPE: KeyLostScope = { mapleIds: new Set(), ocids: new Set() }
+export const EMPTY_KEY_LOST_SCOPE: KeyLostScope = { mapleIds: new Set(), ocids: new Map() }
+
+/**
+ * 기록의 주인이 키가 있던 기기의 부계정이면 그 메이플 ID. 아니면 `undefined` 다.
+ *
+ * @param mapleId 메이플 ID 기록의 메이플 ID. 캐릭터 기록은 `undefined`
+ * @param ocid 캐릭터 기록의 캐릭터. 메이플 ID 기록은 `null`
+ */
+export function keyLostMapleIdOf(scope: KeyLostScope, mapleId: string | undefined, ocid: string | null): string | undefined {
+  if (mapleId !== undefined) return scope.mapleIds.has(mapleId) ? mapleId : undefined
+  return ocid === null ? undefined : scope.ocids.get(ocid)
+}
 
 /**
  * 키가 있던 기기의 메이플 ID. `character_accounts` 에서 본 메이플 ID 가운데 본 넥슨 계정이 모두 쓸 수 없는 것이다. 넥슨 계정을 모르고 본
@@ -53,10 +65,10 @@ export function keyLostScopeOf(
     if (!accounts.some((account) => usable.has(account))) mapleIds.add(mapleId)
   }
   if (mapleIds.size === 0) return EMPTY_KEY_LOST_SCOPE
-  const ocids = new Set<string>()
+  const ocids = new Map<string, string>()
   for (const ocid of new Set(sightings.map((one) => one.ocid))) {
     const mapleId = accountOfOcid(sightings, ocid)
-    if (mapleId !== null && mapleIds.has(mapleId)) ocids.add(ocid)
+    if (mapleId !== null && mapleIds.has(mapleId)) ocids.set(ocid, mapleId)
   }
   return { mapleIds, ocids }
 }
