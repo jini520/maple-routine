@@ -176,6 +176,22 @@ describe('NoticeModal: 배선', () => {
     expect(삭제.fontSize).toBe(나중에.fontSize)
   })
 
+  // 부 버튼이 파괴 동작인데 주 버튼이 진행하는 쪽이면 무르는 `취소` 가 따로 있어야 한다. 파괴 동작 아래에 서고 색은 평범하다.
+  it('닫기 버튼은 파괴 동작 아래에 평범한 글자로 서고 누르면 그 일만 한다', async () => {
+    const 닫기 = jest.fn()
+    const { getByTestId, getByText } = await renderOverlay(
+      <NoticeModal
+        {...기본프롭()}
+        secondaryAction={{ label: '삭제', onPress: noop, danger: true }}
+        dismissAction={{ label: '취소', onPress: 닫기 }}
+      />,
+    )
+
+    expect(flattenStyle(getByText('취소').props.style).color).not.toBe(기본테마.errorInk)
+    await fireEvent.press(getByTestId('notice-dismiss'))
+    expect(닫기).toHaveBeenCalledTimes(1)
+  })
+
   it('두 버튼 다 대기와 비활성을 받는다', async () => {
     const { getByText } = await renderOverlay(
       <NoticeModal

@@ -89,6 +89,12 @@ jest.mock('../../../hooks/useScreenNavigation', () => ({
 const mockRunAfterTransition = jest.fn((task: () => void) => task())
 jest.mock('../../../hooks/useRunAfterTransition', () => ({ useRunAfterTransition: () => mockRunAfterTransition }))
 // 드롭의 가격 입력 카드는 인벤토리 · 가격 입력 화면과 같은 카드라 그 테스트가 본다. 여기서는 무엇을 열었나만 본다.
+jest.mock('../../../features/server-sync/discard', () => ({ discardKeyLostMapleId: jest.fn() }))
+jest.mock('../../../features/server-sync/keyless', () => ({
+  ...jest.requireActual('../../../features/server-sync/keyless'),
+  loadKeyRegisterTarget: jest.fn(),
+}))
+
 jest.mock('../open-drop-price-card', () => ({ openDropPriceCardOf: jest.fn(async () => undefined) }))
 
 // 시트 껍데기는 `BossDropSheet.test.tsx` 와 같은 방식으로 세운다.
@@ -118,6 +124,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { useToastStore } from '../../../features/toast/store'
+import { useAccountManageOpenStore } from '../../../features/account-manage/open-request'
 import { FragmentShortageError } from '../../../storage/fragment-ledger'
 import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { useResetBoundaryTick } from '../../../features/query/reset-timer'
@@ -128,6 +135,8 @@ import { setHapticsPort } from '../../../native/ports'
 import { BOSS_SLOT_GAP_PX, BOSS_SLOT_PX, CashbookScreen } from '../CashbookScreen'
 
 const records = jest.requireMock('../../../features/cashbook/records') as Record<string, jest.Mock>
+const discard = jest.requireMock('../../../features/server-sync/discard') as Record<string, jest.Mock>
+const keyless = jest.requireMock('../../../features/server-sync/keyless') as Record<string, jest.Mock>
 
 type Rendered = Awaited<ReturnType<typeof renderOverlay>>
 
@@ -1475,6 +1484,63 @@ describe('줄을 누르면 고칠 수 있다', () => {
 
 // 헥사 매트릭스 · 아이템 구매는 그날 같은 캐릭터의 기록이 둘 이상이면 한 줄로 합친다. 합친 줄은 자동 줄처럼 그 자리에서
 // 펼치고, 기록을 고치는 곳은 펼친 칸이다. 어느 기록을 묶는지는 `merged-rows.spec.ts` 가 보고 여기서는 배선을 본다.
+describe('키가 없는 부계정의 기록', () => {
+  beforeEach(() => {
+    그날줄을(고른날, [
+      { kind: 'income', record: 그날수입, characterName: '' },
+      { kind: 'spend', record: 그날지출, characterName: '', keyLostMapleId: 'maple-sub' },
+    ])
+    useAccountManageOpenStore.getState().clear()
+    discard.discardKeyLostMapleId.mockReset().mockResolvedValue('discarded')
+    keyless.loadKeyRegisterTarget.mockReset().mockResolvedValue('account-sub')
+  })
+
+  it('흐리게 서고 그날 합계에 들지 않는다', async () => {
+    const view = await 그리기()
+
+    expect(flattenStyle(view.getByTestId('cashbook-row-card-spd-1').props.style).opacity).toBeCloseTo(0.4)
+    expect(flattenStyle(view.getByTestId('cashbook-row-card-inc-1').props.style).opacity).toBeUndefined()
+    expect(view.getByTestId('cashbook-day-total')).toHaveTextContent(/지출\s*0/)
+  })
+
+  it('누르면 시트가 아니라 모달이 뜨고 취소는 아무것도 바꾸지 않는다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, 'cashbook-row-spd-1')
+
+    expect(view.queryByTestId('spend-sheet-title')).toBeNull()
+    expect(view.getByText('키가 없는 계정의 기록이에요')).toBeTruthy()
+    await 누르기(view, 'key-lost-record-modal-dismiss')
+    expect(view.queryByText('키가 없는 계정의 기록이에요')).toBeNull()
+    expect(discard.discardKeyLostMapleId).not.toHaveBeenCalled()
+  })
+
+  it('API 키 등록은 그 계정의 키 시트를 열어 달라고 한다', async () => {
+    const view = await 그리기()
+
+    await 누르기(view, 'cashbook-row-spd-1')
+    await 누르기(view, 'key-lost-record-modal-primary')
+
+    expect(keyless.loadKeyRegisterTarget).toHaveBeenCalledWith('maple-sub')
+    expect(useAccountManageOpenStore.getState().request).toEqual({ accountKey: 'account-sub', openKeySheet: true })
+  })
+
+  it('기록 삭제는 그 메이플 ID 를 지우고, 올리지 못한 기록이 남으면 토스트로 알린다', async () => {
+    discard.discardKeyLostMapleId.mockResolvedValue('pending')
+    const showError = jest.spyOn(useToastStore.getState(), 'showError')
+    const view = await 그리기()
+
+    await 누르기(view, 'cashbook-row-spd-1')
+    await act(async () => {
+      fireEvent.press(view.getByText('기록 삭제'))
+    })
+
+    expect(discard.discardKeyLostMapleId).toHaveBeenCalledWith('maple-sub')
+    expect(showError).toHaveBeenCalledWith(expect.stringContaining('올리지 못한 기록'))
+    showError.mockRestore()
+  })
+})
+
 describe('헥사 · 구매 합친 줄', () => {
   const 지출 = (over: Record<string, unknown>) => ({
     kind: 'spend' as const,

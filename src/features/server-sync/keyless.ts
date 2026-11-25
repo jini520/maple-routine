@@ -82,6 +82,28 @@ export async function loadKeyLostScope(): Promise<KeyLostScope> {
   return keyLostScopeOf(config, byAccount, sightings)
 }
 
+/**
+ * `API 키 등록` 이 열 계정 상세의 `key`. 그 메이플 ID 를 본 넥슨 계정의 키가 지금 로그인의 부계정 키로 무효 표시와 함께 남아 있으면 그
+ * 키의 id 이고, 그 계정 상세가 `API 키 변경` 시트를 연다. 키가 지워졌으면 `null` 이고 목록이 `API 키 추가` 시트를 연다.
+ *
+ * @param byAccount `getMapleIdsByNexonAccount` 의 값
+ */
+export function keyRegisterTargetOf(
+  config: NexonAuthConfig | null,
+  byAccount: ReadonlyMap<string, readonly string[]>,
+  mapleId: string,
+): string | null {
+  if (config?.login == null) return null
+  const loginId = config.login.id
+  const accounts = new Set([...byAccount].filter(([, mapleIds]) => mapleIds.includes(mapleId)).map(([account]) => account))
+  return config.apiKeys.find((key) => key.loginId === loginId && accounts.has(key.id))?.id ?? null
+}
+
+export async function loadKeyRegisterTarget(mapleId: string): Promise<string | null> {
+  const [config, byAccount] = await Promise.all([getAuthConfig().catch(() => null), getMapleIdsByNexonAccount()])
+  return keyRegisterTargetOf(config, byAccount, mapleId)
+}
+
 /** 넥슨을 부를 수 있는 넥슨 계정의 메이플 ID 해시. 받기가 지운 메이플 ID 를 다시 받을지 가른다. */
 export async function loadUsableMapleIdHashes(): Promise<Set<string>> {
   const [config, byAccount] = await Promise.all([getAuthConfig().catch(() => null), getMapleIdsByNexonAccount()])

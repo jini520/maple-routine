@@ -163,6 +163,7 @@ import type { SpendRecord } from '../../storage/spend'
 import { SpendSheet, type SpendDraft } from './SpendSheet'
 import { useMonthDays } from './useMonthDays'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
+import { KeyLostRecordModal } from '../KeyLostRecordModal'
 
 const NO_RECORDS: readonly DayRecord[] = []
 
@@ -648,12 +649,14 @@ function DayRecordRow(props: {
   const bosses = entry.kind === 'bossCrystal' ? entry.bosses : null
   const items = entry.kind === 'enhancement' ? entry.items : null
   const soldItems = entry.kind === 'dropSale' ? entry.items : null
-  const expandable = bosses !== null || items !== null || soldItems !== null
+  // 키가 없는 부계정의 기록은 흐리게 서고, 누르면 펴거나 고치지 않고 키 없는 기록 모달이 뜬다.
+  const keyLost = entry.keyLostMapleId !== undefined
+  const expandable = !keyLost && (bosses !== null || items !== null || soldItems !== null)
   const isOpen = expanded && expandable
 
   return (
     // 줄과 펼친 판이 테두리 없는 카드 하나다. 판이 카드 밖에 따로 붙으면 둘 사이에 다시 경계 선이 필요해진다.
-    <View testID={`cashbook-row-card-${rowKey}`} className="rounded-[14px] bg-surface">
+    <View testID={`cashbook-row-card-${rowKey}`} className={`rounded-[14px] bg-surface${keyLost ? ' opacity-40' : ''}`}>
       <RowHeader
         rowKey={rowKey}
         card={recordCardOf(entry)}
@@ -668,7 +671,7 @@ function DayRecordRow(props: {
         rowIcon={recordIconOf(entry)}
         // 무슨 일이 일어날지 미리 말하는 화살촉. 같은 카드 두 줄이 서로 다르게 반응하는데 그림이 같으면 그것이 고장으로 읽힌다.
         Chevron={!expandable ? ChevronRightIcon : isOpen ? ChevronUpIcon : ChevronDownIcon}
-        action={!expandable ? '고치기' : isOpen ? '접기' : '펼치기'}
+        action={keyLost ? '키가 없는 계정의 기록' : !expandable ? '고치기' : isOpen ? '접기' : '펼치기'}
         expanded={expandable ? isOpen : undefined}
         memo={isManualRecord(entry) && entry.record.memo !== undefined}
         onPress={props.onPress}
@@ -838,6 +841,8 @@ export function CashbookScreen(): React.JSX.Element {
    * (`bossCrystal:{ocid}`)이고, 그것이 날짜를 안 들고 있으므로 날을 바꿀 때 여기서 지워야 한다.
    */
   const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null)
+  /** 누른 흐린 기록의 메이플 ID. 키 없는 기록 모달이 이 계정을 다룬다 */
+  const [keyLostMapleId, setKeyLostMapleId] = useState<string | null>(null)
   const [lastPointRate, setLastPointRate] = useState<number | null>(null)
   /** 캐릭터별 마지막 사냥. 사냥 계산기에서 캐릭터를 고르면 그 몫이 선다. */
   const [lastHunts, setLastHunts] = useState<LastHunts>({})
@@ -1050,6 +1055,10 @@ export function CashbookScreen(): React.JSX.Element {
    * 삭제도 없다. 여기서 지워도 원천이 그대로라 다음에 읽으면 되살아난다.
    */
   function openRecord(entry: DayRecord): void {
+    if (entry.keyLostMapleId !== undefined) {
+      setKeyLostMapleId(entry.keyLostMapleId)
+      return
+    }
     if (isManualRecord(entry)) {
       setSheet(entry)
       return
@@ -1476,7 +1485,7 @@ export function CashbookScreen(): React.JSX.Element {
           onClose={() => setSheet(null)}
         />
       )}
-
+      {keyLostMapleId !== null && <KeyLostRecordModal mapleId={keyLostMapleId} onClose={() => setKeyLostMapleId(null)} />}
     </View>
   )
 }

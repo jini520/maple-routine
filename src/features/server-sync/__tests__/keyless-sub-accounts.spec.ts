@@ -6,7 +6,7 @@
  */
 import type { CharacterAccountSighting } from '../../../lib/mvp/membership'
 import type { NexonApiKeyMethod, NexonAuthConfig } from '../../../types/auth'
-import { keyLostScopeOf } from '../keyless'
+import { keyLostScopeOf, keyRegisterTargetOf } from '../keyless'
 
 const LOGIN = { type: 'login', id: 'account-login', session: 's' } as const
 
@@ -71,5 +71,20 @@ describe('키가 있던 기기의 메이플 ID', () => {
 
   it('인증 수단이 없으면 아무것도 고르지 않는다', () => {
     expect(keyLostScopeOf(null, BY_ACCOUNT, SIGHTINGS).mapleIds.size).toBe(0)
+  })
+})
+
+describe('API 키 등록이 여는 곳', () => {
+  it('무효 표시로 남은 부계정 키면 그 계정 상세를 연다', () => {
+    const config: NexonAuthConfig = { login: LOGIN, apiKeys: [key('account-sub', 'account-login', true)], mainKeyId: null }
+
+    expect(keyRegisterTargetOf(config, BY_ACCOUNT, 'maple-sub')).toBe('account-sub')
+  })
+
+  it('키가 지워졌거나 다른 로그인의 키면 목록의 키 추가를 연다', () => {
+    const config: NexonAuthConfig = { login: LOGIN, apiKeys: [key('account-sub', 'account-other', true)], mainKeyId: null }
+
+    expect(keyRegisterTargetOf(config, BY_ACCOUNT, 'maple-sub')).toBeNull()
+    expect(keyRegisterTargetOf(config, BY_ACCOUNT, 'maple-gone')).toBeNull()
   })
 })

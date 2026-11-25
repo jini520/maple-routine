@@ -41,6 +41,8 @@ function mergeTargetOf(entry: DayRecord): MergeTarget | null {
   const { category, ocid } = entry.record
   // 캐릭터가 없는 옛 기록은 누구 것인지 몰라 묶지 않는다.
   if (ocid === null || !isMergedCategory(category)) return null
+  // 키가 없는 부계정의 기록은 흐리게 따로 서야 누르면 모달이 뜬다. 합친 줄에 들면 합친 금액에 섞인다.
+  if (entry.keyLostMapleId !== undefined) return null
   return { key: `${category}:${ocid}`, entry }
 }
 
