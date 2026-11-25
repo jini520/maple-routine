@@ -33,7 +33,7 @@ jest.mock('../../../storage/enhancement-recomputes', () => ({
   saveRecomputeProgress: jest.fn(),
 }))
 jest.mock('../anomalies', () => ({ ...jest.requireActual('../anomalies'), reportEnhancementAnomalies: jest.fn() }))
-jest.mock('../recompute', () => ({ ...jest.requireActual('../recompute'), RECOMPUTE_REQUESTS: [] }))
+jest.mock('../../../lib/enhancement/recompute-requests', () => ({ ...jest.requireActual('../../../lib/enhancement/recompute-requests'), RECOMPUTE_REQUESTS: [] }))
 jest.mock('../../settlement/store', () => ({ settlingYesterdayOf: jest.fn() }))
 
 const { getAuthConfig } = jest.requireMock('../../../storage/api-key') as Record<string, jest.Mock>
@@ -51,7 +51,7 @@ const { createOwnerResolver } = jest.requireMock('../owners') as Record<string, 
 let ownerTable: Record<string, unknown> = {}
 const { ensureEnhancementTotals } = jest.requireMock('../legacy-totals') as Record<string, jest.Mock>
 const recomputes = jest.requireMock('../../../storage/enhancement-recomputes') as Record<string, jest.Mock>
-const { RECOMPUTE_REQUESTS } = jest.requireMock('../recompute') as { RECOMPUTE_REQUESTS: unknown[] }
+const { RECOMPUTE_REQUESTS } = jest.requireMock('../../../lib/enhancement/recompute-requests') as { RECOMPUTE_REQUESTS: unknown[] }
 const { reportEnhancementAnomalies } = jest.requireMock('../anomalies') as Record<string, jest.Mock>
 const { settlingYesterdayOf } = jest.requireMock('../../settlement/store') as Record<string, jest.Mock>
 const setRequests = (requests: unknown[]) => RECOMPUTE_REQUESTS.splice(0, RECOMPUTE_REQUESTS.length, ...requests)

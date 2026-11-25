@@ -1,4 +1,4 @@
-# ADR-100+174+189+234+295 강화 내역을 계산한 합계로 저장하고, 다시 매길 기간은 환경 변수로 건다
+# ADR-100+174+189+234+295+327 강화 내역을 계산한 합계로 저장하고, 다시 매길 기간은 환경 변수로 건다
 
 > 🟢 유효
 > 관련 소스: `features/enhancement-history/spending.ts` · `features/enhancement-history/collect.ts` · `features/enhancement-history/recompute.ts` · `features/enhancement-history/anomalies.ts` · `features/enhancement-history/owners.ts` · `features/enhancement-history/legacy-totals.ts` · `lib/enhancement/world.ts` · `lib/enhancement/sighted-owner.ts` · `lib/world/worlds.ts` · `storage/enhancement-totals.ts` · `storage/enhancement-refetches.ts` · `storage/character-dated-names.ts` · `storage/character-first-days.ts` · `storage/sqlite/enhancement-tables.ts` · `storage/sqlite/convert-enhancement-tables.ts` · `lib/enhancement/cost.ts` · `features/cashbook/records.ts` · `app/cashbook/CashbookScreen.tsx` · 서버 `database/schema.ts`(`world_open_periods` · `superior_series` · `superior_items`) · 서버 `modules/worlds/worlds.repository.ts` · 서버 `modules/enhancement-costs/` · 서버 `modules/admin/`
@@ -275,6 +275,19 @@ today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어
   - 같은 날을 화면 회차나 `superiorOnly` 가 없는 요청이 함께 받으면 통째로 갈아 끼운다. 그쪽도 슈페리얼 장비의 줄을 함께 매기기
     때문이다.
 
+### 결정 11. 새로 깐 기기와 강화 데이터를 지운 기기는 그때 번들에 든 다시 매기기 요청을 건너뛴다
+
+- 다시 매기기 요청은 고치기 전의 코드로 매긴 합계를 고친다(결정 4). 새로 깐 기기에는 그런 합계가 없다. 그 기기의 합계는 지금
+  코드로 처음 받은 것이거나 서버에서 받은 것이다. 서버의 합계는 그 합계를 올린 기기가 자기 요청을 마치고 다시 올린다.
+- 그런데 진행 줄이 없는 기기는 요청을 처음부터 돌았다. 넥슨 로그인 계정은 한 회차에 60일씩만 받아서, 새로 깐 기기가 가계부를
+  새로고침할 때마다 지난 스타포스 내역을 다시 받고 그 합계를 서버에 다시 올렸다. 다른 기기는 그 합계를 다시 받았다(#1257).
+- 그래서 DB 를 처음 만든 기기는 그때 번들에 든 요청을 건너뛸 요청으로 기기 표 `enhancement_recompute_skips` 에 적는다(사용자 선택
+  2026-11-25). 건너뛸 요청은 모든 넥슨 계정에서 끝난 것으로 읽는다. 1.0.14 에서 올라온 기기는 DB 가 이미 있어 지금처럼 남은
+  요청을 이어서 받는다.
+- 데이터 삭제로 강화 묶음을 지운 기기도 같다. 합계와 조회 기록이 지워져 지난 날을 지금 코드로 다시 받으므로 고칠 것이 없다. 이
+  줄은 같은 이유에서 따라 나와 Claude 가 정했다.
+- 그 뒤 번들에 새로 든 요청은 건너뛰지 않는다. 그 기기가 그 사이에 옛 코드로 받은 합계가 있을 수 있기 때문이다.
+
 ## 테스트
 
 | 테스트 | 확인하는 것 |
@@ -284,7 +297,7 @@ today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어
 | `features/enhancement-history/__tests__/collect.spec.ts` | 모든 쪽을 받아 한 합계로 갈아 끼우는지, 목록을 못 받으면 판정을 비우고 굳히지 않는지(결정 5 · 6) |
 | `features/cashbook/__tests__/records.spec.ts` | 이벤트 월드 · 모름 줄을 지출에서 빼는지, MVP 할인을 스타포스 시도 비용에만 붙이는지, 옮기는 단계 뒤에 읽는지, 칸 금액과 상세 합계가 같은지(결정 2 · 3 · 5) |
 | `lib/enhancement/__tests__/cost.spec.ts` | 스타포스 비용을 두 몫으로 나누고 MVP 할인을 시도 비용에만 붙이는 계산(결정 2) |
-| `features/enhancement-history/__tests__/recompute.spec.ts` | 틀린 요청만 버리는지, 기간을 하한 · 오늘로 자르고 진행 뒤부터 고르는지, 한도가 있으면 그 날 수만 고르는지(결정 4) |
+| `lib/enhancement/__tests__/recompute-requests.spec.ts` · `features/enhancement-history/__tests__/recompute.spec.ts` | 틀린 요청만 버리는지(앞 파일), 기간을 하한 · 오늘로 자르고 진행 뒤부터 고르는지, 한도가 있으면 그 날 수만 고르는지(결정 4) |
 | `features/enhancement-history/__tests__/collect.spec.ts` (다시 매기기) | 굳은 날도 요청이면 다시 받고 분모에 드는지, 모두 받으면 진행 · 완료를 적고 실패하면 안 적는지, 완료된 요청은 안 도는지, 넥슨 로그인 계정만 한 회차에 60일로 자르는지, 다시 매기기의 날만 남으면 분모에는 들고 모달 판정에는 안 드는지(결정 4) |
 | `features/enhancement-history/__tests__/spending.spec.ts` (성) | 최신 줄부터 받아도 가장 이른 시도의 강화 전 성과 가장 늦은 시도의 강화 후 성을 드는지, 중간에 성이 오르내려도 두 끝만 잇는지, 합계에 안 드는 줄은 성에도 안 드는지(결정 8) |
 | `storage/sqlite/__tests__/enhancement-totals-real-sqlite.test.ts` (성) | 갈아 끼울 때 성 칸과 슈페리얼 비용도 고쳐 적는지(결정 8 · 10) |
@@ -298,9 +311,10 @@ today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어
 | `features/enhancement-history/__tests__/spending.spec.ts` (슈페리얼) | 표의 장비면 성 · 이벤트 할인 · 파괴 방지와 상관없이 계열 금액을 슈페리얼 몫에 드는지, `노바 두건` 처럼 계열 이름만 든 장비는 일반 식인지, 표에 없는데 `superior_item_flag` 가 `슈페리얼 장비 미해당` 도 빈 글자도 아니면 `no_cost` 인지(결정 10) |
 | `features/enhancement-history/__tests__/anomalies.spec.ts` (슈페리얼) | 표에 없는 슈페리얼 줄을 성수와 상관없이 `no_cost` 로 세는지(결정 10) |
 | `features/cashbook/__tests__/records.spec.ts` (슈페리얼) | 슈페리얼 비용에는 MVP 할인을 붙이지 않는지(결정 2 · 10) |
-| `features/enhancement-history/__tests__/recompute.spec.ts` (슈페리얼) | `superiorOnly` 를 읽고, 참 · 거짓이 아니면 그 요청을 버리는지(결정 4 · 10) |
+| `lib/enhancement/__tests__/recompute-requests.spec.ts` (슈페리얼) | `superiorOnly` 를 읽고, 참 · 거짓이 아니면 그 요청을 버리는지(결정 4 · 10) |
 | `features/enhancement-history/__tests__/collect.spec.ts` (슈페리얼) | `superiorOnly` 요청의 날은 슈페리얼 장비의 줄이 있을 때만 갈아 끼우고, 없으면 합계 · 굳음 원장 · 이상 보고를 그대로 두되 진행은 적는지, 같은 날을 통째로 받는 일이 함께 있으면 통째로 갈아 끼우는지(결정 10) |
 | 서버 `modules/enhancement-costs/enhancement-costs.repository.spec.ts` (슈페리얼) | 칸에 계열과 슈페리얼 장비 줄(그림 id 포함)을 싣는지, 계열을 더하거나 금액을 고치거나 장비를 더하고 지우거나 그림을 바꾸면 칸의 `updatedAt` 이 바뀌는지, 그림 표에 없는 그림은 막는지, 빈 · 겹친 계열 key, 1 보다 작은 금액, 빈 장비 이름, 공백을 지운 뒤 같은 장비 이름은 400 이고 아무것도 안 바뀌는지(결정 10) |
+| `storage/sqlite/__tests__/db-real-sqlite.test.ts` (다시 매기기 건너뛰기) · `storage/__tests__/cache-data.spec.ts` (강화) | 결정 11: DB 를 처음 만들면 그때의 요청을 건너뛸 요청으로 적고 그 요청을 모든 계정에서 끝난 것으로 읽는지, 이미 있던 DB 는 적지 않는지, 강화 묶음을 지우면 다시 적는지 |
 
 ## 번호 기록
 
@@ -324,3 +338,4 @@ today · 통계의 지출에서 빠졌다(#1029). 장비 표에 레벨을 넣어
   범위를 소속 기록의 그 넥슨 계정 ocid 와 받은 API 종류의 분류로 고쳤고, 결정 3 에 옮기기가 변환 뒤에 돈다는 것을 더했다
 - (2026-11-24) 배경의 `합계는 지금 서버로 보내지 않는다` 를 1.0.15 의 기기 간 동기화에 맞추고, 결정 9 의 서버 표를
   `world_open_periods` 로 고쳤다. 1.0.14 까지의 운영 서버는 따로 밝혔다(#947)
+- ADR-327 (2026-11-25): 새로 깐 기기와 강화 데이터를 지운 기기가 그때 번들에 든 다시 매기기 요청을 건너뛰는 결정 11 을 더했다(#1257)

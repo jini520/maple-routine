@@ -5,6 +5,8 @@ import { getCachedCharacterBasic } from './character-basic-cache'
 import { addMissingCharacterProfile, type CharacterProfileSnapshot } from './character-profiles'
 import { withServerSyncPaused, type ServerSyncTable } from './server-sync-queue'
 import { getBossProfitDb } from './sqlite/db'
+import { recomputeSkipStatements } from './sqlite/enhancement-tables'
+import { RECOMPUTE_REQUESTS } from '../lib/enhancement/recompute-requests'
 
 // 데이터 삭제. 사용자가 고른 그룹이 목록으로 든 키와 표만 지운다. 목록에 없는 것은 어떤 선택에서도 남는다.
 // 화면에 적지 않은 것을 함께 지우면 사용자가 모르는 것을 잃는다. 새 키 · 새 표는 그룹 목록에 더해야만 지워진다.
@@ -103,7 +105,12 @@ function statementsFor(selection: CacheDataSelection): string[] {
       ? [dropQueued(['cashbookEntries', 'inventoryItems', 'rememberedLevels']), ...CASHBOOK_TABLES.map((table) => `DELETE FROM ${table}`)]
       : []),
     ...(selection.enhancement
-      ? [dropQueued(['enhancementTotals', 'enhancementSettledDays']), ...ENHANCEMENT_TABLES.map((table) => `DELETE FROM ${table}`)]
+      ? [
+          dropQueued(['enhancementTotals', 'enhancementSettledDays']),
+          ...ENHANCEMENT_TABLES.map((table) => `DELETE FROM ${table}`),
+          // 지운 날은 지금 코드로 다시 받으므로 그때 번들에 든 다시 매기기 요청이 고칠 것이 없다.
+          ...recomputeSkipStatements(RECOMPUTE_REQUESTS.map((request) => request.id), new Date().toISOString()),
+        ]
       : []),
     ...(selection.boss ? [dropQueued(['bossDrops']), dropQueuedEntries(CLEARED_BOSS_ENTRIES), ...CLEAR_BOSS_RECORDS] : []),
     ...(selection.manual
