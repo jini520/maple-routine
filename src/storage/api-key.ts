@@ -163,9 +163,13 @@ export function subscribeAuthMethods(listener: () => void): () => void {
   }
 }
 
+function notifyAuthMethods(): void {
+  for (const listener of authMethodsListeners) listener()
+}
+
 async function write(shape: StoredShape): Promise<void> {
   await preferences.set(STORAGE_KEYS.authMethods, JSON.stringify(shape))
-  for (const listener of authMethodsListeners) listener()
+  notifyAuthMethods()
 }
 
 /**
@@ -324,8 +328,10 @@ export async function removeAllApiKeys(): Promise<void> {
 export async function signOutAuth(): Promise<void> {
   const current = await getAuthConfig()
   const apiKeys = (current?.apiKeys ?? []).filter((one) => one.loginId !== null)
-  if (apiKeys.length === 0) await preferences.remove(STORAGE_KEYS.authMethods)
-  else await write({ login: null, apiKeys, mainKeyId: null })
+  if (apiKeys.length === 0) {
+    await preferences.remove(STORAGE_KEYS.authMethods)
+    notifyAuthMethods()
+  } else await write({ login: null, apiKeys, mainKeyId: null })
   await preferences.remove(STORAGE_KEYS.apiKey)
   await preferences.remove(STORAGE_KEYS.legacySelectedAccountId)
 }

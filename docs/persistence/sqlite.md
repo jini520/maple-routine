@@ -201,9 +201,10 @@
   지우기가, 인벤토리 줄을 지우면 그 줄을 가리키던 가계부 기록이 함께 들어간다.
 - `server_sync_pause` 에 줄이 있는 동안은 넣지 않는다(`withServerSyncPaused`). 받은 줄을 넣거나 올리기의 결과로 기기 줄을 고칠 때다.
 - 동기화의 받기가 넣은 줄의 ocid · 메이플 ID 칸(`ocid` · `previous_ocid` · `receiver_ocid` · `account_id`)은 이 기기의
-  `character_accounts` 에 짝이 없으면 원문 대신 `#` 를 붙인 해시다(`storage/server-sync-pull.ts`, [[ADR-099]] 결정 12 · 67). 그
-  캐릭터는 알 수 없는 캐릭터로 보이고 금액에는 들어간다. 넥슨을 부를 자격이 없어 넥슨에 보내지 않는다. 짝이 생기면 받기가 대기 표에
-  넣지 않고 원문으로 바꾼다(`storage/server-sync-unmatched.ts`).
+  `character_accounts` 에 짝이 없으면 원문 대신 `#` 를 붙인 해시다(`storage/server-sync-pull.ts`, [[ADR-099]] 결정 12 · 67). 줄의
+  주인인 메이플 ID 를 모르는 줄은 받기가 넣지 않아(결정 68), `#` 로 남는 것은 그 메이플 ID 에서 지운 캐릭터와 다른 캐릭터를 가리키는
+  칸이다. 그 캐릭터는 알 수 없는 캐릭터로 보이고 금액에는 들어간다. 넥슨을 부를 자격이 없어 넥슨에 보내지 않는다. 짝이 생기면 받기가
+  대기 표에 넣지 않고 원문으로 바꾼다(`storage/server-sync-unmatched.ts`).
 - 기기 변환이 옮긴 줄은 트리거를 거치지 않아 대기 표에 없다. 처음 동기화가 이 표에서 같은 조건의 줄을 모두 넣는다
   (`enqueueAllRecordRows`). 가계부의 딸린 줄은 기록의 id 로, 강화 조회 기록은 굳은 줄만 넣는다. 표 목록이 하나라 트리거를 건 표와
   처음 동기화가 넣는 표가 갈리지 않는다.
