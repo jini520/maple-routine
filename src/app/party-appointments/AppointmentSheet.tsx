@@ -41,11 +41,12 @@ import {
 import { orderByCharacter } from '../../features/party-appointments/boss-groups'
 import { checkAlarmGate, ensureNotificationPermission, type AlarmGateResult } from '../../features/party-appointments/alarm-gate'
 import { usePartyAlarmSettingsStore } from '../../features/party-appointments/alarm-settings'
+import { withHiddenBosses } from '../../features/party-appointments/hidden-bosses'
 import { savePartyAppointments, usePartyAppointments } from '../../features/party-appointments/query'
 import { bossShortNameOf } from '../../lib/boss/bosses'
 import { WEEKDAY_LABELS } from '../../lib/calendar'
 import { getCurrentKstDateKey } from '../../lib/scheduler/reset-clock'
-import type { PartyAppointmentOccurrence } from '../../types/party-appointment'
+import type { PartyAppointment, PartyAppointmentOccurrence } from '../../types/party-appointment'
 import { openInputCard } from '../../features/input-card/store'
 import { openNotificationSettings } from '../settings/notification-settings-link'
 import { AppointmentAlarmField } from './AppointmentAlarmField'
@@ -86,7 +87,7 @@ export interface AppointmentSheetProps {
 }
 
 export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Element {
-  const { appointments } = usePartyAppointments()
+  const { appointments, stored, hidden } = usePartyAppointments()
   const save = savePartyAppointments
   const { target } = props
   const [now] = useState(() => new Date())
@@ -107,6 +108,14 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   const repeating = schedule?.type === 'weekly'
   const past = target !== undefined && isPastWeek(target.weekStart, todayKey)
 
+  /**
+   * 화면의 약속에 해당하는 기기에 저장된 그대로의 약속. 화면의 약속은 숨은 보스를 뺀 것이라, 그대로 저장하면 숨은 보스가 서버와 키가
+   * 멀쩡한 다른 기기에서까지 지워진다.
+   */
+  function storedOf(appointment: PartyAppointment): PartyAppointment {
+    return stored.find((one) => one.id === appointment.id) ?? appointment
+  }
+
   function update(patch: Partial<AppointmentDraft>): void {
     setDraft((current) => ({ ...current, ...patch }))
   }
@@ -124,7 +133,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   }, [alarmSwitch])
 
   /**
-   * 알림 체크 상자를 켤 때 기기 권한 → 파티 약속 알림 스위치 차례로 보고 걸리는 첫 하나의 모달을 띄운다.
+   * 알림 체크 상자를 켤 때 기기 권한 → `파티 스케줄 알림` 스위치 차례로 보고 걸리는 첫 하나의 모달을 띄운다.
    * 체크 상자는 먼저 켠다.
    */
   async function turnAlarmOn(): Promise<void> {
@@ -168,14 +177,13 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
     setSaving(true)
     try {
       const id = newAppointmentId()
-      await save(
-        target === undefined
-          ? [...appointments, toAppointment(values, id)]
-          : applyEdit(appointments, target.occurrence.appointment, target.weekStart, values, {
-              thisWeekOnly: repeating && thisWeekOnly,
-              newId: id,
-            }),
-      )
+      if (target === undefined) {
+        await save([...stored, toAppointment(values, id)])
+      } else {
+        const original = storedOf(target.occurrence.appointment)
+        const kept = withHiddenBosses(values, original, target.weekStart, hidden)
+        await save(applyEdit(stored, original, target.weekStart, kept, { thisWeekOnly: repeating && thisWeekOnly, newId: id }))
+      }
       props.onClose()
     } finally {
       setSaving(false)
@@ -185,7 +193,7 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
   async function remove(): Promise<void> {
     if (target === undefined) return
     setConfirmingDelete(false)
-    await save(applyDelete(appointments, target.occurrence.appointment, target.weekStart))
+    await save(applyDelete(stored, storedOf(target.occurrence.appointment), target.weekStart))
     props.onClose()
   }
 
