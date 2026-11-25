@@ -105,6 +105,27 @@ export const ENHANCEMENT_RECOMPUTES_BODY = `(
   )`
 
 /**
+ * 이 기기가 건너뛰는 다시 매기기 요청. 요청 하나가 한 줄이고 모든 넥슨 계정에서 끝난 것으로 읽는다. DB 를 처음 만들 때와 강화
+ * 묶음을 지울 때 그때 번들에 든 요청을 적는다. 그 기기의 합계는 지금 코드로 받은 것이라 고칠 것이 없다.
+ */
+export const ENHANCEMENT_RECOMPUTE_SKIPS_BODY = `(
+    id TEXT NOT NULL PRIMARY KEY DEFAULT (${NEW_UUID_SQL}),
+    request_key TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL
+  )`
+
+/**
+ * 요청들을 건너뛸 요청으로 적는 문장. 이미 적힌 요청은 그대로 둔다. 트랜잭션 안의 문장 목록에 섞여 매개변수 없이 나가서 따옴표를
+ * 겹쳐 적는다.
+ */
+export function recomputeSkipStatements(requestKeys: readonly string[], at: string): string[] {
+  const text = (value: string): string => `'${value.replaceAll("'", "''")}'`
+  return requestKeys.map(
+    (key) => `INSERT OR IGNORE INTO enhancement_recompute_skips (request_key, created_at) VALUES (${text(key)}, ${text(at)})`,
+  )
+}
+
+/**
  * 캐릭터의 그날 이름과 월드. 강화 줄의 이름을 ocid 에 붙일 때 `character/basic` 에 날짜를 넣어 받은 값이다. 지난 날의 값은
  * 바뀌지 않아 같은 ocid · 날짜를 다시 부르지 않는다.
  */

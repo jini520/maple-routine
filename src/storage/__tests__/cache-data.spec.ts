@@ -9,6 +9,14 @@ import { clearCacheData, getCacheDataCounts, type CacheDataSelection } from '../
 import { __resetStoragePortsForTest, setSqlitePort } from '../ports'
 import { closeBossProfitDb, getBossProfitDb } from '../sqlite/db'
 import { createRealSqlite, type RealSqlite } from '../sqlite/__tests__/node-sqlite-port'
+import { loadRecomputeProgress } from '../enhancement-recomputes'
+
+jest.mock('../../lib/enhancement/recompute-requests', () => ({
+  ...jest.requireActual('../../lib/enhancement/recompute-requests'),
+  RECOMPUTE_REQUESTS: [],
+}))
+const recomputeRequests = (jest.requireMock('../../lib/enhancement/recompute-requests') as { RECOMPUTE_REQUESTS: { id: string }[] })
+  .RECOMPUTE_REQUESTS
 
 let real: RealSqlite
 let prefs: FakePreferences
@@ -173,6 +181,18 @@ describe('clearCacheData', () => {
       ['enhancement_totals', 'enhancement_history_checks', 'enhancement_refetches', 'character_dated_names', 'character_first_days'].map(count),
     ).toEqual([0, 0, 0, 0, 0])
     expect(count('cashbook_entries')).toBe(1)
+  })
+
+  // 합계와 확인 기록을 지우면 지난 날을 지금 코드로 다시 받는다. 다시 매기기 요청까지 처음부터 돌면 같은 날을 두 번 받는다.
+  it('강화를 지우면 그때 번들에 든 다시 매기기 요청을 건너뛸 요청으로 적는다', async () => {
+    await seedAll()
+    recomputeRequests.splice(0, recomputeRequests.length, { id: 'starforce-stars-876' })
+
+    await clearCacheData({ ...NONE, enhancement: true })
+
+    expect(count('enhancement_recomputes')).toBe(0)
+    expect((await loadRecomputeProgress('account-login')).get('starforce-stars-876')?.completed).toBe(true)
+    recomputeRequests.splice(0, recomputeRequests.length)
   })
 
   it('다섯 그룹을 다 골라도 목록에 없는 키 · 표는 남는다', async () => {

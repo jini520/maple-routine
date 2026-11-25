@@ -1,5 +1,6 @@
 import { getSqlitePort } from '../ports'
 import type { SqliteDbConnection } from '../ports'
+import { RECOMPUTE_REQUESTS } from '../../lib/enhancement/recompute-requests'
 import { whenRecordsReleased } from '../record-hold'
 import {
   BOSS_DROPS_BODY,
@@ -31,6 +32,8 @@ import {
 } from './cashbook-tables'
 import {
   ENHANCEMENT_RECOMPUTES_BODY,
+  ENHANCEMENT_RECOMPUTE_SKIPS_BODY,
+  recomputeSkipStatements,
   ENHANCEMENT_TOTALS_BODY,
   ENHANCEMENT_TOTALS_DATE_INDEX,
   CHARACTER_DATED_NAMES_BODY,
@@ -185,6 +188,11 @@ const TABLE_DEFINITIONS = [
   {
     name: 'enhancement_recomputes',
     createSql: `CREATE TABLE IF NOT EXISTS enhancement_recomputes ${ENHANCEMENT_RECOMPUTES_BODY}`,
+  },
+  // 이 기기가 건너뛰는 다시 매기기 요청. 지워지면 새로 깐 기기가 지금 코드로 받은 날을 다시 받는다.
+  {
+    name: 'enhancement_recompute_skips',
+    createSql: `CREATE TABLE IF NOT EXISTS enhancement_recompute_skips ${ENHANCEMENT_RECOMPUTE_SKIPS_BODY}`,
   },
   // 강화 줄의 이름을 ocid 에 붙이며 받은 그날 이름. 넥슨에서 다시 받을 수 있는 값이다.
   {
@@ -581,6 +589,12 @@ async function openBossProfitDb(): Promise<SqliteDbConnection> {
   await runVersionedMigrations(db)
   // 이관 상한을 건 DB 는 앞 버전 이관을 보는 테스트라 바꾸지 않는다.
   if (fresh && !isMigrationCeilingSet()) await runDeviceConversion(db, { backup: false })
+  // 새로 깐 기기의 합계는 지금 코드로 받은 것이라 그때 번들에 든 다시 매기기 요청이 고칠 것이 없다.
+  if (fresh) {
+    for (const statement of recomputeSkipStatements(RECOMPUTE_REQUESTS.map((request) => request.id), new Date().toISOString())) {
+      await db.execute(statement)
+    }
+  }
   // 인덱스는 변환 뒤의 단계 번호로 고른다. 새로 설치한 DB 는 위에서 변환을 마쳤다.
   const converted = await deviceConversionVersionOf(db)
   if (converted < BOSS_TABLES_CONVERTED_AT) await db.execute(PERIOD_BOSS_DROPS_INDEX)

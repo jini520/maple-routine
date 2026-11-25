@@ -93,6 +93,7 @@
 | `enhancement_totals` | `id`(uuid, `(ocid, history_date, category, item_name)` 는 UNIQUE) | 강화 내역을 날짜 · 캐릭터(ocid) · 분류 · 넥슨이 준 장비 이름별로 묶은 합계. 응답이 준 그날 이름을 그날 그 이름이었던 캐릭터에 붙여 적는다. 그 캐릭터의 메이플 ID 와 그날 이름은 읽을 때 `character_accounts` · `character_dated_names` 에서 찾는다. 비용은 MVP 할인 전 시도 비용과 할인을 받지 않는 파괴 방지 · 슈페리얼 비용이고, 스타포스는 그날 첫 성과 끝 성을 든다. 이벤트 월드 판정도 든다 | `storage/enhancement-totals.ts` | 지운다 (강화) | [[ADR-100]] · [[ADR-101]] |
 | `enhancement_history` | `id` | 옛 강화 응답 원본. 새 기기에는 만들지 않는다. 옛 기기는 합계로 옮기는 부팅 단계만 읽고, 옮긴 뒤 지운다 | `storage/enhancement-history.ts` | 남긴다 | [[ADR-100]] · [[ADR-101]] |
 | `enhancement_recomputes` | `id`(uuid, `(nexon_account_id, request_key)` 는 UNIQUE) | 강화 비용 다시 매기기 요청을 넥슨 계정마다 어디까지 받았는지와 끝났는지 | `storage/enhancement-recomputes.ts` | 지운다 (강화) | [[ADR-100]] |
+| `enhancement_recompute_skips` | `id`(uuid, `request_key` 는 UNIQUE) | 이 기기가 건너뛰는 다시 매기기 요청. DB 를 처음 만들 때와 강화 묶음을 지울 때 그때 번들에 든 요청을 적는다. 고칠 옛 합계가 없기 때문이다. 모든 넥슨 계정에서 끝난 것으로 읽는다 | `storage/enhancement-recomputes.ts` | 남긴다 (강화를 지우면 그때의 요청을 다시 적는다) | [[ADR-100]] |
 | `enhancement_history_checks` | `id`(uuid, `(nexon_account_id, enhancement_type, history_date)` 는 UNIQUE) | 강화 내역을 넥슨 계정 · 날짜별로 조회했는지 기록 | `storage/enhancement-history.ts` | 지운다 (강화) | `features/cashbook.md` |
 | `enhancement_refetches` | `id`(uuid, `(nexon_account_id, enhancement_type, history_date)` 는 UNIQUE) | 다시 받아야 하는 강화 내역의 날. 버전 18 이관과 옛 원본 옮기기가 캐릭터에 붙이지 못한 줄의 날을 적는다. 가계부 · 통계 화면의 회차가 끝난 뒤 수집기가 따로 받아 굳히면 지운다 | `storage/enhancement-refetches.ts` | 지운다 (강화) | [[ADR-101]] |
 | `character_dated_names` | `id`(uuid, `(ocid, history_date)` 는 UNIQUE) | 캐릭터의 그날 이름과 월드 이름. 강화 줄의 이름을 캐릭터에 붙일 때 `character/basic` 에 날짜를 넣어 받은 값이다. 그날 값이 없으면 이름이 `NULL` 이다 | `storage/character-dated-names.ts` | 지운다 (강화) | [[ADR-101]] |
@@ -132,6 +133,7 @@
 | `enhancement_totals` | `id` NN · `ocid` NN · `history_date` NN · `category` NN · `item_name` NN · `attempt_count` NN · `attempt_cost_meso` NN · `destroy_defence_cost_meso` NN · `world_id` · `superior_cost_meso` NN(기본 0) · `from_star` · `to_star`(스타포스만, 다른 분류와 칸이 생기기 전 줄은 `NULL`) · `is_event_world`(1 이벤트 월드 · 0 아님 · `NULL` 모름) · `updated_at` NN |
 | `enhancement_history` | `id` NN · `kind` NN · `date_key` NN · `created_at` NN · `character_name` NN · `target_item` NN · `item_key` · `item_level` · `payload` NN · `cost_meso` |
 | `enhancement_recomputes` | `id` NN · `nexon_account_id` NN · `request_key` NN · `done_through_date` · `completed_at` · `updated_at` NN |
+| `enhancement_recompute_skips` | `id` NN · `request_key` NN UNIQUE · `created_at` NN |
 | `enhancement_history_checks` | `id` NN · `nexon_account_id` NN · `enhancement_type` NN · `history_date` NN · `next_cursor` · `settled` NN(기본 0) · `checked_at` NN |
 | `enhancement_refetches` | `id` NN · `nexon_account_id` NN · `enhancement_type` NN · `history_date` NN · `created_at` NN |
 | `character_dated_names` | `id` NN · `ocid` NN · `history_date` NN · `name` · `world_name` · `checked_at` NN |

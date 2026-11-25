@@ -12,14 +12,14 @@ export interface RecomputeProgress {
   completed: boolean
 }
 
-/** 그 계정의 요청마다 진행. 키는 요청 id 다. 없는 요청은 아직 시작하지 않은 것이다. */
+/** 그 계정의 요청마다 진행. 키는 요청 id 다. 없는 요청은 아직 시작하지 않은 것이다. 이 기기가 건너뛰는 요청은 끝난 것이다. */
 export async function loadRecomputeProgress(nexonAccountId: string): Promise<Map<string, RecomputeProgress>> {
   const db = await getBossProfitDb()
   const { values } = await db.query(
     'SELECT request_key, done_through_date, completed_at FROM enhancement_recomputes WHERE nexon_account_id = ?',
     [nexonAccountId],
   )
-  return new Map(
+  const progress = new Map<string, RecomputeProgress>(
     (values ?? []).map((row) => [
       row.request_key as string,
       {
@@ -28,6 +28,13 @@ export async function loadRecomputeProgress(nexonAccountId: string): Promise<Map
       },
     ]),
   )
+  // 이 기기가 건너뛰는 요청은 계정과 상관없이 끝난 것이다.
+  const { values: skips } = await db.query('SELECT request_key FROM enhancement_recompute_skips')
+  for (const row of skips ?? []) {
+    const key = row.request_key as string
+    progress.set(key, { doneThroughDate: progress.get(key)?.doneThroughDate ?? null, completed: true })
+  }
+  return progress
 }
 
 /**
