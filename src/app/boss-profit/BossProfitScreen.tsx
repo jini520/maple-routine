@@ -15,7 +15,7 @@
  *
  * @see docs/features/boss-profit.md 정책
  */
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ScrollView } from 'react-native'
 import { Image, Pressable, View } from 'react-native'
 
@@ -89,6 +89,7 @@ import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { forgetCountUp } from '../../hooks/useCountUp'
 import { ItemRevenuePopover } from './ItemRevenuePopover'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
+import { KeyLostRecordModal } from '../KeyLostRecordModal'
 
 /** 주기 탭. 값은 스토어의 `tab` 이고 화면에는 라벨이 선다. */
 const BOSS_PROFIT_TABS = ['weekly', 'monthly'] as const
@@ -103,6 +104,7 @@ const PERIOD_REVENUE_LIST_LIMIT = 10
 // 아직 못 읽은 기간의 빈 값. 렌더마다 새 배열을 만들면 아래 메모가 매번 깨진다.
 const EMPTY_ROWS: readonly BossProfitRow[] = []
 const EMPTY_SUBTOTALS: readonly BossProfitWeeklySubtotal[] = []
+const EMPTY_KEY_LOST: Readonly<Record<string, string>> = {}
 const EMPTY_CARDS: readonly CharacterCardStub[] = []
 const EMPTY_DROPS: Record<string, RecordedDrop[]> = {}
 
@@ -138,6 +140,9 @@ export function BossProfitScreen(): React.JSX.Element {
   const dropsByRowKey = snapshot?.dropsByRowKey ?? EMPTY_DROPS
   const periodState = snapshot?.periodState ?? 'confirmedEmpty'
   const periodPendingAggregation = snapshot?.periodPendingAggregation ?? false
+  const keyLostMapleIdByOcid = snapshot?.keyLostMapleIdByOcid ?? EMPTY_KEY_LOST
+  /** 누른 흐린 카드의 메이플 ID. 키 없는 기록 모달이 이 계정을 다룬다 */
+  const [keyLostMapleId, setKeyLostMapleId] = useState<string | null>(null)
   const canGoPreviousPeriod = snapshot?.canGoPreviousPeriod ?? false
   // 불러오는 중은 둘이다. 이 기간을 아직 한 번도 못 읽었거나, 창 동기화를 기다린다.
   const isPeriodLoading = snapshot === null || period.isWindowSyncing
@@ -258,7 +263,10 @@ export function BossProfitScreen(): React.JSX.Element {
     onRetry: () => void retryPeriod(),
   })
 
-  const totalMeso = characterGroups.reduce(
+  // 이 기기에 쓸 수 있는 키가 없는 부계정의 카드는 흐리게 서고, 총 수익 · 결정석 칩 · 내역에서 빠진다.
+  const countedGroups = characterGroups.filter((group) => keyLostMapleIdByOcid[group.ocid] === undefined)
+
+  const totalMeso = countedGroups.reduce(
     (sum, group) => sum + groupTotalMeso(group, dropsByRowKey),
     0,
   )
@@ -268,7 +276,7 @@ export function BossProfitScreen(): React.JSX.Element {
   // 결정석 한도는 메이플 ID 마다 따로다. 소속을 읽기 전에는 메이플 ID 를 가르지 않는다.
   const mapleIds = useMapleIdOwners(trackedOcids ?? [])
   const monthlyCrystalsUpToWeek = useMonthlyCrystalsUpToWeek(
-    characterGroups.map((group) => group.ocid),
+    countedGroups.map((group) => group.ocid),
     tab === 'weekly' ? periodKey : null,
     mapleIds?.ofOcid ?? null,
   )
@@ -306,13 +314,13 @@ export function BossProfitScreen(): React.JSX.Element {
   // 캐시 기록도 없는 기간에 착지하지 않도록 막는다.
   const isPrevDisabled = !canGoPreviousPeriod
   // 이 기간의 아이템 드롭. 카드 금액과 같은 원천이라 결정석과 정확히 갈린다.
-  const periodRevenueDrops = characterGroups.flatMap((group) => collectRevenueDrops(group, dropsByRowKey))
+  const periodRevenueDrops = countedGroups.flatMap((group) => collectRevenueDrops(group, dropsByRowKey))
   const periodItemMeso = sumDropPayout(periodRevenueDrops)
   const crystalTotalMeso = totalMeso - periodItemMeso
   // 결정석 총합 안의 월간 보스 몫. 두 탭 모두 한 기간에 두 주기가 섞인다.
-  const monthlyCrystalMeso = characterGroups.reduce((sum, group) => sum + monthlyCrystalMesoOf(group), 0)
+  const monthlyCrystalMeso = countedGroups.reduce((sum, group) => sum + monthlyCrystalMesoOf(group), 0)
   // 총 수익 헤드라인 우측 뱃지용. 이 기간 전체 고가 드롭.
-  const periodValuableDrops = collectAllValuableDrops(characterGroups, dropsByRowKey)
+  const periodValuableDrops = collectAllValuableDrops(countedGroups, dropsByRowKey)
 
   const showsDropPriceFab = tab === 'weekly'
 
@@ -420,9 +428,9 @@ export function BossProfitScreen(): React.JSX.Element {
 
           <View className="flex-row items-center gap-1.5">
             {tab === 'weekly' ? (
-              <CrystalSummaryChip weekKey={periodKey} groups={characterGroups} monthlyByWorld={monthlyCrystalsUpToWeek ?? undefined} mapleIds={mapleIds} />
+              <CrystalSummaryChip weekKey={periodKey} groups={countedGroups} monthlyByWorld={monthlyCrystalsUpToWeek ?? undefined} mapleIds={mapleIds} />
             ) : (
-              <CrystalSummaryChip variant="monthly" weekKey={null} groups={characterGroups} mapleIds={mapleIds} />
+              <CrystalSummaryChip variant="monthly" weekKey={null} groups={countedGroups} mapleIds={mapleIds} />
             )}
             <Pressable
               ref={periodChipRef}
@@ -510,6 +518,11 @@ export function BossProfitScreen(): React.JSX.Element {
                   // 조회 불가 팝오버의 갈 길. 카드는 네비게이션을 모르고 화면이 내려준다.
                   // 피커를 열어 둔 채로 설정 탭에 보낸다(빈 상태 CTA 와 같은 길).
                   onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
+                  onKeyLost={
+                    keyLostMapleIdByOcid[group.ocid] === undefined
+                      ? undefined
+                      : () => setKeyLostMapleId(keyLostMapleIdByOcid[group.ocid] ?? null)
+                  }
                 />
               ))}
           </View>
@@ -533,6 +546,7 @@ export function BossProfitScreen(): React.JSX.Element {
             onClose={closePeriodPopover}
           />
         )}
+        {keyLostMapleId !== null && <KeyLostRecordModal mapleId={keyLostMapleId} onClose={() => setKeyLostMapleId(null)} />}
       </View>
     </BossProfitContextProvider>
   )

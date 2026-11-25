@@ -7,8 +7,12 @@ jest.mock('../../../storage/boss-profit', () => ({
 }))
 jest.mock('../../../storage/character-selection', () => ({ getTrackedCharacterOcids: jest.fn() }))
 jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
+jest.mock('../../server-sync/keyless', () => ({
+  ...jest.requireActual('../../server-sync/keyless'),
+  loadKeyLostScope: jest.fn(),
+}))
 
-import { dropHistoryOptions, loadDropHistory } from '../drop-history-query'
+import { dropHistoryOptions, loadDropHistory, usableDropGroups } from '../drop-history-query'
 
 const { getAllBossDropRecords: getAllBossDropRecordsMock } = jest.requireMock('../../../storage/boss-drops') as Record<string, jest.Mock>
 const {
@@ -16,6 +20,7 @@ const {
   getRecordedCharacterOcids: getRecordedCharacterOcidsMock,
 } = jest.requireMock('../../../storage/boss-profit') as Record<string, jest.Mock>
 const { getTrackedCharacterOcids: getTrackedCharacterOcidsMock } = jest.requireMock('../../../storage/character-selection') as Record<string, jest.Mock>
+const { loadKeyLostScope: loadKeyLostScopeMock } = jest.requireMock('../../server-sync/keyless') as Record<string, jest.Mock>
 const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 
 function dropRecord(overrides: Partial<BossDropRecord>): BossDropRecord {
@@ -59,6 +64,7 @@ beforeEach(() => {
   getAllBossProfitRecordKeysMock.mockReset().mockResolvedValue([])
   getTrackedCharacterOcidsMock.mockReset().mockResolvedValue(['ocid-1'])
   getRecordedCharacterOcidsMock.mockReset().mockResolvedValue([])
+  loadKeyLostScopeMock.mockReset().mockResolvedValue({ mapleIds: new Set(), ocids: new Map() })
   resolveDisplayProfilesMock
     .mockReset()
     .mockImplementation(async (ocids: readonly string[]) =>
@@ -74,8 +80,26 @@ beforeEach(() => {
 describe('dropHistoryOptions', () => {
   // 드롭 입력 시트가 쓰고 자동 기록이 난이도를 확정하면 이 쿼리가 다시 읽혀야 한다. 표를 안 적으면 무효화가 안 닿아
   // 히스토리와 today 의 드롭 위젯이 옛 값에 머문다.
-  it('드롭 기록과 보스 기록 표를 읽는 쿼리로 적는다', () => {
-    expect(dropHistoryOptions.meta?.tables).toEqual(['boss_drop_records', 'boss_profit_records'])
+  it('드롭 기록 · 보스 기록 · 인증 수단 표를 읽는 쿼리로 적는다', () => {
+    expect(dropHistoryOptions.meta?.tables).toEqual(['boss_drop_records', 'boss_profit_records', 'auth_methods'])
+  })
+})
+
+describe('키가 없는 부계정의 드롭', () => {
+  // 히스토리는 흐리게 그리려고 기록을 남기고, today 의 드롭 위젯과 가뭄 요약은 이 계정의 기록을 세지 않는다.
+  it('기록은 남기고 그 캐릭터를 알리며, 가뭄 요약과 쓸 수 있는 묶음에서는 뺀다', async () => {
+    getTrackedCharacterOcidsMock.mockResolvedValue(['ocid-1', 'ocid-sub'])
+    loadKeyLostScopeMock.mockResolvedValue({ mapleIds: new Set(['maple-sub']), ocids: new Map([['ocid-sub', 'maple-sub']]) })
+    getAllBossDropRecordsMock.mockResolvedValue([
+      dropRecord({ ocid: 'ocid-sub', periodKey: '2026-07-16' }),
+      dropRecord({ periodKey: '2026-07-09' }),
+    ])
+
+    const data = await loadDropHistory()
+
+    expect(data.groups.map((group) => group.periodKey)).toEqual(['2026-07-16', '2026-07-09'])
+    expect(data.keyLostMapleIdByOcid).toEqual({ 'ocid-sub': 'maple-sub' })
+    expect(usableDropGroups(data.groups, data.keyLostMapleIdByOcid).map((group) => group.periodKey)).toEqual(['2026-07-09'])
   })
 })
 

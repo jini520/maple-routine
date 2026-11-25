@@ -88,10 +88,19 @@ function MoneyBox({
 function CardHeader(props: {
   expandable: boolean
   isExpanded: boolean
+  /** 키가 없는 부계정의 카드면 읽어 주는 이름. 펴지 않고 눌리기만 해 `aria-expanded` 를 달지 않는다 */
+  keyLostLabel?: string
   onPress: () => void
   className: string
   children: React.ReactNode
 }): React.JSX.Element {
+  if (props.keyLostLabel !== undefined) {
+    return (
+      <Pressable role="button" aria-label={props.keyLostLabel} onPress={props.onPress} className={props.className}>
+        {props.children}
+      </Pressable>
+    )
+  }
   if (!props.expandable) return <View className={props.className}>{props.children}</View>
   return (
     <Pressable
@@ -116,6 +125,11 @@ export function CharacterAccordion(props: {
    * 안 주면 그 버튼이 안 선다. 화면이 주는지는 `BossProfitScreen` 테스트가 지킨다.
    */
   onOpenCharacterManage?: () => void
+  /**
+   * 이 기기에 쓸 수 있는 키가 없는 부계정의 카드면 그 키 없는 기록 모달을 띄우는 일. 주면 카드가 흐리게 서고, 누르면 펴지 않고 이것을
+   * 부른다. 금액 상자와 고가 드롭의 빛도 서지 않는다
+   */
+  onKeyLost?: () => void
 }): React.JSX.Element {
   const { tab, loadedTab, loadedPeriodKey, dropsByRowKey } = useBossProfitContext()
   const [isOpenedByUser, setIsOpenedByUser] = useState(false)
@@ -147,6 +161,7 @@ export function CharacterAccordion(props: {
    *   행 수로 보지 않는 이유는 스케줄 캐시가 남은 캐릭터다. 조회는 못 하는데 낡은 캐시가 행을
    *   만들어, 행이 있는데 금액은 `0 메소` 인 자리가 실제로 생긴다
    */
+  const keyLost = props.onKeyLost !== undefined
   const cannotStateAmount = props.issue === 'unavailable' && totalMeso === 0
   /**
    * 실제로 펼쳐진 상태. **금액을 말할 수 없는 카드는 펼치지 않는다**(사용자 지정).
@@ -157,7 +172,7 @@ export function CharacterAccordion(props: {
    * 펼침 state 를 지우지 않고 곱하는 것은 되돌아올 자리를 남기기 위해서다. 드롭 값이 지워져
    * 금액이 0 으로 떨어지면 본문이 닫히고, 값이 다시 생기면 열어 둔 그대로 돌아온다.
    */
-  const isExpanded = isOpenedByUser && !cannotStateAmount
+  const isExpanded = isOpenedByUser && !cannotStateAmount && !keyLost
   /**
    * 금액 위 칸의 배지가 말할 것. `undefined` 면 안 선다.
    *
@@ -171,13 +186,13 @@ export function CharacterAccordion(props: {
   // 머리가 실패를 말하는 카드는 드롭이 있어도 강조하지 않는다(사용자 지정). 배지와 아이템 그림이
   // 같은 칸에 서고, 실패를 말하는 카드가 빛나면 앞뒤가 안 맞는다.
   const valuableDrops = collectGroupValuableDrops(group, dropsByRowKey)
-  const hasValuable = !cannotStateAmount && badgeIssue === undefined && valuableDrops.length > 0
+  const hasValuable = !keyLost && !cannotStateAmount && badgeIssue === undefined && valuableDrops.length > 0
   const holoMotion = useHoloMotion(hasValuable)
   const themeMode = useThemeMode()
   // 카드 금액(`groupTotalMeso`)과 같은 원천이어야 상자의 목록 · 아이템 줄 · 합계가 맞는다.
   const groupDrops = collectRevenueDrops(group, dropsByRowKey)
   const itemTotal = sumDropPayout(groupDrops)
-  const hasItemRevenue = itemTotal > 0
+  const hasItemRevenue = !keyLost && itemTotal > 0
   // 낱개가 없는 몫은 주차 한 줄씩 말한다. 라벨을 `N주차` 로 고정하는 것은
   // `formatBossProfitPeriodLabel` 이 최근 두 주만 이번 주·지난 주로 불러 줄이 어긋나기 때문이다.
   const weeklyItemLines = group.weeklySubtotals
@@ -242,13 +257,18 @@ export function CharacterAccordion(props: {
 
       {/* 머리와 본문을 한 셸이 감싸 펼쳐도 한 카드로 읽힌다. 빛은 셸의 첫 자식이라 바탕과 내용 사이에 깔리고,
           펼치면 본문 바탕까지 덮는다. */}
-      <View testID="character-card-shell" className="rounded-[14px] bg-surface">
+      <View testID="character-card-shell" className={`rounded-[14px] bg-surface${keyLost ? ' opacity-40' : ''}`}>
         {hasValuable && <HologramSheen variant="card" motion={holoMotion} testID="character-card-sheen" />}
         <CardHeader
           expandable={!cannotStateAmount}
           isExpanded={isExpanded}
+          keyLostLabel={keyLost ? `${group.characterName} 키가 없는 계정의 기록` : undefined}
           // 접기는 **상태만 바꾼다.** 여기에 스크롤 조작을 다시 넣지 말 것.
           onPress={() => {
+            if (props.onKeyLost !== undefined) {
+              props.onKeyLost()
+              return
+            }
             // 카드를 여닫으면 설명 팝오버를 닫는다. 펼침이 레이아웃을 바꿔 열기 직전에 잰 위치가 낡은 값이 된다.
             closeIssue()
             setIsOpenedByUser((expanded) => !expanded)
@@ -315,7 +335,8 @@ export function CharacterAccordion(props: {
           </View>
 
           {/* 펼칠 수 없는 카드에는 안 세운다. 눌러도 아무 일이 없는 셰브런은 거짓 어포던스다. */}
-          {!cannotStateAmount &&
+          {!keyLost &&
+            !cannotStateAmount &&
             (isExpanded ? (
               <ChevronUpIcon testID="accordion-chevron" className="h-4 w-4 text-text-muted" strokeWidth={2} aria-hidden />
             ) : (

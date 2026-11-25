@@ -19,6 +19,7 @@ import { getAllBossDropRecords, type BossDropRecord } from '../../storage/boss-d
 import { getAllBossProfitRecordKeys, getRecordedCharacterOcids } from '../../storage/boss-profit'
 import { getTrackedCharacterOcids } from '../../storage/character-selection'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
+import { EMPTY_KEY_LOST_SCOPE, loadKeyLostScope } from '../server-sync/keyless'
 import { queryKeys } from '../query/keys'
 import { withSqliteTimeout } from './sqlite-guards'
 import { useQuerySubscribed } from '../query/subscription'
@@ -33,9 +34,24 @@ export interface DropHistoryData {
   groups: DropHistoryPeriodGroup[]
   drought: ValuableDroughtSummary | null
   charactersByOcid: Record<string, DropHistoryCharacter>
+  /**
+   * 이 기기에 쓸 수 있는 키가 없는 부계정의 캐릭터 → 그 메이플 ID. 히스토리는 그 기록을 흐리게 두고, 가뭄 요약과 today 의 드롭
+   * 위젯에서는 빠진다
+   */
+  keyLostMapleIdByOcid: Record<string, string>
 }
 
-const EMPTY: DropHistoryData = { groups: [], drought: null, charactersByOcid: {} }
+const EMPTY: DropHistoryData = { groups: [], drought: null, charactersByOcid: {}, keyLostMapleIdByOcid: {} }
+
+/** 키가 없는 부계정의 기록을 뺀 기간 묶음. 기록이 모두 빠진 기간은 없다. */
+export function usableDropGroups(
+  groups: readonly DropHistoryPeriodGroup[],
+  keyLostMapleIdByOcid: Readonly<Record<string, string>>,
+): DropHistoryPeriodGroup[] {
+  return groups
+    .map((group) => ({ ...group, records: group.records.filter((record) => keyLostMapleIdByOcid[record.ocid] === undefined) }))
+    .filter((group) => group.records.length > 0)
+}
 
 // 저장 계층은 부재를 null 로, `RecordedDrop` 은 optional(undefined)로 표현한다. 여기서 한 번 정규화한다.
 // `recordedAt` 은 옮기지 않는다. 히스토리가 이 값을 쓸 수 없으므로 타입에서 뺀다.
@@ -84,9 +100,10 @@ export async function loadDropHistory(now = new Date()): Promise<DropHistoryData
   if (ocids.length === 0) return EMPTY
 
   // 드롭 기록과 처치 난이도가 확정된 조합의 키를 함께 읽는다. 후자는 획득 불가 기록을 거를 범위를 정하는 데만 쓴다.
-  const [dropRecords, profitKeys] = await Promise.all([
+  const [dropRecords, profitKeys, keyLost] = await Promise.all([
     withSqliteTimeout(getAllBossDropRecords(ocids)),
     withSqliteTimeout(getAllBossProfitRecordKeys(ocids)),
+    loadKeyLostScope().catch(() => EMPTY_KEY_LOST_SCOPE),
   ])
   const confirmedKeys = new Set(
     profitKeys.map((key) => confirmedDropKey(key.ocid, key.bossKey, key.difficulty, key.periodKey)),
@@ -101,10 +118,20 @@ export async function loadDropHistory(now = new Date()): Promise<DropHistoryData
     charactersByOcid[ocid] = { ocid, characterName: profile.name, imageUrl: profile.imageUrl }
   }
 
+  const keyLostMapleIdByOcid: Record<string, string> = {}
+  for (const ocid of new Set(records.map((record) => record.ocid))) {
+    const mapleId = keyLost.ocids.get(ocid)
+    if (mapleId !== undefined) keyLostMapleIdByOcid[ocid] = mapleId
+  }
+
   return {
     groups: groupDropRecordsByPeriod(records),
-    drought: summarizeValuableDrought(records, now),
+    drought: summarizeValuableDrought(
+      records.filter((record) => keyLostMapleIdByOcid[record.ocid] === undefined),
+      now,
+    ),
     charactersByOcid,
+    keyLostMapleIdByOcid,
   }
 }
 
@@ -112,7 +139,8 @@ export const dropHistoryOptions = queryOptions<DropHistoryData>({
   queryKey: queryKeys.dropHistory(),
   queryFn: () => loadDropHistory(),
   staleTime: Number.POSITIVE_INFINITY,
-  meta: { tables: ['boss_drop_records', 'boss_profit_records'] },
+  // 인증 수단이 바뀌면 키가 없는 부계정의 기록이 달라진다.
+  meta: { tables: ['boss_drop_records', 'boss_profit_records', 'auth_methods'] },
 })
 
 export type DropHistoryStatus = 'loading' | 'ready' | 'failed'

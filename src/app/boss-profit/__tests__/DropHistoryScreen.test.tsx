@@ -104,6 +104,7 @@ function mockStore(overrides: Partial<History> = {}): void {
   mockedHistory.mockReturnValue({
     status: 'ready',
     groups: [],
+    keyLostMapleIdByOcid: {},
     drought: null,
     charactersByOcid: {
       'ocid-1': { ocid: 'ocid-1', characterName: '메이플영웅', imageUrl: null },
@@ -328,6 +329,23 @@ describe('DropHistoryScreen: 기록 한 줄', () => {
     expect(문장(getByTestId('drop-history-entry'))).toBe(
       `${주간보스이름}(하드)에서 가디언 엔젤 링을 획득하였습니다.`,
     )
+  })
+})
+
+describe('DropHistoryScreen: 키가 없는 부계정의 기록', () => {
+  it('흐리게 서고 누르면 키 없는 기록 모달이 뜬다', async () => {
+    mockStore({
+      groups: [{ periodKey: PERIOD, cycle: 'weekly', records: [기록(), 기록({ ocid: 'ocid-sub' })] }],
+      keyLostMapleIdByOcid: { 'ocid-sub': 'maple-sub' },
+    })
+    const { getAllByTestId, getByLabelText, getByText } = await renderHistory()
+
+    const opacities = getAllByTestId('drop-history-entry').map((entry) => flattenStyle(entry.props.style).opacity)
+    expect(opacities.filter((opacity) => opacity !== undefined)).toHaveLength(1)
+    await act(async () => {
+      fireEvent.press(getByLabelText('키가 없는 계정의 기록'))
+    })
+    expect(getByText('키가 없는 계정의 기록이에요')).toBeTruthy()
   })
 })
 

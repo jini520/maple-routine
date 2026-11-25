@@ -32,6 +32,10 @@ jest.mock('../../../storage/manual-tracked-content', () => ({ getManualTrackedCo
 jest.mock('../../character-profile/resolve', () => ({ resolveDisplayProfiles: jest.fn() }))
 jest.mock('../../schedule-window/sync', () => ({ syncScheduleWindow: jest.fn() }))
 jest.mock('../../schedule-window/window', () => ({ getLastWindowFailures: jest.fn(() => []) }))
+jest.mock('../../server-sync/keyless', () => ({
+  ...jest.requireActual('../../server-sync/keyless'),
+  loadKeyLostScope: jest.fn(),
+}))
 
 import { getAdjacentPeriodKey, getCurrentBossProfitPeriod } from '../../../lib/boss/boss-profit-period'
 import type { BossDropRecord } from '../../../storage/boss-drops'
@@ -69,6 +73,7 @@ const { getManualTrackedContent: getManualTrackedContentMock } = jest.requireMoc
 >
 const { resolveDisplayProfiles: resolveDisplayProfilesMock } = jest.requireMock('../../character-profile/resolve') as Record<string, jest.Mock>
 const { syncScheduleWindow: syncWindowMock } = jest.requireMock('../../schedule-window/sync') as Record<string, jest.Mock>
+const { loadKeyLostScope: loadKeyLostScopeMock } = jest.requireMock('../../server-sync/keyless') as Record<string, jest.Mock>
 const { getLastWindowFailures: windowFailuresMock } = jest.requireMock('../../schedule-window/window') as Record<string, jest.Mock>
 
 // Date 만 가짜다. 타이머까지 가짜면 SQLite 폴백의 실제 `setTimeout` 경주가 영영 안 끝난다.
@@ -235,6 +240,7 @@ beforeEach(() => {
   at(PINNED_NOW)
   queryClient.clear()
   profiles = {}
+  loadKeyLostScopeMock.mockResolvedValue({ mapleIds: new Set(), ocids: new Map() })
   resolveDisplayProfilesMock.mockImplementation(async (ocids: readonly string[]) => {
     const map = new Map<string, DisplayProfile>()
     for (const ocid of new Set(ocids)) {
@@ -397,6 +403,34 @@ describe('지금 기간은 스케줄 캐시에서 행을 만든다', () => {
     expect(current.rows.find((row) => row.ocid === 'ocid-1')).toMatchObject({ world: '스카니아', worldKey: 'scania' })
     expect(current.rows.find((row) => row.ocid === 'ocid-2')).toMatchObject({ world: null, worldKey: null })
     expect(past.rows[0]).toMatchObject({ ocid: 'ocid-1', world: '스카니아', worldKey: 'scania' })
+  })
+})
+
+describe('키가 없는 부계정의 캐릭터', () => {
+  // 화면이 이 값으로 카드를 흐리게 두고 총 수익 · 결정석 칩에서 뺀다. 행이 선 캐릭터만 든다.
+  it('행이 선 캐릭터 가운데 키가 없는 부계정의 캐릭터와 그 메이플 ID 를 든다', async () => {
+    track(['ocid-1', 'ocid-2'])
+    schedule('ocid-1', [bossContent()])
+    schedule('ocid-2', [bossContent()])
+    loadKeyLostScopeMock.mockResolvedValueOnce({
+      mapleIds: new Set(['maple-sub']),
+      ocids: new Map([
+        ['ocid-2', 'maple-sub'],
+        ['ocid-none', 'maple-sub'],
+      ]),
+    })
+
+    const snapshot = await build('weekly', currentKey('weekly'), ['ocid-1', 'ocid-2'])
+
+    expect(snapshot.keyLostMapleIdByOcid).toEqual({ 'ocid-2': 'maple-sub' })
+  })
+
+  it('가를 수 없으면 아무 카드도 흐리게 두지 않는다', async () => {
+    track(['ocid-1'])
+    schedule('ocid-1', [bossContent()])
+    loadKeyLostScopeMock.mockRejectedValueOnce(new Error('auth'))
+
+    expect((await build('weekly', currentKey('weekly'))).keyLostMapleIdByOcid).toEqual({})
   })
 })
 
