@@ -32,7 +32,8 @@ import { queryKeys } from '../query/keys'
 import { mapWithLimit } from '../schedule-window/gate'
 import { historyFloorDateKey } from '../cashbook/range'
 import { loadRecomputeProgress, saveRecomputeProgress } from '../../storage/enhancement-recomputes'
-import { RECOMPUTE_REQUESTS, recomputeDatesOf, type RecomputeRequest } from './recompute'
+import { RECOMPUTE_REQUESTS, type RecomputeRequest } from '../../lib/enhancement/recompute-requests'
+import { recomputeDatesOf } from './recompute'
 import { settlingYesterdayOf } from '../settlement/store'
 
 /** 네 종류. 순서가 진행 표시에 보이지 않으므로 아무래도 된다. */
