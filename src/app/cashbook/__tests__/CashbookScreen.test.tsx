@@ -1539,6 +1539,20 @@ describe('키가 없는 부계정의 기록', () => {
     expect(showError).toHaveBeenCalledWith(expect.stringContaining('올리지 못한 기록'))
     showError.mockRestore()
   })
+
+  it('지우다 실패하면 대기 줄 탓이 아니라 실패로 알린다', async () => {
+    discard.discardKeyLostMapleId.mockRejectedValue(new Error('sqlite'))
+    const showError = jest.spyOn(useToastStore.getState(), 'showError')
+    const view = await 그리기()
+
+    await 누르기(view, 'cashbook-row-spd-1')
+    await act(async () => {
+      fireEvent.press(view.getByText('기록 삭제'))
+    })
+
+    expect(showError).toHaveBeenCalledWith('기록을 지우지 못했습니다. 잠시 뒤 다시 시도해 주세요.')
+    showError.mockRestore()
+  })
 })
 
 describe('헥사 · 구매 합친 줄', () => {
