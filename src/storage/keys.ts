@@ -84,7 +84,7 @@ export const STORAGE_KEYS = {
   // 데이터 삭제 그룹에 넣지 말 것. 지워지면 iOS 에서 다시 묻게 되는데, 그 시스템 팝업은 이미 답한
   // 사용자에게 두 번째로는 아예 안 뜬다. 그래서 사용자는 아무 일도 안 일어난 것을 본다.
   notificationPermissionAsked: 'notificationPermissionAsked',
-  // 파티 약속 알림 스위치(설정 > 알림 설정). 없으면 켜짐이다.
+  // 파티 스케줄 알림 스위치(설정 > 알림 설정). 없으면 켜짐이다.
   //
   // 데이터 삭제 그룹에 넣지 말 것. 사용자가 끈 스위치가 지워져 되살아나면 끈 약속 알림이 다시 온다.
   partyAlarmEnabled: 'partyAlarmEnabled',

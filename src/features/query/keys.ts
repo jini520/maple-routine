@@ -45,6 +45,8 @@ export const queryKeys = {
   manualCompleted: (weeklyKey: string, monthlyKey: string) => ['manual-completed', weeklyKey, monthlyKey] as const,
   /** 파티 약속 목록(Preferences). 저장이 `setQueryData` 로 덮는다. */
   partyAppointments: () => ['party-appointments'] as const,
+  /** 이 기기에 쓸 수 있는 키가 없는 부계정의 메이플 ID 와 캐릭터. 파티 스케줄이 그 캐릭터의 보스를 숨긴다. */
+  keyLostScope: () => ['key-lost-scope'] as const,
   /** 캐릭터 하나의 메소 획득량(%) 마지막 성공값. */
   mesoRate: (ocid: string) => ['meso-rate', ocid] as const,
   /** 메소 획득량 전부를 가리키는 앞 칸. */

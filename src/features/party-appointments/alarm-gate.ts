@@ -1,5 +1,5 @@
 /**
- * 알림 체크 상자를 켤 때와 저장할 때의 확인 차례. 기기 알림 권한 → 파티 약속 알림 스위치이고, 걸리는 첫 하나만 낸다.
+ * 알림 체크 상자를 켤 때와 저장할 때의 확인 차례. 기기 알림 권한 → `파티 스케줄 알림` 스위치이고, 걸리는 첫 하나만 낸다.
  *
  * 시트가 결과마다 모달을 고른다.
  */
@@ -11,7 +11,7 @@ export type AlarmGateResult = { kind: 'ok' } | { kind: 'permission' } | { kind: 
 export interface AlarmGateDeps {
   /** 권한이 있으면 참. 한 번도 안 물었으면 여기서 OS 팝업을 띄운다 */
   ensurePermission: () => Promise<boolean>
-  /** 설정의 `파티 약속 알림` 스위치 */
+  /** 설정의 `파티 스케줄 알림` 스위치 */
   switchEnabled: boolean
 }
 

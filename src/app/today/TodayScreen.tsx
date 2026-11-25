@@ -75,7 +75,7 @@ export function TodayScreen(): React.JSX.Element {
   const contentStore = useContentSchedulerStore()
   const bossStore = useBossSchedulerStore()
   const { mode } = useTrackingModeStore()
-  // 파티 약속은 기기에만 있다. 저장이 캐시를 덮어 파티 스케줄 탭에서 고친 것이 위젯 10 에 바로 선다.
+  // 저장이 캐시를 덮어 파티 스케줄 탭에서 고친 것이 위젯 10 에 바로 선다. 키 없는 부계정 캐릭터의 보스는 뺀 목록이다.
   const { appointments: partyAppointments } = usePartyAppointments()
   const quickLinks = useQuickLinksStore((state) => state.config)
   const figureMotions = useFigureMotionStore((state) => state.motions)

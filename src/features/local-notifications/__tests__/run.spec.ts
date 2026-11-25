@@ -1,6 +1,7 @@
 // 재조정을 실제 저장소 · 포트에 잇는 흐름. 권한 · 스위치 · 실패 · 멱등 · 다시 부르는 신호.
 import { focusManager } from '@tanstack/react-query'
 
+import { setMainApiKey } from '../../../storage/api-key'
 import { installFakePreferences } from '../../../storage/__tests__/fake-preferences'
 import { setScheduleAlertEnabled } from '../../../storage/schedule-alert-settings'
 import type { CachedSchedulerEntry } from '../../../storage/scheduler-cache'
@@ -260,5 +261,19 @@ describe('watchReconcileTriggers', () => {
 
     focusManager.setFocused(undefined)
     stop()
+  })
+
+  // 부계정 키를 등록하거나 키가 무효가 되면 그 캐릭터의 파티 스케줄 알림이 잡히거나 거둬진다.
+  it('인증 수단이 바뀌면 부른다', async () => {
+    const reconcile = jest.fn()
+    const stop = watchReconcileTriggers(reconcile)
+
+    await setMainApiKey('key-1', '', 'account-1')
+    expect(reconcile).toHaveBeenCalled()
+
+    stop()
+    reconcile.mockClear()
+    await setMainApiKey('key-2', '', 'account-2')
+    expect(reconcile).not.toHaveBeenCalled()
   })
 })

@@ -39,8 +39,13 @@ jest.mock('../../../features/boss-scheduler/use-boss-schedule', () => ({
 // 약속 목록은 쿼리 캐시에서 온다. 이 하네스에는 쿼리 클라이언트가 없어 훅과 저장을 세운다. 저장이 넘긴 값이 곧 다음
 // 렌더의 목록이다.
 let mockAppointments: PartyAppointment[] = []
+// 화면의 목록은 숨은 캐릭터(`#`)의 보스를 뺀 것이고 저장은 기기에 저장된 그대로의 목록으로 한다.
 jest.mock('../../../features/party-appointments/query', () => ({
-  usePartyAppointments: () => ({ appointments: mockAppointments, loaded: true }),
+  usePartyAppointments: () => {
+    const { hiddenOcidOf, visibleAppointments } = jest.requireActual('../../../features/party-appointments/hidden-bosses')
+    const hidden = hiddenOcidOf({ mapleIds: new Set(), ocids: new Map() })
+    return { appointments: visibleAppointments(mockAppointments, hidden), stored: mockAppointments, hidden, loaded: true }
+  },
   savePartyAppointments: jest.fn(async (next: PartyAppointment[]) => {
     mockAppointments = next
   }),
@@ -274,6 +279,22 @@ describe('알림 체크 상자를 켤 때', () => {
         fireEvent.press(view.getByLabelText('저장'))
       })
     }
+
+    // 화면에 없는 보스를 저장이 빠뜨리면 서버와 키가 멀쩡한 다른 기기에서까지 그 보스가 지워진다.
+    it('키 없는 부계정 캐릭터의 보스가 숨은 스케줄을 고쳐도 숨은 보스를 남긴다', async () => {
+      const hiddenBoss = { bossKey: 'lucid', difficulty: 'hard', ocid: '#a1b2' }
+      const mixed = { ...weekly, bosses: [...weekly.bosses, hiddenBoss] }
+      mockAppointments = [mixed]
+      const [occurrence] = occurrencesInWeek([{ ...mixed, bosses: weekly.bosses }], '2099-01-01')
+      const view = await 그리기({ target: { occurrence: occurrence!, weekStart: '2099-01-01' } })
+      await act(async () => {
+        fireEvent.press(view.getByLabelText('수정'))
+      })
+
+      await 저장(view)
+
+      expect(mockAppointments[0]!.bosses).toEqual(mixed.bosses)
+    })
 
     // 설정 열기로 갔다가 켜지 않고 돌아와도 체크 상자는 켜져 있다(사용자 보고).
     it('권한이 여전히 없으면 권한 모달이고, 알림 없이 저장은 알림을 끄고 저장한다', async () => {

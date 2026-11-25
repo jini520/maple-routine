@@ -2,7 +2,7 @@
  * 로컬 알림 재조정을 저장소 · 네이티브 포트에 잇는 곳.
  *
  * 앱을 켤 때 · 포그라운드로 돌아올 때 · 배경으로 갈 때 · 약속을 저장할 때 · 알림 스위치를 바꿀 때 · 스케줄 회차가 새
- * 데이터를 들 때 · KST 자정 · 백그라운드 태스크가 돌 때 부른다. iOS 는 로컬 알림이 울려도 앱을 깨우지 않아, 넘친 알림은
+ * 데이터를 들 때 · KST 자정 · 인증 수단이 바뀔 때 · 백그라운드 태스크가 돌 때 부른다. iOS 는 로컬 알림이 울려도 앱을 깨우지 않아, 넘친 알림은
  * 이 때들에 채운다.
  */
 import { focusManager, hashKey } from '@tanstack/react-query'
@@ -13,6 +13,7 @@ import {
   hasNotificationPermission,
   scheduleLocalNotification,
 } from '../../native/notifications'
+import { subscribeAuthMethods } from '../../storage/api-key'
 import {
   getNotificationLedger,
   setNotificationLedger,
@@ -95,9 +96,9 @@ export function requestNotificationReconcile(): Promise<void> {
 }
 
 /**
- * 재조정을 다시 부르는 신호 셋을 잇는다. 스케줄 회차 쿼리가 새 데이터를 들 때 · KST 자정 · 앱이 배경으로 갈 때.
+ * 재조정을 다시 부르는 신호 넷을 잇는다. 스케줄 회차 쿼리가 새 데이터를 들 때 · KST 자정 · 앱이 배경으로 갈 때 · 인증 수단이 바뀔 때.
  * 회차가 바뀌면 남은 것이 바뀌고, 앱 안에서 바꾼 추적 목록 · 모드 · 직접 적은 완료는 배경으로 갈 때 그날 밤 알림에 들어간다.
- * 복귀는 `AppShell` 이 따로 잇는다.
+ * 부계정 키를 등록하거나 키가 무효가 되면 그 캐릭터의 파티 스케줄 알림을 잡거나 거둔다. 복귀는 `AppShell` 이 따로 잇는다.
  *
  * @param reconcile 부를 재조정. 테스트가 바꾼다
  * @returns 구독을 떼는 함수
@@ -111,9 +112,11 @@ export function watchReconcileTriggers(reconcile: () => unknown = requestNotific
   const stopFocus = focusManager.subscribe((focused) => {
     if (!focused) reconcile()
   })
+  const stopAuth = subscribeAuthMethods(() => reconcile())
   return () => {
     stopCache()
     stopTick()
     stopFocus()
+    stopAuth()
   }
 }
