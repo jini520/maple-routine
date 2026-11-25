@@ -156,6 +156,7 @@ function seedPeriod(tab: BossCycle, periodKey: string, partial: Partial<PeriodSn
     periodPendingAggregation: false,
     canGoPreviousPeriod: true,
     unqueryableCards: [],
+    keyLostMapleIdByOcid: {},
     ...partial,
   }
   const queryKey = queryKeys.bossProfitPeriod(tab, periodKey)

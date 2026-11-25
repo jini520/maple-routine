@@ -32,6 +32,7 @@ import { getTrackingMode } from '../../storage/tracking-mode'
 import type { RecordedDrop } from '../../types/drops'
 import type { BossCycle } from '../../types'
 import { resolveDisplayProfiles } from '../character-profile/resolve'
+import { EMPTY_KEY_LOST_SCOPE, loadKeyLostScope } from '../server-sync/keyless'
 import { readScheduleSnapshot } from '../schedule-sync/read-schedule'
 import {
   loadObservedPeriodKeys,
@@ -114,6 +115,11 @@ export interface PeriodSnapshot {
    * **주간 탭의 지금 기간에서만 찬다.** 다른 기간은 기록이 있으면 이미 행으로 서고, 월간 탭은 주차 소계의 추적 게이트가 세운다.
    */
   unqueryableCards: CharacterCardStub[]
+  /**
+   * 이 기기에 쓸 수 있는 키가 없는 부계정의 캐릭터 → 그 메이플 ID. 그 카드는 흐리게 서고 총 수익 · 결정석 칩에서 빠진다. 누르면 펴지
+   * 않고 키 없는 기록 모달이 뜬다
+   */
+  keyLostMapleIdByOcid: Record<string, string>
 }
 
 /**
@@ -498,6 +504,19 @@ export interface PeriodBuildInput {
  * 창을 채우고 기다린다. 캐시를 지우고 진입하자마자 이동하면 창이 시작조차 안 한 순간이 있기 때문이다.
  */
 export async function buildPeriodSnapshot(input: PeriodBuildInput): Promise<PeriodSnapshot> {
+  const [snapshot, keyLost] = await Promise.all([
+    buildPeriodRows(input),
+    loadKeyLostScope().catch(() => EMPTY_KEY_LOST_SCOPE),
+  ])
+  const keyLostMapleIdByOcid: Record<string, string> = {}
+  for (const ocid of new Set([...snapshot.rows.map((row) => row.ocid), ...snapshot.weeklySubtotals.map((one) => one.ocid)])) {
+    const mapleId = keyLost.ocids.get(ocid)
+    if (mapleId !== undefined) keyLostMapleIdByOcid[ocid] = mapleId
+  }
+  return { ...snapshot, keyLostMapleIdByOcid }
+}
+
+async function buildPeriodRows(input: PeriodBuildInput): Promise<Omit<PeriodSnapshot, 'keyLostMapleIdByOcid'>> {
   const { tab, periodKey, ocids, now } = input
   const currentPeriodKey = getCurrentBossProfitPeriod(tab, now).periodKey
   const displayOcids = await resolveDisplayOcids(ocids)

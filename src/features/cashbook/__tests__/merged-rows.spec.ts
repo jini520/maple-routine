@@ -83,6 +83,19 @@ describe('mergeDayRows', () => {
     expect(shapeOf(mergeDayRows(records))).toEqual(records.map((entry) => (entry as { record: { id: string } }).record.id))
   })
 
+  // 키가 없는 부계정의 기록은 흐린 줄 하나로 서야 누르면 모달이 뜨고, 합친 줄의 금액에 섞이지 않는다.
+  it('키가 없는 부계정의 기록은 합치지 않는다', () => {
+    const 흐린구매 = (id: string, recordedAt: string): DayRecord => ({ ...spend({ id, recordedAt }), keyLostMapleId: 'maple-sub' })
+
+    const rows = mergeDayRows([
+      spend({ id: 'buy-1', recordedAt: '2026-11-13T09:00:00Z' }),
+      흐린구매('buy-lost-1', '2026-11-13T10:00:00Z'),
+      흐린구매('buy-lost-2', '2026-11-13T11:00:00Z'),
+    ])
+
+    expect(shapeOf(rows)).toEqual(['buy-1', 'buy-lost-1', 'buy-lost-2'])
+  })
+
   // 받은 차례가 아니라 적은 시각으로 정한다. 그래야 펼친 칸의 차례와 대표 그림의 같은 금액 순서가 받은 배열에 기대지 않는다.
   it('묶인 기록은 적은 순이고, 합친 줄은 가장 먼저 적은 기록의 자리에 선다', () => {
     const rows = mergeDayRows([

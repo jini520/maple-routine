@@ -153,6 +153,7 @@ function mockStore(overrides: Partial<화면값> = {}): void {
     periodPendingAggregation: false,
     canGoPreviousPeriod: true,
     unqueryableCards: [],
+    keyLostMapleIdByOcid: {},
     loadedTab: 'weekly',
     loadedPeriodKey: CURRENT_WEEKLY,
     isWindowSyncing: false,
@@ -194,6 +195,7 @@ function mockStore(overrides: Partial<화면값> = {}): void {
             periodPendingAggregation: value.periodPendingAggregation,
             canGoPreviousPeriod: value.canGoPreviousPeriod,
             unqueryableCards: value.unqueryableCards,
+            keyLostMapleIdByOcid: value.keyLostMapleIdByOcid,
           },
     loadedTab: value.loadedTab,
     loadedPeriodKey: value.loadedPeriodKey,
@@ -1088,6 +1090,29 @@ describe('총 수입 헤드라인', () => {
     const { queryByLabelText } = await renderScreen()
 
     expect(queryByLabelText('이 기간 고가 드롭')).toBeNull()
+  })
+})
+
+describe('키가 없는 부계정의 카드', () => {
+  // 그 계정은 이 기기에서 부를 수도 고칠 수도 없어 총 수입에 섞이면 이름 모를 금액이 된다. 카드는 남아 기록이 있다는 것을 알린다.
+  it('흐리게 서고 총 수입에서 빠지며, 누르면 펴지 않고 키 없는 기록 모달이 뜬다', async () => {
+    mockStore({
+      status: 'loaded',
+      periodState: 'recorded',
+      rows: [보스행(), 보스행({ ocid: 'ocid-2', characterName: '부캐', payoutMeso: 3_000_000 })],
+      keyLostMapleIdByOcid: { 'ocid-2': 'maple-sub' },
+    })
+    const { getAllByTestId, getAllByText, getByLabelText, getByText, queryByText } = await renderScreen()
+
+    expect(getAllByText(/^5,000,000 /)).toHaveLength(2)
+    expect(queryByText(/^8,000,000 /)).toBeNull()
+    const shells = getAllByTestId('character-card-shell').map((shell) => flattenStyle(shell.props.style).opacity)
+    expect(shells.filter((opacity) => opacity !== undefined)).toHaveLength(1)
+
+    await act(async () => {
+      fireEvent.press(getByLabelText('부캐 키가 없는 계정의 기록'))
+    })
+    expect(getByText('키가 없는 계정의 기록이에요')).toBeTruthy()
   })
 })
 

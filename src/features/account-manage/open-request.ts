@@ -9,7 +9,7 @@ import { getAuthConfig } from '../../storage/api-key'
 export interface AccountManageOpenRequest {
   /** 열 계정의 상세. `null` 이면 목록을 연다 */
   accountKey: string | null
-  /** 열자마자 `API 키 변경` 시트를 띄운다 */
+  /** 열자마자 키 입력 시트를 띄운다. 계정 상세는 `API 키 변경`, 목록은 `API 키 추가` 다 */
   openKeySheet: boolean
 }
 

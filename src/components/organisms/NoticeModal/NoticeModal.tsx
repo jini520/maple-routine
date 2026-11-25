@@ -12,6 +12,7 @@
  * [주 버튼]              전폭. **되돌릴 수 없는 확인에서는 이 자리가 `취소` 다**
  *   ↕ 4
  * 부 버튼 또는 링크       가운데 글자 버튼. `danger` 는 크기가 같고 글자색만 error
+ * 닫기 버튼              가운데 글자 버튼. 부 버튼이 파괴 동작이라 `취소` 가 따로 서야 할 때
  * ```
  *
  * 호출부는 무엇을 넣을지만 정하고 자리와 간격은 못 바꾼다. 골격이 문장으로만 있고 코드에 없던
@@ -71,6 +72,8 @@ export interface NoticeModalProps {
    * 동작이 주 버튼보다 커 보이면 안 되고, 위험하다는 신호는 색 하나로 충분하다.
    */
   secondaryAction?: NoticeAction & { danger?: boolean }
+  /** 부 버튼 아래 글자 버튼. 부 버튼이 파괴 동작인데 주 버튼도 `취소` 가 아닐 때 `취소` 가 선다. */
+  dismissAction?: NoticeAction
   /** 주 버튼 아래 인라인 링크. 앱 밖으로 나가는 도움말이 여기 선다. */
   link?: { label: string; onPress: () => void }
   onClose: () => void
@@ -112,6 +115,18 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
                 className={`self-center${props.secondaryAction.disabled === true ? ' opacity-50' : ''}`}
               >
                 {props.secondaryAction.label}
+              </Button>
+            )}
+            {props.dismissAction !== undefined && (
+              <Button
+                testID={`${testId}-dismiss`}
+                variant="text"
+                size="sm"
+                onPress={props.dismissAction.onPress}
+                disabled={props.dismissAction.disabled}
+                className="self-center"
+              >
+                {props.dismissAction.label}
               </Button>
             )}
             {props.link !== undefined && (

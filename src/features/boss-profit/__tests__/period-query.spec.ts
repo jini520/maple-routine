@@ -60,6 +60,7 @@ function snapshot(partial: Partial<PeriodSnapshot> = {}): PeriodSnapshot {
     periodPendingAggregation: false,
     canGoPreviousPeriod: false,
     unqueryableCards: [],
+    keyLostMapleIdByOcid: {},
     ...partial,
   }
 }
@@ -94,12 +95,12 @@ afterEach(() => {
 })
 
 describe('bossProfitPeriodOptions', () => {
-  it('보스 기록 · 드롭 기록 · 조회 원장을 읽고 스케줄 회차에 기댄다고 적는다', () => {
+  it('보스 기록 · 드롭 기록 · 조회 원장 · 인증 수단을 읽고 스케줄 회차에 기댄다고 적는다', () => {
     const options = bossProfitPeriodOptions('weekly', WEEK)
 
     expect(options.queryKey).toEqual(queryKeys.bossProfitPeriod('weekly', WEEK))
     expect(options.meta).toEqual({
-      tables: ['boss_profit_records', 'boss_drop_records', 'schedule_probe_ledger'],
+      tables: ['boss_profit_records', 'boss_drop_records', 'schedule_probe_ledger', 'auth_methods'],
       dependsOn: ['schedule-round'],
     })
   })

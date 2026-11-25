@@ -4,6 +4,7 @@
  * 부계정은 기기마다 따로 관리하고, 서버는 어느 넥슨 계정이 그 로그인의 부계정인지만 메이플 ID 로 적는다. 부계정은 넥슨 ID 하나에만
  * 등록되므로, 더하고 바꿀 때는 서버 등록을 먼저 하고, 지울 때는 서버의 등록을 먼저 해제한다.
  */
+import { getServerSyncCursors } from '../../storage/server-sync-cursors'
 import { create } from 'zustand'
 
 import { apiKeyHashHex } from '../../lib/crypto/api-key-hash'
@@ -90,14 +91,16 @@ function sessionOf(login: NexonLoginMethod): Record<string, string> {
 }
 
 async function readSources(): Promise<AccountManageSources> {
-  const [config, mapleIdsByAccount] = await Promise.all([
+  const [config, mapleIdsByAccount, cursors] = await Promise.all([
     getAuthConfig().catch(() => null),
     getMapleIdsByNexonAccount().catch(() => new Map<string, string[]>()),
+    getServerSyncCursors().catch(() => null),
   ])
   return {
     config,
     listOf: readCachedCharacterListOfAccount,
     mapleIdsByAccount,
+    serverMapleIdHashes: cursors === null ? [] : Object.keys(cursors.mapleIds),
   }
 }
 

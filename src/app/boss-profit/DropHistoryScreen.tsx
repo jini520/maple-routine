@@ -10,7 +10,7 @@
  * `useDropHistory()` 의 쿼리가 전 기간 조회·획득 불가 필터·가뭄 집계를 전부 갖는다.
  */
 import { useState } from 'react'
-import { Image, View } from 'react-native'
+import { Image, Pressable, View } from 'react-native'
 
 import {
   useDropHistory,
@@ -45,6 +45,7 @@ import { ScreenScroll } from '../../components/templates/ScreenScroll/ScreenScro
 import { DROUGHT_GLOW_FILTER, DROUGHT_TIER_STYLES } from '../../constants/style/drought-tier-styles'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { useScreenNavigation } from '../../hooks/useScreenNavigation'
+import { KeyLostRecordModal } from '../KeyLostRecordModal'
 
 /**
  * 고가 드롭 배지의 골드. 여기서는 단색으로 내려앉는다.
@@ -133,14 +134,24 @@ function ValuableDrought(props: { summary: ValuableDroughtSummary; now: Date }):
 function DropHistoryEntry(props: {
   record: DropHistoryRecord
   character: DropHistoryCharacter | undefined
+  /** 이 기기에 쓸 수 있는 키가 없는 부계정의 기록이면 키 없는 기록 모달을 띄우는 일. 주면 줄이 흐리게 서고 눌린다 */
+  onKeyLost?: () => void
 }): React.JSX.Element {
   const { record } = props
   const line = formatDropHistoryLine(record, props.character?.characterName)
   const isValuable = isValuableDropItem(record.itemKey)
   const iconUrl = isValuable ? dropItemIconOf(record.itemKey) : null
+  const keyLost = props.onKeyLost !== undefined
+  const Row = keyLost ? Pressable : View
 
   return (
-    <View testID="drop-history-entry" aria-label={isValuable ? '고가 드롭 기록' : undefined} className="py-0.5">
+    <Row
+      testID="drop-history-entry"
+      role={keyLost ? 'button' : undefined}
+      aria-label={keyLost ? '키가 없는 계정의 기록' : isValuable ? '고가 드롭 기록' : undefined}
+      onPress={props.onKeyLost}
+      className={`py-0.5${keyLost ? ' opacity-40' : ''}`}
+    >
       {/* 배경·구분선 없이 문장만 둔다. 카드 셸도 고가 줄의 골드 틴트도 쓰지 않는다. 고가
           표시는 아이템명 배경과 본문색만 담당한다.
 
@@ -189,13 +200,15 @@ function DropHistoryEntry(props: {
         )}
         {line.suffix}
       </Text>
-    </View>
+    </Row>
   )
 }
 
 function DropHistoryPeriodSection(props: {
   group: DropHistoryPeriodGroup
   charactersByOcid: Record<string, DropHistoryCharacter>
+  keyLostMapleIdByOcid: Record<string, string>
+  onKeyLost: (mapleId: string) => void
   now: Date
 }): React.JSX.Element {
   const label = formatBossProfitPeriodLabel(props.group.cycle, props.group.periodKey, props.now)
@@ -241,6 +254,7 @@ function DropHistoryPeriodSection(props: {
             key={`${record.ocid}-${record.bossKey}-${record.difficulty}-${record.itemKey ?? record.itemName}-${index}`}
             record={record}
             character={props.charactersByOcid[record.ocid]}
+            onKeyLost={keyLostHandlerOf(props.keyLostMapleIdByOcid[record.ocid], props.onKeyLost)}
           />
         ))}
       </View>
@@ -248,11 +262,17 @@ function DropHistoryPeriodSection(props: {
   )
 }
 
+function keyLostHandlerOf(mapleId: string | undefined, onKeyLost: (mapleId: string) => void): (() => void) | undefined {
+  return mapleId === undefined ? undefined : () => onKeyLost(mapleId)
+}
+
 export function DropHistoryScreen(): React.JSX.Element {
   const faq = useFaqSheet('drop-history')
   const navigation = useScreenNavigation()
   // 쿼리가 마운트에 스스로 읽는다. 기록 · 보스 기록의 판이 오르면 무효화되어 다시 읽힌다.
-  const { status, groups, drought, charactersByOcid, reload } = useDropHistory()
+  const { status, groups, drought, charactersByOcid, keyLostMapleIdByOcid, reload } = useDropHistory()
+  /** 누른 흐린 기록의 메이플 ID. 키 없는 기록 모달이 이 계정을 다룬다 */
+  const [keyLostMapleId, setKeyLostMapleId] = useState<string | null>(null)
 
   const now = new Date()
 
@@ -313,10 +333,13 @@ export function DropHistoryScreen(): React.JSX.Element {
               key={group.periodKey}
               group={group}
               charactersByOcid={charactersByOcid}
+              keyLostMapleIdByOcid={keyLostMapleIdByOcid}
+              onKeyLost={setKeyLostMapleId}
               now={now}
             />
           ))}
       </View>
+      {keyLostMapleId !== null && <KeyLostRecordModal mapleId={keyLostMapleId} onClose={() => setKeyLostMapleId(null)} />}
     </ScreenScroll>
   )
 }

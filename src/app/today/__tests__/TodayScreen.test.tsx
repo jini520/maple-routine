@@ -64,7 +64,10 @@ jest.mock('../../../features/refresh/pull', () => ({ pullRefresh: jest.fn() }))
 jest.mock('../../../features/refresh/freshness', () => ({ useRealtimeFetchedAt: jest.fn(() => null) }))
 jest.mock('../../../features/boss-profit/period-query', () => ({ useBossProfitPeriod: jest.fn() }))
 jest.mock('../../../features/boss-profit/round-view', () => ({ useBossProfitRound: jest.fn() }))
-jest.mock('../../../features/boss-profit/drop-history-query', () => ({ useDropHistory: jest.fn() }))
+jest.mock('../../../features/boss-profit/drop-history-query', () => ({
+  useDropHistory: jest.fn(),
+  usableDropGroups: jest.requireActual('../../../features/boss-profit/drop-history-query').usableDropGroups,
+}))
 jest.mock('../../../features/cashbook/ledger-query', () => ({ useLedgerDays: jest.fn() }))
 jest.mock('../../../hooks/useRefetchStaleOnFocus', () => ({ useRefetchStaleOnFocus: jest.fn() }))
 // **훅만 갈아끼우고 나머지는 실물을 남긴다.** 스토어 모듈은 훅 말고도 순수 헬퍼를 내보내는데
@@ -183,6 +186,7 @@ function setStores(
       periodPendingAggregation: false,
       canGoPreviousPeriod: false,
       unqueryableCards: [],
+      keyLostMapleIdByOcid: {},
       ...overrides.period,
     },
     loadedTab: 'weekly',
@@ -202,6 +206,7 @@ function setStores(
   mockedDropHistory.mockReturnValue({
     status: 'ready',
     groups: [],
+    keyLostMapleIdByOcid: {},
     drought: null,
     charactersByOcid: {},
     reload: jest.fn().mockResolvedValue(undefined),

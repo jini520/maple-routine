@@ -121,14 +121,14 @@ export function AppNavigation(): React.JSX.Element {
     ;(navigationRef.navigate as (route: string, params: TabNavigateParams) => void)(name, nested)
   }, [alertRequest, routeNames, navigationRef])
 
-  // 429 모달의 `다른 키 입력` 은 부계정이면 그 계정의 상세를, 무효 키 모달은 계정 관리 목록을 연다. 모달이 내비게이터 밖이라 요청을
-  // 받아 여기서 민다.
+  // 429 모달의 `다른 키 입력` 은 부계정이면 그 계정의 상세를, 무효 키 모달은 계정 관리 목록을 연다. 키 없는 기록 모달의 `API 키 등록`
+  // 도 같은 요청을 둔다. 모달이 내비게이터 밖이라 요청을 받아 여기서 민다.
   const accountRequest = useAccountManageOpenStore((state) => state.request)
   useEffect(() => {
     if (accountRequest === null || !routeNames.includes('Main')) return
     useAccountManageOpenStore.getState().clear()
     const { accountKey, openKeySheet } = accountRequest
-    if (accountKey === null) navigationRef.navigate('SettingsAccounts')
+    if (accountKey === null) navigationRef.navigate('SettingsAccounts', openKeySheet ? { openAddSheet: true } : undefined)
     else navigationRef.navigate('SettingsAccountDetail', { accountKey, openKeySheet })
   }, [accountRequest, routeNames, navigationRef])
 

@@ -32,7 +32,7 @@ import { SETTLEMENT_BANNER_DETAIL_TODAY } from '../../features/settlement/banner
 import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { usePartyAppointments } from '../../features/party-appointments/query'
 import { refreshNoticeKinds } from '../../features/notice/notice-query'
-import { useDropHistory } from '../../features/boss-profit/drop-history-query'
+import { usableDropGroups, useDropHistory } from '../../features/boss-profit/drop-history-query'
 import { useBossProfitPeriod } from '../../features/boss-profit/period-query'
 import { useBossProfitRound } from '../../features/boss-profit/round-view'
 import { useBossSchedulerStore } from '../../features/boss-scheduler/store'
@@ -133,9 +133,11 @@ export function TodayScreen(): React.JSX.Element {
     manualCompletedByOcid: boss.manualCompletedByOcid,
     characterIssues: round.characterIssues,
     // 이번 주 행은 주간 보스 + 그 주에 선 월간 보스다. 자르는 일은 기간 스냅샷이 했다. 뷰모델은 다시 자르지 않는다.
-    profitRows: week.snapshot?.rows ?? [],
+    // 이 기기에 쓸 수 있는 키가 없는 부계정의 캐릭터는 보스 수익 화면처럼 결정석 한도와 이번 주 드롭에서 뺀다.
+    profitRows: (week.snapshot?.rows ?? []).filter((row) => week.snapshot?.keyLostMapleIdByOcid[row.ocid] === undefined),
     profitDropsByRowKey: week.snapshot?.dropsByRowKey ?? EMPTY_DROPS,
-    dropGroups: dropHistory.groups,
+    // 키가 없는 부계정의 드롭은 이번 주 드롭 위젯에서 뺀다. 히스토리는 흐리게 두고 여기서는 세지 않는다.
+    dropGroups: usableDropGroups(dropHistory.groups, dropHistory.keyLostMapleIdByOcid),
     statsDays,
     partyAppointments,
     quickLinks,

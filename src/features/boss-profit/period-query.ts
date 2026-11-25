@@ -19,8 +19,10 @@ import { buildPeriodSnapshot, periodNeedsWindowSync, resolveDisplayOcids, type P
 import { resolvePeriodWindow } from './period-window'
 import { useQuerySubscribed } from '../query/subscription'
 
-/** 이 쿼리가 읽는 표. 지난 기간의 상태는 기록 없이 조회 원장만으로도 바뀐다. */
-export const PERIOD_TABLES: readonly RecordTable[] = ['boss_profit_records', 'boss_drop_records', 'schedule_probe_ledger']
+/**
+ * 이 쿼리가 읽는 표. 지난 기간의 상태는 기록 없이 조회 원장만으로도 바뀐다. 인증 수단이 바뀌면 키가 없는 부계정의 카드가 달라진다.
+ */
+export const PERIOD_TABLES: readonly RecordTable[] = ['boss_profit_records', 'boss_drop_records', 'schedule_probe_ledger', 'auth_methods']
 
 function periodCacheKey(tab: BossCycle, periodKey: string): string {
   return `${tab}|${periodKey}`

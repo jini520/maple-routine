@@ -7,6 +7,7 @@
  *
  * @see docs/foundation/server-sync.md `로그인과 로그아웃` · `부계정 해제`
  */
+import { forgetServerSyncSkippedMapleIds } from './server-sync-skipped'
 import { isUnmatchedNexonId, nexonIdHashHex, unmatchedNexonIdOf } from '../lib/crypto/nexon-id-hash'
 import { getTrackedCharacterOcids } from './character-selection'
 import { accountSharedProgressKey, STORAGE_KEYS, worldSharedProgressKey } from './keys'
@@ -199,6 +200,7 @@ function hashOfMapleId(mapleId: string): string {
 export async function forgetServerSyncOwners(owners: ServerSyncOwners): Promise<void> {
   await clearServerSyncOwners(owners)
   const cleared = new Set(owners.mapleIds.map(hashOfMapleId))
+  await forgetServerSyncSkippedMapleIds([...cleared])
   const cursors = await getServerSyncCursors()
   await setServerSyncCursors({
     ...cursors,

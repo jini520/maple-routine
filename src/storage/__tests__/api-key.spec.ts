@@ -10,6 +10,7 @@ import {
   setMainApiKey,
   setNexonLogin,
   signOutAuth,
+  subscribeAuthMethods,
 } from '../api-key'
 import type { NexonApiKeyMethod, NexonAuthConfig } from '../../types'
 import { STORAGE_KEYS } from '../keys'
@@ -173,7 +174,20 @@ describe('무효화된 키 하나만 지운다', () => {
     expect((await getAuthConfig())?.apiKeys).toHaveLength(1)
   })
 
-  it('키를 전부 지워도 로그인은 남는다', async () => {
+  it('어느 키인지 모를 때 지우는 것은 메인 키뿐이고, 로그인과 로그인에 귀속된 부계정 키는 남는다', async () => {
+    await 저장({
+      login: null,
+      apiKeys: [키('account-메인', null), 키('account-부', 'account-로그인')],
+      mainKeyId: 'account-메인',
+    })
+
+    await removeAllApiKeys()
+
+    // 부계정 키를 지우면 계정 관리에서 그 계정이 사라지고, 그 기록이 키 없는 기록으로 흐려진다.
+    expect(await getAuthConfig()).toEqual({ login: null, apiKeys: [키('account-부', 'account-로그인')], mainKeyId: null })
+  })
+
+  it('로그인이 있으면 귀속된 부계정 키와 함께 남는다', async () => {
     await 저장({
       login: { type: 'login', id: 'account-로그인', session: '세션' },
       apiKeys: [키('account-부', 'account-로그인')],
@@ -184,7 +198,7 @@ describe('무효화된 키 하나만 지운다', () => {
 
     expect(await getAuthConfig()).toEqual({
       login: { type: 'login', id: 'account-로그인', session: '세션' },
-      apiKeys: [],
+      apiKeys: [키('account-부', 'account-로그인')],
       mainKeyId: null,
     })
   })
@@ -455,5 +469,33 @@ describe('계정 관리', () => {
 
     await replaceApiKeyValue('a', '바꾼-키')
     expect((await getAuthConfig())?.apiKeys[0]).toEqual({ ...키('a', 'login-1'), value: '바꾼-키' })
+  })
+})
+
+describe('인증 수단이 바뀌면 알린다', () => {
+  // 키가 무효가 되거나 지워지면 어느 부계정의 기록이 흐려지는지가 바뀐다. 알리지 않으면 가계부 · 보스 수익이 옛 합계에 머문다.
+  it('무효 표시마다 건 함수를 부르고, 푼 뒤에는 부르지 않는다', async () => {
+    await 저장({ login: { type: 'login', id: 'login', session: 's' }, apiKeys: [키('sub', 'login')], mainKeyId: null })
+    const listener = jest.fn()
+    const stop = subscribeAuthMethods(listener)
+
+    await markApiKeyInvalid('값-sub', [])
+    expect(listener).toHaveBeenCalledTimes(1)
+
+    stop()
+    await markApiKeyInvalid('값-sub', [])
+    expect(listener).toHaveBeenCalledTimes(1)
+  })
+
+  it('로그아웃이 수단을 모두 지울 때도 알린다', async () => {
+    await 저장({ login: null, apiKeys: [키('main', null)], mainKeyId: 'main' })
+    const listener = jest.fn()
+    const stop = subscribeAuthMethods(listener)
+
+    await signOutAuth()
+
+    expect(await getAuthConfig()).toBeNull()
+    expect(listener).toHaveBeenCalledTimes(1)
+    stop()
   })
 })

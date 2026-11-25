@@ -160,13 +160,15 @@ KST 자정에는 공용 타이머 하나(`features/query/reset-timer.ts`)가 `me
 
 기록을 쓰는 쪽이 화면을 알 필요가 없게 한다. 저장 계층은 표마다 판을 올리고 구독 함수를 낸다
 (`subscribeBossProfitRecordsRevision` · `subscribeBossDropRecordsRevision` · `subscribeIncomeRecordsRevision` ·
-`subscribeSpendRecordsRevision` · `subscribeEnhancementTotalsRevision` · `subscribeScheduleProbeLedgerRevision`).
-`features/query/invalidation.ts` 의 `startRecordInvalidation` 이 여섯을 구독해, `meta.tables` 에 그 표를 적은 쿼리를
-무효화한다. 표 이름은 `features/query/meta.ts` 의 `RecordTable` 이다.
+`subscribeSpendRecordsRevision` · `subscribeEnhancementTotalsRevision` · `subscribeScheduleProbeLedgerRevision` ·
+`subscribeInventoryItemsRevision` · `subscribeAuthMethods`). `features/query/invalidation.ts` 의 `startRecordInvalidation` 이
+여덟을 구독해, `meta.tables` 에 그 표를 적은 쿼리를 무효화한다. 표 이름은 `features/query/meta.ts` 의 `RecordTable` 이다.
 
-- 쿼리는 자기가 읽는 표를 `meta.tables` 에 적는다. `ledgerDays` 는 다섯 기록 표, `bossProfitPeriod` 는 보스 기록 · 드롭
-  기록 · 조회 원장, `dropHistory` 는 드롭 기록 · 보스 기록이다. 조회 원장(`scheduleProbe:*`)이 든 것은 지난 기간의 상태
-  (`notChecked` 에서 `confirmedEmpty` 로)가 기록 없이 원장만으로 바뀌기 때문이다.
+- 쿼리는 자기가 읽는 표를 `meta.tables` 에 적는다. `ledgerDays` 는 다섯 기록 표와 인증 수단, `bossProfitPeriod` 는 보스 기록 ·
+  드롭 기록 · 조회 원장 · 인증 수단, `dropHistory` 는 드롭 기록 · 보스 기록 · 인증 수단이다. 조회 원장(`scheduleProbe:*`)이 든
+  것은 지난 기간의 상태(`notChecked` 에서 `confirmedEmpty` 로)가 기록 없이 원장만으로 바뀌기 때문이다. 인증 수단(Preferences
+  `authMethods`)이 든 것은 키가 무효가 되거나 지워지면 어느 부계정의 기록이 흐려지고 합계에서 빠지는지가 바뀌기 때문이다
+  ([[ADR-099]] 결정 68).
 - 다른 쿼리에 기대는 쿼리는 `meta.dependsOn` 에 그 열쇠의 이름을 적는다. `bossProfitPeriod` 의 지금 기간은
   `schedule(ocid)` 캐시에서 행을 만들므로 `schedule-round` 에 기댄다. 같은 모듈이 쿼리 캐시를 구독해, 회차가 새 데이터를
   들면(받았든 `setQueryData` 로 넣었든) 그 쿼리를 무효화한다.

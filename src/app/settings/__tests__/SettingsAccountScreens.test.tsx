@@ -74,7 +74,7 @@ let removeAccount: jest.Mock
 let replaceWithKey: jest.Mock
 
 function 보기(view: Partial<AccountManageView>): void {
-  useAccountManageStore.setState({ view: { hasLogin: true, accounts: [넥슨ID], canAdd: true, ...view } })
+  useAccountManageStore.setState({ view: { hasLogin: true, accounts: [넥슨ID], canAdd: true, hasKeylessSubAccount: false, ...view } })
 }
 
 beforeEach(() => {
@@ -140,6 +140,30 @@ describe('SettingsAccountsScreen', () => {
     await fireEvent.press(view.getByText('확인'))
     await waitFor(() => expect(addKey).toHaveBeenLastCalledWith('새-키'))
     await waitFor(() => expect(view.queryByTestId('api-key-sheet')).toBeNull())
+  })
+
+  // 서버에 등록돼 있지만 이 기기에 키가 없는 부계정은 목록에 서지 않아, 줄이 없으면 그 계정을 보거나 해제할 길이 없다.
+  it('이 기기에 키가 없는 부계정이 있으면 줄이 서고, 누르면 API 키 추가 시트가 열린다', async () => {
+    보기({ accounts: [넥슨ID, 부계정], hasKeylessSubAccount: true })
+    const view = await renderOverlay(<SettingsAccountsScreen />)
+
+    await fireEvent.press(view.getByText('이 기기에 키가 없는 부계정이 있어요'))
+
+    expect(view.getByTestId('api-key-sheet')).toBeTruthy()
+  })
+
+  it('키가 없는 부계정이 없으면 줄이 서지 않는다', async () => {
+    보기({ accounts: [넥슨ID, 부계정] })
+    const view = await renderOverlay(<SettingsAccountsScreen />)
+
+    expect(view.queryByText('이 기기에 키가 없는 부계정이 있어요')).toBeNull()
+  })
+
+  it('흐린 기록의 API 키 등록으로 들어오면 API 키 추가 시트가 열린 채 선다', async () => {
+    보기({ accounts: [넥슨ID] })
+    const view = await renderOverlay(<SettingsAccountsScreen route={{ params: { openAddSheet: true } }} />)
+
+    expect(view.getByTestId('api-key-sheet')).toBeTruthy()
   })
 
   // 모달에서 읽은 말과 목록의 표시가 이어져야 어느 계정의 키가 문제인지 찾는다.

@@ -24,6 +24,7 @@ function 소스(overrides: Partial<AccountManageSources>): AccountManageSources 
     config: { login: 로그인, apiKeys: [], mainKeyId: null },
     listOf: () => undefined,
     mapleIdsByAccount: new Map(),
+    serverMapleIdHashes: [],
     ...overrides,
   }
 }
@@ -118,4 +119,47 @@ it('목록이 없는 계정은 기기가 본 메이플 ID 를 대표 캐릭터 �
   const view = buildAccountManageView(소스({ mapleIdsByAccount: new Map([['login-1', ['m-x']]]) }))
 
   expect(view.accounts[0]).toMatchObject({ mapleIds: [{ accountId: 'm-x', representative: null }], mapleIdHashes: [h('m-x')] })
+})
+
+describe('이 기기에 키가 없는 부계정 줄', () => {
+  const mapleIdsByAccount = new Map([
+    ['login-1', ['m-login']],
+    ['k-sub', ['m-sub']],
+  ])
+
+  it('서버가 이 로그인이 쓸 수 있다고 답한 메이플 ID 가 목록의 어느 계정에도 없으면 선다', () => {
+    const view = buildAccountManageView(소스({ mapleIdsByAccount, serverMapleIdHashes: [h('m-login'), h('m-elsewhere')] }))
+
+    expect(view.hasKeylessSubAccount).toBe(true)
+  })
+
+  it('무효 표시가 붙은 키의 계정은 그 행에 표시가 있어 세지 않는다', () => {
+    const invalid = { ...키('k-sub', 'K'), invalid: { untrackedOcids: [] } }
+    const config: NexonAuthConfig = { login: 로그인, apiKeys: [invalid], mainKeyId: null }
+
+    const view = buildAccountManageView(소스({ config, mapleIdsByAccount, serverMapleIdHashes: [h('m-login'), h('m-sub')] }))
+
+    expect(view.hasKeylessSubAccount).toBe(false)
+  })
+
+  it('키가 지워진 부계정은 목록에 없어 선다', () => {
+    const view = buildAccountManageView(소스({ mapleIdsByAccount, serverMapleIdHashes: [h('m-login'), h('m-sub')] }))
+
+    expect(view.hasKeylessSubAccount).toBe(true)
+  })
+
+  it('받아 둔 목록의 메이플 ID 도 그 계정의 것으로 본다', () => {
+    const config: NexonAuthConfig = { login: 로그인, apiKeys: [키('k-sub', 'K')], mainKeyId: null }
+    const listOf = (id: string) => (id === 'k-sub' ? [메이플ID('m-listed', 캐릭터('부캐', 200))] : undefined)
+
+    const view = buildAccountManageView(소스({ config, listOf, mapleIdsByAccount, serverMapleIdHashes: [h('m-login'), h('m-listed')] }))
+
+    expect(view.hasKeylessSubAccount).toBe(false)
+  })
+
+  it('로그인이 없으면 부계정이 없어 서지 않는다', () => {
+    const config: NexonAuthConfig = { login: null, apiKeys: [키('k-main', 'K', null)], mainKeyId: 'k-main' }
+
+    expect(buildAccountManageView(소스({ config, serverMapleIdHashes: [h('m-elsewhere')] })).hasKeylessSubAccount).toBe(false)
+  })
 })
