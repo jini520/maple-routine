@@ -17,6 +17,8 @@ export interface AccountManageSources {
   listOf: (nexonAccountId: string) => readonly MapleAccount[] | undefined
   /** 넥슨 계정 id → 기기가 본 메이플 ID(`character_accounts`) */
   mapleIdsByAccount: ReadonlyMap<string, readonly string[]>
+  /** 서버가 이 신원이 쓸 수 있다고 마지막으로 답한 메이플 ID 해시(받기 번호의 열쇠) */
+  serverMapleIdHashes: readonly string[]
 }
 
 export interface ManagedMapleId {
@@ -46,6 +48,11 @@ export interface AccountManageView {
   accounts: ManagedAccount[]
   /** `API 키 추가` 로 더 넣을 수 있는가. 로그인이 없거나 상한이면 거짓 */
   canAdd: boolean
+  /**
+   * 서버에 등록돼 있지만 이 기기에 키가 없는 부계정이 있나. 서버가 쓸 수 있다고 답한 메이플 ID 가운데 목록의 어느 계정에도 없는 것이
+   * 있으면 참이다. 그 부계정은 이 기기에서 보이지도 해제되지도 않아 줄로 알린다
+   */
+  hasKeylessSubAccount: boolean
 }
 
 /** 목록이 있으면 대표 레벨 차례, 없으면 기기가 본 차례의 메이플 ID. */
@@ -76,7 +83,12 @@ export function buildAccountManageView(sources: AccountManageSources): AccountMa
   const login = config?.login
   if (config == null || login == null) {
     const main = mainApiKeyOf(config)
-    return { hasLogin: false, accounts: main === null ? [] : [accountOfKey(main, 'mainKey', 'API 키 계정', sources)], canAdd: false }
+    return {
+      hasLogin: false,
+      accounts: main === null ? [] : [accountOfKey(main, 'mainKey', 'API 키 계정', sources)],
+      canAdd: false,
+      hasKeylessSubAccount: false,
+    }
   }
 
   const loginMapleIds = mapleIdsOfAccount(login.id, sources)
@@ -96,5 +108,11 @@ export function buildAccountManageView(sources: AccountManageSources): AccountMa
     .filter((key) => key.loginId === login.id)
     .forEach((key, index) => accounts.push(accountOfKey(key, 'subKey', `API 키 ${index + 1} 계정`, sources)))
 
-  return { hasLogin: true, accounts, canAdd: accounts.length < NEXON_ACCOUNT_LIMIT }
+  const listed = new Set(accounts.flatMap((account) => account.mapleIdHashes))
+  return {
+    hasLogin: true,
+    accounts,
+    canAdd: accounts.length < NEXON_ACCOUNT_LIMIT,
+    hasKeylessSubAccount: sources.serverMapleIdHashes.some((hash) => !listed.has(hash)),
+  }
 }

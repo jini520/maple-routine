@@ -116,6 +116,12 @@ export interface AccountDetailParams {
   openKeySheet?: boolean
 }
 
+/** 계정 관리 목록이 받는 파라미터. */
+export interface AccountsParams {
+  /** 참이면 열자마자 `API 키 추가` 시트를 띄운다. 키가 지워진 계정의 흐린 기록이 `API 키 등록` 으로 준다 */
+  openAddSheet?: boolean
+}
+
 /** MVP 등급 이력 상세가 받는 파라미터. 이력은 스토어가 들고 있어 ID 만 넘긴다. */
 export interface MvpGradeHistoryParams {
   accountId: string
@@ -193,7 +199,7 @@ export type RootStackParamList = {
    */
   SettingsCharacters: undefined
   /** 계정 관리 목록. 넥슨 계정마다 행 하나와 그 계정의 메이플 ID 이름. 앱 설정의 `계정 관리` 행이 연다 */
-  SettingsAccounts: undefined
+  SettingsAccounts: AccountsParams | undefined
   /** 넥슨 계정 하나의 상세. 메이플 ID 이름 칸과 API 키 행. 목록의 계정 행과 429 모달의 `다른 키 입력` 이 연다 */
   SettingsAccountDetail: AccountDetailParams
   /** 보스 관리. 스케줄러 하위 탭이던 것이 설정에서 여는 하위 페이지가 됐다 */

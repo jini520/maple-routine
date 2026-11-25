@@ -2,7 +2,8 @@
  * 계정 관리 목록. 넥슨 계정마다 `… 계정 설정` 행 하나와 그 아래 메이플 ID 이름이 선다.
  *
  * 넥슨 로그인 사용자는 넥슨 ID 계정 카드, `API 키 추가` 글자 버튼, API 키 계정 카드 차례다. 로그인하지 않은 사용자는 넥슨 로그인
- * 블록과 키 계정 카드다. 부계정은 넥슨 로그인 사용자만 넣는다.
+ * 블록과 키 계정 카드다. 부계정은 넥슨 로그인 사용자만 넣는다. 서버에 등록돼 있지만 이 기기에 키가 없는 부계정이 있으면 API 키 계정
+ * 카드 아래에 그것을 알리는 줄이 서고, 누르면 키 입력 시트가 열린다.
  *
  * @see docs/features/auth.md 계정 관리
  */
@@ -27,17 +28,18 @@ import { useAuthStore } from '../../features/auth/store'
 import { useFaqSheet } from '../../features/faq/use-faq-sheet'
 import { useMapleIdNameOf } from '../../features/maple-id/names'
 import { useSettingsNavigation } from '../../hooks/useSettingsNavigation'
+import type { AccountsParams } from '../../navigation/routes'
 import { ApiKeySheet } from '../auth/ApiKeySheet'
 import { UnregistrableKeyModal } from '../auth/UnregistrableKeyModal'
 import { SETTINGS_CARD_CLASS } from './row-class'
 import { SettingsRow } from './SettingsRow'
 
-export function SettingsAccountsScreen(): React.JSX.Element {
+export function SettingsAccountsScreen(props: { route?: { params?: AccountsParams } }): React.JSX.Element {
   // 계정 관리는 앱 설정의 하위 페이지라 그 묶음을 함께 쓴다.
   const faq = useFaqSheet('app-settings')
   const navigation = useSettingsNavigation()
   const view = useAccountManageStore((state) => state.view)
-  const [adding, setAdding] = useState(false)
+  const [adding, setAdding] = useState(props.route?.params?.openAddSheet === true)
   const [submitting, setSubmitting] = useState(false)
   const [rejection, setRejection] = useState<UnregistrableReason | null>(null)
   const [limitOpen, setLimitOpen] = useState(false)
@@ -155,6 +157,11 @@ export function SettingsAccountsScreen(): React.JSX.Element {
                     {subs.map((account, index) => (
                       <AccountRows key={account.key} account={account} last={index === subs.length - 1} onOpen={openAccount} />
                     ))}
+                  </Card>
+                )}
+                {view.hasKeylessSubAccount && (
+                  <Card className={SETTINGS_CARD_CLASS} testID="account-keyless-sub">
+                    <SettingsRow label="이 기기에 키가 없는 부계정이 있어요" onPress={startAdding} />
                   </Card>
                 )}
               </View>

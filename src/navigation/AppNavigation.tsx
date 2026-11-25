@@ -128,7 +128,7 @@ export function AppNavigation(): React.JSX.Element {
     if (accountRequest === null || !routeNames.includes('Main')) return
     useAccountManageOpenStore.getState().clear()
     const { accountKey, openKeySheet } = accountRequest
-    if (accountKey === null) navigationRef.navigate('SettingsAccounts')
+    if (accountKey === null) navigationRef.navigate('SettingsAccounts', openKeySheet ? { openAddSheet: true } : undefined)
     else navigationRef.navigate('SettingsAccountDetail', { accountKey, openKeySheet })
   }, [accountRequest, routeNames, navigationRef])
 

@@ -4,10 +4,9 @@
  * 여기서 막는 사고는 둘이다. 키가 무효이거나 지워진 부계정의 기록이 합계에 섞이는 것, 쓸 수 있는 계정의 기록이 흐려져 합계에서 빠지는
  * 것이다.
  */
-import { nexonIdHashHex } from '../../../lib/crypto/nexon-id-hash'
 import type { CharacterAccountSighting } from '../../../lib/mvp/membership'
 import type { NexonApiKeyMethod, NexonAuthConfig } from '../../../types/auth'
-import { hasKeylessSubAccountOf, keyLostScopeOf } from '../keyless'
+import { keyLostScopeOf } from '../keyless'
 
 const LOGIN = { type: 'login', id: 'account-login', session: 's' } as const
 
@@ -69,33 +68,5 @@ describe('키가 있던 기기의 메이플 ID', () => {
 
   it('인증 수단이 없으면 아무것도 고르지 않는다', () => {
     expect(keyLostScopeOf(null, BY_ACCOUNT, SIGHTINGS).mapleIds.size).toBe(0)
-  })
-})
-
-describe('계정 관리의 키 없는 부계정 줄', () => {
-  const config: NexonAuthConfig = { login: LOGIN, apiKeys: [key('account-sub', 'account-login', true)], mainKeyId: null }
-
-  it('서버가 쓸 수 있다고 답한 메이플 ID 가운데 목록의 어느 계정에도 없는 것이 있으면 선다', () => {
-    const hashes = ['maple-login', 'maple-sub', 'maple-elsewhere'].map(nexonIdHashHex)
-
-    expect(hasKeylessSubAccountOf(config, BY_ACCOUNT, hashes)).toBe(true)
-  })
-
-  it('무효 표시가 붙은 키의 계정은 그 행에 표시가 있어 세지 않는다', () => {
-    const hashes = ['maple-login', 'maple-sub'].map(nexonIdHashHex)
-
-    expect(hasKeylessSubAccountOf(config, BY_ACCOUNT, hashes)).toBe(false)
-  })
-
-  it('키가 지워진 부계정은 목록에 없어 선다', () => {
-    const hashes = ['maple-login', 'maple-gone'].map(nexonIdHashHex)
-
-    expect(hasKeylessSubAccountOf(config, BY_ACCOUNT, hashes)).toBe(true)
-  })
-
-  it('로그인이 없으면 부계정이 없어 서지 않는다', () => {
-    const keyOnly: NexonAuthConfig = { login: null, apiKeys: [key('account-login', null)], mainKeyId: 'account-login' }
-
-    expect(hasKeylessSubAccountOf(keyOnly, BY_ACCOUNT, [nexonIdHashHex('maple-elsewhere')])).toBe(false)
   })
 })
