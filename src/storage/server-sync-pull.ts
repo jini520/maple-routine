@@ -7,6 +7,7 @@
  *
  * @see docs/foundation/server-sync.md `받기`
  */
+import { clearServerSyncSkippedMapleIds } from './server-sync-skipped'
 import { nexonIdHashHex } from '../lib/crypto/nexon-id-hash'
 import { cashbookItemTypeIdOf } from '../lib/cashbook/entry-ids'
 import type { SqliteDbConnection } from './ports'
@@ -264,6 +265,11 @@ export interface ServerSyncOwners {
    * 놓칠 지우기가 없다
    */
   anotherPerson?: boolean
+  /**
+   * 참이면 `#` 로 적은 캐릭터의 기록도 비운다. 설정은 그대로 둔다. 메이플 ID 를 모르고 넣은 옛 기록을 한 번 비울 때 준다. `#` 캐릭터는 메이플 ID 를
+   * 몰라 함께 비우고, 받기가 처음부터 다시 받아 메이플 ID 를 아는 것만 되돌린다
+   */
+  unmatchedOcids?: boolean
 }
 
 const NOT_QUEUED = 'id NOT IN (SELECT record_id FROM server_sync_queue)'
@@ -360,11 +366,14 @@ export async function clearServerSyncOwners(owners: ServerSyncOwners): Promise<v
     ocids.push(...mine)
     await withServerSyncPaused((paused) => clearMapleIdRecords(paused, mapleId, mine, accounts, owners.includeQueued === true))
   }
-  if (owners.anotherPerson === true) {
+  if (owners.anotherPerson === true || owners.unmatchedOcids === true) {
     const marked = await unmatchedOcids(db)
     ocids.push(...marked)
     await withServerSyncPaused((paused) => clearCharacterRecords(paused, marked, owners.includeQueued === true))
   }
   await clearServerSyncOwnerPreferences({ mapleIds: owners.mapleIds, ocids, person: owners.person, includeQueued: owners.includeQueued === true })
-  if (owners.anotherPerson === true) await resetServerSyncSettings()
+  if (owners.anotherPerson === true) {
+    await resetServerSyncSettings()
+    await clearServerSyncSkippedMapleIds()
+  }
 }

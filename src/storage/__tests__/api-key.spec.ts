@@ -173,7 +173,20 @@ describe('무효화된 키 하나만 지운다', () => {
     expect((await getAuthConfig())?.apiKeys).toHaveLength(1)
   })
 
-  it('키를 전부 지워도 로그인은 남는다', async () => {
+  it('어느 키인지 모를 때 지우는 것은 메인 키뿐이고, 로그인과 로그인에 귀속된 부계정 키는 남는다', async () => {
+    await 저장({
+      login: null,
+      apiKeys: [키('account-메인', null), 키('account-부', 'account-로그인')],
+      mainKeyId: 'account-메인',
+    })
+
+    await removeAllApiKeys()
+
+    // 부계정 키를 지우면 계정 관리에서 그 계정이 사라지고, 그 기록이 키 없는 기록으로 흐려진다.
+    expect(await getAuthConfig()).toEqual({ login: null, apiKeys: [키('account-부', 'account-로그인')], mainKeyId: null })
+  })
+
+  it('로그인이 있으면 귀속된 부계정 키와 함께 남는다', async () => {
     await 저장({
       login: { type: 'login', id: 'account-로그인', session: '세션' },
       apiKeys: [키('account-부', 'account-로그인')],
@@ -184,7 +197,7 @@ describe('무효화된 키 하나만 지운다', () => {
 
     expect(await getAuthConfig()).toEqual({
       login: { type: 'login', id: 'account-로그인', session: '세션' },
-      apiKeys: [],
+      apiKeys: [키('account-부', 'account-로그인')],
       mainKeyId: null,
     })
   })

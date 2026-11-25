@@ -150,6 +150,10 @@ export const STORAGE_KEYS = {
   serverSyncCursors: 'serverSyncCursors',
   // 로그인한 뒤 첫 받기가 서버의 목록으로 앞 사람의 기록을 비울 표시와 앞 계정의 메이플 ID 해시. 지워지면 그 비우기를 건너뛴다.
   serverSyncSignIn: 'serverSyncSignIn',
+  // 받기가 줄을 넣지 않고 건너뛰는 메이플 ID 해시와 까닭(이 기기가 모름 · 이 기기에서 지움). 지워지면 키 없는 부계정의 기록이 들어온다.
+  serverSyncSkippedMapleIds: 'serverSyncSkippedMapleIds',
+  // 메이플 ID 를 모르고 넣은 옛 `#` 기록을 한 번 비웠나. 지워지면 그 기록을 다시 비우고 메이플 ID 를 처음부터 다시 받는다.
+  serverSyncUnmatchedCleared: 'serverSyncUnmatchedCleared',
   // 처음 동기화가 기기의 기록을 모두 대기 표에 넣은 시각과 받기를 끝냈는지. 지워지면 다시 넣어 받은 기록까지 서버로 되돌아간다.
   firstServerSync: 'firstServerSync',
   // 옛 강화 원본 표를 합계로 옮겼나. 옮긴 뒤 원본 표를 지운다.

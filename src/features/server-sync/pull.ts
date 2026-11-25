@@ -3,12 +3,15 @@
  *
  * ```
  * 짝이 생긴 `#` 값을 원문으로 바꾼다
+ * 메이플 ID 를 모르고 넣은 옛 `#` 기록을 한 번 비우고 메이플 ID 를 처음부터 다시 받는다
+ * 건너뛰던 메이플 ID 를 알게 됐거나 그 계정에 쓸 수 있는 키가 생겼으면 목록에서 빼고 처음부터 다시 받는다
  * 기억한 번호를 보낸다
  *   응답 없음 · 요청 전체의 거절 → 번호를 두고 멈춘다
  *   로그인 뒤 첫 응답 → 그 목록에 없는 메이플 ID 의 기록을 비운다. 앞 계정과 겹치지 않으면 사람의 기록도 비우고 다시 받는다
  *   첫 응답의 메이플 ID 목록에서 앞 목록에 있던 메이플 ID 가 빠졌다 → 다른 기기가 해제한 부계정과 그 기록을 이 기기에서 뺀다
  *   지운 번호가 적어 둔 값과 다르고, 번호가 0 보다 크며 그보다 작은 주인 → 그 주인의 기록을 비우고 번호를 0 으로 적어 다시 받는다
  *   받은 줄을 표 차례로 기기 칸으로 바꿔 넣는다. 넣지 못한 줄은 건너뛴다
+ *   모르는 메이플 ID 와 이 기기에서 지운 메이플 ID 의 줄은 넣지 않고, 모르는 메이플 ID 는 건너뛴 목록에 적는다
  *   응답의 번호와 지운 번호를 적는다. `hasMore` 면 이어 받는다. 번호가 그대로면 멈춘다
  * 넣은 표의 화면을 다시 읽게 한다
  * ```
@@ -41,11 +44,19 @@ import {
   type PulledPreferenceRecord,
 } from '../../storage/server-sync-pull-preferences'
 import { replaceMatchedNexonIds } from '../../storage/server-sync-unmatched'
+import {
+  getServerSyncSkippedMapleIds,
+  isServerSyncUnmatchedCleared,
+  markServerSyncUnmatchedCleared,
+  setServerSyncSkippedMapleIds,
+  type ServerSyncSkippedMapleIds,
+} from '../../storage/server-sync-skipped'
 import { SERVER_SYNC_TABLES, type ServerSyncTable } from '../../storage/server-sync-queue'
 import { whenRecordsReleased } from '../../storage/record-hold'
 import { unmatchedNexonIdOf } from '../../lib/crypto/nexon-id-hash'
 import { forgetReleasedSubAccounts } from '../account-manage/store'
 import { serverIdentityHeaders } from '../auth/server-identity'
+import { loadUsableMapleIdHashes } from './keyless'
 import { pulledRecordOf, type NexonIdResolver } from './pull-records'
 import { nexonIdHashOf } from './push-records'
 import { refreshAfterServerSync } from './refresh'
@@ -77,6 +88,12 @@ export interface PullDeps {
   deviceMapleIds(): Promise<string[]>
   /** 기기 줄을 고치거나 지운 표. 그 표를 읽는 화면이 다시 읽게 한다 */
   afterRecordsChanged(tables: ReadonlySet<ServerSyncTable>): void
+  getSkipped(): Promise<ServerSyncSkippedMapleIds>
+  setSkipped(skipped: ServerSyncSkippedMapleIds): Promise<void>
+  /** 넥슨을 부를 수 있는 넥슨 계정의 메이플 ID 해시 */
+  usableMapleIdHashes(): Promise<Set<string>>
+  isUnmatchedCleared(): Promise<boolean>
+  markUnmatchedCleared(): Promise<void>
 }
 
 const DEFAULT_DEPS: PullDeps = {
@@ -96,6 +113,11 @@ const DEFAULT_DEPS: PullDeps = {
   clearSignIn: clearServerSyncSignIn,
   deviceMapleIds: listServerSyncMapleIds,
   afterRecordsChanged: refreshAfterServerSync,
+  getSkipped: getServerSyncSkippedMapleIds,
+  setSkipped: setServerSyncSkippedMapleIds,
+  usableMapleIdHashes: loadUsableMapleIdHashes,
+  isUnmatchedCleared: isServerSyncUnmatchedCleared,
+  markUnmatchedCleared: markServerSyncUnmatchedCleared,
 }
 
 export interface PullOptions {
@@ -183,6 +205,7 @@ async function applyPage(
   options: PullOptions,
   records: SyncPullResponse['records'],
   resolver: NexonIdResolver,
+  skipped: ServerSyncSkippedMapleIds,
   summary: PullSummary,
   changed: Set<ServerSyncTable>,
 ): Promise<void> {
@@ -191,6 +214,13 @@ async function applyPage(
   let unpairedRepresentative = false
   for (const table of SERVER_SYNC_TABLES) {
     for (const row of records[table] ?? []) {
+      // 이 기기에 키가 없는 부계정의 줄이다. 넣으면 이름 없는 기록이 합계에 섞인다. 가리키는 줄이 없는 드롭은 기기 표가 받지 않는다.
+      const mapleIdHash = typeof row.mapleId === 'string' ? row.mapleId : null
+      if (mapleIdHash !== null && (skipped[mapleIdHash] === 'discarded' || resolver.mapleIdOf(mapleIdHash) === null)) {
+        if (skipped[mapleIdHash] === undefined) skipped[mapleIdHash] = 'unknown'
+        summary.skipped += 1
+        continue
+      }
       const record = pulledRecordOf(table, row, resolver)
       if (record === null) {
         if (options.firstQueuedAt !== undefined && table === 'trackedCharacters' && row.isRepresentative === true && row.deletedAt == null) {
@@ -225,6 +255,38 @@ async function applyPage(
 }
 
 /**
+ * 메이플 ID 를 모르고 넣은 옛 `#` 기록을 한 번 비운다. `#` 캐릭터의 기록은 메이플 ID 를 몰라 함께 비우고, 메이플 ID 번호를 모두 0 으로 적어
+ * 다시 받는다. 다시 받으면 메이플 ID 를 아는 기록만 돌아온다. 대기 중인 기록은 비우지 않는다.
+ */
+async function clearUnmatched(deps: PullDeps): Promise<void> {
+  const unmatched = (await deps.deviceMapleIds()).filter((mapleId) => mapleId.startsWith('#'))
+  await deps.clearOwners({ mapleIds: unmatched, person: false, unmatchedOcids: true })
+  const cursors = await deps.getCursors()
+  await deps.setCursors({ ...cursors, mapleIds: Object.fromEntries(Object.keys(cursors.mapleIds).map((hash) => [hash, 0])) })
+  await deps.markUnmatchedCleared()
+}
+
+/**
+ * 건너뛰던 메이플 ID 가운데 다시 받을 것을 목록에서 빼고 번호를 0 으로 적는다. 모르던 메이플 ID 는 알게 됐을 때, 이 기기에서 지운 메이플 ID 는
+ * 그 계정에 쓸 수 있는 키가 생겼을 때다. 남은 목록을 돌려준다.
+ */
+async function releaseSkipped(deps: PullDeps, lookup: NexonIdLookup): Promise<ServerSyncSkippedMapleIds> {
+  const skipped = await deps.getSkipped()
+  const entries = Object.entries(skipped)
+  if (entries.length === 0) return skipped
+  const usable = entries.some(([, reason]) => reason === 'discarded') ? await deps.usableMapleIdHashes() : new Set<string>()
+  const released = entries
+    .filter(([hash, reason]) => (reason === 'unknown' ? lookup.mapleIds.has(hash) : usable.has(hash)))
+    .map(([hash]) => hash)
+  if (released.length === 0) return skipped
+  const cursors = await deps.getCursors()
+  await deps.setCursors({ ...cursors, mapleIds: { ...cursors.mapleIds, ...Object.fromEntries(released.map((hash) => [hash, 0])) } })
+  const left = Object.fromEntries(entries.filter(([hash]) => !released.includes(hash)))
+  await deps.setSkipped(left)
+  return left
+}
+
+/**
  * 받는다. **던지지 않는 쪽은 부르는 쪽이다.** 저장소가 던지면 그대로 올라가고 번호는 적지 않는다. 다음 동기화가 같은 번호로 다시 받는다.
  *
  * 신원이 없으면 아무것도 안 한다. 키를 지웠거나 로그인 전인 상태다.
@@ -240,6 +302,11 @@ export async function pullServerSync(options: PullOptions = {}, deps: PullDeps =
   const resolver = resolverOf(lookup)
   // 받은 줄의 유일 기준이 기기 줄과 맞도록 먼저 바꾼다.
   const changed = await deps.replaceMatched(lookup)
+  if (!(await deps.isUnmatchedCleared())) {
+    await clearUnmatched(deps)
+    for (const table of SERVER_SYNC_TABLES) changed.add(table)
+  }
+  const skipped = await releaseSkipped(deps, lookup)
   let pageLimit = options.maxPages ?? MAX_PAGES
   try {
     for (let page = 0; page < pageLimit; page += 1) {
@@ -295,7 +362,10 @@ export async function pullServerSync(options: PullOptions = {}, deps: PullDeps =
         continue
       }
 
-      await applyPage(deps, options, response.records, resolver, summary, changed)
+      const skippedBefore = JSON.stringify(skipped)
+      await applyPage(deps, options, response.records, resolver, skipped, summary, changed)
+      // 번호보다 먼저 적는다. 번호만 오르면 건너뛴 메이플 ID 를 알게 돼도 처음부터 다시 받지 않는다.
+      if (JSON.stringify(skipped) !== skippedBefore) await deps.setSkipped(skipped)
       await deps.setCursors({
         nexonAccount: response.cursors.nexonAccount,
         mapleIds: response.cursors.mapleIds,

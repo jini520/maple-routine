@@ -286,15 +286,15 @@ export async function removeApiKey(apiKey: string): Promise<void> {
 }
 
 /**
- * API 키를 **전부** 지운다. 어느 키가 죽었는지 못 가렸을 때만 쓴다.
+ * 어느 키가 죽었는지 못 가렸을 때 넥슨 로그인에 귀속되지 않은 키를 **전부** 지운다. 로그인과 부계정 키는 남긴다.
  *
- * 실패가 키를 실어 나르지 못한 경로에서 쓰인다. 키가 여럿이면 다른 넥슨 계정의 키까지 잃지만,
- * 아무것도 안 지우면 그 사용자는 같은 실패를 무한히 다시 만난다. 로그인은 안 건드린다.
+ * 실패가 키를 실어 나르지 못한 경로에서 쓰인다. 아무것도 안 지우면 그 사용자는 같은 실패를 무한히 다시 만난다. 부계정 키를 지우면 계정
+ * 관리에서 그 계정이 사라지고 그 기록이 키 없는 기록이 되어, 부계정 키의 무효는 표시만 붙인다.
  */
 export async function removeAllApiKeys(): Promise<void> {
   const current = await getAuthConfig()
   if (current === null) return
-  await write({ login: current.login, apiKeys: [], mainKeyId: null })
+  await write({ login: current.login, apiKeys: current.apiKeys.filter((one) => one.loginId !== null), mainKeyId: null })
 }
 
 /**

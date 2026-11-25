@@ -9,6 +9,7 @@ import { nexonIdHashHex } from '../../../lib/crypto/nexon-id-hash'
 import type { SyncPullCursors, SyncPullOutcome, SyncPullResponse } from '../../../server/sync'
 import type { ServerSyncCursors } from '../../../storage/server-sync-cursors'
 import type { ServerSyncTable } from '../../../storage/server-sync-queue'
+import type { ServerSyncSkippedMapleIds } from '../../../storage/server-sync-skipped'
 import { pullServerSync, type PullDeps } from '../pull'
 
 const HEADERS = { 'x-maple-id-hash': 'h' }
@@ -38,9 +39,12 @@ function setup(
   stored: Stored = { nexonAccount: null, mapleIds: {} },
   signIn: { previousMapleIds: string[] } | null = null,
   device: string[] = [],
+  keyless: { skipped?: ServerSyncSkippedMapleIds; cleared?: boolean; usable?: string[] } = {},
 ) {
   let cursors: ServerSyncCursors = { purgedChangeSeq: null, ...stored }
   let signedIn = signIn
+  let skipped: ServerSyncSkippedMapleIds = { ...keyless.skipped }
+  let cleared = keyless.cleared ?? true
   const events: string[] = []
   const sent: SyncPullCursors[] = []
   const deps: PullDeps = {
@@ -93,8 +97,18 @@ function setup(
     }),
     deviceMapleIds: jest.fn(async () => device),
     afterRecordsChanged: jest.fn(),
+    getSkipped: jest.fn(async () => ({ ...skipped })),
+    setSkipped: jest.fn(async (next: ServerSyncSkippedMapleIds) => {
+      events.push(`skipped ${JSON.stringify(next)}`)
+      skipped = next
+    }),
+    usableMapleIdHashes: jest.fn(async () => new Set(keyless.usable ?? [])),
+    isUnmatchedCleared: jest.fn(async () => cleared),
+    markUnmatchedCleared: jest.fn(async () => {
+      cleared = true
+    }),
   }
-  return { deps, events, sent, current: () => cursors }
+  return { deps, events, sent, current: () => cursors, skipped: () => skipped }
 }
 
 it('신원이 없으면 받지 않는다', async () => {
@@ -452,5 +466,71 @@ describe('로그인 뒤 첫 받기', () => {
 
     expect(deps.clearOwners).not.toHaveBeenCalled()
     expect(deps.clearSignIn).not.toHaveBeenCalled()
+  })
+})
+
+describe('이 기기에 키가 없는 부계정의 줄', () => {
+  const entry = (id: string, mapleId: string) => ({ id, mapleId, ocid: nexonIdHashHex('ocid-1'), deletedAt: null })
+
+  it('메이플 ID 를 모르는 줄은 넣지 않고, 번호보다 먼저 건너뛴 목록에 적는다', async () => {
+    const { deps, events, skipped } = setup([
+      answered(response({ mapleIds: [MAPLE_HASH, OTHER_HASH], records: { bossProfitEntries: [entry('mine', MAPLE_HASH), entry('keyless', OTHER_HASH)] } })),
+    ])
+
+    const summary = await pullServerSync({}, deps)
+
+    expect(events.filter((one) => one.startsWith('sqlite'))).toEqual(['sqlite bossProfitEntries mine'])
+    expect(skipped()).toEqual({ [OTHER_HASH]: 'unknown' })
+    // 번호만 오르고 앱이 꺼지면, 키를 등록해도 그 메이플 ID 를 처음부터 다시 받지 않는다.
+    const skippedAt = events.findIndex((one) => one.startsWith('skipped'))
+    const cursorsAt = events.findIndex((one) => one.startsWith('cursors'))
+    expect(skippedAt).toBeLessThan(cursorsAt)
+    expect(summary.skipped).toBe(1)
+  })
+
+  it('이 기기에서 지운 메이플 ID 의 줄은 메이플 ID 를 알아도 넣지 않는다', async () => {
+    const { deps, events } = setup([answered(response({ records: { bossProfitEntries: [entry('discarded', MAPLE_HASH)] } }))], undefined, null, [], {
+      skipped: { [MAPLE_HASH]: 'discarded' },
+    })
+
+    await pullServerSync({}, deps)
+
+    expect(events.filter((one) => one.startsWith('sqlite'))).toEqual([])
+  })
+
+  it('모르던 메이플 ID 를 알게 되면 목록에서 빼고 그 번호를 0 으로 적어 처음부터 받는다', async () => {
+    const { deps, sent, skipped } = setup([answered(response())], { nexonAccount: null, mapleIds: { [MAPLE_HASH]: 7, [OTHER_HASH]: 9 } }, null, [], {
+      skipped: { [MAPLE_HASH]: 'unknown', [OTHER_HASH]: 'unknown' },
+    })
+
+    await pullServerSync({}, deps)
+
+    expect(sent[0].mapleIds).toEqual({ [MAPLE_HASH]: 0, [OTHER_HASH]: 9 })
+    expect(skipped()).toEqual({ [OTHER_HASH]: 'unknown' })
+  })
+
+  it('지운 메이플 ID 는 알아도 두고, 그 계정에 쓸 수 있는 키가 생겨야 처음부터 받는다', async () => {
+    const stored = { nexonAccount: null, mapleIds: { [MAPLE_HASH]: 7 } }
+    const kept = setup([answered(response())], stored, null, [], { skipped: { [MAPLE_HASH]: 'discarded' } })
+    await pullServerSync({}, kept.deps)
+    expect(kept.sent[0].mapleIds).toEqual({ [MAPLE_HASH]: 7 })
+
+    const released = setup([answered(response())], stored, null, [], { skipped: { [MAPLE_HASH]: 'discarded' }, usable: [MAPLE_HASH] })
+    await pullServerSync({}, released.deps)
+    expect(released.sent[0].mapleIds).toEqual({ [MAPLE_HASH]: 0 })
+    expect(released.skipped()).toEqual({})
+  })
+
+  it('메이플 ID 를 모르고 넣은 옛 `#` 기록은 한 번만 비우고 메이플 ID 를 처음부터 다시 받는다', async () => {
+    const stored = { nexonAccount: { id: 'account-1', changeSeq: 3 }, mapleIds: { [MAPLE_HASH]: 5, [OTHER_HASH]: 6 } }
+    const { deps, sent } = setup([answered(response()), answered(response())], stored, null, [MAPLE, `#${OTHER_HASH}`], { cleared: false })
+
+    await pullServerSync({}, deps)
+    await pullServerSync({}, deps)
+
+    expect(deps.clearOwners).toHaveBeenCalledTimes(1)
+    expect(deps.clearOwners).toHaveBeenCalledWith({ mapleIds: [`#${OTHER_HASH}`], person: false, unmatchedOcids: true })
+    // 사람의 번호는 두어 추적 목록과 설정을 다시 받지 않는다.
+    expect(sent[0]).toEqual({ nexonAccount: { id: 'account-1', changeSeq: 3 }, mapleIds: { [MAPLE_HASH]: 0, [OTHER_HASH]: 0 } })
   })
 })
