@@ -3,11 +3,12 @@
  *
  * 복귀마다 받는다(`refetchOnWindowFocus: 'always'`). 새벽 결산 중 배경에 두었다가 돌아오면 다음 동기화 회차를 기다리지
  * 않고 줄이 걷힌다. 스케줄러를 부르는 회차 넷은 `refreshSettlement` 로 함께 묻는다. 겹친 호출은 쿼리가 하나로 접는다.
+ * 0시 ~ 2시에는 결산 중이라는 답을 받을 때까지 포그라운드에서 1분마다 다시 묻는다(`startSettlementRecheck`).
  *
  * 닫은 기록은 기기 값이라 쿼리가 아니라 아래 스토어(`useSettlementDismissal`)가 든다. 서버가 말하는 결산과 사용자가 닫은
  * 결산은 다른 사실이다.
  */
-import { queryOptions, useQuery } from '@tanstack/react-query'
+import { focusManager, queryOptions, useQuery } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { create } from 'zustand'
 
@@ -37,6 +38,41 @@ const SETTLEMENT_READ_END_HOUR = 2
 /** 받은 결산 상태를 다시 쓰는 시간. 서버는 10분마다 확인하므로 1분 늦어도 판정은 같다. */
 const SETTLEMENT_REUSE_MS = 60_000
 
+/** 결산 답을 쓰는 시각(KST 0시 ~ 2시)인가. */
+function isSettlementReadHour(now: Date): boolean {
+  return new Date(now.getTime() + 9 * 60 * 60 * 1000).getUTCHours() < SETTLEMENT_READ_END_HOUR
+}
+
+/**
+ * 회차보다 먼저 결산 답을 받아 두는 함수. 0시 ~ 2시가 아니면 아무것도 안 한다. 던지지 않는다.
+ *
+ * 받아 두면 뒤의 단계는 1분 재사용으로 기다리지 않고, 결산 중이면 처음부터 어제를 뺀다.
+ *
+ * @example await readSettlementBeforeRound(new Date()) // 당김의 회차 앞
+ */
+export async function readSettlementBeforeRound(now: Date): Promise<void> {
+  if (!isSettlementReadHour(now)) return
+  await refreshSettlement()
+}
+
+/**
+ * 0시 ~ 2시 포그라운드에서 결산 중이라는 답이 없으면 1분마다 다시 묻는 타이머. 부팅 때 한 번 건다.
+ *
+ * 서버는 넥슨 확인에 한 번 성공해야 결산 중이라고 해서, 0시 직후에 받은 결산 아님을 들고 있으면 다음 복귀까지 줄이 안 선다.
+ * 간격은 `SETTLEMENT_REUSE_MS` 와 같아야 회차의 조회와 겹쳐도 호출이 늘지 않는다.
+ *
+ * @returns 타이머를 멈추는 함수
+ */
+export function startSettlementRecheck(): () => void {
+  const timer = setInterval(() => {
+    // 배경에서는 복귀 재조회가 돌아올 때 한 번 묻는다.
+    if (!focusManager.isFocused() || !isSettlementReadHour(new Date())) return
+    if (queryClient.getQueryData<Settlement | null>(settlementOptions.queryKey)?.settling === true) return
+    void refreshSettlement()
+  }, SETTLEMENT_REUSE_MS)
+  return () => clearInterval(timer)
+}
+
 /**
  * 결산 중이라 넥슨에 묻지 않을 어제 날짜(KST). 아니면 `null`.
  *
@@ -46,8 +82,7 @@ const SETTLEMENT_REUSE_MS = 60_000
  * @example const skip = await settlingYesterdayOf(now) // 그 날짜의 조회를 건너뛴다
  */
 export async function settlingYesterdayOf(now: Date): Promise<string | null> {
-  const kstHour = new Date(now.getTime() + 9 * 60 * 60 * 1000).getUTCHours()
-  if (kstHour >= SETTLEMENT_READ_END_HOUR) return null
+  if (!isSettlementReadHour(now)) return null
   // 캐릭터마다 부르므로 1분 안의 답은 다시 쓴다. 매번 물으면 회차 하나가 우리 서버 nginx 의 속도 제한(초당 10건)에 닿는다.
   const settlement = await queryClient
     .fetchQuery({ ...settlementOptions, staleTime: SETTLEMENT_REUSE_MS })

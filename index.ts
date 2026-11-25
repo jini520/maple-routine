@@ -5,6 +5,7 @@ import notifee from '@notifee/react-native'
 import App from './App'
 import { installPorts, loadGameData } from './src/boot'
 import { startQueryRuntime } from './src/features/query/client'
+import { startSettlementRecheck } from './src/features/settlement/query'
 import { holdSplashUntilAppReady } from './src/boot-splash'
 import { handleBackgroundNotificationEvent } from './src/native/adapters/rn-notifications'
 import { defineBackgroundRefreshTask } from './src/native/adapters/rn-background-task'
@@ -20,6 +21,10 @@ installPorts()
 
 // 앱 복귀와 KST 자정을 쿼리 캐시에 잇는다. 포트 주입 뒤, 첫 렌더 전이다.
 startQueryRuntime()
+
+// 0시 ~ 2시에 결산 중이라는 답이 없으면 포그라운드 동안 1분마다 다시 묻는다. 0시 직후 받은 결산 아님을 다음 복귀까지
+// 들고 있으면 결산 안내 줄이 안 서고, 회차가 결산 중인 어제를 모든 캐릭터에 묻는다.
+startSettlementRecheck()
 
 // 게임 데이터 사본을 읽고, 없으면 잠금 화면 뒤에서 서버에서 받는다. 포트 주입 **뒤**여야 한다. 기기 사본을
 // SQLite 에서 읽기 때문이다. 결과는 안 기다린다. 다 받기 전에는 화면이 잠금 화면을 그린다. 1.0.15 기기 변환의 기록 표

@@ -147,7 +147,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-018](./adr/ADR-018_server-sync_drop-price.md) | 🟢 | server-sync | 드롭 기록의 id 와 월드 |
 | [ADR-019](./adr/ADR-019_game-data_reference.md) | 🟢 | game-data | 게임 데이터의 규칙 |
 | [ADR-020+097+103+140+244+263](./adr/ADR-020+097+103+140+244+263_game-data_server-catalog.md) | 🟢 | game-data | 게임 데이터 서버 표와 기기 사본 |
-| [ADR-021+195](./adr/ADR-021+195_nexon-api_sync.md) | 🟢 | nexon-api | 넥슨 API 호출과 스케줄러 동기화 |
+| [ADR-021+195+329](./adr/ADR-021+195+329_nexon-api_sync.md) | 🟢 | nexon-api | 넥슨 API 호출과 스케줄러 동기화 |
 | [ADR-022+081](./adr/ADR-022+081_error-resilience_failure-states.md) | 🟢 | error-resilience | 실패를 알리는 방법과 기간 데이터 상태 |
 | [ADR-023](./adr/ADR-023_error-resilience_resumable-task.md) | 🟢 | error-resilience | 이어서 하는 작업과 기록 판 알림 |
 | [ADR-024+196](./adr/ADR-024+196_auth_api-key.md) | 🟢 | auth | API 키 로그인과 키 재입력 |
