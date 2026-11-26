@@ -84,7 +84,12 @@ export function BossDifficultyPopover(props: BossDifficultyPopoverProps): React.
             <Capsule
               {...props}
               difficulties={difficulties}
-              caret={{ edge: placement.side === 'above' ? 'bottom' : 'top', left: geometry.caretLeft }}
+              // 화면 가운데로 옮겼으면 가리킬 초상이 없다.
+              caret={
+                placement.side === 'center'
+                  ? undefined
+                  : { edge: placement.side === 'above' ? 'bottom' : 'top', left: geometry.caretLeft }
+              }
             />
           </Animated.View>
         </View>
@@ -96,7 +101,7 @@ export function BossDifficultyPopover(props: BossDifficultyPopoverProps): React.
 function Capsule(
   props: BossDifficultyPopoverProps & {
     difficulties: ReturnType<typeof supportedDifficultiesOf>
-    /** 크기를 재는 동안에는 없다 */
+    /** 크기를 재는 동안과 화면 가운데로 옮긴 때는 없다 */
     caret?: { edge: 'top' | 'bottom'; left: number }
   },
 ): React.JSX.Element {
