@@ -95,7 +95,7 @@ async function 그리기(): Promise<Awaited<ReturnType<typeof renderOverlay>>> {
 }
 
 describe('StatsScreen', () => {
-  it('순 수익 카드는 그 기간의 수입 − 지출이다', async () => {
+  it('순수익 카드는 그 기간의 수입 − 지출이다', async () => {
     const view = await 그리기()
 
     expect(view.getByTestId('stats-summary-net').props.children.join('')).toContain('+3억')
@@ -177,7 +177,7 @@ describe('StatsScreen', () => {
 
   // 읽기 전에 `0 메소` 를 그리면 기록이 없다는 말로 읽힌다. 기간 줄과 카드 제목은 그대로 선다.
   describe('불러오는 중', () => {
-    const 제목들 = ['순 수익', '추이', '캐릭터별', '수입 내역', '지출 내역', '사냥 수입', '보스별 수입', '누적 순 수익']
+    const 제목들 = ['순수익', '추이', '캐릭터별', '수입 내역', '지출 내역', '사냥 수입', '보스별 수입', '누적 순수익']
 
     it('첫 읽기가 끝나기 전에는 카드 본문 자리에 스켈레톤이 선다', async () => {
       useLedgerDays.mockReturnValue({ days: null, isFetching: true })

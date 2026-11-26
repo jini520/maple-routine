@@ -175,7 +175,7 @@ const PERIOD_TAB_LABELS: Record<(typeof PERIOD_TABS)[number], string> = {
 }
 
 /**
- * 재료 한 줄(수익 · 지출). 답 옆에 각주처럼 쌓인다.
+ * 재료 한 줄(수입 · 지출). 답 옆에 각주처럼 쌓인다.
  *
  * **금액 칸이 고정 폭이다.** 오른쪽 정렬만으로는 금액의 오른쪽 끝만 한 x 에 서고, 자릿수가
  * 달라지면 줄의 왼쪽 끝(라벨)이 밀린다. 값이 들어올 때마다 두 줄이 흔들렸다(사용자 보고).
@@ -219,7 +219,7 @@ function SourceRow(props: {
  *
  * ```
  * ┌────────────────────────────────────┐
- * │ 순 수익                수익 +8,500만 │
+ * │ 순수익                수입 +8,500만 │
  * │ +5,700만              지출 −2,800만 │
  * └────────────────────────────────────┘
  * ```
@@ -232,12 +232,12 @@ function SourceRow(props: {
  *
  * 막대는 안 그린다. 얼마인가 를 묻던 화면에 어느 비율인가 를 더하는 일이라, 더할지는 따로 정한다.
  *
- * 라벨은 `순 수익` 이다. 바로 위 줄이 기간을 이미 말하고 있어 한 화면에서 같은 말이 두 번 선다.
+ * 라벨은 `순수익` 이다. 바로 위 줄이 기간을 이미 말하고 있어 한 화면에서 같은 말이 두 번 선다.
  *
  * 단위는 큰 숫자에만 붙인다. 셋이 같은 단위이므로 헤드라인이 한 번 말하면 카드 전체가 그 축이다.
  *
  * 부호와 색은 칸의 두 줄과 같은 어법이다. `+`·`rise-ink` 와 `−`·`fall-ink`. 재료는 크기로
- * 약해질 뿐 색은 안 걷는다. 순 수익만 부호를 따라 갈린다. 셋을 늘 같은 색으로 칠하면
+ * 약해질 뿐 색은 안 걷는다. 순수익만 부호를 따라 갈린다. 셋을 늘 같은 색으로 칠하면
  * 이번 달은 적자다 가 숫자를 끝까지 읽어야만 보인다. 0 이면 부호도 색도 없다.
  *
  * 테두리는 없다. 채움만으로 격자와 갈린다.
@@ -253,7 +253,7 @@ function PeriodSummary(props: {
       className="flex-row items-end justify-between gap-3 rounded-xl bg-surface px-3.5 py-3"
     >
       <View className="shrink">
-        <Text className="text-11 font-bold tracking-wide text-text-muted">순 수익</Text>
+        <Text className="text-11 font-bold tracking-wide text-text-muted">순수익</Text>
         <Text
           testID="cashbook-summary-net"
           numberOfLines={1}

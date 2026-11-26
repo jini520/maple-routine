@@ -148,7 +148,7 @@ export function StatsSkeleton(): React.JSX.Element {
   return (
     // 조회 중임을 말하는 것은 이 상자다. 안쪽 막대는 장식이라 스스로 숨는다.
     <View testID="stats-skeleton" role="status" aria-busy className="gap-2">
-      <StatsSection title="순 수익">
+      <StatsSection title="순수익">
         <View className="flex-row items-end justify-between gap-3">
           <LineBar height={LINE['2xl']} className="h-6 w-32" />
           <View className="items-end gap-1">
@@ -220,7 +220,7 @@ export function StatsSkeleton(): React.JSX.Element {
         </View>
       </StatsSection>
 
-      <StatsSection title="누적 순 수익">
+      <StatsSection title="누적 순수익">
         <LineBar height={LINE['2xl']} className="h-6 w-36" />
         <Skeleton className="h-[26px] w-32" fillClassName="rounded-full" />
         <View style={{ paddingTop: CUMULATIVE.bubble }}>

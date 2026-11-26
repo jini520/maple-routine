@@ -40,8 +40,8 @@ beforeEach(() => {
 })
 
 describe('CharacterSection', () => {
-  // 수입은 붉은색, 지출은 파란색이다. 순 수익은 부호를 따른다(사용자 지정 2026-10-26).
-  it('합계 글자는 수입 탭이 수입 색, 지출 탭이 지출 색이고 순 수익은 부호를 따른다', async () => {
+  // 수입은 붉은색, 지출은 파란색이다. 순수익은 부호를 따른다(사용자 지정 2026-10-26).
+  it('합계 글자는 수입 탭이 수입 색, 지출 탭이 지출 색이고 순수익은 부호를 따른다', async () => {
     const view = await 그리기()
     const colorOfTotal = () => flattenStyle(view.getByTestId('stats-characters-total').props.style).color
     const 순수익 = colorOfTotal()
@@ -55,11 +55,11 @@ describe('CharacterSection', () => {
     const 지출 = colorOfTotal()
 
     expect(수입).not.toBe(지출)
-    // 네 캐릭터의 순 수익 합은 +5.5억이라 수입 색이다.
+    // 네 캐릭터의 순수익 합은 +5.5억이라 수입 색이다.
     expect(순수익).toBe(수입)
   })
 
-  it('순 수익 탭은 순 수익이 큰 순서이고 금액만 적는다', async () => {
+  it('순수익 탭은 순수익이 큰 순서이고 금액만 적는다', async () => {
     const view = await 그리기()
 
     const names = view.getAllByTestId(/^stats-character-row-/).map((row) => within(row).getByTestId('stats-character-name').props.children)

@@ -53,7 +53,7 @@
 | 역할 | 클래스 | 보기 |
 |---|---|---|
 | 화면 제목 | `text-lg font-bold` | `보스 수입` · `설정` · `통계` |
-| 화면 대표 금액 | `text-2xl font-bold` | 보스 수입 합계 · 가계부 순 수익 · 통계 순 수익 · 분배금 정산 금액 · `AmountFigure` |
+| 화면 대표 금액 | `text-2xl font-bold` | 보스 수입 합계 · 가계부 순수익 · 통계 순수익 · 분배금 정산 금액 · `AmountFigure` |
 | 카드 합계 금액 | `text-lg font-bold` | 통계 섹션 합계 · 계산 기록 합계 · 통계 도넛 가운데 금액 |
 | 금액 단위 | `text-xs` | `메소` · `개`. 큰 숫자 옆이어도 같다 |
 | 갱신 시각 | `text-11` | `DataFreshness` |
