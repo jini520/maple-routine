@@ -1,8 +1,7 @@
 /**
  * MVP 등급을 묻는 모달. 고르기와 확인 두 화면을 오가고, 주간 확인은 확인 화면부터 선다.
  *
- * 머리는 `NoticeModal` 과 같은 규격(배지 56 · 제목 · 설명)이지만 폭이 `max-w-sm` 이다. `NoticeModal` 의
- * `max-w-xs` 에는 등급 일곱과 ID 표시가 함께 안 들어간다.
+ * 머리는 `NoticeModal` 과 같은 규격(배지 40 · 제목 · 설명)이고 폭도 같은 `max-w-sm` 이다.
  *
  * @see docs/features/mvp-grade.md 묻는 자리
  */
