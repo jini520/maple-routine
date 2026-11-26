@@ -192,11 +192,11 @@ export function 공유계열(
   return { category, label: contentCategoryNameOf(category), items, weeklyLimit }
 }
 
-/** 카탈로그 일곱을 다 그린 상태. 남은 것 넷(악몽선경· 일간· 익스트림· PC방). */
+/** 카탈로그 일곱을 다 그린 상태. 남은 것 넷(악몽선경· 일일· 익스트림· PC방). */
 export function 공유컨텐츠(): SharedContentGroupView[] {
   return [
     공유계열('monster_park', [
-      공유항목('일간', { count: { now: 7, max: 14 } }),
+      공유항목('일일', { count: { now: 7, max: 14 } }),
       공유항목('익스트림 몬스터파커', { count: { now: 1, max: 5 } }),
     ]),
     공유계열('maple_union', [

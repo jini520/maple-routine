@@ -1,7 +1,7 @@
 /**
  * 수동 트래킹 모드의 캐릭터별 추적 항목. Preferences 의 JSON 한 칸(`manualTrackedContent:{ocid}`).
  *
- * 저장은 서버 `manual_tracked_items` 와 같은 칸(`type` · `targetId`)이다. 대상은 줄 id 이고, 일간 · 주간은 컨텐츠 줄, 보스는 난이도
+ * 저장은 서버 `manual_tracked_items` 와 같은 칸(`type` · `targetId`)이다. 대상은 줄 id 이고, 일일 · 주간은 컨텐츠 줄, 보스는 난이도
  * 줄이다. 화면과 병합은 컨텐츠 key · 보스 key 를 들어서, 그 사이를 여기서 바꾼다.
  */
 import { bossDifficultyIdOf, bossDifficultyOfId } from '../lib/boss/bosses'
@@ -33,7 +33,7 @@ function toItem(stored: StoredManualTrackedItem): ManualTrackedItem | null {
   return contentKey === null ? null : { contentKey, kind: stored.type }
 }
 
-/** 항목이 가리키는 줄 id. 일간 · 주간은 컨텐츠 줄, 보스는 난이도 줄이다. 게임 데이터에 없으면 `null` 이다. */
+/** 항목이 가리키는 줄 id. 일일 · 주간은 컨텐츠 줄, 보스는 난이도 줄이다. 게임 데이터에 없으면 `null` 이다. */
 export function manualTrackedTargetIdOf(item: ManualTrackedItem): string | null {
   return item.kind === 'boss' ? bossDifficultyIdOf(item.bossKey, item.difficulty) : contentIdOf(item.contentKey)
 }

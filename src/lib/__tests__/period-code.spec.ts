@@ -27,8 +27,8 @@ describe('기간 값과 기간 key', () => {
     expect(keys.filter((key) => periodKeyOfCode(periodCodeOf(key)!) !== key)).toEqual([])
   })
 
-  // 일간 공유 컨텐츠의 진행은 그날 날짜로 기간을 가른다. 일간 key 와 주간 key 는 꼴이 같아 일간 값은 따로 구하고, 요일을 보지 않는다.
-  it('일간 값은 요일과 상관없이 그날 날짜를 적고 그 날짜로 돌아온다', () => {
+  // 일일 공유 컨텐츠의 진행은 그날 날짜로 기간을 가른다. 일일 key 와 주간 key 는 꼴이 같아 일일 값은 따로 구하고, 요일을 보지 않는다.
+  it('일일 값은 요일과 상관없이 그날 날짜를 적고 그 날짜로 돌아온다', () => {
     expect(dailyPeriodCodeOf('2026-11-18')).toBe('D20261118')
     expect(periodKeyOfCode('D20261118')).toBe('2026-11-18')
     expect(dailyPeriodCodeOf('2026-11')).toBeNull()

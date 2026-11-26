@@ -64,7 +64,7 @@ function weekCodeOf(weekStart: string): string | null {
 // ---- 수동 추적 항목 ----
 
 /**
- * 옛 항목 하나. 컨텐츠가 일간 · 주간 구분 없이 `kind: 'content'` 로 저장되던 시절, 컨텐츠가 key 대신 `contentName` 에 이름을 들던
+ * 옛 항목 하나. 컨텐츠가 일일 · 주간 구분 없이 `kind: 'content'` 로 저장되던 시절, 컨텐츠가 key 대신 `contentName` 에 이름을 들던
  * 시절, 보스가 `contentName` 에 보스 이름 · `difficulty` 에 한글 난이도를 들던 시절의 모양이 섞여 있다.
  */
 interface LegacyManualTrackedItem {
@@ -85,7 +85,7 @@ function legacyBossItemOf(item: LegacyManualTrackedItem): ManualTrackedItem | nu
   return bossKey === null || difficulty === null ? null : { kind: 'boss', bossKey, difficulty }
 }
 
-/** 옛 컨텐츠 항목의 컨텐츠 key 모양. 이름은 key 로 찾고, `content` 는 그 컨텐츠의 섹션으로 일간 · 주간을 정한다. */
+/** 옛 컨텐츠 항목의 컨텐츠 key 모양. 이름은 key 로 찾고, `content` 는 그 컨텐츠의 섹션으로 일일 · 주간을 정한다. */
 function legacyContentItemOf(item: LegacyManualTrackedItem): ManualTrackedItem | null {
   const contentKey = item.contentKey ?? (item.contentName === undefined ? null : contentKeyOfApiName(item.contentName))
   const kind = item.kind === 'content' ? contentSectionOf(contentKey) : item.kind

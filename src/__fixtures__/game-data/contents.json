@@ -82,7 +82,7 @@
       "apiName": "몬스터파크",
       "categoryId": "1cbd8775-33e1-4a4f-be9f-1dd4dc4f945e",
       "name": "몬스터파크",
-      "shortName": "일간",
+      "shortName": "일일",
       "countTag": "월드 당 최대 14회",
       "type": "contents",
       "checkType": "count_only",

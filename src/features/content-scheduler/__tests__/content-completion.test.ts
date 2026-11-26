@@ -38,7 +38,7 @@ function weekly(overrides: Partial<WeeklyContent> = {}): WeeklyContent {
   }
 }
 
-describe('일간 완료 판정', () => {
+describe('일일 완료 판정', () => {
   it('퀘스트는 quest_state 2 가 완료다', () => {
     expect(dailyContentCompletion(daily({ questState: 2 }))).toBe('complete')
     expect(dailyContentCompletion(daily({ questState: 1 }))).toBe('incomplete')

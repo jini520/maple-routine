@@ -179,7 +179,7 @@ function RailPortrait(props: RailPortraitProps): React.JSX.Element {
 
           {props.rings.length === 2 && (
             <>
-              {/* 왼쪽이 일간, 오른쪽이 주간. 둘 다 12시에서 시작해 아래로 찬다. */}
+              {/* 왼쪽이 일일, 오른쪽이 주간. 둘 다 12시에서 시작해 아래로 찬다. */}
               <ProgressArc
                 half="left"
                 progress={props.rings[0]}

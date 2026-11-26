@@ -3,15 +3,19 @@
  *
  * 화면 밖에 있는 것은 today 의 남은 스케줄이 같은 수를 세기 때문이다. 두 벌로 두면 반드시
  * 갈라진다. 이 필터 없이 `character.dailyContents` 를 통째로 세면 모든 캐릭터가 똑같이 일퀘
- * 18 로 나온다. 그 배열은 등록 여부와 무관하게 게임에 있는 일간 컨텐츠 전부다.
+ * 18 로 나온다. 그 배열은 등록 여부와 무관하게 게임에 있는 일일 컨텐츠 전부다.
  *
  * 수동 모드는 사용자가 앱에서 관리하는 멤버십이 목록을 정하고, 자동 모드는 게임 등록 여부가
  * 정한다.
+ *
+ * 공유 범위가 캐릭터가 아닌 컨텐츠는 두 모드 모두 넣지 않는다. 진행을 월드나 메이플 ID 가 함께 써서 그 캐릭터만의 일이 아니고,
+ * 공유 탭(`shared-contents`)이 메이플 ID 마다 한 번 그린다. 이 목록이 링과 today 남은 스케줄의 분모다.
  */
 
 import { categorizeContentEntries, weeklyCategoryOrder } from '../../lib/scheduler/content-category'
 import type { ContentEntry } from '../../lib/scheduler/contents'
 import { mergeManualContentList, orderContentsByTemplate } from '../../lib/scheduler/manual-content-merge'
+import { getShareScope } from '../../lib/scheduler/scheduler-content-scope'
 import { contentTemplate, effectiveTemplateEntries } from '../../lib/scheduler/scheduler-content-template'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 import type { ManualTrackedContentItem } from '../../types/scheduler'
@@ -20,15 +24,23 @@ import type { DailyContent, WeeklyContent } from '../../types'
 
 /**
  * 관리 페이지와 같은 `categorizeContentEntries` 평탄화 순서로 정렬한 템플릿
- * (일간은 첫 등장 순서, 주간은 분류 표의 차례).
+ * (일일은 첫 등장 순서, 주간은 분류 표의 차례). 공유 범위가 캐릭터인 줄만 든다.
  * 컨텐츠 표가 켜는 동안 서버 응답으로 덮일 수 있어 부를 때 읽는다. 줄이 41 이라 값이 싸다.
  */
+function isCharacterScope(content: { contentKey: string | null }): boolean {
+  return getShareScope(content.contentKey) === 'character'
+}
+
+function characterEntries(entries: readonly ContentEntry[]): ContentEntry[] {
+  return entries.filter((entry) => isCharacterScope({ contentKey: entry.key }))
+}
+
 function orderedDailyTemplate(): ContentEntry[] {
-  return categorizeContentEntries(contentTemplate().daily).flatMap((group) => group.items.map((item) => item.entry))
+  return categorizeContentEntries(characterEntries(contentTemplate().daily)).flatMap((group) => group.items.map((item) => item.entry))
 }
 
 function orderedWeeklyTemplate(): ContentEntry[] {
-  return categorizeContentEntries(contentTemplate().weekly, weeklyCategoryOrder()).flatMap((group) =>
+  return categorizeContentEntries(characterEntries(contentTemplate().weekly), weeklyCategoryOrder()).flatMap((group) =>
     group.items.map((item) => item.entry),
   )
 }
@@ -71,11 +83,11 @@ export function displayedDailyContents(
       trackedInPeriod(input.manualItems, 'daily', template, weeklyPeriodKey),
       input.dailyContents,
       template,
-    )
+    ).filter(isCharacterScope)
   }
 
   return orderContentsByTemplate(
-    input.dailyContents.filter((content) => content.isRegistered),
+    input.dailyContents.filter((content) => content.isRegistered && isCharacterScope(content)),
     template,
   )
 }
@@ -92,11 +104,11 @@ export function displayedWeeklyContents(
       trackedInPeriod(input.manualItems, 'weekly', template, weeklyPeriodKey),
       input.weeklyContents,
       template,
-    ) as WeeklyContent[]
+    ).filter(isCharacterScope) as WeeklyContent[]
   }
 
   return orderContentsByTemplate(
-    input.weeklyContents.filter((content) => content.isRegistered),
+    input.weeklyContents.filter((content) => content.isRegistered && isCharacterScope(content)),
     template,
   )
 }

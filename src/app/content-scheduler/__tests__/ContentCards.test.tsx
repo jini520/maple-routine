@@ -66,7 +66,7 @@ function progressNow(view: Awaited<ReturnType<typeof renderAtom>>): number | und
   return (track?.props.accessibilityValue as { now: number } | undefined)?.now
 }
 
-describe('일간 카드', () => {
+describe('일일 카드', () => {
   it('kind: quest 는 접두어를 뗀 이름 + quest_state 배지 + 지역 배경이다', async () => {
     const view = await renderAtom(
       <DailyContentCard content={daily({

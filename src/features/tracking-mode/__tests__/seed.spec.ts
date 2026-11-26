@@ -83,7 +83,7 @@ afterEach(() => {
 })
 
 describe('seedManualTrackedContent', () => {
-  it('최신 동기화 결과에서 등록된(isRegistered) 항목만 일간/주간 구분과 함께 저장한다', async () => {
+  it('최신 동기화 결과에서 등록된(isRegistered) 항목만 일일/주간 구분과 함께 저장한다', async () => {
     jest.mocked(syncSchedules).mockResolvedValue([
       buildSyncResult(
         buildState({

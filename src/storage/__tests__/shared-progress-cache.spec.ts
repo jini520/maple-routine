@@ -9,7 +9,7 @@ import {
   setWorldSharedProgressEntry,
 } from '../shared-progress-cache'
 
-/** 일간 컨텐츠(몬스터파크)의 진행. 기간은 그날 날짜다. */
+/** 일일 컨텐츠(몬스터파크)의 진행. 기간은 그날 날짜다. */
 const dailyEntry: SharedProgressEntry = {
   active: true,
   kind: 'contents',
@@ -71,7 +71,7 @@ describe('world 원장', () => {
 
 // 저장은 서버 `shared_content_progress` 와 같은 칸이다. 종류는 컨텐츠 줄에 있고, 기간은 그 컨텐츠의 주기로 적는다.
 describe('저장 모양', () => {
-  it('키는 월드 줄 id, 열쇠는 컨텐츠 줄 id 이고, 일간은 D · 주간은 W 기간 값으로 적으며 종류를 적지 않는다', async () => {
+  it('키는 월드 줄 id, 열쇠는 컨텐츠 줄 id 이고, 일일은 D · 주간은 W 기간 값으로 적으며 종류를 적지 않는다', async () => {
     await setWorldSharedProgressEntry('maple-a', 'elysium', 'monster_park', dailyEntry)
     await setAccountSharedProgressEntry('maple-a', 'epic_dungeon_nightmare_paradise', { ...weeklyEntry, kind: 'contents' })
 

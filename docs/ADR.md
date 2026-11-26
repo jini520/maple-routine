@@ -52,7 +52,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | `auth` | API 키 입력 · 검증 · 넥슨 로그인 | `features/auth.md` |
 | `app-entry` | 앱을 켜면 서는 화면 · 캐릭터 설정 | `features/app-entry.md` |
 | `character` | 추적 캐릭터 · 캐릭터 관리 · 캐릭터 선택 · 초상화 | (재작성 때 정한다) |
-| `content-scheduler` | 일간 · 주간 컨텐츠 진행 | `features/content-scheduler.md` |
+| `content-scheduler` | 일일 · 주간 컨텐츠 진행 | `features/content-scheduler.md` |
 | `boss-scheduler` | 보스 진행 · 파티 인원 · 분배 비율 | `features/boss-scheduler.md` |
 | `boss-profit` | 보스 수익 기록 · 기간 | `features/boss-profit.md` |
 | `item-drop` | 드롭 아이템 기록 · 드롭 히스토리 | `features/item-drop.md` |
@@ -162,6 +162,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-033+274](./adr/ADR-033+274_content-scheduler_cards.md) | 🟢 | content-scheduler | 컨텐츠 카드와 완료 판정 |
 | [ADR-034+175+298+311](./adr/ADR-034+175+298+311_content-scheduler_tracking-mode.md) | 🟢 | content-scheduler | 자동 · 수동 추적 모드와 컨텐츠 관리 · 두 관리 화면의 `저장` |
 | [ADR-035](./adr/ADR-035_content-scheduler_layout.md) | 🟢 | content-scheduler | 스케줄러 화면의 레일 아래 간격 |
+| [ADR-331](./adr/ADR-331_content-scheduler_shared-tab.md) | 🟢 | content-scheduler | 컨텐츠 스케줄러의 공유 탭과 `일일` 이름 |
 | [ADR-036+312+320](./adr/ADR-036+312+320_boss-scheduler_boss-list.md) | 🟢 | boss-scheduler | 보스 스케줄러 목록과 보스 관리 화면 · 보스 관리의 초안과 `저장` |
 | [ADR-037](./adr/ADR-037_boss-scheduler_completion.md) | 🟢 | boss-scheduler | 보스 완료 판정과 주간 한도 |
 | [ADR-038+220+238+288+313](./adr/ADR-038+220+238+288+313_boss-scheduler_party.md) | 🟢 | boss-scheduler | 보스 파티 인원과 결정석 분배 비율 · 결정석을 팔지 않은 처치의 `제외` · 비율 % 입력과 받는 금액 |
