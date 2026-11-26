@@ -126,4 +126,19 @@ describe('CumulativeSection 시작 날짜', () => {
 
     expect(view.getByTestId('stats-cumulative-start').props.children).toBe('9월 5일 (토)')
   })
+
+  // 첫 점은 차트 왼쪽 끝(0)에 선다. 말풍선이 카드 여백으로 나가야 꼬리가 그 점에 닿는다.
+  it('말풍선의 꼬리가 고른 점을 가리키고, 차트 끝의 첫 점에도 닿는다', async () => {
+    const view = await renderOverlay(<CumulativeSection days={days} cycle="weekly" periodKey="2026-09-24" startDateKey={null} earliest="2025-03-27" latest="2026-09-29" onChangeStart={jest.fn()} />)
+    const points = view.getAllByLabelText(/까지 보기$/)
+    for (const index of [0, points.length - 1]) {
+      await act(async () => {
+        fireEvent.press(view.getAllByLabelText(/까지 보기$/)[index])
+      })
+      await fireEvent(view.getByTestId('stats-cumulative-bubble'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 90, height: 36 } } })
+      const left = flattenStyle(view.getByTestId('stats-cumulative-bubble').props.style).left as number
+      const caret = flattenStyle(view.getByTestId('stats-cumulative-bubble-caret', { includeHiddenElements: true }).props.style)
+      expect(left + (caret.left as number) + 6).toBeCloseTo((index / (points.length - 1)) * 312)
+    }
+  })
 })

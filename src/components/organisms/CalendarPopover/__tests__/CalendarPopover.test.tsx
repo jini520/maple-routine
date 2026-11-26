@@ -91,7 +91,7 @@ describe('CalendarPopover', () => {
       const style = flattenStyle(view.getByTestId(BOX).props.style)
       expect(style.top).toBe(100 + 28 + 8)
       expect(style.opacity).toBeUndefined()
-      expect(flattenStyle(view.getByTestId(`${BOX}-caret`, { includeHiddenElements: true }).props.style).top).toBe(-4)
+      expect(flattenStyle(view.getByTestId(`${BOX}-caret`, { includeHiddenElements: true }).props.style).top).toBe(-6)
     })
 
     it('아래가 모자라면 앵커 위로 뒤집고 꼬리가 아래로 간다', async () => {
@@ -100,7 +100,7 @@ describe('CalendarPopover', () => {
       await 재기(view, 268)
 
       expect(flattenStyle(view.getByTestId(BOX).props.style).top).toBe(anchor.top - 8 - 268)
-      expect(flattenStyle(view.getByTestId(`${BOX}-caret`, { includeHiddenElements: true }).props.style).bottom).toBe(-4)
+      expect(flattenStyle(view.getByTestId(`${BOX}-caret`, { includeHiddenElements: true }).props.style).bottom).toBe(-6)
     })
 
     it('위아래 둘 다 모자라면 가운데로 옮기고 꼬리를 없애고 옅은 스크림을 깐다', async () => {

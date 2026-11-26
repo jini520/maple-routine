@@ -74,7 +74,9 @@ describe('AnchoredPopover', () => {
     expect(style.top).toBe(100 + 28 + 8)
     expect(style.width).toBe(248)
     expect(style.opacity).toBeUndefined()
-    expect(flattenStyle(view.getByTestId(`${BOX}-caret`, { includeHiddenElements: true }).props.style).top).toBe(-4)
+    const caret = flattenStyle(view.getByTestId(`${BOX}-caret`, { includeHiddenElements: true }).props.style)
+    // 높이 7 중 1 은 상자 변에 겹친다. 밑변과 변 사이에 틈이 안 보이게 한다.
+    expect(caret.top).toBe(-6)
   })
 
   it('아래가 모자라면 앵커 위로 뒤집고 꼬리가 아래로 간다', async () => {
@@ -83,7 +85,8 @@ describe('AnchoredPopover', () => {
     await 재기(view, 180, 120)
 
     expect(flattenStyle(view.getByTestId(BOX).props.style).top).toBe(anchor.top - 8 - 120)
-    expect(flattenStyle(view.getByTestId(`${BOX}-caret`, { includeHiddenElements: true }).props.style).bottom).toBe(-4)
+    const caret = flattenStyle(view.getByTestId(`${BOX}-caret`, { includeHiddenElements: true }).props.style)
+    expect(caret.bottom).toBe(-6)
   })
 
   it('위아래 둘 다 모자라면 가운데로 옮기고 꼬리를 없애고 옅은 스크림을 깐다', async () => {
@@ -113,7 +116,7 @@ describe('AnchoredPopover', () => {
     const left = flattenStyle(view.getByTestId(BOX).props.style).left as number
     const caretLeft = flattenStyle(view.getByTestId(`${BOX}-caret`, { includeHiddenElements: true }).props.style)
       .left as number
-    expect(left + caretLeft + 4).toBe(ANCHOR.left + ANCHOR.width / 2)
+    expect(left + caretLeft + 6).toBe(ANCHOR.left + ANCHOR.width / 2)
   })
 })
 

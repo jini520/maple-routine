@@ -7,17 +7,21 @@
  */
 import { Circle, DashPathEffect, Line as SkiaLine, vec } from '@shopify/react-native-skia'
 import { useState } from 'react'
+import { vars } from 'nativewind'
 import { View } from 'react-native'
 import { runOnJS, useAnimatedReaction } from 'react-native-reanimated'
 import { AreaRange, CartesianChart, Line, useChartPressState, type ChartBounds } from 'victory-native'
 
 import { Text } from '../../../components/atoms'
+import { PopoverCaret } from '../../../components/molecules/Popover/Popover'
 import { NO_AXIS_LINES } from '../../../components/molecules/SparkLine/axis'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import { bandSegments, formatTick, niceScale, trendOf } from '../../../features/market/format'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
+import { CARET_WIDTH, centerBubble } from '../../../lib/popover-anchor'
 import type { MarketSeriesPoint } from '../../../server/market'
 import { useThemeAppearance } from '../../../theme/context'
+import { buildPopoverScopeVariables } from '../../../theme/theme-vars'
 import { toneColor } from './tone'
 
 /** 그림 영역의 높이. 날짜 줄은 그 아래다 */
@@ -27,8 +31,10 @@ const DATE_ROW_HEIGHT = 18
 const TICK_LANE = 34
 /** 아래 날짜의 수. 처음과 끝을 넣어 고르게 나눈다 */
 const DATE_LABELS = 5
-/** 날짜 · 상자 글자를 가운데에 맞추는 상자의 폭 */
+/** 날짜 글자를 가운데에 맞추는 상자의 폭 */
 const LABEL_BOX = 120
+/** 상자 꼬리가 상자 끝에서 띄우는 거리. 상자 모서리 반경 10 의 둥근 곳을 피한다 */
+const TIP_CARET_INSET = 8
 
 /** `11/5`. 그래프 날짜와 누른 날 상자가 같이 쓴다 */
 function shortDate(date: string): string {
@@ -47,6 +53,7 @@ export function MarketChart(props: { series: readonly MarketSeriesPoint[] }): Re
   const [bounds, setBounds] = useState<ChartBounds | null>(null)
   const [width, setWidth] = useState(0)
   const [pressed, setPressed] = useState<number | null>(null)
+  const [tipWidth, setTipWidth] = useState<number | null>(null)
   const { state } = useChartPressState({ x: 0, y: { price: 0, low: 0, high: 0 } })
 
   // 누른 날을 글자로 적으려면 JS 의 상태가 있어야 한다. 바뀔 때만 넘긴다.
@@ -69,7 +76,8 @@ export function MarketChart(props: { series: readonly MarketSeriesPoint[] }): Re
     area.top + ((scale.hi - value) / (scale.hi - scale.lo)) * (area.bottom - area.top)
   const xOf = (index: number, area: ChartBounds): number =>
     data.length < 2 ? area.left : area.left + (index / (data.length - 1)) * (area.right - area.left)
-  const centeredLeft = (x: number): number => Math.min(Math.max(x - LABEL_BOX / 2, 0), Math.max(width - LABEL_BOX, 0))
+  const tipAt = (x: number) =>
+    centerBubble({ containerWidth: width, anchorCenterX: x, bubbleWidth: tipWidth ?? 0, caretSize: CARET_WIDTH, caretInset: TIP_CARET_INSET })
   const pressedPoint = pressed === null ? undefined : props.series[pressed]
 
   return (
@@ -141,15 +149,25 @@ export function MarketChart(props: { series: readonly MarketSeriesPoint[] }): Re
           ))}
 
         {bounds !== null && pressedPoint !== undefined && pressed !== null && (
-          <View pointerEvents="none" className="absolute top-0.5 items-center" style={{ left: centeredLeft(xOf(pressed, bounds)), width: LABEL_BOX }}>
-            <View testID="market-chart-tip" className="items-center rounded-[10px] bg-surface px-2.5 py-1.5 shadow-lg">
-              <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
-                {shortDate(pressedPoint.date)}
-              </Text>
-              <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
-                {formatMesoUnits(pressedPoint.price)}
-              </Text>
-            </View>
+          <View
+            testID="market-chart-tip"
+            pointerEvents="none"
+            className="absolute top-0.5 items-center rounded-[10px] bg-surface px-2.5 py-1.5 shadow-lg"
+            // 폭을 재기 전에는 안 보이게 그린다. 폭을 알아야 점 가운데에 맞출 수 있다.
+            style={[
+              // 팝오버와 같은 면이다. 다크에서는 한 단 더 올려 꼬리와 같은 색이 된다.
+              vars(buildPopoverScopeVariables(definition)),
+              { left: tipAt(xOf(pressed, bounds)).left, opacity: tipWidth === null ? 0 : undefined },
+            ]}
+            onLayout={(event) => setTipWidth(event.nativeEvent.layout.width)}
+          >
+            <PopoverCaret testID="market-chart-tip-caret" edge="bottom" left={tipAt(xOf(pressed, bounds)).caretLeft} />
+            <Text className="text-11 text-text-muted" style={TABULAR_NUMS}>
+              {shortDate(pressedPoint.date)}
+            </Text>
+            <Text className="text-xs font-bold text-text" style={TABULAR_NUMS}>
+              {formatMesoUnits(pressedPoint.price)}
+            </Text>
           </View>
         )}
       </View>
