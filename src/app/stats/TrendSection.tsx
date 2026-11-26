@@ -51,7 +51,7 @@ function GrowBar(props: {
   )
 }
 
-const MODES = ['순 수익', '수입', '지출'] as const
+const MODES = ['순수익', '수입', '지출'] as const
 type Mode = (typeof MODES)[number]
 
 /** 말풍선이 차트를 가리지 않도록 그 위에 비워 두는 높이 */
@@ -76,7 +76,7 @@ function niceCeil(value: number): number {
 }
 
 function valueOf(totals: StatsTotals, mode: Mode): number {
-  return mode === '순 수익' ? totals.netMeso : mode === '수입' ? totals.incomeMeso : totals.expenseMeso
+  return mode === '순수익' ? totals.netMeso : mode === '수입' ? totals.incomeMeso : totals.expenseMeso
 }
 
 /** 축 글자 줄들. 주간은 `10월` · `1주차` 두 줄이다 */
@@ -99,7 +99,7 @@ export const TrendSection = memo(function TrendSection(props: {
   revealed?: boolean
 }): React.JSX.Element {
   const { definition } = useThemeAppearance()
-  const [mode, setMode] = useState<Mode>('순 수익')
+  const [mode, setMode] = useState<Mode>('순수익')
   /** 고른 막대. 어느 구간 · 보기에서 골랐는지 함께 들어, 그것이 바뀌면 고름이 풀린다 */
   const [picked, setPicked] = useState<{ scope: string; index: number } | null>(null)
   const [width, setWidth] = useState(312)
@@ -112,7 +112,7 @@ export const TrendSection = memo(function TrendSection(props: {
   const selected = picked !== null && picked.scope === scope ? picked.index : null
   const toggle = (index: number): void => setPicked(selected === index ? null : { scope, index })
   const values = series.map((totals) => valueOf(totals, mode))
-  const net = mode === '순 수익'
+  const net = mode === '순수익'
 
   const plotWidth = Math.max(width - AXIS_LEFT, 1)
   const plotHeight = CHART_HEIGHT - TOP_PAD - AXIS_BOTTOM
@@ -228,7 +228,7 @@ export const TrendSection = memo(function TrendSection(props: {
               style={TABULAR_NUMS}
             >
               {net
-                ? `순 수익 ${signed(pickedTotals.netMeso)}`
+                ? `순수익 ${signed(pickedTotals.netMeso)}`
                 : `${mode} ${formatMesoCompact(valueOf(pickedTotals, mode))}`}
             </Text>
             {net && (

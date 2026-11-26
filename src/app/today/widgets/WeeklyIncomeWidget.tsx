@@ -1,7 +1,7 @@
 /**
  * 이번 주 수익. 통계 화면의 이번 주를 한 장으로 줄인 위젯.
  *
- * 제목 줄의 세그먼트(`순 수익` · `수익` · `지출`)가 큰 숫자 · 반원 도넛 · 캐릭터 순위를 함께 바꾼다. 캐릭터
+ * 제목 줄의 세그먼트(`순수익` · `수입` · `지출`)가 큰 숫자 · 반원 도넛 · 캐릭터 순위를 함께 바꾼다. 캐릭터
  * 줄을 누르면 그 캐릭터가 어느 분류에서 벌고 썼는지 팝오버로 띄운다. 위젯 안에서 누르는 것이 있으므로
  * 타일 전체는 누를 수 없다.
  *
@@ -28,7 +28,7 @@ import { useThemeAppearance } from '../../../theme/context'
 import type { WeeklyIncomeCharacterView, WeeklyIncomeView } from '../view-model'
 import type { WidgetProps } from './types'
 
-const MODES = ['순 수익', '수입', '지출'] as const
+const MODES = ['순수익', '수입', '지출'] as const
 type Mode = (typeof MODES)[number]
 
 const RANK_LABELS = ['1st', '2nd', '3rd'] as const
@@ -54,7 +54,7 @@ function signedMeso(meso: number, sign: Sign): string {
   return formatMesoSigned(meso, sign)
 }
 
-/** 순 수익은 부호가 값에서 나온다. 0 은 부호가 없다 */
+/** 순수익은 부호가 값에서 나온다. 0 은 부호가 없다 */
 function netText(meso: number): string {
   if (meso === 0) return '0'
   return formatMesoSigned(Math.abs(meso), meso > 0 ? '+' : '−')
@@ -82,7 +82,7 @@ function slicesOf(items: readonly CategoryTotal[], color: string): Slice[] {
 }
 
 function modeValue(totals: StatsTotals, mode: Mode): number {
-  if (mode === '순 수익') return totals.netMeso
+  if (mode === '순수익') return totals.netMeso
   return mode === '수입' ? totals.incomeMeso : totals.expenseMeso
 }
 
@@ -232,7 +232,7 @@ function RankRow(props: {
 
 export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
   const { definition } = useThemeAppearance()
-  const [mode, setMode] = useState<Mode>('순 수익')
+  const [mode, setMode] = useState<Mode>('순수익')
   const view: WeeklyIncomeView = data.weeklyIncome
   const rise = definition.riseInk
   const fall = definition.fallInk
@@ -258,7 +258,7 @@ export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
   let legend: { slice: Slice; amount: string; ink?: string }[]
   let centerText: string
   let centerColor: string
-  if (mode === '순 수익') {
+  if (mode === '순수익') {
     slices = [
       { key: 'income', name: '수입', meso: totals.incomeMeso, color: rise },
       { key: 'expense', name: '지출', meso: totals.expenseMeso, color: fall },
@@ -319,13 +319,13 @@ export function WeeklyIncomeWidget({ data }: WidgetProps): React.JSX.Element {
               first={index === 0}
               character={character}
               amount={
-                mode === '순 수익'
+                mode === '순수익'
                   ? netText(character.netMeso)
                   : signedMeso(modeValue(character, mode), mode === '수입' ? '+' : '−')
               }
               ink={mode === '지출' ? fall : mode === '수입' ? rise : character.netMeso >= 0 ? rise : fall}
               groups={
-                mode === '순 수익'
+                mode === '순수익'
                   ? [incomeGroup(character), expenseGroup(character)].filter((group) => group.rows.length > 0)
                   : mode === '수입'
                     ? [incomeGroup(character)]

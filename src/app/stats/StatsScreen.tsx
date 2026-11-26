@@ -230,7 +230,7 @@ export function StatsScreen(): React.JSX.Element {
             <StatsSkeleton />
           ) : (
             <>
-              <StatsSection title="순 수익" testID="stats-summary">
+              <StatsSection title="순수익" testID="stats-summary">
                 <View className="flex-row items-end justify-between gap-3">
                   <View className="shrink">
                     <Text

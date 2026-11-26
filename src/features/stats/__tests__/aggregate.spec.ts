@@ -103,7 +103,7 @@ function enhancement(ocid: string, characterName: string, category: 'starforce' 
 const WEEK = { from: '2026-09-24', to: '2026-09-30' }
 
 describe('totalsBetween', () => {
-  it('범위 안의 날만 더하고 순 수익은 수입 − 지출이다', () => {
+  it('범위 안의 날만 더하고 순수익은 수입 − 지출이다', () => {
     const byDate = {
       '2026-09-23': [crystal('a', '낟낟', 999)],
       '2026-09-24': [crystal('a', '낟낟', 500), spend(null, '', { mesoAmount: 120 })],
@@ -139,7 +139,7 @@ describe('키가 없는 부계정의 기록', () => {
 })
 
 describe('totalsSeries 와 cumulativeNet', () => {
-  it('기간마다 합계를 내고 누적은 순 수익을 차례로 더한다', () => {
+  it('기간마다 합계를 내고 누적은 순수익을 차례로 더한다', () => {
     const byDate = {
       '2026-09-17': [crystal('a', '낟낟', 100)],
       '2026-09-24': [crystal('a', '낟낟', 50), spend(null, '', { mesoAmount: 80 })],
@@ -154,7 +154,7 @@ describe('totalsSeries 와 cumulativeNet', () => {
 })
 
 describe('characterTotalsBetween', () => {
-  it('캐릭터마다 수입 · 지출 · 순 수익을 낸다', () => {
+  it('캐릭터마다 수입 · 지출 · 순수익을 낸다', () => {
     const byDate = {
       '2026-09-24': [
         crystal('a', '낟낟', 500),
