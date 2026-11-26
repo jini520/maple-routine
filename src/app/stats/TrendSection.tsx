@@ -12,6 +12,8 @@ import { Text } from '../../components/atoms'
 import { Segment } from '../../components/molecules/Segment/Segment'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { buildPopoverScopeVariables } from '../../theme/theme-vars'
+import { PopoverCaret } from '../../components/molecules/Popover/Popover'
+import { CARET_WIDTH, centerBubble } from '../../lib/popover-anchor'
 import { totalsSeries, type DaysByDate, type StatsTotals } from '../../features/stats/aggregate'
 import type { StatsPeriodRange } from '../../features/stats/periods'
 import { weekOfMonthLabel } from '../../lib/boss/boss-profit-period'
@@ -56,6 +58,10 @@ type Mode = (typeof MODES)[number]
 
 /** 말풍선이 차트를 가리지 않도록 그 위에 비워 두는 높이 */
 const BUBBLE_SPACE = 54
+/** 말풍선이 카드 여백으로 나갈 수 있는 폭. 꼬리 여백 8 과 꼬리 폭의 반 6 이라 꼬리가 차트 끝까지 닿는다 */
+const BUBBLE_OVERHANG = 14
+/** 꼬리가 말풍선 끝에서 띄우는 거리. 말풍선 모서리 반경 10 의 둥근 곳을 피한다 */
+const BUBBLE_CARET_INSET = 8
 const CHART_HEIGHT = 162
 const AXIS_LEFT = 46
 /** 축 글자 두 줄(`10월` · `1주차`) 자리. `10월 1주차` 한 줄은 여덟 칸에 안 들어간다 */
@@ -103,6 +109,7 @@ export const TrendSection = memo(function TrendSection(props: {
   /** 고른 막대. 어느 구간 · 보기에서 골랐는지 함께 들어, 그것이 바뀌면 고름이 풀린다 */
   const [picked, setPicked] = useState<{ scope: string; index: number } | null>(null)
   const [width, setWidth] = useState(312)
+  const [bubbleWidth, setBubbleWidth] = useState<number | null>(null)
   const textScale = useTextScale()
 
   const series = totalsSeries(props.days, props.trend)
@@ -128,7 +135,14 @@ export const TrendSection = memo(function TrendSection(props: {
   const average = values.reduce((sum, value) => sum + value, 0) / values.length
   const span = props.cycle === 'weekly' ? `${series.length}주` : `${series.length}개월`
   const bubbleX = AXIS_LEFT + slot * (selected ?? 0) + slot / 2
-  const bubbleAlign = bubbleX / width < 0.3 ? 'left' : bubbleX / width > 0.7 ? 'right' : 'center'
+  const bubble = centerBubble({
+    containerWidth: width,
+    anchorCenterX: bubbleX,
+    bubbleWidth: bubbleWidth ?? 0,
+    caretSize: CARET_WIDTH,
+    edgeGap: -BUBBLE_OVERHANG,
+    caretInset: BUBBLE_CARET_INSET,
+  })
 
   return (
     <StatsSection
@@ -212,13 +226,12 @@ export const TrendSection = memo(function TrendSection(props: {
             className="absolute top-0 rounded-[10px] bg-surface px-2 py-1 shadow-lg"
             style={[
               vars(buildPopoverScopeVariables(definition)),
-              bubbleAlign === 'left'
-                ? { left: 0 }
-                : bubbleAlign === 'right'
-                  ? { right: 0 }
-                  : { left: bubbleX, transform: [{ translateX: '-50%' }] },
+              // 폭을 재기 전에는 안 보이게 그린다. 폭을 알아야 막대 가운데에 맞출 수 있다.
+              { left: bubble.left, opacity: bubbleWidth === null ? 0 : undefined },
             ]}
+            onLayout={(event: LayoutChangeEvent) => setBubbleWidth(event.nativeEvent.layout.width)}
           >
+            <PopoverCaret testID="stats-trend-bubble-caret" edge="bottom" left={bubble.caretLeft} />
             <Text testID="stats-trend-bubble-title" className="text-10 text-text-muted">
               {bubbleTitle(props.cycle, props.trend[selected!].periodKey)}
             </Text>

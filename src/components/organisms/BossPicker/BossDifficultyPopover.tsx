@@ -1,20 +1,24 @@
 /**
  * 선택 줄의 초상을 누르면 튀어나오는 난이도 캡슐. 그 보스의 난이도 배지와 `제거` 가 한 줄이다.
  *
- * 고른 난이도는 선명하고 나머지는 흐리다. 테두리로 고름을 가르지 않는다. 꼬리 없는 알약 모양이고, 초상 위아래 중
+ * 고른 난이도는 선명하고 나머지는 흐리다. 테두리로 고름을 가르지 않는다. 알약 모양이고 꼬리가 초상을 가리킨다. 초상 위아래 중
  * 빈 공간이 넓은 쪽 10 에 가운데를 맞춰, 초상 쪽 변을 기준으로 0.7 배에서 튀어나온다(시안과 같은 값).
  */
 import { useState } from 'react'
 import { Pressable, View, type LayoutChangeEvent } from 'react-native'
+import { vars } from 'nativewind'
 import Animated, { Easing, Keyframe } from 'react-native-reanimated'
 
 import { useScreenLayout } from '../../../lib/screen-layout'
 import { Badge, Text } from '../../atoms'
-import { PopoverLayer } from '../../molecules/Popover/Popover'
+import { PopoverCaret, PopoverLayer } from '../../molecules/Popover/Popover'
 import { DIFFICULTY_NAME } from '../../../constants/domain/boss-difficulty'
 import { activeDifficultiesNow, supportedDifficultiesOf } from '../../../lib/boss/bosses'
 import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
 import { usePopoverPlacement } from '../../../hooks/usePopoverPlacement'
+import { CARET_WIDTH, centerBubble } from '../../../lib/popover-anchor'
+import { useThemeAppearance } from '../../../theme/context'
+import { buildPopoverScopeVariables } from '../../../theme/theme-vars'
 
 /** 초상과 캡슐 사이 · 화면 가장자리 여백 */
 const GAP = 10
@@ -50,10 +54,16 @@ export function BossDifficultyPopover(props: BossDifficultyPopoverProps): React.
   const placement = usePopoverPlacement(anchor, GAP)
   const difficulties = activeDifficultiesNow(props.bossKey)
 
-  const left =
-    size === null
-      ? 0
-      : Math.max(EDGE_GAP, Math.min(contentWidthPx - size.width - EDGE_GAP, anchor.left + anchor.width / 2 - size.width / 2))
+  // 꼬리는 알약의 둥근 끝(높이의 반)을 피한다.
+  const geometry = centerBubble({
+    containerWidth: contentWidthPx,
+    anchorCenterX: anchor.left + anchor.width / 2,
+    bubbleWidth: size?.width ?? 0,
+    caretSize: CARET_WIDTH,
+    edgeGap: EDGE_GAP,
+    caretInset: (size?.height ?? 0) / 2,
+  })
+  const left = size === null ? 0 : geometry.left
 
   function onLayout(event: LayoutChangeEvent): void {
     setSize(event.nativeEvent.layout)
@@ -71,7 +81,11 @@ export function BossDifficultyPopover(props: BossDifficultyPopoverProps): React.
         // 자리는 바깥 View, 튀어나오는 움직임만 Animated.View. 한데 주면 자리가 버려진다.
         <View testID="boss-difficulty-popover" style={{ position: 'absolute', left, top: placement.top }}>
           <Animated.View entering={popIn(size.height, placement.side === 'below')}>
-            <Capsule {...props} difficulties={difficulties} />
+            <Capsule
+              {...props}
+              difficulties={difficulties}
+              caret={{ edge: placement.side === 'above' ? 'bottom' : 'top', left: geometry.caretLeft }}
+            />
           </Animated.View>
         </View>
       )}
@@ -80,14 +94,24 @@ export function BossDifficultyPopover(props: BossDifficultyPopoverProps): React.
 }
 
 function Capsule(
-  props: BossDifficultyPopoverProps & { difficulties: ReturnType<typeof supportedDifficultiesOf> },
+  props: BossDifficultyPopoverProps & {
+    difficulties: ReturnType<typeof supportedDifficultiesOf>
+    /** 크기를 재는 동안에는 없다 */
+    caret?: { edge: 'top' | 'bottom'; left: number }
+  },
 ): React.JSX.Element {
+  const { definition } = useThemeAppearance()
   return (
     <View
       role="dialog"
       aria-label="난이도 고르기"
+      // 다른 팝오버처럼 다크에서는 시트보다 한 단 더 올린다. 꼬리도 이 색이다.
+      style={vars(buildPopoverScopeVariables(definition))}
       className="flex-row items-center gap-1 rounded-full bg-surface p-1 shadow-lg"
     >
+      {props.caret !== undefined && (
+        <PopoverCaret testID="boss-difficulty-popover-caret" edge={props.caret.edge} left={props.caret.left} />
+      )}
       {props.difficulties.map((difficulty) => (
         <Pressable
           key={difficulty}
