@@ -692,6 +692,15 @@ describe('공유 탭', () => {
     expect(screen.queryByText('무릉도장')).toBeNull()
   })
 
+  it('메이플 ID 소속을 아직 못 읽었으면 행 대신 로딩을 보인다', async () => {
+    mockedMapleIdOwners.mockReturnValue(null)
+    mockStore({ activeTab: 'shared' })
+    await renderScreen()
+
+    expect(screen.getByText('불러오고 있어요')).toBeTruthy()
+    expect(screen.queryByText('몬스터파크')).toBeNull()
+  })
+
   it('그 메이플 ID 의 캐릭터 가운데 하나라도 추적하면 켜져 있다', async () => {
     mockStore({ activeTab: 'shared', manualTrackedByOcid: { a2: [{ contentKey: 'monster_park', kind: 'daily' }] } })
     await renderScreen()

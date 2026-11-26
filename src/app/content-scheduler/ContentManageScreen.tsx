@@ -373,6 +373,11 @@ export function ContentManageScreen(): React.JSX.Element {
                 캐릭터를 먼저 선택해주세요. 설정의 ‘캐릭터 관리’에서 추가할 수 있어요.
               </Text>
             </View>
+          ) : isSharedTab && mapleIds === null ? (
+            // 메이플 ID 소속을 아직 못 읽었다. 행을 세우면 눌러도 저장할 캐릭터가 없다.
+            <View className="px-4 pb-4">
+              <LoadingState size="page" message="불러오고 있어요" />
+            </View>
           ) : selected.error?.kind === 'characterUnavailable' && !isSharedTab ? (
             // 편집할 목록이 **빈 것이 아니라 모르는 것**이다. 체크박스를 세우면 사용자가 지금
             // 추적을 고르고 있다고 믿는데, 그 선택은 조회가 돌아와야 뜻을 갖는다.
