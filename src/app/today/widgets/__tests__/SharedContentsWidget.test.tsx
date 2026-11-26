@@ -40,7 +40,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
 
   it('카운트가 있으면 분자와 분모를 붙여 그린다 ( 과 같은 이유)', async () => {
     const { getByText } = await 위젯([
-      공유계열('monster_park', [공유항목('일간', { count: { now: 7, max: 14 } })]),
+      공유계열('monster_park', [공유항목('일일', { count: { now: 7, max: 14 } })]),
     ])
 
     // 벌어지면 두 값, 붙으면 분수로 읽힌다. 한 `Text` 안에서 이어져야 **7/14** 로 읽힌다.
@@ -53,7 +53,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
   // **몇 번 했나** 는 언제나 max 라 `14/14` 가 더 말하는 것이 없다.
   it('완료한 항목은 오른쪽이 통째로 빈다. 체크박스가 그 말을 한다', async () => {
     const { queryByTestId, getAllByTestId } = await 위젯([
-      공유계열('monster_park', [공유항목('일간', { isComplete: true })]),
+      공유계열('monster_park', [공유항목('일일', { isComplete: true })]),
     ])
 
     expect(queryByTestId('shared-count')).toBeNull()
@@ -66,7 +66,7 @@ describe('오른쪽 열은 `count` 유무 하나로 갈린다', () => {
   it('숫자에 `tabular-nums` 가 걸린다. 자릿수가 달라도 오른쪽 끝이 안 흔들린다', async () => {
     const { getByText } = await 위젯([
       공유계열('monster_park', [
-        공유항목('일간', { count: { now: 7, max: 14 } }),
+        공유항목('일일', { count: { now: 7, max: 14 } }),
         공유항목('익스트림 몬스터파커', { count: { now: 1, max: 5 } }),
       ]),
     ])
@@ -198,7 +198,7 @@ describe('계열의 주간 한도', () => {
   })
 
   it('한도가 없는 계열은 수를 안 단다', async () => {
-    const { queryByTestId } = await 위젯([공유계열('monster_park', [공유항목('일간')])])
+    const { queryByTestId } = await 위젯([공유계열('monster_park', [공유항목('일일')])])
 
     expect(queryByTestId('shared-group-count')).toBeNull()
   })

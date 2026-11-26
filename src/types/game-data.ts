@@ -357,7 +357,7 @@ export interface ContentRow {
 }
 export interface ContentsTable extends TableHead {
   contentCategories: ContentCategoryRow[]
-  /** 일간 뒤 주간. 주기 안의 차례가 관리 화면의 차례다. */
+  /** 일일 뒤 주간. 주기 안의 차례가 관리 화면의 차례다. */
   contents: ContentRow[]
 }
 

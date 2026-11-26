@@ -463,7 +463,7 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
 
     await renderScreen()
 
-    // 일일 퀘스트라 기본 탭(일간)에서 바로 수치가 선다.
+    // 일일 퀘스트라 기본 탭(일일)에서 바로 수치가 선다.
     expect(screen.queryAllByTestId('schedule-stats').length).toBeGreaterThan(0)
   })
 
@@ -478,7 +478,7 @@ describe('TodayScreen: 수동 멤버십을 어느 스토어에서 읽는가', ()
     await renderScreen()
 
     // 주간 보스라 **주간 탭**에서 선다. 위젯이 탭마다 다른 배열을 보므로
-    // 기본 탭(일간)에는 이 캐릭터에 남은 것이 없다.
+    // 기본 탭(일일)에는 이 캐릭터에 남은 것이 없다.
     expect(screen.queryAllByTestId('schedule-stats')).toHaveLength(0)
 
     await act(async () => {

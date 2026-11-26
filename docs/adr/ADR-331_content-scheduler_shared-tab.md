@@ -1,7 +1,7 @@
 # ADR-331 컨텐츠 스케줄러의 공유 탭과 `일일` 이름
 
-> ⚪ 미구현
-> 관련 소스: `app/content-scheduler/ContentScreen.tsx` · `app/content-scheduler/ContentManageScreen.tsx` · `features/content-scheduler/store.ts` · `features/content-scheduler/displayed-contents.ts` · `features/content-scheduler/manage-draft.ts` · `features/remaining-schedule/remaining-schedule.ts` · `lib/scheduler/scheduler-content-scope.ts` · `app/today/view-model.ts` · `app/today/widgets/RemainingScheduleWidget.tsx` · `features/schedule-alert/notification-text.ts` · `components/organisms/CharacterPortrait/PortraitRing.tsx`
+> 🟢 유효
+> 관련 소스: `app/content-scheduler/ContentScreen.tsx` · `app/content-scheduler/ContentManageScreen.tsx` · `features/content-scheduler/store.ts` · `features/content-scheduler/displayed-contents.ts` · `features/content-scheduler/shared-contents.ts` · `features/content-scheduler/manage-draft.ts` · `features/remaining-schedule/remaining-schedule.ts` · `lib/scheduler/scheduler-content-scope.ts` · `app/today/view-model.ts` · `app/today/widgets/RemainingScheduleWidget.tsx` · `features/schedule-alert/notification-text.ts` · `components/organisms/CharacterPortrait/PortraitRing.tsx`
 
 ## 배경
 
@@ -53,9 +53,10 @@ ID 가 함께 쓰는 컨텐츠도 캐릭터마다 한 번씩 나와서, 캐릭�
 - 고른 메이플 ID 는 컨텐츠 스케줄러 스토어가 든다. 처음 값은 지금 고른 캐릭터의 메이플 ID 다. 별칭을 골라도 고른 캐릭터는
   바뀌지 않는다. 일일 · 주간 탭으로 돌아갔을 때 보던 캐릭터가 바뀌면 안 되기 때문이다. 저장하지 않는다.
 - 메이플 ID 줄은 캐릭터 레일과 같은 모양이다(사용자 지정). 칸마다 `CharacterPortrait` 의 rail 칸 하나이고, 얼굴은 그 메이플 ID
-  의 대표 캐릭터, 둥근 이름은 별칭이다. 대표 캐릭터는 메이플 ID 드롭다운(`AccountSelect`)과 같은 `summarizeAccount` 의 대표(가장
-  레벨이 높은 캐릭터)다. 같은 사람을 화면마다 다른 얼굴로 보이지 않게 하려는 것이다. 고르지 않은 칸이 흐린 것과 자리 · 여백도
-  캐릭터 레일과 같다. 진행 고리는 두지 않는다.
+  의 대표 캐릭터, 둥근 이름은 별칭이다. 대표 캐릭터는 그 메이플 ID 의 추적 캐릭터 가운데 `pickRepresentativeCharacter` 와 같은
+  차례(레벨이 높은 순, 같으면 이름 순)의 첫째다. 메이플 ID 드롭다운(`AccountSelect`)과 같은 규칙이라 대개 같은 얼굴이 된다. 추적
+  캐릭터 가운데에서 고르는 것은 얼굴 그림이 추적 캐릭터만 스케줄 캐시에 있기 때문이다. 고르지 않은 칸이 흐린 것과 자리 · 여백도
+  캐릭터 레일과 같다. 진행 고리와 레벨 글자는 두지 않는다.
 - 메이플 ID 가 하나여도 별칭을 그린다. 이 탭의 값이 누구의 것인지 보이게 하려는 것이다.
 - 메이플 ID 를 모르는 캐릭터(소속을 아직 받지 못했다)는 공유 탭에 넣지 않는다. 다른 메이플 ID 의 에픽 던전 완료가 섞이면 주
   3회 한도가 틀린다.
@@ -65,8 +66,10 @@ ID 가 함께 쓰는 컨텐츠도 캐릭터마다 한 번씩 나와서, 캐릭�
 ### 결정 4. 공유 탭의 값은 그 메이플 ID 의 추적 캐릭터 가운데 가장 앞선 값이다
 
 컨텐츠 하나에 타일 하나다. 값은 today 공유 컨텐츠 위젯과 같은 규칙으로 정한다([[ADR-058]] 결정 18). 완료는 캐릭터 가운데
-하나라도 완료면 완료이고, 횟수는 가장 큰 값이다. 주기 안에서 진행은 줄지 않으므로 가장 큰 값이 최신이다. 두 화면이 같은
-함수를 쓰도록 today 뷰모델의 묶는 함수를 `features/` 로 옮긴다. 두 벌로 두면 같은 컨텐츠가 두 화면에서 다르게 보인다.
+하나라도 완료면 완료이고, 횟수와 퀘스트 상태는 가장 앞선 값이다. 주기 안에서 진행은 줄지 않으므로 가장 큰 값이 최신이다. 여러
+벌을 하나로 합치는 함수(`mergeSharedProgress`)는 `features/content-scheduler/shared-contents.ts` 에 두고 today 뷰모델도 그것을
+부른다. 두 벌로 두면 같은 컨텐츠가 두 화면에서 다르게 보인다. 공유 탭은 퀘스트 상태만 확인하는 메이플 유니온 드래곤 퇴치 둘도
+그린다. today 위젯은 횟수를 확인하는 줄만 그린다([[ADR-058]] 결정 18).
 
 - 묶음은 카테고리이고 차례는 분류 줄의 `sharedSortOrder` 다(몬스터파크 · 메이플 유니온 · 에픽 던전).
 - 에픽 던전 주 3회 한도와 `마감` 은 메이플 ID 단위로 센다([[ADR-033]] 결정 7). 한도가 `ID당` 이기 때문이다.
@@ -96,7 +99,7 @@ ID 가 함께 쓰는 컨텐츠도 캐릭터마다 한 번씩 나와서, 캐릭�
 - `저장` 하면 켠 항목은 그 메이플 ID 의 추적 캐릭터 모두의 목록에 넣고, 끈 항목은 모두에서 뺀다. 한 명에게만 남아 있으면 끈
   항목이 공유 탭에 계속 보이기 때문이다. 항목의 종류(`daily` · `weekly`)는 컨텐츠의 주기다.
 - 저장 · 초안 · 확인 창은 일일 · 주간 탭과 같다([[ADR-034]] 결정 10). 다른 별칭을 고를 때 바꾼 것이 있으면 캐릭터를 바꿀 때와
-  같은 확인 창이 뜬다.
+  같은 확인 창이 뜬다. 한 번의 `저장` 이 캐릭터 탭과 공유 탭에서 바꾼 것을 함께 적는다.
 - 수동 모드에서 캐릭터를 새로 더하면 그 캐릭터는 지금처럼 게임 등록으로 채운다([[ADR-034]] 결정 5). 공유 항목은 결정 5 의
   `하나라도` 기준이라, 새 캐릭터가 등록하지 않은 공유 항목도 공유 탭에서 사라지지 않는다.
 
@@ -116,10 +119,12 @@ ID 가 함께 쓰는 컨텐츠도 캐릭터마다 한 번씩 나와서, 캐릭�
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `features/content-scheduler/__tests__/displayed-contents.test.ts` | 결정 2: 두 모드 모두 일일 · 주간 목록에 공유 범위가 캐릭터가 아닌 컨텐츠가 없는지, 그 판정이 공유 범위를 바꾸면 따라가는지 본다 |
-| `features/content-scheduler/__tests__/shared-contents.test.ts` | 결정 3 · 4 · 5: 메이플 ID 마다 그 캐릭터만 모으는지, 메이플 ID 를 모르는 캐릭터를 넣지 않는지, 가장 앞선 값과 메이플 ID 단위 에픽 던전 한도, 자동은 등록 · 수동은 추적이 하나라도 있으면 보이는지 본다 |
-| `features/content-scheduler/__tests__/manage-draft.test.ts` | 결정 6: 공유 탭의 켜짐이 `하나라도` 기준인지, 저장이 그 메이플 ID 의 추적 캐릭터 모두에 넣고 빼는지, 다른 메이플 ID 의 목록을 건드리지 않는지 본다 |
-| `app/content-scheduler/__tests__/` | 결정 1 · 3 · 7: 탭 셋의 이름, 공유 탭에서 레일 대신 별칭이 서는지, 별칭을 골라도 고른 캐릭터가 그대로인지, 탭이 md 크기인지 본다 |
+| `features/content-scheduler/__tests__/displayed-contents.spec.ts` | 결정 2: 두 모드 모두 일일 · 주간 목록에 공유 범위가 캐릭터가 아닌 컨텐츠가 없는지 본다. 이름이 아니라 공유 범위로 거르는지는 표에 그런 줄이 있는지와 함께 본다 |
+| `features/content-scheduler/__tests__/shared-contents.test.ts` | 결정 3 · 4 · 5: 레일이 추적 캐릭터가 있는 메이플 ID 만 세우고 대표가 가장 레벨이 높은 캐릭터인지, 메이플 ID 를 모르는 캐릭터를 넣지 않는지, 가장 앞선 값, 공유 분류 차례, 시작 기간, 메이플 ID 단위 에픽 던전 한도, 자동은 등록 · 수동은 추적이 하나라도 있으면 보이는지 본다 |
+| `features/content-scheduler/__tests__/shared-manage-draft.test.ts` | 결정 6: 공유 탭의 켜짐이 `하나라도` 기준인지, 켠 항목이 컨텐츠의 주기로 들어가는지, 끈 항목만 빠지는지 본다 |
+| `features/content-scheduler/__tests__/store.spec.ts` | 결정 3 · 6: 저장이 그 메이플 ID 의 추적 캐릭터 모두에 넣고 빼는지, 넘기지 않은 캐릭터의 목록을 건드리지 않는지, 고른 메이플 ID 를 드는지 본다 |
+| `app/content-scheduler/__tests__/ContentScreen.test.tsx` | 결정 1 · 2 · 3 · 4 · 5 · 7: 탭 셋의 이름과 크기, 공유 컨텐츠가 일일 탭과 링에 없는지, 공유 탭에서 레일 대신 별칭이 서고 처음 값이 고른 캐릭터의 메이플 ID 인지, 별칭을 골라도 고른 캐릭터가 그대로인지, 가장 앞선 값과 메이플 ID 단위 `마감`, 빈 상태를 본다 |
+| `app/content-scheduler/__tests__/ContentManageScreen.test.tsx` | 결정 6: 일일 · 주간 탭에 공유 행이 없는지, 공유 탭의 별칭 레일과 켜짐, 저장이 그 메이플 ID 의 캐릭터 모두를 넘기는지, 다른 별칭을 고를 때 확인 창이 뜨는지 본다 |
 
 ## 번호 기록
 

@@ -24,10 +24,10 @@ const SCREENS = [
 /**
  * 레일을 감싼 뷰. 레일과 **같은 조건** 안에 있어야 하므로 조건까지 함께 본다.
  *
- * 주석이 조건과 감싸개 사이에 들어가므로 그 사이를 넉넉히 허용한다.
+ * 주석이 조건과 감싸개 사이에 들어가므로 그 사이를 넉넉히 허용한다. 컨텐츠 스케줄러의 캐릭터 레일은 공유 탭이 아닐 때만 선다.
  */
 const WRAPPED_RAIL =
-  /characters\.length > 0 && selected !== null && \(\s*(?:\{\/\*[\s\S]*?\*\/\}\s*)?<View className="(pb-\d(?:\.5)?)">\s*<CharacterRail/
+  /characters\.length > 0 && selected !== null(?: && !isSharedTab)? && \(\s*(?:\{\/\*[\s\S]*?\*\/\}\s*)?<View className="(pb-\d(?:\.5)?)">\s*<CharacterRail/
 
 describe('캐릭터 레일 아래 간격', () => {
   const found = SCREENS.map((path) => ({
@@ -47,15 +47,15 @@ describe('캐릭터 레일 아래 간격', () => {
 })
 
 // 빈 상태도 첫 카드와 같은 자리에 선다. 전에는 목록이 있으면 첫 카드가 28 내려가고 비면 빈 상태가
-// 레일 바로 밑에 붙어, 같은 화면이 두 높이를 오갔다. 네 자리가 같은 값이어야 한다 - 화면 둘 ×
-// 빈 상태 둘(컨텐츠는 일간·주간, 보스는 목록 없음·필터 결과 없음).
+// 레일 바로 밑에 붙어, 같은 화면이 두 높이를 오갔다. 다섯 자리가 같은 값이어야 한다. 컨텐츠는 일일 · 주간 · 공유,
+// 보스는 목록 없음 · 필터 결과 없음이다.
 describe('빈 상태의 위 여백', () => {
   const wrappers = SCREENS.flatMap((path) => [
     ...readFileSync(path, 'utf8').matchAll(/<View className="(pt-\d(?:\.5)?)">\s*<EmptyState/g),
   ]).map((match) => match[1])
 
-  it('빈 상태 넷이 모두 위 여백을 든다', () => {
-    expect(wrappers).toHaveLength(4)
+  it('빈 상태 다섯이 모두 위 여백을 든다', () => {
+    expect(wrappers).toHaveLength(5)
   })
 
   // 카드 목록이 드는 값에서 따온다. 둘이 갈리면 목록이 있을 때와 없을 때 첫 줄의 높이가 달라진다.
@@ -70,16 +70,16 @@ describe('빈 상태의 위 여백', () => {
 
 // 보스 스케줄러는 카드 앞에 무리 제목(`월간`)이 서고 컨텐츠 스케줄러는 바로 카드다. 그 제목이
 // 차지하는 높이만큼 컨텐츠 쪽 카드 목록이 비워 둬야 두 화면을 오갈 때 첫 카드가 안 뛴다.
-// 일간·주간 목록 둘 다 같은 값이어야 한다.
+// 일일 · 주간 · 공유 목록 셋 다 같은 값이어야 한다.
 describe('컨텐츠 스케줄러의 첫 카드 자리', () => {
   const source = readFileSync(join(APP, 'content-scheduler', 'ContentScreen.tsx'), 'utf8')
 
-  it('카드 목록 둘이 같은 위 여백을 든다', () => {
+  it('카드 목록 셋이 같은 위 여백을 든다', () => {
     const lists = [...source.matchAll(/className="gap-2([^"]*)"/g)].map(
       (match) => /\bpt-\d(?:\.5)?\b/.exec(match[1])?.[0] ?? null,
     )
 
-    expect(lists).toHaveLength(2)
+    expect(lists).toHaveLength(3)
     expect(new Set(lists).size).toBe(1)
     expect(lists[0]).not.toBeNull()
   })

@@ -224,7 +224,7 @@
     {
       "id": "03d0aff2-e4d1-4376-9450-712a3a9ce5ae",
       "key": "daily_quest_quick_pass",
-      "name": "일간 퀘스트",
+      "name": "일일 퀘스트",
       "iconAssetId": "b0b9e9aa-9805-4256-8c40-2b94900c6a78"
     },
     {
@@ -660,7 +660,7 @@
       "key": "daily_quest_quick_pass",
       "groupId": "1e63f70e-57d5-44cd-8cac-a2e776de2ae4",
       "tileId": "03d0aff2-e4d1-4376-9450-712a3a9ce5ae",
-      "name": "일간 퀘스트",
+      "name": "일일 퀘스트",
       "tier": null,
       "currency": "maple_point",
       "unitPrice": 200,

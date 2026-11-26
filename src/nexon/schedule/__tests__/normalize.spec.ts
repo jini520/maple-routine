@@ -124,7 +124,7 @@ describe('normalizeSchedulerCharacterState', () => {
     })
   })
 
-  it('일간 quest_state 문자열을 숫자로 파싱하고 kind를 채운다', () => {
+  it('일일 quest_state 문자열을 숫자로 파싱하고 kind를 채운다', () => {
     const result = normalizeSchedulerCharacterState(baseWire, resolve)
 
     expect(result.dailyContents[1]).toEqual({

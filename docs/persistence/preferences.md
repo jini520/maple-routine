@@ -148,6 +148,6 @@
 | `lastSelectedCharacter` | ocid | `character-selection.ts` | 드롭다운에서 마지막으로 고른 캐릭터 |
 | `representativeCharacter` | ocid | `character-selection.ts` | 사용자가 고른 대표 캐릭터. 고르지 않았으면 키가 없다 |
 | `trackedCharacters:content` · `:boss` · `:daily` · `:weekly` · `lastSelectedCharacter:content` · `:boss` | | `character-selection.ts` | 옛 키. `trackedCharacters` 가 없을 때 합쳐 옮기고 지운다 |
-| `manualTrackedContent:{ocid}` | JSON `{ type, targetId }[]`. `targetId` 는 일간 · 주간이면 컨텐츠 줄 id, 보스면 난이도 줄 id | `manual-tracked-content.ts` | 수동 모드에서 그 캐릭터가 추적할 항목([[ADR-034]] 결정 3) |
-| `worldSharedProgress:{accountId}:{월드 줄 id}` | JSON `{ [컨텐츠 줄 id]: { isRegistered, nowCount, maxCount, questState, periodCode } }` | `shared-progress-cache.ts` | 월드 단위로 완료가 공유되는 컨텐츠의 진행. 같은 월드라도 메이플 ID 마다 따로다. 기간 값은 일간 `D20261119` · 주간 `W202647` 이다([[ADR-032]] 결정 9). 월드로만 묶던 옛 키(`worldSharedProgress:{worldKey}` · 월드 이름)는 추적 캐릭터가 있는 메이플 ID 마다 한 번 베끼고 지운다([[ADR-101]] 결정 23) |
+| `manualTrackedContent:{ocid}` | JSON `{ type, targetId }[]`. `targetId` 는 일일 · 주간이면 컨텐츠 줄 id, 보스면 난이도 줄 id | `manual-tracked-content.ts` | 수동 모드에서 그 캐릭터가 추적할 항목([[ADR-034]] 결정 3) |
+| `worldSharedProgress:{accountId}:{월드 줄 id}` | JSON `{ [컨텐츠 줄 id]: { isRegistered, nowCount, maxCount, questState, periodCode } }` | `shared-progress-cache.ts` | 월드 단위로 완료가 공유되는 컨텐츠의 진행. 같은 월드라도 메이플 ID 마다 따로다. 기간 값은 일일 `D20261119` · 주간 `W202647` 이다([[ADR-032]] 결정 9). 월드로만 묶던 옛 키(`worldSharedProgress:{worldKey}` · 월드 이름)는 추적 캐릭터가 있는 메이플 ID 마다 한 번 베끼고 지운다([[ADR-101]] 결정 23) |
 | `accountSharedProgress:{accountId}` | JSON. 월드 원장과 같은 모양 | `shared-progress-cache.ts` | 계정 단위로 공유되는 컨텐츠의 진행. `accountId` 는 그 캐릭터가 속한 계정이다 |

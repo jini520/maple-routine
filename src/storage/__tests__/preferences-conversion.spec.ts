@@ -120,7 +120,7 @@ describe('공유 진행', () => {
   const daily = { active: true, kind: 'contents', nowCount: 7, maxCount: 14, questState: null, lastUpdatedBucket: '2026-07-21' }
   const weekly = { active: false, kind: 'quest', nowCount: 0, maxCount: 1, questState: 1, lastUpdatedBucket: '2026-07-16' }
 
-  // 종류는 컨텐츠 줄에 있어 적지 않는다. 기간은 그 컨텐츠의 주기로 일간은 날짜, 주간은 주차 값이다.
+  // 종류는 컨텐츠 줄에 있어 적지 않는다. 기간은 그 컨텐츠의 주기로 일일은 날짜, 주간은 주차 값이다.
   it('열쇠를 컨텐츠 줄 id 로, 등록을 isRegistered 로, 기간을 컨텐츠 주기의 기간 값으로 바꾸고 종류를 버린다', async () => {
     await setJson('accountSharedProgress:maple-a', {
       '에픽 던전 : 하이마운틴': weekly,

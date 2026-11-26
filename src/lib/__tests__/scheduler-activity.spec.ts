@@ -63,11 +63,11 @@ describe('hasCharacterScopeCompletion', () => {
     expect(hasCharacterScopeCompletion(state())).toBe(false)
   })
 
-  it('일간 퀘스트가 완료(questState 2)면 활동 증거다', () => {
+  it('일일 퀘스트가 완료(questState 2)면 활동 증거다', () => {
     expect(hasCharacterScopeCompletion(state({ dailyContents: [daily({ questState: 2 })] }))).toBe(true)
   })
 
-  it('일간 콘텐츠의 카운트가 올랐으면 활동 증거다', () => {
+  it('일일 콘텐츠의 카운트가 올랐으면 활동 증거다', () => {
     expect(
       hasCharacterScopeCompletion(
         state({ dailyContents: [daily({ kind: 'contents', nowCount: 3, maxCount: 5 })] }),
@@ -235,7 +235,7 @@ describe('getSectionPresence', () => {
     ).toMatchObject({ daily: false, weekly: true, weeklyBoss: true, monthlyBoss: false })
   })
 
-  it('공유 항목만 남은 일간 섹션은 present가 아니다 (정정)', () => {
+  it('공유 항목만 남은 일일 섹션은 present가 아니다 (정정)', () => {
     expect(
       getSectionPresence(
         state({ dailyContents: [daily({ contentKey: 'monster_park', apiName: '몬스터파크', kind: 'contents', nowCount: 7 })] }),

@@ -24,7 +24,7 @@ async function 위젯(schedule: ScheduleRowView[]): Promise<위젯화면> {
 }
 
 /** 세그먼트는 `aria-label` 로 잡는다. 글자를 누르면 눌리는 것이 `Pressable` 인지가 안 보인다. */
-async function 탭(view: 위젯화면, 주기: '일간' | '주간' | '월간'): Promise<void> {
+async function 탭(view: 위젯화면, 주기: '일일' | '주간' | '월간'): Promise<void> {
   await act(async () => {
     fireEvent.press(view.getByLabelText(주기))
   })
@@ -67,19 +67,19 @@ describe('주기 탭', () => {
     const view = await 위젯(스케줄목록(2))
 
     expect(view.getByText('남은 스케줄')).toBeTruthy()
-    expect(view.getByLabelText('일간')).toBeTruthy()
+    expect(view.getByLabelText('일일')).toBeTruthy()
     expect(view.getByLabelText('주간')).toBeTruthy()
     expect(view.getByLabelText('월간')).toBeTruthy()
     expect(view.queryByText('20')).toBeNull()
   })
 
-  it('기본은 일간이다. 일퀘 수만 서고 다른 주기의 수치는 안 보인다', async () => {
+  it('기본은 일일이다. 일퀘 수만 서고 다른 주기의 수치는 안 보인다', async () => {
     const view = await 위젯([스케줄행()])
 
-    expect(view.getByLabelText('일간').props.accessibilityState?.selected).toBe(true)
+    expect(view.getByLabelText('일일').props.accessibilityState?.selected).toBe(true)
     expect(view.getByText('퀘스트')).toBeTruthy()
     expect(view.getByText('4')).toBeTruthy()
-    // 일간엔 보스 묶음이 없다. 주간 보스 2 도 검마 1 도 이 탭의 값이 아니다.
+    // 일일엔 보스 묶음이 없다. 주간 보스 2 도 검마 1 도 이 탭의 값이 아니다.
     expect(view.queryByText('보스')).toBeNull()
     expect(view.queryByText('3')).toBeNull()
   })
@@ -286,7 +286,7 @@ describe('펼침도 그 탭의 것만이다', () => {
     expect(view.queryByTestId('schedule-detail')).toBeNull()
   })
 
-  it('일간 탭에서 펼치면 일퀘 이름만 선다. 보스는 안 딸려 온다', async () => {
+  it('일일 탭에서 펼치면 일퀘 이름만 선다. 보스는 안 딸려 온다', async () => {
     const view = await 위젯([스케줄행()])
 
     await 펼치기(view)

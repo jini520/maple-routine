@@ -66,10 +66,10 @@ describe('categorizeContentEntries', () => {
 
 describe('contentCountTag: 태그 오버라이드 (사용자 지정)', () => {
   it('줄의 countTag 가 분류 태그 · 기본 규칙보다 우선한다', () => {
-    // 일간 몬스터파크: "월드 당 최대 14회"
+    // 일일 몬스터파크: "월드 당 최대 14회"
     expect(contentCountTag(templateEntry('monster_park'))).toBe('월드 당 최대 14회')
     // 익스트림 몬스터파커(주간, 같은 분류지만 줄의 태그가 이김): "월드 당 2회".
-    // 완료 조건(일간 5회)이 아니라 수행 제한을 말하는 자리다.
+    // 완료 조건(일일 5회)이 아니라 수행 제한을 말하는 자리다.
     expect(contentCountTag(templateEntry('monster_park_extreme'))).toBe('월드 당 2회')
   })
 

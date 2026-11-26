@@ -1,5 +1,5 @@
 /**
- * 컨텐츠 스케줄러. 일간/주간 콘텐츠 진행 상태(`docs/features/content-scheduler.md`).
+ * 컨텐츠 스케줄러. 일일 · 주간 컨텐츠와 메이플 ID 마다의 공유 컨텐츠 진행 상태(`docs/features/content-scheduler.md`).
  *
  * **이 화면에 걸린 ADR 이 스물하나다.** 대부분은 화면에 안 보이는 판단이라(캐시 우선 표시 · 실패의
  * 목적지 · 빈 상태의 판정 시점) 아래 주석이 그 자리를 지목한다.
@@ -19,6 +19,13 @@ import { useCharacterSelectionStore } from '../../features/character-selection/s
 import { useRealtimeFetchedAt } from '../../features/refresh/freshness'
 import { useTrackingModeStore } from '../../features/tracking-mode/store'
 import { useScheduleSyncErrorToast } from '../../features/schedule-sync/use-sync-error-toast'
+import { useMapleIdNamesStore } from '../../features/maple-id/names'
+import { useMapleIdOwners } from '../../hooks/useMapleIdOwners'
+import {
+  resolveSelectedMapleId,
+  sharedContentsOf,
+  sharedMapleIdsOf,
+} from '../../features/content-scheduler/shared-contents'
 import {
   displayedDailyContents,
   displayedWeeklyContents,
@@ -46,10 +53,11 @@ import { WeeklyContentCard } from './WeeklyContentCards'
 import { NexonMaintenanceBanner } from '../NexonMaintenanceBanner'
 
 /** 주기 탭. 값은 스케줄러가 쓰는 주기이고 화면에는 라벨이 선다. */
-const CONTENT_TABS = ['daily', 'weekly'] as const
+const CONTENT_TABS = ['daily', 'weekly', 'shared'] as const
 const CONTENT_TAB_LABELS: Record<(typeof CONTENT_TABS)[number], string> = {
-  daily: '일간',
+  daily: '일일',
   weekly: '주간',
+  shared: '공유',
 }
 
 export function ContentScreen(): React.JSX.Element {
@@ -62,6 +70,8 @@ export function ContentScreen(): React.JSX.Element {
     // 같은 값을 읽어 보던 탭 그대로 열린다.
     activeTab,
     setActiveTab,
+    selectedMapleId,
+    setSelectedMapleId,
   } = useContentSchedulerStore()
   // 선택은 화면·스토어가 아니라 **여기 한 벌**이다.
   const { selectedOcid, select } = useCharacterSelectionStore()
@@ -88,6 +98,9 @@ export function ContentScreen(): React.JSX.Element {
   // 스토어가 내는 것은 **기준 순서**(레벨 내림차순)이고, 화면 순서는 사용자가
   // 캐릭터 관리에서 정한 저장 배열 순서다. core 를 안 고치는 이유는 `orderByTracked` 머리에 있다.
   const characters = orderByTracked(storeCharacters, trackedOcids ?? [])
+  // 공유 탭은 캐릭터 대신 메이플 ID 를 고른다. 소속은 기기에 남긴 값이고, 못 읽은 동안은 고를 메이플 ID 가 없다.
+  const mapleIds = useMapleIdOwners(trackedOcids ?? [])
+  const mapleIdNames = useMapleIdNamesStore((state) => state.names)
 
   /**
    * 머리 아래 한 줄이 읽는 값. **실시간 데이터를 마지막으로 받은 시각 하나**다.
@@ -140,7 +153,24 @@ export function ContentScreen(): React.JSX.Element {
   // 한도는 표시 목록이 아니라 병합된 목록 전체로 센다. 등록 안 한 던전의 완료도 한도를 채운다.
   const selectedClosedKeys = weeklyLimitClosedKeys(selected?.weeklyContents ?? [])
 
-  // 링 **하나를 좌·우 반원으로 가른다**. 왼쪽 일간, 오른쪽 주간. 둘 다 12시에서
+  // 공유 탭. 메이플 ID 하나의 공유 컨텐츠를 그 추적 캐릭터 가운데 가장 앞선 값으로 그린다.
+  const sharedMapleIds = sharedMapleIdsOf(characters, mapleIds, mapleIdNames)
+  const shownMapleId = resolveSelectedMapleId(selectedMapleId, sharedMapleIds, selected?.ocid ?? null, mapleIds)
+  const sharedContents =
+    shownMapleId === null || mapleIds === null
+      ? null
+      : sharedContentsOf({ characters, ofOcid: mapleIds.ofOcid, manualTrackedByOcid: manualTrackedByOcid ?? {} }, shownMapleId, mode, weeklyPeriodKey)
+  // 레일 칸은 캐릭터 레일과 같은 모양이다. 얼굴은 대표 캐릭터, 둥근 이름은 별칭이고, 진행 고리와 레벨 글자는 없다.
+  const sharedRailEntries: CharacterRailEntry[] = sharedMapleIds.map((entry) => ({
+    ocid: entry.mapleId,
+    characterName: entry.name,
+    level: null,
+    imageUrl: entry.representative.imageUrl ?? null,
+    rings: [],
+  }))
+  const isSharedTab = activeTab === 'shared'
+
+  // 링 **하나를 좌·우 반원으로 가른다**. 왼쪽 일일, 오른쪽 주간. 둘 다 12시에서
   // 시작해 아래로 차므로 두 반원을 나란히 읽을 수 있다.
   const railEntries: CharacterRailEntry[] = characters.map((character) => ({
     ocid: character.ocid,
@@ -153,7 +183,7 @@ export function ContentScreen(): React.JSX.Element {
     rings: [
       // 링이 세는 것도 요구 레벨을 탄다. 링·카드 목록·today 가 같은 판정을
       // 봐야 셋의 숫자가 맞는다.
-      { label: '일간', ...dailyContentProgress(dailyContentsOf(character), character.level ?? null) },
+      { label: '일일', ...dailyContentProgress(dailyContentsOf(character), character.level ?? null) },
       {
         label: '주간',
         ...weeklyContentProgress(
@@ -185,15 +215,16 @@ export function ContentScreen(): React.JSX.Element {
     </Pressable>
   )
 
-  // 빈 상태 문구는 탭(일간/주간)과 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다.
+  // 빈 상태 문구는 탭(일일 · 주간 · 공유)과 모드(수동/자동)별로 나눈다. 수동 모드만 CTA를 준다.
   // 자동 모드가 지시하는 곳("게임에서 등록")은 앱 밖이라 데려다줄 수 없다.
-  function contentEmptyProps(tab: 'daily' | 'weekly'): React.ComponentProps<typeof EmptyState> {
-    const label = tab === 'daily' ? '일간' : '주간'
+  function contentEmptyProps(tab: 'daily' | 'weekly' | 'shared'): React.ComponentProps<typeof EmptyState> {
+    const label = CONTENT_TAB_LABELS[tab]
+    const what = tab === 'daily' ? '매일 챙길' : tab === 'weekly' ? '주간' : '공유'
     if (mode === 'manual') {
       return {
         icon: ListChecksIcon,
         title: `추적할 ${label} 컨텐츠가 없습니다`,
-        description: `컨텐츠 관리에서 ${tab === 'daily' ? '매일 챙길' : '주간'} 항목을 골라주세요`,
+        description: `컨텐츠 관리에서 ${what} 항목을 골라주세요`,
         action: { label: '컨텐츠 관리', onClick: () => navigation.navigate('ContentManage') },
       }
     }
@@ -221,7 +252,7 @@ export function ContentScreen(): React.JSX.Element {
             size="page"
             icon="leaf"
             title="표시할 캐릭터가 없습니다"
-            description="캐릭터를 선택하면 일간·주간 컨텐츠를 확인할 수 있습니다"
+            description="캐릭터를 선택하면 일일·주간 컨텐츠를 확인할 수 있습니다"
             action={{ label: '캐릭터 선택하기', onClick: goToCharacterManage }}
           />
         </View>
@@ -250,8 +281,10 @@ export function ContentScreen(): React.JSX.Element {
                 <View className="flex-row items-center gap-3">
                   {manualManageButton}
                   {characters.length > 0 && selected !== null && (
+                    // 탭이 셋이라 중간 크기다. 큰 크기면 기준 폭 360 에서 제목이 잘린다.
                     <Segment
-                      size="lg" className="self-start"
+                      size="md"
+                      className="self-start"
                       options={CONTENT_TABS}
                       selected={activeTab}
                       onSelect={setActiveTab}
@@ -276,7 +309,7 @@ export function ContentScreen(): React.JSX.Element {
             아래 여백은 **감싸는 뷰**가 든다. 레일 아래에 오는 것이 셋이라서다 - 카드 덩어리 ·
             첫 조회 중의 로딩 카드 · 조회할 수 없는 캐릭터를 골랐을 때의 안내. 레일 안에 넣으면
             관리 화면 둘까지 같이 벌어진다. */}
-        {characters.length > 0 && selected !== null && (
+        {characters.length > 0 && selected !== null && !isSharedTab && (
           <View className="pb-1">
             <CharacterRail
               entries={railEntries}
@@ -285,6 +318,14 @@ export function ContentScreen(): React.JSX.Element {
                 void select(ocid)
               }}
             />
+          </View>
+        )}
+
+        {/* 공유 탭은 같은 자리에 메이플 ID 레일이 선다. 메이플 ID 가 하나여도 그린다. 이 탭의 값이 누구의 것인지 보이게 한다.
+            골라도 고른 캐릭터는 그대로다. */}
+        {characters.length > 0 && selected !== null && isSharedTab && shownMapleId !== null && (
+          <View className="pb-1">
+            <CharacterRail entries={sharedRailEntries} selectedOcid={shownMapleId} onSelect={setSelectedMapleId} />
           </View>
         )}
 
@@ -298,7 +339,7 @@ export function ContentScreen(): React.JSX.Element {
 
         {/* 조회할 수 없는 캐릭터를 고르면 내용 자리가 통째로 이 안내다. 그 캐릭터의 목록은
             **빈 것이 아니라 모르는 것**이라, 빈 상태로 그리면 다 했다 로 읽힌다. */}
-        {characters.length > 0 && isSelectedUnavailable && (
+        {characters.length > 0 && isSelectedUnavailable && !isSharedTab && (
           <View className="px-4 pt-7">
             <CharacterUnavailableNotice
               onOpenCharacterManage={() => openTab('Settings', { openPicker: true })}
@@ -306,7 +347,44 @@ export function ContentScreen(): React.JSX.Element {
           </View>
         )}
 
-        {characters.length > 0 && selected !== null && !isSelectedUnavailable && (
+        {characters.length > 0 && selected !== null && isSharedTab && (
+          <View testID="pull-content" className="gap-4 px-4 pb-4">
+            {/* 소속을 아직 못 읽었으면 빈 것이 아니라 모르는 것이다. 빈 상태로 그리면 할 일이 없다로 읽힌다. */}
+            {mapleIds === null && (
+              <View className="pt-7">
+                <LoadingState size="page" message="불러오고 있어요" />
+              </View>
+            )}
+
+            {/* 공유 탭은 요구 레벨로 진행 불가를 달지 않는다. 그 메이플 ID 의 어느 캐릭터든 진행할 수 있다. */}
+            {mapleIds !== null && (sharedContents === null || sharedContents.daily.length + sharedContents.weekly.length === 0) && (
+              <View className="pt-7">
+                <EmptyState {...contentEmptyProps('shared')} />
+              </View>
+            )}
+
+            {sharedContents !== null && sharedContents.daily.length + sharedContents.weekly.length > 0 && (
+              <View className="gap-2 pt-7">
+                {sharedContents.daily.map((content) => (
+                  <View key={content.contentKey ?? content.apiName}>
+                    <DailyContentCard content={content} characterLevel={null} />
+                  </View>
+                ))}
+                {sharedContents.weekly.map((content) => (
+                  <View key={content.contentKey ?? content.apiName}>
+                    <WeeklyContentCard
+                      content={content}
+                      characterLevel={null}
+                      isWeeklyLimitClosed={content.contentKey !== null && sharedContents.closedKeys.has(content.contentKey)}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+
+        {characters.length > 0 && selected !== null && !isSelectedUnavailable && !isSharedTab && (
           <View testID="pull-content" className="gap-4 px-4 pb-4">
             {activeTab === 'daily' && (
               <>

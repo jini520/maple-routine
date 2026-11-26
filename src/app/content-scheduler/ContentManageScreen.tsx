@@ -1,5 +1,5 @@
 /**
- * 컨텐츠 관리. 수동 추적 항목 편집.
+ * 컨텐츠 관리. 수동 추적 항목 편집. 일일 · 주간은 캐릭터마다, 공유는 메이플 ID 마다 고른다.
  */
 import { useEffect, useState } from 'react'
 import { Pressable, View } from 'react-native'
@@ -21,9 +21,21 @@ import {
   EMPTY_CONTENT_MANAGE_DRAFT,
   hasContentManageChanges,
   isContentTracked,
+  isSharedContentTracked,
+  changedSharedManageDraft,
   withoutSavedContentManageDraft,
   type ContentManageDraft,
+  type SharedManageDraft,
 } from '../../features/content-scheduler/manage-draft'
+import {
+  ocidsOfMapleId,
+  resolveSelectedMapleId,
+  sharedMapleIdsOf,
+  sharedTemplate,
+} from '../../features/content-scheduler/shared-contents'
+import { getShareScope, sharedCategoryOrder } from '../../lib/scheduler/scheduler-content-scope'
+import { useMapleIdNamesStore } from '../../features/maple-id/names'
+import { useMapleIdOwners } from '../../hooks/useMapleIdOwners'
 import { useContentSchedulerStore, type ContentTab } from '../../features/content-scheduler/store'
 import { useContentSchedule } from '../../features/content-scheduler/use-content-schedule'
 import { useGameTable } from '../../features/game-data/sync'
@@ -75,18 +87,22 @@ const CATEGORY_ICON: Record<ContentCategoryKey, LucideIcon> = {
   guild: FlagIcon,
 }
 
-// 컨텐츠 관리 페이지(수동 추적 항목 편집). 템플릿 전체를 일간/주간 탭 체크리스트로 항상
+// 컨텐츠 관리 페이지(수동 추적 항목 편집). 템플릿 전체를 일일 · 주간 · 공유 탭 체크리스트로 항상
 // 보여주고 추적 중인 항목만 선택 상태로 그린다. 추가·삭제가 행 탭(토글) 하나로 통일되고,
 // 토글은 초안에만 들고 아래 `저장` 이 한 번에 저장한다. 누를 때마다 저장하면 그만큼 서버 동기화가
 // 깨어난다. 대상 캐릭터는 컨텐츠 스케줄러에서 선택된 캐릭터를 승계한다. 수동 모드 전용.
 // 리디자인(와이어프레임 리뷰): 템플릿 줄의 `category`(lib/scheduler/content-category)로
 // 카테고리 그룹핑. 카테고리 이름을 헤더로 한 번만 묶고 행에는 표의 `displayName` 만 표시한다.
 /** 주기 탭. 값은 스케줄러가 쓰는 주기이고 화면에는 라벨이 선다. */
-const CONTENT_TABS = ['daily', 'weekly'] as const
+const CONTENT_TABS = ['daily', 'weekly', 'shared'] as const
 const CONTENT_TAB_LABELS: Record<(typeof CONTENT_TABS)[number], string> = {
-  daily: '일간',
+  daily: '일일',
   weekly: '주간',
+  shared: '공유',
 }
+
+/** 공유 탭의 초안이 없는 값. 주인(메이플 ID)이 없다. */
+const EMPTY_SHARED_DRAFT: { mapleId: string | null; tracked: SharedManageDraft } = { mapleId: null, tracked: {} }
 
 export function ContentManageScreen(): React.JSX.Element {
   const faq = useFaqSheet('content-manage')
@@ -97,8 +113,12 @@ export function ContentManageScreen(): React.JSX.Element {
   const {
     manualTrackedByOcid,
     saveManualContentDraft,
-    // 진입 시점의 스케줄러 탭을 이어받는다(일간에서 들어오면 일간).
+    saveManualSharedDraft,
+    // 진입 시점의 스케줄러 탭을 이어받는다(일일에서 들어오면 일일).
     activeTab: schedulerTab,
+    // 공유 탭의 메이플 ID 는 스케줄러와 함께 쓴다. 고른 캐릭터와 같은 이유로 두 화면이 갈라지면 안 된다.
+    selectedMapleId,
+    setSelectedMapleId,
     // 선택 캐릭터는 스케줄러와 공유한다. 탭과 달리 "지금 누구를 보고 있는가"는
     // 두 화면이 갈라지면 안 되는 값이다.
   } = useContentSchedulerStore()
@@ -118,6 +138,10 @@ export function ContentManageScreen(): React.JSX.Element {
     ocid: null,
     tracked: EMPTY_CONTENT_MANAGE_DRAFT,
   })
+  /** 공유 탭의 저장 전 초안. `mapleId` 가 주인이다. 캐릭터 초안과 같은 이유로 주인이 다르면 얹지 않는다. */
+  const [sharedDraft, setSharedDraft] = useState(EMPTY_SHARED_DRAFT)
+  const mapleIds = useMapleIdOwners(trackedOcids ?? [])
+  const mapleIdNames = useMapleIdNamesStore((state) => state.names)
   // 고정 바가 덮는 높이. 그만큼 목록 아래를 비워야 마지막 행이 바 뒤에 숨지 않는다.
   const [actionBarHeightPx, setActionBarHeightPx] = useState(0)
   // 컨텐츠 표는 켜는 동안 서버 응답으로 덮일 수 있다. 칸을 구독해 덮이면 목록을 다시 그린다.
@@ -146,18 +170,53 @@ export function ContentManageScreen(): React.JSX.Element {
     rings: [],
   }))
 
+  // 공유 탭. 레일 자리에 메이플 ID 별칭이 서고, 행의 켜짐은 그 메이플 ID 의 추적 캐릭터 가운데 하나라도 추적하는 것이다.
+  const isSharedTab = activeTab === 'shared'
+  const sharedMapleIds = sharedMapleIdsOf(characters, mapleIds, mapleIdNames)
+  const shownMapleId = resolveSelectedMapleId(selectedMapleId, sharedMapleIds, selected?.ocid ?? null, mapleIds)
+  const sharedOcids = shownMapleId === null || mapleIds === null ? [] : ocidsOfMapleId(characters, mapleIds.ofOcid, shownMapleId)
+  const sharedLists = sharedOcids.map((ocid) => manualTrackedByOcid?.[ocid] ?? [])
+  const ownSharedDraft = sharedDraft.mapleId !== null && sharedDraft.mapleId === shownMapleId ? sharedDraft.tracked : {}
+  const sharedChanges = changedSharedManageDraft(ownSharedDraft, sharedLists)
+  const isSharedDirty = Object.keys(sharedChanges).length > 0
+  const sharedRailEntries: CharacterRailEntry[] = sharedMapleIds.map((entry) => ({
+    ocid: entry.mapleId,
+    characterName: entry.name,
+    level: null,
+    imageUrl: entry.representative.imageUrl ?? null,
+    rings: [],
+  }))
+
   const storedItems = selected !== null ? (manualTrackedByOcid?.[selected.ocid] ?? []) : []
   // 주인이 다른 초안은 쓰지 않는다.
   const ownDraft = draft.ocid !== null && draft.ocid === selected?.ocid ? draft.tracked : EMPTY_CONTENT_MANAGE_DRAFT
   const changes = changedContentManageDraft(ownDraft, storedItems)
-  const isDirty = hasContentManageChanges(changes)
+  const isCharacterDirty = hasContentManageChanges(changes)
+  const isDirty = isCharacterDirty || isSharedDirty
   // 화면은 저장된 목록에 초안을 얹어 그린다. 저장 함수가 같은 함수로 얹어 쓴다.
   const trackedKeys = new Set(
-    applyContentManageDraft(storedItems, ownDraft).flatMap((item) => (item.kind === activeTab ? [item.contentKey] : [])),
+    isSharedTab
+      ? sharedTemplate().flatMap((entry) =>
+          (ownSharedDraft[entry.key] ?? isSharedContentTracked(sharedLists, entry.key)) ? [entry.key] : [],
+        )
+      : applyContentManageDraft(storedItems, ownDraft).flatMap((item) => (item.kind === activeTab ? [item.contentKey] : [])),
   )
 
   // 저장된 값과 같아진 항목은 초안에서 뺀다. 남겨 두면 나중에 받은 값이 그 항목을 바꿨을 때 옛 초안이 바꾼 것으로 다시 잡힌다.
   function handleToggle(contentKey: string): void {
+    if (activeTab === 'shared') {
+      if (shownMapleId === null) return
+      const mapleId = shownMapleId
+      const tracked = !trackedKeys.has(contentKey)
+      const isStored = tracked === isSharedContentTracked(sharedLists, contentKey)
+      setSharedDraft((current) => {
+        const base = current.mapleId === mapleId ? { ...current.tracked } : {}
+        if (isStored) delete base[contentKey]
+        else base[contentKey] = tracked
+        return { mapleId, tracked: base }
+      })
+      return
+    }
     if (selected === null) return
     const ocid = selected.ocid
     const kind = activeTab
@@ -173,24 +232,48 @@ export function ContentManageScreen(): React.JSX.Element {
     })
   }
 
+  // 캐릭터 초안과 공유 초안을 함께 저장한다. 한 번의 `저장` 이 두 탭에서 바꾼 것을 모두 적는다.
   async function saveDraft(): Promise<DraftSaveOutcome> {
-    if (selected === null || !isDirty) return { saved: true }
-    const ocid = selected.ocid
-    try {
-      await saveManualContentDraft(ocid, changes)
-    } catch {
-      return { saved: false, report: () => useToastStore.getState().showError('추적 목록을 저장하지 못했습니다') }
+    const failed: DraftSaveOutcome = {
+      saved: false,
+      report: () => useToastStore.getState().showError('추적 목록을 저장하지 못했습니다'),
     }
-    setDraft((current) =>
-      current.ocid === ocid ? { ocid, tracked: withoutSavedContentManageDraft(current.tracked, changes) } : current,
-    )
+    if (selected !== null && isCharacterDirty) {
+      const ocid = selected.ocid
+      try {
+        await saveManualContentDraft(ocid, changes)
+      } catch {
+        return failed
+      }
+      setDraft((current) =>
+        current.ocid === ocid ? { ocid, tracked: withoutSavedContentManageDraft(current.tracked, changes) } : current,
+      )
+    }
+    if (shownMapleId !== null && isSharedDirty) {
+      const mapleId = shownMapleId
+      try {
+        await saveManualSharedDraft(sharedOcids, sharedChanges)
+      } catch {
+        return failed
+      }
+      setSharedDraft((current) => {
+        if (current.mapleId !== mapleId) return current
+        const rest = Object.fromEntries(
+          Object.entries(current.tracked).filter(([contentKey, tracked]) => sharedChanges[contentKey] !== tracked),
+        )
+        return { mapleId, tracked: rest }
+      })
+    }
     return { saved: true }
   }
 
   const guard = useUnsavedChangesGuard({
     dirty: isDirty,
     save: saveDraft,
-    discard: () => setDraft({ ocid: null, tracked: EMPTY_CONTENT_MANAGE_DRAFT }),
+    discard: () => {
+      setDraft({ ocid: null, tracked: EMPTY_CONTENT_MANAGE_DRAFT })
+      setSharedDraft(EMPTY_SHARED_DRAFT)
+    },
   })
   const isSaveDisabled = !isDirty || guard.saving
 
@@ -200,6 +283,8 @@ export function ContentManageScreen(): React.JSX.Element {
 
   // 이미 추적 중인 항목은 잠그지 않는다. 길드를 나가도 해제할 수 있어야 하고, 초안에서 끈 항목을 다시 켤 수 있어야 한다.
   function isGuildBlocked(entry: ContentEntry): boolean {
+    // 공유 컨텐츠에는 길드 컨텐츠가 없다.
+    if (activeTab === 'shared') return false
     return (
       !trackedKeys.has(entry.key) &&
       !isContentTracked(storedItems, activeTab, entry.key) &&
@@ -220,8 +305,10 @@ export function ContentManageScreen(): React.JSX.Element {
               className="justify-between"
               trailing={
                 selected !== null ? (
+                  // 컨텐츠 스케줄러와 같은 중간 크기다. 화면마다 다르면 오갈 때 탭이 커졌다 작아진다.
                   <Segment
-                    size="lg" className="self-start"
+                    size="md"
+                    className="self-start"
                     options={CONTENT_TABS}
                     selected={activeTab}
                     onSelect={setActiveTab}
@@ -247,7 +334,18 @@ export function ContentManageScreen(): React.JSX.Element {
             없다**(`rings: []`) - 이 화면의 일은 캐릭터를 고르는 것이지 진행을 보는 것이 아니다.
 
             좌우 여백을 주지 않는다. 레일이 자기 안쪽 스크롤로 그 16 을 든다. */}
-        {selected !== null && (
+        {selected !== null && isSharedTab && shownMapleId !== null && (
+          <CharacterRail
+            entries={sharedRailEntries}
+            selectedOcid={shownMapleId}
+            onSelect={(mapleId) => {
+              if (mapleId === shownMapleId) return
+              guard.confirm(() => setSelectedMapleId(mapleId))
+            }}
+          />
+        )}
+
+        {selected !== null && !isSharedTab && (
           <CharacterRail
             entries={railEntries}
             selectedOcid={selected.ocid}
@@ -275,7 +373,7 @@ export function ContentManageScreen(): React.JSX.Element {
                 캐릭터를 먼저 선택해주세요. 설정의 ‘캐릭터 관리’에서 추가할 수 있어요.
               </Text>
             </View>
-          ) : selected.error?.kind === 'characterUnavailable' ? (
+          ) : selected.error?.kind === 'characterUnavailable' && !isSharedTab ? (
             // 편집할 목록이 **빈 것이 아니라 모르는 것**이다. 체크박스를 세우면 사용자가 지금
             // 추적을 고르고 있다고 믿는데, 그 선택은 조회가 돌아와야 뜻을 갖는다.
             <View className="px-4 pb-4">
@@ -287,11 +385,14 @@ export function ContentManageScreen(): React.JSX.Element {
             <View className="gap-4 px-4 pb-4">
               {categorizeContentEntries(
                 // 출시 전인 컨텐츠는 고를 수 없다. 이미 추적 중이어도 목록에서만 빠지고 저장은 그대로다.
+                // 일일 · 주간 탭은 공유 범위가 캐릭터인 줄만, 공유 탭은 나머지 줄만 든다.
                 effectiveTemplateEntries(
-                  contentTemplate()[activeTab],
+                  isSharedTab
+                    ? sharedTemplate()
+                    : contentTemplate()[activeTab].filter((entry) => getShareScope(entry.key) === 'character'),
                   getCurrentBossProfitPeriod('weekly', new Date()).periodKey,
                 ),
-                activeTab === 'weekly' ? weeklyCategoryOrder() : undefined,
+                isSharedTab ? sharedCategoryOrder() : activeTab === 'weekly' ? weeklyCategoryOrder() : undefined,
               ).map((group) => {
                 const GroupIcon = CATEGORY_ICON[group.category]
                 const trackedCount = group.items.filter((item) => trackedKeys.has(item.entry.key)).length

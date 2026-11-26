@@ -45,7 +45,7 @@ function normalizeWeeklyContent(wire: NexonWeeklyContentWire, resolvers: Schedul
   }
 }
 
-// bossDaily 항목(힐라 하드·핑크빈 카오스 등 일간으로 격하된 보스)은 이 앱이 다루지 않는 대상이라 걸러낸다
+// bossDaily 항목(힐라 하드·핑크빈 카오스 등 일일로 격하된 보스)은 이 앱이 다루지 않는 대상이라 걸러낸다
 //
 // 등록한 난이도와 실제로 처치한 난이도가 다를 수 있어, 등록된 항목은 자기 자신의
 // complete_flag가 false여도 같은 content_name의 다른 난이도가 complete_flag: true면 완료로
@@ -59,7 +59,7 @@ function normalizeBossContent(
   completedNames: Set<string>,
   resolvers: ScheduleNameResolvers,
 ): BossContent | null {
-  // 일간으로 내려간 보스와 모르는 주기는 버린다. 모르는 주기를 월간으로 받으면 그 달의 월간 완료를 덮을 수 있다.
+  // 일일로 내려간 보스와 모르는 주기는 버린다. 모르는 주기를 월간으로 받으면 그 달의 월간 완료를 덮을 수 있다.
   if (wire.cycle !== 'bossWeekly' && wire.cycle !== 'bossMonthly') {
     return null
   }

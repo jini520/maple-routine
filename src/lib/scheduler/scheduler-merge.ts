@@ -200,7 +200,7 @@ function mergeBossCycle(cycle: BossCycle, freshBossContents: BossContent[], prev
 }
 
 /**
- * 받은 뒤 초기화 시각을 넘긴 주기의 진행을 비운 상태. 일간은 KST 날짜, 주간 컨텐츠 · 주간 보스는 목요일 주, 월간 보스는
+ * 받은 뒤 초기화 시각을 넘긴 주기의 진행을 비운 상태. 일일은 KST 날짜, 주간 컨텐츠 · 주간 보스는 목요일 주, 월간 보스는
  * 달로 가른다. 비우는 방법은 병합이 캐시에서 되살린 항목과 같다. 넘긴 주기가 없으면 받은 상태를 그대로 돌려준다.
  *
  * @param syncedAt 그 상태를 넥슨에서 받은 시각(ISO)

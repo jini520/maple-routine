@@ -23,7 +23,7 @@ const index = derive(contentsTable, (table) => {
     byKey: new Map(table.contents.map((content) => [content.key, content])),
     categoryById,
     categoryByKey: new Map(table.contentCategories.map((category) => [category.key, category])),
-    /** 캐릭터 범위가 아닌 줄. 표의 차례(일간 뒤 주간) 그대로다. */
+    /** 캐릭터 범위가 아닌 줄. 표의 차례(일일 뒤 주간) 그대로다. */
     shared: table.contents.filter((content) => content.shareScope !== 'character'),
   }
 })
@@ -41,8 +41,8 @@ export function getShareScope(contentKey: string | null): ShareScope {
  * 병합이 이 항목의 등록을 **이번 응답의 `registration_flag`** 로 정하는가. 공유 범위가 캐릭터가 아니고 퀘스트 상태만 확인하는
  * 컨텐츠(메이플 유니온 드래곤 퇴치 둘)다.
  *
- * 나머지 공유 항목은 원장의 `active` 가 한 번 참이면 계속 참이다. 이 둘을 그렇게 두면 등록을 풀어도 같은 월드나 같은 메이플 ID
- * 의 캐릭터 카드에 계속 남는다.
+ * 나머지 공유 항목은 원장의 `active` 가 한 번 참이면 계속 참이다. 이 둘을 그렇게 두면 등록을 풀어도 컨텐츠 스케줄러의 공유
+ * 탭에 계속 남는다.
  */
 export function trustsRegistrationFlag(contentKey: string | null): boolean {
   const row = rowOf(contentKey)
@@ -100,7 +100,7 @@ const WIDGET_CHECK_TYPES: readonly ContentCheckType[] = ['count_only', 'both']
  *
  * - **분류 순서**는 분류 줄의 `sharedSortOrder` 다. 컨텐츠 줄을 읽은 첫 등장 순서와 지금은 같지만 그것에 맡기지
  *   않는다. 계정 공유 컨텐츠가 하나 붙는 날 화면 순서가 조용히 바뀐다.
- * - **분류 안의 항목 순서**는 컨텐츠 표의 차례(일간 뒤 주간, 주기 안은 관리 화면 차례) 그대로다.
+ * - **분류 안의 항목 순서**는 컨텐츠 표의 차례(일일 뒤 주간, 주기 안은 관리 화면 차례) 그대로다.
  *
  * `sharedSortOrder` 가 없는 분류는 **버리지 않고 뒤에 붙인다**. 항목을 더하고 순서를 안 적었을 때 화면에서 조용히
  * 사라지는 것보다 순서가 어긋나는 편이 낫다.
@@ -122,11 +122,26 @@ export function getSharedContentGroups(): SharedContentGroup[] {
     groups.set(category, [...(groups.get(category) ?? []), entry])
   }
 
-  const rankOf = (category: ContentCategoryKey): number =>
-    index().categoryByKey.get(category)?.sharedSortOrder ?? Number.MAX_SAFE_INTEGER
+  const order = sharedCategoryOrder()
+  const rankOf = (category: ContentCategoryKey): number => {
+    const rank = order.indexOf(category)
+    return rank === -1 ? order.length : rank
+  }
   const ordered = [...groups.keys()].sort((a, b) => rankOf(a) - rankOf(b))
 
   return ordered.map((category) => ({ category, entries: groups.get(category) ?? [] }))
+}
+
+/**
+ * 공유 컨텐츠를 묶는 분류의 차례. 분류 줄의 `sharedSortOrder` 차례이고, 그 값이 없는 분류는 표의 차례로 뒤에 붙는다.
+ * today 공유 위젯과 컨텐츠 스케줄러의 공유 탭 · 관리 화면이 같은 차례를 쓴다.
+ */
+export function sharedCategoryOrder(): ContentCategoryKey[] {
+  const categories = [...index().categoryById.values()]
+  const rankOf = (sortOrder: number | null | undefined): number => sortOrder ?? Number.MAX_SAFE_INTEGER
+  return [...categories]
+    .sort((a, b) => rankOf(a.sharedSortOrder) - rankOf(b.sharedSortOrder))
+    .map((category) => category.key)
 }
 
 export function getContentCatalogEntries(section: ContentSection): ContentCatalogEntry[] {

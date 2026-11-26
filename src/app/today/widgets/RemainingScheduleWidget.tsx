@@ -1,5 +1,5 @@
 /**
- * 위젯 2. 캐릭터별 남은 스케줄을 일간·주간·월간 탭으로 그리는 `4×auto` 타일.
+ * 위젯 2. 캐릭터별 남은 스케줄을 일일·주간·월간 탭으로 그리는 `4×auto` 타일.
  *
  * 지키는 것 셋.
  *
@@ -39,7 +39,7 @@ const PORTRAIT_PX = 32
 const VALUE_MIN_WIDTH_PX = 14
 
 /** 세그먼트가 고르는 값. 라벨이 곧 값이다(`Segment` 가 `options` 를 그대로 그린다). */
-const CYCLE_LABELS = ['일간', '주간', '월간'] as const
+const CYCLE_LABELS = ['일일', '주간', '월간'] as const
 type Cycle = (typeof CYCLE_LABELS)[number]
 
 /**
@@ -53,7 +53,7 @@ interface CycleItems {
 }
 
 function cycleItems(row: ScheduleRowView, cycle: Cycle): CycleItems {
-  if (cycle === '일간') return { quests: row.dailyNames, bosses: [] }
+  if (cycle === '일일') return { quests: row.dailyNames, bosses: [] }
   if (cycle === '주간') return { quests: row.weeklyNames, bosses: row.weeklyBosses }
   return { quests: [], bosses: row.monthlyBosses }
 }
@@ -109,7 +109,7 @@ function Amount(props: { label: string; count: number }): React.JSX.Element {
 }
 
 /**
- * 묶음 라벨은 어느 탭에서나 붙는다. 일간은 퀘스트 N개, 월간은 보스 N개.
+ * 묶음 라벨은 어느 탭에서나 붙는다. 일일은 퀘스트 N개, 월간은 보스 N개.
  *
  * 탭 이름만으로 뜻이 닫히는 자리에도 라벨을 두는 대신 규칙이 하나로 준다. 값이 있는 묶음이
  * 자기 이름과 함께 선다. 그래서 탭마다 다른 모양을 만들 분기가 없다.
@@ -303,13 +303,13 @@ function ScheduleRow(props: {
 
 export function RemainingScheduleWidget({ data }: WidgetProps): React.JSX.Element {
   /**
-   * 보고 있는 주기. 저장소에 안 쓴다. 앱을 다시 켜면 언제나 일간이고 요일에 따라 기본 탭을
+   * 보고 있는 주기. 저장소에 안 쓴다. 앱을 다시 켜면 언제나 일일이고 요일에 따라 기본 탭을
    * 바꾸지 않는다. 첫 화면이 날마다 다른 얼굴로 열리면 어제와 같은 화면 이 깨진다.
    */
   const [cycle, setCycle] = useState<Cycle>(() => {
     // 미완료 스케줄 알림을 눌러 왔으면 그 주기로 연다. 요청은 아래 이펙트가 비운다.
     const requested = useScheduleAlertOpenStore.getState().cycle
-    return requested === null ? '일간' : CYCLE_LABEL[requested]
+    return requested === null ? '일일' : CYCLE_LABEL[requested]
   })
 
   /**

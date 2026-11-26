@@ -28,6 +28,8 @@ import { renderOverlay, type AtomElement } from '../../../components/__tests__/r
 import { ScreenStack } from '../../../navigation/__tests__/screen-stack'
 import { ContentManageScreen } from '../ContentManageScreen'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
+import { useMapleIdOwners } from '../../../hooks/useMapleIdOwners'
+import { useMapleIdNamesStore } from '../../../features/maple-id/names'
 
 const mockShowError = jest.fn()
 const goBack = jest.fn()
@@ -48,9 +50,13 @@ jest.mock('../../../features/content-scheduler/store', () => ({
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
+// 메이플 ID 소속은 기기 저장소에서 읽는다. 이 하네스에는 저장소가 없어 훅째 세운다.
+jest.mock('../../../hooks/useMapleIdOwners', () => ({ useMapleIdOwners: jest.fn(() => null) }))
+
 const mockedSchedule = jest.mocked(useContentSchedule)
 const mockedStore = jest.mocked(useContentSchedulerStore)
 const mockedNavigation = jest.mocked(useScreenNavigation)
+const mockedMapleIdOwners = jest.mocked(useMapleIdOwners)
 
 type Schedule = ContentSchedule
 // `ReturnType<typeof useContentSchedulerStore>` 은 **`unknown` 이 된다**. zustand 의 훅이 오버로드라
@@ -78,8 +84,11 @@ function mockStore(overrides: Partial<Store> = {}): Store {
   const base = {
     manualTrackedByOcid: {},
     saveManualContentDraft: jest.fn(async () => {}),
+    saveManualSharedDraft: jest.fn(async () => {}),
     activeTab: 'daily' as const,
     setActiveTab: jest.fn(),
+    selectedMapleId: null,
+    setSelectedMapleId: jest.fn(),
     ...overrides,
   } as Store
 
@@ -90,7 +99,8 @@ function mockStore(overrides: Partial<Store> = {}): Store {
   mockedStore.mockImplementation(() => {
     const state = live()
     const [activeTab, setActiveTab] = useState(base.activeTab)
-    return { ...state, activeTab, setActiveTab }
+    const [selectedMapleId, setSelectedMapleId] = useState(base.selectedMapleId)
+    return { ...state, activeTab, setActiveTab, selectedMapleId, setSelectedMapleId }
   })
   return base
 }
@@ -164,6 +174,8 @@ beforeEach(() => {
 // 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
 beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
+  useMapleIdNamesStore.setState({ names: {} })
+  mockedMapleIdOwners.mockReturnValue(null)
 })
 
 describe('ContentManageScreen', () => {
@@ -186,14 +198,14 @@ describe('ContentManageScreen', () => {
     expect(goBack).toHaveBeenCalled()
   })
 
-  it('일간 템플릿 전체를 보여주고 추적 중인 항목만 선택 상태다', async () => {
+  it('일일 템플릿 전체를 보여주고 추적 중인 항목만 선택 상태다', async () => {
     mockSchedule({ characters: [character()] })
-    mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] } })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' }] } })
 
     await renderScreen()
 
     expect(screen.getByText('컨텐츠 관리')).toBeTruthy()
-    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+    expect(stateOf(row('소멸의 여로 조사')).selected).toBe(true)
   })
 
   // 분류 이름을 그룹 헤더로 한 번만 말하고 행에는 표의 `displayName` 만 남긴다.
@@ -207,13 +219,23 @@ describe('ContentManageScreen', () => {
   })
 
   // 주기 탭은 다른 화면처럼 제목 덩어리 오른쪽에 둔다. 레일 아래에 두면 이 화면만 탭 자리가 달랐다.
-  it('일간 · 주간 탭이 제목 덩어리 오른쪽에 선다', async () => {
+  it('일일 · 주간 · 공유 탭이 제목 덩어리 오른쪽에 선다', async () => {
     mockSchedule({ characters: [character()] })
     await renderScreen()
 
     const trailing = screen.getByTestId('page-header-title-trailing')
-    expect(within(trailing).getByText('일간')).toBeTruthy()
+    expect(within(trailing).getByText('일일')).toBeTruthy()
     expect(within(trailing).getByText('주간')).toBeTruthy()
+    expect(within(trailing).getByText('공유')).toBeTruthy()
+  })
+
+  it('일일 · 주간 탭에는 공유 컨텐츠 행이 없다', async () => {
+    mockSchedule({ characters: [character()] })
+    await renderScreen()
+
+    expect(screen.queryByText('몬스터파크')).toBeNull()
+    await press(row('주간'))
+    expect(screen.queryByText('하이마운틴')).toBeNull()
   })
 
   it('주간 탭으로 바꾸면 주간 템플릿이 보인다', async () => {
@@ -232,9 +254,9 @@ describe('ContentManageScreen', () => {
     const store = mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'mu_lung_dojo', kind: 'daily' }] } })
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
 
-    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+    expect(stateOf(row('소멸의 여로 조사')).selected).toBe(true)
     expect(store.saveManualContentDraft).not.toHaveBeenCalled()
   })
 
@@ -244,29 +266,29 @@ describe('ContentManageScreen', () => {
     await renderScreen()
 
     expect(stateOf(saveButton()).disabled).toBe(true)
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     expect(stateOf(saveButton()).disabled).toBe(false)
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     expect(stateOf(saveButton()).disabled).toBe(true)
   })
 
   // 탭은 같은 캐릭터의 목록을 나눠 보여 줄 뿐이다. 바꾼 것은 그 탭의 kind 로 든다.
   it('탭을 바꿔도 초안이 남고, `저장` 이 두 탭의 바꾼 것을 한 번에 넘긴다', async () => {
     mockSchedule({ characters: [character()] })
-    const store = mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] } })
+    const store = mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' }] } })
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(row('주간'))
     await press(row('무릉도장'))
-    await press(row('일간'))
+    await press(row('일일'))
 
-    expect(stateOf(row('몬스터파크')).selected).toBe(false)
+    expect(stateOf(row('소멸의 여로 조사')).selected).toBe(false)
     await press(saveButton())
 
     expect(store.saveManualContentDraft).toHaveBeenCalledTimes(1)
     expect(store.saveManualContentDraft).toHaveBeenCalledWith('ocid-1', {
-      daily: { monster_park: false },
+      daily: { daily_quest_road_of_vanishing: false },
       weekly: { mu_lung_dojo: true },
     })
   })
@@ -276,15 +298,15 @@ describe('ContentManageScreen', () => {
     mockSchedule({ characters: [character()] })
     const store = mockStore()
     ;(store.saveManualContentDraft as jest.Mock).mockImplementation(async () => {
-      liveStore.setState({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] } })
+      liveStore.setState({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' }] } })
     })
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(saveButton())
 
     expect(stateOf(saveButton()).disabled).toBe(true)
-    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+    expect(stateOf(row('소멸의 여로 조사')).selected).toBe(true)
     expect(goBack).not.toHaveBeenCalled()
     expect(screen.getByTestId('screen-ContentManage')).toBeTruthy()
   })
@@ -299,11 +321,11 @@ describe('ContentManageScreen', () => {
     })
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(saveButton())
 
     expect(mockShowError).toHaveBeenCalledWith('추적 목록을 저장하지 못했습니다')
-    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+    expect(stateOf(row('소멸의 여로 조사')).selected).toBe(true)
     expect(stateOf(saveButton()).disabled).toBe(false)
   })
 
@@ -313,12 +335,12 @@ describe('ContentManageScreen', () => {
     const store = mockStore()
     await renderScreen()
 
-    await press(row('몬스터파크'))
-    await receive({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' }] } })
+    await press(row('소멸의 여로 조사'))
+    await receive({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'daily_quest_lacheln', kind: 'daily' }] } })
 
-    expect(stateOf(row('소멸의 여로 조사')).selected).toBe(true)
+    expect(stateOf(row('레헬른의 평온한 밤')).selected).toBe(true)
     await press(saveButton())
-    expect(store.saveManualContentDraft).toHaveBeenCalledWith('ocid-1', { daily: { monster_park: true }, weekly: {} })
+    expect(store.saveManualContentDraft).toHaveBeenCalledWith('ocid-1', { daily: { daily_quest_road_of_vanishing: true }, weekly: {} })
   })
 
   // 받기가 추적 캐릭터를 바꿔 고른 캐릭터가 넘어가도 앞 캐릭터의 초안이 새 캐릭터의 행에 얹히지 않는다.
@@ -326,12 +348,12 @@ describe('ContentManageScreen', () => {
     mockSchedule({ characters: [character(), character({ ocid: 'ocid-2', characterName: '캐릭터2' })] })
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await act(async () => {
       useCharacterSelectionStore.setState({ selectedOcid: 'ocid-2' })
     })
 
-    expect(stateOf(row('몬스터파크')).selected).toBe(false)
+    expect(stateOf(row('소멸의 여로 조사')).selected).toBe(false)
     expect(stateOf(saveButton()).disabled).toBe(true)
   })
 
@@ -421,7 +443,8 @@ describe('시작 기간 전인 컨텐츠', () => {
   async function 주간목록(now: string): Promise<void> {
     jest.useFakeTimers({ now: new Date(now) })
     mockSchedule({ characters: [character()] })
-    mockStore({ activeTab: 'weekly' })
+    mockedMapleIdOwners.mockReturnValue({ ofOcid: { 'ocid-1': 'A' }, order: ['A'] })
+    mockStore({ activeTab: 'shared' })
     await renderScreen()
   }
 
@@ -498,7 +521,7 @@ describe('저장하지 않고 나갈 때', () => {
   it('바꾼 것이 있으면 확인 창을 띄우고 화면에 남는다', async () => {
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(screen.getByLabelText('뒤로'))
 
     expect(screen.getByText(확인창)).toBeTruthy()
@@ -510,7 +533,7 @@ describe('저장하지 않고 나갈 때', () => {
     const store = mockStore()
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(screen.getByLabelText('뒤로'))
     await press(screen.getByText('버리기'))
 
@@ -522,11 +545,11 @@ describe('저장하지 않고 나갈 때', () => {
     const store = mockStore()
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(screen.getByLabelText('뒤로'))
     await press(screen.getByTestId('unsaved-changes-primary'))
 
-    expect(store.saveManualContentDraft).toHaveBeenCalledWith('ocid-1', { daily: { monster_park: true }, weekly: {} })
+    expect(store.saveManualContentDraft).toHaveBeenCalledWith('ocid-1', { daily: { daily_quest_road_of_vanishing: true }, weekly: {} })
     expect(isOpen()).toBe(false)
   })
 
@@ -539,34 +562,34 @@ describe('저장하지 않고 나갈 때', () => {
     })
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(screen.getByLabelText('뒤로'))
     await press(screen.getByTestId('unsaved-changes-primary'))
 
     expect(screen.queryByText(확인창)).toBeNull()
     expect(mockShowError).toHaveBeenCalledWith('추적 목록을 저장하지 못했습니다')
     expect(isOpen()).toBe(true)
-    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+    expect(stateOf(row('소멸의 여로 조사')).selected).toBe(true)
   })
 
   // 두 버튼 중 아무것도 고르지 않았으니 아무것도 하지 않는다.
   it('창 바깥을 누르면 창만 닫히고 초안이 남는다', async () => {
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(screen.getByLabelText('뒤로'))
     await press(screen.getByTestId('unsaved-changes'))
 
     expect(screen.queryByText(확인창)).toBeNull()
     expect(isOpen()).toBe(true)
-    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+    expect(stateOf(row('소멸의 여로 조사')).selected).toBe(true)
   })
 
   // 모드는 서버 동기화가 다른 기기의 값을 받아 바꿀 수 있다. 이 화면이 스스로 뒤로 가는 것도 나가는 이동이다.
   it('자동 모드가 되어 스스로 뒤로 갈 때도 확인 창을 띄운다', async () => {
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await act(async () => {
       useTrackingModeStore.setState({ mode: 'auto' })
     })
@@ -585,7 +608,7 @@ describe('바꾼 것이 있을 때 캐릭터 바꾸기', () => {
   it('확인 창을 띄우고 고른 캐릭터는 그대로다', async () => {
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(screen.getAllByTestId('character-portrait')[1])
 
     expect(screen.getByText('저장하지 않은 변경이 있어요')).toBeTruthy()
@@ -596,25 +619,25 @@ describe('바꾼 것이 있을 때 캐릭터 바꾸기', () => {
     const store = mockStore()
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(screen.getAllByTestId('character-portrait')[1])
     await press(screen.getByText('버리기'))
 
     expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
     expect(store.saveManualContentDraft).not.toHaveBeenCalled()
     await press(screen.getAllByTestId('character-portrait')[0])
-    expect(stateOf(row('몬스터파크')).selected).toBe(false)
+    expect(stateOf(row('소멸의 여로 조사')).selected).toBe(false)
   })
 
   it('`저장` 은 저장한 뒤 캐릭터를 바꾼다', async () => {
     const store = mockStore()
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(screen.getAllByTestId('character-portrait')[1])
     await press(screen.getByTestId('unsaved-changes-primary'))
 
-    expect(store.saveManualContentDraft).toHaveBeenCalledWith('ocid-1', { daily: { monster_park: true }, weekly: {} })
+    expect(store.saveManualContentDraft).toHaveBeenCalledWith('ocid-1', { daily: { daily_quest_road_of_vanishing: true }, weekly: {} })
     expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
   })
 
@@ -626,7 +649,7 @@ describe('바꾼 것이 있을 때 캐릭터 바꾸기', () => {
     })
     await renderScreen()
 
-    await press(row('몬스터파크'))
+    await press(row('소멸의 여로 조사'))
     await press(screen.getAllByTestId('character-portrait')[1])
     await press(screen.getByTestId('unsaved-changes-primary'))
 
@@ -641,5 +664,64 @@ describe('바꾼 것이 있을 때 캐릭터 바꾸기', () => {
 
     expect(screen.queryByText('저장하지 않은 변경이 있어요')).toBeNull()
     expect(useCharacterSelectionStore.getState().selectedOcid).toBe('ocid-2')
+  })
+})
+
+describe('공유 탭', () => {
+  /** 메이플 ID A 에 캐릭터 둘, B 에 하나. */
+  beforeEach(() => {
+    mockSchedule({
+      trackedOcids: ['a1', 'a2', 'b1'],
+      characters: [
+        character({ ocid: 'a1', characterName: '가' }),
+        character({ ocid: 'a2', characterName: '다' }),
+        character({ ocid: 'b1', characterName: '나' }),
+      ],
+    })
+    mockedMapleIdOwners.mockReturnValue({ ofOcid: { a1: 'A', a2: 'A', b1: 'B' }, order: ['A', 'B'] })
+    useMapleIdNamesStore.setState({ names: { A: '본계정', B: '부계정' } })
+  })
+
+  it('레일 자리에 메이플 ID 별칭이 서고, 공유 컨텐츠를 분류로 묶어 보인다', async () => {
+    mockStore({ activeTab: 'shared' })
+    await renderScreen()
+
+    expect(screen.getAllByTestId('character-portrait').map((one) => one.props.accessibilityLabel)).toEqual(['본계정', '부계정'])
+    expect(row('몬스터파크')).toBeTruthy()
+    expect(row('하이마운틴')).toBeTruthy()
+    expect(screen.queryByText('무릉도장')).toBeNull()
+  })
+
+  it('그 메이플 ID 의 캐릭터 가운데 하나라도 추적하면 켜져 있다', async () => {
+    mockStore({ activeTab: 'shared', manualTrackedByOcid: { a2: [{ contentKey: 'monster_park', kind: 'daily' }] } })
+    await renderScreen()
+
+    expect(stateOf(row('몬스터파크')).selected).toBe(true)
+  })
+
+  it('저장은 그 메이플 ID 의 추적 캐릭터 모두에 넘긴다', async () => {
+    const store = mockStore({ activeTab: 'shared', manualTrackedByOcid: { a2: [{ contentKey: 'monster_park', kind: 'daily' }] } })
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(row('하이마운틴'))
+    await press(saveButton())
+
+    expect(store.saveManualSharedDraft).toHaveBeenCalledWith(['a1', 'a2'], {
+      monster_park: false,
+      epic_dungeon_high_mountain: true,
+    })
+    expect(store.saveManualContentDraft).not.toHaveBeenCalled()
+  })
+
+  it('바꾼 것이 있으면 다른 별칭을 고를 때 확인 창이 뜬다', async () => {
+    mockStore({ activeTab: 'shared' })
+    await renderScreen()
+
+    await press(row('몬스터파크'))
+    await press(screen.getByLabelText('부계정'))
+
+    expect(screen.getByText('저장하지 않은 변경이 있어요')).toBeTruthy()
+    expect(stateOf(screen.getAllByTestId('character-portrait')[0]).selected).toBe(true)
   })
 })

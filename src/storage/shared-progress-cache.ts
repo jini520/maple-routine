@@ -29,7 +29,7 @@ export interface StoredSharedProgressEntry {
 /** 컨텐츠 줄 id → 그 컨텐츠의 저장된 공유 진행. */
 export type StoredSharedProgressLedger = Record<string, StoredSharedProgressEntry>
 
-/** 컨텐츠의 주기로 기간 key 의 기간 값. 일간은 `D`, 주간은 `W` 다. 표에 없는 컨텐츠 · 꼴이 다른 key 는 `null` 이다. */
+/** 컨텐츠의 주기로 기간 key 의 기간 값. 일일은 `D`, 주간은 `W` 다. 표에 없는 컨텐츠 · 꼴이 다른 key 는 `null` 이다. */
 function periodCodeOfBucket(contentKey: string, bucket: string): string | null {
   const section = contentSectionOf(contentKey)
   if (section === 'daily') return dailyPeriodCodeOf(bucket)

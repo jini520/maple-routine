@@ -37,7 +37,7 @@ function basicEntry(overrides: Partial<CharacterBasicProfile> = {}): CachedChara
 
 beforeEach(() => {
   queryClient.clear()
-  useContentSchedulerStore.setState({ manualTrackedByOcid: {}, activeTab: 'daily' })
+  useContentSchedulerStore.setState({ manualTrackedByOcid: {}, activeTab: 'daily', selectedMapleId: null })
   mockTrackingMode.mode = 'auto'
   getManualTrackedContentMock.mockReset().mockResolvedValue([])
   setManualTrackedContentMock.mockReset().mockResolvedValue(undefined)
@@ -129,7 +129,7 @@ describe('saveManualContentDraft', () => {
     expect(useContentSchedulerStore.getState().manualTrackedByOcid).toEqual({ 'ocid-1': next })
   })
 
-  // 같은 key 라도 일간과 주간은 다른 항목이다. 이미 있는 항목을 켜도 겹치지 않는다.
+  // 같은 key 라도 일일과 주간은 다른 항목이다. 이미 있는 항목을 켜도 겹치지 않는다.
   it('이미 추적 중인 항목을 켜도 겹쳐 넣지 않고, 다른 kind 의 같은 key 는 건드리지 않는다', async () => {
     getManualTrackedContentMock.mockResolvedValue([{ contentKey: 'monster_park', kind: 'daily' }])
 
@@ -206,6 +206,43 @@ describe('setActiveTab', () => {
 
     expect(useContentSchedulerStore.getState().activeTab).toBe('weekly')
     expect(queryClient.getQueryCache().findAll()).toHaveLength(0)
+    expect(getManualTrackedContentMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('saveManualSharedDraft', () => {
+  it('그 메이플 ID 의 추적 캐릭터 모두에 켠 항목을 넣고 끈 항목을 뺀다', async () => {
+    const stored: Record<string, unknown[]> = {
+      a1: [{ contentKey: 'monster_park', kind: 'daily' }],
+      a2: [{ contentKey: 'mu_lung_dojo', kind: 'weekly' }],
+    }
+    getManualTrackedContentMock.mockImplementation(async (ocid: string) => stored[ocid] ?? [])
+
+    await useContentSchedulerStore
+      .getState()
+      .saveManualSharedDraft(['a1', 'a2'], { monster_park: false, epic_dungeon_high_mountain: true })
+
+    expect(setManualTrackedContentMock).toHaveBeenCalledWith('a1', [{ contentKey: 'epic_dungeon_high_mountain', kind: 'weekly' }])
+    expect(setManualTrackedContentMock).toHaveBeenCalledWith('a2', [
+      { contentKey: 'mu_lung_dojo', kind: 'weekly' },
+      { contentKey: 'epic_dungeon_high_mountain', kind: 'weekly' },
+    ])
+    expect(useContentSchedulerStore.getState().manualTrackedByOcid.a2).toHaveLength(2)
+  })
+
+  it('넘기지 않은 캐릭터(다른 메이플 ID)의 목록은 읽지도 쓰지도 않는다', async () => {
+    await useContentSchedulerStore.getState().saveManualSharedDraft(['a1'], { monster_park: true })
+
+    expect(getManualTrackedContentMock).toHaveBeenCalledTimes(1)
+    expect(setManualTrackedContentMock.mock.calls.map(([ocid]) => ocid)).toEqual(['a1'])
+  })
+})
+
+describe('setSelectedMapleId', () => {
+  it('고른 메이플 ID 를 들고, 저장소를 읽지 않는다', () => {
+    useContentSchedulerStore.getState().setSelectedMapleId('A')
+
+    expect(useContentSchedulerStore.getState().selectedMapleId).toBe('A')
     expect(getManualTrackedContentMock).not.toHaveBeenCalled()
   })
 })

@@ -4,7 +4,7 @@
  * 카드마다 배경 일러스트와 배지 구성이 다르고, 어느 것을 그릴지는 `WeeklyContentCard` 가
  * 컨텐츠 key 와 표의 `category` 로 가른다. 전부 자기 카드 안에서 끝나 화면의 고정 헤더와 무관하다.
  *
- * bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard` 가 든다. 일간 카드와 같은 규약이라
+ * bleed 는 `FadedIllustration`, 껍데기는 `IllustratedCard` 가 든다. 일일 카드와 같은 규약이라
  * 사유는 `DailyContentCards.tsx` 에 한 번만 적는다.
  */
 import { weeklyContentCompletion } from '../../features/content-scheduler/content-completion'
