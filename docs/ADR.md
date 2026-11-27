@@ -224,4 +224,4 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-261+306](./adr/ADR-261+306_error-resilience_server-maintenance.md) | 🟢 | error-resilience | 서버 점검 잠금 |
 | [ADR-286](./adr/ADR-286_persistence_device-conversion.md) | 🟢 | persistence | 1.0.15 기기 변환 |
 | [ADR-307+325+337](./adr/ADR-307+325+337_architecture_web.md) | ⚪ | architecture | PC 웹 버전 |
-| [ADR-335](./adr/ADR-335_design-system_web-screens.md) | ⚪ | design-system | PC 웹 화면 디자인 |
+| [ADR-335+341](./adr/ADR-335+341_design-system_web-screens.md) | ⚪ | design-system | PC 웹 화면 디자인 |
