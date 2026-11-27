@@ -69,7 +69,7 @@ RootStack
 | MVP 등급 · 등급 이력 | `SettingsMvpGrade` · `SettingsMvpGradeHistory` |
 | 설정(더보기 머리의 톱니바퀴) | `AppSettings` |
 | 판매 분배금 계산기 | `UtilityItemSplit` |
-| 주간 보스 수익 계산기 · 계산 기록 | `UtilityBossProfitCalculator` · `UtilityBossProfitCalculatorRecords` |
+| 주간 보스 수입 계산기 · 계산 기록 | `UtilityBossProfitCalculator` · `UtilityBossProfitCalculatorRecords` |
 
 ## 하단바
 

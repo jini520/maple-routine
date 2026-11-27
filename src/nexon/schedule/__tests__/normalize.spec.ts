@@ -282,7 +282,7 @@ describe('normalizeSchedulerCharacterState: 등록 난이도 ≠ 처치 난이�
     const easy = result.bossContents.find((boss) => boss.difficulty === 'easy')
     const normal = result.bossContents.find((boss) => boss.difficulty === 'normal')
     // isComplete(카드 뱃지용)는 둘 다 true(이지는 승격, 노멀은 원본)지만, ownComplete는 실제로
-    // 처치한 노멀만 true다. 보스 수익 계산기가 이 필드로 등록 난이도(이지)가 아니라 실제
+    // 처치한 노멀만 true다. 보스 수입 계산기가 이 필드로 등록 난이도(이지)가 아니라 실제
     // 처치 난이도(노멀)를 골라낼 수 있다.
     expect(easy?.isComplete).toBe(true)
     expect(easy?.ownComplete).toBe(false)

@@ -2,7 +2,7 @@
  * 보스 고르기의 본문. 캐릭터 자리와 `모든 보스` 토글, 그 아래 보스 타일 묶음.
  *
  * 묶음마다 흰 카드에 5열로 타일을 놓는다. 고른 타일은 초상 오른쪽 아래에 체크 원이 붙는다. 다시 누르면 빠진다.
- * 파티 스케줄과 주간 보스 수익 계산기가 함께 쓰고, 화면마다 다른 것(캐릭터 자리 · 묶음 · 잠긴 타일 · 등록됨)은 여는 쪽이 넘긴다.
+ * 파티 스케줄과 주간 보스 수입 계산기가 함께 쓰고, 화면마다 다른 것(캐릭터 자리 · 묶음 · 잠긴 타일 · 등록됨)은 여는 쪽이 넘긴다.
  */
 import { useRef, useState } from 'react'
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated'
