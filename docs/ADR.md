@@ -127,7 +127,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 
 | ADR | 상태 | 카테고리 | 제목 |
 |---|---|---|---|
-| [ADR-001+084+235+241+247](./adr/ADR-001+084+235+241+247_utility_item-split.md) | 🟢 | utility | 판매 분배금 계산기 · 정산 금액 복사 · 비율 % 입력 · 유틸리티 도구 분류 |
+| [ADR-001+084+235+241+247+338](./adr/ADR-001+084+235+241+247+338_utility_item-split.md) | ⚪ | utility | 판매 분배금 계산기 · 정산 금액 복사 · 비율 % 입력 · 유틸리티 도구 분류 · 웹 모양 도구 카드 |
 | [ADR-002+094+165+237](./adr/ADR-002+094+165+237_stats_overview.md) | 🟢 | stats | 통계 화면 |
 | [ADR-003+273+283](./adr/ADR-003+273+283_docs_writing-rules.md) | 🟢 | docs | 문서 · 주석 · 앱 문구 쓰는 규칙 |
 | [ADR-004+065](./adr/ADR-004+065_architecture_local-first-adapters.md) | 🟢 | architecture | 기기 저장소와 네이티브 어댑터 경계 |
@@ -206,7 +206,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-101+186+193+201+259+277+285+294+297](./adr/ADR-101+186+193+201+259+277+285+294+297_auth_multi-account.md) | 🟢 | auth | 다계정 |
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
-| [ADR-086+317+324](./adr/ADR-086+317+324_design-system_figma-library.md) | ⚪ | design-system | Figma 디자인 시스템 파일 · 앱과 웹 |
+| [ADR-086+317+324+339](./adr/ADR-086+317+324+339_design-system_figma-library.md) | ⚪ | design-system | Figma 디자인 시스템 파일 · 앱과 웹 |
 | [ADR-137+168+292](./adr/ADR-137+168+292_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
 | [ADR-142+144+229+275+322](./adr/ADR-142+144+229+275+322_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
 | [ADR-147+252](./adr/ADR-147+252_design-system_round-entry-buttons.md) | 🟢 | design-system | 진입 버튼과 대표 캐릭터의 움직임 · 고른 동작 |
