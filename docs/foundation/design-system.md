@@ -276,7 +276,7 @@
 
 시안을 만들 때 지키는 것이다(사용자 지정).
 
-- **시안은 Figma `maple-routine` 에서 그 화면의 페이지(`App/<화면>` · `Web/<화면>`) 안에 부품 인스턴스로 그린다**([[ADR-086]] 결정 8). 확정되면 고르지 않은 안은 지운다. 움직임이나 실제 웹 동작을 봐야 하는 시안만 아티팩트로 만든다. 그리는 법은 [Figma](./design-system/figma.md) 에 있다.
+- **시안은 Figma `maple-routine` 의 `시안` 페이지에 부품 인스턴스로 그린다**([[ADR-086]] 결정 8). 움직임이나 실제 웹 동작을 봐야 하는 시안만 아티팩트로 만든다. 그리는 법은 [Figma](./design-system/figma.md) 에 있다.
 
 - **앱 부품을 베껴 그린다.** `src/components/` 의 실제 부품과 `src/assets/` 의 그림을 먼저 확인하고 그린다.
 - **글자는 Pretendard 로 그린다.** 크기와 두께는 [글자 체계](./design-system/typography.md) 의 값을 쓴다.
