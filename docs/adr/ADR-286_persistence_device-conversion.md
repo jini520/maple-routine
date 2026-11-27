@@ -292,7 +292,7 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 | 키 | 바꾸는 것 |
 |---|---|
 | `manualTrackedContent:{ocid}` | 항목마다 `kind` → `type`, 대상은 줄 id(`targetId`. 컨텐츠는 컨텐츠 줄, 보스는 난이도 줄). 이름으로 적힌 옛 항목은 지금 이관 함수로 key 를 얻은 뒤 바꾼다. `maxCount` 는 없앤다(결정 47 · 52). 못 찾은 항목은 뺀다 |
-| `worldSharedProgress:*` · `accountSharedProgress:*` | 목록의 열쇠를 컨텐츠 줄 id 로 바꾼다. `active` → `isRegistered`, `kind` 는 없애고, `lastUpdatedBucket` 은 그 컨텐츠의 주기로 `periodCode`(일간 `D`, 주간 `W`)로 바꾼다(결정 56). 키 글자의 월드 key 는 월드 줄 id 로 바꾼다. 못 찾은 컨텐츠는 뺀다 |
+| `worldSharedProgress:*` · `accountSharedProgress:*` | 목록의 열쇠를 컨텐츠 줄 id 로 바꾼다. `active` → `isRegistered`, `kind` 는 없애고, `lastUpdatedBucket` 은 그 컨텐츠의 주기로 `periodCode`(일일 `D`, 주간 `W`)로 바꾼다(결정 56). 키 글자의 월드 key 는 월드 줄 id 로 바꾼다. 못 찾은 컨텐츠는 뺀다 |
 | `partyAppointments` | 보스마다 난이도 줄 id, 주는 주차 값, 칸 이름은 서버와 같게(`time` · `alarmMinutesBefore` · `date` · `fromWeekCode` · `untilWeekCode`). `members` 와 예외의 `type` 은 없앤다(결정 57). 못 찾은 보스는 그 항목만 빼고, 보스가 하나도 안 남은 약속은 지운다 |
 | `bossProfitCalculatorRecords` | 보스마다 난이도 줄 id, 분배는 `splitShareMillipercent` 등 서버 칸 이름으로(결정 21 · 57). 못 찾은 보스는 위와 같다 |
 | `quickLinks` · `barOrder` | `{ rowCount, keys }` · `{ groupKeys, subPageKeys }`. 값은 그대로 |
@@ -309,7 +309,7 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
   없거나 값이 하나뿐이다.
 - 수동 추적 항목: 한 캐릭터에 종류 · 대상이 같은 항목이 둘이면 서버의 유일 기준처럼 앞 항목만 남긴다. 이름으로 적힌 옛 항목과
   key 로 적힌 항목이 같은 컨텐츠를 가리킬 때 생긴다.
-- 공유 진행: 읽을 때 `kind` 는 컨텐츠 줄의 `type` 으로, 기간 값은 기간 key 로 되돌린다. 일간 컨텐츠의 기간 값은 `D` 와 날짜다
+- 공유 진행: 읽을 때 `kind` 는 컨텐츠 줄의 `type` 으로, 기간 값은 기간 key 로 되돌린다. 일일 컨텐츠의 기간 값은 `D` 와 날짜다
   (`lib/boss/period-code.ts` 의 `dailyPeriodCodeOf`). 키 글자의 월드가 월드 표에 없으면 그 키를 지운다. 월드 줄 id 로 가리킬 수 없어
   읽는 코드가 닿지 못한다. 열쇠 둘이 같은 컨텐츠로 모이면 지금 읽는 코드처럼 뒤의 것을 남긴다.
 - 약속: 예외의 보스가 하나도 안 남으면 그 예외만 지운다. 그 주는 약속의 보스로 돈다. 지금 읽는 코드가 모양이 틀렸다고 버리는
@@ -395,7 +395,7 @@ DB 버전 23)이다. 백업의 숫자는 이 문서의 표에 함께 적는다.
 | `storage/sqlite/__tests__/device-conversion-real-sqlite.test.ts` | 결정 1: 한 트랜잭션이고 단계가 던지면 앞 단계의 변경과 번호가 함께 되돌아가며 다시 돌면 끝까지 가는지, 번호가 끝이면 다시 돌지 않는지, 사본 파일을 한 번만 뜨는지, 던진 단계의 번호를 알리는지 본다. 결정 8: 남은 빈 표 `boss_profit_period_checks` 를 지우는지, 옛 대기 줄을 모두 비우는지 본다 |
 | `storage/sqlite/__tests__/convert-boss-tables-real-sqlite.test.ts` | 결정 3: 분배 설정은 분배를 정한 줄만 옮기는지, 비율을 % 의 1000 배로 반올림하고 `제외` 의 숨긴 분배를 버리는지, 수익 건을 기간 값 · 월드 줄 id · 바뀐 처치 칸으로 옮기는지, 처치한 비율 분배의 빈 요율을 그 날 등급 요율로 채우고 받은 메소를 다시 세는지 본다. 반지는 레벨 줄로, 상자 연마석과 상자로만 주는 난이도의 상자 칸 빈 연마석은 상자용 줄로 옮기는지, 가격을 적은 드롭의 받는 메소를 적는지, 모르는 보스 · 아이템의 기록과 빈 처치 전 줄을 지우는지, 같은 아이템 줄이 둘이면 먼저 적은 줄만 남기는지 본다 |
 | `lib/__tests__/drop-item-ids.spec.ts` | 결정 3: 아이템 key · 반지 레벨 · 나온 상자 칸 셋과 아이템 줄 id 가 서로 오가는지 본다 |
-| `lib/__tests__/period-code.spec.ts` | 결정 3: 기간 key 와 기간 값(`W202647` · `M202611`)이 서로 오가는지 본다. 결정 7: 일간 기간 값(`D20261119`)이 날짜와 오가는지 본다 |
+| `lib/__tests__/period-code.spec.ts` | 결정 3: 기간 key 와 기간 값(`W202647` · `M202611`)이 서로 오가는지 본다. 결정 7: 일일 기간 값(`D20261119`)이 날짜와 오가는지 본다 |
 | `storage/__tests__/boss-drops.spec.ts` | 결정 3: 드롭을 드롭 표의 차례로 늘어놓는지, 아이템 줄로 같은 드롭을 찾아 식별자를 이어 받는지, 받는 메소를 이어 받는지, 수수료를 드롭 id 로 고치는지 본다 |
 | `storage/sqlite/__tests__/convert-cashbook-tables-real-sqlite.test.ts` | 결정 4: 분류 · 품목 key 를 줄 id 로 옮기는지, 헥사 코어를 직업과 `전직업` 에서 찾고 못 찾으면 이름을 `item_name` 으로 옮기는지, 사냥 효과를 두 칸으로 나누는지, 모르는 분류 · 품목의 기록을 지우는지 본다. 결정 5: 인벤토리를 줄 id 로 옮기고 못 찾은 줄을 지우면 품목의 인벤토리 칸을 비우는지, 기억한 레벨을 대상 줄 id 로 옮기는지 본다. 결정 9: 기타 조각 사용 줄의 월드를 기록으로 옮기는지 본다. 결정 10: 옛 손입력을 메이플 ID · 대표 캐릭터에게 붙이고 붙일 곳 없는 기록을 지우는지 본다 |
 | `lib/__tests__/cashbook-entry-ids.spec.ts` | 결정 4: 분류 key · 품목 key 와 줄 id 가 서로 오가는지, 헥사 코어를 직업과 `전직업` 에서 찾는지 본다 |

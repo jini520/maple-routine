@@ -72,13 +72,13 @@ export interface SharedProgressEntry {
   nowCount: number
   maxCount: number
   questState: 0 | 1 | 2 | null
-  lastUpdatedBucket: string // 리셋 경계 판단용(주간은 lib/boss/boss-profit-period 의 periodKey, 일간은 lib/scheduler/reset-clock 의 getCurrentKstDateKey)
+  lastUpdatedBucket: string // 리셋 경계 판단용(주간은 lib/boss/boss-profit-period 의 periodKey, 일일은 lib/scheduler/reset-clock 의 getCurrentKstDateKey)
 }
 
 // 멤버십만 저장한다. nowCount/questState/isComplete 같은
 // 동기화 유래 값은 절대 여기 두지 않고, 표시 시점에 스케줄 쿼리 캐시(`schedule(ocid)`)에서 조회한다(단일 진실 공급원).
 // 저장은 `storage/manual-tracked-content` 가 종류와 줄 id 로 바꾼다.
-// 컨텐츠는 일간/주간 탭 표시 구분을 저장 시점에 확정하기 위해 kind를
+// 컨텐츠는 일일/주간 탭 표시 구분을 저장 시점에 확정하기 위해 kind를
 // 'daily' | 'weekly'로 세분한다(표시 시점 추론 없음).
 //
 // 선언이 `storage/manual-tracked-content` 가 아니라 여기 있는 이유: 그 값을 병합하는 순수 함수

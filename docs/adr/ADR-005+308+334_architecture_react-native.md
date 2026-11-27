@@ -1,4 +1,4 @@
-# ADR-005+308 React Native 앱 하나로 만들고, 웹과 한 저장소에 둔다
+# ADR-005+308+334 React Native 앱 하나로 만들고, 웹과 한 저장소에 둔다
 
 > ⚪ 미구현
 > 옛 번호: ADR-128 · ADR-154 · ADR-155
@@ -106,27 +106,68 @@ Metro 는 사이클을 찾으면 `Require cycle: …` 경고를 내고, 그 경�
 값이 함수 본문에서만 쓰여 동작은 멀쩡해도, 누가 그 값을 모듈 최상위로 옮기는 순간 `undefined` 가 된다.
 `import type` 은 컴파일 때 지워지므로 사이클로 치지 않는다.
 
-### 결정 8. 저장소를 모노레포로 바꾸고 앱을 `apps/mobile` 로 옮긴다 (사용자 선택 2026-11-24)
+### 결정 8. 저장소를 모노레포로 바꾸고 앱을 `apps/mobile` 로 옮긴다 (사용자 선택 2026-11-24 · 2026-11-27)
 
 웹을 Next.js 로 따로 만들고 로직은 앱과 함께 쓰기로 했다([[ADR-307]] 결정 1). 로직을 두 앱이 함께 쓰려면 패키지로 빼야 해서, 결정 4 의
 `앱이 하나뿐이라 패키지를 나눌 이유가 없다` 가 더는 맞지 않는다.
 
+모노레포는 git 저장소 하나 안에서 폴더마다 `package.json` 을 따로 두는 구조다. 브랜치 · PR · 이슈는 지금처럼 하나다. 앱과 웹이 로직을
+한 트리에서 함께 고쳐야 같은 로직을 쓴다. 웹이 다른 저장소에 있으면 core 를 패키지로 내고 버전을 올려야 해서, 두 앱이 다른 버전의
+로직을 쓰는 때가 생긴다. 동기화는 앱과 웹이 같은 표와 트리거를 써야 맞물리므로 그 어긋남이 특히 위험하다.
+
 ```
-apps/mobile/      지금 RN 앱. app.json · index.ts · ios/ · android/ · 화면 · 저장소와 네이티브 어댑터
+apps/mobile/      지금 RN 앱. app.json · index.ts · ios/ · android/ · modules/ · 화면 · 저장소와 네이티브 어댑터
 apps/web/         Next.js 웹
-packages/core/    features · lib · storage · nexon · server 와 이들이 쓰는 타입 · 상수
+packages/core/    features · lib · storage · nexon · server · native 의 포트와 그 앞 함수, 이들이 쓰는 타입 · 상수
 packages/tokens/  글자 역할표. 색은 앱(직업 테마)과 웹(라이트 · 다크)이 따로다
 ```
 
-- `packages/core` 에는 플랫폼 라이브러리를 들이지 않는다. 웹 번들에 RN 이 딸려 오면 웹에서 돌지 않기 때문이다. 2026-11-24 에 로직 파일
-  가운데 RN · Expo 를 직접 가져오는 것은 `features` 5개(`AppState` · 로그인 창)와 `lib` 8개(화면 치수 계산)였다. 앞의 것은 포트로
-  바꾸고, 뒤의 것은 화면이 쓰는 계산이라 `apps/mobile` 에 둔다. 저장소 어댑터(`storage/adapters/rn-*`)도 `apps/mobile` 에 둔다.
-- 화면 쪽 코드를 가져오는 로직 파일 7개는 그 타입과 표를 `packages/core` 로 옮긴다. `features/bar-order` 와 `storage/bar-order.ts` 가
-  `navigation/bar-groups` 를, `features/boss-profit` · `features/inventory` · `features/input-card` 가 `components/organisms/InputCard`
-  의 타입을 가져온다.
-- 옮긴 트리는 다음 스토어 바이너리로 낸다. `ios/Podfile.lock` 의 `../node_modules/...` 상대 경로 255곳이 바뀌어 iOS 지문이 바뀌고, 지문이
+**서버 저장소(`maple-routine-server`)는 합치지 않는다**(사용자 선택 2026-11-27). 서버 main 은 운영 박스에 배포된 코드를, 앱 main 은 스토어
+바이너리를 따라가서 브랜치 흐름이 다르다(서버에는 patch 가 없다, [[ADR-188]] 결정 9). 한 저장소에 넣으면 서버 핫픽스에도 앱 브랜치 규칙이
+얽히고, 운영 박스가 앱 전체를 받아 빌드해야 한다. 합쳐서 얻는 것은 동기화 요청과 응답의 타입을 함께 쓰는 것뿐이다.
+
+**패키지 관리자는 pnpm 이고, `node-linker=hoisted` 로 쓴다**(사용자 선택 2026-11-27). pnpm 은 패키지를 맥에 한 벌만 두고 워크트리마다
+하드링크로 잇는다. npm 은 워크트리마다 `node_modules` 를 통째로 복사해서, 워크트리를 여럿 두는 이 저장소에서 디스크를 많이 쓴다.
+`hoisted` 는 `node_modules` 를 npm 과 같은 모양으로 만든다. RN 자동 연결 · Metro · `ios/Podfile.lock` 이 npm 때와 같은 경로를 보게 하려는
+것이다. `package-lock.json` 은 `pnpm-lock.yaml` 로 바뀌고, `CLAUDE.md` 와 문서의 `npm` 명령은 `pnpm` 으로 바뀐다. Turborepo 같은 작업
+실행기는 두지 않는다. core 는 빌드하지 않고 TS 원본을 그대로 가져다 쓰므로 순서를 맞출 빌드 단계가 없다.
+
+패키지와 도구는 이렇게 둔다.
+
+- 앱과 웹은 core 를 패키지 이름(`@maple-routine/core/...`)으로 가져온다. pnpm 이 그 이름을 `packages/core` 폴더로 잇는다. 결정 4 의
+  `alias 를 두지 않는다` 는 그대로다. 패키지 이름은 tsc · Metro · jest 가 모두 `node_modules` 에서 같은 방법으로 찾으므로 도구마다
+  매핑을 적을 일이 없다. 한 패키지 안에서는 지금처럼 상대 경로로 쓴다.
+- React 는 두 앱이 같은 버전 하나를 쓴다. 버전이 둘이면 core 의 훅이 앱마다 다른 React 를 불러 깨진다.
+- `packages/core` 에는 플랫폼 라이브러리를 들이지 않는다. 웹 번들에 RN 이 딸려 오면 웹에서 돌지 않기 때문이다. 2026-11-27 에 core 로 갈
+  파일 가운데 RN · Expo 를 직접 가져오는 것은 8개다. `features` 5개(`AppState` · `Platform`) · `server/friends-stream.ts`(`expo/fetch`) ·
+  `native/browser.ts`(`Linking`) · `constants/style/text-styles.ts`(`TextStyle` 타입)다. 포트로 바꾸거나 타입을 core 의 것으로 바꾼다.
+  `lib` 의 화면 치수 계산 8개는 화면이 쓰는 계산이라 `apps/mobile` 에 둔다.
+- `native/` 는 둘로 나뉜다. `native/ports.ts` 와 그 앞 함수(`native/notifications.ts` 등, `features` 가 부르는 것)는 core 로, RN 구현인
+  `native/adapters/` 는 `apps/mobile` 로 간다. 저장소도 같다. `storage/` 는 core 로, `storage/adapters/` 는 `apps/mobile` 로 간다.
+- 화면 쪽 코드를 가져오는 로직 파일 8개는 그 타입과 표를 core 로 옮긴다. `features/bar-order` 둘과 `storage/bar-order.ts` 가
+  `navigation/bar-groups` 를, `features/boss-profit` 둘 · `features/inventory` · `features/input-card` 가 `components/organisms/InputCard`
+  의 타입을, `features/text-size/store.ts` 가 `theme/text-scale` 을 가져온다. `lib/fab-metrics.ts` 도 화면 훅을 가져오지만 화면 치수
+  계산이라 위 8개와 함께 `apps/mobile` 에 둔다.
+- 루트에는 `docs/` · `CLAUDE.md` · `README.md` · `site/` · `ota/` · `workers/` 와 저장소 전체를 보는 스크립트(`adr-number.mjs` ·
+  `build-site.mjs`)를 둔다. 앱을 발행하고 그리는 스크립트(`publish-rn-ota.mjs` · `ota-runtime-version.mjs` · 그림 만드는 스크립트)는
+  `apps/mobile` 로 간다. 저장소 규칙을 보는 `adr-policy.test.ts` 는 루트로 옮기고, `src/` 밖을 고르는 조건을 `apps/` · `packages/` 로 넓힌다.
+- jest 는 루트 설정 하나에 패키지마다 project 를 둔다. 타입 검사도 패키지마다 `tsconfig.json` 을 두고 루트에서 한 번에 돌린다.
+
+옮기는 때와 순서는 이렇다.
+
+- 옮기는 일은 1.0.15 작업을 develop 에서 마치고 `release/1.0.15` 를 딴 직후 develop 에서 한다(#1208). 그 전에 옮기면 1.0.15 를 만드는
+  브랜치마다 모든 파일 경로가 부딪힌다. 심사 중에 `patch/1.0.15` 에 들어온 고침은 옮기기 전 경로에 있다. develop 으로 머지할 때 git 이
+  이름이 바뀐 파일을 찾아 맞춘다.
+- 옮긴 트리는 1.0.16 스토어 바이너리로 낸다. `ios/Podfile.lock` 의 `../node_modules/...` 상대 경로 255곳이 바뀌어 iOS 지문이 바뀌고, 지문이
   다른 트리에서는 지금 스토어 바이너리에 OTA 를 낼 수 없기 때문이다([[ADR-011]]). 옮길 때 앞뒤 지문을 잰다.
-- 옮기는 일은 `release/1.0.15` 를 딴 뒤 develop 에서 한다(#1208). 그 전에 옮기면 1.0.15 를 만드는 브랜치마다 모든 파일 경로가 부딪힌다.
+- PR 은 넷으로 나눈다. 한 PR 에 이동과 로직 변경을 섞으면 리뷰에서 무엇이 바뀌었는지 가려낼 수 없다.
+  1. 동작은 그대로 두고 앱을 `apps/mobile` 로 옮기고 pnpm 으로 바꾼다. 앞뒤 지문을 재고, 맥에서 iOS · Android 개발 빌드를 돌리고, 전체
+     테스트를 돌린다. 문서의 경로와 명령도 함께 고친다.
+  2. `packages/core` 를 뺀다. 위의 플랫폼 라이브러리 8개와 화면 코드 8개를 고치고, core 가 플랫폼 라이브러리를 가져오지 않는지 보는 테스트를 더한다.
+  3. `packages/tokens` 를 뺀다.
+  4. `apps/web` 시험 빌드. core 를 Next.js 에서 불러 첫 로딩 크기와 브라우저 SQLite 를 잰다(#1206).
+- 1번 PR 을 머지하면 열려 있는 워크트리는 develop 을 받은 뒤 `node_modules` 를 지우고 `pnpm install` 을 다시 한다. 맥의 DEV 빌드
+  워크트리(`device-1015`)도 같다.
 
 ## 테스트
 
@@ -140,7 +181,7 @@ packages/tokens/  글자 역할표. 색은 앱(직업 테마)과 웹(라이트 �
 | `src/__tests__/require-cycle-policy.test.ts` | 결정 7: Metro 가 번들하는 `src/` 그래프에 런타임 import 사이클이 없는지, 그래프를 실제로 읽었는지 본다 |
 | `ota/__tests__/latest.spec.ts` | 결정 6: `latest.json` 이 동결한 파서를 통과하는지(문자열로 와도), 목록에 `android` 만 있는지, `highlights` 에 스토어 이야기가 없는지(iOS 도 같은 문구를 읽는다), `url` · `checksum` · `size` 형식이 맞는지 본다 |
 
-결정 8 의 테스트는 옮길 때 적는다. `packages/core` 가 RN · Expo 와 플랫폼 라이브러리를 가져오지 않는지 본다.
+결정 8 의 테스트는 옮길 때 적는다. `packages/core` 가 RN · Expo 와 플랫폼 라이브러리를 가져오지 않는지, `adr-policy.test.ts` 가 `apps/` · `packages/` 의 소스도 보는지 본다.
 
 ## 열린 질문
 
@@ -153,3 +194,4 @@ packages/tokens/  글자 역할표. 색은 앱(직업 테마)과 웹(라이트 �
   의미가 없어져 옮기지 않았다. 옛 ADR-155 결정 6(러너 둘)은 [[ADR-006]] 으로 대체됐다
 - ADR-308 (2026-11-24): 결정 8 을 더했다. 웹을 Next.js 로 따로 만들고 로직을 앱과 함께 쓰기로 해서, 결정 4 의 저장소 구조를 모노레포로
   바꾼다(#1206 · #1208)
+- ADR-334 (2026-11-27): 결정 8 에 서버 저장소를 합치지 않는 것, pnpm(`node-linker=hoisted`), 패키지 경계, 옮기는 때와 PR 순서를 더했다(#1208)

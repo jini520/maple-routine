@@ -7,7 +7,6 @@
 import { bossNameOf } from '../../lib/boss/bosses'
 import { contentShortNameOf } from '../../lib/scheduler/contents'
 import { isBossBlocked, isContentBlocked } from '../../lib/scheduler/required-level'
-import { getShareScope } from '../../lib/scheduler/scheduler-content-scope'
 import type { TrackingMode } from '../../storage/tracking-mode'
 import type { BossCycle, BossDifficulty } from '../../types'
 import type { ManualTrackedItem } from '../../types/scheduler'
@@ -53,8 +52,7 @@ export interface RemainingSchedule {
 export function remainingScheduleOf(input: RemainingScheduleInput): RemainingSchedule {
   const { content, boss } = input
   // 표시 대상으로 먼저 거른다. `dailyContents` 는 등록 여부와 무관하게 게임에 있는 항목 전부라 그냥 세면 모든 캐릭터가
-  // 카탈로그 길이로 같아진다. 공유 항목은 진행이 캐릭터 단위가 아니라 여기서 뺀다. 요구 레벨 미달은 이 캐릭터로는
-  // 못 하므로 남은 것이 아니다.
+  // 카탈로그 길이로 같아진다. 공유 항목은 표시 대상 판정이 이미 뺀다. 요구 레벨 미달은 이 캐릭터로는 못 하므로 남은 것이 아니다.
   const contentsInput = {
     dailyContents: content?.dailyContents ?? [],
     weeklyContents: content?.weeklyContents ?? [],
@@ -62,12 +60,10 @@ export function remainingScheduleOf(input: RemainingScheduleInput): RemainingSch
   }
   const characterLevel = content?.level ?? boss?.level ?? null
   const dailyNames = displayedDailyContents(contentsInput, input.trackingMode, input.weeklyPeriodKey)
-    .filter((item) => getShareScope(item.contentKey) === 'character')
     .filter((item) => !isContentBlocked(characterLevel, item.contentKey))
     .filter((item) => dailyContentCompletion(item) === 'incomplete')
     .map((item) => contentShortNameOf(item.contentKey, item.apiName))
   const weeklyNames = displayedWeeklyContents(contentsInput, input.trackingMode, input.weeklyPeriodKey)
-    .filter((item) => getShareScope(item.contentKey) === 'character')
     .filter((item) => !isContentBlocked(characterLevel, item.contentKey))
     .filter((item) => weeklyContentCompletion(item) === 'incomplete')
     .map((item) => contentShortNameOf(item.contentKey, item.apiName))

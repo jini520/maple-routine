@@ -14,10 +14,12 @@ import {
 } from '../../../features/content-scheduler/use-content-schedule'
 import { useTrackingModeStore } from '../../../features/tracking-mode/store'
 
-import { renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay, type AtomElement } from '../../../components/__tests__/render-atom'
 import { ContentScreen } from '../ContentScreen'
 import { useRefetchStaleOnFocus } from '../../../hooks/useRefetchStaleOnFocus'
 import { useScreenNavigation } from '../../../hooks/useScreenNavigation'
+import { useMapleIdOwners } from '../../../hooks/useMapleIdOwners'
+import { useMapleIdNamesStore } from '../../../features/maple-id/names'
 
 // 이름이 `mock` 으로 시작해야 한다. babel-jest 가 `jest.mock` 팩토리 밖 변수 참조를 막는데
 // 그 접두사만 예외로 통과시킨다(안 지키면 트랜스폼 단계에서 죽는다).
@@ -59,10 +61,14 @@ jest.mock('../../../hooks/useRefetchStaleOnFocus', () => ({ useRefetchStaleOnFoc
 
 jest.mock('../../../hooks/useScreenNavigation', () => ({ useScreenNavigation: jest.fn() }))
 
+// 메이플 ID 소속은 기기 저장소에서 읽는다. 이 하네스에는 저장소가 없어 훅째 세운다.
+jest.mock('../../../hooks/useMapleIdOwners', () => ({ useMapleIdOwners: jest.fn(() => null) }))
+
 const mockedSchedule = jest.mocked(useContentSchedule)
 const mockedStore = jest.mocked(useContentSchedulerStore)
 const mockedRefetchStaleOnFocus = jest.mocked(useRefetchStaleOnFocus)
 const mockedNavigation = jest.mocked(useScreenNavigation)
+const mockedMapleIdOwners = jest.mocked(useMapleIdOwners)
 
 type Schedule = ContentSchedule
 // `ReturnType<typeof useContentSchedulerStore>` 은 **`unknown` 이 된다**. zustand 의 훅이 오버로드라
@@ -94,12 +100,15 @@ function mockStore(overrides: Partial<Store> = {}): Store {
     manualTrackedByOcid: {},
     activeTab: 'daily' as const,
     setActiveTab: jest.fn(),
+    selectedMapleId: null,
+    setSelectedMapleId: jest.fn(),
     ...overrides,
   } as Store
 
   mockedStore.mockImplementation(() => {
     const [activeTab, setActiveTab] = useState(base.activeTab)
-    return { ...base, activeTab, setActiveTab }
+    const [selectedMapleId, setSelectedMapleId] = useState(base.selectedMapleId)
+    return { ...base, activeTab, setActiveTab, selectedMapleId, setSelectedMapleId }
   })
   return base
 }
@@ -168,6 +177,8 @@ beforeEach(() => {
 // 실물 스토어라 값이 파일 안에서 넘어가므로 테스트마다 되돌린다.
 beforeEach(() => {
   useCharacterSelectionStore.setState({ selectedOcid: null })
+  useMapleIdNamesStore.setState({ names: {} })
+  mockedMapleIdOwners.mockReturnValue(null)
 })
 
 describe('ContentScreen: 빈 상태와 마운트', () => {
@@ -228,7 +239,7 @@ describe('ContentScreen: 목록', () => {
       characters: [
         character({
           dailyContents: [
-            { contentKey: null, apiName: '일간항목', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null },
+            { contentKey: null, apiName: '일일항목', kind: 'contents', isRegistered: true, nowCount: 1, maxCount: 3, questState: null },
             { contentKey: null, apiName: '미등록', kind: 'contents', isRegistered: false, nowCount: 0, maxCount: 3, questState: null },
           ],
           weeklyContents: [
@@ -239,12 +250,12 @@ describe('ContentScreen: 목록', () => {
     })
   }
 
-  it('기본 탭은 일간이고 등록된 항목만 보인다', async () => {
+  it('기본 탭은 일일이고 등록된 항목만 보인다', async () => {
     withContents()
 
     await renderScreen()
 
-    expect(screen.getByText('일간항목 · 1/3')).toBeTruthy()
+    expect(screen.getByText('일일항목 · 1/3')).toBeTruthy()
     expect(screen.queryByText(/미등록/)).toBeNull()
     expect(screen.queryByText(/주간항목/)).toBeNull()
   })
@@ -256,7 +267,7 @@ describe('ContentScreen: 목록', () => {
     await press(button('주간'))
 
     expect(screen.getByText('주간항목 · 2/4')).toBeTruthy()
-    expect(screen.queryByText(/일간항목/)).toBeNull()
+    expect(screen.queryByText(/일일항목/)).toBeNull()
   })
 
   // 캐시가 있으면 재검증 중에도 계속 보여준다(셸 승계 카드는 보여줄 게 없을 때만).
@@ -323,7 +334,7 @@ describe('ContentScreen: 목록', () => {
 
     await renderScreen()
 
-    expect(screen.getByTestId('character-portrait').props.accessibilityLabel).toContain('일간 1/2')
+    expect(screen.getByTestId('character-portrait').props.accessibilityLabel).toContain('일일 1/2')
   })
 
   // 훅은 레벨 내림차순으로 준다. 그 위에 사용자가
@@ -362,7 +373,7 @@ describe('ContentScreen: 목록', () => {
 })
 
 // 에픽 던전 주 3회 한도. 카드와 링이 같은 판정을 본다. 원천은 표시 목록이 아니라 병합된 목록 전체다.
-describe('ContentScreen: 에픽 던전 주간 한도', () => {
+describe('ContentScreen: 공유 탭', () => {
   /** 다 깬 던전은 5, 안 깬 던전은 0 이다. 최대 횟수는 병합이 덮은 표의 5 다. */
   const epic = (key: string, name: string, nowCount: number, isRegistered = true) => ({
     contentKey: `epic_dungeon_${key}`,
@@ -373,43 +384,132 @@ describe('ContentScreen: 에픽 던전 주간 한도', () => {
     maxCount: 5,
     questState: null,
   })
-
-  function withEpics(weeklyContents: ContentCharacterView['weeklyContents']): void {
-    mockSchedule({
-      status: 'loaded',
-      trackedOcids: ['ocid-1'],
-      characters: [character({ weeklyContents })],
-    })
-    mockStore({ activeTab: 'weekly' })
-  }
-
-  it('3종을 완료하면 남은 1종의 카드가 마감이고 링은 가득 찬다', async () => {
-    withEpics([
-      epic('high_mountain', '하이마운틴', 5),
-      epic('angler_company', '앵글러 컴퍼니', 5),
-      epic('nightmare_paradise', '악몽선경', 0),
-      epic('aurum_regis', '아우룸 레기스', 5),
-    ])
-
-    await renderScreen()
-
-    expect(screen.getAllByText('마감')).toHaveLength(1)
-    expect(screen.getByTestId('character-portrait').props.accessibilityLabel).toContain('주간 4/4')
+  const monsterPark = (nowCount: number) => ({
+    contentKey: 'monster_park',
+    apiName: '몬스터 파크',
+    kind: 'contents' as const,
+    isRegistered: true,
+    nowCount,
+    maxCount: 7,
+    questState: null,
   })
 
-  // 자동 모드에서 등록 안 한 던전은 카드가 없지만 그 완료는 한도를 채운다.
-  it('등록 안 한 던전의 완료도 한도에 든다', async () => {
-    withEpics([
-      epic('high_mountain', '하이마운틴', 5),
-      epic('angler_company', '앵글러 컴퍼니', 5),
-      epic('nightmare_paradise', '악몽선경', 5, false),
-      epic('aurum_regis', '아우룸 레기스', 0),
-    ])
+  /** 메이플 ID A 에 캐릭터 둘(a1 · a2), B 에 하나(b1). */
+  function withMapleIds(characters: ContentCharacterView[]): void {
+    mockSchedule({ status: 'loaded', trackedOcids: characters.map((one) => one.ocid), characters })
+    mockedMapleIdOwners.mockReturnValue({ ofOcid: { a1: 'A', a2: 'A', b1: 'B' }, order: ['A', 'B'] })
+    useMapleIdNamesStore.setState({ names: { A: '본계정', B: '부계정' } })
+  }
+
+  // 탭이 셋이면 기준 폭 360 에서 제목이 잘려 탭을 중간 크기로 줄였다. 중간 크기의 글자는 `관리` 와 같은 크기다.
+  it('탭은 일일 · 주간 · 공유 셋이고, 글자가 머리의 관리와 같은 크기다', async () => {
+    useTrackingModeStore.setState({ mode: 'manual' })
+    mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
 
     await renderScreen()
 
-    expect(screen.getByText('마감')).toBeTruthy()
-    expect(screen.getByTestId('character-portrait').props.accessibilityLabel).toContain('주간 3/3')
+    expect(button('일일')).toBeTruthy()
+    expect(button('주간')).toBeTruthy()
+    expect(button('공유')).toBeTruthy()
+    expect(flattenStyle(screen.getByText('공유').props.style).fontSize).toBe(flattenStyle(screen.getByText('관리').props.style).fontSize)
+  })
+
+  it('공유 컨텐츠는 일일 탭에 나오지 않는다', async () => {
+    withMapleIds([character({ ocid: 'a1', characterName: '가', dailyContents: [monsterPark(3)] })])
+
+    await renderScreen()
+
+    expect(screen.queryByText(/몬스터파크/)).toBeNull()
+  })
+
+  it('공유 탭의 레일에는 캐릭터 대신 메이플 ID 별칭이 서고, 대표 캐릭터는 가장 레벨이 높은 캐릭터다', async () => {
+    withMapleIds([
+      character({ ocid: 'a1', characterName: '가', level: 200 }),
+      character({ ocid: 'b1', characterName: '나', level: 260 }),
+      character({ ocid: 'a2', characterName: '다', level: 280 }),
+    ])
+    useCharacterSelectionStore.setState({ selectedOcid: 'b1' })
+    await renderScreen()
+
+    await press(button('공유'))
+
+    const portraits = screen.getAllByTestId('character-portrait').map((one) => one.props.accessibilityLabel)
+    expect(portraits).toEqual(['본계정', '부계정'])
+    // 처음 고른 메이플 ID 는 지금 고른 캐릭터(b1)의 것이다.
+    expect(screen.getAllByTestId('character-portrait').map((one) => one.props.accessibilityState?.selected)).toEqual([false, true])
+  })
+
+  it('별칭을 골라도 고른 캐릭터는 그대로다', async () => {
+    withMapleIds([
+      character({ ocid: 'a1', characterName: '가', level: 200 }),
+      character({ ocid: 'b1', characterName: '나', level: 260 }),
+    ])
+    useCharacterSelectionStore.setState({ selectedOcid: 'a1' })
+    await renderScreen()
+    await press(button('공유'))
+
+    await press(screen.getByLabelText('부계정'))
+
+    expect(useCharacterSelectionStore.getState().selectedOcid).toBe('a1')
+  })
+
+  it('고른 메이플 ID 의 캐릭터 가운데 가장 앞선 값을 그린다. 다른 메이플 ID 의 값은 섞지 않는다', async () => {
+    withMapleIds([
+      character({ ocid: 'a1', characterName: '가', dailyContents: [monsterPark(2)] }),
+      character({ ocid: 'a2', characterName: '다', dailyContents: [monsterPark(5)] }),
+      character({ ocid: 'b1', characterName: '나', dailyContents: [monsterPark(6)] }),
+    ])
+    useCharacterSelectionStore.setState({ selectedOcid: 'a1' })
+    await renderScreen()
+
+    await press(button('공유'))
+
+    expect(screen.getByText('5/7')).toBeTruthy()
+    expect(screen.queryByText('6/7')).toBeNull()
+  })
+
+  it('에픽 던전 3종을 같은 메이플 ID 의 캐릭터들이 끝내면 남은 1종의 카드가 마감이다', async () => {
+    withMapleIds([
+      character({ ocid: 'a1', characterName: '가', weeklyContents: [epic('high_mountain', '하이마운틴', 5), epic('aurum_regis', '아우룸 레기스', 0)] }),
+      character({
+        ocid: 'a2',
+        characterName: '다',
+        weeklyContents: [epic('angler_company', '앵글러 컴퍼니', 5), epic('nightmare_paradise', '악몽선경', 5, false)],
+      }),
+    ])
+    useCharacterSelectionStore.setState({ selectedOcid: 'a1' })
+    await renderScreen()
+
+    await press(button('공유'))
+
+    expect(screen.getAllByText('마감')).toHaveLength(1)
+  })
+
+  it('링은 공유 컨텐츠를 세지 않는다', async () => {
+    withMapleIds([character({ ocid: 'a1', characterName: '가', weeklyContents: [epic('high_mountain', '하이마운틴', 0)] })])
+
+    await renderScreen()
+
+    expect(screen.getByTestId('character-portrait').props.accessibilityLabel).toContain('주간 0/0')
+  })
+
+  it('메이플 ID 소속을 아직 못 읽었으면 빈 상태 대신 로딩을 보인다', async () => {
+    mockSchedule({ status: 'loaded', trackedOcids: ['a1'], characters: [character({ ocid: 'a1' })] })
+    await renderScreen()
+
+    await press(button('공유'))
+
+    expect(screen.getByText('불러오고 있어요')).toBeTruthy()
+    expect(screen.queryByText('등록된 공유 컨텐츠가 없습니다')).toBeNull()
+  })
+
+  it('보일 공유 컨텐츠가 없으면 빈 상태다', async () => {
+    withMapleIds([character({ ocid: 'a1', characterName: '가' })])
+    await renderScreen()
+
+    await press(button('공유'))
+
+    expect(screen.getByText('등록된 공유 컨텐츠가 없습니다')).toBeTruthy()
   })
 })
 
@@ -583,23 +683,23 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
         character({
           dailyContents: [
             {
-              contentKey: 'monster_park',
-              apiName: '몬스터파크',
-              kind: 'contents',
+              contentKey: 'daily_quest_road_of_vanishing',
+              apiName: '[일일 퀘스트] 소멸의 여로 조사',
+              kind: 'quest',
               isRegistered: false,
-              nowCount: 3,
-              maxCount: 14,
-              questState: null,
+              nowCount: 0,
+              maxCount: 0,
+              questState: 1,
             },
           ],
         }),
       ],
     })
-    mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'monster_park', kind: 'daily' }] } })
+    mockStore({ manualTrackedByOcid: { 'ocid-1': [{ contentKey: 'daily_quest_road_of_vanishing', kind: 'daily' }] } })
 
     await renderScreen()
 
-    expect(screen.getByText('3/14')).toBeTruthy()
+    expect(screen.getByText('소멸의 여로 조사')).toBeTruthy()
   })
 
   // 멤버십의 `kind` 가 저장 시점에 확정돼 각 탭은 자기 것만 그린다.
@@ -630,7 +730,18 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
     mockSchedule({ status: 'loaded', trackedOcids: ['ocid-1'], characters: [character()] })
     await renderScreen()
 
-    expect(screen.getByText('추적할 일간 컨텐츠가 없습니다')).toBeTruthy()
+    expect(screen.getByText('추적할 일일 컨텐츠가 없습니다')).toBeTruthy()
+    await press(buttonAt('컨텐츠 관리'))
+    expect(navigate).toHaveBeenCalledWith('ContentManage')
+  })
+
+  it('공유 탭의 빈 상태도 컨텐츠 관리로 민다', async () => {
+    mockSchedule({ status: 'loaded', trackedOcids: ['a1'], characters: [character({ ocid: 'a1' })] })
+    mockedMapleIdOwners.mockReturnValue({ ofOcid: { a1: 'A' }, order: ['A'] })
+    await renderScreen()
+    await press(button('공유'))
+
+    expect(screen.getByText('추적할 공유 컨텐츠가 없습니다')).toBeTruthy()
     await press(buttonAt('컨텐츠 관리'))
     expect(navigate).toHaveBeenCalledWith('ContentManage')
   })
@@ -643,6 +754,6 @@ describe('ContentScreen: 수동 트래킹 모드', () => {
 
     expect(screen.queryByText('관리')).toBeNull()
     expect(screen.queryByText('컨텐츠 관리')).toBeNull()
-    expect(screen.getByText('등록된 일간 컨텐츠가 없습니다')).toBeTruthy()
+    expect(screen.getByText('등록된 일일 컨텐츠가 없습니다')).toBeTruthy()
   })
 })

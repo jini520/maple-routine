@@ -17,7 +17,7 @@ import { ProgressRing } from '../../atoms'
 import { isFullTurn, portraitRingArcPath, portraitRingSpan, ringRatio } from './portrait-arc'
 import { PORTRAIT_COMPACT, PORTRAIT_RAIL } from './portrait-metrics'
 
-/** 링 한 칸이 받는 값. `label` 은 `일간`·`주간`·`월간` 으로 접근성 이름에 들어간다. */
+/** 링 한 칸이 받는 값. `label` 은 `일일`·`주간`·`월간` 으로 접근성 이름에 들어간다. */
 export interface PortraitRingProgress {
   label: string
   completed: number

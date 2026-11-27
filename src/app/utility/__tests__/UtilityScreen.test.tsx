@@ -76,4 +76,25 @@ describe('UtilityScreen', () => {
     // 통째로 그리면 글자 단위로 끊긴다. 한 덩어리 노드가 있으면 안 된다.
     expect(view.queryByText(ITEM_SPLIT_TOOL_NAME)).toBeNull()
   })
+
+  // 카드는 이름 아래에 무엇을 하는 도구인지 두 줄로 적는다. 줄은 정해 둔 자리에서만 바뀌고, 줄 안에서도
+  // 이름처럼 단어 경계에서만 끊긴다. 스크린리더는 이름을 읽은 뒤 설명을 힌트로 읽는다.
+  it.each([
+    [MASPI_TOOL_NAME, ['드롭 아이템 시세와', 'MASPI 지수를 매일 확인해요']],
+    [ITEM_SPLIT_TOOL_NAME, ['수수료를 떼고도 똑같이 나누려면', '얼마를 보낼지 알려 줘요']],
+    [BOSS_PROFIT_CALCULATOR_TOOL_NAME, ['캐릭터마다 보스를 골라', '한 주 수입을 미리 따져 봐요']],
+  ])('%s 카드는 이름 아래에 설명 두 줄을 단어 단위로 적고, 설명을 스크린리더 힌트로 준다', async (name, lines) => {
+    const view = await renderOverlay(<UtilityScreen />)
+    const card = view.getByLabelText(name)
+
+    expect(card.props.accessibilityHint).toBe(lines.join(' '))
+    const rows = within(card).getAllByTestId('tool-description-line')
+    expect(rows).toHaveLength(lines.length)
+    rows.forEach((row, index) => {
+      for (const word of lines[index].split(' ')) {
+        expect(within(row).getAllByText(word).length).toBeGreaterThan(0)
+      }
+      expect(within(row).queryByText(lines[index])).toBeNull()
+    })
+  })
 })

@@ -72,6 +72,7 @@ import {
 import { statsRanges } from '../../features/stats/periods'
 
 import { dailyContentCompletion, weeklyContentCompletion } from '../../features/content-scheduler/content-completion'
+import { mergeSharedProgress } from '../../features/content-scheduler/shared-contents'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -255,7 +256,7 @@ export interface ResetCountdown {
   /**
    * 이 주기 한 바퀴의 길이(ms). 2x2 타일의 진행 바가 주기의 어디쯤인가 를 그리는 분모다.
    *
-   * 일간·주간은 상수지만 월간은 달마다 다르다(28~31일). 위젯이 그것을 스스로 구하려면 KST 달
+   * 일일·주간은 상수지만 월간은 달마다 다르다(28~31일). 위젯이 그것을 스스로 구하려면 KST 달
    * 경계를 다시 계산해야 하고, 그 순간 리셋 시각의 진실이 둘이 된다. 그래서 경계를 이미 아는
    * 이 파일이 함께 낸다.
    */
@@ -543,16 +544,16 @@ function buildSharedContents(
           const matches = (entry.section === 'daily' ? daily : weekly).filter(
             (item) => item.contentKey === entry.contentKey,
           )
-          const isComplete = matches.some(
-            (item) =>
-              (entry.section === 'daily'
-                ? dailyContentCompletion(item as DailyContent)
-                : weeklyContentCompletion(item as WeeklyContent)) === 'complete',
-          )
+          // 가장 앞선 값으로 합치는 규칙은 컨텐츠 스케줄러 공유 탭과 같은 함수다. 두 화면이 같은 컨텐츠를 다르게 그리지 않는다.
           // `maxCount` 는 스토어가 이미 표의 최대 횟수를 얹은 값이다(`scheduler-merge`).
-          // 여기서 다시 얹으면 최대 횟수의 출처가 둘이 된다.
-          const max = Math.max(0, ...matches.map((item) => item.maxCount))
-          const now = Math.max(0, ...matches.map((item) => item.nowCount))
+          const merged = matches.length === 0 ? null : mergeSharedProgress(matches)
+          const isComplete =
+            merged !== null &&
+            (entry.section === 'daily'
+              ? dailyContentCompletion(merged as DailyContent)
+              : weeklyContentCompletion(merged as WeeklyContent)) === 'complete'
+          const max = merged?.maxCount ?? 0
+          const now = merged?.nowCount ?? 0
 
           return {
             contentKey: entry.contentKey,
@@ -771,7 +772,7 @@ function buildTopItem(
  * 다음 초기화까지 남은 시간.
  *
  * 세 값 모두 **기존 KST 계산을 조합**한다. 오프셋 상수를 여기서 다시 선언하면 리셋 시각의 진실이
- * 둘이 된다. 일간은 오늘의 KST 날짜 키가 가리키는 자정 + 24h, 주간은 가장 최근 목요일 리셋 + 7일,
+ * 둘이 된다. 일일은 오늘의 KST 날짜 키가 가리키는 자정 + 24h, 주간은 가장 최근 목요일 리셋 + 7일,
  * 월간은 다음 달 기간 키의 시작(1일 00:00 KST)이다.
  */
 function buildResets(now: Date): ResetCountdownView {

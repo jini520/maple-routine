@@ -140,7 +140,7 @@ export function selectDisplayBosses(bosses: MatchedBoss[]): MatchedBoss[] {
   return result
 }
 
-// 보스 수익 계산기 전용 선택 로직. selectDisplayBosses(카드 표시용, 등록 여부 우선)와
+// 보스 수입 계산기 전용 선택 로직. selectDisplayBosses(카드 표시용, 등록 여부 우선)와
 // 달리 "실제로 처치했는가"(ownComplete, 승격 없는 원본 완료 여부)를 우선한다. 등록한 난이도와
 // 실제로 처치한 난이도가 다를 수 있어, 수익 계산은 반드시 진짜 처치한 난이도의
 // 가격을 써야 한다. 같은 content_name·같은 cycle(weekly/monthly) 안에서는 게임 룰상 한

@@ -170,7 +170,7 @@ function mergeSection(
 // 보스는 전부 character 범위(확인)라 world/account 원장 단계가 필요 없다. cycle 내에서
 // 항목(보스+난이도) 단위로 병합한다(정정): fresh에 있으면 그대로 쓰고, fresh에 없는데
 // previous에 있으면 isComplete·ownComplete를 false로 리셋해 복원한다. ownComplete도 함께 리셋해야
-// 한다. 안 그러면 지난 리셋에서의 완료 여부가 그대로 남아있어 보스 수익 계산기
+// 한다. 안 그러면 지난 리셋에서의 완료 여부가 그대로 남아있어 보스 수입 계산기
 // (selectBossProfitBosses)가 이번 리셋에서 아직 처치하지 않은 보스를 "실제로 완료함"으로
 // 오판한다.
 /** 병합의 항목 신원. 보스 key 이고, 보스 표에 없는 보스는 API 원문이다. 두 모양이 겹치지 않게 앞에 표지를 붙인다. */
@@ -200,7 +200,7 @@ function mergeBossCycle(cycle: BossCycle, freshBossContents: BossContent[], prev
 }
 
 /**
- * 받은 뒤 초기화 시각을 넘긴 주기의 진행을 비운 상태. 일간은 KST 날짜, 주간 컨텐츠 · 주간 보스는 목요일 주, 월간 보스는
+ * 받은 뒤 초기화 시각을 넘긴 주기의 진행을 비운 상태. 일일은 KST 날짜, 주간 컨텐츠 · 주간 보스는 목요일 주, 월간 보스는
  * 달로 가른다. 비우는 방법은 병합이 캐시에서 되살린 항목과 같다. 넘긴 주기가 없으면 받은 상태를 그대로 돌려준다.
  *
  * @param syncedAt 그 상태를 넥슨에서 받은 시각(ISO)

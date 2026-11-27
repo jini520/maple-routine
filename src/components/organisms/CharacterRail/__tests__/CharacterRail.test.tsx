@@ -19,7 +19,7 @@ function entry(overrides: Partial<CharacterRailEntry> = {}): CharacterRailEntry 
     level: 285,
     imageUrl: 'https://open.api.nexon.com/character/1.png',
     rings: [
-      { label: '일간', completed: 3, total: 7 },
+      { label: '일일', completed: 3, total: 7 },
       { label: '주간', completed: 1, total: 5 },
     ],
     ...overrides,
@@ -88,7 +88,7 @@ describe('조회 불가 표식', () => {
   it('표식이 붙어도 링은 그대로 읽힌다', async () => {
     const { getByLabelText } = await render([entry({ unavailable: true })])
 
-    expect(getByLabelText(/일간 3\/7/)).toBeTruthy()
+    expect(getByLabelText(/일일 3\/7/)).toBeTruthy()
   })
 })
 

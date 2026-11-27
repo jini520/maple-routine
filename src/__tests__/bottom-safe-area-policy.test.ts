@@ -88,7 +88,7 @@ describe('하단 안전영역은 한 자리에서 나온다', () => {
   it('검사 대상을 실제로 찾는다', () => {
     // 경로가 틀려 0개를 훑고도 초록이 되는 것이 이 부류 가드의 흔한 실패다.
     expect(files.length).toBeGreaterThan(15)
-    // 셸 셋 + 자기 `paddingBottom` 을 직접 주는 화면 하나(주간 보스 수익 계산기).
+    // 셸 셋 + 자기 `paddingBottom` 을 직접 주는 화면 하나(주간 보스 수입 계산기).
     expect(
       files.filter((file) => file.source.includes('useBottomSafeAreaPx')).length,
     ).toBeGreaterThanOrEqual(SHELLS.length + 1)

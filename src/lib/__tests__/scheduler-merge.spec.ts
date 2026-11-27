@@ -715,7 +715,7 @@ describe('clearPastPeriodProgress: 받은 뒤 초기화를 넘긴 주기의 진�
     expect(result).toBe(state)
   })
 
-  it('날만 바뀌면 일간 컨텐츠만 비우고 이름과 등록 여부는 남긴다', () => {
+  it('날만 바뀌면 일일 컨텐츠만 비우고 이름과 등록 여부는 남긴다', () => {
     // 화요일 밤에 받고 수요일 새벽에 본다. 목요일을 넘지 않았다.
     const result = clearPastPeriodProgress(progressed(), syncedAt('2026-11-10T23:50:00+09:00'), new Date('2026-11-11T00:30:00+09:00'))
 

@@ -62,7 +62,7 @@ function entriesBetween(byDate: DaysByDate, range: StatsRange): DayRecord[] {
     .flatMap(([, entries]) => entries.filter((entry) => entry.keyLostMapleId === undefined))
 }
 
-/** 범위의 수입 · 지출 · 순 수익. */
+/** 범위의 수입 · 지출 · 순수익. */
 export function totalsBetween(byDate: DaysByDate, range: StatsRange): StatsTotals {
   const { incomeMeso, expenseMeso } = dayTotalsOf(entriesBetween(byDate, range))
   return { incomeMeso, expenseMeso, netMeso: incomeMeso - expenseMeso }
@@ -73,7 +73,7 @@ export function totalsSeries(byDate: DaysByDate, ranges: readonly StatsRange[]):
   return ranges.map((range) => totalsBetween(byDate, range))
 }
 
-/** 순 수익을 차례로 더한 값. 누적 카드의 선이다. */
+/** 순수익을 차례로 더한 값. 누적 카드의 선이다. */
 export function cumulativeNet(series: readonly StatsTotals[]): number[] {
   let sum = 0
   return series.map((totals) => (sum += totals.netMeso))
@@ -108,7 +108,7 @@ function characterEntriesBetween(byDate: DaysByDate, range: StatsRange): Charact
   return keyed
 }
 
-/** 캐릭터별 합계. 순 수익이 큰 순서다. 캐릭터를 가르는 기준은 `characterEntriesBetween` 에 있다. */
+/** 캐릭터별 합계. 순수익이 큰 순서다. 캐릭터를 가르는 기준은 `characterEntriesBetween` 에 있다. */
 export function characterTotalsBetween(byDate: DaysByDate, range: StatsRange): CharacterTotals[] {
   const rows = new Map<string, CharacterTotals>()
   for (const { key, ocid, accountId, name, entry } of characterEntriesBetween(byDate, range)) {

@@ -50,4 +50,27 @@ describe('BossDifficultyPopover', () => {
       flattenStyle(view.getByTestId('boss-difficulty-popover', { includeHiddenElements: true }).props.style).opacity,
     ).toBe(0)
   })
+
+  it.each([
+    ['아래에 서면 위를', 150, 'top'],
+    ['위에 서면 아래를', H - 200, 'bottom'],
+  ] as const)('꼬리가 초상 가운데를 가리킨다. %s 향한다', async (_, anchorTop, edge) => {
+    const view = await renderOverlay(
+      <BossDifficultyPopover
+        bossKey="limbo"
+        difficulty="hard"
+        anchor={{ left: 100, top: anchorTop, width: 40, height: 40 }}
+        onSelect={jest.fn()}
+        onRemove={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    )
+    await fireEvent(view.getByTestId('boss-difficulty-popover', { includeHiddenElements: true }), 'layout', {
+      nativeEvent: { layout: SIZE },
+    })
+    const left = flattenStyle(view.getByTestId('boss-difficulty-popover').props.style).left as number
+    const caret = flattenStyle(view.getByTestId('boss-difficulty-popover-caret', { includeHiddenElements: true }).props.style)
+    expect(left + (caret.left as number) + 6).toBe(120)
+    expect(caret[edge]).toBe(-6)
+  })
 })

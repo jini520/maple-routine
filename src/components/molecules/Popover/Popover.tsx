@@ -8,18 +8,58 @@
 import { useState, type ReactNode } from 'react'
 import { Modal, Pressable, View, type LayoutChangeEvent } from 'react-native'
 import { vars } from 'nativewind'
+import Svg, { Path } from 'react-native-svg'
 
 import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
 import { usePopoverPlacement } from '../../../hooks/usePopoverPlacement'
-import { anchorPopover } from '../../../lib/popover-anchor'
+import { CARET_HEIGHT, CARET_OVERLAP, CARET_WIDTH, anchorPopover } from '../../../lib/popover-anchor'
 import { useScreenLayout } from '../../../lib/screen-layout'
 import { useThemeAppearance } from '../../../theme/context'
-import { buildPopoverScopeVariables } from '../../../theme/theme-vars'
+import { buildPopoverScopeVariables, toColorVariableName } from '../../../theme/theme-vars'
 
 const EDGE_GAP = 12
-const CARET_SIZE = 8
-/** 앵커 밑변과 상자 윗변 사이. 꼬리(8 의 절반이 삐져나온다)가 닿아 보이는 최소값 */
+/** 앵커 밑변과 상자 윗변 사이. 꼬리(상자 밖으로 6 나온다)가 앵커에 닿아 보이는 최소값 */
 const POPOVER_GAP = 8
+
+/** 위를 가리키는 꼬리. 끝만 둥근 삼각형이고 Figma 꼬리와 같은 경로 */
+const CARET_UP = 'M0 7 L4.6 1.4 Q6 -0.3 7.4 1.4 L12 7 Z'
+const CARET_DOWN = 'M0 0 L4.6 5.6 Q6 7.3 7.4 5.6 L12 0 Z'
+
+/**
+ * 상자 위 · 아래 변에 붙어 앵커를 가리키는 꼬리. 상자와 같은 팝오버 표면색이고 선이 없다.
+ *
+ * @example
+ * <PopoverCaret testID="stats-trend-bubble-caret" edge="bottom" left={geometry.caretLeft} />
+ */
+export function PopoverCaret(props: {
+  /** 꼬리가 붙는 상자 변. `top` 이면 위를 가리킨다 */
+  edge: 'top' | 'bottom'
+  /** 상자 왼쪽 변에서 꼬리 왼쪽 끝까지 */
+  left: number
+  testID?: string
+}): React.JSX.Element {
+  const { definition } = useThemeAppearance()
+  const fill = buildPopoverScopeVariables(definition)[toColorVariableName('surface')]
+  const outside = CARET_OVERLAP - CARET_HEIGHT
+  return (
+    <View
+      testID={props.testID}
+      aria-hidden
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: props.left,
+        width: CARET_WIDTH,
+        height: CARET_HEIGHT,
+        ...(props.edge === 'top' ? { top: outside } : { bottom: outside }),
+      }}
+    >
+      <Svg width={CARET_WIDTH} height={CARET_HEIGHT}>
+        <Path d={props.edge === 'top' ? CARET_UP : CARET_DOWN} fill={fill} />
+      </Svg>
+    </View>
+  )
+}
 
 /** 투명 `Modal` 과 화면 전체를 덮는 닫기 층. 내용은 `children` 으로 그 위에 그린다 */
 export function PopoverLayer(props: {
@@ -87,7 +127,7 @@ export function AnchoredPopover(props: {
     anchorCenterX: anchor === null ? 0 : anchor.left + anchor.width / 2,
     popoverWidth: boxWidth,
     edgeGap,
-    caretSize: CARET_SIZE,
+    caretSize: CARET_WIDTH,
   })
   const center = placement.side === 'center'
   const hasWidth = props.width !== undefined || measuredWidth !== null
@@ -119,16 +159,10 @@ export function AnchoredPopover(props: {
         className={`absolute rounded-[12px] bg-surface shadow-lg ${props.className ?? ''}`}
       >
         {!center && (
-          <View
+          <PopoverCaret
             testID={`${props.testID}-caret`}
-            aria-hidden
-            style={{
-              left: geometry.caretLeft,
-              width: CARET_SIZE,
-              height: CARET_SIZE,
-              ...(placement.side === 'below' ? { top: -4 } : { bottom: -4 }),
-            }}
-            className="absolute rotate-45 bg-surface"
+            edge={placement.side === 'below' ? 'top' : 'bottom'}
+            left={geometry.caretLeft}
           />
         )}
         {props.children}

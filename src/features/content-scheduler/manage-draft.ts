@@ -1,12 +1,13 @@
 /**
- * 컨텐츠 관리 화면의 초안. 저장하기 전에 켜고 끈 컨텐츠를 일간 · 주간마다 든다.
+ * 컨텐츠 관리 화면의 초안. 저장하기 전에 켜고 끈 컨텐츠를 일일 · 주간마다, 공유 탭은 메이플 ID 하나에 든다.
  *
  * 화면은 저장된 값에 초안을 얹어 그리고, 저장 함수는 저장소의 지금 배열에 같은 함수로 초안을 얹어 쓴다. 두 곳이 같은 함수를 써야
  * 화면에 보인 목록이 그대로 저장된다.
  */
+import { contentSectionOf } from '../../lib/scheduler/contents'
 import type { ManualTrackedItem } from '../../storage/manual-tracked-content'
 
-/** 일간 · 주간마다 컨텐츠 key 의 추적 여부. */
+/** 일일 · 주간마다 컨텐츠 key 의 추적 여부. */
 export type ContentManageDraft = Record<'daily' | 'weekly', Partial<Record<string, boolean>>>
 
 export const EMPTY_CONTENT_MANAGE_DRAFT: ContentManageDraft = { daily: {}, weekly: {} }
@@ -58,4 +59,42 @@ export function withoutSavedContentManageDraft(draft: ContentManageDraft, saved:
     }
   }
   return next
+}
+
+/** 공유 탭의 초안. 컨텐츠 key 의 추적 여부이고, 종류(`daily` · `weekly`)는 컨텐츠의 주기에서 정한다. */
+export type SharedManageDraft = Partial<Record<string, boolean>>
+
+/**
+ * 공유 탭의 행이 켜져 있나. 그 메이플 ID 의 추적 캐릭터 가운데 하나라도 추적하면 켜져 있다. 공유 탭이 항목을 보이는 기준과 같다.
+ *
+ * @param lists 그 메이플 ID 의 추적 캐릭터마다의 저장된 목록
+ */
+export function isSharedContentTracked(lists: readonly (readonly ManualTrackedItem[])[], contentKey: string): boolean {
+  return lists.some((items) => items.some((item) => item.kind !== 'boss' && item.contentKey === contentKey))
+}
+
+/**
+ * 캐릭터 한 명의 저장된 목록에 공유 탭 초안을 얹은 목록. 켠 항목은 컨텐츠의 주기로 끝에 붙고, 끈 항목은 빠진다.
+ *
+ * 저장은 이것을 그 메이플 ID 의 추적 캐릭터 모두에 적는다. 한 명에게만 남아 있으면 끈 항목이 공유 탭에 계속 보인다.
+ */
+export function applySharedManageDraft(items: readonly ManualTrackedItem[], draft: SharedManageDraft): ManualTrackedItem[] {
+  const next = items.filter((item) => item.kind === 'boss' || draft[item.contentKey] !== false)
+  for (const [contentKey, tracked] of Object.entries(draft)) {
+    const kind = contentSectionOf(contentKey)
+    if (tracked === true && kind !== null && !isContentTracked(next, kind, contentKey)) next.push({ contentKey, kind })
+  }
+  return next
+}
+
+/** 저장된 값(`하나라도` 기준)과 다른 것만 남긴 공유 탭 초안. */
+export function changedSharedManageDraft(
+  draft: SharedManageDraft,
+  lists: readonly (readonly ManualTrackedItem[])[],
+): SharedManageDraft {
+  return Object.fromEntries(
+    Object.entries(draft).filter(
+      ([contentKey, tracked]) => tracked !== undefined && tracked !== isSharedContentTracked(lists, contentKey),
+    ),
+  )
 }

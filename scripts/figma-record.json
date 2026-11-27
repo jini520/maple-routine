@@ -175,7 +175,7 @@
     },
     "molecules/Popover": {
       "node": "98:125",
-      "hash": "7e8bdfd6ce58a629"
+      "hash": "d2291532a1db1c4e"
     },
     "molecules/SearchField": {
       "node": "93:100",
@@ -211,7 +211,7 @@
     },
     "organisms/BossPicker": {
       "node": "103:308",
-      "hash": "e85fb648a2885f66"
+      "hash": "7b4a94d0cd98fdaf"
     },
     "organisms/BottomBar": {
       "node": "103:226",

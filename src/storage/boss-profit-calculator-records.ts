@@ -1,5 +1,5 @@
 /**
- * 주간 보스 수익 계산기의 기록 목록. Preferences 의 JSON 한 칸.
+ * 주간 보스 수입 계산기의 기록 목록. Preferences 의 JSON 한 칸.
  *
  * 저장은 서버 `boss_profit_calculator_record_bosses` 와 같은 칸이다. 보스는 난이도 줄 id, 분배는 분배 설정과 같은 칸 다섯이다.
  * 계산기는 보스 key · 비율 칸을 들어서, 그 사이를 여기서 바꾼다.

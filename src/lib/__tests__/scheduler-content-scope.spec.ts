@@ -69,7 +69,7 @@ describe('getSharedContentGroups', () => {
       '아우룸레기스',
     ])
     expect(byCategory.get('monster_park')?.entries.map((entry) => entry.shortName)).toEqual([
-      '일간',
+      '일일',
       '익스트림 몬스터파커',
     ])
   })

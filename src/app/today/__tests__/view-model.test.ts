@@ -1053,7 +1053,7 @@ describe('주간 결정석 판매 한도', () => {
 
 describe('초기화 카운트다운', () => {
   // now 를 고정하면 전부 결정적이다. 이 파일이 `new Date` 를 부르지 않는 이유.
-  it('일간·주간·월간 초기화까지 남은 시간을 KST 기준으로 센다', () => {
+  it('일일·주간·월간 초기화까지 남은 시간을 KST 기준으로 센다', () => {
     const model = buildTodayViewModel(input())
 
     // 2026-08-18 00:00 KST
@@ -1201,7 +1201,7 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
     const park = model.sharedContents.find((group) => group.category === 'monster_park')
 
     expect(park?.items[0]).toMatchObject({
-      shortName: '일간',
+      shortName: '일일',
       count: { now: 7, max: 14 },
       isComplete: false,
     })
@@ -1230,7 +1230,7 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
 
   it('완료하면 카운트를 안 준다. 화면이 CLEAR 를 그린다', () => {
     // 완료한 항목의 **몇 번 했나** 는 언제나 max 라 카운트를 줄 이유가 없다. 익스트림 몬스터파커의
-    // `now_count` 는 이번 주 일간 몬스터파크 횟수로 진짜지만, 그 사실이 이 규칙을 바꾸지 않는다.
+    // `now_count` 는 이번 주 일일 몬스터파크 횟수로 진짜지만, 그 사실이 이 규칙을 바꾸지 않는다.
     const model = buildTodayViewModel(
       input({
         orderedOcids: ['a'],
@@ -1262,7 +1262,7 @@ describe('공유 컨텐츠. 오른쪽 열은 `maxCount > 0` 하나로 갈린다'
     )
     const park = model.sharedContents.find((group) => group.category === 'monster_park')
 
-    expect(park?.items[0]).toMatchObject({ shortName: '일간', count: null, isComplete: true })
+    expect(park?.items[0]).toMatchObject({ shortName: '일일', count: null, isComplete: true })
   })
 
   it('카운트가 최대를 넘어도 분모를 넘지 않는다', () => {
@@ -1476,7 +1476,7 @@ describe('공유 컨텐츠. 유니온은 그리지 않는다', () => {
     )
 
     expect(sharedRows(model)).toEqual([
-      ['몬스터파크', [['일간', null, false], ['익스트림 몬스터파커', null, false]]],
+      ['몬스터파크', [['일일', null, false], ['익스트림 몬스터파커', null, false]]],
       [
         '에픽 던전',
         [

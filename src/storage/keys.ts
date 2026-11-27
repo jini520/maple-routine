@@ -162,7 +162,7 @@ export const STORAGE_KEYS = {
   worldSharedProgressSplit: 'worldSharedProgressSplit',
   // 1.0.15 기기 변환이 Preferences 의 기록을 새 모양으로 바꾼 판. 지워져도 변환이 이미 바꾼 키를 건너뛰어 결과가 같다.
   preferencesConversion: 'preferencesConversion',
-  // 주간 보스 수익 계산기의 기록(JSON). 사용자가 남긴 것이라 아무도 되살려 주지 않는다. 데이터 삭제 그룹에 넣지 말 것.
+  // 주간 보스 수입 계산기의 기록(JSON). 사용자가 남긴 것이라 아무도 되살려 주지 않는다. 데이터 삭제 그룹에 넣지 말 것.
   bossProfitCalculatorRecords: 'bossProfitCalculatorRecords',
   // 1.0.13 전의 게임 데이터 사본(TanStack Query 캐시). 사본은 이제 SQLite 에 있어 안 읽고 켤 때 지우기만 한다.
   queryCache: 'queryCache',

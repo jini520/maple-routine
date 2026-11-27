@@ -17,13 +17,19 @@ import { queryClient } from '../query/client'
 import { queryKeys } from '../query/keys'
 import { readTrackedOcidsSync } from '../schedule-sync/read-schedule'
 import { useTrackingModeStore } from '../tracking-mode/store'
-import { applyContentManageDraft, isContentTracked, type ContentManageDraft } from './manage-draft'
+import {
+  applyContentManageDraft,
+  applySharedManageDraft,
+  isContentTracked,
+  type ContentManageDraft,
+  type SharedManageDraft,
+} from './manage-draft'
 
 export type { ContentCharacterView } from './views'
 
 // 스케줄러 화면과 관리 페이지가 함께 쓰는 탭 식별자. 두 화면이 각자 선언하면 그 복제가 각자
 // 판단해도 된다 처럼 보인다.
-export type ContentTab = 'daily' | 'weekly'
+export type ContentTab = 'daily' | 'weekly' | 'shared'
 
 export interface ContentSchedulerState {
   // 수동 모드에서 캐릭터별 추적 항목(멤버십). 값 필드는 여기 두지 않고 표시 시점에 캐시의
@@ -32,6 +38,11 @@ export interface ContentSchedulerState {
   // 화면 로컬 state 가 아니라 스토어가 소유한다. 화면이 언마운트돼도 살아남고, 관리 페이지가
   // 같은 값을 읽어 보던 탭 그대로 열린다. 영속화하지 않는다. 앱을 다시 켜면 기본값으로 돌아온다.
   activeTab: ContentTab
+  /**
+   * 공유 탭이 보여 주는 메이플 ID. `null` 이면 지금 고른 캐릭터의 메이플 ID 로 연다. 고른 캐릭터와 따로 든다. 별칭을 골라도
+   * 일일 · 주간 탭으로 돌아갔을 때 보던 캐릭터가 바뀌면 안 된다. 탭처럼 저장하지 않는다.
+   */
+  selectedMapleId: string | null
 }
 
 export interface ContentSchedulerStore extends ContentSchedulerState {
@@ -48,11 +59,19 @@ export interface ContentSchedulerStore extends ContentSchedulerState {
   // 보스 수익의 setTab 과 달리 동기다. 그쪽은 탭이 바뀌면 기간을 다시 불러와야 하지만 여기 탭은
   // 이미 받아 둔 데이터를 갈라 보여줄 뿐이라 네트워크가 없다.
   setActiveTab(tab: ContentTab): void
+  setSelectedMapleId(mapleId: string): void
+  /**
+   * 공유 탭의 초안을 그 메이플 ID 의 추적 캐릭터 모두에 저장하는 함수. 쓰기 알림은 끝날 때 한 번이다. 실패하면 던진다.
+   *
+   * @param ocids 그 메이플 ID 의 추적 캐릭터. 넘기지 않은 캐릭터의 목록은 읽지도 쓰지도 않는다
+   */
+  saveManualSharedDraft(ocids: readonly string[], draft: SharedManageDraft): Promise<void>
 }
 
 const initialState: ContentSchedulerState = {
   manualTrackedByOcid: {},
   activeTab: 'daily',
+  selectedMapleId: null,
 }
 
 export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, get) => ({
@@ -75,6 +94,23 @@ export const useContentSchedulerStore = create<ContentSchedulerStore>()((set, ge
 
   setActiveTab(tab) {
     set({ activeTab: tab })
+  },
+
+  setSelectedMapleId(mapleId) {
+    set({ selectedMapleId: mapleId })
+  },
+
+  // 캐릭터 초안 저장과 같이 저장소의 지금 배열에 얹어 쓴다. 공유 컨텐츠에는 길드 컨텐츠가 없어 잠글 것이 없다.
+  saveManualSharedDraft(ocids, draft) {
+    return batchRecordWrites(async () => {
+      const saved: Record<string, ManualTrackedItem[]> = {}
+      for (const ocid of ocids) {
+        const next = applySharedManageDraft(await getManualTrackedContent(ocid), draft)
+        await setManualTrackedContent(ocid, next)
+        saved[ocid] = next
+      }
+      set((state) => ({ manualTrackedByOcid: { ...state.manualTrackedByOcid, ...saved } }))
+    })
   },
 
   // 저장소(단일 진실 공급원)에서 지금 배열을 읽어 초안을 얹고 한 번 쓴 뒤 화면 상태를 갱신한다. 받기가 넣은 항목을 덮지 않는다.

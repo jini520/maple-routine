@@ -1,4 +1,4 @@
-# ADR-074+301 주간 보스 수익 계산기
+# ADR-074+301 주간 보스 수입 계산기
 
 > 🟢 유효
 > 관련 소스: `app/utility/BossProfitCalculatorScreen.tsx` · `app/utility/BossProfitCalculatorRecordsScreen.tsx` · `app/utility/boss-profit-calculator/` · `components/molecules/DonutRing/` · `components/molecules/DifficultyExpander/` · `features/boss-profit-calculator/` · `lib/boss/boss-profit-calculator.ts` · `storage/boss-profit-calculator-records.ts` · `native/uuid.ts`
@@ -14,7 +14,7 @@
 
 ## 결정
 
-### 결정 1. 유틸리티 탭의 둘째 도구이고, 이름은 `주간 보스 수익 계산기` 다
+### 결정 1. 유틸리티 탭의 둘째 도구이고, 이름은 `주간 보스 수입 계산기` 다
 
 도구 목록과 여는 방식은 [[ADR-001]] 결정 10 을 따른다. 카드를 누르면 `UtilityBossProfitCalculator` 화면을 루트 스택에
 push 한다. 이름은 `tool-names.ts` 에 한 번만 적고 카드와 화면 제목이 함께 쓴다.

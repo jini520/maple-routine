@@ -103,13 +103,13 @@
 | `preferencesConversion` | 판 번호 문자열(`'1'`) | `preferences-conversion.ts` | 남긴다 | 1.0.15 기기 변환이 기록 키를 새 모양으로 바꾼 판. 지워져도 변환이 이미 바꾼 키를 건너뛰어 결과가 같다([[ADR-286]] 결정 1) |
 | `appReview` | JSON `{ firstLaunchAt, saveCount, lastRequestedAt }`. 시각은 ISO, `lastRequestedAt` 은 요청 전이면 `null` | `app-review.ts` | 남긴다 | 앱 안 리뷰 요청의 기록([[ADR-052]] 결정 10). 지워지면 90일 간격을 처음부터 다시 센다 |
 | `partyScheduleView` | `'list'` · `'board'` | `party-schedule-view.ts` | 남긴다 | 파티 스케줄 화면에서 마지막으로 고른 보기. 없으면 목록 |
-| `bossProfitCalculatorRecords` | JSON 기록 배열. 보스는 `{ bossDifficultyId, splitType, partySize, splitShareMillipercent, splitFeePercent, splitFeeFollowsMvpGrade }` | `boss-profit-calculator-records.ts` | 남긴다 | 주간 보스 수익 계산기에서 저장한 기록. 금액 없이 보스 · 난이도 · 파티 값만 남긴다([[ADR-074]] 결정 13) |
+| `bossProfitCalculatorRecords` | JSON 기록 배열. 보스는 `{ bossDifficultyId, splitType, partySize, splitShareMillipercent, splitFeePercent, splitFeeFollowsMvpGrade }` | `boss-profit-calculator-records.ts` | 남긴다 | 주간 보스 수입 계산기에서 저장한 기록. 금액 없이 보스 · 난이도 · 파티 값만 남긴다([[ADR-074]] 결정 13) |
 | `notificationLedger` | JSON `{ id, kind, fireAt, title, body }[]` | `notification-ledger.ts` | 남긴다 | 지금 예약해 둔 로컬 알림. OS 의 예약 목록은 읽을 수 없어서 따로 적는다 |
 | `notices` | JSON `Notice[]` | `legacy-cleanup.ts` | 켤 때 지운다 | 1.0.12 까지의 키. 공지는 이제 쿼리 `notices(kind)` 가 SQLite `query_cache` 에 든다([[ADR-142]] 결정 7). 안 읽고 옛 키 정리가 지운다([[ADR-142]] 결정 12) |
 | `dismissedNotices` | JSON 공지 id 배열(최근 50) | `notice-banner.ts` | 남긴다 | today 배너에서 닫은 공지. 닫았다는 사실은 기기에만 있다 |
 | `dismissedSettlement` | ISO 시각 | `settlement-banner.ts` | 남긴다 | 닫은 결산 안내의 시작 시각. 다음 결산은 시각이 달라 다시 보인다 |
 | `dismissedManualCompletion` | 주간 기간 키(목요일 `YYYY-MM-DD`) | `manual-completion-banner.ts` | 남긴다 | 닫은 직접 완료 안내의 주 |
-| `statsCumulativeStartDate` | KST `YYYY-MM-DD` | `stats-cumulative-start.ts` | 남긴다 | 통계 누적 순 수익의 시작 날짜 |
+| `statsCumulativeStartDate` | KST `YYYY-MM-DD` | `stats-cumulative-start.ts` | 남긴다 | 통계 누적 순수익의 시작 날짜 |
 | `isMvpWeeklyCheckOff` | `'true'`(끄면 키를 지운다) | `mvp-grade-prefs.ts` | 남긴다 | 등급 주간 확인을 끈 체크박스 |
 | `mvpLastCheckedWeekCode` | 주차 값(`W202647`) | `mvp-grade-prefs.ts` | 남긴다 | 마지막으로 등급을 확인한 주 |
 | `isMvpBulkApplyAsked` | `'true'` | `mvp-grade-prefs.ts` | 남긴다 | 지난 기록 일괄 적용을 물어봤는지 |
@@ -148,6 +148,6 @@
 | `lastSelectedCharacter` | ocid | `character-selection.ts` | 드롭다운에서 마지막으로 고른 캐릭터 |
 | `representativeCharacter` | ocid | `character-selection.ts` | 사용자가 고른 대표 캐릭터. 고르지 않았으면 키가 없다 |
 | `trackedCharacters:content` · `:boss` · `:daily` · `:weekly` · `lastSelectedCharacter:content` · `:boss` | | `character-selection.ts` | 옛 키. `trackedCharacters` 가 없을 때 합쳐 옮기고 지운다 |
-| `manualTrackedContent:{ocid}` | JSON `{ type, targetId }[]`. `targetId` 는 일간 · 주간이면 컨텐츠 줄 id, 보스면 난이도 줄 id | `manual-tracked-content.ts` | 수동 모드에서 그 캐릭터가 추적할 항목([[ADR-034]] 결정 3) |
-| `worldSharedProgress:{accountId}:{월드 줄 id}` | JSON `{ [컨텐츠 줄 id]: { isRegistered, nowCount, maxCount, questState, periodCode } }` | `shared-progress-cache.ts` | 월드 단위로 완료가 공유되는 컨텐츠의 진행. 같은 월드라도 메이플 ID 마다 따로다. 기간 값은 일간 `D20261119` · 주간 `W202647` 이다([[ADR-032]] 결정 9). 월드로만 묶던 옛 키(`worldSharedProgress:{worldKey}` · 월드 이름)는 추적 캐릭터가 있는 메이플 ID 마다 한 번 베끼고 지운다([[ADR-101]] 결정 23) |
+| `manualTrackedContent:{ocid}` | JSON `{ type, targetId }[]`. `targetId` 는 일일 · 주간이면 컨텐츠 줄 id, 보스면 난이도 줄 id | `manual-tracked-content.ts` | 수동 모드에서 그 캐릭터가 추적할 항목([[ADR-034]] 결정 3) |
+| `worldSharedProgress:{accountId}:{월드 줄 id}` | JSON `{ [컨텐츠 줄 id]: { isRegistered, nowCount, maxCount, questState, periodCode } }` | `shared-progress-cache.ts` | 월드 단위로 완료가 공유되는 컨텐츠의 진행. 같은 월드라도 메이플 ID 마다 따로다. 기간 값은 일일 `D20261119` · 주간 `W202647` 이다([[ADR-032]] 결정 9). 월드로만 묶던 옛 키(`worldSharedProgress:{worldKey}` · 월드 이름)는 추적 캐릭터가 있는 메이플 ID 마다 한 번 베끼고 지운다([[ADR-101]] 결정 23) |
 | `accountSharedProgress:{accountId}` | JSON. 월드 원장과 같은 모양 | `shared-progress-cache.ts` | 계정 단위로 공유되는 컨텐츠의 진행. `accountId` 는 그 캐릭터가 속한 계정이다 |

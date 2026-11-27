@@ -192,11 +192,11 @@ export function 공유계열(
   return { category, label: contentCategoryNameOf(category), items, weeklyLimit }
 }
 
-/** 카탈로그 일곱을 다 그린 상태. 남은 것 넷(악몽선경· 일간· 익스트림· PC방). */
+/** 카탈로그 일곱을 다 그린 상태. 남은 것 넷(악몽선경· 일일· 익스트림· PC방). */
 export function 공유컨텐츠(): SharedContentGroupView[] {
   return [
     공유계열('monster_park', [
-      공유항목('일간', { count: { now: 7, max: 14 } }),
+      공유항목('일일', { count: { now: 7, max: 14 } }),
       공유항목('익스트림 몬스터파커', { count: { now: 1, max: 5 } }),
     ]),
     공유계열('maple_union', [
@@ -258,9 +258,9 @@ export function 이번주수익(캐릭터들: WeeklyIncomeCharacterView[]): Week
 }
 
 /**
- * 셋. 순 수익 · 수익 · 지출 순위가 서로 다르다. 세그먼트를 바꾸면 순위가 바뀌는지를 이름으로 물을 수 있다.
+ * 셋. 순수익 · 수입 · 지출 순위가 서로 다르다. 세그먼트를 바꾸면 순위가 바뀌는지를 이름으로 물을 수 있다.
  *
- * 순 수익: 가(8억) · 나(5억) · 다(1억), 합 14억. 수익: 가(10억) · 다(6억) · 나(5억). 지출: 다(5억) · 가(2억), 나는 지출이 없다.
+ * 순수익: 가(8억) · 나(5억) · 다(1억), 합 14억. 수입: 가(10억) · 다(6억) · 나(5억). 지출: 다(5억) · 가(2억), 나는 지출이 없다.
  */
 export function 수익캐릭터셋(): WeeklyIncomeCharacterView[] {
   return [

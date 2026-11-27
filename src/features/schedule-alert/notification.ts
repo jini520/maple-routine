@@ -35,7 +35,7 @@ function fireAtOf(dateKey: string): number {
   return Date.parse(`${dateKey}T21:00:00+09:00`)
 }
 
-/** 그날 드는 주기. 일간은 매일, 주간은 다음 날이 리셋 주의 시작(목요일)인 날, 월간은 다음 날이 1일인 날 */
+/** 그날 드는 주기. 일일은 매일, 주간은 다음 날이 리셋 주의 시작(목요일)인 날, 월간은 다음 날이 1일인 날 */
 function dueCycles(dateKey: string): AlertCycle[] {
   const nextDay = shiftDateKey(dateKey, 1)
   return CYCLES.filter((cycle) => {

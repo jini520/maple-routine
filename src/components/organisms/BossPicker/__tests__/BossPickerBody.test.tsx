@@ -1,4 +1,4 @@
-// 보스 고르기 본문. 파티 스케줄과 주간 보스 수익 계산기가 함께 쓴다.
+// 보스 고르기 본문. 파티 스케줄과 주간 보스 수입 계산기가 함께 쓴다.
 import { fireEvent, within } from '@testing-library/react-native'
 import { Text } from 'react-native'
 

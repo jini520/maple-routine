@@ -30,7 +30,7 @@ async function 고르기(view: Rendered, label: string): Promise<void> {
 }
 
 describe('세그먼트', () => {
-  it('처음은 순 수익이고, 큰 숫자와 순위가 순 수익 기준이다', async () => {
+  it('처음은 순수익이고, 큰 숫자와 순위가 순수익 기준이다', async () => {
     const view = await 위젯()
 
     expect(view.getByTestId('weekly-income-total').props.children).toBe('+14억')
@@ -56,7 +56,7 @@ describe('세그먼트', () => {
 })
 
 describe('캐릭터 줄의 팝오버', () => {
-  it('순 수익에서는 그 캐릭터의 수입 분류와 지출 분류를 함께 띄운다', async () => {
+  it('순수익에서는 그 캐릭터의 수입 분류와 지출 분류를 함께 띄운다', async () => {
     const view = await 위젯()
 
     await act(async () => {

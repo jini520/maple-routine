@@ -128,13 +128,13 @@ export const CastleIcon = withIconInterop(Castle)
 export const CrownIcon = withIconInterop(Crown)
 /** 숫자 판의 한 자리 지우개. `NumberPad`. lucide 의 `delete` 는 백스페이스 키 모양이다. */
 export const DeleteIcon = withIconInterop(Delete)
-/** 더 보기 메뉴를 여는 버튼. 주간 보스 수익 계산기의 보스 카드 머리. */
+/** 더 보기 메뉴를 여는 버튼. 주간 보스 수입 계산기의 보스 카드 머리. */
 export const EllipsisIcon = withIconInterop(Ellipsis)
-/** 기록 목록을 여는 버튼. 주간 보스 수익 계산기의 머리. */
+/** 기록 목록을 여는 버튼. 주간 보스 수입 계산기의 머리. */
 export const HistoryIcon = withIconInterop(History)
 /** 배경 그림이 있는 테마 표식. `ThemeSelector` 칸. RN 의 `Image` 와 겹치지 않게 `ImageGlyph` 로 가져온다. */
 export const ImageIcon = withIconInterop(ImageGlyph)
-/** 기록 하나를 지우는 버튼. 주간 보스 수익 계산기의 계산 기록. */
+/** 기록 하나를 지우는 버튼. 주간 보스 수입 계산기의 계산 기록. */
 export const Trash2Icon = withIconInterop(Trash2)
 /** 데이터 삭제 확인 창의 머리 배지. */
 export const TrashIcon = withIconInterop(Trash)
@@ -277,7 +277,7 @@ export const WalletIcon = withIconInterop(Wallet)
 export const HammerIcon = withIconInterop(Hammer)
 /** today 빠른 이동의 판매 분배금 계산기 칸. */
 export const DivideIcon = withIconInterop(Divide)
-/** today 빠른 이동의 주간 보스 수익 계산기 칸. */
+/** today 빠른 이동의 주간 보스 수입 계산기 칸. */
 export const CalculatorIcon = withIconInterop(Calculator)
 /** today 빠른 이동의 알림 설정 칸. 약속에 달린 알림(`Bell`)과 다른 그림이다. */
 export const BellRingIcon = withIconInterop(BellRing)

@@ -223,7 +223,7 @@ describe('미완료 스케줄 알림', () => {
     expect(alerts).toHaveLength(7)
     expect(alerts[0]!.scheduleAt.toISOString()).toBe('2026-10-07T12:00:00.000Z')
     // 수요일이라 주간이 드는 날이지만, 주간은 남은 것이 없고 같은 리셋 주라 그 상태를 믿어 제목에서 빠진다.
-    expect(alerts[0]!.title).toBe('일간 스케줄이 남은 것 같아요')
+    expect(alerts[0]!.title).toBe('일일 스케줄이 남은 것 같아요')
 
     await setScheduleAlertEnabled(false)
     await reconcileLocalNotifications(NOW)

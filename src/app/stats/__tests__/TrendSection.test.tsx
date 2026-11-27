@@ -1,6 +1,6 @@
 import { act, fireEvent } from '@testing-library/react-native'
 
-import { renderOverlay } from '../../../components/__tests__/render-atom'
+import { flattenStyle, renderOverlay } from '../../../components/__tests__/render-atom'
 import { installNoopNativePorts } from '../../../native/__tests__/fake-native-ports'
 import { statsRanges } from '../../../features/stats/periods'
 import { TrendSection } from '../TrendSection'
@@ -51,13 +51,13 @@ beforeEach(() => {
 })
 
 describe('TrendSection', () => {
-  it('막대를 누르면 그 주의 순 수익과 수입 · 지출이 뜨고, 다시 누르면 닫힌다', async () => {
+  it('막대를 누르면 그 주의 순수익과 수입 · 지출이 뜨고, 다시 누르면 닫힌다', async () => {
     const view = await 그리기()
 
     await 누르기(view, '9월 4주차 보기')
 
     expect(view.getByTestId('stats-trend-bubble-title').props.children).toBe('9월 4주차')
-    expect(view.getByTestId('stats-trend-bubble-value').props.children).toBe('순 수익 +3억')
+    expect(view.getByTestId('stats-trend-bubble-value').props.children).toBe('순수익 +3억')
     expect(view.getByTestId('stats-trend-bubble-sub').props.children).toBe('수입 5억 · 지출 2억')
 
     await 누르기(view, '9월 4주차 보기')
@@ -87,11 +87,25 @@ describe('TrendSection', () => {
     expect(view.getByLabelText('9월 4주차 보기')).toBeTruthy()
   })
 
+  // 폭을 재기 전의 차트 폭 312 에서 막대 칸은 눈금 자리 46 을 뺀 266 을 여덟로 나눈 폭이다.
+  it('말풍선의 꼬리가 고른 막대 가운데를 가리킨다. 오른쪽 끝 막대에서 말풍선이 밀려도 따라간다', async () => {
+    const view = await 그리기()
+    const slot = (312 - 46) / 8
+    for (const [label, index] of [['9월 4주차 보기', 7], ['9월 1주차 보기', 4]] as const) {
+      await 누르기(view, label)
+      await fireEvent(view.getByTestId('stats-trend-bubble'), 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 120, height: 48 } } })
+      const left = flattenStyle(view.getByTestId('stats-trend-bubble').props.style).left as number
+      const caret = flattenStyle(view.getByTestId('stats-trend-bubble-caret', { includeHiddenElements: true }).props.style)
+      expect(left + (caret.left as number) + 6).toBeCloseTo(46 + slot * (index + 0.5))
+      expect(caret.bottom).toBe(-6)
+    }
+  })
+
   it('아래 줄은 구간 평균이다', async () => {
     const view = await 그리기()
 
     // 여덟 주의 순수익 합은 +1억이다.
-    expect(view.getByTestId('stats-trend-average').props.children).toBe('8주 평균 순 수익 +1,250만')
+    expect(view.getByTestId('stats-trend-average').props.children).toBe('8주 평균 순수익 +1,250만')
   })
 })
 

@@ -31,7 +31,7 @@ function railProps(overrides: Partial<RailPortraitProps> = {}): RailPortraitProp
     level: 285,
     imageUrl: 'https://open.api.nexon.com/character/1.png',
     rings: [
-      { label: '일간', completed: 3, total: 7 },
+      { label: '일일', completed: 3, total: 7 },
       { label: '주간', completed: 1, total: 5 },
     ],
     isSelected: true,
@@ -174,7 +174,7 @@ describe('CharacterPortrait · rail 규격의 호 링', () => {
   it('두 반원이 12시에서 갈라져 반대 방향으로 찬다', async () => {
     const view = await rail({
       rings: [
-        { label: '일간', completed: 1, total: 2 },
+        { label: '일일', completed: 1, total: 2 },
         { label: '주간', completed: 1, total: 2 },
       ],
     })
@@ -192,7 +192,7 @@ describe('CharacterPortrait · rail 규격의 호 링', () => {
   it('셀 것이 없으면 채운 호를 아예 안 그린다', async () => {
     const view = await rail({
       rings: [
-        { label: '일간', completed: 0, total: 0 },
+        { label: '일일', completed: 0, total: 0 },
         { label: '주간', completed: 0, total: 0 },
       ],
     })

@@ -16,6 +16,8 @@ import { useAnchoredPopover } from '../../hooks/useAnchoredPopover'
 import { monthKeyOf } from '../../lib/calendar'
 import { TABULAR_NUMS } from '../../constants/style/text-styles'
 import { buildPopoverScopeVariables } from '../../theme/theme-vars'
+import { PopoverCaret } from '../../components/molecules/Popover/Popover'
+import { CARET_WIDTH, centerBubble } from '../../lib/popover-anchor'
 import { cumulativeNet, totalsSeries, type DaysByDate } from '../../features/stats/aggregate'
 import { cumulativeRanges } from '../../features/stats/periods'
 import { formatMesoCompact } from '../../lib/cashbook/meso-compact'
@@ -31,6 +33,10 @@ import { StatsSection } from './StatsSection'
 const AnimatedBox = Animated.createAnimatedComponent(View)
 
 const BUBBLE_SPACE = 42
+/** 말풍선이 카드 여백으로 나갈 수 있는 폭. 꼬리 여백 8 과 꼬리 폭의 반 6 이라 꼬리가 차트 끝의 첫 점 · 끝 점까지 닿는다 */
+const BUBBLE_OVERHANG = 14
+/** 꼬리가 말풍선 끝에서 띄우는 거리. 말풍선 모서리 반경 10 의 둥근 곳을 피한다 */
+const BUBBLE_CARET_INSET = 8
 const CHART_HEIGHT = 96
 const TOP_PAD = 8
 const BOTTOM_PAD = 8
@@ -60,6 +66,7 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
   const { definition } = useThemeAppearance()
   const progress = useRevealProgress(props.revealed ?? true, `${props.periodKey}|${props.startDateKey ?? ''}`)
   const [width, setWidth] = useState(312)
+  const [bubbleWidth, setBubbleWidth] = useState<number | null>(null)
   /** 고른 점. 어느 기간 · 시작 날짜에서 골랐는지 함께 들어, 그것이 바뀌면 고름이 풀린다 */
   const [picked, setPicked] = useState<{ scope: string; index: number } | null>(null)
 
@@ -83,11 +90,18 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
   const area = `${line} L${x(points.length - 1).toFixed(1)} ${y(0).toFixed(1)} L${x(0).toFixed(1)} ${y(0).toFixed(1)} Z`
   const zeroY = y(0)
   const pointColor = selected !== null && points[selected] < 0 ? definition.fallInk : definition.riseInk
-  const bubbleRatio = x(selected ?? 0) / width
+  const bubble = centerBubble({
+    containerWidth: width,
+    anchorCenterX: x(selected ?? 0),
+    bubbleWidth: bubbleWidth ?? 0,
+    caretSize: CARET_WIDTH,
+    edgeGap: -BUBBLE_OVERHANG,
+    caretInset: BUBBLE_CARET_INSET,
+  })
   const revealStyle = useAnimatedStyle(() => ({ width: width * progress.value }))
 
   return (
-    <StatsSection title="누적 순 수익" testID="stats-cumulative">
+    <StatsSection title="누적 순수익" testID="stats-cumulative">
       <View className="flex-row items-end gap-2">
         <Text testID="stats-cumulative-total" className={`text-2xl font-bold ${total >= 0 ? 'text-rise-ink' : 'text-fall-ink'}`} style={TABULAR_NUMS}>
           {signed(total)}{' '}
@@ -186,13 +200,12 @@ export const CumulativeSection = memo(function CumulativeSection(props: {
             className="absolute top-0 rounded-[10px] bg-surface px-2 py-1 shadow-lg"
             style={[
               vars(buildPopoverScopeVariables(definition)),
-              bubbleRatio < 0.3
-                ? { left: 0 }
-                : bubbleRatio > 0.7
-                  ? { right: 0 }
-                  : { left: x(selected), transform: [{ translateX: '-50%' }] },
+              // 폭을 재기 전에는 안 보이게 그린다. 폭을 알아야 점 가운데에 맞출 수 있다.
+              { left: bubble.left, opacity: bubbleWidth === null ? 0 : undefined },
             ]}
+            onLayout={(event: LayoutChangeEvent) => setBubbleWidth(event.nativeEvent.layout.width)}
           >
+            <PopoverCaret testID="stats-cumulative-bubble-caret" edge="bottom" left={bubble.caretLeft} />
             <Text testID="stats-cumulative-bubble-title" className="text-10 text-text-muted">
               {`${periodTitle(props.cycle, ranges[selected].periodKey)}까지`}
             </Text>
