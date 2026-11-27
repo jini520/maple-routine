@@ -215,7 +215,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-158+180+222+276+333](./adr/ADR-158+180+222+276+333_server-sync_usage-log.md) | 🟢 | server-sync | 앱 사용 로그와 관리자 대시보드(사용자 · 사용 로그) |
 | [ADR-160+200](./adr/ADR-160+200_cashbook_exclusions.md) | ⚪ | cashbook | 가계부에서 빼는 강화 기록 |
 | [ADR-161+202+293](./adr/ADR-161+202+293_cashbook_account-records.md) | 🟢 | cashbook | 가계부 메이플 ID 기록 |
-| [ADR-187+213+216+278+281](./adr/ADR-187+213+216+278+281_game-data_item-catalog.md) | 🟢 | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 · 고르기 목록 칸 · 묶음 표 |
+| [ADR-187+213+216+278+281+330](./adr/ADR-187+213+216+278+281+330_game-data_item-catalog.md) | 🟢 | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 · 고르기 목록 칸 · 묶음 표 |
 | [ADR-188+260+269+321+340](./adr/ADR-188+260+269+321+340_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기, 사용자에게 묻기 전에 확인할 것, 버전의 역할과 릴리즈 대기 단계, 찾은 잘못을 그 자리에서 고치기, 전제가 바뀌면 옛 말로 찾아 고치기, 구현 전의 일은 미구현 ADR 에만 적기, 구현 뒤 코드 리뷰, 화면을 바꾸는 작업의 순서 |
 | [ADR-191+230](./adr/ADR-191+230_design-system_screen-size.md) | 🟢 | design-system | 태블릿과 접는 폰 외부 화면의 배치 |
 | [ADR-209+291](./adr/ADR-209+291_inventory_items.md) | 🟢 | inventory | 인벤토리 |
