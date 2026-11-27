@@ -15,7 +15,7 @@
  */
 
 import { useId } from 'react'
-import { Image, Pressable, View, type ImageSourcePropType } from 'react-native'
+import { Image, Pressable, StyleSheet, View, type ImageSourcePropType } from 'react-native'
 import { Circle, Defs, RadialGradient, Rect, Stop } from 'react-native-svg'
 
 import bossProfitIllustration from '../../assets/utility/boss-profit-calculator.webp'
@@ -139,20 +139,26 @@ function WordWrapRow(props: {
   )
 }
 
-/** 어둡게 바탕. 가운데가 밝은 방사 그라데이션이다. RN 에 방사 그라데이션이 없어 SVG 로 그린다. */
+/**
+ * 어둡게 바탕. 가운데가 밝은 방사 그라데이션이다. RN 에 방사 그라데이션이 없어 SVG 로 그린다.
+ *
+ * 카드를 다 덮는 틀 안에 둔다. 절대 위치 자식의 `100%` 는 카드의 안쪽 여백을 뺀 폭이라, SVG 에 바로 주면 글자 자리만 칠해진다.
+ */
 function DarkBackdrop(props: { colors: DarkPalette['backdrop'] }): React.JSX.Element {
   const id = useGradientId()
   return (
-    <Svg width="100%" height="100%" style={{ position: 'absolute' }} pointerEvents="none">
-      <Defs>
-        <RadialGradient id={id} cx="50%" cy="50%" r="50%">
-          {props.colors.map((color, index) => (
-            <Stop key={DARK_STOPS[index]} offset={DARK_STOPS[index]} stopColor={color} />
-          ))}
-        </RadialGradient>
-      </Defs>
-      <Rect width="100%" height="100%" fill={`url(#${id})`} />
-    </Svg>
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Svg width="100%" height="100%">
+        <Defs>
+          <RadialGradient id={id} cx="50%" cy="50%" r="50%">
+            {props.colors.map((color, index) => (
+              <Stop key={DARK_STOPS[index]} offset={DARK_STOPS[index]} stopColor={color} />
+            ))}
+          </RadialGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill={`url(#${id})`} />
+      </Svg>
+    </View>
   )
 }
 
@@ -211,7 +217,7 @@ function ToolCard(props: {
             colors={tool.light.backdrop}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
+            style={StyleSheet.absoluteFill}
           />
           <LightGlow />
         </>
