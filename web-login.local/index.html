@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>메이플 루틴</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #ffffff; --panel: #fbfbfc; --field: #f6f6f8; --line: #e5e5ea;
+    --text: #16161b; --text-muted: #5f5f6b; --text-subtle: #9a9aa5;
+    --accent: #ee7a0c; --on-accent: #ffffff; --accent-ink: #c25e08; --accent-soft: #fff2e5;
+    --fall: #2f6bdb; --rise: #d6343c; --rise-soft: #fdecec;
+    --scrim: rgba(11, 11, 14, .5); --hero-bg: #fff8f1;
+    --badge-tint: #feecda; --badge-ink: #f58b0f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0f0f12; --panel: #141418; --field: #19191e; --line: #2a2a31;
+      --text: #f3f3f6; --text-muted: #a7a7b2; --text-subtle: #6c6c77;
+      --accent: #ff9a3d; --on-accent: #1b1006; --accent-ink: #ffb067; --accent-soft: #33220f;
+      --fall: #6ea2ff; --rise: #ff6b6b; --rise-soft: #3a1a1c;
+      --scrim: rgba(0, 0, 0, .5); --hero-bg: #1c1c20;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f0f12; --panel: #141418; --field: #19191e; --line: #2a2a31;
+    --text: #f3f3f6; --text-muted: #a7a7b2; --text-subtle: #6c6c77;
+    --accent: #ff9a3d; --on-accent: #1b1006; --accent-ink: #ffb067; --accent-soft: #33220f;
+    --fall: #6ea2ff; --rise: #ff6b6b; --rise-soft: #3a1a1c;
+    --scrim: rgba(0, 0, 0, .5); --hero-bg: #1c1c20;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: 'Noto Sans KR', system-ui, sans-serif; background: var(--bg); color: var(--text);
+         -webkit-font-smoothing: antialiased; }
+  body.locked { overflow: hidden; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  p { margin: 0; }
+  .ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2;
+         stroke-linecap: round; stroke-linejoin: round; }
+  .t12 { font-size: 12px; line-height: 17px; } .t14 { font-size: 14px; line-height: 20px; }
+  .t16 { font-size: 16px; line-height: 23px; } .b { font-weight: 700; }
+  .muted { color: var(--text-muted); } .subtle { color: var(--text-subtle); } .ink { color: var(--accent-ink); }
+  .grow { flex: 1 1 0; min-width: 1px; }
+  .wrap { width: 100%; max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+
+  /* 상단 바: 높이 86(1차 메뉴 46 + 간격 8 + 2차 메뉴 줄 32) */
+  .topbar { padding-top: 24px; }
+  .topbar .row1 { display: flex; align-items: center; height: 46px; }
+  .topbar .side { width: 280px; display: flex; align-items: center; }
+  .topbar .side.right { justify-content: flex-end; }
+  .logo { display: flex; align-items: center; gap: 6px; font-size: 16px; line-height: 23px; font-weight: 700; }
+  .logo svg { width: 24px; height: 24.567px; fill: var(--accent); }
+  .menu-wrap { flex: 1; display: flex; justify-content: center; min-width: 0; }
+  .menu { display: flex; gap: 2px; padding: 3px; border-radius: 9999px; background: var(--panel); overflow-x: auto; scrollbar-width: none; }
+  .menu button { display: flex; align-items: center; gap: 6px; padding: 10px 16px 10px 14px; border-radius: 9999px;
+                 font-size: 14px; line-height: 20px; color: var(--text-muted); white-space: nowrap; }
+  .menu button:hover { background: var(--field); }
+  .menu button.on { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+  .pill { height: 36px; padding: 0 16px; border-radius: 9999px; background: var(--accent); color: var(--on-accent);
+          font-size: 12px; line-height: 17px; font-weight: 700; display: inline-flex; align-items: center; }
+  .pill:hover { filter: brightness(1.05); }
+  .topbar .row2 { height: 32px; margin-top: 8px; }
+
+  /* MASPI 칩 + 공지 줄 */
+  .notice-bar { display: flex; gap: 10px; margin-top: 13px; height: 54px; }
+  .chip { display: flex; align-items: center; gap: 10px; padding: 11px 18px; border-radius: 9999px; background: var(--panel); }
+  .tag { padding: 0 5px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent-ink);
+         font-size: 12px; line-height: 17px; font-weight: 700; }
+  .spark { width: 56px; height: 20px; color: var(--fall); }
+  .notice-pill { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px 18px 8px 11px;
+                 border-radius: 9999px; background: var(--panel); }
+  .notice-pill .megaphone { width: 36px; height: 30px; border-radius: 9999px; background: var(--accent-soft);
+                            color: var(--accent-ink); display: grid; place-items: center; flex: none; }
+  .notice-pill .megaphone .ico { width: 14px; height: 14px; }
+  .notice-pill .txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .notice-pill .txt p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .notice-pill .new { padding: 1px 6px; }
+
+  /* 본문 */
+  main.body { margin-top: 19px; min-height: 1683px; display: flex; flex-direction: column; gap: 56px; }
+  .hero { position: relative; height: 540px; }
+  .hero-text { position: absolute; left: 8px; top: 64px; display: flex; flex-direction: column; align-items: flex-start; z-index: 1; }
+  .hero-text .eyebrow { font-size: 16px; line-height: 24px; font-weight: 700; color: var(--accent-ink); }
+  .hero-text h1 { margin: 14px 0 0; font-size: 30px; line-height: 38px; font-weight: 700; }
+  .hero-text .lead { margin-top: 16px; font-size: 16px; line-height: 24px; color: var(--text-muted); }
+  .start { margin-top: 32px; display: inline-flex; align-items: center; gap: 5px; padding: 10px 14px 10px 19px;
+           border-radius: 9999px; background: var(--accent); color: var(--on-accent); font-size: 16px; line-height: 23px; font-weight: 700; }
+  .start .ico { width: 18px; height: 18px; }
+  .start:hover { filter: brightness(1.05); }
+  .steps { margin-top: 22px; display: flex; gap: 18px; flex-wrap: wrap; }
+  .steps span { display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 20px; font-weight: 700; }
+  .steps i { width: 20px; height: 20px; border-radius: 9999px; background: var(--accent); color: var(--on-accent);
+             font-style: normal; font-size: 11.667px; line-height: 16.667px; font-weight: 700; display: grid; place-items: center; }
+  .stores { margin-top: 40px; display: flex; gap: 10px; }
+  .stores img { height: 44px; display: block; }
+
+  /* 히어로 그림: 734 × 470 을 그대로 그리고, 좁은 폭에서는 통째로 줄인다 */
+  .hero-pic-box { position: absolute; left: 466px; top: 40px; width: 734px; height: 470px; }
+  .hero-pic { position: relative; width: 734px; height: 470px; border-radius: 40px; overflow: hidden; transform-origin: 0 0; }
+  .hero-pic > * { position: absolute; -webkit-mask-image: url(/assets/hero-mask.svg); mask-image: url(/assets/hero-mask.svg);
+                  -webkit-mask-size: 762px 518px; mask-size: 762px 518px; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+  .hero-pic .bg { left: 0; top: 0; width: 734px; height: 470px; background: var(--hero-bg);
+                  -webkit-mask-position: -14px -24px; mask-position: -14px -24px; }
+  .hero-pic img { display: block; object-fit: cover; }
+  .hero-pic .l1 { left: -54px; top: 28px; width: 346px; height: 364px; -webkit-mask-position: 40px -52px; mask-position: 40px -52px; }
+  .hero-pic .l2 { left: 46px; top: 123px; width: 168px; height: 224px; -webkit-mask-position: -60px -147px; mask-position: -60px -147px; }
+  .hero-pic .l3 { left: 424px; top: 84px; width: 347px; height: 376px; -webkit-mask-position: -438px -108px; mask-position: -438px -108px; }
+  .hero-pic .l4 { left: 171px; top: -12px; width: 392px; height: 494px; -webkit-mask-position: -185px -12px; mask-position: -185px -12px; }
+  .dark-only { display: none !important; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .dark-only { display: block !important; }
+    :root:not([data-theme="light"]) .light-only { display: none !important; }
+  }
+  :root[data-theme="dark"] .dark-only { display: block !important; }
+  :root[data-theme="dark"] .light-only { display: none !important; }
+
+  /* 기능 셋 */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+  .feature img { display: block; width: 100%; height: 164px; object-fit: cover; border-radius: 20px; }
+  .feature .kicker { margin-top: 20px; font-size: 12px; line-height: 17px; font-weight: 700; color: var(--accent-ink); }
+  .feature .kicker.fall { color: var(--fall); }
+  .feature h2 { margin: 6px 0 0; font-size: 18px; line-height: 25px; font-weight: 700; }
+  .feature p.desc { margin-top: 8px; font-size: 14px; line-height: 20px; color: var(--text-muted); }
+
+  /* 공지 셋 */
+  .boards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 38px; }
+  .board { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .board .head { display: flex; align-items: center; gap: 6px; padding-bottom: 6px; }
+  .board .line { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-radius: 12px; font-size: 12px; line-height: 17px; }
+  .board .line .title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
+  .board .line .date { color: var(--text-muted); white-space: nowrap; }
+
+  /* 이벤트 · 캐시샵 */
+  .promos { display: flex; gap: 26px; }
+  .promo { display: flex; flex-direction: column; gap: 11px; min-width: 0; }
+  .promo.event { width: 482px; flex: none; } .promo.shop { flex: 1; }
+  .promo .head { display: flex; align-items: center; gap: 6px; }
+  .round { width: 28px; height: 28px; border-radius: 9999px; display: grid; place-items: center; color: var(--text-muted); }
+  .round.filled { background: var(--field); color: var(--text); }
+  .promo .pic { height: 203px; border-radius: 20px; overflow: hidden; background: var(--field); }
+  .promo .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .promo .cap { display: flex; flex-direction: column; gap: 3px; }
+
+  /* 유틸리티 카드 */
+  .utility h3 { margin: 0 0 13px; font-size: 16px; line-height: 23px; font-weight: 700; }
+  .tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .tool { position: relative; height: 176px; border-radius: 24px; overflow: hidden; display: block; }
+  .tool .glow { position: absolute; left: 174.33px; top: -12px; width: 200px; height: 200px; }
+  .tool .art { position: absolute; overflow: hidden; }
+  .tool .art img { position: absolute; top: 0; height: 100%; max-width: none; }
+  .tool .name { position: absolute; left: 24px; top: 24px; display: flex; align-items: center; gap: 6px;
+                font-size: 16px; line-height: 22px; font-weight: 700; }
+  .tool .badge { padding: 3px 8px; border-radius: 9999px; background: var(--badge-tint); color: var(--badge-ink);
+                 font-size: 10px; line-height: 14px; font-weight: 700; }
+  .tool .desc { position: absolute; left: 24px; top: 54px; font-size: 14px; line-height: 20px; }
+  .tool .open { position: absolute; left: 24px; top: 116px; width: 36px; height: 36px; border-radius: 18px;
+                display: grid; place-items: center; }
+  .tool .open .ico { width: 18px; height: 18px; }
+  .tool.maspi { background: linear-gradient(148.92deg, #f2fbf9 0%, #d5f2ec 71.429%); box-shadow: 0 8px 24px -6px rgba(14,94,82,.1); }
+  .tool.maspi .name { color: #0e5e52; } .tool.maspi .desc { color: rgba(14,94,82,.72); }
+  .tool.maspi .open { background: rgba(255,255,255,.9); color: #0e5e52; box-shadow: 0 2px 6px rgba(14,94,82,.1); }
+  .tool.split { background: linear-gradient(148.92deg, #f6f2ff 0%, #e3dafc 71.429%); box-shadow: 0 8px 24px -6px rgba(74,58,154,.1); }
+  .tool.split .name { color: #4a3a9a; } .tool.split .desc { color: rgba(74,58,154,.72); }
+  .tool.split .open { background: rgba(255,255,255,.9); color: #4a3a9a; box-shadow: 0 2px 6px rgba(74,58,154,.1); }
+  .tool.boss { background: linear-gradient(148.92deg, #fff9ea 0%, #ffefc7 71.429%); box-shadow: 0 8px 24px -6px rgba(122,83,0,.1); }
+  .tool.boss .name { color: #7a5300; } .tool.boss .desc { color: rgba(122,83,0,.72); }
+  .tool.boss .open { background: rgba(255,255,255,.9); color: #7a5300; box-shadow: 0 2px 6px rgba(122,83,0,.1); }
+  .art.maspi { left: 198px; top: 11px; width: 180px; height: 159px; } .art.maspi img { left: -86.89%; width: 265.81%; }
+  .art.split { left: 222.67px; top: 19px; width: 148px; height: 138px; } .art.split img { left: -71.18%; width: 240.48%; }
+  .art.boss { left: 194.33px; top: 15px; width: 195px; height: 146px; } .art.boss img { left: -47.35%; width: 198.04%; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .tool { box-shadow: none; }
+    :root:not([data-theme="light"]) .tool .glow { display: none; }
+    :root:not([data-theme="light"]) .tool.maspi { background: radial-gradient(ellipse 440px 320px at 274.33px 88px, #365e57 0%, #22453f 22%, #183833 50%, #102522 100%); }
+    :root:not([data-theme="light"]) .tool.maspi .name { color: #9fe3d5; } :root:not([data-theme="light"]) .tool.maspi .desc { color: #7cb5aa; }
+    :root:not([data-theme="light"]) .tool.maspi .open { background: #293e3b; color: #9fe3d5; box-shadow: none; }
+    :root:not([data-theme="light"]) .tool.split { background: radial-gradient(ellipse 440px 320px at 274.33px 88px, #50496f 0%, #383154 22%, #2b2546 50%, #1e1a30 100%); }
+    :root:not([data-theme="light"]) .tool.split .name { color: #d2c7ff; } :root:not([data-theme="light"]) .tool.split .desc { color: #a69dcd; }
+    :root:not([data-theme="light"]) .tool.split .open { background: #373349; color: #d2c7ff; box-shadow: none; }
+    :root:not([data-theme="light"]) .tool.boss { background: radial-gradient(ellipse 440px 320px at 274.33px 88px, #635430 0%, #493d1f 22%, #3b3016 50%, #2a2210 100%); }
+    :root:not([data-theme="light"]) .tool.boss .name { color: #f3d58a; } :root:not([data-theme="light"]) .tool.boss .desc { color: #c2a96c; }
+    :root:not([data-theme="light"]) .tool.boss .open { background: #423b29; color: #f3d58a; box-shadow: none; }
+  }
+  :root[data-theme="dark"] .tool { box-shadow: none; }
+  :root[data-theme="dark"] .tool .glow { display: none; }
+  :root[data-theme="dark"] .tool.maspi { background: radial-gradient(ellipse 440px 320px at 274.33px 88px, #365e57 0%, #22453f 22%, #183833 50%, #102522 100%); }
+  :root[data-theme="dark"] .tool.maspi .name { color: #9fe3d5; } :root[data-theme="dark"] .tool.maspi .desc { color: #7cb5aa; }
+  :root[data-theme="dark"] .tool.maspi .open { background: #293e3b; color: #9fe3d5; box-shadow: none; }
+  :root[data-theme="dark"] .tool.split { background: radial-gradient(ellipse 440px 320px at 274.33px 88px, #50496f 0%, #383154 22%, #2b2546 50%, #1e1a30 100%); }
+  :root[data-theme="dark"] .tool.split .name { color: #d2c7ff; } :root[data-theme="dark"] .tool.split .desc { color: #a69dcd; }
+  :root[data-theme="dark"] .tool.split .open { background: #373349; color: #d2c7ff; box-shadow: none; }
+  :root[data-theme="dark"] .tool.boss { background: radial-gradient(ellipse 440px 320px at 274.33px 88px, #635430 0%, #493d1f 22%, #3b3016 50%, #2a2210 100%); }
+  :root[data-theme="dark"] .tool.boss .name { color: #f3d58a; } :root[data-theme="dark"] .tool.boss .desc { color: #c2a96c; }
+  :root[data-theme="dark"] .tool.boss .open { background: #423b29; color: #f3d58a; box-shadow: none; }
+
+  /* footer */
+  footer { margin-top: 48px; display: flex; flex-direction: column; gap: 24px; overflow: hidden; }
+  footer .rule { height: 1px; background: var(--line); }
+  footer .top { display: flex; justify-content: space-between; gap: 32px; flex-wrap: wrap; }
+  footer .brand { display: flex; flex-direction: column; gap: 8px; }
+  footer .links { display: flex; gap: 64px; flex-wrap: wrap; }
+  footer .col { display: flex; flex-direction: column; gap: 12px; }
+  footer .col a, footer .col span.l { display: flex; align-items: center; gap: 6px; font-size: 14px; line-height: 20px; color: var(--text-muted); }
+  footer .col a:hover { color: var(--text); }
+  footer .bottom { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 12px; line-height: 17px; color: var(--text-subtle); }
+  footer .leaves { position: relative; height: 120px; }
+  footer .leaves img { position: absolute; display: block; }
+
+  /* 로그인 창 */
+  .scrim { position: fixed; inset: 0; background: var(--scrim); display: none; align-items: center; justify-content: center;
+           padding: 16px; z-index: 10; }
+  .scrim.open { display: flex; }
+  .dialog { width: 100%; max-width: 480px; max-height: calc(100vh - 32px); overflow: auto; background: var(--panel);
+            border-radius: 28px; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+  .dialog[data-view="login"] { padding: 22px 22px 14px; gap: 0; align-items: center; }
+  .view { display: none; } .dialog[data-view="login"] .v-login, .dialog[data-view="warn"] .v-warn,
+  .dialog[data-view="key"] .v-key, .dialog[data-view="faq"] .v-faq { display: contents; }
+  .dhead { display: flex; align-items: center; gap: 8px; width: 100%; }
+  .iconbtn { width: 34px; height: 28px; border-radius: 9999px; background: var(--field); color: var(--text);
+             display: grid; place-items: center; flex: none; }
+  .iconbtn:hover { filter: brightness(.97); }
+  .faq-link { padding: 4px 0; font-size: 14px; line-height: 20px; font-weight: 700; color: var(--text-muted); }
+  .faq-link:hover { color: var(--text); }
+  .login-main { width: 100%; padding: 48px 20px 40px; display: flex; flex-direction: column; align-items: center; gap: 32px; }
+  .lockup-group { display: flex; flex-direction: column; align-items: center; gap: 48px; }
+  .lockup { display: flex; align-items: center; gap: 6px; }
+  .lockup .leaf { width: 39.077px; height: 40px; fill: var(--accent); }
+  .lockup .wordmark { height: 34px; width: 153.714px; color: var(--text); display: block; }
+  .lockup .wordmark svg { width: 100%; height: 100%; display: block; }
+  .copy { text-align: center; font-size: 14px; line-height: 20px; color: var(--text-muted); }
+  .buttons { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+  /* 넥슨 로그인 버튼은 넥슨이 준 그림(712 × 96)을 폭에 맞춰 그대로 그린다. 높이를 정하면 글자가 일그러진다. */
+  .nexon { display: block; width: 342px; max-width: 100%; }
+  .nexon img { display: block; width: 100%; height: auto; }
+  .nexon.wide { width: 100%; }
+  .textlink { padding: 2px 12px; font-size: 12px; line-height: 17px; font-weight: 700; color: var(--accent-ink); }
+  .textlink:hover { text-decoration: underline; }
+  .quiet { padding: 8px 12px; font-size: 12px; line-height: 17px; color: var(--text-muted); }
+  .quiet:hover { color: var(--text); }
+  .result { margin-top: -16px; margin-bottom: 8px; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 19px; text-align: center; width: 100%; }
+  .result.ok { background: var(--accent-soft); color: var(--accent-ink); font-weight: 700; }
+  .result.err { background: var(--rise-soft); color: var(--rise); }
+  .mhead { display: flex; align-items: center; gap: 12px; }
+  .ibadge { width: 40px; height: 40px; border-radius: 9999px; display: grid; place-items: center; flex: none; }
+  .ibadge.rise { background: var(--rise-soft); color: var(--rise); }
+  .ibadge.rise .ico { width: 20px; height: 20px; }
+  .ibadge.sm { width: 32px; height: 32px; background: var(--accent-soft); color: var(--accent-ink); }
+  .mtitle { font-size: 18px; line-height: 25px; font-weight: 700; }
+  .rows { display: flex; flex-direction: column; gap: 6px; }
+  .inset { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--field); font-size: 14px; line-height: 20px; }
+  .inset .ico { width: 18px; height: 18px; color: var(--text-muted); }
+  .actions { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .actions .quiet { padding: 10px 12px 2px; }
+  .limit { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 9999px; background: var(--rise-soft);
+           color: var(--rise); font-size: 12px; line-height: 14px; font-weight: 700; white-space: nowrap; }
+  .limit .ico { width: 12px; height: 12px; }
+  .form { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+  .field .label { display: flex; padding: 0 2px; font-size: 12px; line-height: 17px; }
+  .input { display: flex; align-items: center; height: 48px; padding: 0 12px 0 14px; border-radius: 12px; background: var(--field); }
+  .input input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--text); font: inherit; font-size: 16px; line-height: 23px; }
+  .input input::placeholder { color: var(--text-subtle); }
+  .input:focus-within { box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .input button { color: var(--text-muted); display: grid; place-items: center; }
+  .input button .ico { width: 18px; height: 18px; }
+  .confirm { width: 100%; padding: 10px 20px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent-ink);
+             font-size: 16px; line-height: 23px; font-weight: 700; }
+  .confirm:disabled { opacity: .5; cursor: default; }
+  .hint { font-size: 12px; line-height: 17px; color: var(--text-muted); text-align: center; }
+  .faq-list { display: flex; flex-direction: column; gap: 8px; }
+  .faq-list details { border-radius: 12px; background: var(--field); padding: 12px 14px; }
+  .faq-list summary { cursor: pointer; font-size: 14px; line-height: 20px; font-weight: 700; list-style: none; }
+  .faq-list summary::-webkit-details-marker { display: none; }
+  .faq-list .a { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 20px; color: var(--text-muted); white-space: pre-line; }
+
+  /* 좁은 폭: 앱과 같은 흐름을 한 열로 놓는다 */
+  @media (max-width: 1100px) {
+    .hero { height: auto; display: flex; flex-direction: column; gap: 32px; }
+    .hero-text { position: static; }
+    .hero-pic-box { position: relative; left: 0; top: 0; width: 100%; height: auto; aspect-ratio: 734 / 470; }
+    .hero-pic { position: absolute; left: 0; top: 0; }
+    .promos { flex-direction: column; }
+    .promo.event, .promo.shop { width: 100%; }
+    .promo .pic { height: auto; aspect-ratio: 482 / 203; }
+    .promo.shop .pic { aspect-ratio: 692 / 203; }
+    main.body { min-height: 0; }
+  }
+  @media (max-width: 900px) {
+    .topbar .side { width: auto; }
+    .menu-wrap { padding: 0 12px; }
+    .features, .boards, .tools { grid-template-columns: 1fr; }
+    .notice-bar { height: auto; flex-direction: column; }
+    .chip { align-self: flex-start; }
+  }
+  @media (max-width: 560px) {
+    .menu button span { display: none; }
+    .menu button { padding: 10px 12px; }
+    .hero-text h1 { font-size: 26px; line-height: 34px; }
+    .steps { flex-direction: column; gap: 10px; }
+    .notice-pill .date { display: none; }
+    .login-main { padding: 32px 0 28px; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-leaf" viewBox="0 0 127 130"><path d="M60.4426 107.504L59.1392 127.924C59.1024 128.5 59.5598 128.987 60.1372 128.987H65.9593C66.5534 128.987 67.0165 128.472 66.9537 127.882L64.785 107.496C64.6975 106.673 65.5908 106.106 66.2984 106.536L78.2704 113.805C78.4651 113.923 78.6944 113.971 78.9203 113.941L103.215 110.732C104.008 110.628 104.363 109.681 103.835 109.081L91.452 94.9894C91.0117 94.4885 91.1759 93.7052 91.7802 93.4231L118.529 80.9405C119.315 80.5738 119.293 79.4491 118.494 79.1126L112.061 76.4041C111.526 76.1789 111.295 75.5471 111.558 75.0296L125.96 46.675C126.366 45.8757 125.596 44.9873 124.747 45.275L98.4688 54.1831C97.9655 54.3537 97.4167 54.1008 97.2193 53.6074L95.2595 48.7079C94.9641 47.9693 93.9662 47.8547 93.5109 48.5071L82.408 64.4213C81.7836 65.3163 80.3814 64.7067 80.6101 63.6396L88.1353 28.5217C88.311 27.7019 87.4603 27.0428 86.7103 27.4178L81.4218 30.062C80.9453 30.3003 80.3657 30.1231 80.1038 29.6592L63.9299 1.00826C63.5499 0.335101 62.5824 0.329222 62.1943 0.997712L45.543 29.6749C45.2779 30.1315 44.7033 30.3033 44.231 30.0672L38.9323 27.4178C38.1823 27.0428 37.3315 27.7018 37.5072 28.5217L44.9884 63.4338C45.2189 64.5095 43.7966 65.1145 43.1815 64.2025L32.5593 48.4523C32.1246 47.8077 31.1528 47.884 30.824 48.5885L28.4482 53.6797C28.2334 54.14 27.7076 54.3661 27.2258 54.2055L1.8202 45.7369C0.98094 45.4572 0.218491 46.3249 0.603813 47.1212L14.1413 75.0988C14.3797 75.5913 14.1779 76.184 13.6884 76.4287L7.43998 79.553C6.68865 79.9286 6.70724 81.0071 7.47107 81.3567L33.8706 93.4379C34.4733 93.7136 34.6458 94.4888 34.217 94.9941L22.2282 109.124C21.7222 109.72 22.0657 110.64 22.8386 110.759L46.6876 114.428C46.9344 114.466 47.1865 114.41 47.3943 114.272L58.8899 106.608C59.5787 106.149 60.4953 106.678 60.4426 107.504Z"/></symbol>
+  <symbol id="i-dashboard" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></symbol>
+  <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-arrow-l" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+  <symbol id="i-arrow-r" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+</svg>
+
+<div class="wrap">
+  <header class="topbar">
+    <div class="row1">
+      <div class="side"><a class="logo" href="/"><svg viewBox="0 0 127 130" aria-hidden="true"><use href="#i-leaf"/></svg>메이플 루틴</a></div>
+      <nav class="menu-wrap" aria-label="메뉴">
+        <div class="menu">
+          <button class="on" type="button"><svg class="ico"><use href="#i-dashboard"/></svg><span>today</span></button>
+          <button type="button" data-open-login><svg class="ico"><use href="#i-lock"/></svg><span>스케줄러</span></button>
+          <button type="button" data-open-login><svg class="ico"><use href="#i-lock"/></svg><span>수입·지출</span></button>
+          <button type="button" data-open-login><svg class="ico"><use href="#i-wrench"/></svg><span>유틸리티</span></button>
+          <button type="button" data-open-login><svg class="ico"><use href="#i-menu"/></svg><span>더보기</span></button>
+        </div>
+      </nav>
+      <div class="side right"><button class="pill" type="button" data-open-login>로그인</button></div>
+    </div>
+    <div class="row2"></div>
+  </header>
+
+  <div class="notice-bar">
+    <div class="chip">
+      <span class="t12 b muted">MASPI</span>
+      <span class="tag">beta</span>
+      <img class="spark light-only" src="/assets/sparkline.svg" alt="">
+      <img class="spark dark-only" src="/assets/sparkline.svg" alt="">
+      <span class="t12 b" style="display:flex;gap:5px;align-items:baseline"><span>9,022.15</span><span style="color:var(--fall)">▼ 8.03</span></span>
+    </div>
+    <div class="notice-pill">
+      <span class="megaphone"><svg class="ico"><use href="#i-megaphone"/></svg></span>
+      <div class="txt">
+        <div style="display:flex;gap:6px;align-items:center"><span class="tag new">새 공지</span><p class="t12 b">1.0.14 업데이트 안내</p></div>
+        <p class="t12 muted">안녕하세요. 메이플 루틴입니다. 1.0.14 업데이트 내용을 안내드립니다.</p>
+      </div>
+      <span class="grow"></span>
+      <span class="t12 muted date">2026. 11. 20.</span>
+      <svg class="ico muted" style="width:14px;height:14px"><use href="#i-chev-r"/></svg>
+    </div>
+  </div>
+
+  <main class="body">
+    <section class="hero">
+      <div class="hero-text">
+        <p class="eyebrow">메이플스토리 OPEN API 연동</p>
+        <h1>기록은 자동으로,<br>입력은 간단하게</h1>
+        <p class="lead">메이플스토리 OPEN API 로 보스 처치와 강화 기록을 불러와<br>결정석 수입과 강화 지출을 자동으로 기록해요.</p>
+        <button class="start" type="button" data-open-login>로그인하고 시작하기<svg class="ico"><use href="#i-chev-r"/></svg></button>
+        <div class="steps">
+          <span><i>1</i>넥슨 계정으로 로그인</span>
+          <span><i>2</i>OPEN API 로 기록 연동</span>
+          <span><i>3</i>수입 · 지출 자동 정리</span>
+        </div>
+        <div class="stores">
+          <img src="/assets/app-store.png" alt="App Store에서 다운로드 하기" width="143" height="44">
+          <img src="/assets/google-play.png" alt="Google Play에서 다운로드" width="148" height="44">
+        </div>
+      </div>
+      <div class="hero-pic-box" aria-hidden="true">
+        <div class="hero-pic light-only">
+          <div class="bg"></div>
+          <img class="l1" src="/assets/hero-light-boss-profit.png" alt="">
+          <img class="l2" src="/assets/hero-light-drop.png" alt="">
+          <img class="l3" src="/assets/hero-light-stats.png" alt="">
+          <img class="l4" src="/assets/hero-light-today.png" alt="">
+        </div>
+        <div class="hero-pic dark-only">
+          <div class="bg"></div>
+          <img class="l1" src="/assets/hero-dark-boss-profit.png" alt="">
+          <img class="l2" src="/assets/hero-dark-drop.png" alt="">
+          <img class="l3" src="/assets/hero-dark-stats.png" alt="">
+          <img class="l4" src="/assets/hero-dark-today.png" alt="">
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <article class="feature">
+        <img src="/assets/feature-profit.png" alt="">
+        <p class="kicker">자동 기록 · 결정석 수입</p>
+        <h2>보스 처치만으로 쌓이는 결정석 수입</h2>
+        <p class="desc">인게임 스케줄러에서 처치한 보스를 불러와<br>결정석 금액을 자동으로 기록해요.</p>
+      </article>
+      <article class="feature">
+        <img src="/assets/feature-enhance.png" alt="">
+        <p class="kicker fall">자동 기록 · 강화 지출</p>
+        <h2>스타포스 · 큐브 비용까지 자동 기록</h2>
+        <p class="desc">스타포스 · 큐브 · 잠재능력 재설정 기록을<br>불러와 캐릭터별 강화 지출로 정리해요.</p>
+      </article>
+      <article class="feature">
+        <img src="/assets/feature-party.png" alt="">
+        <p class="kicker">파티 스케줄</p>
+        <h2>고정 파티 일정, 주간 시간표로 한눈에</h2>
+        <p class="desc">매주 반복되는 파티와 한 번뿐인 파티를<br>캐릭터 · 보스별로 등록해요.</p>
+      </article>
+    </section>
+
+    <section class="boards">
+      <div class="board">
+        <div class="head"><span class="t16 b">NOTICE</span><span class="grow"></span><span class="t12 b ink">전체</span></div>
+        <div class="line"><span class="title">1.0.14 업데이트 안내</span><span class="date">2026. 11. 20.</span></div>
+        <div class="line"><span class="title">메이플 루틴 웹 버전 수요 설문 조사</span><span class="date">2026. 11. 20.</span></div>
+        <div class="line"><span class="title">오늘(11/18)  끝나는 이벤트 확인하세요</span><span class="date">2026. 11. 18.</span></div>
+      </div>
+      <div class="board">
+        <div class="head"><span class="t16 b">공지 사항</span><span class="grow"></span><span class="t12 b ink">전체</span></div>
+        <div class="line"><span class="title">[패치완료] 11/20(금) ver1.2.421 마이너버전(3) 패치 (15:33 적용)</span><span class="date">2026. 11. 20.</span></div>
+        <div class="line"><span class="title">[패치완료] 11/19(목) ver1.2.421 마이너버전(2) 패치 (16:44 적용)</span><span class="date">2026. 11. 19.</span></div>
+        <div class="line"><span class="title">[점검완료] 11/19(목) 전체 월드 채널 점검 (17:00~17:50)</span><span class="date">2026. 11. 19.</span></div>
+      </div>
+      <div class="board">
+        <div class="head"><span class="t16 b">업데이트</span><span class="grow"></span><span class="t12 b ink">전체</span></div>
+        <div class="line"><span class="title">클라이언트 1.2.421 업데이트 안내</span><span class="date">2026. 11. 19.</span></div>
+        <div class="line"><span class="title">클라이언트 1.2.420 업데이트 안내</span><span class="date">2026. 10. 22.</span></div>
+        <div class="line"><span class="title">클라이언트 1.2.419(5) 업데이트 안내</span><span class="date">2026. 9. 22.</span></div>
+      </div>
+    </section>
+
+    <section class="promos">
+      <div class="promo event">
+        <div class="head"><span class="t16 b">진행 중인 이벤트</span><span class="grow"></span><span class="t12 b ink">전체</span>
+          <span class="round"><svg class="ico"><use href="#i-chev-l"/></svg></span><span class="round filled"><svg class="ico"><use href="#i-chev-r"/></svg></span></div>
+        <div class="pic"><img src="/assets/event.png" alt=""></div>
+        <div class="cap"><p class="t16 b">메이플스토리X 블루 아카이브</p><p class="t12 muted">2026.11.19 ~ 2026.12.16</p></div>
+      </div>
+      <div class="promo shop">
+        <div class="head"><span class="t16 b">캐시샵 업데이트</span><span class="grow"></span><span class="t12 b ink">전체</span>
+          <span class="round"><svg class="ico"><use href="#i-chev-l"/></svg></span><span class="round filled"><svg class="ico"><use href="#i-chev-r"/></svg></span></div>
+        <div class="pic"><img src="/assets/cashshop.png" alt=""></div>
+        <div class="cap"><p class="t16 b">블루 아카이브 굿즈 컬렉션 Vol.1</p><p class="t12 muted">2026.11.19 ~ 2027.01.20</p></div>
+      </div>
+    </section>
+
+    <section class="utility">
+      <h3>유틸리티</h3>
+      <div class="tools">
+        <button class="tool maspi" type="button" data-open-login>
+          <img class="glow" src="/assets/tool-glow.svg" alt="">
+          <span class="art maspi"><img src="/assets/tool-maspi.png" alt=""></span>
+          <span class="name">MASPI <span class="badge">beta</span></span>
+          <span class="desc">드롭 아이템 시세와<br>MASPI 지수를 매일 확인해요</span>
+          <span class="open"><svg class="ico"><use href="#i-arrow-r"/></svg></span>
+        </button>
+        <button class="tool split" type="button" data-open-login>
+          <img class="glow" src="/assets/tool-glow.svg" alt="">
+          <span class="art split"><img src="/assets/tool-split.png" alt=""></span>
+          <span class="name">판매 분배금 계산기</span>
+          <span class="desc">수수료를 떼고도 똑같이 나누려면<br>얼마를 보낼지 알려 줘요</span>
+          <span class="open"><svg class="ico"><use href="#i-arrow-r"/></svg></span>
+        </button>
+        <button class="tool boss" type="button" data-open-login>
+          <img class="glow" src="/assets/tool-glow.svg" alt="">
+          <span class="art boss"><img src="/assets/tool-boss.png" alt=""></span>
+          <span class="name">주간 보스 수입 계산기</span>
+          <span class="desc">캐릭터마다 보스를 골라<br>한 주 수입을 미리 따져 봐요</span>
+          <span class="open"><svg class="ico"><use href="#i-arrow-r"/></svg></span>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="rule"></div>
+    <div class="top">
+      <div class="brand">
+        <a class="logo" href="/"><svg viewBox="0 0 127 130" aria-hidden="true"><use href="#i-leaf"/></svg>메이플 루틴</a>
+        <p class="t14 muted">메이플 수입 · 지출, 자동으로 기록하세요</p>
+      </div>
+      <div class="links">
+        <div class="col">
+          <span class="t12 b subtle">안내</span>
+          <span class="l">개발 노트</span>
+          <a href="https://info.mapleroutine.store/api-key" target="_blank" rel="noopener">API 키 발급</a>
+          <a href="https://info.mapleroutine.store/privacy" target="_blank" rel="noopener">개인정보 처리방침</a>
+        </div>
+        <div class="col">
+          <span class="t12 b subtle">문의 · 버그 제보</span>
+          <a href="mailto:support.mapleroutine@gmail.com"><svg class="ico"><use href="#i-mail"/></svg>메일</a>
+          <a href="https://open.kakao.com/o/sbxo2RHi" target="_blank" rel="noopener"><svg viewBox="0 0 48 48" width="16" height="16" aria-hidden="true"><rect width="48" height="48" rx="24" fill="#FEE500"/><path d="M24.0014 14C17.9241 14 13 18.0219 13 22.9825C13 26.1711 15.0368 28.9728 18.1057 30.5656L17.0681 34.5677C17.0295 34.6871 17.0598 34.8151 17.1424 34.9033C17.2029 34.9659 17.2855 35 17.3653 35C17.4341 35 17.5029 34.9772 17.5607 34.9289L22.0196 31.8171C22.661 31.911 23.3215 31.9622 23.9986 31.9622C30.0732 31.9622 35 27.9403 35 22.9797C35 18.0191 30.0759 14 24.0014 14Z" fill="#191919"/></svg>카카오톡 오픈채팅</a>
+          <span class="l">GitHub Issues</span>
+        </div>
+        <div class="col">
+          <span class="t12 b subtle">앱 받기</span>
+          <span class="l">App Store</span>
+          <span class="l">Google Play</span>
+        </div>
+      </div>
+    </div>
+    <div class="rule"></div>
+    <div class="bottom"><span>© 2026 메이플 루틴</span><span>Data based on NEXON Open API · Maple Routine is not associated with NEXON Korea</span></div>
+    <div class="leaves" aria-hidden="true">
+      <img src="/assets/leaf-01.svg" style="left:33.7px;top:70px;width:23.216px;height:23.47px" alt="">
+      <img src="/assets/leaf-02.svg" style="left:120px;top:22.75px;width:34.464px;height:34.932px" alt="">
+      <img src="/assets/leaf-03.svg" style="left:210px;top:73px;width:19.936px;height:19.977px" alt="">
+      <img src="/assets/leaf-04.svg" style="left:278.86px;top:48px;width:50.626px;height:50.835px" alt="">
+      <img src="/assets/leaf-05.svg" style="left:420px;top:84.53px;width:23.251px;height:23.634px" alt="">
+      <img src="/assets/leaf-06.svg" style="left:520px;top:1.4px;width:58.912px;height:59.415px" alt="">
+      <img src="/assets/leaf-07.svg" style="left:621.18px;top:72px;width:34.246px;height:34.176px" alt="">
+      <img src="/assets/leaf-08.svg" style="left:740px;top:22.14px;width:22.184px;height:22.045px" alt="">
+      <img src="/assets/leaf-09.svg" style="left:816.22px;top:64px;width:64.005px;height:64.873px" alt="">
+      <img src="/assets/leaf-10.svg" style="left:950px;top:11.38px;width:30.938px;height:31.066px" alt="">
+      <img src="/assets/leaf-11.svg" style="left:1014.65px;top:80px;width:41.335px;height:41.595px" alt="">
+      <img src="/assets/leaf-12.svg" style="left:1120px;top:33.84px;width:23.216px;height:23.47px" alt="">
+      <img src="/assets/leaf-13.svg" style="left:1149.36px;top:92px;width:16.638px;height:16.534px" alt="">
+      <img src="/assets/leaf-14.svg" style="left:580px;top:100px;width:12px;height:12.283px" alt="">
+      <img src="/assets/leaf-15.svg" style="left:880px;top:-2.49px;width:17.171px;height:17.171px" alt="">
+    </div>
+  </footer>
+</div>
+
+<div class="scrim" id="scrim">
+  <section class="dialog" id="dialog" role="dialog" aria-modal="true" aria-label="로그인" data-view="login">
+    <!-- 로그인 -->
+    <div class="view v-login">
+      <div class="dhead">
+        <button class="faq-link" type="button" id="faq-open" hidden>자주 묻는 질문</button>
+        <span class="grow"></span>
+        <button class="iconbtn" type="button" data-close aria-label="닫기"><svg class="ico"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="login-main">
+        <div class="lockup-group">
+          <div class="lockup" role="img" aria-label="메이플 루틴">
+            <svg class="leaf" viewBox="0 0 127 130" aria-hidden="true"><path d="M60.28 111.77L59.76 125.19Q59.64 128.46 62.91 128.45L63.18 128.44Q66.46 128.43 66.32 125.16L65.73 111.36Q65.54 107.02 69.39 109.04L77.12 113.10Q78.60 113.87 80.24 113.61L95.28 111.22Q103.53 109.91 98.48 103.26L93.40 96.55Q91.62 94.21 94.22 92.83L115.13 81.81Q118.51 80.03 115.29 77.96L113.63 76.89Q111.81 75.72 112.71 73.75L120.85 55.86Q125.35 45.97 114.92 48.98L99.62 53.38Q97.84 53.90 96.83 52.35L96.05 51.15Q94.39 48.61 92.44 50.94L87.38 57.00Q81.51 64.03 82.99 55.00L86.89 31.25Q87.42 27.97 84.23 28.88L82.59 29.34Q80.76 29.86 79.77 28.25L67.27 7.86Q63.06 1.00 58.78 7.81L45.89 28.28Q44.89 29.87 43.08 29.36L41.42 28.88Q38.22 27.97 38.76 31.25L42.56 54.52Q44.08 63.82 38.15 56.50L33.70 51.00Q31.69 48.52 29.84 51.12L28.86 52.51Q27.84 53.94 26.14 53.46L11.34 49.29Q1.21 46.43 5.39 56.09L13.12 73.92Q13.91 75.76 12.29 76.94L10.56 78.20Q7.46 80.45 10.86 82.22L31.45 92.87Q34.04 94.22 32.32 96.57L27.26 103.48Q22.53 109.94 30.41 111.36L45.38 114.05Q47.04 114.35 48.54 113.58L56.64 109.44Q60.44 107.50 60.28 111.77Z"/></svg>
+            <span class="wordmark"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4521 1000" fill="currentColor" stroke="currentColor" stroke-width="18" stroke-linejoin="round"><path transform="translate(0 0)" d="M539 629Q539 543 539 455Q515 457 486 458Q456 459 428 460Q428 520 428 575Q427 630 425 678Q424 706 414 716Q403 727 381 729Q357 731 322 732Q287 734 250 736Q213 738 179 739Q145 740 122 740Q89 739 75 722Q61 704 59 674Q57 608 56 546Q54 485 54 424Q53 362 53 299Q53 236 53 168Q53 125 92 123Q119 122 158 120Q197 119 238 118Q280 116 320 116Q360 115 390 115Q422 115 424 148Q426 202 426 257Q427 312 428 369Q457 367 486 366Q516 365 539 364Q539 306 539 248Q539 191 540 132Q540 112 552 102Q563 93 591 93Q618 93 630 102Q641 110 641 129Q642 224 642 306Q642 387 640 466Q639 546 637 628Q635 710 632 804Q631 828 620 838Q608 849 585 849Q541 849 541 802Q540 715 539 629ZM810 821Q807 866 762 864Q721 863 721 817Q721 722 722 636Q724 551 726 468Q727 384 730 300Q732 215 735 122Q736 103 746 94Q757 85 785 85Q813 86 824 96Q836 105 836 122Q836 217 834 302Q832 387 829 470Q826 554 821 640Q816 726 810 821ZM332 623Q332 583 332 530Q331 477 330 420Q330 363 328 307Q327 251 326 205L151 210Q152 259 153 316Q154 373 156 432Q157 490 158 546Q159 602 160 649L313 642Q324 642 328 638Q332 634 332 624Z"/><path transform="translate(900 0)" d="M547 532Q527 580 491 614Q455 647 406 665Q356 683 298 684Q237 686 188 670Q138 654 103 622Q68 589 49 540Q30 490 30 424Q30 369 48 321Q67 273 102 237Q136 201 186 179Q235 157 298 155Q359 153 409 172Q459 190 494 225Q529 260 548 310Q567 361 567 422Q567 484 547 532ZM363 579Q394 566 416 543Q438 520 450 488Q462 457 462 419Q462 378 450 346Q437 313 415 291Q393 269 363 258Q333 246 298 247Q260 248 230 262Q200 276 179 300Q158 323 146 355Q135 387 135 424Q135 508 178 550Q222 593 295 592Q332 592 363 579ZM767 814Q765 843 751 854Q737 865 716 863Q694 861 684 847Q673 833 673 801Q673 467 685 138Q686 111 698 100Q711 88 741 88Q793 88 793 141Q792 223 790 310Q788 397 785 484Q782 570 778 654Q773 738 767 814Z"/><path transform="translate(1780 0)" d="M621 235Q620 270 618 311Q641 310 663 310Q685 310 698 309Q718 308 728 314Q737 319 739 343Q741 366 732 376Q723 387 702 389Q679 390 632 392Q586 394 528 396Q469 399 405 402Q341 404 282 406Q224 408 177 410Q130 412 106 413Q88 414 77 406Q66 398 64 375Q62 351 72 341Q81 331 96 330Q113 329 138 328Q164 327 196 325Q194 281 192 244Q191 208 190 163Q158 164 132 164Q107 165 92 165Q74 166 64 156Q53 147 52 124Q51 100 60 90Q70 81 85 80Q111 79 160 78Q210 77 272 76Q333 75 400 74Q467 73 528 72Q588 72 637 72Q686 71 712 71Q732 71 742 78Q751 84 752 108Q753 131 744 141Q734 151 713 152Q699 153 676 154Q653 154 624 155Q623 199 621 235ZM688 704Q686 746 684 781Q682 801 674 810Q666 818 644 819Q603 821 551 822Q499 824 444 826Q390 828 336 830Q282 831 237 833Q238 848 238 856Q238 863 239 879Q285 879 340 878Q394 877 451 876Q508 876 564 875Q620 874 670 873Q685 873 691 882Q697 891 697 908Q697 925 692 938Q687 950 669 951Q551 956 436 958Q320 959 202 959Q167 959 154 946Q141 933 139 901Q137 871 136 845Q134 819 134 789Q134 778 138 771Q141 764 152 763Q192 761 250 759Q308 757 370 755Q432 753 490 752Q548 750 587 748Q588 731 588 718Q588 704 588 686Q544 688 486 690Q428 692 368 694Q308 696 250 698Q192 700 148 701Q132 702 125 694Q118 686 117 663Q116 640 124 630Q132 621 149 620Q204 617 268 614Q333 612 400 610Q468 607 536 605Q604 603 667 601Q678 601 684 606Q691 612 691 626Q691 662 688 704ZM237 551Q151 553 75 555Q37 557 37 513Q37 491 46 482Q55 472 76 471Q154 468 242 466Q329 463 416 460Q503 458 585 456Q667 454 735 452Q770 451 770 489Q770 512 760 522Q750 531 733 532Q662 536 579 540Q496 543 410 546Q323 549 237 551ZM407 318Q460 316 514 314Q514 273 514 237Q515 201 516 157Q463 159 407 159Q351 159 298 161Q299 206 299 242Q299 279 299 321Q354 319 407 318Z"/><path transform="translate(2851 0)" d="M712 501Q712 539 681 540Q551 549 426 556Q300 563 170 568Q147 569 132 566Q117 564 108 558Q99 551 94 539Q90 527 89 509Q86 476 85 430Q84 385 83 343Q83 330 89 321Q95 312 107 311Q132 309 170 306Q209 304 254 301Q298 298 346 295Q395 292 441 290Q487 287 526 284Q566 282 594 280Q594 269 594 254Q594 238 594 221Q595 204 595 188Q595 172 595 161Q564 162 523 163Q482 164 436 166Q389 167 340 168Q292 170 248 172Q204 173 166 174Q129 175 105 175Q90 175 84 166Q78 156 78 130Q78 105 86 96Q93 86 112 85Q179 83 252 80Q324 78 397 76Q470 73 542 72Q614 70 679 70Q703 70 703 99Q703 122 702 150Q702 178 701 208Q700 237 700 266Q699 294 698 317Q697 336 688 346Q679 355 656 357Q628 359 590 362Q551 364 507 366Q463 369 417 372Q371 375 328 378Q285 380 248 382Q211 385 187 387Q187 407 188 428Q188 450 189 466Q189 479 203 479Q256 477 315 475Q374 473 435 470Q496 468 558 466Q619 463 677 460Q694 459 703 468Q712 477 712 501ZM580 716Q519 720 456 723Q455 768 454 812Q452 856 450 894Q448 923 433 934Q418 944 397 943Q375 942 364 931Q353 920 352 891Q350 854 350 813Q350 772 351 728Q290 731 228 733Q167 735 105 737Q67 737 67 692Q67 670 76 660Q85 649 106 648Q264 641 415 634Q566 627 703 622Q722 621 730 632Q738 643 738 661Q738 684 728 694Q718 704 701 706Q641 711 580 716Z"/><path transform="translate(3641 0)" d="M172 519Q172 531 182 531Q220 528 266 525Q313 522 360 519Q408 516 454 513Q500 510 538 507Q558 505 566 513Q574 521 576 544Q578 568 568 578Q557 587 541 589Q441 599 338 606Q235 614 141 619Q112 621 92 603Q73 585 71 553Q69 523 68 465Q67 407 66 342Q66 278 66 220Q65 162 65 132Q65 112 72 104Q79 95 99 94Q193 90 299 86Q405 82 505 80Q537 80 537 123Q537 146 530 155Q524 164 504 166Q465 169 422 171Q379 173 336 176Q292 178 250 180Q207 182 170 183Q170 198 170 236Q171 273 171 318Q208 317 248 316Q288 314 328 313Q368 312 407 311Q446 310 480 309Q498 309 506 319Q513 329 512 350Q511 373 504 382Q496 391 476 393Q443 395 404 397Q366 399 326 401Q286 403 246 405Q206 407 171 408Q171 449 171 480Q171 510 172 519ZM787 892Q787 913 776 922Q764 932 750 933Q700 937 644 940Q587 943 529 945Q471 947 416 948Q360 950 314 950Q290 950 276 934Q262 917 260 892Q258 862 256 840Q255 819 254 800Q254 780 254 760Q253 739 253 710Q253 687 264 679Q274 671 303 669Q332 667 346 675Q360 683 361 706Q361 723 362 742Q362 762 362 782Q362 801 362 819Q363 837 363 851Q363 863 373 863Q411 862 460 860Q510 859 562 857Q613 855 662 854Q711 852 749 852Q769 852 778 860Q787 869 787 892ZM776 640Q773 669 760 678Q746 687 725 686Q703 685 691 676Q679 667 678 637Q678 621 678 588Q677 556 678 513Q678 470 678 420Q678 370 678 320Q679 270 680 222Q680 175 681 138Q681 111 693 100Q705 88 735 88Q788 88 787 141Q786 173 786 218Q786 262 785 312Q784 361 784 412Q783 462 782 507Q781 552 780 587Q778 622 776 640Z"/></svg></span>
+          </div>
+          <p class="copy">넥슨 Open API의 메이플스토리 스케줄러와 강화 기록을<br>불러오려면 넥슨 로그인이 필요해요.</p>
+        </div>
+        <div class="buttons">
+          <a class="nexon" href="/login" aria-label="넥슨ID 로그인"><img src="/nexon-login-button.png" alt="" width="712" height="96"></a>
+          <a class="textlink" href="https://openapi.nexon.com/ko/data-util/introduction/" target="_blank" rel="noopener">게임 데이터 활용 로그인이란?</a>
+        </div>
+      </div>
+      <!--RESULT-->
+      <button class="quiet" type="button" data-view-to="warn">API 키로 시작하기</button>
+    </div>
+
+    <!-- API 키 경고 -->
+    <div class="view v-warn">
+      <div class="dhead">
+        <button class="iconbtn" type="button" data-view-to="login" aria-label="뒤로"><svg class="ico"><use href="#i-arrow-l"/></svg></button>
+        <span class="grow"></span>
+        <button class="iconbtn" type="button" data-close aria-label="닫기"><svg class="ico"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="mhead"><span class="ibadge rise"><svg class="ico"><use href="#i-alert"/></svg></span><p class="mtitle">API 키로 시작할까요?</p></div>
+      <div class="rows">
+        <div class="inset"><svg class="ico"><use href="#i-lock"/></svg><span>일부 기능은 넥슨 로그인으로만 쓸 수 있어요</span></div>
+        <div class="inset muted">앞으로 나오는 기능도 넥슨 로그인을 기준으로 만들어요.</div>
+      </div>
+      <div class="actions">
+        <a class="nexon wide" href="/login" aria-label="넥슨ID 로그인"><img src="/nexon-login-button.png" alt="" width="712" height="96"></a>
+        <button class="quiet" type="button" data-view-to="key">그래도 API 키로 시작하기</button>
+      </div>
+    </div>
+
+    <!-- API 키 입력 -->
+    <div class="view v-key">
+      <div class="dhead" style="gap:10px">
+        <button class="iconbtn" type="button" data-view-to="warn" aria-label="뒤로"><svg class="ico"><use href="#i-arrow-l"/></svg></button>
+        <span class="ibadge sm"><svg class="ico"><use href="#i-key"/></svg></span>
+        <span class="t16 b">API 키로 시작하기</span>
+        <span class="limit"><svg class="ico"><use href="#i-alert"/></svg>일부 기능 제한</span>
+        <span class="grow"></span>
+        <button class="iconbtn" type="button" data-close aria-label="닫기"><svg class="ico"><use href="#i-x"/></svg></button>
+      </div>
+      <form class="form" id="key-form" autocomplete="off">
+        <label class="field">
+          <span class="label"><span class="muted">Nexon Open API 키</span><span class="grow"></span>
+            <a class="b ink" href="https://openapi.nexon.com" target="_blank" rel="noopener">openapi.nexon.com에서 확인</a></span>
+          <span class="input">
+            <input id="key-input" type="password" placeholder="발급받은 API 키를 입력하세요" spellcheck="false">
+            <button type="button" id="key-eye" aria-label="키 보기"><svg class="ico"><use href="#i-eye"/></svg></button>
+          </span>
+        </label>
+        <button class="confirm" type="submit" id="key-confirm" disabled>확인</button>
+        <p class="hint" id="key-hint" hidden>이 페이지는 넥슨 로그인 확인용이라 API 키로는 들어갈 수 없어요.</p>
+        <a class="textlink" href="https://info.mapleroutine.store/api-key" target="_blank" rel="noopener">API 키 발급 방법 보기</a>
+      </form>
+    </div>
+
+    <!-- 자주 묻는 질문 -->
+    <div class="view v-faq">
+      <div class="dhead" style="gap:10px">
+        <button class="iconbtn" type="button" data-view-to="login" aria-label="뒤로"><svg class="ico"><use href="#i-arrow-l"/></svg></button>
+        <span class="t16 b" id="faq-title">자주 묻는 질문</span>
+        <span class="grow"></span>
+        <button class="iconbtn" type="button" data-close aria-label="닫기"><svg class="ico"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="faq-list" id="faq-list"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+  // ?theme=light · ?theme=dark 로 캡처할 테마를 고정한다. 없으면 기기 설정을 따른다.
+  const theme = new URLSearchParams(location.search).get('theme')
+  if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+
+  const scrim = document.getElementById('scrim')
+  const dialog = document.getElementById('dialog')
+  const views = { login: '로그인', warn: 'API 키로 시작할까요?', key: 'API 키로 시작하기', faq: '자주 묻는 질문' }
+
+  function show(view) {
+    dialog.dataset.view = view
+    dialog.setAttribute('aria-label', views[view])
+    dialog.scrollTop = 0
+  }
+  function open(view = 'login') {
+    show(view)
+    scrim.classList.add('open')
+    document.body.classList.add('locked')
+  }
+  function close() {
+    scrim.classList.remove('open')
+    document.body.classList.remove('locked')
+  }
+
+  document.querySelectorAll('[data-open-login]').forEach((el) => el.addEventListener('click', () => open()))
+  document.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close))
+  document.querySelectorAll('[data-view-to]').forEach((el) => el.addEventListener('click', () => show(el.dataset.viewTo)))
+  scrim.addEventListener('click', (event) => { if (event.target === scrim) close() })
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') close() })
+
+  const keyInput = document.getElementById('key-input')
+  const keyConfirm = document.getElementById('key-confirm')
+  const keyEye = document.getElementById('key-eye')
+  keyInput.addEventListener('input', () => { keyConfirm.disabled = keyInput.value.trim() === '' })
+  keyEye.addEventListener('click', () => {
+    const hidden = keyInput.type === 'password'
+    keyInput.type = hidden ? 'text' : 'password'
+    keyEye.setAttribute('aria-label', hidden ? '키 가리기' : '키 보기')
+    keyEye.querySelector('use').setAttribute('href', hidden ? '#i-eye-off' : '#i-eye')
+  })
+  document.getElementById('key-form').addEventListener('submit', (event) => {
+    event.preventDefault()
+    document.getElementById('key-hint').hidden = false
+  })
+
+  // 앱과 같이 서버 게임 데이터의 `sign-in` FAQ 묶음을 연다. 묶음이 없거나 비면 입구를 그리지 않는다.
+  fetch('/faq.json').then((res) => res.json()).then((sheet) => {
+    if (!sheet || !sheet.items || sheet.items.length === 0) return
+    document.getElementById('faq-title').textContent = sheet.title
+    const list = document.getElementById('faq-list')
+    for (const item of sheet.items) {
+      const details = document.createElement('details')
+      const summary = document.createElement('summary')
+      summary.textContent = item.question
+      const answer = document.createElement('div')
+      answer.className = 'a'
+      for (const paragraph of item.answer) {
+        const p = document.createElement('p')
+        p.textContent = paragraph.trim()
+        answer.append(p)
+      }
+      details.append(summary, answer)
+      list.append(details)
+    }
+    const entry = document.getElementById('faq-open')
+    entry.hidden = false
+    entry.addEventListener('click', () => show('faq'))
+  }).catch(() => {})
+
+  // 히어로 그림은 734 × 470 그대로 그리고, 상자가 좁아지면 통째로 줄인다.
+  const heroBox = document.querySelector('.hero-pic-box')
+  function fitHero() {
+    const scale = Math.min(1, heroBox.clientWidth / 734)
+    document.querySelectorAll('.hero-pic').forEach((pic) => { pic.style.transform = scale < 1 ? `scale(${scale})` : '' })
+  }
+  new ResizeObserver(fitHero).observe(heroBox)
+
+  // 처음 열면 로그인 창을 띄운다. 넥슨 검수 캡처가 이 화면이다. `?closed` 면 둘러보기 화면부터.
+  if (!new URLSearchParams(location.search).has('closed')) open()
+</script>
+</body>
+</html>
