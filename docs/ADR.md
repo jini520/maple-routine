@@ -206,7 +206,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-101+186+193+201+259+277+285+294+297](./adr/ADR-101+186+193+201+259+277+285+294+297_auth_multi-account.md) | 🟢 | auth | 다계정 |
 | [ADR-102](./adr/ADR-102_server-sync_anomaly-reports.md) | 🟢 | server-sync | 예상하지 못한 상황의 서버 로그 |
 | [ADR-117](./adr/ADR-117_cashbook_hunt-loot-sale.md) | 🟢 | cashbook | 사냥 전리품 판매 |
-| [ADR-086+317+324](./adr/ADR-086+317+324_design-system_figma-library.md) | ⚪ | design-system | Figma 디자인 시스템 파일 · 앱과 웹 |
+| [ADR-086+317+324+336](./adr/ADR-086+317+324+336_design-system_figma-library.md) | ⚪ | design-system | Figma 디자인 시스템 파일 · 앱과 웹 |
 | [ADR-137+168+292](./adr/ADR-137+168+292_cashbook_hexa-spend.md) | 🟢 | cashbook | 헥사 강화 지출과 강화 레벨 기억 |
 | [ADR-142+144+229+275+322](./adr/ADR-142+144+229+275+322_architecture_query-cache.md) | 🟢 | architecture | 받은 값과 읽은 값을 TanStack Query 캐시 하나에 둔다 |
 | [ADR-147+252](./adr/ADR-147+252_design-system_round-entry-buttons.md) | 🟢 | design-system | 진입 버튼과 대표 캐릭터의 움직임 · 고른 동작 |
@@ -223,4 +223,5 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-250](./adr/ADR-250_design-system_press-feedback.md) | 🟢 | design-system | 누를 때 흐려지지 않는다 |
 | [ADR-261+306](./adr/ADR-261+306_error-resilience_server-maintenance.md) | 🟢 | error-resilience | 서버 점검 잠금 |
 | [ADR-286](./adr/ADR-286_persistence_device-conversion.md) | 🟢 | persistence | 1.0.15 기기 변환 |
-| [ADR-307+325](./adr/ADR-307+325_architecture_web.md) | ⚪ | architecture | PC 웹 버전 |
+| [ADR-307+325+337](./adr/ADR-307+325+337_architecture_web.md) | ⚪ | architecture | PC 웹 버전 |
+| [ADR-335](./adr/ADR-335_design-system_web-screens.md) | ⚪ | design-system | PC 웹 화면 디자인 |
