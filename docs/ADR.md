@@ -131,7 +131,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-002+094+165+237](./adr/ADR-002+094+165+237_stats_overview.md) | 🟢 | stats | 통계 화면 |
 | [ADR-003+273+283](./adr/ADR-003+273+283_docs_writing-rules.md) | 🟢 | docs | 문서 · 주석 · 앱 문구 쓰는 규칙 |
 | [ADR-004+065](./adr/ADR-004+065_architecture_local-first-adapters.md) | 🟢 | architecture | 기기 저장소와 네이티브 어댑터 경계 |
-| [ADR-005+308](./adr/ADR-005+308_architecture_react-native.md) | ⚪ | architecture | React Native 앱 하나로 만들고, 웹과 한 저장소에 둔다 |
+| [ADR-005+308+334](./adr/ADR-005+308+334_architecture_react-native.md) | ⚪ | architecture | React Native 앱 하나로 만들고, 웹과 한 저장소에 둔다 |
 | [ADR-006+069+154+271+284+303+318](./adr/ADR-006+069+154+271+284+303+318_architecture_testing.md) | 🟢 | architecture | 테스트 러너 · 검증 명령 · 네이티브 빌드 캐시 |
 | [ADR-007+077+323](./adr/ADR-007+077+323_persistence_sqlite.md) | 🟢 | persistence | SQLite 커넥션 · 스키마 진화 · 기본키 |
 | [ADR-008](./adr/ADR-008_release_android-signing.md) | 🟢 | release | Android 릴리스 서명 |
