@@ -103,7 +103,7 @@
 | `preferencesConversion` | 판 번호 문자열(`'1'`) | `preferences-conversion.ts` | 남긴다 | 1.0.15 기기 변환이 기록 키를 새 모양으로 바꾼 판. 지워져도 변환이 이미 바꾼 키를 건너뛰어 결과가 같다([[ADR-286]] 결정 1) |
 | `appReview` | JSON `{ firstLaunchAt, saveCount, lastRequestedAt }`. 시각은 ISO, `lastRequestedAt` 은 요청 전이면 `null` | `app-review.ts` | 남긴다 | 앱 안 리뷰 요청의 기록([[ADR-052]] 결정 10). 지워지면 90일 간격을 처음부터 다시 센다 |
 | `partyScheduleView` | `'list'` · `'board'` | `party-schedule-view.ts` | 남긴다 | 파티 스케줄 화면에서 마지막으로 고른 보기. 없으면 목록 |
-| `bossProfitCalculatorRecords` | JSON 기록 배열. 보스는 `{ bossDifficultyId, splitType, partySize, splitShareMillipercent, splitFeePercent, splitFeeFollowsMvpGrade }` | `boss-profit-calculator-records.ts` | 남긴다 | 주간 보스 수익 계산기에서 저장한 기록. 금액 없이 보스 · 난이도 · 파티 값만 남긴다([[ADR-074]] 결정 13) |
+| `bossProfitCalculatorRecords` | JSON 기록 배열. 보스는 `{ bossDifficultyId, splitType, partySize, splitShareMillipercent, splitFeePercent, splitFeeFollowsMvpGrade }` | `boss-profit-calculator-records.ts` | 남긴다 | 주간 보스 수입 계산기에서 저장한 기록. 금액 없이 보스 · 난이도 · 파티 값만 남긴다([[ADR-074]] 결정 13) |
 | `notificationLedger` | JSON `{ id, kind, fireAt, title, body }[]` | `notification-ledger.ts` | 남긴다 | 지금 예약해 둔 로컬 알림. OS 의 예약 목록은 읽을 수 없어서 따로 적는다 |
 | `notices` | JSON `Notice[]` | `legacy-cleanup.ts` | 켤 때 지운다 | 1.0.12 까지의 키. 공지는 이제 쿼리 `notices(kind)` 가 SQLite `query_cache` 에 든다([[ADR-142]] 결정 7). 안 읽고 옛 키 정리가 지운다([[ADR-142]] 결정 12) |
 | `dismissedNotices` | JSON 공지 id 배열(최근 50) | `notice-banner.ts` | 남긴다 | today 배너에서 닫은 공지. 닫았다는 사실은 기기에만 있다 |

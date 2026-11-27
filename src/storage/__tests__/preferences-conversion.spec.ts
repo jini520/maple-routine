@@ -304,7 +304,7 @@ describe('파티 약속', () => {
   })
 })
 
-describe('보스 수익 계산기 기록', () => {
+describe('보스 수입 계산기 기록', () => {
   const even = { myShare: null, sharesTotal: null, splitFeePercent: null }
 
   // 분배 칸은 분배 설정과 같은 규칙이다. 계산기는 수수료 자동을 저장하지 않아 요율이 있으면 손으로 고른 값이다.

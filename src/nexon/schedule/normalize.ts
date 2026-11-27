@@ -52,7 +52,7 @@ function normalizeWeeklyContent(wire: NexonWeeklyContentWire, resolvers: Schedul
 // 승격시킨다(isComplete, 카드 뱃지 표시용). 이 승격은 등록된 항목에만 적용하고, 미등록 항목끼리는
 // 서로 전파하지 않는다. 미등록 완료 항목은 원본 complete_flag 그대로 lib/boss-matching의 카드
 // 선택 로직에서 쓰인다. ownComplete는 승격 없이 이 항목 자신의 원본 complete_flag를 그대로
-// 보존한다. 보스 수익 계산기가 "실제로 어느 난이도를 처치했는지" 판정할 때 isComplete만으론
+// 보존한다. 보스 수입 계산기가 "실제로 어느 난이도를 처치했는지" 판정할 때 isComplete만으론
 // 승격된 건지 진짜 완료인지 구분할 수 없어서 별도로 필요하다.
 function normalizeBossContent(
   wire: NexonBossContentWire,
