@@ -66,7 +66,7 @@ half4 main(float2 xyIn) {
   float2 q = center + (p * (rhoS / max(rho, 0.0001))) / mag;
   half4 col = accent.eval(S(q));
   half4 bg;
-  // 뒤에 비치는 바 판(뜬 화면)의 세로만 따로 그린다. 시스템 녹화를 재 보면 렌즈 가운데에서 판 끝선이 렌즈 밖
+  // 뒤에 비치는 바 판(렌즈 뒤 그림)의 세로만 따로 그린다. 시스템 녹화를 재 보면 렌즈 가운데에서 판 끝선이 렌즈 밖
   // 끝선보다 3.3pt 안쪽에 있고, 그 위아래로 판 밖의 화면이 띠로 비친다. 띠 양쪽(가운데에서 반폭의 0.4 ~ 0.55)에서
   // 끝선이 반원처럼 꺾여 렌즈 밖 끝선과 이어진다. 그 모양대로 판을 세로로만 줄여 뽑는다.
   float t = clamp((ex - 0.4) / 0.15, 0.0, 1.0);
@@ -84,8 +84,8 @@ half4 main(float2 xyIn) {
   float plateD = sdRoundRect(xy - barCenter, float2(barHalf.x, plateHalfY), plateHalfY);
   float onPlate = 1.0 - smoothstep(-0.5, 0.5, plateD);
   if (hasPage > 0.5) {
-    // 뜬 화면에는 유리 바가 없다. 바 판 자리는 흐린 화면 위에 테마의 바 색을 덮어 그린다.
-    // 뜬 화면에서 투명한 자리(레일 화면의 오른쪽 빈 자리 등)는 테마 바탕색 위에 얹는다. 그냥 쓰면 검게 비쳤다.
+    // 렌즈 뒤 그림에는 바가 없다. 바 판 자리는 흐린 사본 위에 테마의 바 색을 덮어 그린다.
+    // 그림의 투명한 자리는 테마 바탕색 위에 얹는다. 그냥 쓰면 검게 비친다.
     half4 pg = mix(page.eval(S(qb)), pageBlur.eval(S(qb)), half(onPlate));
     half3 under = pg.rgb + half3(pageBg.rgb) * (1.0 - pg.a);
     half3 glassed = mix(under, half3(glassTint.rgb), half(glassTint.a));
@@ -130,7 +130,7 @@ export interface LensCanvasProps {
   height: number
   /** 세로 막대(오른쪽 레일)인지. 그러면 width 가 세로, height 가 가로다. */
   vertical?: boolean
-  /** 테마 바탕색(0~1 네 개). 뜬 화면의 투명한 자리를 채운다. */
+  /** 테마 바탕색(0~1 네 개). 렌즈 뒤 그림의 투명한 자리를 채운다. */
   pageBg: number[]
   pillX: SharedValue<number>
   pillW: number
@@ -147,7 +147,7 @@ export interface LensCanvasProps {
   /** 캔버스를 바 위로 올리는 양. */
   top: number
   page: PageImages | null
-  /** 창 크기와 캔버스 왼쪽 위의 창 좌표. 뜬 화면을 캔버스 좌표로 옮긴다. */
+  /** 창 크기와 캔버스 왼쪽 위의 창 좌표. 렌즈 뒤 그림을 캔버스 좌표로 옮긴다. */
   windowW: number
   windowH: number
   originX: SharedValue<number>
@@ -210,10 +210,12 @@ export function LensCanvas(props: LensCanvasProps): React.JSX.Element | null {
     () => (vertical ? { x: 0, y: EXT_X, width: height, height: width } : { x: EXT_X, y: 0, width, height }),
     [width, height, vertical],
   )
+  // 렌즈 뒤 그림은 창 좌표 strip 자리의 그림이다. 캔버스 좌표로 옮긴다.
+  const strip = page?.strip ?? { x: 0, y: 0, width: windowW, height: windowH }
   const pageRect = useDerivedValue(() =>
     vertical
-      ? { x: -originY, y: -originX.value + EXT_X, width: windowW, height: windowH }
-      : { x: -originX.value + EXT_X, y: -originY, width: windowW, height: windowH },
+      ? { x: strip.x - originY, y: strip.y - originX.value + EXT_X, width: strip.width, height: strip.height }
+      : { x: strip.x - originX.value + EXT_X, y: strip.y - originY, width: strip.width, height: strip.height },
   )
   const source = lensEffect()
   if (source === null) return null

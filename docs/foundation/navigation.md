@@ -9,8 +9,8 @@
 |---|---|
 | `navigation/AppNavigation.tsx` | `NavigationContainer`. 알림을 눌렀을 때 공지 상세와 파티 약속 화면으로 보내고, 업데이트 안내와 월드 이전 안내 모달을 띄운다 |
 | `navigation/RootNavigator.tsx` | 루트 스택. 진입 전에는 온보딩 화면 넷, 진입 뒤에는 `Main`(`LayerStack`)과 하위 페이지 스물둘 |
-| `navigation/LayerStack.tsx` | 그룹 행과 하위 행을 레이어로 하나씩 쌓는 스택. `layout` 에서 하단바와 `BottomBarOverlayHost` 를 그리고, 렌즈가 뜰 화면 상자를 둔다 |
-| `navigation/bar-capture.ts` | 렌즈가 뜰 화면 상자 · 가림 여부 · 다시 뜨기 함수를 `LayerStack` 과 바가 나눠 쓰는 자리 |
+| `navigation/LayerStack.tsx` | 그룹 행과 하위 행을 레이어로 하나씩 쌓는 스택. `layout` 에서 하단바와 `BottomBarOverlayHost` 를 그린다 |
+| `navigation/bar-focus.ts` | 바가 다시 보일 때 렌즈 항목 줄을 다시 뜨게 하려고 `LayerStack` 과 바가 나눠 쓰는 자리 |
 | `navigation/tab-layer-props.tsx` | 레이어 안 탭 내비게이터 셋이 함께 쓰는 props(`backBehavior="none"`, 바 숨김, 배경) |
 | `navigation/push-screen-options.ts` | `PUSH_SCREEN_OPTIONS`. 두 스택이 같은 전환과 제스처를 쓰게 하는 상수 |
 | `navigation/routes.ts` | `ROUTE_TABLE` 과 라우트 이름 타입, `INITIAL_TAB_ROUTE`, `LAYER_STACK_ID` |
@@ -23,8 +23,8 @@
 | `components/organisms/BottomBar/BottomBar.tsx` | 하단바 그리기와 누르기 · 끌기 처리 |
 | `components/organisms/BottomBar/bar-motion.ts` | 누르기 · 끌기 · 놓기 판정과 스프링 값 |
 | `components/organisms/BottomBar/BarLens.tsx` | iOS 의 렌즈 캔버스(Skia 셰이더) |
-| `components/organisms/BottomBar/lens-images.tsx` | 렌즈가 휘는 그림(항목 줄 · 뒤 화면)을 뜨는 훅 |
-| `components/organisms/BottomBar/lens-snapshot.ts` | 렌즈 그림을 언제 뜨고 언제 쓰는지의 판정 |
+| `components/organisms/BottomBar/lens-images.tsx` | 렌즈가 휘는 그림(항목 줄 · 테마로 그린 렌즈 뒤 그림)을 만드는 훅 |
+| `components/organisms/BottomBar/lens-snapshot.ts` | 렌즈 그림을 언제 만들고 언제 쓰는지의 판정 |
 | `components/organisms/BottomBar/bar-symbol.ios.tsx` · `bar-symbol.android.tsx` | 일곱 칸의 플랫폼 그림. iOS 는 SF Symbols(`assets/bar-sf/`), 안드로이드는 lucide 와 직접 그린 아이콘 |
 | `components/organisms/BottomBar/BarGlyph.tsx` | 칸 하나의 아이콘 · 라벨. 바와 미리보기가 같이 쓴다 |
 | `components/organisms/BottomBar/BarPreview.tsx` | 설정의 하단 탭 순서 페이지가 그리는 바 한 행의 그림 |

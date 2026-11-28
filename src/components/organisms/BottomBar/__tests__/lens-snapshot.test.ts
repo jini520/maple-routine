@@ -1,6 +1,6 @@
 // 렌즈 그림을 언제 쓰고 언제 다시 뜨는지. 셰이더 출력은 jest 로 볼 수 없어서 기기로 확인하고, 여기서는 그림을 고르는 판정을 본다.
 import { beginPress, lensStrength, movePress, slotCenter, type Slots } from '../bar-motion'
-import { ROW_RETRY_LIMIT, ROW_RETRY_MS, canCapturePage, hasInk, rowRetryDelay, usableSnapshot } from '../lens-snapshot'
+import { ROW_RETRY_LIMIT, ROW_RETRY_MS, backdropKey, hasInk, lensBackdropStrip, rowRetryDelay, usableSnapshot } from '../lens-snapshot'
 
 describe('뜬 테마가 지금 테마와 다른 그림은 쓰지 않는다', () => {
   const 렌_다크 = { key: '렌|dark', value: '렌 그림' }
@@ -33,15 +33,38 @@ describe('빈 항목 줄 그림은 다시 뜬다', () => {
   })
 })
 
-describe('뒤 화면은 보이는 동안에만 뜬다', () => {
-  // 위 화면(설정 등)에 가려진 뷰를 뜨면 앱이 죽는다(2026-11-28 실기기).
-  it('위 화면에 가려졌으면 뜨지 않는다', () => {
-    expect(canCapturePage({ covered: true, busy: false })).toBe(false)
+// 렌즈 뒤 그림은 화면을 뜨지 않고 테마로 그린다. 뜬 화면은 스크롤하면 낡아서 렌즈에 옛 화면이 비쳤다(#1290).
+describe('렌즈 뒤 그림은 바 자리 띠다', () => {
+  // 아이폰 17: 창 402 × 874, 바 위 끝 = 874 − 34 − 62, 렌즈 캔버스는 위아래 12 넓다.
+  const 가로 = lensBackdropStrip({ vertical: false, windowWidthPx: 402, windowHeightPx: 874, crossStartPx: 874 - 34 - 62 - 12, crossLengthPx: 62 + 24 })
+
+  // 바는 칸 수가 바뀔 때 자리와 폭이 움직이고 렌즈는 바 양 끝 밖으로 부푼다. 띠가 창 폭 전체여야 어디서 눌러도 그림이 있다.
+  it('가로 바는 창 폭 전체이고, 세로는 렌즈 캔버스와 같은 줄이다', () => {
+    expect(가로).toEqual({ x: 0, y: 874 - 34 - 62 - 12, width: 402, height: 86 })
   })
 
-  it('뜨는 중이면 겹쳐 뜨지 않는다', () => {
-    expect(canCapturePage({ covered: false, busy: true })).toBe(false)
-    expect(canCapturePage({ covered: false, busy: false })).toBe(true)
+  it('세로 막대는 창 높이 전체이고, 가로는 렌즈 캔버스와 같은 줄이다', () => {
+    const 세로 = lensBackdropStrip({ vertical: true, windowWidthPx: 466, windowHeightPx: 678, crossStartPx: 412 - 12, crossLengthPx: 64 + 24 })
+
+    expect(세로).toEqual({ x: 400, y: 0, width: 88, height: 678 })
+  })
+})
+
+describe('렌즈 뒤 그림은 테마 · 창 크기 · 바 자리가 바뀔 때만 다시 그린다', () => {
+  const 띠 = { x: 0, y: 766, width: 402, height: 86 }
+  const 기준 = backdropKey({ themeKey: '렌|dark', strip: 띠 })
+
+  // 페이지가 바뀌거나 스크롤해도 같은 그림이다. 그것들은 열쇠에 들어가지 않는다.
+  it('같은 테마 · 같은 띠면 같은 열쇠다', () => {
+    expect(backdropKey({ themeKey: '렌|dark', strip: { ...띠 } })).toBe(기준)
+  })
+
+  it.each([
+    ['테마', { themeKey: '레테|light', strip: 띠 }],
+    ['창 폭(회전 · 접기)', { themeKey: '렌|dark', strip: { ...띠, width: 874 } }],
+    ['바 자리(3버튼 내비게이션 바)', { themeKey: '렌|dark', strip: { ...띠, y: 745 } }],
+  ])('%s 이 바뀌면 열쇠가 바뀐다', (_name, input) => {
+    expect(backdropKey(input)).not.toBe(기준)
   })
 })
 

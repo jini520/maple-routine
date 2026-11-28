@@ -44,7 +44,7 @@ import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { useScreenLayout } from '../../../lib/screen-layout'
 import { boxShadowOf } from '../../../lib/shadow'
 import { tapFeedback } from '../../../native/haptics'
-import { pageCapture } from '../../../navigation/bar-capture'
+import { barFocus } from '../../../navigation/bar-focus'
 import {
   BAR_GROUPS,
   barLayer,
@@ -65,7 +65,7 @@ import { scrollPageToTop } from '../../../navigation/scroll-to-top'
 import type { LayerRouteName, TabRouteName } from '../../../navigation/routes'
 import { useThemeAppearance } from '../../../theme/context'
 import { LensCanvas } from './BarLens'
-import { colorToUniform, useLensRowImages, usePageSnapshot, type LensRowSpec } from './lens-images'
+import { colorToUniform, useLensBackdrop, useLensRowImages, type LensRowSpec } from './lens-images'
 import { BarBackGlyph, BarGlyph } from './BarGlyph'
 import { resolveBarColors } from './bar-colors'
 import {
@@ -92,7 +92,7 @@ import {
 import { BAR_SHADOW, PLATE_SHADOW } from './bar-shape'
 import { setLastSub, useLastSub } from './bar-store'
 import { isSecondTap, type TapRecord } from './double-tap'
-import { PAGE_CAPTURE_AFTER_CHANGE_MS, PAGE_CAPTURE_AFTER_FOCUS_MS } from './lens-snapshot'
+import { ROW_REFRESH_AFTER_FOCUS_MS, lensBackdropStrip } from './lens-snapshot'
 
 /**
  * 바가 아는 이동은 둘뿐이다.
@@ -135,11 +135,6 @@ interface Item {
   key: GroupId | TabRouteName
   label: string
   active: boolean
-}
-
-/** 위 화면에 가려졌는가. `LayerStack` 이 마운트 뒤에 채우는 값이라 부를 때마다 읽는다. */
-function isPageCovered(): boolean {
-  return pageCapture.isCovered()
 }
 
 /** 지금 시각(ms). 워크릿에서 누른 뒤 지난 시간을 잰다. */
@@ -548,40 +543,45 @@ export function BottomBar({ page, pageBelow, navigation }: BottomBarProps): Reac
     vertical,
     rowRefresh,
   )
-  const { images: pageImages, capture: capturePage } = usePageSnapshot(pageCapture.ref, themeKey, isPageCovered)
+  const bottom = bottomSafeAreaPx + metrics.liftPx
+  /** 렌즈 캔버스 왼쪽 위의 창 좌표 중 가로지르는 방향 값. */
+  const lensCrossStart = vertical ? rail.leftPx - LENS_EXT : screenLayout.windowHeightPx - bottom - BAR_HEIGHT - LENS_EXT
+  const pageImages = useLensBackdrop({
+    enabled: useLens,
+    definition,
+    themeKey,
+    strip: lensBackdropStrip({
+      vertical,
+      windowWidthPx: screenLayout.windowWidthPx,
+      windowHeightPx: screenLayout.windowHeightPx,
+      crossStartPx: lensCrossStart,
+      crossLengthPx: thickness + LENS_EXT * 2,
+    }),
+    windowWidthPx: screenLayout.windowWidthPx,
+    windowHeightPx: screenLayout.windowHeightPx,
+  })
 
   useEffect(() => {
     if (!useLens) return
     let timer: ReturnType<typeof setTimeout> | null = null
-    pageCapture.onFocus = () => {
+    barFocus.onFocus = () => {
       if (timer !== null) clearTimeout(timer)
-      timer = setTimeout(() => {
-        void capturePage()
-        setRowRefresh((n) => n + 1)
-      }, PAGE_CAPTURE_AFTER_FOCUS_MS)
+      timer = setTimeout(() => setRowRefresh((n) => n + 1), ROW_REFRESH_AFTER_FOCUS_MS)
     }
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') pageCapture.onFocus?.()
+      if (state === 'active') barFocus.onFocus?.()
     })
     return () => {
-      pageCapture.onFocus = null
+      barFocus.onFocus = null
       subscription.remove()
       if (timer !== null) clearTimeout(timer)
     }
-  }, [capturePage, useLens])
-
-  // 페이지나 행이 바뀌고 화면 전환이 끝난 뒤 뒤 화면을 떠 둔다.
-  useEffect(() => {
-    if (!useLens) return
-    const timer = setTimeout(() => void capturePage(), PAGE_CAPTURE_AFTER_CHANGE_MS)
-    return () => clearTimeout(timer)
-  }, [page, rowKey, capturePage, useLens])
+  }, [useLens])
 
   const rowImages = useLens ? (lensImages[rowKey] ?? null) : null
 
   if (isKeyboardShown) return null
 
-  const bottom = bottomSafeAreaPx + metrics.liftPx
   // 바 전체 상자. 가로 바는 화면 아래 줄, 세로 막대는 레일 자리의 세로 줄(창 위 끝부터)이다.
   const outerStyle: ViewStyle = vertical
     ? { position: 'absolute', top: 0, left: rail.leftPx, width: thickness, height: screenLayout.windowHeightPx }
@@ -729,7 +729,7 @@ export function BottomBar({ page, pageBelow, navigation }: BottomBarProps): Reac
                     windowW={screenLayout.windowWidthPx}
                     windowH={screenLayout.windowHeightPx}
                     originX={barStartSV}
-                    originY={vertical ? rail.leftPx - LENS_EXT : screenLayout.windowHeightPx - bottom - BAR_HEIGHT - LENS_EXT}
+                    originY={lensCrossStart}
                     barW={barLengthSV}
                     barH={thickness}
                     glassTint={[...colorToUniform(colors.bar).slice(0, 3), 0.6]}
