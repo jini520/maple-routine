@@ -189,8 +189,10 @@ eslint 규칙을 옮겨 적은 것이라 판정이 조금 다르다. 그래서 o
 
 **파일 감시는 watchman 이다.** Metro 와 jest 가 파일 목록을 watchman 에서 받는다. 없으면 둘 다 시작할 때마다
 저장소를 직접 훑는다. `.watchmanconfig` 의 `ignore_dirs` 가 빌드 산출물(`ios/build` · `ios/Pods` ·
-`android/build` 등)을 뺀다. `.claude/worktrees` 는 빼지 않는다. watchman 은 저장소 루트 하나를 감시하고 워크트리는
-그 안에 있어서, 빼면 워크트리에서 도는 jest 와 Metro 가 파일을 못 본다.
+`android/build` 등)을 뺀다. `.claude/worktrees` 는 `ignore_dirs` 에 없다. 이 맥에서 그 자리는 외장 SSD 로 가는
+링크이고([[ADR-188]] 결정 18), watchman 은 링크를 따라 들어가지 않는다. 그래서 저장소 루트를 감시해도 워크트리 안은
+훑지 않는다. 워크트리에서 jest 를 돌리면 watchman 이 그 워크트리의 실제 경로
+(`/Volumes/MapleDev/maple-routine-worktrees/<이름>`)를 루트로 따로 감시한다(2026-11-28 `watchman watch-list` 로 확인).
 
 ### 결정 14. `act()` 경고는 그 테스트의 실패다
 
@@ -290,3 +292,5 @@ V8 플래그를 워커에 직접 주지 않는 이유는 셋이다. `NODE_OPTION
   실행 끝에 워커가 강제 종료되던 것을 고쳤다(#1194). 결정 8 의 스위트 수 · 걸리는 시간 · 워커가 죽는 원인을 실제에 맞췄다
 - ADR-318 (2026-11-24): 결정 16 을 더했다. 실제 시계의 타이머를 마운트한 테스트가 부하에서만 실패하던 것을 가짜 타이머로
   고쳤다(#1223). 결정 14 의 정리 순서 설명이 실제와 반대여서 바로잡았다
+- (2026-11-28) 결정 13 에서 watchman 이 워크트리를 보는 설명을 실제에 맞췄다. `.claude/worktrees` 가 외장 SSD 로 가는 링크가
+  되어, 저장소 루트의 감시는 워크트리 안을 훑지 않고 워크트리는 따로 감시된다(#1289)
