@@ -21,7 +21,7 @@ export interface TrackingModeModalProps {
 export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Element {
   const { mode, setMode } = useTrackingModeStore()
   // 옵션 탭은 고르는 것일 뿐이다. 고른 값을 여기서 들고 있다가 "적용"에서
-  // 한 번만 setMode를 부른다. 전에는 탭이 곧 적용이라 되돌릴 자리가 없었다.
+  // 한 번만 setMode를 부른다. 탭이 곧 적용이면 잘못 누른 것을 되돌릴 자리가 없다.
   const [selected, setSelected] = useState<TrackingMode>(mode)
   const [isApplying, setIsApplying] = useState(false)
   const isUnchanged = selected === mode
@@ -38,7 +38,7 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
     } catch {
       failed = true
     }
-    //  정정: 시드는 저장소를 채우지만 수동 모드의 표시 목록을 정하는 것은 스토어
+    // 시드는 저장소를 채우지만 수동 모드의 표시 목록을 정하는 것은 스토어
     // 메모리의 사본(`manualTrackedByOcid`)이고, RN 탭 화면은 마운트된 채 남아 스스로 다시 읽지
     // 않는다. 이 줄이 없으면 자동 → 수동 직후 세 탭이 "모드는 수동인데 멤버십은 빈 맵"을 그린다
     // (보스 탭의 "추적할 주간 보스가 없습니다", 새로고침해야 나옴). **시드 뒤여야 한다**. 먼저
