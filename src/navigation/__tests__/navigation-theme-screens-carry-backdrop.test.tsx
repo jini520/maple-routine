@@ -23,7 +23,7 @@ import { useNavigationTheme } from '../navigation-theme'
 jest.mock('../../theme/screen-backdrop-policy', () => ({ SCREENS_CARRY_BACKDROP: true }))
 
 // 진짜 배경 이미지는 번들 에셋을 해석해야 그려지는데 jest 는 그것을 못 한다(그 계약은
-// `theme-backdrop-layout.test.ts` 의 몫이다). 여기서 지킬 것은 **그리는 자리에 놓였는가** 하나다.
+// `lib/__tests__/theme-backdrop-layout.test.ts` 의 몫이다). 여기서 지킬 것은 **그리는 자리에 놓였는가** 하나다.
 jest.mock('../../components/templates/ThemeBackdrop/ThemeBackdrop', () => {
   // 팩토리 밖 변수를 못 쓰므로(jest 의 hoisting 가드) 여기서 직접 가져온다.
   const MockView = require('react-native').View

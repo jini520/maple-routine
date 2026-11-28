@@ -2,7 +2,7 @@
 
 > 🟢 유효
 > 옛 번호: ADR-088 결정 3 · 4 · 6 · ADR-089 결정 3 · ADR-105 결정 3 · ADR-106 · ADR-108 · ADR-109 · ADR-133 · ADR-193
-> 관련 소스: `src/data/job-themes.json` · `types/theme.ts` · `components/templates/ThemeBackdrop/` · `theme/screen-backdrop-policy.ts` · `navigation/navigation-theme.ts` · `navigation/tab-layer-props.tsx` · `navigation/RootNavigator.tsx` · `lib/assets/asset-lookup.ts` · `src/assets/themes/`
+> 관련 소스: `src/data/job-themes.json` · `types/theme.ts` · `components/templates/ThemeBackdrop/` · `lib/theme-backdrop-layout.ts` · `theme/screen-backdrop-policy.ts` · `navigation/navigation-theme.ts` · `navigation/tab-layer-props.tsx` · `navigation/RootNavigator.tsx` · `lib/assets/asset-lookup.ts` · `src/assets/themes/`
 
 ## 배경
 
@@ -59,7 +59,7 @@
 
 - `ThemeBackdrop` 이 `AppShell` 의 첫 자식으로 한 장을 깐다. RN 은 형제 순서가 그리는 순서라 z-index 가 필요 없다.
 - 머리에 따로 배경을 칠하지 않는다. 머리도 같은 그림 위에서 함께 스크롤한다. 그래서 `fadeTop` 은 `0px` 이다.
-- `cover` 와 위치는 `theme-backdrop-layout.ts` 가 좌표로 계산한다. RN 에는 배경 크기 · 위치 속성이 없다. 그림 크기를 모르면
+- `cover` 와 위치는 `lib/theme-backdrop-layout.ts` 가 좌표로 계산한다. RN 에는 배경 크기 · 위치 속성이 없다. 그림 크기를 모르면
   그리지 않는다. 크기 없이 그리면 그림이 늘어난다.
 - 그림 뒤에 테마 `bg` 를 먼저 깐다. 그림이 투명한 부분이 많은데 뒤가 비어 있으면 어둡게 하는 일을 `dim` 혼자 맡게 되고, 올릴수록
   그림이 회색이 된다.
@@ -93,7 +93,7 @@
 
 | 파일 | 확인하는 것 |
 |---|---|
-| `components/templates/ThemeBackdrop/__tests__/theme-backdrop-layout.test.ts` | 결정 4: `cover` 배율과 위치 계산, 위치 문자열 해석, 크기를 모를 때 그리지 않는지 본다 |
+| `lib/__tests__/theme-backdrop-layout.test.ts` | 결정 4: `cover` 배율과 위치 계산, 위치 문자열 해석, 크기를 모를 때 그리지 않는지 본다 |
 | `navigation/__tests__/navigation-theme-screens-carry-backdrop.test.tsx` | 결정 5: 플랫폼 값에 따라 화면 배경이 불투명한지와 화면마다 배경을 그리는지가 함께 바뀌는지 본다 |
 | `navigation/__tests__/tab-layers-carry-backdrop.test.tsx` | 결정 5: 탭 내비게이터와 루트 스택이 `screenLayout` 으로 배경을 그리는지 본다 |
 | `lib/__tests__/theme-backgrounds.spec.ts` | 결정 1: 슬러그를 에셋으로 바꾸고, 없는 슬러그는 `null` 인지 본다 |

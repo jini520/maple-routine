@@ -19,7 +19,7 @@ import {
 import { BarGlyph } from './BarGlyph'
 import { getThemeBackgroundUrl } from '../../../lib/assets/asset-lookup'
 import type { ThemeDefinition } from '../../../types/theme'
-import { resolveThemeBackdropLayout } from '../../templates/ThemeBackdrop/theme-backdrop-layout'
+import { resolveThemeBackdropLayout } from '../../../lib/theme-backdrop-layout'
 import { backdropKey, hasInk, rowRetryDelay, usableSnapshot, type Snapshot, type StripRect } from './lens-snapshot'
 import type { GroupId } from '../../../navigation/bar-groups'
 import type { TabRouteName } from '../../../navigation/routes'
