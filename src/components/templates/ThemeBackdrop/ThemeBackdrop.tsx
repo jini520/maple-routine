@@ -6,15 +6,14 @@
  * - `z-index: -1` 이 필요 없다. 형제 순서가 곧 그리는 순서라 셸의 첫 자식이면 뒤에 깔린다.
  *   부모가 스태킹 컨텍스트인지 따질 일이 없다.
  * - `background-size/position` 이 없다. `cover` + 위치를 좌표로 계산한다
- *   (`lib/theme-backdrop-layout.ts`).
+ *   (`lib/theme/theme-backdrop-layout.ts`).
  * - `dim` 은 그림 위에 덮는 검정 한 겹이다.
  */
 import { Image, View, useWindowDimensions } from 'react-native'
 
 import { getThemeBackgroundUrl } from '../../../lib/assets/asset-lookup'
-
+import { resolveThemeBackdropLayout } from '../../../lib/theme/theme-backdrop-layout'
 import { useThemeAppearance } from '../../../theme/context'
-import { resolveThemeBackdropLayout } from '../../../lib/theme-backdrop-layout'
 
 /** `#RRGGBB` + 알파 → `#RRGGBBAA`. 이 파일에서만 쓰므로 여기 둔다. */
 function withAlpha(hex: string, alpha: number): string {

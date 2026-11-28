@@ -1,5 +1,5 @@
 // 테마 배경 이미지 기하. CSS `background-size: cover` + `background-position` 을 그대로 옮겼는지 본다.
-import { parseBackgroundPosition, resolveThemeBackdropLayout } from '../theme-backdrop-layout'
+import { parseBackgroundPosition, resolveThemeBackdropLayout } from '../theme/theme-backdrop-layout'
 
 describe('background-position 읽기', () => {
   // 실제 데이터가 이 형태다. 혼테일 `45% bottom`, 검은마법사 `25% bottom`.

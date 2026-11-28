@@ -18,8 +18,8 @@ import {
 
 import { BarGlyph } from './BarGlyph'
 import { getThemeBackgroundUrl } from '../../../lib/assets/asset-lookup'
+import { resolveThemeBackdropLayout } from '../../../lib/theme/theme-backdrop-layout'
 import type { ThemeDefinition } from '../../../types/theme'
-import { resolveThemeBackdropLayout } from '../../../lib/theme-backdrop-layout'
 import { backdropKey, hasInk, rowRetryDelay, usableSnapshot, type Snapshot, type StripRect } from './lens-snapshot'
 import type { GroupId } from '../../../navigation/bar-groups'
 import type { TabRouteName } from '../../../navigation/routes'
