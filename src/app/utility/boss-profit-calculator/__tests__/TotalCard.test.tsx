@@ -1,7 +1,10 @@
 // 합계 카드의 범례. 다섯 캐릭터까지는 모두 적고, 그보다 많으면 나머지를 `그 외 n캐릭터` 로 묶어 팝오버로 보인다.
 import { act, fireEvent } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 
 import { renderOverlay } from '../../../../components/__tests__/render-atom'
+import { donutStepColors } from '../../../../components/molecules/DonutRing/donut-steps'
+import { DEFAULT_THEME, getThemeDefinition } from '../../../../lib/theme/theme-registry'
 import { TotalCard, type TotalCardCharacter } from '../TotalCard'
 
 function characters(count: number): TotalCardCharacter[] {
@@ -11,6 +14,9 @@ function characters(count: number): TotalCardCharacter[] {
     meso: (count - index) * 100_000_000,
   }))
 }
+
+/** svg 가 색을 바꿔 담는 값(ARGB 정수) */
+const argb = (hex: string): number => parseInt(`ff${hex.slice(1)}`, 16)
 
 /** 범례 줄의 testID 차례 */
 function legendOrder(view: Awaited<ReturnType<typeof renderOverlay>>): string[] {
@@ -69,5 +75,19 @@ describe('TotalCard', () => {
 
     expect(view.getByText('캐릭5')).toBeTruthy()
     expect(view.getByText('캐릭6')).toBeTruthy()
+  })
+
+  // 테마마다 어울리도록 테마 primary 한 색의 단계로 칠한다(사용자 선택). 묶음 줄은 마지막 단계다.
+  it('조각과 범례 네모를 금액 순서대로 테마 primary 의 단계 색으로 칠하고, 그 외 묶음은 다섯째 단계다', async () => {
+    const definition = getThemeDefinition(DEFAULT_THEME)
+    const steps = donutStepColors(definition.primary, definition.surface, definition.mode)
+    const view = await renderOverlay(<TotalCard characters={characters(6)} bossCount={10} selectedOcid="ocid-1" />)
+
+    const keys = ['ocid-1', 'ocid-2', 'ocid-3', 'ocid-4', 'other']
+    keys.forEach((key, index) => {
+      const slice = view.getByTestId(`donut-slice-${key}`)
+      expect((slice.props.fill as { payload: unknown }).payload).toBe(argb(steps[index]!))
+      expect(StyleSheet.flatten(view.getByTestId(`calculator-swatch-${key}`).props.style).backgroundColor).toBe(steps[index])
+    })
   })
 })
