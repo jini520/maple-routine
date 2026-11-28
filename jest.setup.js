@@ -211,7 +211,7 @@ jest.mock('victory-native', () => {
     }),
   }
 })
-// 하단바 렌즈(`BarLens.tsx`)가 쓰는 이름까지 둔다. 뷰를 뜨면 그림이 없다고 답해, 바는 렌즈 없이 앱 뷰로 그린다.
+// 하단바 렌즈(`BarLens.tsx` · `lens-images.tsx`)가 쓰는 이름까지 둔다. 그림을 만들면 없다고 답해, 바는 렌즈 없이 앱 뷰로 그린다.
 jest.mock('@shopify/react-native-skia', () => {
   const nothing = () => null
   return {
@@ -225,7 +225,8 @@ jest.mock('@shopify/react-native-skia', () => {
     ImageShader: nothing,
     vec: (x, y) => ({ x, y }),
     makeImageFromView: () => Promise.resolve(null),
-    Skia: { RuntimeEffect: { Make: () => null } },
+    useImage: () => null,
+    Skia: { RuntimeEffect: { Make: () => null }, Surface: { MakeOffscreen: () => null, Make: () => null } },
     TileMode: { Clamp: 0 },
     ColorType: { RGBA_8888: 4 },
     AlphaType: { Premul: 2 },

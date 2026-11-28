@@ -1,14 +1,26 @@
 /**
- * 하단바 렌즈가 휘는 그림(항목 줄 · 뒤 화면)을 뜨는 훅과 색 변환. 언제 뜨고 언제 쓰는지의 판정은 `lens-snapshot.ts` 에 있다.
+ * 하단바 렌즈가 휘는 그림(항목 줄 · 렌즈 뒤 그림)을 만드는 훅과 색 변환. 언제 뜨고 언제 쓰는지의 판정은 `lens-snapshot.ts` 에 있다.
  *
  * 렌즈 캔버스(`BarLens.tsx`)와 파일을 나눈 것은 컴포넌트 파일이 훅을 함께 내보내면 fast refresh 가 깨지기 때문이다.
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { View } from 'react-native'
-import { AlphaType, ColorType, Skia, TileMode, makeImageFromView, type SkImage } from '@shopify/react-native-skia'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { PixelRatio, View } from 'react-native'
+import {
+  AlphaType,
+  ColorType,
+  Skia,
+  TileMode,
+  makeImageFromView,
+  useImage,
+  type DataSourceParam,
+  type SkImage,
+} from '@shopify/react-native-skia'
 
 import { BarGlyph } from './BarGlyph'
-import { canCapturePage, hasInk, rowRetryDelay, usableSnapshot, type Snapshot } from './lens-snapshot'
+import { getThemeBackgroundUrl } from '../../../lib/assets/asset-lookup'
+import type { ThemeDefinition } from '../../../types/theme'
+import { resolveThemeBackdropLayout } from '../../templates/ThemeBackdrop/theme-backdrop-layout'
+import { backdropKey, hasInk, rowRetryDelay, usableSnapshot, type Snapshot, type StripRect } from './lens-snapshot'
 import type { GroupId } from '../../../navigation/bar-groups'
 import type { TabRouteName } from '../../../navigation/routes'
 
@@ -161,60 +173,84 @@ function rowHasInk(image: SkImage, row: LensRowSpec, height: number, vertical: b
   return pixels === null || hasInk(pixels)
 }
 
+/** 렌즈 뒤 그림과 흐린 사본. 창 좌표 `strip` 자리의 그림이다. */
 export interface PageImages {
   sharp: SkImage
   blurred: SkImage
+  strip: StripRect
 }
 
 /**
- * 렌즈 뒤에 비칠 화면을 뜨는 훅. 바를 뺀 화면 상자(`ref`)를 뜨고 흐린 사본을 함께 만든다.
+ * 렌즈 뒤 그림을 그리는 훅. 화면을 뜨지 않고, 바 뒤에 빈 화면이 있었다 치고 테마로 그린다. 페이지 바탕색 위에
+ * `ThemeBackdrop` 과 같은 배치로 배경 그림과 덮는 색을 얹고, 그 가운데 `strip` 자리만 남긴다.
  *
- * @param themeKey 지금 테마를 이은 글자. 뜬 순간의 값과 다르면 그림을 쓰지 않는다
- * @param isCovered 위 화면에 가려졌는가. 가려진 뷰를 뜨면 앱이 죽는다
+ * 화면을 뜨면 스크롤한 뒤 옛 화면이 렌즈에 비친다. 그림은 `backdropKey` 가 바뀔 때만 다시 그린다.
+ *
+ * @param enabled 렌즈를 쓰는 플랫폼인가. 아니면 그리지 않는다
  */
-export function usePageSnapshot(
-  ref: React.RefObject<View | null> | null,
-  themeKey: string,
-  isCovered: () => boolean,
-): {
-  images: PageImages | null
-  capture: () => Promise<void>
-} {
-  const [shot, setShot] = useState<Snapshot<PageImages> | null>(null)
-  const images = usableSnapshot(shot, themeKey)
-  const keyRef = useRef(themeKey)
-  useEffect(() => {
-    keyRef.current = themeKey
-  })
-  const busy = useRef(false)
-  const capture = useCallback((): Promise<void> => {
-    if (ref === null || ref.current === null) return Promise.resolve()
-    if (!canCapturePage({ covered: isCovered(), busy: busy.current })) return Promise.resolve()
-    busy.current = true
-    const capturedKey = keyRef.current
-    return makeImageFromView(ref as React.RefObject<View>)
-      .then((sharp) => {
-        if (sharp === null) return
-        const w = sharp.width()
-        const h = sharp.height()
-        const surface = Skia.Surface.MakeOffscreen(w, h) ?? Skia.Surface.Make(w, h)
-        if (surface === null) return
-        const paint = Skia.Paint()
-        // 흐린 사본. 렌즈 안 바 판에 쓴다. 화면 배율 3 기준 약 10pt.
-        paint.setImageFilter(Skia.ImageFilter.MakeBlur(30, 30, TileMode.Clamp, null))
-        surface.getCanvas().drawImage(sharp, 0, 0, paint)
-        surface.flush()
-        const snap = surface.makeImageSnapshot()
-        setShot({ key: capturedKey, value: { sharp, blurred: snap.makeNonTextureImage() ?? snap } })
-      })
-      .catch(() => {
-        // 못 뜨면 렌즈 안을 그림 없이 바 판 색으로 그린다.
-      })
-      .finally(() => {
-        busy.current = false
-      })
-  }, [ref, isCovered])
-  return { images, capture }
+export function useLensBackdrop(options: {
+  enabled: boolean
+  definition: ThemeDefinition
+  themeKey: string
+  strip: StripRect
+  windowWidthPx: number
+  windowHeightPx: number
+}): PageImages | null {
+  const { enabled, definition, themeKey, strip, windowWidthPx, windowHeightPx } = options
+  const background = definition.background
+  const source = enabled && background !== undefined ? getThemeBackgroundUrl(background.image) : null
+  const image = useImage(source as DataSourceParam)
+  const key = backdropKey({ themeKey, strip })
+
+  return useMemo(() => {
+    if (!enabled) return null
+    if (source !== null && image === null) return null
+    const scale = PixelRatio.get()
+    const width = Math.ceil(strip.width * scale)
+    const height = Math.ceil(strip.height * scale)
+    const draw = (blur: number): SkImage | null => {
+      const surface = Skia.Surface.MakeOffscreen(width, height) ?? Skia.Surface.Make(width, height)
+      if (surface === null) return null
+      const canvas = surface.getCanvas()
+      canvas.scale(scale, scale)
+      canvas.translate(-strip.x, -strip.y)
+      const layer = Skia.Paint()
+      if (blur > 0) layer.setImageFilter(Skia.ImageFilter.MakeBlur(blur, blur, TileMode.Clamp, null))
+      canvas.saveLayer(layer)
+      const paint = Skia.Paint()
+      paint.setColor(Skia.Color(definition.bg))
+      canvas.drawRect(Skia.XYWHRect(0, 0, windowWidthPx, windowHeightPx), paint)
+      if (image !== null && background !== undefined) {
+        const placement = resolveThemeBackdropLayout(
+          { width: windowWidthPx, height: windowHeightPx },
+          { width: image.width(), height: image.height() },
+          background.position,
+        )
+        if (placement !== null) {
+          canvas.drawImageRect(
+            image,
+            Skia.XYWHRect(0, 0, image.width(), image.height()),
+            Skia.XYWHRect(placement.left, placement.top, placement.width, placement.height),
+            Skia.Paint(),
+          )
+        }
+        const dim = Skia.Paint()
+        dim.setColor(Skia.Color(definition.bg))
+        dim.setAlphaf(background.dim)
+        canvas.drawRect(Skia.XYWHRect(0, 0, windowWidthPx, windowHeightPx), dim)
+      }
+      canvas.restore()
+      surface.flush()
+      const snap = surface.makeImageSnapshot()
+      return snap.makeNonTextureImage() ?? snap
+    }
+    const sharp = draw(0)
+    // 흐린 사본은 렌즈 안 바 판에 쓴다. 약 10pt.
+    const blurred = draw(10)
+    return sharp === null || blurred === null ? null : { sharp, blurred, strip }
+    // key 가 테마 · 띠를 모두 담는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, image, enabled, windowWidthPx, windowHeightPx])
 }
 
 /** `rgba(r, g, b, a)` 나 `#rrggbb` 를 셰이더 uniform 값(0~1 네 개)으로. */
