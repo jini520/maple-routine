@@ -14,8 +14,8 @@
 | `app/inventory/InventoryAddSheet.tsx` | 아이템 넣기 시트. 아이템 칸은 입력 카드 안 목록에서 고른다 |
 | `app/inventory/HuntFragmentSaleSheet.tsx` | 사냥 조각 판매. 가계부 `IncomeSheet` 를 `사냥 전리품 판매` 로 바로 연다 |
 | `app/inventory/InventoryAddFab.tsx` | 넣기 시트를 여는 떠 있는 버튼 |
+| `app/inventory/InventoryTabs.tsx` | 판 위에 같은 폭으로 늘어선 탭. 고른 탭은 판과 같은 `surface`, 나머지는 `surface-2` 다 |
 | `app/boss-profit/drop-price-card.ts` | 드롭 가격 카드. 가격 입력 화면과 같이 쓴다 |
-| `components/molecules/InventoryTabs` | 판 위에 같은 폭으로 늘어선 탭 |
 | `features/inventory/load.ts` | 칸 · 칸 얼굴 · 넣은 아이템의 주인 글자, 넣기 시트의 메이플 ID · 월드 보기 |
 | `features/inventory/cells.ts` | 칸 세우기 · 차례 · 팝오버 글자 |
 | `features/inventory/owner-face.ts` | 넣은 아이템 칸의 얼굴 고르기 |

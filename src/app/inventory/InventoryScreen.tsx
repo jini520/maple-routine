@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { Image, Pressable, View } from 'react-native'
 
 import { Text } from '../../components/atoms'
-import { InventoryTabs } from '../../components/molecules/InventoryTabs/InventoryTabs'
+import { InventoryTabs } from './InventoryTabs'
 import { AnchoredPopover } from '../../components/molecules/Popover/Popover'
 import { FaqButton } from '../../components/organisms/FaqSheet/FaqButton'
 import { NoticeModal } from '../../components/organisms/NoticeModal/NoticeModal'
