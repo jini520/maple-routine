@@ -9,7 +9,8 @@
 |---|---|
 | `navigation/AppNavigation.tsx` | `NavigationContainer`. 알림을 눌렀을 때 공지 상세와 파티 약속 화면으로 보내고, 업데이트 안내와 월드 이전 안내 모달을 띄운다 |
 | `navigation/RootNavigator.tsx` | 루트 스택. 진입 전에는 온보딩 화면 넷, 진입 뒤에는 `Main`(`LayerStack`)과 하위 페이지 스물둘 |
-| `navigation/LayerStack.tsx` | 그룹 행과 하위 행을 레이어로 하나씩 쌓는 스택. `layout` 에서 하단바와 `BottomBarOverlayHost` 를 그린다 |
+| `navigation/LayerStack.tsx` | 그룹 행과 하위 행을 레이어로 하나씩 쌓는 스택. `layout` 에서 하단바와 `BottomBarOverlayHost` 를 그리고, 렌즈가 뜰 화면 상자를 둔다 |
+| `navigation/bar-capture.ts` | 렌즈가 뜰 화면 상자 · 가림 여부 · 다시 뜨기 함수를 `LayerStack` 과 바가 나눠 쓰는 자리 |
 | `navigation/tab-layer-props.tsx` | 레이어 안 탭 내비게이터 셋이 함께 쓰는 props(`backBehavior="none"`, 바 숨김, 배경) |
 | `navigation/push-screen-options.ts` | `PUSH_SCREEN_OPTIONS`. 두 스택이 같은 전환과 제스처를 쓰게 하는 상수 |
 | `navigation/routes.ts` | `ROUTE_TABLE` 과 라우트 이름 타입, `INITIAL_TAB_ROUTE`, `LAYER_STACK_ID` |
@@ -19,16 +20,22 @@
 | `navigation/scroll-to-top.ts` | 라우트 이름별 맨 위 스크롤 함수 표 |
 | `navigation/navigation-theme.ts` | react-navigation 이 칠하는 배경 · 카드 · 테두리 색을 테마에서 가져온다 |
 | `navigation/LedgerLoadingModal.tsx` | 수입·지출 레이어가 데이터를 오래 불러올 때 띄우는 모달 |
-| `components/organisms/BottomBar/BottomBar.tsx` | 하단바 그리기와 누름 처리 |
+| `components/organisms/BottomBar/BottomBar.tsx` | 하단바 그리기와 누르기 · 끌기 처리 |
+| `components/organisms/BottomBar/bar-motion.ts` | 누르기 · 끌기 · 놓기 판정과 스프링 값 |
+| `components/organisms/BottomBar/BarLens.tsx` | iOS 의 렌즈 캔버스(Skia 셰이더) |
+| `components/organisms/BottomBar/lens-images.tsx` | 렌즈가 휘는 그림(항목 줄 · 뒤 화면)을 뜨는 훅 |
+| `components/organisms/BottomBar/lens-snapshot.ts` | 렌즈 그림을 언제 뜨고 언제 쓰는지의 판정 |
+| `components/organisms/BottomBar/bar-symbol.ios.tsx` · `bar-symbol.android.tsx` | 일곱 칸의 플랫폼 그림. iOS 는 SF Symbols(`assets/bar-sf/`), 안드로이드는 lucide 와 직접 그린 아이콘 |
 | `components/organisms/BottomBar/BarGlyph.tsx` | 칸 하나의 아이콘 · 라벨. 바와 미리보기가 같이 쓴다 |
 | `components/organisms/BottomBar/BarPreview.tsx` | 설정의 하단 탭 순서 페이지가 그리는 바 한 행의 그림 |
-| `components/organisms/BottomBar/bar-shape.ts` | 바와 미리보기가 같이 쓰는 여백 · 알약 · ← 치수와 그림자 |
+| `components/organisms/BottomBar/bar-shape.ts` | 바와 미리보기가 같이 쓰는 그림자 |
 | `components/organisms/BottomBar/bar-colors.ts` | 테마에서 바 색을 계산한다 |
 | `components/organisms/BottomBar/bar-store.ts` | 그룹마다 마지막으로 보던 하위(`lastSub`) |
 | `features/bar-order/config.ts` · `features/bar-order/store.ts` | 사용자가 정한 바 순서를 표에 맞춰 읽고 저장한다([[ADR-152]]) |
 | `components/organisms/BottomBar/double-tap.ts` | 두 번 누름 판정(`isSecondTap`, 300ms) |
 | `components/organisms/BottomBar/BottomBarOverlay.tsx` | 화면이 띄우는 것을 바 위에 그리는 포털([[ADR-062]]) |
-| `lib/bottom-bar-metrics.ts` | 창 폭과 3버튼 내비게이션 바 여부에서 바 치수를 계산한다. 오른쪽 레일 화면의 세로 막대 치수도 여기서 계산한다 |
+| `lib/bottom-bar-metrics.ts` | 창 폭과 3버튼 내비게이션 바 여부에서 바 치수를 계산한다. 행의 칸 · 알약 배치와 오른쪽 레일 화면의 세로 막대 치수도 여기서 계산한다 |
+| `patches/expo-glass-effect+57.0.5.patch` | 유리의 색 · 명암을 애니메이션 없이 바꾸는 패치. 테마를 고르는 순간 바도 바뀐다 |
 | `hooks/useButtonNavigation.ts` | 아래에 3버튼 내비게이션 바가 있는지 낸다. 로컬 모듈 `app-system-bars` 가 안드로이드에 묻는다 |
 | `hooks/useOpenTab.ts` | 화면이 페이지 이름으로 탭을 연다 |
 | `hooks/useScreenNavigation.ts` · `hooks/useSettingsNavigation.ts` | 화면이 하위 페이지를 열고 닫는다(둘은 같은 훅) |
@@ -121,13 +128,14 @@ RootStack
 | 아이콘 · 라벨 | 아이콘 칸 25, 간격 3, 라벨 10pt · 600(시스템 글자 크기를 따르지 않는다) |
 
 오른쪽 레일 화면(`design-system.md` 의 `화면 크기`)에서는 바를 세로 막대로 세워 오른쪽 안전영역에 둔다. 가로 바의 왼쪽에서
-오른쪽 순서가 막대의 위에서 아래 순서이고, 하위 행은 맨 위 칸이 ← 다([[ADR-191]] 결정 4).
+오른쪽 순서가 막대의 위에서 아래 순서이고, 하위 행은 ← 원이 막대 위에 따로 선다([[ADR-191]] 결정 4).
 
 | 값 | 계산 |
 |---|---|
-| 폭 · 칸 | 폭 64, 칸 높이 56 다섯 칸. 막대 높이 286 |
+| 폭 · 칸 | 폭 64, 막대 길이는 칸 56 다섯과 여백(56 × 5 + 4 × 2 = 288) |
 | 위치 | 가로는 오른쪽 안전영역의 가운데, 세로는 아래 끝이 아래쪽 안전영역 바로 위 |
-| 안쪽 여백 · 알약 | 여백 3, 알약 58 × 56, ← 원 42 |
+| 안쪽 여백 · 알약 | 여백 4, 알약 두께 56. 알약 길이와 칸 간격은 가로 바와 같은 식(`(길이 − 17) ÷ 5`, 알약은 + 9)이다 |
+| 하위 행 | ← 원(지름 54)이 막대 위에 간격 8 로 서고, 막대는 남은 길이를 네 칸으로 나눈다 |
 | 아이콘 · 라벨 | 가로 바와 같다 |
 
 재질은 iOS 26 이상에서 바 `GlassView`(`regular`) · ← 원 `clear` 이고, 그 밖에서는 불투명 판에 그림자다. 쉬는 알약은 iOS

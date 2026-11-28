@@ -9,18 +9,21 @@
 import { act, fireEvent, render as renderNow, screen, within } from '@testing-library/react-native'
 import { Dimensions, StyleSheet } from 'react-native'
 import { isLiquidGlassAvailable } from 'expo-glass-effect'
+import { getAnimatedStyle } from 'react-native-reanimated'
 import { useAppEntryStore } from '../../features/app-entry/store'
 
 import jobThemes from '../../data/job-themes.json'
 import type { ThemeDefinition, ThemeName } from '../../types/theme'
 
 import {
+  BACK_CIRCLE,
+  BACK_GAP,
   BAR_MAX_WIDTH,
   BAR_SIDE_MARGIN,
-  RAIL_BAR_ITEM_HEIGHT,
   resolveBottomBarMetrics,
   resolveRailBarMetrics,
 } from '../../lib/bottom-bar-metrics'
+import { resolveBarColors } from '../../components/organisms/BottomBar/bar-colors'
 import { resolveScreenLayout } from '../../lib/screen-layout'
 import { __resetThemeAppearanceForTest, setThemeAppearance } from '../../theme/appearance-store'
 import { resetBarStoreForTests, setLastSub } from '../../components/organisms/BottomBar/bar-store'
@@ -85,9 +88,13 @@ async function render(element: React.ReactElement): Promise<ReturnType<typeof re
   return view
 }
 
+/**
+ * 바의 칸 하나를 누른다. 바는 칸마다 누름 과녁을 두지 않고 바 전체의 제스처로 누름 · 끌기를 받는다. jest 는 그 제스처를
+ * 손가락으로 움직일 수 없어서, 칸이 받는 접근성 동작(`activate`)으로 누른다. 누름 · 끌기 판정은 `bar-motion.test.ts` 가 본다.
+ */
 async function press(testID: string): Promise<void> {
   await act(async () => {
-    fireEvent.press(screen.getByTestId(testID))
+    fireEvent(screen.getByTestId(testID), 'accessibilityAction', { nativeEvent: { actionName: 'activate' } })
   })
   await settle()
 }
@@ -102,37 +109,26 @@ async function press(testID: string): Promise<void> {
 // 를 아예 그리지 않는다. 알약과 코드가 한 글자도 다르지 않고 런타임 props 까지 같은데도
 // 그렇다. 판을 바 루트로 꺼내면 바로 살아난다(바 대비 −15.7 → +23.1). 네이티브 렌더는 jest
 // 로 못 보므로 깨졌던 구조 자체를 건다.
-describe('채우지 못하는 아이콘은 활성일 때 굵어진다', () => {
+// 안쪽에 선이 많은 그림(달력 · 목록 · 장부 등)은 SF Symbols 자리로 옮겨 가 색만 바꾼다. 남은 앱 아이콘은 활성일 때 면을
+// 채우고 굵기는 그대로다. 채우기와 굵히기를 함께 하면 채운 그림이 과해진다.
+describe('앱 아이콘은 활성이어도 굵기가 그대로다', () => {
   const strokes = (id: string): number[] =>
     [...JSON.stringify(screen.getByTestId(id)).matchAll(/"strokeWidth":([0-9.]+)/g)].map(
       ([, value]) => Number(value),
     )
 
-  // 활성이 되는 자리로 고른다. 그룹 행에서 ← 를 누르면 기록이 있어 **today 로 돌아가므로**
-  // 그 경로로는 스케줄이 활성이 되지 않는다.
   it.each([
-    ['bar-sub-Content', 'bar-group-schedule', true],   // 목록. 선뿐이라 못 채운다
-    ['bar-sub-Cashbook', 'bar-group-ledger', true],    // 장부. 선뿐이라 못 채운다
-    ['bar-sub-Boss', 'bar-group-schedule', false],     // 검. 칼날이 면으로 찬다(채우는 쪽)
-    ['bar-sub-Profit', 'bar-group-ledger', false],     // 수익. 동전 두 개가 면으로 찬다
-    ['bar-group-utility', 'bar-group-utility', false], // 렌치. 채운다
-  ] as const)('%s 가 활성일 때 굵어지는가: %s', async (target, entry, thicker) => {
+    ['bar-sub-Boss', 'bar-group-schedule'],
+    ['bar-sub-Profit', 'bar-group-ledger'],
+    ['bar-group-utility', 'bar-group-utility'],
+  ] as const)('%s', async (target, entry) => {
     await render(<NavigationHarness />)
     await press(entry)
     if (target !== entry) await press(target)
 
     const active = strokes(target)
     expect(active.length).toBeGreaterThan(0)
-    expect(active.some((width) => width > 1.5)).toBe(thicker)
-  })
-
-  it('비활성은 어느 그림이든 기본 굵기다', async () => {
-    await render(<NavigationHarness />)
-
-    // 같은 값이 컴포넌트·호스트 양쪽에 실려 여러 번 잡힌다. 개수가 아니라 **전부 기본인가** 다.
-    const widths = strokes('bar-group-schedule')
-    expect(widths.length).toBeGreaterThan(0)
-    expect(widths.every((width) => width === 1.5)).toBe(true)
+    expect(active.every((width) => width === 1.5)).toBe(true)
   })
 })
 
@@ -140,12 +136,9 @@ describe('활성 아이콘 채우기는 가려서 한다', () => {
   it.each([
     ['today', true],
     ['utility', true],
-    ['schedule', false],
-    ['ledger', false],
   ] as const)('%s 그룹의 활성 아이콘 fill 은 %s 다', async (group, filled) => {
     await render(<NavigationHarness />)
     await press(`bar-group-${group}`)
-    if (group === 'schedule' || group === 'ledger') await press('bar-back')
 
     const item = JSON.stringify(screen.getByTestId(`bar-group-${group}`))
     // 커스텀 아이콘은 뿌리에 자기 `fill="none"` 을 갖는다. **none 이 있나** 가 아니라
@@ -154,6 +147,25 @@ describe('활성 아이콘 채우기는 가려서 한다', () => {
 
     expect(item).toContain('strokeWidth')
     expect(fills.some((value) => value !== 'none')).toBe(filled)
+  })
+})
+
+// iOS 는 일곱 자리에 SF Symbols 그림을 쓰고 활성일 때 색만 바꾼다. 채우거나 굵히면 안쪽 선이 사라진다.
+describe('SF Symbols 자리', () => {
+  const tintOf = (testID: string): unknown[] =>
+    [...JSON.stringify(screen.getByTestId(testID)).matchAll(/"tintColor":"([^"]*)"/g)].map(([, value]) => value)
+
+  it('스케줄러 · 더보기 칸은 그림에 색을 입히고, 활성과 비활성의 색이 다르다', async () => {
+    await render(<NavigationHarness />)
+    const inactive = tintOf('bar-group-settings')
+
+    await press('bar-group-settings')
+    const active = tintOf('bar-group-settings')
+
+    expect(inactive).toHaveLength(1)
+    expect(active).toHaveLength(1)
+    expect(active[0]).not.toBe(inactive[0])
+    expect(JSON.stringify(screen.getByTestId('bar-group-settings'))).not.toContain('strokeWidth')
   })
 })
 
@@ -324,9 +336,11 @@ describe('바의 스타일이 플랫폼을 안 가린다', () => {
       unknown
     >
 
-  it.each(['bottom-bar', 'bar-pill', 'bar-back-plate'])(
+  // 그림자는 유리가 없는 곳(iOS 26 미만 · 안드로이드)의 판에만 있다.
+  it.each(['bar-plate', 'bar-pill-plate', 'bar-back-plate'])(
     '%s. 그림자를 boxShadow 로 쓴다',
     async (testID) => {
+      isLiquidGlassAvailableMock.mockReturnValue(false)
       await render(<NavigationHarness />)
  // ← 판은 하위 행에만 마운트된다.
       await press('bar-group-ledger')
@@ -359,16 +373,14 @@ describe('바의 스타일이 플랫폼을 안 가린다', () => {
     await render(<NavigationHarness />)
     const metrics = resolveBottomBarMetrics(Dimensions.get('window').width, false)
 
-    const style = styleOf('bottom-bar')
-
-    expect(style.height).toBe(metrics.heightPx)
-    expect(style.left).toBe(metrics.sideMarginPx)
-    expect(style.right).toBe(metrics.sideMarginPx)
+    expect(styleOf('bottom-bar').height).toBe(metrics.heightPx)
+    expect(styleOf('bar-content').left).toBe(metrics.sideMarginPx)
+    expect(styleOf('bar-content').width).toBe(metrics.widthPx)
   })
 
   // 3버튼 내비게이션 바는 버튼 줄 전체가 인셋이라, 안전영역 바로 위에 서면 바가 버튼 줄에 붙는다(#984).
   // 띄우는 높이는 좌우 최소 여백과 같아 바가 세 방향에서 같은 간격으로 뜬다.
-  it('3버튼 내비게이션 바가 있으면 안전영역 위 14 에 선다', async () => {
+  it('3버튼 내비게이션 바가 있으면 안전영역 위 21 에 선다', async () => {
     setSystemBarsPort(buttonNavigationSystemBarsPort)
     await render(<NavigationHarness />)
 
@@ -386,11 +398,11 @@ describe('바의 스타일이 플랫폼을 안 가린다', () => {
   it('창이 상한보다 넓으면 바가 상한에서 멈추고 가운데 선다', async () => {
     await render(<NavigationHarness />)
     const windowWidth = Dimensions.get('window').width
-    const style = styleOf('bottom-bar')
+    const style = styleOf('bar-content')
 
     expect(windowWidth).toBeGreaterThan(BAR_MAX_WIDTH)
-    expect(windowWidth - Number(style.left) - Number(style.right)).toBe(BAR_MAX_WIDTH)
-    expect(style.left).toBe(style.right)
+    expect(style.width).toBe(BAR_MAX_WIDTH)
+    expect(style.left).toBe((windowWidth - BAR_MAX_WIDTH) / 2)
   })
 })
 
@@ -407,26 +419,21 @@ describe('재질이 없는 쪽은 흉내 내지 않는다', () => {
     setThemeAppearance('엔젤릭버스터', (jobThemes as Record<ThemeName, ThemeDefinition>)['엔젤릭버스터'])
 
     await render(<NavigationHarness />)
-    const bar = Object.assign(
-      {},
-      ...[screen.getByTestId('bottom-bar').props.style].flat(2),
-    ) as Record<string, unknown>
+    const bar = Object.assign({}, ...[screen.getByTestId('bar-plate').props.style].flat(2)) as Record<string, unknown>
 
     expect(screen.queryByTestId('bar-glass')).toBeNull()
     expect(screen.queryByTestId('bar-blur')).toBeNull()
- // 유리가 없으면 바탕은 **바 자신이** 칠한다(유리일 때는 투명이어야 한다. 아래 케이스).
+    // 유리가 없으면 바탕은 **바 판이** 칠한다. 쉬는 알약은 테마 `pill` 색 판이다.
     expect(bar.backgroundColor).toBe('#FEF8FB')
+    const pill = Object.assign({}, ...[screen.getByTestId('bar-pill-plate').props.style].flat(2)) as Record<string, unknown>
+    expect(pill.backgroundColor).toBe(resolveBarColors((jobThemes as Record<ThemeName, ThemeDefinition>)['엔젤릭버스터']).pill)
   })
 
   it('유리가 있으면 바탕을 재질에 맡긴다', async () => {
     await render(<NavigationHarness />)
-    const bar = Object.assign(
-      {},
-      ...[screen.getByTestId('bottom-bar').props.style].flat(2),
-    ) as Record<string, unknown>
 
     expect(screen.getByTestId('bar-glass')).toBeTruthy()
-    expect(bar.backgroundColor).toBe('transparent')
+    expect(screen.queryByTestId('bar-plate')).toBeNull()
   })
 })
 // 활성 탭을 두 번 두드리면 그 화면이 맨 위로 간다.
@@ -575,16 +582,6 @@ describe('사용자가 정한 순서로 그린다', () => {
     return ids
   }
 
-  /** 알약이 놓인 칸 번호. 칸 폭의 몇 배만큼 밀렸는지로 잰다. */
-  function pillSlot(): number {
-    const pill = StyleSheet.flatten(screen.getByTestId('bar-pill').props.style) as {
-      width: number
-      transform: { translateX: number }[]
-    }
-    const overhang = 23
-    return Math.round((pill.transform[0].translateX + overhang / 2) / (pill.width - overhang))
-  }
-
   it('순서를 바꿔도 today 에서 시작하고, 칸이 그 순서로 선다', async () => {
     useBarOrderStore.setState({ order: MOVED })
     await render(<NavigationHarness />)
@@ -599,7 +596,7 @@ describe('사용자가 정한 순서로 그린다', () => {
     ])
   })
 
-  // 층을 넘는 이동이라 알약이 미끄러지지 않고 바로 앉는다. 같은 층 안의 이동은 네이티브 드라이버가 움직여 JS 에서 못 읽는다.
+  // 알약은 활성 칸에 선다(`BottomBar` 의 행 전환). 여기서는 활성 칸이 표의 순서가 아니라 사용자 순서의 자리인지 본다.
   it('활성 표시가 옮긴 칸을 따라간다', async () => {
     useBarOrderStore.setState({ order: MOVED })
     setLastSub({ ledger: 'Cashbook' })
@@ -607,8 +604,9 @@ describe('사용자가 정한 순서로 그린다', () => {
 
     await press('bar-group-ledger')
 
-    // ← 가 첫 칸이고 가계부는 사용자 순서의 셋째다. 표의 순서였다면 2 다.
-    expect(pillSlot()).toBe(3)
+    // 가계부는 사용자 순서의 셋째(2)다. 표의 순서였다면 첫째 다음(1)이다.
+    expect(screen.getByTestId('bar-sub-Cashbook').props.accessibilityState).toEqual({ selected: true })
+    expect(drawnTestIds('bar-sub-').indexOf('bar-sub-Cashbook')).toBe(2)
   })
 
   it('맨 왼쪽 하위로 들어가고, 하위 행이 그 순서로 선다', async () => {
@@ -629,8 +627,13 @@ describe('오른쪽 레일 화면에서는 바가 세로 막대로 선다', () =
     frame: { x: 0, y: 0, width: 466, height: 678 },
     insets: { top: 0, left: 0, right: 84, bottom: 34 },
   }
-  const styleOf = (testID: string): Record<string, unknown> =>
-    Object.assign({}, ...[screen.getByTestId(testID).props.style].flat(2)) as Record<string, unknown>
+  /** 움직이는 상자는 리애니메이티드가 마지막으로 그린 값을 읽는다. 렌더 트리의 `style` 은 마운트 때 값에 머문다. */
+  const styleOf = (testID: string): Record<string, unknown> => {
+    const element = screen.getByTestId(testID)
+    return 'jestAnimatedStyle' in element.props
+      ? (getAnimatedStyle(element as never) as unknown as Record<string, unknown>)
+      : (Object.assign({}, ...[element.props.style].flat(2)) as Record<string, unknown>)
+  }
 
   beforeEach(() => {
     jest.spyOn(Dimensions, 'get').mockReturnValue({ width: 466, height: 678, scale: 3, fontScale: 1 })
@@ -643,25 +646,29 @@ describe('오른쪽 레일 화면에서는 바가 세로 막대로 선다', () =
   it('오른쪽 안전영역 가운데에 서고 아래 끝이 아래쪽 안전영역에 닿는다', async () => {
     await render(<NavigationHarness safeAreaMetrics={듀오_외부} />)
     const layout = resolveScreenLayout({ platform: 'ios', windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
-    const rail = resolveRailBarMetrics({ layout, bottomSafeAreaPx: 34, itemCount: 5, paddingPx: 3 })
-    const style = styleOf('bottom-bar')
+    const rail = resolveRailBarMetrics({ layout, bottomSafeAreaPx: 34, itemCount: 5 })
 
-    expect(style.flexDirection).toBe('column')
-    expect(style.left).toBe(rail.leftPx)
-    expect(style.top).toBe(rail.topPx)
-    expect(style.width).toBe(rail.widthPx)
-    expect(style.height).toBe(rail.heightPx)
+    expect(styleOf('bottom-bar').left).toBe(rail.leftPx)
+    expect(styleOf('bottom-bar').width).toBe(rail.widthPx)
+    expect(styleOf('bar-content').top).toBe(rail.topPx)
+    expect(styleOf('bar-content').height).toBe(rail.heightPx)
   })
 
-  // 가로 바의 왼쪽에서 오른쪽 순서가 막대의 위에서 아래 순서다. 하위 행의 맨 위 칸은 ← 다.
-  it('하위 행에서 ← 가 맨 위 칸에 서고, 하위는 그 아래로 내려간다', async () => {
+  // 가로 바의 왼쪽에서 오른쪽 순서가 막대의 위에서 아래 순서다. 하위 행은 ← 원이 막대 위에 따로 선다.
+  it('하위 행에서 ← 원이 막대 위에 서고, 막대는 그 아래로 줄며 알약이 세로로 움직인다', async () => {
     await render(<NavigationHarness safeAreaMetrics={듀오_외부} />)
     await press('bar-group-schedule')
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(1000)
+    })
 
-    const back = styleOf('bar-back-plate')
-    const transform = (styleOf('bar-pill').transform ?? []) as Record<string, unknown>[]
+    const layout = resolveScreenLayout({ platform: 'ios', windowWidthPx: 466, windowHeightPx: 678, insetRightPx: 84 })
+    const rail = resolveRailBarMetrics({ layout, bottomSafeAreaPx: 34, itemCount: 5 })
 
-    expect(Number(back.top)).toBeLessThan(RAIL_BAR_ITEM_HEIGHT)
-    expect(transform.some((step) => 'translateY' in step)).toBe(true)
+    expect(Number(styleOf('bar-back').top)).toBeCloseTo(rail.topPx)
+    expect(Number(styleOf('bar-content').top)).toBeCloseTo(rail.topPx + BACK_CIRCLE + BACK_GAP)
+    expect(styleOf('bar-pill').top).toEqual(expect.any(Number))
+    expect(styleOf('bar-pill').left).toEqual(expect.any(Number))
+    expect(Number(styleOf('bar-pill').height)).toBeGreaterThan(Number(styleOf('bar-pill').width))
   })
 })

@@ -159,26 +159,18 @@ describe('떠 있는 바의 색', () => {
     }
   })
 
-  // 실기기에서 알약 자리는 유리가 두 겹이다(바 `regular` + 알약 `clear`). 시뮬레이터는 두 겹을
-  // 덜 두껍게 그리는데 실기기는 하이라이트를 두 번 깔아 판이 밝아지고, 그 위 강조색이 대비로
-  // 탁해진다. `tintColor` 로는 그 하이라이트를 못 덜어낸다(위 tint 검사가 그 값이다). 유리 위에
-  // **뷰 한 겹**을 덮는 것이 이 토큰이고, 합성 경로가 달라 실제로 어두워진다.
-  it.each(THEMES)('%s: 라이트만 유리 위에 판을 덮고 다크는 안 덮는다', (_name, theme) => {
-    const { pillVeil } = resolveBarColors(theme)
+  // 쉬는 알약은 유리가 아니라 옅은 판이다. 바 유리 위에서 다크는 밝히고 라이트는 덜어내는 방향이라야 판으로 읽힌다.
+  // 라이트에서 흰 판을 얹으면 흰 카드 위에서 알약이 흰 덩어리가 된다.
+  it.each(THEMES)('%s: 유리 위 쉬는 알약 판은 다크에서 흰색, 라이트에서 검정 쪽이다', (_name, theme) => {
+    const { glassPill, pressFill } = resolveBarColors(theme)
+    const base = theme.mode === 'dark' ? 'rgba(255,255,255,' : 'rgba(0,0,0,'
 
-    if (theme.mode === 'dark') {
-      // 다크에서 그 하이라이트는 원하는 방향이라 덜어낼 것이 없다.
-      expect(pillVeil).toBeNull()
-      return
-    }
-    expect(pillVeil).not.toBeNull()
+    expect(glassPill.startsWith(base)).toBe(true)
+    expect(pressFill.startsWith(base)).toBe(true)
   })
 
-  // 덜어내는 값이므로 바보다 어두워야 한다. 흰색을 얹으면 고치려던 것을 키운다.
-  it.each(THEMES)('%s: 덮는 판은 바보다 어두운 쪽이다', (_name, theme) => {
-    const { pillVeil, bar } = resolveBarColors(theme)
-    if (pillVeil === null) return
-
-    expect(luminance(pillVeil.slice(0, 7))).toBeLessThan(luminance(bar))
+  // 시스템 라이트 탭 바는 렌즈 안 판이 밖과 같은 밝기다. 라이트에 흰빛을 얹으면 렌즈 안만 뿌옇게 뜬다.
+  it.each(THEMES)('%s: 렌즈 안 흰빛은 다크에만 있다', (_name, theme) => {
+    expect(resolveBarColors(theme).lensLift > 0).toBe(theme.mode === 'dark')
   })
 })

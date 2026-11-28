@@ -1,56 +1,98 @@
 /**
- * 떠 있는 캡슐 하단바. 층 판정과 기록 규칙은 `bar-groups.ts` 가 갖고 여기는 그리기와 배선만 하는 뷰.
+ * 떠 있는 하단바. 행 판정과 기록 규칙은 `bar-groups.ts`, 누르기 · 끌기 판정은 `bar-motion.ts` 가 갖고 여기는 그리기와 배선만 하는 뷰.
+ *
+ * 모양과 움직임은 iOS 26 시스템 탭 바에 맞췄다. 높이 62 · 테마 색 판 알약 · 누르는 칸으로 바로 가는 알약 · 끌기.
+ * iOS 는 누르고 끄는 동안 알약을 Skia 렌즈(`BarLens.tsx`)로 그리고, 안드로이드는 렌즈 없이 알약만 미끄러진다.
  *
  * 지키는 것 셋.
  *
  * ① 루트가 `position: absolute` 다. flex 자식으로 두면 화면 높이를 그만큼 먹는다.
  * ② 치수는 창 폭에서 계산한다(`lib/bottom-bar-metrics.ts`). 재면 첫 프레임이 0 이라 알약이 접힌다.
- * ③ 유리(`expo-glass-effect`)는 iOS 26 이상뿐이다. 그 아래와 안드로이드는 흉내 내지 않고 색만
- *    맞춘다(`bar-colors.ts` 의 `neutralPlate`).
+ * ③ 유리(`expo-glass-effect`)는 iOS 26 이상뿐이다. 그 밖은 흉내 내지 않고 불투명 판에 그림자다.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  Animated,
+import { AppState, Platform, StyleSheet, View, type ViewStyle } from 'react-native'
+import { GlassContainer, GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
+import { Gesture, GestureDetector } from 'react-native-gesture-handler'
+import Animated, {
   Easing,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native'
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
+  FadeIn,
+  FadeOut,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withSpring,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated'
 
 import { useBarOrderStore } from '../../../features/bar-order/store'
 import { useButtonNavigation } from '../../../hooks/useButtonNavigation'
 import { useKeyboardShown } from '../../../hooks/useKeyboardShown'
-import { tapFeedback } from '../../../native/haptics'
-import { scrollPageToTop } from '../../../navigation/scroll-to-top'
-import { isSecondTap, type TapRecord } from './double-tap'
-import { resolveBottomBarMetrics, resolveRailBarMetrics } from '../../../lib/bottom-bar-metrics'
+import {
+  BACK_CIRCLE,
+  BAR_HEIGHT,
+  BAR_PADDING,
+  resolveBarRowLayout,
+  resolveBottomBarMetrics,
+  resolveRailBarMetrics,
+} from '../../../lib/bottom-bar-metrics'
 import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { useScreenLayout } from '../../../lib/screen-layout'
 import { boxShadowOf } from '../../../lib/shadow'
-import { useThemeAppearance } from '../../../theme/context'
-import { resolveBarColors } from './bar-colors'
-import { BarBackGlyph, BarGlyph } from './BarGlyph'
-import { BACK_CIRCLE_RATIO, BAR_PADDING, BAR_SHADOW, PILL_OVERHANG, PLATE_SHADOW } from './bar-shape'
+import { tapFeedback } from '../../../native/haptics'
+import { pageCapture } from '../../../navigation/bar-capture'
 import {
   BAR_GROUPS,
   barLayer,
   canGoBack,
   groupById,
   groupOfPage,
+  layerOfPage,
   pressBack,
   pressGroup,
   pressSub,
-  layerOfPage,
   rememberSub,
   visibleSubs,
   type BarIntent,
   type BarState,
   type GroupId,
 } from '../../../navigation/bar-groups'
-import { setLastSub, useLastSub } from './bar-store'
+import { scrollPageToTop } from '../../../navigation/scroll-to-top'
 import type { LayerRouteName, TabRouteName } from '../../../navigation/routes'
+import { useThemeAppearance } from '../../../theme/context'
+import { LensCanvas } from './BarLens'
+import { colorToUniform, useLensRowImages, usePageSnapshot, type LensRowSpec } from './lens-images'
+import { BarBackGlyph, BarGlyph } from './BarGlyph'
+import { resolveBarColors } from './bar-colors'
+import {
+  BAR_PRESS_SCALE,
+  HOLD_GROW_H,
+  HOLD_GROW_W,
+  HOLD_SPRING,
+  IDLE_PRESS,
+  LIFT_SPRING,
+  RELEASE_SPRING,
+  RESIZE_SPRING,
+  TRAVEL_SHAPE_H,
+  TRAVEL_SHAPE_W,
+  TRAVEL_SPRING,
+  beginPress,
+  deferNavigation,
+  endPress,
+  lensStrength,
+  movePress,
+  slotCenter,
+  type PressState,
+  type Slots,
+} from './bar-motion'
+import { BAR_SHADOW, PLATE_SHADOW } from './bar-shape'
+import { setLastSub, useLastSub } from './bar-store'
+import { isSecondTap, type TapRecord } from './double-tap'
+import { PAGE_CAPTURE_AFTER_CHANGE_MS, PAGE_CAPTURE_AFTER_FOCUS_MS } from './lens-snapshot'
 
 /**
  * 바가 아는 이동은 둘뿐이다.
@@ -66,244 +108,212 @@ export interface BarNavigation {
 }
 
 export interface BottomBarProps {
-  /** react-navigation 이 알려 주는 지금 화면(`page-from-layer-state.ts`). 바는 사본을 들지 않는다. */
+  /** react-navigation 이 알려 주는 지금 화면(`page-from-layer-state.ts`). */
   page: TabRouteName
+  /** ← 를 눌렀을 때 돌아갈 페이지. 행을 내비게이션이 끝나기 전에 바꾸려고 받는다. */
+  pageBelow: TabRouteName | null
   navigation: BarNavigation
 }
 
-/**
- * 알약이 같은 층 안에서 미끄러지는 시간. 화면이 통째로 밀려 들어오는 전환값(340ms)은
- * 70~145pt 를 움직이는 작은 판에 길다.
- */
-const TRAVEL_MS = 240
+/** 안드로이드는 유리 · 렌즈 · 들림 없이 알약만 미끄러진다. 끊김 없이 바 역할을 하는 것이 움직임보다 먼저다. */
+const PLAIN = Platform.OS === 'android'
+/** 행 전환 때 알약이 나타나기 시작하는 크기 배율. */
+const ENTER_FROM = 0.85
+/** ← 원이 나오고 들어가는 시간 · 바 쪽에서 출발하는 거리. */
+const BACK_MS = 300
+const BACK_DROP = 26
+/** 렌즈 안 확대 정도. */
+const LENS_ZOOM = 0.12
+/** 렌즈 캔버스가 바 위아래로 더 덮는 길이. 들린 알약이 바 밖으로 나가는 만큼. */
+const LENS_EXT = 12
+const SINE = Easing.inOut(Easing.sin)
+const EASE_OUT = Easing.out(Easing.cubic)
 
-/** 층 전환(페이드·← 열림). 알약보다 조금 짧아 알약이 마지막에 자리를 잡는다. */
-const LAYER_MS = 280
-/** 들어오는 행이 오른쪽에서 밀려 들어오는 거리. 크면 날아온다 가 되어 층 관계가 흐려진다. */
-const ROW_SHIFT = 10
-/** 앱이 이미 쓰는 스택 전환 커브와 같은 가족. */
-const EASE = Easing.bezier(0.32, 0.72, 0, 1)
+const AnimatedGlassView = Animated.createAnimatedComponent(GlassView)
 
-interface BarItemProps {
-  id: GroupId | TabRouteName
+interface Item {
+  key: GroupId | TabRouteName
   label: string
   active: boolean
-  /** 활성일 때 아이콘·라벨이 **함께** 쓰는 색(`bar-colors.ts` 의 `accent`). */
-  accent: string
-  /**
-   * 비활성 색. `text-muted` 가 아니라 **채도를 뺀** 값이다(`bar-colors.ts` 의 `muted`).
-   *
-   * 바 안에서 색을 지는 자리는 활성 하나다. 클래스(`text-text-muted`)로 두면 레테처럼 `textMuted`
-   * 자체가 연보라인 테마에서 비활성까지 같은 색 계열로 읽힌다.
-   */
-  muted: string
-  /** 층과 무관하게 같은 값이다. 가로 바는 칸 폭, 세로 막대는 알약 폭(`BottomBar` 의 `itemBox`). */
-  width: number
-  /**
-   * 가로 바는 알약 높이(바 높이 − 여백×2), 세로 막대는 칸 높이. 상수가 아니라 프롭인 것은 가로 바 세로가 기기 폭에서
-   * 나오기 때문이다. 이 항목의 과녁도 함께 자란다(글리프는 안 자란다).
-   */
-  height: number
-  testID: string
-  onPress: () => void
 }
 
-function BarItem({
-  id,
-  label,
-  active,
-  accent,
-  muted,
-  width,
-  height,
-  testID,
-  onPress,
-}: BarItemProps): React.JSX.Element {
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="tab"
-      accessibilityState={{ selected: active }}
-      accessibilityLabel={label}
-      onPress={onPress}
-      style={{ width, height }}
-      className="items-center justify-center"
-    >
-      <BarGlyph id={id} label={label} active={active} accent={accent} muted={muted} />
-    </Pressable>
-  )
+/** 위 화면에 가려졌는가. `LayerStack` 이 마운트 뒤에 채우는 값이라 부를 때마다 읽는다. */
+function isPageCovered(): boolean {
+  return pageCapture.isCovered()
 }
 
-export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Element | null {
-  // 인셋이 아니라 하한이 깔린 값이다. 들어올림이 0 이라 이 값이 곧 캡슐이 바닥에서 뜨는 높이이고,
-  // 안드로이드 제스처 기기(15)에서는 그것이 iOS 의 절반도 안 된다. 콘텐츠가 남기는 몫
-  // (`ScreenScroll`)과 토스트도 같은 함수를 본다.
+/** 지금 시각(ms). 워크릿에서 누른 뒤 지난 시간을 잰다. */
+function nowMs(): number {
+  'worklet'
+  return Date.now()
+}
+
+/** 옆 칸으로 갈 때 알약 모양을 키프레임대로 바꾸는 워크릿. */
+function startTravelShape(w: SharedValue<number>, h: SharedValue<number>): void {
+  'worklet'
+  const frames = (keys: readonly (readonly [number, number])[]) =>
+    keys.map(([value, duration]) => withTiming(value, { duration, easing: SINE }))
+  h.set(withSequence(...frames(TRAVEL_SHAPE_H)))
+  w.set(withSequence(...frames(TRAVEL_SHAPE_W)))
+}
+
+export function BottomBar({ page, pageBelow, navigation }: BottomBarProps): React.JSX.Element | null {
   const bottomSafeAreaPx = useBottomSafeAreaPx()
   const { definition } = useThemeAppearance()
   const lastSub = useLastSub()
   const order = useBarOrderStore((state) => state.order)
   const isKeyboardShown = useKeyboardShown()
-  // 바의 세로는 창 폭에서 나온다. 콘텐츠가 남기는 몫도 같은 함수를 보므로
-  // (`ScreenScroll` → `bottom-inset.ts`) 두 값이 어긋날 자리가 없다.
-  // 오른쪽 레일 화면에서는 바를 세로 막대로 세워 콘텐츠가 비운 오른쪽 안전영역에 둔다.
   const screenLayout = useScreenLayout()
-  const vertical = screenLayout.kind === 'side-rail'
   const buttonNavigation = useButtonNavigation()
+  const colors = resolveBarColors(definition)
+  const glass = isLiquidGlassAvailable()
+  const useLens = Platform.OS === 'ios'
+
+  // 행은 누르는 순간 바꾼다. 내비게이션이 끝나면 그 값이 다시 들어와 덮는다.
+  const [shownPage, setShownPage] = useState(page)
+  const [propPage, setPropPage] = useState(page)
+  if (propPage !== page) {
+    setPropPage(page)
+    setShownPage(page)
+  }
+
+  const bar: BarState = useMemo(() => ({ page: shownPage, lastSub, order }), [shownPage, lastSub, order])
+  const layer = barLayer(bar)
+  const hasBack = canGoBack(bar)
+  const rowKey = layer === 'group' ? 'group' : groupOfPage(shownPage).id
+
+  const items: Item[] =
+    layer === 'sub'
+      ? visibleSubs(bar).map((sub) => ({ key: sub.page, label: sub.label, active: sub.page === shownPage }))
+      : order.groups.map(groupById).map((group) => ({
+          key: group.id,
+          label: group.label,
+          active: group.id === groupOfPage(shownPage).id,
+        }))
+  const activeIndex = Math.max(0, items.findIndex((item) => item.active))
+
+  // 값은 칸이 늘어선 방향(main)과 가로지르는 방향(cross)으로 적는다. 오른쪽 레일 화면은 바를 세로 막대로 세우고
+  // main 이 세로다.
+  const vertical = screenLayout.kind === 'side-rail'
   const metrics = resolveBottomBarMetrics(screenLayout.contentWidthPx, buttonNavigation)
-  const rail = resolveRailBarMetrics({
-    layout: screenLayout,
-    bottomSafeAreaPx,
-    itemCount: BAR_GROUPS.length,
+  const rail = resolveRailBarMetrics({ layout: screenLayout, bottomSafeAreaPx, itemCount: BAR_GROUPS.length })
+  /** 바 두께(cross). */
+  const thickness = vertical ? rail.widthPx : BAR_HEIGHT
+  /** 알약 두께(cross). */
+  const pillThickness = thickness - BAR_PADDING * 2
+  const fullLength = vertical ? rail.heightPx : metrics.widthPx
+  /** 그룹 행 바가 시작하는 자리(main). 하위 행은 이 자리에 ← 원이 선다. */
+  const groupStart = vertical ? rail.topPx : metrics.sideMarginPx
+  const row = resolveBarRowLayout({
+    fullLengthPx: fullLength,
+    groupSlots: BAR_GROUPS.length,
+    sub: layer === 'sub',
     paddingPx: BAR_PADDING,
   })
+  const barStart = groupStart + row.offsetPx
+  const pillLength = row.pillLengthPx
+  const slots: Slots = { first: row.firstCenterPx, spacing: row.spacingPx, count: items.length }
+  const centerOf = (index: number) => slotCenter(index, slots)
 
-  const bar: BarState = useMemo(() => ({ page, lastSub, order }), [page, lastSub, order])
+  const barStartSV = useSharedValue(barStart)
+  const barLengthSV = useSharedValue(row.lengthPx)
+  const backStartSV = useSharedValue(hasBack ? groupStart : groupStart + BACK_DROP * 2)
+  const backScaleSV = useSharedValue(hasBack ? 1 : 0.4)
+  const pillX = useSharedValue(centerOf(activeIndex))
+  const lift = useSharedValue(0)
+  const hold = useSharedValue(0)
+  const wobW = useSharedValue(0)
+  const wobH = useSharedValue(0)
+  /** 선택 색의 세기. 누르면 빠지고 떼고 앉으면 돌아온다. */
+  const tint = useSharedValue(1)
+  /** 쉬는 알약 몸통의 세기. 누르는 순간 0(투명한 렌즈), 떼고 자리에 앉으면 1. */
+  const body = useSharedValue(1)
+  const backPress = useSharedValue(0)
+  const lensAmt = useSharedValue(0)
+  /** 행이 바뀔 때 알약 등장(0 → 1). 안드로이드 알약이 새 칸에서 나타난다. */
+  const enter = useSharedValue(1)
 
-  const colors = resolveBarColors(definition)
-  // iOS 26 이상에서만 Liquid Glass 가 있다. 그 밖(안드로이드 · iOS 26 미만)은 블러 재질이고,
-  // 재질이 아예 없는 불투명 캡슐로 떨어지지는 않는다.
-  const glass = isLiquidGlassAvailable()
-  const layer = barLayer(bar)
-  const subs = visibleSubs(bar)
-  const hasBack = canGoBack(bar)
-
-  const groupItems = order.groups.map(groupById).map((group) => ({
-    key: group.id,
-    label: group.label,
-    active: group.id === groupOfPage(page).id,
-  }))
-  const subItems = subs.map((sub) => ({
-    key: sub.page,
-    label: sub.label,
-    active: sub.page === page,
-  }))
-
-  const items = layer === 'sub' ? subItems : groupItems
-  const activeIndex = Math.max(
-    0,
-    items.findIndex((item) => item.active),
-  )
-
-  // 재는 것이 하나도 없다. 바 폭이 창 폭의 함수라 계산으로 나오고, 계산은 첫 프레임부터 맞다
-  // (측정은 첫 프레임에 0 이라 알약이 한 프레임 접힌다). 트랙 폭은 애니메이션이 바꾸는 값이라
-  // 그것으로 `itemMain` 을 정하면 애니메이션 → 측정 → `itemMain` → 애니메이션 고리가 돈다.
-  //
-  // 그래서 폭을 움직이는 애니메이션이 하나도 없다. ← 자리는 상자를 넓히는 대신 행을 한 칸
-  // 옆으로 옮겨 만든다. 이동·불투명도·크기는 전부 네이티브 드라이버가 나를 수 있어, 탭 직후
-  // 화면 마운트로 JS 가 막혀도 전환이 끝까지 매끄럽다.
-  //
-  // 아래 값은 축으로 적는다. `Main` 은 칸이 늘어선 방향(가로 바는 가로, 세로 막대는 세로), `Cross` 는 그것을 가로지르는 방향이다.
-  const itemMain = vertical
-    ? rail.itemHeightPx
-    : (metrics.widthPx - BAR_PADDING * 2 - PILL_OVERHANG) / BAR_GROUPS.length
-  /** 알약의 가로지르는 길이 = 바 두께 − 여백×2. 둘은 함께 움직인다. 따로 두면 알약이 바 안에서 떠 버린다. */
-  const itemCross = vertical ? rail.widthPx - BAR_PADDING * 2 : metrics.heightPx - BAR_PADDING * 2
-  /** 알약이 칸보다 긴 정도. 세로 막대는 칸 높이가 곧 알약 높이라 0 이다. */
-  const overhang = vertical ? 0 : PILL_OVERHANG
-  /** 항목 영역을 바 안쪽에서 들여쓰는 양. 끝 칸 알약이 `BAR_PADDING` 만큼만 남기게 하는 값. */
-  const trackInset = overhang / 2
-  const backCircle = Math.round(itemCross * BACK_CIRCLE_RATIO)
-  /**
-   * ← 원이 바 가장자리에서 남기는 여백. 가로지르는 방향과 칸 방향이 같은 값이다.
-   *
-   * 원은 알약 두께의 행 안에서 가운데라 양옆으로 `패딩 + (행 − 원)/2` 만큼 남는다.
-   * 칸 방향도 그 값이어야 사방이 같은 원이 된다. 다른 항목은 이 값과 무관하다. ← 는 절대
-   * 배치라 하위 행의 자리를 밀지 않는다.
-   */
-  const backCircleMargin = BAR_PADDING + (itemCross - backCircle) / 2
-  const pillMain = itemMain + overhang
-  /** 행이 시작하는 칸. 하위 행은 ← 가 차지한 첫 칸 다음이고 격자는 그룹 행과 같다. */
-  const rowOffset = layer === 'sub' ? itemMain : 0
-  const pillX = rowOffset + activeIndex * itemMain + (itemMain - pillMain) / 2
-  /** 항목 하나의 과녁. */
-  const itemBox = vertical ? { width: itemCross, height: itemMain } : { width: itemMain, height: itemCross }
-  /** 칸 방향으로 옮기는 변환. 알약 · 두 행 · ← 가 같은 축을 탄다. */
-  const along = (value: Animated.AnimatedInterpolation<number> | Animated.Value) =>
-    vertical ? { translateY: value } : { translateX: value }
-
-  // `useRef(new Animated.Value(…)).current` 가 아니라 **lazy `useState`** 다. 값이 마운트 동안
-  // 고정이라는 뜻은 같은데, 그쪽은 **렌더 중 ref 읽기** 라 `react-hooks/refs` 가 막는다.
-  const [x] = useState(() => new Animated.Value(0))
-  /** 0 = 그룹 행 · 1 = 하위 행. **전부 네이티브 드라이버다**. 레이아웃 값을 하나도 안 건드린다. */
-  const [visual] = useState(() => new Animated.Value(layer === 'sub' ? 1 : 0))
-  const settled = useRef(false)
-  const previousLayer = useRef(layer)
+  // 제스처 워크릿이 보는 값.
+  const slotsSV = useSharedValue(slots)
+  const activeSV = useSharedValue(activeIndex)
+  /** 칸마다 누르면 하위 행으로 넘어가는지(1). */
+  const opensRowSV = useSharedValue<number[]>([])
+  const pressSV = useSharedValue<PressState>(IDLE_PRESS)
+  const traveling = useSharedValue(false)
+  const beganAt = useSharedValue(0)
+  /** 지금 보이는 행. 렌즈 캔버스는 자기 행일 때만 알약 자리를 따라간다. */
+  const currentRowSV = useSharedValue(rowKey)
+  const shownRow = useRef(rowKey)
+  const placed = useRef(false)
 
   useEffect(() => {
-    const layerChanged = previousLayer.current !== layer
-    previousLayer.current = layer
-
-    // 층을 넘는 이동은 미끄러지지 않는다. 두 행은 서로 다른 항목 집합이라 두 자리 사이에
-    // 이어지는 관계가 없다. 층이 바뀌는 사건은 행 교차가 이미 말한다. 첫 배치도 같은 처리다.
-    if (!settled.current || layerChanged) {
-      settled.current = true
-      x.setValue(pillX)
+    slotsSV.set(slots)
+    activeSV.set(activeIndex)
+    opensRowSV.set(
+      items.map((item) => (layer === 'group' && !item.active && groupById(item.key as GroupId).subs.length > 0 ? 1 : 0)),
+    )
+    if (!placed.current) {
+      placed.current = true
       return
     }
+    barStartSV.set(withSpring(barStart, RESIZE_SPRING))
+    barLengthSV.set(withSpring(row.lengthPx, RESIZE_SPRING))
+    if (shownRow.current !== rowKey) {
+      // 알약은 행의 일부다. 옛 행 알약은 제자리에 멈춘 채 옛 항목과 함께 빠지고, 새 행 알약은 새 선택 칸에서
+      // 새 항목과 같은 페이드로 나타난다. 두 행의 칸이 달라 알약이 이어 갈 자리가 없기 때문이다.
+      shownRow.current = rowKey
+      currentRowSV.set(rowKey)
+      pillX.set(centerOf(activeIndex))
+      if (PLAIN) {
+        enter.set(0)
+        enter.set(withTiming(1, { duration: 120 }))
+      }
+      return
+    }
+    if (pressSV.get().index < 0) pillX.set(withSpring(centerOf(activeIndex), TRAVEL_SPRING))
+    // slots 는 아래 값들의 함수다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [barStart, row.lengthPx, row.firstCenterPx, row.spacingPx, items.length, activeIndex, rowKey, layer])
 
-    Animated.timing(x, {
-      toValue: pillX,
-      duration: TRAVEL_MS,
-      easing: EASE,
-      useNativeDriver: true,
-    }).start()
-  }, [layer, pillX, x])
-
+  // ← 원은 늘 마운트돼 있다. 그룹 행에서는 작게 줄어 바 판 밑에 숨는다. 마운트와 언마운트를 오가면 빠른 왕복에서
+  // 나갈 때의 끝 콜백이 다시 들어온 원을 지웠다.
   useEffect(() => {
-    Animated.timing(visual, {
-      toValue: layer === 'sub' ? 1 : 0,
-      duration: LAYER_MS,
-      easing: EASE,
-      useNativeDriver: true,
-    }).start()
-  }, [layer, visual])
+    const ease = { duration: BACK_MS, easing: EASE_OUT }
+    backStartSV.set(withTiming(hasBack ? groupStart : groupStart + BACK_DROP * 2, ease))
+    backScaleSV.set(withTiming(hasBack ? 1 : 0.4, ease))
+    // 진입 · 퇴장 때만 돈다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasBack])
 
-  // 겹쳐서 섞지 않고 비운 뒤 채운다(fade-through). 두 행을 같은 구간에 함께 흐리면 항목 수가
-  // 다른 두 줄(5 대 2~3)이 반투명으로 포개져 글자가 이중으로 보인다.
-  const groupOpacity = visual.interpolate({ inputRange: [0, 0.4, 1], outputRange: [1, 0, 0] })
-  const subOpacity = visual.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 0, 1] })
-  const groupShift = visual.interpolate({ inputRange: [0, 1], outputRange: [0, -ROW_SHIFT] })
-  // 하위 행은 **한 칸 옆** 이 제자리다. 들어올 때만 거기서 조금 더 오른쪽에서 온다.
-  const subShift = visual.interpolate({
-    inputRange: [0, 1],
-    outputRange: [itemMain + ROW_SHIFT, itemMain],
-  })
-  // ← 는 전환의 뒷절반에만 존재한다. 나갈 땐 먼저 비키고 들어올 땐 자리가 다 생긴 뒤에 든다.
-  // 투명도가 아니라 마운트로 나타나고 사라진다.
-  //
-  // 판이 `opacity: 0` 인 채로 마운트되면 iOS 가 그 `GlassView` 의 효과를 끄고 뒤에 1 로
-  // 돌아와도 되살리지 않는다. 0.01 로 0 만 피하는 것도 안 통한다(마운트 시점에 정확히 1
-  // 이어야 한다). 그래서 `hasBack` 으로 마운트를 가른다. 등장·퇴장은 `backScale` 이 진다.
-  const backScale = visual.interpolate({ inputRange: [0, 0.45, 1], outputRange: [0.82, 0.82, 1] })
-  const backShift = visual.interpolate({ inputRange: [0, 1], outputRange: [-ROW_SHIFT, 0] })
-
-  // 등록한 핸들러가 옛 상태를 붙들지 않도록 최신 값을 ref 로 둔다. 쓰기는 렌더가 아니라
-  // 이펙트에서 한다. 렌더 중 ref 쓰기는 `react-hooks/refs` 가 막고 렌더가 버려질 수도 있다.
   const barRef = useRef(bar)
+  const pageBelowRef = useRef(pageBelow)
+  const itemsRef = useRef(items)
   useEffect(() => {
     barRef.current = bar
+    pageBelowRef.current = pageBelow
+    itemsRef.current = items
   })
 
-  // 상태가 아니라 지시를 받는다. 층은 스택이 들고 여기가 드는 것은 다시 들어갈 자리(`lastSub`)
-  // 하나다.
   const apply = useCallback(
     (intent: BarIntent) => {
       switch (intent.kind) {
         case 'openSubs':
-          setLastSub(rememberSub(getLastSubOf(barRef.current), intent.page))
-          navigation.openLayer(intent.layer, intent.page)
+          setLastSub(rememberSub(barRef.current.lastSub, intent.page))
+          setShownPage(intent.page)
+          deferNavigation(() => navigation.openLayer(intent.layer, intent.page))
           return
         case 'switchSub':
-          setLastSub(rememberSub(getLastSubOf(barRef.current), intent.page))
-          // 같은 단 안의 옆걸음이다. 그 층 화면은 이미 맨 위이므로 스택이 자라지 않는다.
-          navigation.openLayer(layerOfPage(intent.page), intent.page)
+          setLastSub(rememberSub(barRef.current.lastSub, intent.page))
+          setShownPage(intent.page)
+          deferNavigation(() => navigation.openLayer(layerOfPage(intent.page), intent.page))
           return
         case 'switchGroupPage':
-          // 하위 행에서 눌렀다면 그룹 층이 아래 단이라 **올라가면서** 옆걸음한다(이동 한 번).
-          navigation.openLayer('Groups', intent.page)
+          setShownPage(intent.page)
+          deferNavigation(() => navigation.openLayer('Groups', intent.page))
           return
         case 'back':
-          navigation.goBack()
+          if (pageBelowRef.current !== null) setShownPage(pageBelowRef.current)
+          deferNavigation(() => navigation.goBack())
           return
         case 'none':
           return
@@ -312,321 +322,539 @@ export function BottomBar({ page, navigation }: BottomBarProps): React.JSX.Eleme
     [navigation],
   )
 
-  const applyRef = useRef(apply)
-  useEffect(() => {
-    applyRef.current = apply
-  })
-
-  /** 마지막 누름. 짝을 이루거나 이동이 일어나면 비운다. */
   const lastTap = useRef<TapRecord | null>(null)
 
-  /**
-   * 항목 하나를 눌렀을 때.
-   *
-   * 활성 항목은 갈 곳이 없다(`pressGroup`·`pressSub` 가 `none` 을 낸다). 그 빈 자리가 **두 번
-   * 두드렸는가** 를 묻는 자리이고, 손끝은 화면이 실제로 바뀔 때만 답한다.
-   */
-  const pressItem = useCallback(
-    (key: string, active: boolean, toIntent: (bar: BarState) => BarIntent) => {
-      if (active) {
+  /** 손을 뗀 칸. 활성 칸이면 두 번 두드리기를 본다. */
+  const commit = useCallback(
+    (index: number) => {
+      const item = itemsRef.current[index]
+      if (item === undefined) return
+      if (item.active) {
         const now = Date.now()
-        if (isSecondTap(lastTap.current, key, now)) {
-          // 짝을 이뤘으면 지운다. 안 지우면 빠르게 세 번 두드릴 때 2·3 번째가 또 한 쌍이 된다.
+        if (isSecondTap(lastTap.current, item.key, now)) {
           lastTap.current = null
           scrollPageToTop(barRef.current.page)
           return
         }
-
-        lastTap.current = { key, at: now }
+        lastTap.current = { key: item.key, at: now }
         return
       }
-
-      // 이동한 누름은 짝의 앞이 될 수 없다. 남겨 두면 유틸리티에서 today 로 건너온 직후 today 를
-      // 한 번 누르는 것이 더블 터치가 된다.
       lastTap.current = null
       tapFeedback()
-      applyRef.current(toIntent(barRef.current))
+      const current = barRef.current
+      apply(
+        barLayer(current) === 'sub' ? pressSub(current, item.key as TabRouteName) : pressGroup(current, item.key as GroupId),
+      )
     },
-    [],
+    [apply],
   )
+
+  const goBack = useCallback(() => {
+    lastTap.current = null
+    tapFeedback()
+    apply(pressBack(barRef.current))
+  }, [apply])
+
+  /** 알약을 들어 렌즈를 띄운다. iOS 만. */
+  const liftPill = () => {
+    'worklet'
+    beganAt.set(nowMs())
+    lift.set(withSpring(1, LIFT_SPRING))
+    hold.set(withSpring(1, HOLD_SPRING))
+    tint.set(withTiming(0, { duration: 270, easing: EASE_OUT }))
+    body.set(0)
+  }
+
+  const onPressBegin = (pos: number) => {
+    'worklet'
+    const begin = beginPress(pos, slotsSV.get(), opensRowSV.get(), activeSV.get())
+    pressSV.set(begin.press)
+    lensAmt.set(lensStrength(begin.press))
+    if (begin.pillTarget === null) return
+    pillX.set(withSpring(begin.pillTarget, TRAVEL_SPRING))
+    if (PLAIN) return
+    liftPill()
+    traveling.set(begin.travel)
+    if (begin.travel) startTravelShape(wobW, wobH)
+  }
+
+  const onPressMove = (pos: number, translation: number) => {
+    'worklet'
+    const move = movePress(pressSV.get(), pos, translation, pillX.get(), slotsSV.get())
+    pressSV.set(move.press)
+    lensAmt.set(lensStrength(move.press))
+    if (move.startedDrag && !PLAIN) {
+      if (move.startedLens) liftPill()
+      hold.set(withSpring(1, HOLD_SPRING))
+      wobW.set(withTiming(0, { duration: 120 }))
+      wobH.set(withTiming(0, { duration: 120 }))
+    }
+    if (move.pillPos !== null) pillX.set(move.pillPos)
+  }
+
+  const onPressEnd = () => {
+    'worklet'
+    const press = pressSV.get()
+    const end = endPress(press, pillX.get(), slotsSV.get())
+    pressSV.set(IDLE_PRESS)
+    if (end.commitIndex < 0) return
+    if (end.pillTarget !== null) {
+      pillX.set(withSpring(end.pillTarget, TRAVEL_SPRING))
+      if (!PLAIN) {
+        if (press.dragging) {
+          wobH.set(withSequence(withTiming(-0.09, { duration: 110 }), withTiming(0, { duration: 260, easing: SINE })))
+        }
+        hold.set(withTiming(0, { duration: 170, easing: EASE_OUT }))
+        lift.set(withSpring(0, RELEASE_SPRING))
+        // 탭으로 옆 칸에 갔으면 알약이 앉을 때까지(최대 300ms) 기다렸다 판을 채운다.
+        const elapsed = nowMs() - beganAt.get()
+        const wait = traveling.get() && !press.dragging ? Math.max(0, 300 - elapsed) : 0
+        const fill = withTiming(1, { duration: wait > 0 ? 380 : 170, easing: EASE_OUT })
+        tint.set(withDelay(wait, fill))
+        body.set(withDelay(wait, withTiming(1, { duration: wait > 0 ? 380 : 170, easing: EASE_OUT })))
+        traveling.set(false)
+      }
+    }
+    runOnJS(commit)(end.commitIndex)
+  }
+
+  const gesture = usePanGesture(vertical, onPressBegin, onPressMove, onPressEnd)
+  const backGesture = useBackGesture(backPress, goBack)
+
+  // 애니메이션 뷰의 스타일은 고정 값까지 애니메이션 스타일 하나에 둔다. 고정 스타일과 섞으면 고정 쪽이 조용히 버려지는
+  // 경우가 있다(안드로이드에서 알약이 안 그려졌다).
+  const backFillStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 999,
+    backgroundColor: colors.pressFill,
+    opacity: backPress.get(),
+  }))
+  const backArrowStyle = useAnimatedStyle(() => ({ opacity: Math.max(0, Math.min(1, (backScaleSV.get() - 0.4) / 0.6)) }))
+  const barPlateStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    borderRadius: 999,
+    ...(vertical
+      ? { left: 0, width: thickness, top: barStartSV.get(), height: barLengthSV.get() }
+      : { top: 0, height: thickness, left: barStartSV.get(), width: barLengthSV.get() }),
+    transform: [{ scale: 1 + BAR_PRESS_SCALE * lift.get() }],
+  }))
+  // 같은 애니메이션 스타일을 두 컴포넌트에 걸지 않는다. 그러면 한쪽만 배치 값을 받아 누르기 영역이 0 이 됐다.
+  const contentStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    ...(vertical
+      ? { left: 0, width: thickness, top: barStartSV.get(), height: barLengthSV.get() }
+      : { top: 0, height: thickness, left: barStartSV.get(), width: barLengthSV.get() }),
+    transform: [{ scale: 1 + BAR_PRESS_SCALE * lift.get() }],
+  }))
+  const backPlateStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    width: BACK_CIRCLE,
+    height: BACK_CIRCLE,
+    borderRadius: 999,
+    ...(vertical
+      ? { left: (thickness - BACK_CIRCLE) / 2, top: backStartSV.get() }
+      : { top: (BAR_HEIGHT - BACK_CIRCLE) / 2, left: backStartSV.get() }),
+    transform: [{ scale: backScaleSV.get() * (1 + 0.14 * backPress.get()) }],
+  }))
+  /** 안드로이드 알약의 움직이는 층. transform 과 opacity 만 둔다. 배치 값이 섞이면 매 프레임 메인 스레드가 끊겼다. */
+  const plainPillStyle = useAnimatedStyle(() => ({
+    opacity: enter.get(),
+    transform: [
+      vertical ? { translateY: pillX.get() - pillLength / 2 } : { translateX: pillX.get() - pillLength / 2 },
+      { scale: ENTER_FROM + (1 - ENTER_FROM) * enter.get() },
+    ],
+  }))
+  /** iOS 에서 렌즈 그림이 없을 때 알약. 배치 값까지 이 스타일 안에 둔다. */
+  const pillStyle = useAnimatedStyle(() => {
+    const w = pillLength * (1 + HOLD_GROW_W * hold.get() + wobW.get())
+    const h = pillThickness * (1 + HOLD_GROW_H * hold.get() + wobH.get())
+    return {
+      position: 'absolute',
+      borderRadius: 999,
+      overflow: 'hidden',
+      ...(vertical
+        ? { height: w, width: h, top: pillX.get() - w / 2, left: thickness / 2 - h / 2 }
+        : { width: w, height: h, left: pillX.get() - w / 2, top: thickness / 2 - h / 2 }),
+    }
+  })
+  const pillFillStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    opacity: glass ? tint.get() : 0.35 + 0.65 * tint.get(),
+  }))
+
+  const itemSize: LensBox = { pillLength, pillThickness, vertical }
+
+  // 렌즈가 휠 항목 줄 그림. 그룹 행과 하위가 있는 그룹마다 한 줄.
+  const subRow = resolveBarRowLayout({ fullLengthPx: fullLength, groupSlots: BAR_GROUPS.length, sub: true, paddingPx: BAR_PADDING })
+  const groupRow = resolveBarRowLayout({ fullLengthPx: fullLength, groupSlots: BAR_GROUPS.length, sub: false, paddingPx: BAR_PADDING })
+  const lensRows: LensRowSpec[] = [
+    {
+      key: 'group',
+      width: groupRow.lengthPx,
+      items: order.groups.map(groupById).map((group, index) => ({
+        key: group.id,
+        label: group.label,
+        center: groupRow.firstCenterPx + index * groupRow.spacingPx,
+      })),
+    },
+    ...BAR_GROUPS.filter((group) => group.subs.length > 0).map((group) => {
+      const pages = order.subs[group.id] ?? []
+      const subs = [...group.subs].sort((a, b) => pages.indexOf(a.page) - pages.indexOf(b.page))
+      return {
+        key: group.id,
+        width: subRow.lengthPx,
+        items: subs.map((sub, index) => ({
+          key: sub.page,
+          label: sub.label,
+          center: subRow.firstCenterPx + index * subRow.spacingPx,
+        })),
+      }
+    }),
+  ]
+  const lensEdge = definition.mode === 'dark' ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.28)'
+  const themeKey = [definition.mode, definition.bg, colors.bar].join('|')
+  const lensSignature = [
+    screenLayout.windowWidthPx,
+    vertical ? 'v' : 'h',
+    fullLength,
+    themeKey,
+    colors.accent,
+    colors.muted,
+    lensEdge,
+    JSON.stringify(order),
+  ].join('|')
+  // 위 화면이나 백그라운드에서 돌아올 때 줄 그림도 다시 뜬다(가려진 동안 뜬 그림이 비어 있을 수 있다).
+  const [rowRefresh, setRowRefresh] = useState(0)
+  const { images: lensImages, sources: lensSources } = useLensRowImages(
+    useLens ? lensRows : [],
+    thickness + LENS_EXT * 2,
+    pillLength,
+    pillThickness,
+    colors.accent,
+    colors.muted,
+    lensEdge,
+    lensSignature,
+    LENS_EXT,
+    colors.bar,
+    definition.bg,
+    vertical,
+    rowRefresh,
+  )
+  const { images: pageImages, capture: capturePage } = usePageSnapshot(pageCapture.ref, themeKey, isPageCovered)
+
+  useEffect(() => {
+    if (!useLens) return
+    let timer: ReturnType<typeof setTimeout> | null = null
+    pageCapture.onFocus = () => {
+      if (timer !== null) clearTimeout(timer)
+      timer = setTimeout(() => {
+        void capturePage()
+        setRowRefresh((n) => n + 1)
+      }, PAGE_CAPTURE_AFTER_FOCUS_MS)
+    }
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') pageCapture.onFocus?.()
+    })
+    return () => {
+      pageCapture.onFocus = null
+      subscription.remove()
+      if (timer !== null) clearTimeout(timer)
+    }
+  }, [capturePage, useLens])
+
+  // 페이지나 행이 바뀌고 화면 전환이 끝난 뒤 뒤 화면을 떠 둔다.
+  useEffect(() => {
+    if (!useLens) return
+    const timer = setTimeout(() => void capturePage(), PAGE_CAPTURE_AFTER_CHANGE_MS)
+    return () => clearTimeout(timer)
+  }, [page, rowKey, capturePage, useLens])
+
+  const rowImages = useLens ? (lensImages[rowKey] ?? null) : null
 
   if (isKeyboardShown) return null
 
+  const bottom = bottomSafeAreaPx + metrics.liftPx
+  // 바 전체 상자. 가로 바는 화면 아래 줄, 세로 막대는 레일 자리의 세로 줄(창 위 끝부터)이다.
+  const outerStyle: ViewStyle = vertical
+    ? { position: 'absolute', top: 0, left: rail.leftPx, width: thickness, height: screenLayout.windowHeightPx }
+    : { position: 'absolute', left: 0, right: 0, bottom, height: BAR_HEIGHT }
+  /** 유리가 없는 곳의 바 판과 ← 판. 페이지와는 그림자로 가른다. */
+  const opaquePlate: ViewStyle = {
+    borderRadius: 999,
+    backgroundColor: colors.bar,
+    boxShadow: boxShadowOf(definition.shadowColor, BAR_SHADOW),
+  }
+  // 유리가 없으면 쉬는 알약이 옅은 판으로는 안 보인다. 테마 알약 색에 판 그림자를 준다.
+  const restPill: ViewStyle = glass
+    ? { borderRadius: 999, backgroundColor: colors.glassPill }
+    : { borderRadius: 999, backgroundColor: colors.pill, boxShadow: boxShadowOf(definition.shadowColor, PLATE_SHADOW) }
+  const rowBox: ViewStyle = vertical
+    ? { position: 'absolute', top: 0, left: 0, width: thickness, height: row.lengthPx }
+    : { position: 'absolute', top: 0, left: 0, height: thickness, width: row.lengthPx }
+  const Container = glass ? GlassContainer : View
+
   return (
-    <View
-      testID="bottom-bar"
-      style={{
-        position: 'absolute',
-        // 가로 바의 좌우 여백은 남는 폭을 가른 값이다. 상한(420)에 안 걸리는 기기에서는 그냥 14 이고,
-        // 걸리면 남는 폭이 좌우로 갈라져 바가 가운데 선다. `width` 대신 좌우를 주는 것은 부모가
-        // 창 전체를 전제로 폭을 계산했기 때문이다. 같은 전제를 쓰면 둘이 어긋날 수 없다.
-        // 세로 막대는 레일 가운데에 서고 아래 끝이 아래쪽 안전영역에 닿는다.
-        ...(vertical
-          ? {
-              left: rail.leftPx,
-              top: rail.topPx,
-              width: rail.widthPx,
-              height: rail.heightPx,
-              flexDirection: 'column' as const,
-            }
-          : {
-              left: metrics.sideMarginPx,
-              right: metrics.sideMarginPx,
-              bottom: bottomSafeAreaPx + metrics.liftPx,
-              height: metrics.heightPx,
-              flexDirection: 'row' as const,
-            }),
-        alignItems: 'center',
-        padding: BAR_PADDING,
-        borderRadius: 999,
-        // 유리일 때는 바탕을 `GlassView` 가 그린다. 여기에 색을 주면 그 재질이 가려진다.
-        // 유리가 없는 쪽은 불투명 캡슐이고 유리를 흉내 내지 않는다.
-        backgroundColor: glass ? 'transparent' : colors.bar,
-        // 페이지와 바를 가르는 것은 색이 아니라 그림자다. 선은 긋지 않는다.
-        boxShadow: boxShadowOf(definition.shadowColor, BAR_SHADOW),
-      }}
-    >
-      {glass ? (
-        <GlassView
-          testID="bar-glass"
-          // 바는 `clear` 로 두지 않는다. 유리 느낌은 세지지만 바쁜 콘텐츠 위에서 비활성 라벨
-          // 대비가 1.07 까지 떨어진다. 바는 글자를 얹는 판이고 층은 알약 쪽에서 만든다.
-          glassEffectStyle="regular"
-          // OS 외형이 아니라 앱 테마를 따른다. 기본값 `auto` 는 시스템 외형을 보는데 이 앱은
-          // 자체 테마를 쓴다. 라이트 OS 에서 다크 테마를 켜면 새까만 페이지 위에 밝은 유리판이 뜬다.
-          colorScheme={definition.mode}
-          tintColor={colors.glassTint}
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { borderRadius: 999 }]}
-        />
-      ) : null}
-
-      {/* 활성 알약. 유리일 때는 알약도 유리다. 바 위에 조금 더 밝은 재질 한 겹을 더 얹는다.
-          색으로 칠한 판을 올리면 그 자리만 불투명해져 재질이 끊긴다.
-
-          그림자가 그 위에 얹혀 층을 하나 더 만든다. 유리끼리는 명도 차가 작아 그림자가
-          없으면 두 겹이 한 겹으로 읽힌다. */}
-        <Animated.View
-          testID="bar-pill"
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            // 바 루트 기준이다. 트랙 기준이 아니다(아래 **왜 트랙 밖인가**).
-            top: BAR_PADDING + (vertical ? trackInset : 0),
-            left: BAR_PADDING + (vertical ? 0 : trackInset),
-            height: vertical ? pillMain : itemCross,
-            width: vertical ? itemCross : pillMain,
-            transform: [along(x)],
-            borderRadius: 999,
-            // 유리일 때 뒤판을 깔지 않는다. 깔면 `GlassView` 가 그 판을 배경으로 삼아 뒤 콘텐츠
-            // 대신 그 색을 굴절시켜 재질이 아니라 흰 알약이 된다. 그림자 모양은 `borderRadius`
-            // 에서 나오므로 뒤판 없이도 둥글다.
-            backgroundColor: glass ? 'transparent' : colors.pill,
-            boxShadow: boxShadowOf(definition.shadowColor, PLATE_SHADOW),
-          }}
-        >
-          {glass ? (
-            <>
-              <GlassView
-                // 알약은 `clear`. 바(`regular`)보다 얇은 재질이라 뒤가 더 비친다. 바에는 쓰지
-                // 않는다. 글자를 얹는 판이라 투과를 올리면 비활성 라벨 대비가 무너진다(1.07 까지 내려간다).
-                glassEffectStyle="clear"
-                colorScheme={definition.mode}
-                tintColor={colors.pillOnGlass}
-                style={[StyleSheet.absoluteFill, { borderRadius: 999 }]}
-              />
-              {/* 유리 위에 덮는 얇은 판. 재질이 두 겹으로 올려 놓은 하이라이트를 덜어낸다.
-                  tint 로는 안 움직여서 뷰로 덮는다(`bar-colors.ts` 의 `pillVeil`). */}
-              {colors.pillVeil === null ? null : (
-                <View
-                  pointerEvents="none"
-                  style={[
-                    StyleSheet.absoluteFill,
-                    { borderRadius: 999, backgroundColor: colors.pillVeil },
-                  ]}
-                />
-              )}
-            </>
-          ) : null}
-        </Animated.View>
-
-      {/* 알약이 이 트랙 밖인 이유. 트랙은 `overflow: hidden` 이라(하위 행이 한 칸 옆으로 밀려 그
-          넘침을 잘라야 한다) 알약을 여기 두면 그림자가 함께 잘린다. 상자 높이가 알약 높이와
-          같아 위아래 그림자가 통째로 없어지고 좌우도 사각 경계로 깎인다. 알약은 바 루트가
-          갖고 좌표만 패딩만큼 옮긴다. */}
-      <View
-        style={
-          vertical
-            ? { flex: 1, width: itemCross, marginVertical: trackInset, overflow: 'hidden' }
-            : { flex: 1, height: itemCross, marginHorizontal: trackInset, overflow: 'hidden' }
-        }
-      >
-        {/* 두 층이 **같은 자리에 겹쳐** 있다가 교차한다. 하나만 마운트하면 **갈아 끼우기** 가 된다. */}
-        <Animated.View
-          aria-hidden={layer !== 'group'}
-          pointerEvents={layer === 'group' ? 'auto' : 'none'}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            ...(vertical
-              ? { bottom: 0, width: itemCross, flexDirection: 'column' as const }
-              : { right: 0, height: itemCross, flexDirection: 'row' as const }),
-            alignItems: 'center',
-            opacity: groupOpacity,
-            transform: [along(groupShift)],
-          }}
-        >
-          {groupItems.map((item) => (
-            <BarItem
-              key={item.key}
-              id={item.key}
-              label={item.label}
-              active={item.active}
-              accent={colors.accent}
-              muted={colors.muted}
-              width={itemBox.width}
-              height={itemBox.height}
-              testID={`bar-group-${item.key}`}
-              onPress={() => {
-                pressItem(item.key, item.active, (bar) => pressGroup(bar, item.key))
-              }}
-            />
-          ))}
-        </Animated.View>
-
-        <Animated.View
-          aria-hidden={layer !== 'sub'}
-          pointerEvents={layer === 'sub' ? 'auto' : 'none'}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            ...(vertical
-              ? { bottom: 0, width: itemCross, flexDirection: 'column' as const }
-              : { right: 0, height: itemCross, flexDirection: 'row' as const }),
-            alignItems: 'center',
-            opacity: subOpacity,
-            transform: [along(subShift)],
-          }}
-        >
-          {subItems.map((item) => (
-            <BarItem
-              key={item.key}
-              id={item.key}
-              label={item.label}
-              active={item.active}
-              accent={colors.accent}
-              muted={colors.muted}
-              width={itemBox.width}
-              height={itemBox.height}
-              testID={`bar-sub-${item.key}`}
-              onPress={() => {
-                pressItem(item.key, item.active, (bar) => pressSub(bar, item.key))
-              }}
-            />
-          ))}
-        </Animated.View>
-      </View>
-
-      {/* ← 는 맨 위에서 제자리 페이드한다. 자리는 위쪽 스페이서가 잡고 버튼은 여기 맨 끝에서
-          절대 배치다. 폭이 0 으로 줄어드는 상자에 넣으면 `overflow: hidden` 이 화살표를
-          오른쪽부터 자르고, 트리에서 먼저 그려져 밀려 들어오는 1차 행이 그 위를 덮는다.
-
-          먼저 사라진다. 불투명도가 전환의 45% 지점에서 이미 0 이라 1차 행이 그 자리에
-          도착할 때 남아 있는 것이 없다. 나타날 때는 반대로 45% 를 지나서야 든다. */}
-      {/* ← 판은 알약 옆, `Pressable` 밖이다. 안에 두면 재질이 아예 안 그려진다. 알약은 바 루트의
-          직계 자식인데 판만 두 겹 안쪽(`Animated.View` → `Pressable` → `View`)이면 `GlassView` 의
-          렌더 자체가 없어진다. `Pressable` 은 그 위에 투명한 과녁으로만 남는다. */}
-      {hasBack ? (
-      <Animated.View
-        testID="bar-back-plate"
-        pointerEvents="none"
-        style={{
-          position: 'absolute',
-          left: backCircleMargin,
-          top: backCircleMargin,
-          width: backCircle,
-          height: backCircle,
-          borderRadius: 999,
-          transform: [along(backShift), { scale: backScale }],
-          backgroundColor: glass ? 'transparent' : colors.pill,
-          boxShadow: boxShadowOf(definition.shadowColor, PLATE_SHADOW),
-        }}
-      >
+    <View testID="bottom-bar" pointerEvents="box-none" style={outerStyle}>
+      {/* 바 판과 ← 판은 같은 유리 컨테이너 안이다. 가까우면 한 덩어리로 붙고 멀어지면 떨어진다.
+          ← 판이 먼저다. 유리가 없는 곳에서는 숨은 원을 바 판이 덮는다. ← 원은 누름 영역 밖이다. 안에 두면 iOS 가 그
+          유리를 그리지 않는다. */}
+      <Container {...(glass ? { spacing: 16 } : {})} pointerEvents="box-none" style={StyleSheet.absoluteFill}>
         {glass ? (
-          <>
-            <GlassView
-              glassEffectStyle="clear"
-              colorScheme={definition.mode}
-              tintColor={colors.pillOnGlass}
-              style={[StyleSheet.absoluteFill, { borderRadius: 999 }]}
-            />
-            {/* 알약과 같은 판이다. 한쪽만 덮으면 하위 층에서 원이 알약보다 밝아진다. */}
-            {colors.pillVeil === null ? null : (
-              <View
-                pointerEvents="none"
-                style={[
-                  StyleSheet.absoluteFill,
-                  { borderRadius: 999, backgroundColor: colors.pillVeil },
-                ]}
-              />
-            )}
-          </>
-        ) : null}
-      </Animated.View>
-      ) : null}
+          <AnimatedGlassView
+            testID="bar-back-plate"
+            glassEffectStyle="clear"
+            colorScheme={definition.mode}
+            tintColor={colors.pillOnGlass}
+            pointerEvents="none"
+            style={backPlateStyle}
+          />
+        ) : (
+          <Animated.View pointerEvents="none" style={backPlateStyle}>
+            <View testID="bar-back-plate" style={[StyleSheet.absoluteFill, opaquePlate]} />
+          </Animated.View>
+        )}
+        {glass ? (
+          <AnimatedGlassView
+            testID="bar-glass"
+            glassEffectStyle="regular"
+            colorScheme={definition.mode}
+            tintColor={colors.glassTint}
+            pointerEvents="none"
+            style={barPlateStyle}
+          />
+        ) : (
+          <Animated.View pointerEvents="none" style={barPlateStyle}>
+            <View testID="bar-plate" style={[StyleSheet.absoluteFill, opaquePlate]} />
+          </Animated.View>
+        )}
+      </Container>
 
       {hasBack ? (
-      <Animated.View
-        pointerEvents={hasBack ? 'auto' : 'none'}
-        style={{
-          position: 'absolute',
-          left: vertical ? BAR_PADDING : backCircleMargin,
-          top: vertical ? backCircleMargin : BAR_PADDING,
-          transform: [along(backShift), { scale: backScale }],
-        }}
-      >
-        <Pressable
-          testID="bar-back"
-          aria-hidden={!hasBack}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로 가기"
-          disabled={!hasBack}
-          onPress={() => {
-            // ← 도 화면이 바뀌는 이동이라 항목 누름과 **같은 값**으로 답한다. 뒤로 가기라고
-            // 다른 촉감을 주면 바 안에서 두 가지 언어가 생긴다. 짝의 기록도 함께 비운다.
-            lastTap.current = null
-            tapFeedback()
-            applyRef.current(pressBack(barRef.current))
-          }}
-          // 누르는 자리는 **한 칸 전체**로 남긴다. 메뉴 항목과 같은 크기의 과녁이라야 손이 같은
-          // 규칙으로 움직인다. 다만 화살표는 그 칸의 가운데가 아니라 **칸이 시작하는 끝**(가로 바는 왼쪽,
-          // 세로 막대는 위)의 판 위에 앉는다.
-          style={{
-            ...itemBox,
-            alignItems: vertical ? 'center' : 'flex-start',
-            justifyContent: vertical ? 'flex-start' : 'center',
-          }}
-        >
-          <View
-            style={{
-              width: backCircle,
-              height: backCircle,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+        <GestureDetector gesture={backGesture}>
+          <Animated.View
+            testID="bar-back"
+            accessibilityRole="button"
+            accessibilityLabel="뒤로 가기"
+            accessibilityActions={[{ name: 'activate' }]}
+            onAccessibilityAction={goBack}
+            style={backPlateStyle}
           >
-            <BarBackGlyph color={colors.muted} />
-          </View>
-        </Pressable>
-      </Animated.View>
+            <Animated.View pointerEvents="none" style={backFillStyle} />
+            <View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+              <Animated.View style={backArrowStyle}>
+                <BarBackGlyph color={colors.muted} />
+              </Animated.View>
+            </View>
+          </Animated.View>
+        </GestureDetector>
       ) : null}
+
+      <GestureDetector gesture={gesture}>
+        <Animated.View testID="bar-content" style={contentStyle}>
+          {PLAIN ? (
+            // 안드로이드 알약은 세 겹이다. 자리는 바깥 뷰, 움직임은 가운데 뷰(transform · opacity 만), 판은 안쪽 뷰가 진다.
+            // 고정 스타일과 애니메이션 스타일을 한 뷰에 섞으면 알약이 안 그려졌다.
+            <View pointerEvents="none" style={{ position: 'absolute', left: vertical ? BAR_PADDING : 0, top: vertical ? 0 : BAR_PADDING }}>
+              <Animated.View testID="bar-pill" style={plainPillStyle}>
+                <View
+                  testID="bar-pill-plate"
+                  style={[restPill, vertical ? { width: pillThickness, height: pillLength } : { width: pillLength, height: pillThickness }]}
+                />
+              </Animated.View>
+            </View>
+          ) : rowImages === null ? (
+            // 렌즈 그림이 아직 없을 때(테마를 바꾼 직후 줄 그림을 다시 뜨는 동안 등). 렌즈 없이 알약 판만 움직인다.
+            <Animated.View testID="bar-pill" pointerEvents="none" style={pillStyle}>
+              <Animated.View style={pillFillStyle}>
+                <View testID="bar-pill-plate" style={[StyleSheet.absoluteFill, restPill]} />
+              </Animated.View>
+            </Animated.View>
+          ) : null}
+
+          {/* 항목 줄. 행이 바뀌면 옛 행이 100ms 에 빠지고 새 행이 120ms 에 나타난다. */}
+          <Animated.View key={rowKey} entering={FadeIn.duration(120)} exiting={FadeOut.duration(100)} pointerEvents="box-none" style={rowBox}>
+            {rowImages !== null ? (
+              <>
+                {/* 쉬는 바는 앱 뷰로 테마 값에서 바로 그린다. 렌즈 캔버스는 누르고 끄는 동안(몸통이 빠진 동안)에만 보인다.
+                    쉬는 동안까지 캔버스로 그리면 테마를 바꿀 때 옛 그림이 남는다. */}
+                <SwapLayer body={body} rest>
+                  <View
+                    testID="bar-pill"
+                    style={
+                      vertical
+                        ? { position: 'absolute', top: centerOf(activeIndex) - pillLength / 2, left: BAR_PADDING, height: pillLength, width: pillThickness }
+                        : { position: 'absolute', left: centerOf(activeIndex) - pillLength / 2, top: BAR_PADDING, width: pillLength, height: pillThickness }
+                    }
+                  >
+                    <View testID="bar-pill-plate" style={[StyleSheet.absoluteFill, restPill]} />
+                  </View>
+                  {items.map((item, index) => (
+                    <BarItem key={item.key} index={index} item={item} layer={layer} center={centerOf(index)} lens={itemSize} accent={colors.accent} muted={colors.muted} onActivate={commit} />
+                  ))}
+                </SwapLayer>
+                <SwapLayer body={body} rest={false}>
+                  <LensCanvas
+                    images={rowImages}
+                    width={row.lengthPx}
+                    height={thickness + LENS_EXT * 2}
+                    top={-LENS_EXT}
+                    vertical={vertical}
+                    pageBg={colorToUniform(definition.bg)}
+                    pillX={pillX}
+                    pillW={pillLength}
+                    pillH={pillThickness}
+                    hold={hold}
+                    wobW={wobW}
+                    wobH={wobH}
+                    tint={tint}
+                    lensAmt={lensAmt}
+                    body={body}
+                    enter={enter}
+                    rowKey={rowKey}
+                    currentRow={currentRowSV}
+                    enterFrom={ENTER_FROM}
+                    lensLift={colors.lensLift}
+                    holdW={HOLD_GROW_W}
+                    holdH={HOLD_GROW_H}
+                    zoom={LENS_ZOOM}
+                    page={pageImages}
+                    windowW={screenLayout.windowWidthPx}
+                    windowH={screenLayout.windowHeightPx}
+                    originX={barStartSV}
+                    originY={vertical ? rail.leftPx - LENS_EXT : screenLayout.windowHeightPx - bottom - BAR_HEIGHT - LENS_EXT}
+                    barW={barLengthSV}
+                    barH={thickness}
+                    glassTint={[...colorToUniform(colors.bar).slice(0, 3), 0.6]}
+                    pillFill={premultiplied(colors.glassPill)}
+                  />
+                </SwapLayer>
+              </>
+            ) : (
+              items.map((item, index) => (
+                <BarItem key={item.key} index={index} item={item} layer={layer} center={centerOf(index)} lens={itemSize} accent={colors.accent} muted={colors.muted} onActivate={commit} />
+              ))
+            )}
+          </Animated.View>
+        </Animated.View>
+      </GestureDetector>
+      {lensSources}
     </View>
   )
 }
 
-/** `apply` 가 최신 `lastSub` 를 ref 에서 꺼내는 한 줄. 옛 값을 붙들면 기억이 한 번씩 밀린다. */
-function getLastSubOf(bar: BarState): BarState['lastSub'] {
-  return bar.lastSub
+/**
+ * 바 전체에 거는 누르기 · 끌기 제스처. 손이 닿는 순간부터(`minDistance(0)`) 받고, 바 밖으로 나가도 놓을 때까지 따라간다.
+ *
+ * @param vertical 세로 막대인가(칸 방향이 세로)
+ */
+function usePanGesture(
+  vertical: boolean,
+  onBegin: (pos: number) => void,
+  onMove: (pos: number, translation: number) => void,
+  onEnd: () => void,
+): ReturnType<typeof Gesture.Pan> {
+  return Gesture.Pan()
+    .minDistance(0)
+    .shouldCancelWhenOutside(false)
+    .onBegin((event) => {
+      onBegin(vertical ? event.y : event.x)
+    })
+    .onUpdate((event) => {
+      onMove(vertical ? event.y : event.x, vertical ? event.translationY : event.translationX)
+    })
+    .onFinalize(() => {
+      onEnd()
+    })
+}
+
+/** ← 원의 제스처. 손이 닿자마자 원이 부풀고, 뗀 순간 뒤로 간다. */
+function useBackGesture(press: SharedValue<number>, goBack: () => void): ReturnType<typeof Gesture.Tap> {
+  return Gesture.Tap()
+    .maxDuration(10000)
+    .onBegin(() => {
+      press.set(withSpring(1, LIFT_SPRING))
+    })
+    .onEnd((_event, success) => {
+      if (success) runOnJS(goBack)()
+    })
+    .onFinalize(() => {
+      press.set(withSpring(0, RELEASE_SPRING))
+    })
+}
+
+/** 셰이더에 넘기는 premultiplied rgba(0 ~ 1 네 개). */
+function premultiplied(color: string): number[] {
+  const [r, g, b, a] = colorToUniform(color)
+  return [r * a, g * a, b * a, a]
+}
+
+/**
+ * 쉬는 바(앱 뷰)와 렌즈 캔버스를 바꿔 끼우는 층. 누르는 순간 몸통이 0 이 되며 캔버스로, 다시 다 차면 앱 뷰로.
+ * 행마다 따로 마운트되므로 애니메이션 스타일을 행끼리 나눠 쓰지 않는다.
+ */
+function SwapLayer(props: { body: SharedValue<number>; rest: boolean; children: React.ReactNode }): React.JSX.Element {
+  const { body, rest } = props
+  const style = useAnimatedStyle(() => ({
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    opacity: (body.get() >= 0.999) === rest ? 1 : 0,
+  }))
+  return (
+    <Animated.View pointerEvents="box-none" style={style}>
+      {props.children}
+    </Animated.View>
+  )
+}
+
+/** 항목 칸의 크기를 정하는 값. */
+interface LensBox {
+  pillLength: number
+  pillThickness: number
+  vertical: boolean
+}
+
+/** 항목 한 칸의 상자. 가로 바는 가로로, 세로 막대는 세로로 늘어선다. */
+function itemBox(center: number, lens: LensBox): ViewStyle {
+  return lens.vertical
+    ? { position: 'absolute', top: center - lens.pillLength / 2, left: BAR_PADDING, height: lens.pillLength, width: lens.pillThickness }
+    : { position: 'absolute', left: center - lens.pillLength / 2, top: BAR_PADDING, width: lens.pillLength, height: lens.pillThickness }
+}
+
+/** 항목 하나. 누르기는 바 전체의 제스처가 받고, 이 칸은 접근성 동작(`activate`)만 받는다. */
+function BarItem(props: {
+  index: number
+  item: Item
+  layer: 'group' | 'sub'
+  center: number
+  lens: LensBox
+  accent: string
+  muted: string
+  onActivate: (index: number) => void
+}): React.JSX.Element {
+  const { item } = props
+  return (
+    <View
+      testID={`bar-${props.layer}-${item.key}`}
+      accessible
+      accessibilityRole="tab"
+      accessibilityState={{ selected: item.active }}
+      accessibilityLabel={item.label}
+      accessibilityActions={[{ name: 'activate' }]}
+      onAccessibilityAction={() => props.onActivate(props.index)}
+      style={[itemBox(props.center, props.lens), { alignItems: 'center', justifyContent: 'center' }]}
+    >
+      <BarGlyph id={item.key} label={item.label} active={item.active} accent={props.accent} muted={props.muted} />
+    </View>
+  )
 }
