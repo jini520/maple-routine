@@ -1,6 +1,6 @@
 import { Pressable, View } from 'react-native'
 
-import { Text } from '../../atoms'
+import { Text } from '../../components/atoms'
 
 /**
  * 게임 인벤토리처럼 판 위에 같은 폭으로 늘어선 탭. 판에 붙고, 고른 탭은 판과 같은 색(`surface`)이라 판과 한 덩어리로

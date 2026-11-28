@@ -97,7 +97,6 @@
 | `DataFreshness` | 제목 아래 `hh:mm:ss 기준` 줄. 하루 한 번 나오는 값은 시각 대신 값의 날짜(`11/14 기준`)를 적는다 |
 | `UnavailableBadge` | 값 대신 보이는 `조회 불가` 알약 |
 | `Segment` | 테두리 없는 세그먼트(크기 `sm` 26 · `md` 28 · 화면 헤더 탭 `lg` 32). `fill` 이면 조각이 트랙 폭을 똑같이 나눈다 |
-| `InventoryTabs` | 게임 인벤토리처럼 판 위에 같은 폭으로 늘어선 탭. 판에 붙고, 고른 탭은 판과 같은 `surface`, 나머지는 `surface-2` 다([[ADR-209]] 결정 3) |
 | `Fab` · `FabAnchor` | 떠 있는 ＋ 의 원(지름 56 · `bg-primary` · 바깥 뷰의 그림자 · 누를 때 촉각) · 홀로 뜨는 ＋ 의 위치 상자. 하단바 위 슬롯은 부르는 쪽이 감싼다([[ADR-062]] 결정 18) |
 | `Popover` | `PopoverLayer` · `AnchoredPopover` |
 | `ModalHeader` | 가운데 모달의 머리 줄. 왼쪽 40 원 배지 옆에 제목 · 설명([[ADR-062]] 결정 8) |
