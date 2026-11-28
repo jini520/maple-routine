@@ -76,7 +76,7 @@ push 한다. 이름은 `tool-names.ts` 에 한 번만 적고 카드와 화면 �
 - 다섯 자리에 테마 토큰 다섯(`primary` · `secondary` · `third` · `textMuted` · `border`)을 그대로 쓰던 때는 테마마다 어울림이 갈렸다.
   렌은 셋째 `third` 가 흰 카드에서 거의 보이지 않았고, 넷째 · 다섯째는 어느 테마든 글자 · 테두리 회색이었다.
 - 단계는 `components/molecules/DonutRing/donut-steps.ts` 한 곳에서 계산한다. Figma 는 `Color` 컬렉션의 `donutSlice0` ~ `donutSlice4` 에
-  테마마다 그 값을 넣는다. 시안은 Figma `App/Molecules` 의 섹션 `DonutRing · 테마별 색 단계 · #1293`(887:127)이다.
+  테마마다 그 값을 넣고, `App/Molecules` 의 `DonutRing`(97:248)과 `App/유틸리티` 의 `TotalCard`(581:19898)가 그 변수를 쓴다.
 - 금액이 있는 캐릭터가 다섯까지면 모두 제 이름으로 적는다. 여섯 이상이면 금액이 큰 넷만 적고 나머지는 `그 외 n캐릭터` 한 줄로 묶는다
   (캐릭터는 `명` 으로 세지 않는다). 그 줄은 오른쪽 화살표 아이콘과 함께 누를 수 있고, 누르면 팝오버에 묶인 캐릭터마다
   이름 · 비율 · 금액이 나온다.
