@@ -86,7 +86,7 @@ describe('UpdatePromptModal', () => {
     expect(view.getByText('v1.0.10(1)')).toBeTruthy()
   })
 
-  it('update-available: 버전·용량 표시, [다운로드]→startDownload, [나중에]→dismiss', async () => {
+  it('update-available: 버전·용량 표시, [다운로드]→startDownload, 닫기 X→dismiss', async () => {
     const { view, actions } = await renderModal({ status: 'update-available' })
 
     expect(view.getByText('새 업데이트가 있어요')).toBeTruthy()
@@ -97,7 +97,8 @@ describe('UpdatePromptModal', () => {
     await fireEvent.press(view.getByText('다운로드'))
     expect(actions.startDownload).toHaveBeenCalledTimes(1)
 
-    await fireEvent.press(view.getByText('나중에'))
+    expect(view.queryByText('나중에')).toBeNull()
+    await fireEvent.press(view.getByTestId('update-prompt-overlay-close'))
     expect(actions.dismiss).toHaveBeenCalledTimes(1)
   })
 
@@ -107,7 +108,7 @@ describe('UpdatePromptModal', () => {
     expect(view.getByText('beta')).toBeTruthy()
   })
 
-  it('confirm-cellular: 데이터 경고 표시, [계속]→confirmCellularDownload', async () => {
+  it('confirm-cellular: 데이터 경고 표시, [계속]→confirmCellularDownload, 닫기 X→dismiss', async () => {
     const { view, actions } = await renderModal({ status: 'confirm-cellular' })
 
     expect(view.getByText('모바일 데이터를 사용해요')).toBeTruthy()
@@ -116,6 +117,10 @@ describe('UpdatePromptModal', () => {
 
     await fireEvent.press(view.getByText('계속'))
     expect(actions.confirmCellularDownload).toHaveBeenCalledTimes(1)
+
+    expect(view.queryByText('취소')).toBeNull()
+    await fireEvent.press(view.getByTestId('update-prompt-overlay-close'))
+    expect(actions.dismiss).toHaveBeenCalledTimes(1)
   })
 
   it('downloading: 진행률 바 너비가 downloadProgress를 따른다', async () => {
@@ -125,15 +130,18 @@ describe('UpdatePromptModal', () => {
     expect(flattenStyle(view.getByTestId('update-progress-bar').props.style).width).toBe('42%')
   })
 
-  it('ready-to-apply: [지금 적용 (재시작)]→apply', async () => {
+  it('ready-to-apply: [지금 적용 (재시작)]→apply, 닫기 X→dismiss', async () => {
     const { view, actions } = await renderModal({ status: 'ready-to-apply' })
 
     await fireEvent.press(view.getByText('지금 적용 (재시작)'))
-
     expect(actions.apply).toHaveBeenCalledTimes(1)
+
+    expect(view.queryByText('나중에')).toBeNull()
+    await fireEvent.press(view.getByTestId('update-prompt-overlay-close'))
+    expect(actions.dismiss).toHaveBeenCalledTimes(1)
   })
 
-  it('download-error: 실패 문구 + [다시 시도]→startDownload, [나중에]→dismiss', async () => {
+  it('download-error: 실패 문구 + [다시 시도]→startDownload, 닫기 X→dismiss', async () => {
     const { view, actions } = await renderModal({ status: 'download-error' })
 
     expect(view.getByText('업데이트를 받지 못했습니다')).toBeTruthy()
@@ -141,7 +149,8 @@ describe('UpdatePromptModal', () => {
     await fireEvent.press(view.getByText('다시 시도'))
     expect(actions.startDownload).toHaveBeenCalledTimes(1)
 
-    await fireEvent.press(view.getByText('나중에'))
+    expect(view.queryByText('나중에')).toBeNull()
+    await fireEvent.press(view.getByTestId('update-prompt-overlay-close'))
     expect(actions.dismiss).toHaveBeenCalledTimes(1)
   })
 
@@ -180,7 +189,7 @@ describe('UpdatePromptModal', () => {
     expect(actions.dismiss).toHaveBeenCalledTimes(1)
   })
 
-  it('apply-error: [다시 시도]→apply(startDownload 아님), [나중에]→dismiss', async () => {
+  it('apply-error: [다시 시도]→apply(startDownload 아님), 닫기 X→dismiss', async () => {
     const { view, actions } = await renderModal({ status: 'apply-error' })
 
     expect(view.getByText('업데이트를 적용하지 못했습니다')).toBeTruthy()
@@ -188,6 +197,10 @@ describe('UpdatePromptModal', () => {
     await fireEvent.press(view.getByText('다시 시도'))
     expect(actions.apply).toHaveBeenCalledTimes(1)
     expect(actions.startDownload).not.toHaveBeenCalled()
+
+    expect(view.queryByText('나중에')).toBeNull()
+    await fireEvent.press(view.getByTestId('update-prompt-overlay-close'))
+    expect(actions.dismiss).toHaveBeenCalledTimes(1)
   })
 
   it('store-required: 안내 + [스토어로 이동]→openStore', async () => {
@@ -213,6 +226,7 @@ describe('UpdatePromptModal', () => {
     expect(view.queryByText('나중에')).toBeNull()
     expect(view.queryByText('취소')).toBeNull()
     expect(view.queryByText('종료')).toBeNull()
+    expect(view.queryByTestId('update-prompt-overlay-close')).toBeNull()
 
     await fireEvent.press(view.getByTestId('update-prompt-overlay'))
     expect(actions.dismiss).not.toHaveBeenCalled()

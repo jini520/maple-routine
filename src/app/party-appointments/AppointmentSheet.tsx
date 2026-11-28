@@ -459,9 +459,10 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
               void openNotificationSettings(Platform.OS).catch(() => undefined)
             },
           }}
-          // 켤 때는 체크 상자를 켠 채 닫는다. 저장할 때는 알림을 끄고 저장한다.
-          secondaryAction={alarmBlock.atSave ? saveWithoutAlarm : { label: '나중에', onPress: () => setAlarmBlock(null) }}
+          // 저장할 때만 알림을 끄고 저장하는 길이 있다. 닫기 X 는 켤 때 체크 상자를 켠 채, 저장할 때 저장하지 않고 닫는다.
+          secondaryAction={alarmBlock.atSave ? saveWithoutAlarm : undefined}
           onClose={() => setAlarmBlock(null)}
+          showCloseButton
           testId="appointment-alarm-permission-modal"
         />
       )}
@@ -479,8 +480,9 @@ export function AppointmentSheet(props: AppointmentSheetProps): React.JSX.Elemen
               if (alarmBlock.atSave) void persist(draft)
             },
           }}
-          secondaryAction={alarmBlock.atSave ? saveWithoutAlarm : { label: '나중에', onPress: () => setAlarmBlock(null) }}
+          secondaryAction={alarmBlock.atSave ? saveWithoutAlarm : undefined}
           onClose={() => setAlarmBlock(null)}
+          showCloseButton
           testId="appointment-alarm-switch-modal"
         />
       )}

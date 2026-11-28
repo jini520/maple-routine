@@ -1503,16 +1503,32 @@ describe('키가 없는 부계정의 기록', () => {
     expect(view.getByTestId('cashbook-day-total')).toHaveTextContent(/지출\s*0/)
   })
 
-  it('누르면 시트가 아니라 모달이 뜨고 취소는 아무것도 바꾸지 않는다', async () => {
+  it('누르면 시트가 아니라 모달이 뜨고 닫기 X 는 아무것도 바꾸지 않는다', async () => {
     const view = await 그리기()
 
     await 누르기(view, 'cashbook-row-spd-1')
 
     expect(view.queryByTestId('spend-sheet-title')).toBeNull()
     expect(view.getByText('키가 없는 계정의 기록이에요')).toBeTruthy()
-    await 누르기(view, 'key-lost-record-modal-dismiss')
+    expect(view.queryByText('취소')).toBeNull()
+    await 누르기(view, 'key-lost-record-modal-close')
     expect(view.queryByText('키가 없는 계정의 기록이에요')).toBeNull()
     expect(discard.discardKeyLostMapleId).not.toHaveBeenCalled()
+  })
+
+  // 지우는 동안 닫히면 그만둔 것처럼 보이지만 지우기는 끝까지 돈다.
+  it('지우는 동안에는 닫기 X 가 막힌다', async () => {
+    discard.discardKeyLostMapleId.mockReturnValue(new Promise(() => {}))
+    const view = await 그리기()
+
+    await 누르기(view, 'cashbook-row-spd-1')
+    await act(async () => {
+      fireEvent.press(view.getByText('기록 삭제'))
+    })
+
+    expect(view.getByTestId('key-lost-record-modal-close').props.accessibilityState).toMatchObject({ disabled: true })
+    await 누르기(view, 'key-lost-record-modal-close')
+    expect(view.getByText('키가 없는 계정의 기록이에요')).toBeTruthy()
   })
 
   it('API 키 등록은 그 계정의 키 시트를 열어 달라고 한다', async () => {

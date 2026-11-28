@@ -29,8 +29,9 @@ export function SignOutConfirm(props: SignOutConfirmProps): React.JSX.Element | 
       // 무엇이 남는지 먼저 말한다. 계정 삭제와 헷갈리는 자리라 지우는 범위를 분명히 한다.
       content={<InsetNote>로그인만 풀려요. 이 기기의 기록과 서버의 기록은 그대로 남아요.</InsetNote>}
       action={{ label: '로그아웃', onPress: props.onConfirm, busy: props.isSigningOut, disabled: props.isSigningOut }}
-      secondaryAction={{ label: '취소', onPress: props.onCancel, disabled: props.isSigningOut }}
       onClose={props.onCancel}
+      showCloseButton
+      closeDisabled={props.isSigningOut}
       testId="sign-out-confirm-overlay"
     />
   )

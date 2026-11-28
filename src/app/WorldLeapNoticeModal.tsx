@@ -6,7 +6,7 @@
  * 화면에서든 떠야 하니 화면 안은 안 되고, `캐릭터 관리로 이동` 이 내비게이션을 잡아야 하니
  * 컨테이너 밖인 `AppShell` 도 안 된다(`UpdatePromptModal` 이 같은 이유로 그 자리에 있다).
  *
- * **묻는 얼굴이 셋이다.** 갈리는 것은 주 버튼 라벨과 설명 한 줄이고, 제목·월드 두 개·`나중에` 는
+ * **묻는 얼굴이 셋이다.** 갈리는 것은 주 버튼 라벨과 설명 한 줄이고, 제목·월드 두 개·닫기 X 는
  * 셋이 같다.
  *
  * - 목적지를 짚었으면 `변경`
@@ -106,8 +106,8 @@ export function WorldLeapNoticeModal(props: WorldLeapNoticeModalProps): React.JS
       }
       description={DESCRIPTION[notice.kind]}
       action={action}
-      secondaryAction={{ label: '나중에', onPress: dismiss }}
       onClose={dismiss}
+      showCloseButton
       testId="world-leap-notice-overlay"
     />
   )

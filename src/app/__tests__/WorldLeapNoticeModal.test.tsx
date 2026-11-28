@@ -137,11 +137,12 @@ describe('목적지를 모를 때', () => {
   })
 })
 
-it('나중에 는 어느 쪽이든 닫기만 한다', async () => {
+it('닫기 X 는 어느 쪽이든 닫기만 한다', async () => {
   useWorldLeapStore.setState({ notice: 모름 })
-  const { getByText } = await 그리기()
+  const { getByTestId, queryByText } = await 그리기()
 
-  fireEvent.press(getByText('나중에'))
+  expect(queryByText('나중에')).toBeNull()
+  fireEvent.press(getByTestId('world-leap-notice-overlay-close'))
 
   expect(dismiss).toHaveBeenCalled()
   expect(onOpenCharacterManage).not.toHaveBeenCalled()

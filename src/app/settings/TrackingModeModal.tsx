@@ -60,12 +60,13 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
       align="center"
     >
       <Modal.Card
+        close={{ onPress: props.onClose, disabled: isApplying, testID: 'tracking-mode-modal-close' }}
         footer={
-          // 설정의 다른 확정 모달과 같은 버튼 줄이다. 모드 전환은 파괴적 동작이 아니라 진행 동작이라 위험 색이 아니다.
-          <View className="mt-4 gap-1">
+          // 모드 전환은 파괴적 동작이 아니라 진행 동작이라 위험 색이 아니다.
+          <View className="mt-4">
             <Button
               variant="primary"
-              // 바뀐 것이 없으면 누를 것도 없다. 닫기는 취소·오버레이가 맡는다.
+              // 바뀐 것이 없으면 누를 것도 없다. 닫기는 닫기 X · 오버레이가 맡는다.
               disabled={isUnchanged || isApplying}
               busy={isApplying}
               onPress={() => {
@@ -75,25 +76,19 @@ export function TrackingModeModal(props: TrackingModeModalProps): React.JSX.Elem
             >
               적용
             </Button>
-            <Button
-              variant="text"
-              size="sm"
-              disabled={isApplying}
-              onPress={props.onClose}
-              className={`self-center${isApplying ? ' opacity-50' : ''}`}
-            >
-              취소
-            </Button>
           </View>
         }
       >
         <View className="gap-4">
-          <ModalHeader
-            icon={ListChecksIcon}
-            tone="primary"
-            title="스케줄 관리 방법"
-            description="진행 상황을 어떻게 관리할지 선택해주세요."
-          />
+          {/* 제목이 닫기 X 밑으로 들어가지 않게 X 자리만큼 비운다. */}
+          <View className="pr-6">
+            <ModalHeader
+              icon={ListChecksIcon}
+              tone="primary"
+              title="스케줄 관리 방법"
+              description="진행 상황을 어떻게 관리할지 선택해주세요."
+            />
+          </View>
           <TrackingModeSelector mode={selected} isApplying={isApplying} onSelect={setSelected} />
         </View>
       </Modal.Card>

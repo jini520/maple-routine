@@ -221,16 +221,17 @@ describe('알림 체크 상자를 켤 때', () => {
     expect(view.queryByText('알림이 꺼져 있어요')).toBeNull()
   })
 
-  it('기기 권한이 없으면 권한 모달이고, 나중에를 눌러도 체크 상자는 켜져 있다', async () => {
+  it('기기 권한이 없으면 권한 모달이고, 닫기 X 로 닫아도 체크 상자는 켜져 있다', async () => {
     granted = false
     const view = await 그리기({ repeats: false })
     await 켜기(view)
 
     expect(view.getByText('알림이 꺼져 있어요')).toBeTruthy()
     expect(view.getByText('설정 열기')).toBeTruthy()
+    expect(view.queryByText('나중에')).toBeNull()
 
     await act(async () => {
-      fireEvent.press(view.getByText('나중에'))
+      fireEvent.press(view.getByTestId('appointment-alarm-permission-modal-close'))
     })
 
     expect(view.getByLabelText('알림').props.accessibilityState).toMatchObject({ checked: true })
@@ -310,6 +311,21 @@ describe('알림 체크 상자를 켤 때', () => {
       })
       expect(onClose).toHaveBeenCalled()
       expect(mockAppointments[0]!.leadMinutes).toBeNull()
+    })
+
+    // 저장할 때의 X 는 아무것도 하지 않고 시트로 돌아간다. 알림을 끌지 정하는 것은 `알림 없이 저장` 이다.
+    it('저장할 때 권한 모달을 닫기 X 로 닫으면 저장하지 않고 시트로 돌아간다', async () => {
+      granted = false
+      const { view, onClose } = await 수정으로(weekly)
+
+      await 저장(view)
+      await act(async () => {
+        fireEvent.press(view.getByTestId('appointment-alarm-permission-modal-close'))
+      })
+
+      expect(view.queryByText('알림이 꺼져 있어요')).toBeNull()
+      expect(onClose).not.toHaveBeenCalled()
+      expect(mockAppointments[0]!.leadMinutes).toBe(10)
     })
 
     it('스위치가 꺼져 있으면 알림 켜기가 스위치를 켜고 알림을 단 채 저장한다', async () => {

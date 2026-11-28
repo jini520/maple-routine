@@ -2,7 +2,7 @@
  * 알리거나 확인을 받는 모달의 골격. 영역의 자리와 값을 갖는다.
  *
  * ```
- * [배지 40] 제목         머리 줄. 설명은 제목 아래 text-xs
+ * [배지 40] 제목    [X]  머리 줄. 설명은 제목 아래 text-xs. X 는 켤 때만 카드 오른쪽 위
  *           설명
  *   ↕ 16
  * 내용                   card-inset 칸. 버전 · 크기 · 단계
@@ -11,8 +11,7 @@
  *   ↕ 16
  * [주 버튼]              전폭. **되돌릴 수 없는 확인에서는 이 자리가 `취소` 다**
  *   ↕ 4
- * 부 버튼 또는 링크       가운데 글자 버튼. `danger` 는 크기가 같고 글자색만 error
- * 닫기 버튼              가운데 글자 버튼. 부 버튼이 파괴 동작이라 `취소` 가 따로 서야 할 때
+ * 부 버튼 또는 링크       가운데 글자 버튼. 하는 일만 선다. `danger` 는 크기가 같고 글자색만 error
  * ```
  *
  * 호출부는 무엇을 넣을지만 정하고 자리와 간격은 못 바꾼다. 골격이 문장으로만 있고 코드에 없던
@@ -66,32 +65,44 @@ export interface NoticeModalProps {
    */
   action: NoticeAction
   /**
-   * 주 버튼 아래 글자 버튼. `나중에` · `취소` · 파괴 동작 자리.
+   * 주 버튼 아래 글자 버튼. 하는 일(`기록 삭제` · `알림 없이 저장` · `자세히 보기`)의 자리. 물러나기만 하는
+   * `나중에` · `취소` 는 여기 두지 않고 `showCloseButton` 을 켠다.
    *
    * `danger` 는 **크기를 안 바꾸고 글자색만** `error` 로 만든다(사용자 지정). 되돌릴 수 없는
    * 동작이 주 버튼보다 커 보이면 안 되고, 위험하다는 신호는 색 하나로 충분하다.
    */
   secondaryAction?: NoticeAction & { danger?: boolean }
-  /** 부 버튼 아래 글자 버튼. 부 버튼이 파괴 동작인데 주 버튼도 `취소` 가 아닐 때 `취소` 가 선다. */
-  dismissAction?: NoticeAction
   /** 주 버튼 아래 인라인 링크. 앱 밖으로 나가는 도움말이 여기 선다. */
   link?: { label: string; onPress: () => void }
   onClose: () => void
   /**
+   * 카드 오른쪽 위 닫기 X. 누르면 `onClose` 다. 물러나기만 하는 길(`나중에` · `취소`)은 글자 버튼이 아니라 이것이다.
+   * 주 버튼이 `취소` 인 되돌릴 수 없는 확인은 켜지 않는다. 같은 일을 하는 버튼이 둘이 된다.
+   */
+  showCloseButton?: boolean
+  /** 처리 중이라 닫지 못함. X 를 흐리게 막고 바깥 탭 · 뒤로 가기도 닫지 않는다. 닫혀도 하던 일은 끝까지 돈다. */
+  closeDisabled?: boolean
+  /**
    * 오버레이의 testID. 안쪽 조각들이 여기서 파생한다(`-header` · `-badge` · `-description` ·
-   * `-content` · `-option` · `-primary` · `-link`). `Modal` 이 창 자체에 `-modal` 을 붙인다.
+   * `-content` · `-option` · `-primary` · `-link` · `-close`). `Modal` 이 창 자체에 `-modal` 을 붙인다.
    */
   testId: string
   /** 제목에 다는 별도 손잡이. 화면 테스트가 이것으로 모달이 떴는지 본다. */
   titleTestId?: string
 }
 
+const noop = (): void => {}
+
 export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
   const { testId } = props
+  const showsClose = props.showCloseButton === true
 
   return (
-    <Modal onClose={props.onClose} testId={testId} align="center">
+    <Modal onClose={props.closeDisabled === true ? noop : props.onClose} testId={testId} align="center">
       <Modal.Card
+        close={
+          showsClose ? { onPress: props.onClose, disabled: props.closeDisabled, testID: `${testId}-close` } : undefined
+        }
         footer={
           <View className="mt-4 gap-1">
             <Button
@@ -117,18 +128,6 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
                 {props.secondaryAction.label}
               </Button>
             )}
-            {props.dismissAction !== undefined && (
-              <Button
-                testID={`${testId}-dismiss`}
-                variant="text"
-                size="sm"
-                onPress={props.dismissAction.onPress}
-                disabled={props.dismissAction.disabled}
-                className="self-center"
-              >
-                {props.dismissAction.label}
-              </Button>
-            )}
             {props.link !== undefined && (
               <Pressable
                 testID={`${testId}-link`}
@@ -144,7 +143,8 @@ export function NoticeModal(props: NoticeModalProps): React.JSX.Element {
         }
       >
         <View className="gap-4">
-          <View testID={`${testId}-header`}>
+          {/* 제목이 닫기 X 밑으로 들어가지 않게 X 자리만큼 비운다. */}
+          <View testID={`${testId}-header`} className={showsClose ? 'pr-6' : undefined}>
             <ModalHeader
               icon={props.icon}
               bare={props.icon === undefined}

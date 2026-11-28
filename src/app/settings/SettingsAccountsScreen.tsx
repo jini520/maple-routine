@@ -186,10 +186,9 @@ export function SettingsAccountsScreen(props: { route?: { params?: AccountsParam
           title="이미 등록된 계정의 API 키예요"
           description={`${replacing.label}의 키를 새로 입력한 키로 바꿀까요?`}
           action={{ label: '바꾸기', onPress: () => void confirmReplace(), busy: replaceBusy, disabled: replaceBusy }}
-          secondaryAction={{ label: '취소', onPress: () => setReplacing(null), disabled: replaceBusy }}
-          onClose={() => {
-            if (!replaceBusy) setReplacing(null)
-          }}
+          onClose={() => setReplacing(null)}
+          showCloseButton
+          closeDisabled={replaceBusy}
           testId="replace-existing-key"
         />
       )}
