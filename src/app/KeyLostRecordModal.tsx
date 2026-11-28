@@ -49,8 +49,9 @@ export function KeyLostRecordModal(props: { mapleId: string; onClose: () => void
       description="이 계정의 API 키가 없거나 유효하지 않아 합계에서 뺐어요."
       action={{ label: 'API 키 등록', onPress: () => void register(), disabled: busy }}
       secondaryAction={{ label: '기록 삭제', onPress: () => void discard(), danger: true, busy, disabled: busy }}
-      dismissAction={{ label: '취소', onPress: props.onClose, disabled: busy }}
-      onClose={busy ? () => {} : props.onClose}
+      onClose={props.onClose}
+      showCloseButton
+      closeDisabled={busy}
       testId="key-lost-record-modal"
     />
   )

@@ -21,6 +21,7 @@ import { vars } from 'nativewind'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { XIcon } from '../../atoms'
 import { useBootSplashDone } from '../../../hooks/useBootSplashDone'
 import { MODAL_TOP_GAP_PX, overlayWindowHeightPx, resolveModalMaxHeight } from '../../../lib/modal-metrics'
 import { useNativeModalGate } from '../../../lib/native-modal-gate'
@@ -56,6 +57,11 @@ interface ModalPanelProps {
 interface ModalCardProps extends ModalPanelProps {
   /** 카드 바닥에 고정되는 버튼 줄. 카드가 상한에 닿아도 늘 보인다. 없으면 카드 전체가 구른다. */
   footer?: ReactNode
+  /**
+   * 카드 오른쪽 위 닫기 X. 물러나기만 하는 길(`나중에` · `취소`)의 자리. 구르는 칸 밖이라 내용이 굴러도 남는다.
+   * 머리 줄은 제목이 X 밑으로 들어가지 않게 오른쪽을 24 비워야 한다.
+   */
+  close?: { onPress: () => void; disabled?: boolean; testID?: string }
 }
 
 /** 터치를 이 요소가 가져가게 하는 responder. 바깥으로 흘러가 모달이 닫히는 것을 막는다. */
@@ -194,6 +200,19 @@ function ModalCard(props: ModalCardProps): React.JSX.Element {
         {props.children}
       </CapScroll>
       {props.footer}
+      {/* 아이콘이 카드 위 · 오른쪽 끝에서 20 안쪽에 서도록 누르는 칸 44 를 8 안쪽에 둔다. */}
+      {props.close !== undefined && (
+        <Pressable
+          testID={props.close.testID}
+          role="button"
+          aria-label="닫기"
+          onPress={props.close.onPress}
+          disabled={props.close.disabled}
+          className={`absolute right-2 top-2 h-11 w-11 items-center justify-center${props.close.disabled === true ? ' opacity-50' : ''}`}
+        >
+          <XIcon className="h-5 w-5 text-text-muted" aria-hidden />
+        </Pressable>
+      )}
     </ModalSurface>
   )
 }

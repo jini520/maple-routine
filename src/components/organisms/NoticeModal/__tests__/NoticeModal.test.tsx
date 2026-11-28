@@ -29,7 +29,7 @@ describe('NoticeModal: 영역', () => {
     const { getByTestId } = await renderOverlay(
       <NoticeModal
         {...기본프롭()}
-        secondaryAction={{ label: '나중에', onPress: noop }}
+        secondaryAction={{ label: '자세히 보기', onPress: noop }}
         option={<RNText>옵션</RNText>}
       />,
     )
@@ -38,7 +38,7 @@ describe('NoticeModal: 영역', () => {
     expect(within(scroll).getByText('이 키로는 연결할 수 없습니다')).toBeTruthy()
     expect(within(scroll).getByText('옵션')).toBeTruthy()
     expect(within(scroll).queryByText('다시 입력하기')).toBeNull()
-    expect(within(scroll).queryByText('나중에')).toBeNull()
+    expect(within(scroll).queryByText('자세히 보기')).toBeNull()
   })
 
   // 아래 칸이 무엇을 다루는지 보여 주는 확인은 배지 없이 제목만 둔다. 빈 원이 남으면 제목이 오른쪽으로 밀린다.
@@ -60,7 +60,8 @@ describe('NoticeModal: 영역', () => {
     expect(queryByTestId('notice-description')).toBeNull()
     expect(queryByTestId('notice-option')).toBeNull()
     expect(queryByTestId('notice-link')).toBeNull()
-    expect(queryByText('나중에')).toBeNull()
+    expect(queryByTestId('notice-close')).toBeNull()
+    expect(queryByText('자세히 보기')).toBeNull()
   })
 
   // 설명은 제목보다 작다. 제목이 할 말을 이미 했고 설명은 그 아래 안내라, 둘이 같은 무게로 서면
@@ -116,11 +117,11 @@ describe('NoticeModal: 배선', () => {
       <NoticeModal
         {...기본프롭()}
         action={{ label: '다운로드', onPress }}
-        secondaryAction={{ label: '나중에', onPress: 부동작 }}
+        secondaryAction={{ label: '자세히 보기', onPress: 부동작 }}
       />,
     )
 
-    await fireEvent.press(getByText('나중에'))
+    await fireEvent.press(getByText('자세히 보기'))
 
     expect(부동작).toHaveBeenCalledTimes(1)
     expect(onPress).not.toHaveBeenCalled()
@@ -143,19 +144,19 @@ describe('NoticeModal: 배선', () => {
     expect(onPress).not.toHaveBeenCalled()
   })
 
-  // 글자 버튼이 큰 버튼보다 작아야 무르는 쪽과 진행하는 쪽의 무게가 갈린다(사용자 지적, 업데이트 모달).
+  // 글자 버튼이 큰 버튼보다 작아야 두 버튼의 무게가 갈린다(사용자 지적, 업데이트 모달).
   it('부 버튼은 주 버튼보다 작은 글자다', async () => {
     const { getByText } = await renderOverlay(
-      <NoticeModal {...기본프롭()} secondaryAction={{ label: '나중에', onPress: noop }} />,
+      <NoticeModal {...기본프롭()} secondaryAction={{ label: '자세히 보기', onPress: noop }} />,
     )
 
     const 주 = flattenStyle(getByText('다시 입력하기').props.style).fontSize as number
-    const 부 = flattenStyle(getByText('나중에').props.style).fontSize as number
+    const 부 = flattenStyle(getByText('자세히 보기').props.style).fontSize as number
     expect(부).toBeLessThan(주)
   })
 
   // **되돌릴 수 없는 확인에서는 주 버튼이 취소다.** 파괴 동작은 부 버튼에 `danger` 로 내린다.
-  // 크기는 `나중에` 와 **같고 글자색만** 갈린다(사용자 지정). 되돌릴 수 없는 것이 취소보다 커
+  // 크기는 다른 글자 버튼과 **같고 글자색만** 갈린다(사용자 지정). 되돌릴 수 없는 것이 취소보다 커
   // 보이면 안 되고, 위험하다는 신호는 색 하나로 충분하다.
   it('danger 부 버튼은 크기가 그대로고 글자색만 error 다', async () => {
     const 위험 = await renderOverlay(
@@ -166,30 +167,14 @@ describe('NoticeModal: 배선', () => {
       />,
     )
     const 평범 = await renderOverlay(
-      <NoticeModal {...기본프롭()} secondaryAction={{ label: '나중에', onPress: noop }} />,
+      <NoticeModal {...기본프롭()} secondaryAction={{ label: '자세히 보기', onPress: noop }} />,
     )
 
     const 삭제 = flattenStyle(위험.getByText('삭제').props.style)
-    const 나중에 = flattenStyle(평범.getByText('나중에').props.style)
+    const 자세히 = flattenStyle(평범.getByText('자세히 보기').props.style)
     expect(삭제.color).toBe(기본테마.errorInk)
-    expect(나중에.color).not.toBe(기본테마.errorInk)
-    expect(삭제.fontSize).toBe(나중에.fontSize)
-  })
-
-  // 부 버튼이 파괴 동작인데 주 버튼이 진행하는 쪽이면 무르는 `취소` 가 따로 있어야 한다. 파괴 동작 아래에 서고 색은 평범하다.
-  it('닫기 버튼은 파괴 동작 아래에 평범한 글자로 서고 누르면 그 일만 한다', async () => {
-    const 닫기 = jest.fn()
-    const { getByTestId, getByText } = await renderOverlay(
-      <NoticeModal
-        {...기본프롭()}
-        secondaryAction={{ label: '삭제', onPress: noop, danger: true }}
-        dismissAction={{ label: '취소', onPress: 닫기 }}
-      />,
-    )
-
-    expect(flattenStyle(getByText('취소').props.style).color).not.toBe(기본테마.errorInk)
-    await fireEvent.press(getByTestId('notice-dismiss'))
-    expect(닫기).toHaveBeenCalledTimes(1)
+    expect(자세히.color).not.toBe(기본테마.errorInk)
+    expect(삭제.fontSize).toBe(자세히.fontSize)
   })
 
   it('두 버튼 다 대기와 비활성을 받는다', async () => {
@@ -225,5 +210,47 @@ describe('NoticeModal: 배선', () => {
     await fireEvent(getByTestId('notice-modal'), 'requestClose')
 
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('NoticeModal: 닫기 X', () => {
+  // 물러나기만 하는 길(`나중에` · `취소`)은 글자 버튼이 아니라 패널 오른쪽 위 X 다. 켜지 않은 모달에는 없다.
+  it('켤 때만 서고, 카드가 굴러도 남게 구르는 칸 밖에 선다', async () => {
+    const 켬 = await renderOverlay(<NoticeModal {...기본프롭()} showCloseButton />)
+    const 끔 = await renderOverlay(<NoticeModal {...기본프롭()} />)
+
+    const 닫기 = 켬.getByTestId('notice-close')
+    expect(닫기.props.accessibilityLabel ?? 닫기.props['aria-label']).toBe('닫기')
+    expect(within(켬.getByTestId('modal-card-scroll')).queryByTestId('notice-close')).toBeNull()
+    expect(끔.queryByTestId('notice-close')).toBeNull()
+  })
+
+  // X 는 바깥 탭 · 뒤로 가기와 같은 길이다. 다른 핸들러를 받으면 세 길이 서로 다른 일을 할 수 있다.
+  it('누르면 onClose 만 불린다', async () => {
+    const onClose = jest.fn()
+    const onPress = jest.fn()
+    const { getByTestId } = await renderOverlay(
+      <NoticeModal {...기본프롭()} action={{ label: '확인', onPress }} onClose={onClose} showCloseButton />,
+    )
+
+    await fireEvent.press(getByTestId('notice-close'))
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onPress).not.toHaveBeenCalled()
+  })
+
+  // 처리하는 동안 닫히면 그만둔 것처럼 보이지만 하던 일은 끝까지 돈다. 세 길을 함께 막는다.
+  it('closeDisabled 면 X · 오버레이 · 뒤로가기가 모두 닫지 않는다', async () => {
+    const onClose = jest.fn()
+    const { getByTestId } = await renderOverlay(
+      <NoticeModal {...기본프롭()} onClose={onClose} showCloseButton closeDisabled />,
+    )
+
+    expect(getByTestId('notice-close').props.accessibilityState).toMatchObject({ disabled: true })
+    await fireEvent.press(getByTestId('notice-close'))
+    await fireEvent.press(getByTestId('notice'))
+    await fireEvent(getByTestId('notice-modal'), 'requestClose')
+
+    expect(onClose).not.toHaveBeenCalled()
   })
 })

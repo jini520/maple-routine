@@ -169,14 +169,15 @@ describe('TrackingModeModal', () => {
     ])
   })
 
-  it('취소를 누르면 setMode 없이 닫힌다', async () => {
+  it('닫기 X 를 누르면 setMode 없이 닫힌다', async () => {
     const setMode = jest.fn(async () => {})
     const onClose = jest.fn()
     mockTrackingModeStore({ setMode })
     const view = await renderOverlay(<TrackingModeModal onClose={onClose} />)
 
     await press(optionCard(view, 'manual'))
-    await press(climb(view, '취소'))
+    expect(view.queryByText('취소')).toBeNull()
+    await press(view.getByTestId('tracking-mode-modal-close'))
 
     expect(setMode).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalledTimes(1)
@@ -186,7 +187,7 @@ describe('TrackingModeModal', () => {
 
   // 수동 전환의 `setMode` 는 시드가 전부 끝난 뒤에만 resolve 된다. 그동안
   // 닫히면 사용자가 방금 고른 모드가 아직 준비 안 된 상태를 본다.
-  it('setMode가 resolve되기 전까지 옵션·취소·적용이 모두 비활성이고 모달이 닫히지 않는다', async () => {
+  it('setMode가 resolve되기 전까지 옵션·닫기 X·적용이 모두 비활성이고 모달이 닫히지 않는다', async () => {
     let finish: () => void = () => {}
     const setMode = jest.fn(
       () =>
@@ -204,7 +205,7 @@ describe('TrackingModeModal', () => {
     // 스피너가 라벨을 덮고 라벨은 그대로 남는다.
     const applying = climb(view, '적용')
     expect(applying.props.accessibilityState).toMatchObject({ disabled: true, busy: true })
-    expect(climb(view, '취소').props.accessibilityState?.disabled).toBe(true)
+    expect(view.getByTestId('tracking-mode-modal-close').props.accessibilityState?.disabled).toBe(true)
     expect(optionCard(view, 'auto').props.accessibilityState?.disabled).toBe(true)
     expect(onClose).not.toHaveBeenCalled()
 

@@ -43,7 +43,7 @@
 | `features/server-sync/pull-records.ts` | 표마다 서버 줄을 기기 칸으로 바꾼다. 해시를 원문으로, 짝이 없으면 `#` 를 붙인 해시로(`pulledRecordOf`) |
 | `features/server-sync/keyless.ts` | 이 기기에 쓸 수 있는 키가 없는 부계정 가르기. 넥슨을 부를 수 있는 넥슨 계정(`usableNexonAccountIdsOf`) · 키가 있던 기기의 메이플 ID 와 그 캐릭터(`keyLostScopeOf`) · `API 키 등록` 이 열 계정(`keyRegisterTargetOf`) |
 | `features/server-sync/discard.ts` | 키가 있던 기기의 부계정 기록을 이 기기에서만 지운다(`discardKeyLostMapleId`) |
-| `app/KeyLostRecordModal.tsx` | 흐린 기록을 누르면 뜨는 모달. `API 키 등록` · `기록 삭제` · `취소` |
+| `app/KeyLostRecordModal.tsx` | 흐린 기록을 누르면 뜨는 모달. `API 키 등록` · `기록 삭제` · 오른쪽 위 닫기 X |
 | `storage/server-sync-skipped.ts` | 받기가 건너뛰는 메이플 ID 해시와 까닭(Preferences `serverSyncSkippedMapleIds`), 메이플 ID 를 모르는 기록을 한 번 비웠다는 표시(`serverSyncUnmatchedCleared`) |
 | `features/server-sync/refresh.ts` | 기기 줄을 고친 표의 화면을 다시 읽게 한다. 동기화가 올린 판은 동기화를 다시 깨우지 않는다 |
 | `features/server-sync/rejection-notice.ts` | 두 거절의 알림 문구와 기록 이름 |
@@ -446,7 +446,7 @@
 |---|---|
 | 제목 | `키가 없는 계정의 기록이에요` |
 | 본문 | `이 계정의 API 키가 없거나 유효하지 않아 합계에서 뺐어요.` |
-| 버튼 | `API 키 등록` · `기록 삭제` · `취소` |
+| 버튼 | `API 키 등록` · `기록 삭제`, 오른쪽 위 닫기 X |
 
 - `API 키 등록` 은 그 계정의 키가 무효 표시로 남아 있으면 그 계정 상세의 `API 키 변경` 시트를, 지워졌으면 계정 관리 목록의 `API 키
   추가` 시트를 연다(`keyRegisterTargetOf`).
@@ -454,7 +454,7 @@
   대기 줄이 남으면 지우지 않고 토스트로 알린다. 그 밖의 실패는 다른 토스트로 알린다. 대기 줄의 원본을 지우면 올리기가 지우기를 보내 서버와 다른 기기의 기록까지 지우기
   때문이다. 지우는 범위는 `주인의 기록 비우기` 와 같고 대기 표에 넣지 않는다. 그 해시를 건너뛴 목록에 `discarded` 로 적어 받기가 다시
   넣지 않는다. 그 메이플 ID 의 넥슨 계정에 쓸 수 있는 키가 다시 생기면 목록에서 빼고 번호를 0 으로 적어 서버에 남은 기록을 다시 받는다.
-- `취소` 는 아무것도 바꾸지 않는다.
+- 닫기 X 는 아무것도 바꾸지 않는다. 지우거나 키를 찾는 동안에는 X 가 흐려지고 눌리지 않는다.
 
 ### 넣은 뒤 화면
 

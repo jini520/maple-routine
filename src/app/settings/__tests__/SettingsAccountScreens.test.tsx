@@ -174,7 +174,7 @@ describe('SettingsAccountsScreen', () => {
     expect(view.getAllByText('유효하지 않은 키')).toHaveLength(1)
   })
 
-  it('등록된 부계정의 키를 추가하면 바꿀지 묻고, 바꾸기는 그 계정의 키를 바꾸고 취소는 시트로 돌아간다', async () => {
+  it('등록된 부계정의 키를 추가하면 바꿀지 묻고, 바꾸기는 그 계정의 키를 바꾸고 닫기 X 는 시트로 돌아간다', async () => {
     보기({ accounts: [넥슨ID, 부계정] })
     addKey.mockResolvedValue({ outcome: 'existing', accountKey: 'k-sub', label: 'API 키 1 계정' })
     const view = await renderOverlay(<SettingsAccountsScreen />)
@@ -185,7 +185,8 @@ describe('SettingsAccountsScreen', () => {
     await waitFor(() => expect(view.getByText('이미 등록된 계정의 API 키예요')).toBeTruthy())
     expect(view.getByText('API 키 1 계정의 키를 새로 입력한 키로 바꿀까요?')).toBeTruthy()
 
-    await fireEvent.press(view.getByText('취소'))
+    expect(view.queryByText('취소')).toBeNull()
+    await fireEvent.press(view.getByTestId('replace-existing-key-close'))
     await waitFor(() => expect(view.queryByText('이미 등록된 계정의 API 키예요')).toBeNull())
     expect(view.getByTestId('api-key-sheet')).toBeTruthy()
     expect(replaceWithKey).not.toHaveBeenCalled()

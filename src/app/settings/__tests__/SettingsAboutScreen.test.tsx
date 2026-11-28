@@ -334,11 +334,12 @@ describe('로그아웃 행', () => {
     expect(authActions.signOut).toHaveBeenCalledTimes(1)
   })
 
-  it('취소하면 아무 일도 안 일어나고 모달이 닫힌다', async () => {
+  it('닫기 X 로 닫으면 아무 일도 안 일어나고 모달이 닫힌다', async () => {
     const view = await renderOverlay(<SettingsAboutScreen />)
 
     await press(rowOf(view, '로그아웃'))
-    await press(view.getByText('취소'))
+    expect(view.queryByText('취소')).toBeNull()
+    await press(view.getByTestId('sign-out-confirm-overlay-close'))
 
     expect(authActions.signOut).not.toHaveBeenCalled()
     expect(view.queryByText('로그아웃할까요?')).toBeNull()

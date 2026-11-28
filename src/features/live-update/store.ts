@@ -110,7 +110,7 @@ export interface LiveUpdateStore {
   hasDownloadedBundle: boolean
   /** 내부: 마지막 확인을 시작한 시각(ms). 복귀 확인의 간격을 잰다. 한 번도 확인하지 않았으면 `null`. */
   lastCheckedAt: number | null
-  /** 내부: 이번 실행에서 받아 두고 아직 적용하지 않은 번들이 있는가. `hasDownloadedBundle` 과 달리 `나중에` 와 확인 시작에도 남는다. */
+  /** 내부: 이번 실행에서 받아 두고 아직 적용하지 않은 번들이 있는가. `hasDownloadedBundle` 과 달리 모달을 닫아도(`dismiss`) 확인을 시작해도 남는다. */
   updatePending: boolean
   loadCurrentVersion(): Promise<void>
   check(): Promise<void>

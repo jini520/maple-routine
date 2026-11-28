@@ -24,7 +24,7 @@ import type { WorldLeapNotice } from './world-leap'
 interface WorldLeapStore {
   /** 물어볼 것. 없으면 `null` 이고 모달이 안 선다. */
   notice: WorldLeapNotice | null
-  /** 이 실행 동안 사용자가 답한 옛 ocid. `나중에` 와 `캐릭터 관리로 이동` 이 함께 넣는다. */
+  /** 이 실행 동안 사용자가 답한 옛 ocid. 모달을 닫을 때와 `캐릭터 관리로 이동` 이 함께 넣는다. */
   dismissedOcids: Set<string>
   /**
    * 방금 정리한 자리. `to` 가 ocid 면 갈아끼웠고 `null` 이면 목록에서 뺐다.
@@ -40,7 +40,7 @@ interface WorldLeapStore {
   resolved: { from: string; to: string | null } | null
   /** 판정이 짚은 것을 들인다. 이미 들고 있거나 거절당한 것이면 아무 일도 안 한다. */
   noticeWorldLeap: (notice: WorldLeapNotice) => void
-  /** `나중에` · `캐릭터 관리로 이동`. 표식은 그대로 남는다. */
+  /** 모달 닫기 · `캐릭터 관리로 이동`. 표식은 그대로 남는다. */
   dismiss: () => void
   /**
    * 주 버튼. **바뀐 목록을 돌려준다**. 두 ocid 의 연결을 남기고, 기록은 여기서 안 옮긴다.

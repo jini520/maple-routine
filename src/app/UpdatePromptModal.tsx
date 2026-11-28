@@ -79,9 +79,6 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
 }
 
-// 아래 `HighlightsDisclosure` 의 `자세히 보기` 만 쓴다. 부 동작 버튼(`나중에`·`취소`)은
-// `NoticeModal` 이 그리고 **같은 값을 갖는다**. 한 모달 안에서 두 고스트 버튼의 크기가 갈리면
-// 안 되므로 한쪽을 고칠 때 다른 쪽도 함께 본다.
 function versionText(version: string | null): string {
   return `v${version === null ? '' : formatAppVersion(version)}`
 }
@@ -97,6 +94,10 @@ function VersionRow(props: { version: string | null; beta?: boolean }): React.JS
   )
 }
 
+/**
+ * 새 업데이트의 핵심 목록을 펼치는 `자세히 보기`. 글자 버튼 값(`text` · `sm`)은 완료 안내의 `자세히 보기`(`NoticeModal` 의
+ * 부 버튼)와 같아야 한다. 같은 이름의 버튼이 모달마다 크기가 갈리면 안 된다.
+ */
 function HighlightsDisclosure({ highlights }: { highlights: string[] }): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -160,12 +161,10 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
     props.onOpenReleaseNotes()
   }
 
-  /**
-   * 일곱 상태가 쓰는 공통값. `나중에` 는 이 모달의 기본 부 동작이다. 상태마다 주 동작만 갈리고
-   * 물러나는 길은 같다. `confirm-cellular` 와 `updated` 만 이것을 덮는다.
-   */
-  const 물러나기 = { label: '나중에', onPress: actions.dismiss }
+  /** 일곱 상태가 쓰는 공통값. 상태마다 주 동작만 갈리고 물러나는 길은 같다. `updated` 와 `store-required` 만 `onClose` 를 덮는다. */
   const 공통 = { onClose: actions.dismiss, testId: 'update-prompt-overlay' } as const
+  /** 물러나는 다섯 상태. 지금 버전을 그대로 쓰는 길은 오른쪽 위 닫기 X 다. */
+  const 물러나기 = { ...공통, showCloseButton: true } as const
 
   // 적용 성공 경로에는 상태 전환 코드가 없으므로 이 안내는 **재시작 뒤 부팅에서** 뜬다.
   // 여기서만 `자세히 보기` 가 화면을 옮긴다.
@@ -227,12 +226,12 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
     )
   }
 
-  // ── 나머지 일곱. 머리 줄 · 칸 · 옵션 · 버튼 둘로 나뉜다.
+  // ── 나머지 여섯. 머리 줄 · 칸 · 옵션 · 주 버튼으로 나뉘고, 스토어 업데이트를 뺀 다섯은 오른쪽 위 닫기 X 로 물러난다.
 
   if (status === 'update-available') {
     return (
       <NoticeModal
-        {...공통}
+        {...물러나기}
         icon={CloudDownloadIcon}
         tone="primary"
         title="새 업데이트가 있어요"
@@ -250,7 +249,6 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
           ) : undefined
         }
         action={{ label: '다운로드', onPress: () => void actions.startDownload() }}
-        secondaryAction={물러나기}
       />
     )
   }
@@ -258,15 +256,13 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
   if (status === 'confirm-cellular') {
     return (
       <NoticeModal
-        {...공통}
+        {...물러나기}
         icon={SignalIcon}
         tone="secondary"
         title="모바일 데이터를 사용해요"
         description="Wi-Fi가 아니에요. 데이터로 받으면 요금이 나올 수 있어요."
         content={<InsetRow label="다운로드 크기" value={sizeText} />}
         action={{ label: '계속', onPress: () => void actions.confirmCellularDownload() }}
-        // 여기서만 `취소` 다. 아직 아무것도 안 받았고 무르는 것이 곧 안 받는 것이다.
-        secondaryAction={{ label: '취소', onPress: actions.dismiss }}
       />
     )
   }
@@ -274,14 +270,13 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
   if (status === 'ready-to-apply') {
     return (
       <NoticeModal
-        {...공통}
+        {...물러나기}
         icon={CheckCircle2Icon}
         tone="secondary"
         title="업데이트 준비 완료"
         content={<VersionRow version={state.availableVersion} />}
         description="지금 적용하려면 앱을 재시작해요."
         action={{ label: '지금 적용 (재시작)', onPress: () => void actions.apply() }}
-        secondaryAction={물러나기}
       />
     )
   }
@@ -317,13 +312,12 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
   if (status === 'download-error') {
     return (
       <NoticeModal
-        {...공통}
+        {...물러나기}
         icon={AlertTriangleIcon}
         tone="error"
         title="업데이트를 받지 못했습니다"
         description="네트워크 연결을 확인한 뒤 다시 시도해주세요."
         action={{ label: '다시 시도', onPress: () => void actions.startDownload() }}
-        secondaryAction={물러나기}
       />
     )
   }
@@ -333,13 +327,12 @@ export function UpdatePromptModal(props: UpdatePromptModalProps): React.JSX.Elem
   // `downloadedBundleId` 를 비우지 않는다).
   return (
     <NoticeModal
-      {...공통}
+      {...물러나기}
       icon={AlertTriangleIcon}
       tone="error"
       title="업데이트를 적용하지 못했습니다"
       description="받아둔 파일은 그대로 있습니다. 다시 받지 않고 적용만 다시 시도합니다."
       action={{ label: '다시 시도', onPress: () => void actions.apply() }}
-      secondaryAction={물러나기}
     />
   )
 }
