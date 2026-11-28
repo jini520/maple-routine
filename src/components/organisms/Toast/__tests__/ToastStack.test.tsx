@@ -109,7 +109,7 @@ describe('ToastStack', () => {
     expect(flattenStyle(getByTestId('toast-stack').props.style).bottom).toBe(34 + 바_몫 + 간격)
   })
 
-  // 3버튼 내비게이션 바 위에서는 하단바가 14 더 뜬다. 토스트만 그대로면 바에 겹친다.
+  // 3버튼 내비게이션 바 위에서는 하단바가 21 더 뜬다. 토스트만 그대로면 바에 겹친다.
   it('3버튼 내비게이션 바가 있으면 하단바를 띄운 높이만큼 함께 오른다', async () => {
     setSystemBarsPort(buttonNavigationSystemBarsPort)
     mockStore([toast('t1', '첫째')])

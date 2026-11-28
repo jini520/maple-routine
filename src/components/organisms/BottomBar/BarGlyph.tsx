@@ -1,7 +1,8 @@
 /**
  * 하단바 칸 하나의 그림(아이콘 · 라벨)과 ← 화살표. 바와 설정의 하단 탭 순서 미리보기가 같이 쓴다.
  *
- * 누르기는 여기 없다. 바는 이것을 `Pressable` 로 감싸고 미리보기는 그대로 그린다.
+ * 일곱 칸은 플랫폼 그림(`bar-symbol`)을 쓰고 나머지 칸은 앱의 아이콘이다. 누르기는 여기 없다. 바는 제스처 층 아래에
+ * 이것을 그리고 미리보기는 그대로 그린다.
  */
 import { View } from 'react-native'
 
@@ -21,6 +22,7 @@ import {
   WalletIcon,
   WrenchIcon,
 } from '../../atoms'
+import { barSymbol } from './bar-symbol'
 import type { GroupId } from '../../../navigation/bar-groups'
 import type { TabRouteName } from '../../../navigation/routes'
 
@@ -31,19 +33,6 @@ import type { TabRouteName } from '../../../navigation/routes'
  * 아니라 프롭이기 때문이다. 항목 아이콘과 ← 가 같은 값을 써야 해서 이름을 준다.
  */
 const ICON_STROKE = 1.5
-/**
- * 활성인데 채울 수 없는 그림의 획 굵기.
- *
- * 채우기가 통하는 다섯(대시보드·렌치·장바구니·톱니·수익)은 면으로 활성을 말한다. 나머지
- * (달력·지갑·목록·검·조준경)는 안쪽 선이 의미를 져서 채울 수 없으므로 굵기로 말한다. 둘을
- * 같이 주면 채운 그림이 과해지므로 배타다. `activeStroke` 가 그것을 한 자리에서 고른다.
- *
- * 안쪽에 선이 많은 그림일수록 굵은 획이 칸을 메워 형태가 뭉갠다. 그런 그림은 아래 표가 한 단계 낮춘다.
- */
-const ICON_STROKE_ACTIVE = 2.2
-
-/** 활성 굵기를 낮추는 그림. 달력 + 시계는 2.2 에서 안쪽 선이 칸을 메운다 */
-const LIGHT_ACTIVE_STROKE: ReadonlyMap<IconComponent, number> = new Map([[CalendarClockIcon, 1.8]])
 
 type IconComponent = React.ComponentType<{
   className?: string
@@ -113,12 +102,6 @@ function activeFill(Icon: IconComponent, active: boolean, accent: string): strin
   return active && FILLED_ICONS.has(Icon) ? accent : 'none'
 }
 
-/** 채우지 못하는 그림만 활성일 때 굵어진다. 채우는 그림은 기본 굵기 그대로다(배타). */
-function activeStroke(Icon: IconComponent, active: boolean): number {
-  if (!active || FILLED_ICONS.has(Icon)) return ICON_STROKE
-  return LIGHT_ACTIVE_STROKE.get(Icon) ?? ICON_STROKE_ACTIVE
-}
-
 export interface BarGlyphProps {
   id: GroupId | TabRouteName
   label: string
@@ -133,22 +116,24 @@ export function BarGlyph({ id, label, active, accent, muted }: BarGlyphProps): R
   const Icon = ICONS[id]
 
   return (
-    <View className="items-center gap-[4px]">
+    <View className="items-center gap-[3px]">
       {/* 아이콘과 라벨은 **같은 색**이다. 강조색을 그대로 쓰면 테마에 따라 대비가 1.89 까지
           내려가므로, **읽힐 때까지 민** 값을 `bar-colors.ts` 가 계산해 준다. */}
-      <Icon
-        className="h-[25px] w-[25px]"
-        color={active ? accent : muted}
-        fill={activeFill(Icon, active, accent)}
-        strokeWidth={activeStroke(Icon, active)}
-      />
+      {barSymbol(id, active ? accent : muted) ?? (
+        <Icon
+          className="h-[25px] w-[25px]"
+          color={active ? accent : muted}
+          fill={activeFill(Icon, active, accent)}
+          strokeWidth={ICON_STROKE}
+        />
+      )}
       <Text
         numberOfLines={1}
         // `includeFontPadding` 은 안드로이드에서만 읽히는 값이고, 기본(참)일 때 글자 상자에
         // 폰트 메트릭 여백을 더해 iOS 보다 큰 상자를 만든다. 아이콘→라벨이 27 → 30px
         // 이 되고 블록이 5px 자라 아이콘이 3px 위로 밀린다. iOS 는 이 값을 무시한다.
         style={{ color: active ? accent : muted, includeFontPadding: false }}
-        className="text-10 font-normal tracking-[-0.01em]"
+        className="text-10 font-semibold tracking-[-0.01em]"
       >
         {label}
       </Text>

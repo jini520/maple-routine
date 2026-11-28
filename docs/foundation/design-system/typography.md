@@ -127,7 +127,7 @@
 |---|---|---|
 | 세그먼트 고른 칸 | `font-semibold` | 크기는 `Segment` 가 `sm` 11 · `md` 12 · `lg` 14 로 정한다 |
 | 세그먼트 안 고른 칸 | (없음) | 같은 크기에 400 |
-| 하단바 라벨 | `text-10` | `BottomBar` |
+| 하단바 라벨 | `text-10 font-semibold` | `BottomBar`. 시스템 탭 바의 라벨 두께다 |
 | 토스트 | `text-sm font-semibold` | `Toast` |
 | 빈 상태 · 오류 제목 | `text-sm font-bold` | `EmptyState` · `ErrorState`. 설명은 행 보조 줄이다 |
 

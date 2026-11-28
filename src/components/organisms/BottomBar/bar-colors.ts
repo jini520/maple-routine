@@ -4,18 +4,16 @@
  * 색을 하나씩 고치면 반드시 다른 하나가 깨진다(배경과 안 갈리고, 갈리게 하면 어두워지고,
  * 어두운 위의 강조색 글자는 안 읽힌다). 그래서 관계를 적고 테스트가 테마 전부에 대고 지킨다.
  *
- * | 관계 | 왜 | 최소(6테마) |
- * |---|---|---|
- * | 테두리 ↔ 페이지 배경 | 바가 떠 보이게 하는 것은 색이 아니라 가장자리다 | 1.35 |
- * | 알약 ↔ 바 | 활성 자리가 판으로 읽혀야 한다. 라이트는 옅게 | 다크 1.16 · 라이트 1.04 |
- * | 활성 라벨 ↔ 알약 | 글자는 읽혀야 한다 | 8.8 |
- * | 비활성 라벨 ↔ 바 | 같음 | 5.88 |
+ * | 관계 | 왜 |
+ * |---|---|
+ * | 알약 ↔ 바 | 활성 자리가 판으로 읽혀야 한다. 라이트는 옅고, 남는 몫은 판 그림자가 진다 |
+ * | 활성 ↔ 비활성 | 바 안에서 색을 가진 것은 활성 항목 하나뿐이어야 한다 |
+ * | 비활성 라벨 ↔ 바 | 글자는 읽혀야 한다 |
  *
- * 바탕은 그 모드에서 가장 밝은 표면이고 페이지와의 분리는 테두리가 맡는다. 어둡게 해서
- * 분리하려 들면 그 위 글자가 안 읽힌다.
+ * 바탕은 그 모드에서 가장 밝은 표면이다. 페이지와는 색이 아니라 그림자로 가른다. 바를 어둡게 해서 가르면 그 위
+ * 글자가 안 읽힌다.
  *
- * 활성 라벨은 강조색이 아니다. 강조는 아이콘이 지고 라벨은 `text` 다. `primary-ink` 로 두면
- * 테마에 따라 대비가 2.0 까지 내려간다.
+ * 활성 아이콘과 라벨은 같은 색이고 테마의 메인 컬러(`primaryInk`)다. 다크에서만 명도를 올린다.
  *
  * 테마 이름이 아니라 `mode` 로 분기한다.
  */
@@ -41,13 +39,13 @@ export interface BarColors {
    */
   readonly pill: string
 
-  // 아래 셋은 iOS 26 Liquid Glass 에서만 쓴다.
+  // 아래 셋은 iOS 26 이상의 유리에서만 쓴다.
   /**
    * 유리에 얹는 아주 옅은 색. 진하게 넣으면 재질이 색에 가려 그냥 반투명 판이 된다.
    */
   readonly glassTint: string
   /**
-   * 유리 위 활성 알약의 tint. 채운 판이 아니라 조금 더 밝은 재질이다.
+   * ← 원(`clear` 유리)의 tint. 채운 판이 아니라 조금 더 밝은 재질이다.
    *
    * 색조를 바꾸지 않는다. 바와 갈리는 일은 밝기 차 · 그림자가 한다.
    *
@@ -62,20 +60,19 @@ export interface BarColors {
    */
   readonly pillOnGlass: string
   /**
-   * 유리 위 알약에 **덮는** 얇은 판. 라이트에만 있고 다크는 `null` 이다.
+   * iOS 26 이상에서 쉬는 알약의 판. 다크는 흰색 14% · 라이트는 검정 6% 다.
    *
-   * 알약 자리는 유리가 두 겹이다(바 `regular` 위에 알약 `clear`). 실기기는 진짜 재질이라 그
-   * 자리에만 하이라이트를 두 번 깔고, 밝아진 판 위에서 강조색이 대비로 탁해진다. 시뮬레이터는
-   * 두 겹을 덜 두껍게 그려서 이 차이가 안 보이고 스크린샷에도 안 잡힌다.
-   *
-   * **`pillOnGlass` 로는 못 덜어낸다.** 그 값은 `UIGlassEffect.tintColor` 로 들어가고 tint 는
-   * 판을 거의 못 움직인다(0.38 에서 0.12 로 내려도 253.2 에서 253.3). 뷰 한 겹은 합성 경로가
-   * 달라 실제로 어두워진다. 그래서 tint 와 이 값이 **둘 다** 있다.
-   *
-   * 흰색이 아니라 `text` 다. 라이트에서 알약은 밝히는 자리가 아니라 덜어내는 자리라, 흰색을
-   * 얹으면 고치려던 것을 키운다. 세기 0.1 은 실기기에서 0.05 · 0.07 · 0.15 와 견줘 고른 값이다.
+   * 시스템 탭 바의 알약도 유리가 아니라 옅은 판이다. 유리 알약을 바 유리 위에 겹치면 실기기에서 하얗게 뜨고, 테마를 바꿀 때
+   * 알약만 늦게 바뀌었다. 렌즈 셰이더의 쉬는 몸통도 이 값이다.
    */
-  readonly pillVeil: string | null
+  readonly glassPill: string
+  /** ← 원을 누르는 동안 까는 바탕. 다크는 흰색 13% · 라이트는 검정 7% 다. */
+  readonly pressFill: string
+  /**
+   * 렌즈 안 바 판에 얹는 흰빛의 세기(0 ~ 1). 시스템 다크 탭 바는 렌즈 안 판이 렌즈 밖보다 밝다(녹화 밝기 약 80 대 43).
+   * 라이트는 그 차이가 없어 0 이다.
+   */
+  readonly lensLift: number
 
   /**
    * 활성 항목의 아이콘과 라벨이 함께 쓰는 색. 강조색을 읽힐 때까지 민 값.
@@ -162,11 +159,6 @@ function liftAboveMuted(accent: string, muted: string): string {
  * 판을 진다. 세기를 더 주고 싶어지면 판이 아니라 그림자를 볼 것. 판이 색을 지기 시작하면
  * 강조는 판이 아니라 글리프가 진다 는 규칙이 깨진다.
  */
-/**
- * 유리 위에 덮는 판의 세기. 0 은 옛 상태(그대로 탁하다) · 0.15 는 과했다. 실기기에서만 갈린다.
- */
-const PILL_VEIL_ALPHA = 0.1
-
 function neutralPlate(bar: string, text: string): string {
   return withChroma(mixOklab(bar, text, 0.98), 0)
 }
@@ -178,8 +170,9 @@ export function resolveBarColors(theme: ThemeDefinition): BarColors {
     return {
       glassTint: withAlpha(theme.surface2, 0.28),
       pillOnGlass: 'rgba(255,255,255,0.1)',
-      // 다크에서 `clear` 재질의 하이라이트는 원하는 방향이라 덜어낼 것이 없다.
-      pillVeil: null,
+      glassPill: 'rgba(255,255,255,0.14)',
+      pressFill: 'rgba(255,255,255,0.13)',
+      lensLift: 0.17,
       accent: liftAboveMuted(theme.primaryInk, theme.textMuted),
       muted: withChroma(theme.textMuted, 0),
       bar: theme.surface2,
@@ -193,7 +186,9 @@ export function resolveBarColors(theme: ThemeDefinition): BarColors {
   return {
     glassTint: withAlpha(theme.surface, 0.3),
     pillOnGlass: withAlpha(theme.text, 0.05),
-    pillVeil: withAlpha(theme.text, PILL_VEIL_ALPHA),
+    glassPill: 'rgba(0,0,0,0.06)',
+    pressFill: 'rgba(0,0,0,0.07)',
+    lensLift: 0,
     accent: theme.primaryInk,
     muted: withChroma(theme.textMuted, 0),
     bar: theme.surface,

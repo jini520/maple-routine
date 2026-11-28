@@ -43,9 +43,14 @@ async function 앱을_켠다(): Promise<void> {
   })
 }
 
+/**
+ * 바의 칸 하나를 누른다. 바는 바 전체의 제스처로 누름을 받아서, jest 에서는 칸이 받는 접근성 동작(`activate`)으로 누른다.
+ * 바는 화면 이동을 다음 프레임에 보내므로 한 프레임을 기다린다.
+ */
 async function press(testID: string): Promise<void> {
   await act(async () => {
-    fireEvent.press(screen.getByTestId(testID))
+    fireEvent(screen.getByTestId(testID), 'accessibilityAction', { nativeEvent: { actionName: 'activate' } })
+    await jest.advanceTimersByTimeAsync(16)
   })
 }
 

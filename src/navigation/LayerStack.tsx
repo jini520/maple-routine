@@ -1,8 +1,10 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { StackActions } from '@react-navigation/native'
+import { StackActions, useNavigation } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { useMemo } from 'react'
+import { createRef, useEffect, useMemo } from 'react'
 import { View } from 'react-native'
+
+import { pageCapture } from './bar-capture'
 
 import { BossProfitScreen } from '../app/boss-profit/BossProfitScreen'
 import { AppointmentsScreen } from '../app/party-appointments/AppointmentsScreen'
@@ -15,6 +17,7 @@ import { SettingsScreen } from '../app/settings/SettingsScreen'
 import { TodayScreen } from '../app/today/TodayScreen'
 import { UtilityScreen } from '../app/utility/UtilityScreen'
 import { BottomBarOverlayHost } from '../components/organisms/BottomBar/BottomBarOverlay'
+import { ThemeBackdrop } from '../components/templates/ThemeBackdrop/ThemeBackdrop'
 import { LedgerDataProvider } from '../features/ledger/LedgerDataProvider'
 import { LedgerLoadingModal } from './LedgerLoadingModal'
 import { TAB_LAYER_PROPS } from './tab-layer-props'
@@ -94,6 +97,10 @@ const LAYER_SCREENS = {
   LedgerSubs: LedgerLayer,
 } as const satisfies Record<LayerRouteName, React.ComponentType>
 
+/** 하단바 렌즈가 뒤에 비칠 화면으로 뜨는 상자. */
+const pageViewRef = createRef<View>()
+pageCapture.ref = pageViewRef
+
 /**
  * 탭 레이어를 대신하는 화면 하나. 층 스택 + 그 위에 뜬 바.
  *
@@ -113,6 +120,13 @@ const LAYER_SCREENS = {
  * 하위 페이지에서는 언제 숨기나 라는 판정이 새로 생긴다.
  */
 export function LayerStack(): React.JSX.Element {
+  // 설정 같은 위 화면에서 돌아오면 렌즈 뒤 화면을 다시 뜨게 한다. 가려진 동안 뜨면 앱이 죽는다.
+  const rootNavigation = useNavigation()
+  useEffect(() => {
+    pageCapture.isCovered = () => !rootNavigation.isFocused()
+    return rootNavigation.addListener('focus', () => pageCapture.onFocus?.())
+  }, [rootNavigation])
+
   return (
     <Layer.Navigator
       // `useOpenTab` 이 이 이름으로 층 깊이를 본다(`popToTop` 을 헛치지 않으려고).
@@ -122,7 +136,12 @@ export function LayerStack(): React.JSX.Element {
       // `TAB_LAYER_PROPS` 한 곳에만 둔다.
       layout={({ children, state, navigation }) => (
         <View className="flex-1">
-          {children}
+          {/* 렌즈 뒤에 비칠 화면을 뜨는 상자. 바는 이 상자 밖에 둔다. 실기기에서 유리 바를 뜨면 하얗게 찍힌다.
+              배경 그림이 있는 테마는 화면이 투명하고 그림이 앱 루트에 있어서, 상자 안에도 같은 그림을 깐다. */}
+          <View ref={pageViewRef} collapsable={false} style={{ flex: 1 }}>
+            <ThemeBackdrop />
+            {children}
+          </View>
           <ConnectedBottomBar state={state} navigation={navigation} />
           {/* 바 뒤가 곧 바 위다. 화면이 소유한 오버레이가 여기 뜬다. 같은 상자라 하위 페이지가
               `LayerStack` 을 밀어낼 때 바와 함께 나간다. */}
@@ -185,5 +204,8 @@ function ConnectedBottomBar({ state, navigation }: ConnectedBottomBarProps): Rea
     [navigation, topLayer, layerKey],
   )
 
-  return <BottomBar page={page} navigation={barNavigation} />
+  const index = state.index ?? state.routes.length - 1
+  const pageBelow = index > 0 ? pageFromLayerState({ index: index - 1, routes: state.routes }) : null
+
+  return <BottomBar page={page} pageBelow={pageBelow} navigation={barNavigation} />
 }
