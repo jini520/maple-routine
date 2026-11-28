@@ -200,7 +200,8 @@ export function useLensBackdrop(options: {
   const background = definition.background
   const source = enabled && background !== undefined ? getThemeBackgroundUrl(background.image) : null
   const image = useImage(source as DataSourceParam)
-  const key = backdropKey({ themeKey, strip })
+  // 배경 그림 · 위치 · 덮는 세기도 그림을 바꾸므로 열쇠에 넣는다.
+  const key = backdropKey({ themeKey: [themeKey, background?.image, background?.position, background?.dim].join('|'), strip })
 
   return useMemo(() => {
     if (!enabled) return null

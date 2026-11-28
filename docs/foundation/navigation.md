@@ -10,7 +10,7 @@
 | `navigation/AppNavigation.tsx` | `NavigationContainer`. 알림을 눌렀을 때 공지 상세와 파티 약속 화면으로 보내고, 업데이트 안내와 월드 이전 안내 모달을 띄운다 |
 | `navigation/RootNavigator.tsx` | 루트 스택. 진입 전에는 온보딩 화면 넷, 진입 뒤에는 `Main`(`LayerStack`)과 하위 페이지 스물둘 |
 | `navigation/LayerStack.tsx` | 그룹 행과 하위 행을 레이어로 하나씩 쌓는 스택. `layout` 에서 하단바와 `BottomBarOverlayHost` 를 그린다 |
-| `navigation/bar-capture.ts` | 바가 다시 보일 때 렌즈 항목 줄을 다시 뜨게 하려고 `LayerStack` 과 바가 나눠 쓰는 자리 |
+| `navigation/bar-focus.ts` | 바가 다시 보일 때 렌즈 항목 줄을 다시 뜨게 하려고 `LayerStack` 과 바가 나눠 쓰는 자리 |
 | `navigation/tab-layer-props.tsx` | 레이어 안 탭 내비게이터 셋이 함께 쓰는 props(`backBehavior="none"`, 바 숨김, 배경) |
 | `navigation/push-screen-options.ts` | `PUSH_SCREEN_OPTIONS`. 두 스택이 같은 전환과 제스처를 쓰게 하는 상수 |
 | `navigation/routes.ts` | `ROUTE_TABLE` 과 라우트 이름 타입, `INITIAL_TAB_ROUTE`, `LAYER_STACK_ID` |

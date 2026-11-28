@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { useEffect, useMemo } from 'react'
 import { View } from 'react-native'
 
-import { pageCapture } from './bar-capture'
+import { barFocus } from './bar-focus'
 
 import { BossProfitScreen } from '../app/boss-profit/BossProfitScreen'
 import { AppointmentsScreen } from '../app/party-appointments/AppointmentsScreen'
@@ -117,7 +117,7 @@ const LAYER_SCREENS = {
 export function LayerStack(): React.JSX.Element {
   // 설정 같은 위 화면에서 돌아오면 렌즈 항목 줄을 다시 뜨게 한다. 가려진 동안 뜬 그림은 비어 있을 수 있다.
   const rootNavigation = useNavigation()
-  useEffect(() => rootNavigation.addListener('focus', () => pageCapture.onFocus?.()), [rootNavigation])
+  useEffect(() => rootNavigation.addListener('focus', () => barFocus.onFocus?.()), [rootNavigation])
 
   return (
     <Layer.Navigator

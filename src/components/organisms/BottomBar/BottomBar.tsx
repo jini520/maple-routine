@@ -44,7 +44,7 @@ import { useBottomSafeAreaPx } from '../../../lib/safe-area'
 import { useScreenLayout } from '../../../lib/screen-layout'
 import { boxShadowOf } from '../../../lib/shadow'
 import { tapFeedback } from '../../../native/haptics'
-import { pageCapture } from '../../../navigation/bar-capture'
+import { barFocus } from '../../../navigation/bar-focus'
 import {
   BAR_GROUPS,
   barLayer,
@@ -564,15 +564,15 @@ export function BottomBar({ page, pageBelow, navigation }: BottomBarProps): Reac
   useEffect(() => {
     if (!useLens) return
     let timer: ReturnType<typeof setTimeout> | null = null
-    pageCapture.onFocus = () => {
+    barFocus.onFocus = () => {
       if (timer !== null) clearTimeout(timer)
       timer = setTimeout(() => setRowRefresh((n) => n + 1), ROW_REFRESH_AFTER_FOCUS_MS)
     }
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') pageCapture.onFocus?.()
+      if (state === 'active') barFocus.onFocus?.()
     })
     return () => {
-      pageCapture.onFocus = null
+      barFocus.onFocus = null
       subscription.remove()
       if (timer !== null) clearTimeout(timer)
     }
