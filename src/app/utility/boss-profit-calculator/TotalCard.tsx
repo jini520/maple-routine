@@ -1,7 +1,7 @@
 /**
  * 계산기 맨 위의 합계 카드. 도넛은 캐릭터별 금액의 비중이고, 옆에 캐릭터별 이름 · 비율 · 금액, 아래 면에 합계가 있다.
  *
- * 조각 색은 테마 색이라 테마를 바꾸면 함께 바뀐다. 금액이 큰 캐릭터부터 늘어놓고 0 인 캐릭터는 그리지 않는다.
+ * 조각 색은 테마 `primary` 한 색의 다섯 단계라 테마를 바꾸면 함께 바뀐다. 금액이 큰 캐릭터부터 늘어놓고 0 인 캐릭터는 그리지 않는다.
  * 다섯 캐릭터까지는 모두 적고, 그보다 많으면 큰 넷 뒤에 나머지를
  * `그 외 n캐릭터` 한 줄로 묶어 누르면 팝오버로 보인다. 색만으로 캐릭터를 가르지 않도록 이름을 늘 함께 적는다.
  */
@@ -10,22 +10,17 @@ import { Pressable, View } from 'react-native'
 
 import { ChevronRightIcon, Text } from '../../../components/atoms'
 import { DonutRing } from '../../../components/molecules/DonutRing/DonutRing'
+import { donutStepColors } from '../../../components/molecules/DonutRing/donut-steps'
 import { AnchoredPopover } from '../../../components/molecules/Popover/Popover'
 import { TABULAR_NUMS } from '../../../constants/style/text-styles'
 import type { PopoverAnchorRect } from '../../../hooks/useAnchoredPopover'
 import { formatEok } from '../../../lib/boss/boss-profit-calculator'
 import { formatMesoUnits } from '../../../lib/drop/drop-price'
 import { useThemeAppearance } from '../../../theme/context'
-import type { ThemeDefinition } from '../../../types/theme'
 
 /** 제 이름으로 적는 캐릭터 수의 상한. 이보다 많으면 앞의 `NAMED_WHEN_GROUPED` 만 적고 나머지를 묶는다 */
 const MAX_NAMED = 5
 const NAMED_WHEN_GROUPED = 4
-
-/** 금액 순서대로 쓰는 조각 색. 묶음 줄은 마지막 색이다 */
-function sliceColors(definition: ThemeDefinition): readonly string[] {
-  return [definition.primary, definition.secondary, definition.third, definition.textMuted, definition.border]
-}
 
 export interface TotalCardCharacter {
   ocid: string
@@ -42,7 +37,7 @@ interface LegendRow {
   grouped?: readonly TotalCardCharacter[]
 }
 
-/** 금액이 큰 캐릭터부터 늘어놓고 금액이 0 인 캐릭터는 예외 없이 뺀다(사용자 지정). 모두 0 이면 빈 목록이다 */
+/** 금액이 큰 캐릭터부터 늘어놓고 금액이 0 인 캐릭터는 예외 없이 뺀다(사용자 지정). 모두 0 이면 빈 목록이고, 묶음 줄은 마지막 색이다 */
 function legendRows(all: readonly TotalCardCharacter[], colors: readonly string[]): LegendRow[] {
   const characters = all.filter((character) => character.meso > 0).sort((a, b) => b.meso - a.meso)
   const namedCount = characters.length <= MAX_NAMED ? characters.length : NAMED_WHEN_GROUPED
@@ -79,7 +74,7 @@ export function TotalCard(props: {
   style?: { boxShadow: string }
 }): React.JSX.Element {
   const { definition } = useThemeAppearance()
-  const rows = legendRows(props.characters, sliceColors(definition))
+  const rows = legendRows(props.characters, donutStepColors(definition.primary, definition.surface, definition.mode))
   const otherRef = useRef<View>(null)
   const [otherAnchor, setOtherAnchor] = useState<PopoverAnchorRect | null>(null)
   const [otherOpen, setOtherOpen] = useState(false)
@@ -112,7 +107,11 @@ export function TotalCard(props: {
             const strong = row.key === props.selectedOcid
             const label = (
               <>
-                <View className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: empty ? definition.surface2 : row.color }} />
+                <View
+                  testID={`calculator-swatch-${row.key}`}
+                  className="h-2 w-2 rounded-[2px]"
+                  style={{ backgroundColor: empty ? definition.surface2 : row.color }}
+                />
                 <Text className={`text-10 text-text ${strong ? 'font-semibold' : ''}`}>{row.name}</Text>
                 {row.grouped !== undefined && <ChevronRightIcon className="h-3 w-3 text-text-muted" strokeWidth={2.5} aria-hidden />}
                 {!empty && (

@@ -112,7 +112,7 @@
 | `Stepper` | `−` · 숫자 · `+` 고르개. 크기 `sm` · `md`. 색은 세그먼트와 같아 어디에 놓여도 같다([[ADR-060]] 결정 14). 값이 바뀌면 `selectionFeedback()` 햅틱을 낸다([[ADR-059]] 결정 10) |
 | `BossPortrait` · `CharacterAvatar` · `UnknownCharacterFace` | 보스 얼굴 · 캐릭터 얼굴 원. 링을 두른 초상화(캐릭터 레일 · 보스 수입 카드 머리) 말고는 머리를 원 밖으로 그린다(오버 프레임, [[ADR-219]] 결정 12 · 13). `UnknownCharacterFace` 는 그림을 모르는 캐릭터의 얼굴이다. 남색 원에 흰 실루엣이다 |
 | `CharacterGroupLabel` | 캐릭터별 묶음 왼쪽의 얼굴 · 이름 열 |
-| `DonutRing` | 비중 도넛. 조각 사이 틈 · 둥근 모서리, 조각이 없으면 회색 링([[ADR-074]] 결정 6) |
+| `DonutRing` | 비중 도넛. 조각 사이 틈 · 둥근 모서리, 조각이 없으면 회색 링. 조각 색은 `donut-steps.ts` 가 테마 `primary` 로 만드는 다섯 단계([[ADR-074]] 결정 6) |
 | `SparkLine` | 눈금 없는 작은 꺾은선과 옅은 채움 · 끝 점. 값이 둘 미만이면 가운데 평평한 선. MASPI 카드 · 시세 줄 · today 위젯([[ADR-071]] 결정 13) |
 | `DifficultyExpander` | 난이도를 고르는 곳 모두가 쓰는 고르개. 고른 난이도 배지가 펼쳐져 모든 난이도가 된다. 오른쪽 끝에 붙으면 `align="end"` 로 왼쪽으로 펼치고 화살표도 왼쪽에 선다. 펼친 줄 뒤에 바탕을 깔지 않는다([[ADR-074]] 결정 8, [[ADR-093]] 결정 2 · 3) |
 | `FadedIllustration` · `IllustratedCard` | 카드 안 일러스트와 베일 · 그림을 까는 카드 껍데기. 카드 안 글자의 색 기준을 그림 위 색(`media-*`)으로 바꾼다 |
