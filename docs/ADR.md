@@ -193,7 +193,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-059+136+224+346+348](./adr/ADR-059+136+224+346+348_navigation_stack.md) | 🟢 | navigation | 화면 스택과 하단바 |
 | [ADR-060+073+079+085+088+107+109+130+133+314](./adr/ADR-060+073+079+085+088+107+109+130+133+314_design-system_components.md) | 🟢 | design-system | 공용 부품의 계층과 기본 부품 |
 | [ADR-061+149+315](./adr/ADR-061+149+315_design-system_states.md) | 🟢 | design-system | 빈 상태 · 로딩 · 실패 · 갱신 시각 · 토스트 · 안내 띠 표시 |
-| [ADR-062+082+091+106+119+123+129+131+134+141+148+240+316+332](./adr/ADR-062+082+091+106+119+123+129+131+134+141+148+240+316+332_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 · ＋ 버튼 · 드롭다운 |
+| [ADR-062+082+091+106+119+123+129+131+134+141+148+240+316+332+352](./adr/ADR-062+082+091+106+119+123+129+131+134+141+148+240+316+332+352_design-system_sheets.md) | 🟢 | design-system | 시트 · 상단 시트 · 모달 · 팝오버 · 입력 카드 · ＋ 버튼 · 드롭다운 |
 | [ADR-063+080+113+116+146+184+223+268](./adr/ADR-063+080+113+116+146+184+223+268_design-system_layout.md) | 🟢 | design-system | 화면 틀 · 헤더 · 안전영역 · 글자 체계 · 화면 배율 · 글자 크기 페이지 |
 | [ADR-064](./adr/ADR-064_design-system_refresh.md) | 🟢 | design-system | 당겨서 새로고침 |
 | [ADR-071+205+243+251](./adr/ADR-071+205+243+251_server_drop-price-market.md) | 🟢 | server | 드롭 시세 · 일일 기준가 · MASPI 지수와 도구 · 잘못 적은 값 빼기 · 드롭 가격 · 시세 관리 화면 |
@@ -224,4 +224,4 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-261+306](./adr/ADR-261+306_error-resilience_server-maintenance.md) | 🟢 | error-resilience | 서버 점검 잠금 |
 | [ADR-286](./adr/ADR-286_persistence_device-conversion.md) | 🟢 | persistence | 1.0.15 기기 변환 |
 | [ADR-307+325+337+344](./adr/ADR-307+325+337+344_architecture_web.md) | ⚪ | architecture | PC 웹 버전 |
-| [ADR-335+341+342](./adr/ADR-335+341+342_design-system_web-screens.md) | ⚪ | design-system | PC 웹 화면 디자인 |
+| [ADR-335+341+342+353](./adr/ADR-335+341+342+353_design-system_web-screens.md) | ⚪ | design-system | PC 웹 화면 디자인 |

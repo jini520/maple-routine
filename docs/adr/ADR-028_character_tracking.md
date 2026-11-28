@@ -217,8 +217,8 @@ ocid 의 마지막으로 알던 월드가 월드 표에서 챌린저스(`isChall
 - 모달(`WorldLeapNoticeModal`)은 `AppNavigation` 에 있어 어느 화면에서든 뜬다. API 키 안내 모달과
   업데이트 모달보다 아래에 그린다. 키가 무효면 이 질문에 답해도 할 수 있는 일이 없고, 업데이트는 앱을
   다시 띄우기 때문이다.
-- `나중에` 와 `캐릭터 관리로 이동` 은 이번 실행 동안만 다시 묻지 않는다(`dismissedOcids` 는 메모리에만
-  있다). 앱을 다시 켜면 또 묻는다. 사용자가 반드시 정리해야 하는 문제라서다(사용자 지정). 추적 목록에서
+- 모달을 닫는 것(오른쪽 위 닫기 X · 바깥 탭 · 뒤로 가기, [[ADR-062]] 결정 8)과 `캐릭터 관리로 이동` 은 이번 실행
+  동안만 다시 묻지 않는다(`dismissedOcids` 는 메모리에만 있다). 앱을 다시 켜면 또 묻는다. 사용자가 반드시 정리해야 하는 문제라서다(사용자 지정). 추적 목록에서
   그 ocid 를 빼면 판정 대상에서 빠지므로 그 뒤로는 묻지 않는다.
 
 ## 테스트
@@ -233,7 +233,7 @@ ocid 의 마지막으로 알던 월드가 월드 표에서 챌린저스(`isChall
 | `features/character-profile/__tests__/resolve.spec.ts` · `storage/__tests__/character-profiles.spec.ts` | 결정 7: 표를 먼저 읽고 없는 것만 캐시에서 찾아 표에 써 넣는지, 둘 다 없으면 결과에서 빠지는지, 표 조회가 실패하면 캐시로 넘어가는지, `IN` 한 번으로 읽는지 본다 |
 | `features/schedule-sync/__tests__/stranded-characters.spec.ts` | 결정 9: 답하지 않은 추적 ocid 를 남기고, 원장의 조회 불가를 첫 그리기에 반영하면서 내용을 비우고, 답한 캐릭터의 표식을 지우는지 본다 |
 | `features/character-manage/__tests__/world-leap.spec.ts` | 결정 10: 옛 월드가 챌린저스일 때만 묻는지, 세 결과(`confirmed` · `alreadyTracked` · `unknown`)를 조건대로 내는지 본다 |
-| `features/character-manage/__tests__/world-leap-store.spec.ts` · `app/__tests__/WorldLeapNoticeModal.test.tsx` | 결정 10: `나중에` 를 이번 실행 동안만 기억하는지, 버튼마다 목록을 바꾸고 바뀐 목록을 화면에 반영하는지, 실패하면 모달을 닫지 않는지, 두 ocid 의 연결을 남기는지 본다 |
+| `features/character-manage/__tests__/world-leap-store.spec.ts` · `app/__tests__/WorldLeapNoticeModal.test.tsx` | 결정 10: 닫기 X 로 닫은 것을 이번 실행 동안만 기억하는지, 버튼마다 목록을 바꾸고 바뀐 목록을 화면에 반영하는지, 실패하면 모달을 닫지 않는지, 두 ocid 의 연결을 남기는지 본다 |
 | `hooks/__tests__/useSelectionDraft.spec.tsx` 의 `월드 이전 교체를 초안이 이어받는다` | 결정 10: 편집 중인 초안이 교체와 빼기를 따라가는지 본다 |
 
 ## 번호 기록
