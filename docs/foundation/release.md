@@ -91,6 +91,10 @@ npx expo-updates runtimeversion:resolve --platform android
 
 ccache · Gradle 빌드 캐시 · watchman 을 켜 둔다. 이유와 확인 방법은 [[ADR-006]] 결정 13 에 있다.
 
+이 맥에서는 Gradle · npm · CocoaPods 캐시와 Xcode DerivedData 가 외장 SSD(`/Volumes/MapleDev`)로 가는 링크다. 경로는 그대로지만
+MapleDev 가 안 열려 있으면 링크가 끊겨 `pod install` · Gradle · Xcode 빌드가 실패한다. 빌드하기 전에
+`mount | grep " on /Volumes/MapleDev "` 로 열려 있는지 본다([[ADR-188]] 결정 18).
+
 | 무엇 | 어디 | 켜는 법 |
 |---|---|---|
 | ccache(iOS) | `ios/Podfile.properties.json` 의 `apple.ccacheEnabled` | `brew install ccache` 뒤 `pod install`. 래퍼가 `/opt/homebrew/bin/ccache` 를 그대로 부르므로 ccache 가 없으면 빌드가 안 된다 |
