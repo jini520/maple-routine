@@ -218,7 +218,7 @@ release · hotfix 와 열린 PR, 이 맥의 모든 워크트리를 함께 본다
 | [ADR-187+213+216+278+281+330](./adr/ADR-187+213+216+278+281+330_game-data_item-catalog.md) | 🟢 | game-data | 서버 아이템 표와 그림 연결 · 관리 화면 · 고르기 목록 칸 · 묶음 표 |
 | [ADR-188+260+269+321+340+347](./adr/ADR-188+260+269+321+340+347_release_branches.md) | 🟢 | release | 브랜치 전략(main · develop · release · hotfix)과 ADR 번호 받기, 사용자에게 묻기 전에 확인할 것, 버전의 역할과 릴리즈 대기 단계, 찾은 잘못을 그 자리에서 고치기, 전제가 바뀌면 옛 말로 찾아 고치기, 구현 전의 일은 미구현 ADR 에만 적기, 구현 뒤 코드 리뷰, 화면을 바꾸는 작업의 순서, 작업 중에 만드는 파일은 외장 SSD 에 두고 끝나면 지우기 |
 | [ADR-191+230](./adr/ADR-191+230_design-system_screen-size.md) | 🟢 | design-system | 태블릿과 접는 폰 외부 화면의 배치 |
-| [ADR-209+291](./adr/ADR-209+291_inventory_items.md) | 🟢 | inventory | 인벤토리 |
+| [ADR-209+291+351](./adr/ADR-209+291+351_inventory_items.md) | 🟢 | inventory | 인벤토리 |
 | [ADR-228](./adr/ADR-228_trade-history_page.md) | 🟢 | trade-history | 거래 내역 |
 | [ADR-250](./adr/ADR-250_design-system_press-feedback.md) | 🟢 | design-system | 누를 때 흐려지지 않는다 |
 | [ADR-261+306](./adr/ADR-261+306_error-resilience_server-maintenance.md) | 🟢 | error-resilience | 서버 점검 잠금 |

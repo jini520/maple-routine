@@ -133,10 +133,6 @@
       "node": "93:69",
       "hash": "76589798da0a1a41"
     },
-    "molecules/InventoryTabs": {
-      "node": "93:70",
-      "hash": "cc03dcfffd1787a8"
-    },
     "molecules/LoadingState": {
       "node": "93:85",
       "hash": "cca0e258fb389bae"

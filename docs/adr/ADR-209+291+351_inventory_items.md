@@ -1,7 +1,7 @@
-# ADR-209+291 인벤토리
+# ADR-209+291+351 인벤토리
 
 > 🟢 유효
-> 관련 소스: `navigation/bar-groups.ts` · `storage/income.ts`(`getFragmentStorage`) · `lib/cashbook/hexa-matrix.ts`(`allocateHexaStorage`) · `lib/character-order.ts`(`pickRepresentativeCharacter`) · `storage/sqlite/cashbook-tables.ts` · `storage/inventory.ts` · `storage/cache-data.ts` · `app/inventory/InventorySaleSheet.tsx` · 이슈 #911 · #912
+> 관련 소스: `navigation/bar-groups.ts` · `storage/income.ts`(`getFragmentStorage`) · `lib/cashbook/hexa-matrix.ts`(`allocateHexaStorage`) · `lib/character-order.ts`(`pickRepresentativeCharacter`) · `storage/sqlite/cashbook-tables.ts` · `storage/inventory.ts` · `storage/cache-data.ts` · `app/inventory/InventorySaleSheet.tsx` · `app/inventory/InventoryTabs.tsx` · 이슈 #911 · #912
 
 ## 배경
 
@@ -125,7 +125,10 @@
 - 한 자리 숫자만 왼쪽으로 2 더 옮긴다(사용자 지정 2026-11-12). 12px 에서도 가운데에 두면 한 자리 숫자는 그림에 너무 붙는다.
 - 탭은 판에 붙는다. 고른 탭은 판과 같은 색(`surface`)이라 판과 한 덩어리로 이어지고, 나머지 탭은 한 단계 어두운 바탕(`surface-2`)이다
   (사용자 지정 2026-11-12). 고른 탭과 판이 이어져 있어 지금 어느 종류의 판을 보는지 함께 읽힌다.
-- 이 탭은 앱에 없던 부품이라 `InventoryTabs` 로 새로 두고 디자인 시스템의 부품 목록에 더했다.
+- 이 탭(`InventoryTabs`)은 공용 부품 폴더(`components/`)가 아니라 인벤토리 화면 폴더(`app/inventory/`)에 둔다(사용자 지정
+  2026-11-28). 인벤토리 화면만 쓰는 부품이기 때문이다. `components/` 는 여러 화면이 함께 쓰는 부품 자리이고, Figma 의 `App/Atoms` ·
+  `Molecules` 층이 그 계층을 따른다. 그래서 거기 두면 Figma 에서도 공통 부품으로 선다. Figma 에서는 `App/인벤토리` 페이지의
+  `인벤토리 · 부품` 섹션에 있다.
 
 ### 결정 4. 보스 수익의 `아이템 가격 입력` 화면과 떠 있는 버튼은 그대로 둔다
 
@@ -358,3 +361,4 @@
   들고, 장비가 아닌 줄의 한 줄 기준은 부분 색인 대신 저장 코드가 지키며, 기타 조각 사용은 그 기록의 메이플 ID · 월드로 센다(#947)
 - (2026-11-24) 결정 9 의 `이 기록은 기기에만 두고 서버로 보내지 않는다` 를 1.0.15 의 기기 간 동기화에 맞추고, 결정 3 · 5 · 6 의 옛
   서버 이름(`cashbook_item_kinds` · `drop_prices` · `completed`)을 1.0.15 의 이름으로 고쳤다([[ADR-099]] 결정 2 · 8 · 26, #947)
+- ADR-351 (2026-11-28): 결정 3 의 `InventoryTabs` 를 디자인 시스템 부품에서 인벤토리 화면 폴더의 부품으로 옮겼다(사용자 지정, #1296)
